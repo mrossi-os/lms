@@ -70,7 +70,8 @@
 				</div>
 			</div>
 			<div class="">
-				<div class="sticky top-0 p-5">
+				<div class="sticky top-0 p-5 space-y-5">
+					<LessonAIIngestion :lessonId="lessonDetails?.data?.lesson?.name" />
 					<LessonHelp />
 				</div>
 			</div>
@@ -97,6 +98,7 @@ import {
 import { sessionStore } from '../stores/session'
 import EditorJS from '@editorjs/editorjs'
 import LessonHelp from '@/components/LessonHelp.vue'
+import LessonAIIngestion from '@/components/LessonAIIngestion.vue'
 import { ChevronRight } from 'lucide-vue-next'
 import { getEditorTools, enablePlyr } from '@/utils'
 import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
