@@ -14,7 +14,7 @@ services:
       - mariadb-data:/var/lib/mysql
 
   redis:
-    image: redis:alpine
+    image: redis/redis-stack-server:latest
 
   frappe:
     image: frappe/bench:latest
