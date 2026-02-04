@@ -16,6 +16,8 @@ dependencies = [
     "cairocffi==1.5.1",
     "razorpay~=1.4.1",
     "fuzzywuzzy~=0.18.0",
+    # AI/LMSA dependencies
+    "numpy>=1.24.0",
 ]
 
 [build-system]

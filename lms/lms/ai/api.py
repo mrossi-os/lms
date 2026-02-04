@@ -1,9 +1,16 @@
+import json
+
 import frappe
 from frappe import _
 
-from lms.lms.utils import has_course_instructor_role, has_moderator_role, is_instructor
+from lms.lms.utils import (
+	has_course_instructor_role,
+	has_moderator_role,
+	is_instructor,
+	validate_course_access,
+)
 
-from .ingestion import get_settings, ingest_lesson
+from .ingestion import ask_chat, get_settings, ingest_lesson
 
 
 def check_lesson_permission(lesson_id):
@@ -81,6 +88,44 @@ def get_lesson_ingestion_status(lesson_id):
 	}
 
 
+@frappe.whitelist()
+def ask_lmsa_chat(course_id, lesson_id, question):
+	"""
+	Ask a question to the LMSA chatbot.
+
+	Args:
+		course_id: The LMS Course name/ID
+		lesson_id: The Course Lesson name/ID
+		question: The user's question
+
+	Returns:
+		dict with answer, sources, and status
+	"""
+	if not question or not question.strip():
+		frappe.throw(_("Question cannot be empty"))
+
+	validate_course_access(lesson_id)
+
+	lesson = frappe.get_doc("Course Lesson", lesson_id)
+	if lesson.course != course_id:
+		frappe.throw(_("Lesson does not belong to this course"), frappe.ValidationError)
+
+	result = ask_chat(course_id, lesson_id, question)
+
+	log = frappe.new_doc("LMSA Query Log")
+	log.course = course_id
+	log.lesson = lesson_id
+	log.member = frappe.session.user
+	log.question = question
+	log.answer = result.get("answer", "")
+	log.context = json.dumps(result.get("sources", []))
+	log.status = "Answered" if result.get("status") == "answered" else "Failed"
+	log.save(ignore_permissions=True)
+	frappe.db.commit()
+
+	return result
+
+
 @frappe.whitelist(allow_guest=True)
 def get_lmsa_openapi_spec():
 	"""Return OpenAPI/Swagger spec for LMSA endpoints."""
@@ -88,8 +133,8 @@ def get_lmsa_openapi_spec():
 	return {
 		"openapi": "3.0.0",
 		"info": {
-			"title": "LMSA Ingestion API",
-			"description": "API for LMS AI Assistant ingestion endpoints",
+			"title": "LMSA API",
+			"description": "API for LMS AI Assistant ingestion and chat endpoints",
 			"version": "1.0.0",
 		},
 		"servers": [{"url": base_url}],
@@ -185,6 +230,66 @@ def get_lmsa_openapi_spec():
 							},
 						},
 						"404": {"description": "Lesson not found"},
+					},
+				}
+			},
+			"/api/method/lms.lms.ai.api.ask_lmsa_chat": {
+				"post": {
+					"summary": "Ask LMSA chatbot",
+					"description": "Ask a question about lesson content. Requires course enrollment.",
+					"requestBody": {
+						"required": True,
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"course_id": {"type": "string", "description": "LMS Course ID"},
+										"lesson_id": {"type": "string", "description": "Course Lesson ID"},
+										"question": {"type": "string", "description": "User question"},
+									},
+									"required": ["course_id", "lesson_id", "question"],
+								}
+							},
+						},
+					},
+					"responses": {
+						"200": {
+							"description": "Chat response",
+							"content": {
+								"application/json": {
+									"schema": {
+										"type": "object",
+										"properties": {
+											"message": {
+												"type": "object",
+												"properties": {
+													"answer": {"type": "string"},
+													"sources": {
+														"type": "array",
+														"items": {
+															"type": "object",
+															"properties": {
+																"lesson_id": {"type": "string"},
+																"chunk_index": {"type": "integer"},
+																"score": {"type": "number"},
+																"excerpt": {"type": "string"},
+															},
+														},
+													},
+													"status": {
+														"type": "string",
+														"enum": ["answered", "not_found"],
+													},
+												},
+											}
+										},
+									}
+								}
+							},
+						},
+						"403": {"description": "Access denied"},
+						"500": {"description": "Server error"},
 					},
 				}
 			},
