@@ -1,12 +1,13 @@
-#!bin/bash
+#!/bin/bash
 
 if [ -d "/home/frappe/frappe-bench/apps/frappe" ]; then
     echo "Bench already exists, skipping init"
     cd frappe-bench
     bench start
-else
-    echo "Creating new bench..."
+    exit 0
 fi
+
+echo "Creating new bench..."
 
 export PATH="${NVM_DIR}/versions/node/v${NODE_VERSION_DEVELOP}/bin/:${PATH}"
 
@@ -24,13 +25,14 @@ bench set-redis-socketio-host redis://redis:6379
 sed -i '/redis/d' ./Procfile
 sed -i '/watch/d' ./Procfile
 
-bench get-app lms
+# Install lms from local workspace for development
+bench get-app /workspace
 
 bench new-site lms.localhost \
---force \
---mariadb-root-password 123 \
---admin-password admin \
---no-mariadb-socket
+    --force \
+    --mariadb-root-password 123 \
+    --admin-password admin \
+    --no-mariadb-socket
 
 bench --site lms.localhost install-app lms
 bench --site lms.localhost set-config developer_mode 1
