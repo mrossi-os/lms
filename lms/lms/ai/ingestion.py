@@ -223,6 +223,182 @@ def delete_material_vectors(material_id):
 			client.delete(key)
 
 
+def escape_tag_value(value):
+	"""Escape special characters for Redis TAG field queries."""
+	special_chars = [
+		",",
+		".",
+		"<",
+		">",
+		"{",
+		"}",
+		"[",
+		"]",
+		'"',
+		"'",
+		":",
+		";",
+		"!",
+		"@",
+		"#",
+		"$",
+		"%",
+		"^",
+		"&",
+		"*",
+		"(",
+		")",
+		"-",
+		"+",
+		"=",
+		"~",
+		" ",
+	]
+	escaped = value
+	for char in special_chars:
+		escaped = escaped.replace(char, f"\\{char}")
+	return escaped
+
+
+def vector_search(query, course_id, lesson_id, settings=None):
+	"""Search for similar chunks in Redis vector store."""
+	import numpy as np
+	from redis.commands.search.query import Query
+
+	if not settings:
+		settings = get_settings()
+
+	client = get_redis_client()
+	prefix = get_vector_prefix()
+	index_name = f"{prefix}:chunks_idx"
+
+	query_embedding = embed_chunks([query], settings)[0]
+	query_vector = np.array(query_embedding, dtype=np.float32).tobytes()
+
+	filter_parts = []
+	if course_id:
+		escaped_course = escape_tag_value(course_id)
+		filter_parts.append(f"@course_id:{{{escaped_course}}}")
+	if lesson_id:
+		escaped_lesson = escape_tag_value(lesson_id)
+		filter_parts.append(f"@lesson_id:{{{escaped_lesson}}}")
+
+	filter_str = " ".join(filter_parts) if filter_parts else "*"
+
+	top_k = settings.top_k
+
+	q = (
+		Query(f"({filter_str})=>[KNN {top_k} @embedding $vec AS score]")
+		.sort_by("score")
+		.return_fields("content", "lesson_id", "chunk_index", "score")
+		.dialect(2)
+	)
+
+	try:
+		results = client.ft(index_name).search(q, query_params={"vec": query_vector})
+	except Exception:
+		frappe.log_error("LMSA vector search failed")
+		return []
+
+	chunks = []
+	for doc in results.docs:
+		chunks.append(
+			{
+				"content": doc.content,
+				"lesson_id": doc.lesson_id,
+				"chunk_index": int(doc.chunk_index),
+				"score": float(doc.score),
+			}
+		)
+
+	return chunks
+
+
+def generate_chat_response(question, context_chunks, settings=None):
+	"""Generate a chat response using OpenAI with retrieved context."""
+	import requests
+
+	if not settings:
+		settings = get_settings()
+
+	api_key = get_openai_api_key()
+
+	context_text = "\n\n---\n\n".join([c["content"] for c in context_chunks])
+
+	system_prompt = """You are a helpful teaching assistant for an online learning platform.
+Answer the student's question based on the provided lesson content.
+If the answer cannot be found in the provided content, say so clearly.
+Keep your answers concise and relevant to the question."""
+
+	user_prompt = f"""Lesson Content:
+{context_text}
+
+Question: {question}
+
+Please answer the question based on the lesson content above."""
+
+	response = requests.post(
+		"https://api.openai.com/v1/chat/completions",
+		headers={
+			"Authorization": f"Bearer {api_key}",
+			"Content-Type": "application/json",
+		},
+		json={
+			"model": "gpt-4o-mini",
+			"messages": [
+				{"role": "system", "content": system_prompt},
+				{"role": "user", "content": user_prompt},
+			],
+			"max_tokens": 1000,
+			"temperature": 0.7,
+		},
+		timeout=60,
+	)
+
+	if response.status_code != 200:
+		frappe.throw(f"OpenAI API error: {response.text}")
+
+	data = response.json()
+	return data["choices"][0]["message"]["content"]
+
+
+def ask_chat(course_id, lesson_id, question):
+	"""Main chat function: retrieve context and generate answer."""
+	settings = get_settings()
+	if not settings.enabled:
+		frappe.throw("LMSA is not enabled")
+
+	context_chunks = vector_search(question, course_id, lesson_id, settings)
+
+	if not context_chunks:
+		return {
+			"answer": "I couldn't find relevant information in the lesson content to answer your question.",
+			"sources": [],
+			"status": "not_found",
+		}
+
+	answer = generate_chat_response(question, context_chunks, settings)
+
+	sources = []
+	for chunk in context_chunks:
+		sources.append(
+			{
+				"lesson_id": chunk["lesson_id"],
+				"chunk_index": chunk["chunk_index"],
+				"score": chunk["score"],
+				"excerpt": chunk["content"][:200] + "..."
+				if len(chunk["content"]) > 200
+				else chunk["content"],
+			}
+		)
+
+	return {
+		"answer": answer,
+		"sources": sources,
+		"status": "answered",
+	}
+
+
 def ingest_lesson(lesson_id):
 	"""Main ingestion function for a lesson."""
 	settings = get_settings()
