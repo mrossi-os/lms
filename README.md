@@ -128,16 +128,9 @@ The script will set up a production-ready instance of Frappe Learning with all t
 
 You need Docker, docker-compose and git setup on your machine. Refer [Docker documentation](https://docs.docker.com/). After that, follow below steps:
 
-**Step 1**: Setup folder and download the required files
+**Step 1**: Use the docker setup in this repository
 
-    mkdir frappe-learning
-    cd frappe-learning
-
-    # Download the docker-compose file
-    wget -O docker-compose.yml https://raw.githubusercontent.com/frappe/lms/develop/docker/docker-compose.yml
-
-    # Download the setup script
-    wget -O init.sh https://raw.githubusercontent.com/frappe/lms/develop/docker/init.sh
+    cd docker
 
 **Step 2**: Run the container and daemonize it
 
@@ -147,17 +140,21 @@ You need Docker, docker-compose and git setup on your machine. Refer [Docker doc
 - Username: Administrator
 - Password: admin
 
+The Docker configuration uses Redis Stack for vector search support.
+
 ### Local
 
 To setup the repository locally follow the steps mentioned below:
 
 1. Install bench and setup a `frappe-bench` directory by following the [Installation Steps](https://frappeframework.com/docs/user/en/installation)
+1. Create a new bench in your preferred location: `bench init frappe-bench`
+1. Change into the bench directory: `cd frappe-bench`
+1. Get the Learning app from your local checkout: `bench get-app /path/to/lms`
+1. Create a new site: `bench new-site lms.localhost`
+1. Map your site to localhost with the command `bench --site lms.localhost add-to-hosts`
+1. Install the app: `bench --site lms.localhost install-app lms`
 1. Start the server by running `bench start`
-1. In a separate terminal window, create a new site by running `bench new-site learning.test`
-1. Map your site to localhost with the command `bench --site learning.test add-to-hosts`
-1. Get the Learning app. Run `bench get-app https://github.com/frappe/lms`
-1. Run `bench --site learning.test install-app lms`.
-1. Now open the URL `http://learning.test:8000/lms` in your browser, you should see the app running
+1. Now open the URL `http://lms.localhost:8000/lms` in your browser, you should see the app running
 
 ## Learn and connect
 
