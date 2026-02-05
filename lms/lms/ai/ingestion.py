@@ -143,7 +143,7 @@ def get_vector_prefix():
 def ensure_vector_index(client):
 	"""Create Redis vector index if it doesn't exist."""
 	from redis.commands.search.field import NumericField, TagField, TextField, VectorField
-	from redis.commands.search.index_definition import IndexDefinition, IndexType
+	from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 
 	prefix = get_vector_prefix()
 	index_name = f"{prefix}:chunks_idx"

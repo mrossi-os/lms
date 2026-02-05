@@ -18,6 +18,7 @@ dependencies = [
     "fuzzywuzzy~=0.18.0",
     # AI/LMSA dependencies
     "numpy>=1.24.0",
+    "redis>=4.6.0,<5",
 ]
 
 [build-system]
@@ -80,4 +81,3 @@ index_html_path = "../lms/www/_lms.html"
 Homepage = "https://frappe.io/learning"
 Repository = "https://github.com/frappe/lms.git"
 "Bug Reports" = "https://github.com/frappe/lms/issues"
-

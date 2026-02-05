@@ -140,7 +140,36 @@ You need Docker, docker-compose and git setup on your machine. Refer [Docker doc
 - Username: Administrator
 - Password: admin
 
-The Docker configuration uses Redis Stack for vector search support.
+The Docker configuration uses Redis Stack for vector search support (required for AI features).
+
+### AI Chatbot (LMSA)
+
+Frappe Learning includes an optional AI-powered chatbot that uses RAG (Retrieval Augmented Generation) to answer questions about lesson content.
+
+#### Requirements
+
+- **Redis Stack**: The docker setup uses `redis/redis-stack-server` which includes vector search capabilities
+- **OpenAI API Key**: Add `OPENAI_API_KEY` to `docker/.env` (loaded by docker compose)
+
+```bash
+echo "OPENAI_API_KEY=your-api-key-here" >> docker/.env
+docker compose up -d
+```
+
+#### Configuration
+
+1. Go to **LMSA Settings** in the Frappe desk (`/app/lmsa-settings`)
+2. Enable the **Enabled** checkbox
+3. Configure optional parameters:
+   - **Embedding Model**: OpenAI model for embeddings (default: `text-embedding-3-small`)
+   - **Chunk Size**: Characters per chunk (default: 1000)
+   - **Chunk Overlap**: Overlap between chunks (default: 200)
+   - **Top K**: Number of chunks to retrieve (default: 6)
+
+#### Usage
+
+- **Ingestion**: Teachers can trigger lesson ingestion via the API to index content for RAG
+- **Chat**: Students and teachers can ask questions about lesson content
 
 ### Local
 
