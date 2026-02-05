@@ -18,12 +18,15 @@ services:
 
   frappe:
     image: frappe/bench:latest
+    user: root
     command: bash /workspace/docker/init.sh
+    env_file:
+      - ./.env
     environment:
       - SHELL=/bin/bash
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
     working_dir: /home/frappe
     volumes:
+      - frappe-bench:/home/frappe/bench-data
       - ../:/workspace
     ports:
       - 8000:8000
@@ -34,3 +37,4 @@ services:
 
 volumes:
   mariadb-data:
+  frappe-bench:
