@@ -117,17 +117,23 @@
 														class="h-4 w-4 text-ink-gray-9 stroke-1 mr-2"
 													/>
 													{{ lesson.title }}
-													<Trash2
-														v-if="allowEdit"
-														@click.prevent="
-															trashLesson(lesson.name, chapter.name)
-														"
-														class="h-4 w-4 text-ink-red-3 ml-auto invisible group-hover:visible"
-													/>
-													<Check
-														v-if="lesson.is_complete"
-														class="h-4 w-4 text-green-700 ml-2"
-													/>
+													<div class="flex items-center ml-auto space-x-2">
+														<LessonAIStatus
+															v-if="allowEdit"
+															:lessonId="lesson.name"
+														/>
+														<Trash2
+															v-if="allowEdit"
+															@click.prevent="
+																trashLesson(lesson.name, chapter.name)
+															"
+															class="h-4 w-4 text-ink-red-3 invisible group-hover:visible"
+														/>
+														<Check
+															v-if="lesson.is_complete"
+															class="h-4 w-4 text-green-700"
+														/>
+													</div>
 												</div>
 											</router-link>
 										</div>
@@ -182,6 +188,7 @@ import {
 } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import ChapterModal from '@/components/Modals/ChapterModal.vue'
+import LessonAIStatus from '@/components/LessonAIStatus.vue'
 
 const route = useRoute()
 const router = useRouter()
