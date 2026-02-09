@@ -78,6 +78,8 @@ def get_lesson_ingestion_status(lesson_id):
 	current_text = normalize_lesson_text(lesson_id)
 	current_hash = material_hash(current_text) if current_text else ""
 	needs_update = material.source_hash != current_hash
+	if material.status and material.status.lower() == "failed":
+		needs_update = True
 
 	return {
 		"status": material.status.lower(),

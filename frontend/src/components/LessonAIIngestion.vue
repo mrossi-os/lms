@@ -112,23 +112,40 @@ const formatDate = (dateStr) => {
 	})
 }
 
-const ingestionStatus = createResource({
-	url: 'lms.lms.ai.api.get_lesson_ingestion_status',
-	makeParams() {
-		return { lesson_id: props.lessonId }
-	},
-	onSuccess(data) {
-		status.value = data.status
-		chunkCount.value = data.chunk_count || 0
-		lastIngestedOn.value = data.last_ingested_on
-		needsUpdate.value = data.needs_update || false
+const normalizeStatus = (value) => {
+        switch (value) {
+                case 'ready':
+                case 'completed':
+                        return 'completed'
+                case 'processing':
+                case 'pending':
+                        return 'pending'
+                case 'failed':
+                        return 'failed'
+                case 'not_ingested':
+                        return 'not_ingested'
+                default:
+                        return value || 'not_ingested'
+        }
+}
 
-		if (data.status === 'pending' && !pollInterval) {
-			startPolling()
-		} else if (data.status !== 'pending' && pollInterval) {
-			stopPolling()
-		}
-	},
+const ingestionStatus = createResource({
+        url: 'lms.lms.ai.api.get_lesson_ingestion_status',
+        makeParams() {
+                return { lesson_id: props.lessonId }
+        },
+        onSuccess(data) {
+                status.value = normalizeStatus(data.status)
+                chunkCount.value = data.chunk_count || 0
+                lastIngestedOn.value = data.last_ingested_on
+                needsUpdate.value = data.needs_update || false
+
+                if (status.value === 'pending' && !pollInterval) {
+                        startPolling()
+                } else if (status.value !== 'pending' && pollInterval) {
+                        stopPolling()
+                }
+        },
 })
 
 const ingestionTrigger = createResource({
@@ -136,17 +153,20 @@ const ingestionTrigger = createResource({
 	makeParams() {
 		return { lesson_id: props.lessonId }
 	},
-	onSuccess(data) {
-		isIngesting.value = false
-		if (data.status === 'success' || data.status === 'completed') {
-			status.value = 'completed'
-			chunkCount.value = data.chunk_count || 0
-			needsUpdate.value = false
-			lastIngestedOn.value = new Date().toISOString()
-		} else {
-			status.value = data.status || 'failed'
-		}
-	},
+        onSuccess(data) {
+                isIngesting.value = false
+                if (data.status === 'success' || data.status === 'completed') {
+                        status.value = 'completed'
+                        chunkCount.value = data.chunk_count || 0
+                        needsUpdate.value = false
+                        lastIngestedOn.value = new Date().toISOString()
+                } else {
+                        status.value = normalizeStatus(data.status || 'failed')
+                        if (data.status === 'unchanged') {
+                                ingestionStatus.fetch()
+                        }
+                }
+        },
 	onError() {
 		isIngesting.value = false
 		status.value = 'failed'

@@ -22,6 +22,14 @@ echo "Creating new bench..."
 
 export PATH="${NVM_DIR}/versions/node/v${NODE_VERSION_DEVELOP}/bin/:${PATH}"
 
+if ! command -v yarn >/dev/null 2>&1; then
+    if command -v corepack >/dev/null 2>&1; then
+        corepack enable
+    else
+        npm install -g yarn
+    fi
+fi
+
 if [ -d "${bench_dir}" ] && [ ! -f "${bench_dir}/Procfile" ]; then
     echo "Empty bench directory detected. Cleaning up."
     rm -rf "${bench_dir}"
