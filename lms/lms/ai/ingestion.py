@@ -421,13 +421,6 @@ def ingest_lesson(lesson_id):
 		as_dict=True,
 	)
 
-	if material and material.source_hash == content_hash:
-		return {
-			"status": "unchanged",
-			"message": "Content has not changed since last ingestion",
-			"material": material.name,
-		}
-
 	if material:
 		material_doc = frappe.get_doc("LMSA Material", material.name)
 		delete_material_vectors(material.name)
