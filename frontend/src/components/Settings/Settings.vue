@@ -39,7 +39,8 @@
 						v-bind="{
 							label: activeTab.label,
 							description: activeTab.description,
-							...(activeTab.label == 'Branding'
+							...(activeTab.label == 'Branding' ||
+							activeTab.label == 'AI'
 								? { sections: activeTab.sections }
 								: {}),
 							...(activeTab.label == 'Evaluators' ||
@@ -77,6 +78,7 @@ import Coupons from '@/components/Settings/Coupons/Coupons.vue'
 import Transactions from '@/components/Settings/Transactions/Transactions.vue'
 import ZoomSettings from '@/components/Settings/ZoomSettings.vue'
 import Badges from '@/components/Settings/Badges.vue'
+import AISettings from '@/components/Settings/AISettings.vue'
 
 const show = defineModel()
 const doctype = ref('LMS Settings')
@@ -531,10 +533,72 @@ const tabsStructure = computed(() => {
 						},
 					],
 				},
-			],
-		},
-	]
-})
+				],
+				},
+				{
+				label: 'AI',
+				hideLabel: false,
+				items: [
+				{
+					label: 'AI',
+					icon: 'BrainCircuit',
+					description: 'Configure AI assistant settings for your learning system',
+					template: markRaw(AISettings),
+					sections: [
+						{
+							label: 'Configuration',
+							columns: [
+								{
+									fields: [
+										{
+											label: 'Enabled',
+											name: 'enabled',
+											type: 'checkbox',
+											description:
+												'Enable AI features for your learning system.',
+										},
+										{
+											label: 'Embedding Model',
+											name: 'embedding_model',
+											type: 'text',
+											description:
+												'The model used to generate embeddings for content indexing.',
+										},
+									],
+								},
+								{
+									fields: [
+										{
+											label: 'Chunk Size',
+											name: 'chunk_size',
+											type: 'number',
+											description:
+												'Number of characters per text chunk for indexing.',
+										},
+										{
+											label: 'Chunk Overlap',
+											name: 'chunk_overlap',
+											type: 'number',
+											description:
+												'Character overlap between consecutive chunks.',
+										},
+										{
+											label: 'Top K',
+											name: 'top_k',
+											type: 'number',
+											description:
+												'Number of relevant chunks to retrieve for context.',
+										},
+									],
+								},
+							],
+						},
+					],
+				},
+				],
+				},
+				]
+				})
 
 const tabs = computed(() => {
 	return tabsStructure.value.map((tab) => {
