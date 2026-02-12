@@ -15,3 +15,14 @@ lms/www/lms.html
 lms/www/_lms.html
 frappe-ui
 docker/.env
+.agents/
+AGENTS.md
+ANALYSIS.md
+DEPLOYMENT.md
+PLANNING.md
+SPEC.md
+cookies.txt
+development/
+frappe_docker/
+make_image.sh
+sites/
