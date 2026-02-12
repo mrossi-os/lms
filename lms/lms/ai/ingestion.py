@@ -1,3 +1,4 @@
+import base64
 import hashlib
 import json
 import os
@@ -30,29 +31,57 @@ def normalize_lesson_text(lesson):
 	lesson_doc = frappe.get_doc("Course Lesson", lesson)
 	text_parts = []
 
-	if lesson_doc.content:
+	def extract_editorjs_text(content):
 		try:
-			content = json.loads(lesson_doc.content)
-			for block in content.get("blocks", []):
-				block_type = block.get("type")
-				data = block.get("data", {})
-				if block_type == "paragraph":
-					text_parts.append(data.get("text", ""))
-				elif block_type == "header":
-					text_parts.append(data.get("text", ""))
-				elif block_type == "list":
-					items = data.get("items", [])
-					for item in items:
-						if isinstance(item, str):
-							text_parts.append(item)
-						elif isinstance(item, dict):
-							text_parts.append(item.get("content", ""))
-				elif block_type == "code":
-					text_parts.append(data.get("code", ""))
-				elif block_type == "quote":
-					text_parts.append(data.get("text", ""))
+			parsed = json.loads(content)
 		except json.JSONDecodeError:
-			pass
+			return []
+
+		extracted = []
+		for block in parsed.get("blocks", []):
+			block_type = block.get("type")
+			data = block.get("data", {})
+			if block_type == "paragraph":
+				extracted.append(data.get("text", ""))
+			elif block_type == "header":
+				extracted.append(data.get("text", ""))
+			elif block_type == "list":
+				items = data.get("items", [])
+				for item in items:
+					if isinstance(item, str):
+						extracted.append(item)
+					elif isinstance(item, dict):
+						extracted.append(item.get("content", ""))
+			elif block_type == "code":
+				extracted.append(data.get("code", ""))
+			elif block_type == "quote":
+				extracted.append(data.get("text", ""))
+			elif block_type == "markdown":
+				extracted.append(data.get("text", ""))
+			elif block_type == "table":
+				table_rows = data.get("content", [])
+				for row in table_rows:
+					if isinstance(row, list):
+						extracted.append(" ".join(cell for cell in row if cell))
+					elif isinstance(row, str):
+						extracted.append(row)
+			elif block_type == "codeBox":
+				extracted.append(data.get("code", ""))
+			elif block_type == "embed":
+				extracted.append(data.get("caption", ""))
+				extracted.append(data.get("embed", ""))
+			elif block_type == "image":
+				extracted.append(data.get("caption", ""))
+				extracted.append(data.get("url", ""))
+			elif block_type == "upload":
+				extracted.append(data.get("file_url", ""))
+		return extracted
+
+	if lesson_doc.content:
+		text_parts.extend(extract_editorjs_text(lesson_doc.content))
+
+	if lesson_doc.instructor_content:
+		text_parts.extend(extract_editorjs_text(lesson_doc.instructor_content))
 
 	if lesson_doc.body:
 		text_parts.append(lesson_doc.body)
@@ -129,8 +158,17 @@ def embed_chunks(chunks, settings=None):
 
 
 def get_redis_client():
-	"""Get Redis client for vector operations."""
-	redis_url = frappe.conf.get("redis_cache") or "redis://localhost:6379"
+	"""Get Redis client for vector operations.
+
+	Uses redis_vector_store if configured, otherwise falls back to
+	redis_queue which is persistent (unlike redis_cache which Frappe
+	flushes on bench clear-cache).
+	"""
+	redis_url = (
+		frappe.conf.get("redis_vector_store")
+		or frappe.conf.get("redis_queue")
+		or "redis://localhost:6379"
+	)
 	return redis.from_url(redis_url)
 
 
@@ -175,14 +213,18 @@ def ensure_vector_index(client):
 
 
 def upsert_vectors(chunks, embeddings, metadata):
-	"""Upsert vectors to Redis."""
+	"""Upsert vectors to Redis.
+
+	Returns list of (vector_id, embedding_bytes) tuples so callers can
+	persist the raw embedding alongside the LMSA Chunk record.
+	"""
 	import numpy as np
 
 	client = get_redis_client()
 	ensure_vector_index(client)
 	prefix = get_vector_prefix()
 
-	vector_ids = []
+	results = []
 	for i, (chunk, embedding) in enumerate(zip(chunks, embeddings, strict=False)):
 		vector_id = str(uuid.uuid4())
 		key = f"{prefix}:chunk:{vector_id}"
@@ -201,9 +243,9 @@ def upsert_vectors(chunks, embeddings, metadata):
 				"embedding": embedding_bytes,
 			},
 		)
-		vector_ids.append(vector_id)
+		results.append((vector_id, embedding_bytes))
 
-	return vector_ids
+	return results
 
 
 def delete_material_vectors(material_id):
@@ -221,6 +263,64 @@ def delete_material_vectors(material_id):
 		if chunk.vector_id:
 			key = f"{prefix}:chunk:{chunk.vector_id}"
 			client.delete(key)
+
+
+def rehydrate_vectors():
+	"""Rebuild Redis vectors from LMSA Chunk records stored in MariaDB.
+
+	Called automatically when vector_search detects an empty index.
+	Only chunks that have a persisted embedding blob are restored;
+	chunks without one are skipped (they will be re-embedded on next
+	ingestion via sync_stale_materials or manual re-index).
+	"""
+	client = get_redis_client()
+	ensure_vector_index(client)
+	prefix = get_vector_prefix()
+
+	chunks = frappe.get_all(
+		"LMSA Chunk",
+		fields=["name", "material", "chunk_index", "content", "vector_id", "embedding_blob"],
+	)
+
+	if not chunks:
+		return 0
+
+	restored = 0
+	for chunk in chunks:
+		if not chunk.vector_id or not chunk.embedding_blob:
+			continue
+
+		material = frappe.db.get_value(
+			"LMSA Material",
+			chunk.material,
+			["course", "lesson"],
+			as_dict=True,
+		)
+		if not material:
+			continue
+
+		key = f"{prefix}:chunk:{chunk.vector_id}"
+		if client.exists(key):
+			continue
+
+		embedding_bytes = base64.b64decode(chunk.embedding_blob)
+
+		client.hset(
+			key,
+			mapping={
+				"course_id": material.course,
+				"lesson_id": material.lesson,
+				"material_id": chunk.material,
+				"chunk_id": chunk.vector_id,
+				"chunk_index": chunk.chunk_index,
+				"content": chunk.content,
+				"embedding": embedding_bytes,
+			},
+		)
+		restored += 1
+
+	frappe.logger().info(f"LMSA rehydrated {restored} vectors into Redis")
+	return restored
 
 
 def escape_tag_value(value):
@@ -296,9 +396,25 @@ def vector_search(query, course_id, lesson_id, settings=None):
 
 	try:
 		results = client.ft(index_name).search(q, query_params={"vec": query_vector})
+	except redis.ResponseError:
+		rehydrate_vectors()
+		try:
+			results = client.ft(index_name).search(q, query_params={"vec": query_vector})
+		except Exception:
+			frappe.log_error("LMSA vector search failed after rehydration")
+			return []
 	except Exception:
 		frappe.log_error("LMSA vector search failed")
 		return []
+
+	if not results.docs:
+		rehydrated = rehydrate_vectors()
+		if rehydrated:
+			try:
+				results = client.ft(index_name).search(q, query_params={"vec": query_vector})
+			except Exception:
+				frappe.log_error("LMSA vector search failed after rehydration")
+				return []
 
 	chunks = []
 	for doc in results.docs:
@@ -450,15 +566,18 @@ def ingest_lesson(lesson_id):
 			"material_id": material_doc.name,
 		}
 
-		vector_ids = upsert_vectors(chunks, embeddings, metadata)
+		vector_results = upsert_vectors(chunks, embeddings, metadata)
 
-		for i, (chunk, vector_id) in enumerate(zip(chunks, vector_ids, strict=False)):
+		for i, (chunk, (vector_id, embedding_bytes)) in enumerate(
+			zip(chunks, vector_results, strict=False)
+		):
 			chunk_doc = frappe.new_doc("LMSA Chunk")
 			chunk_doc.material = material_doc.name
 			chunk_doc.chunk_index = i
 			chunk_doc.content = chunk
 			chunk_doc.vector_id = vector_id
 			chunk_doc.source_hash = content_hash
+			chunk_doc.embedding_blob = base64.b64encode(embedding_bytes).decode("ascii")
 			chunk_doc.save(ignore_permissions=True)
 
 		material_doc.status = "Ready"

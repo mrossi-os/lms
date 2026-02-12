@@ -12,7 +12,8 @@
   "chunk_index",
   "content",
   "vector_id",
-  "source_hash"
+  "source_hash",
+  "embedding_blob"
  ],
  "fields": [
   {
@@ -70,12 +71,19 @@
    "fieldtype": "Data",
    "label": "Source Hash",
    "read_only": 1
+  },
+  {
+   "fieldname": "embedding_blob",
+   "fieldtype": "Long Text",
+   "hidden": 1,
+   "label": "Embedding Blob",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-04 12:33:00.000000",
+ "modified": "2026-02-12 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "LMS",
  "name": "LMSA Chunk",
