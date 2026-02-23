@@ -1,5 +1,6 @@
 """API methods for the LMS."""
 
+import ast
 import json
 import os
 import re
@@ -7,6 +8,8 @@ import shutil
 import xml.etree.ElementTree as ET
 import zipfile
 from datetime import timedelta
+from functools import lru_cache
+from pathlib import Path
 from xml.dom.minidom import parseString
 
 import frappe
@@ -71,12 +74,135 @@ def get_user_info():
 
 
 @frappe.whitelist(allow_guest=True)
-def get_translations():
-	if frappe.session.user != "Guest":
-		language = frappe.db.get_value("User", frappe.session.user, "language")
+def get_translations(lang=None):
+	language = lang
+	if not language:
+		if frappe.session.user != "Guest":
+			language = frappe.db.get_value("User", frappe.session.user, "language")
+		else:
+			language = frappe.db.get_single_value("System Settings", "language")
+
+	# Use Frappe's translation map first, then fill missing keys from local .po files.
+	# This allows newly synced Crowdin translations to work immediately.
+	translations = get_all_translations(language) or {}
+	local_translations = get_local_po_translations(language)
+	if should_force_local_translations(language):
+		translations.update(local_translations)
 	else:
-		language = frappe.db.get_single_value("System Settings", "language")
-	return get_all_translations(language)
+		for msgid, translated in local_translations.items():
+			if not translations.get(msgid):
+				translations[msgid] = translated
+
+	return translations
+
+
+def should_force_local_translations(language):
+	if not language:
+		return False
+
+	normalized = language.replace("-", "_").lower()
+	return normalized in {"it", "it_it"}
+
+
+def get_local_po_translations(language):
+	locale_path = Path(__file__).resolve().parents[1] / "locale"
+	if not locale_path.exists() or not language:
+		return {}
+
+	translations = {}
+	for po_file in get_candidate_po_files(locale_path, language):
+		try:
+			mtime_ns = po_file.stat().st_mtime_ns
+		except OSError:
+			continue
+
+		translations.update(parse_po_file_cached(str(po_file), mtime_ns))
+
+	return translations
+
+
+def get_candidate_po_files(locale_path, language):
+	available_files = {po_file.stem.lower(): po_file for po_file in locale_path.glob("*.po")}
+	if not available_files:
+		return []
+
+	normalized = language.replace("-", "_")
+	parts = normalized.split("_")
+	variants = [normalized, normalized.lower()]
+	if len(parts) == 2:
+		variants.append(f"{parts[0].lower()}_{parts[1].upper()}")
+	variants.append(parts[0].lower())
+
+	po_files = []
+	seen = set()
+	for variant in variants:
+		po_file = available_files.get(variant.lower())
+		if not po_file or po_file in seen:
+			continue
+		po_files.append(po_file)
+		seen.add(po_file)
+
+	return po_files
+
+
+def parse_po_file(po_file):
+	translations = {}
+	current_msgid = None
+	current_msgstr = []
+	state = None
+
+	def flush_entry():
+		nonlocal current_msgid, current_msgstr
+		if current_msgid and current_msgstr:
+			translated = "".join(current_msgstr)
+			if translated:
+				translations[current_msgid] = translated
+		current_msgid = None
+		current_msgstr = []
+
+	with po_file.open(encoding="utf-8") as handle:
+		for raw_line in handle:
+			line = raw_line.strip()
+			if not line:
+				flush_entry()
+				state = None
+				continue
+
+			if line.startswith("#"):
+				continue
+
+			if line.startswith("msgid "):
+				flush_entry()
+				current_msgid = decode_po_string(line[6:].strip())
+				state = "msgid"
+				continue
+
+			if line.startswith("msgstr "):
+				current_msgstr = [decode_po_string(line[7:].strip())]
+				state = "msgstr"
+				continue
+
+			if line.startswith('"'):
+				value = decode_po_string(line)
+				if state == "msgid":
+					current_msgid = (current_msgid or "") + value
+				elif state == "msgstr":
+					current_msgstr.append(value)
+
+	flush_entry()
+	return translations
+
+
+@lru_cache(maxsize=128)
+def parse_po_file_cached(po_file_path, _mtime_ns):
+	return parse_po_file(Path(po_file_path))
+
+
+def decode_po_string(value):
+	try:
+		return ast.literal_eval(value)
+	except (SyntaxError, ValueError):
+		return value.strip('"')
 
 
 @frappe.whitelist()
