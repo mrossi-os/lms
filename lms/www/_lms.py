@@ -13,6 +13,7 @@ no_cache = 1
 def get_context():
 	context = frappe._dict()
 	context.boot = get_boot()
+	context.lang = frappe.local.lang or "en"
 	frappe.db.commit()
 
 	app_path = frappe.form_dict.get("app_path")
@@ -34,6 +35,7 @@ def get_boot():
 			"read_only_mode": frappe.flags.read_only,
 			"csrf_token": frappe.sessions.get_csrf_token(),
 			"site_name": frappe.local.site,
+			"lang": frappe.local.lang or "en",
 			"lms_path": get_lms_path(),
 		}
 	)
