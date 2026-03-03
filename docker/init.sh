@@ -50,6 +50,11 @@ if [ -f "${bench_dir}/Procfile" ]; then
     sed -i '/watch/d' "${bench_dir}/Procfile"
 fi
 
+# On Windows bind mounts, repo ownership can differ from the container user.
+# Mark the mounted workspace as safe so `bench get-app /workspace` can clone it.
+su - frappe -c "git config --global --add safe.directory /workspace"
+su - frappe -c "git config --global --add safe.directory /workspace/.git"
+
 # Install lms from local workspace for development
 if [ ! -d "${bench_dir}/apps/lms" ]; then
     su - frappe -c "${bench_cmd} get-app /workspace"
