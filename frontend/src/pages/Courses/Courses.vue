@@ -61,7 +61,7 @@
 				<div class="grid grid-cols-2 gap-2">
 					<FormControl
 						v-model="title"
-						:placeholder="__('Search by Title')"
+						:placeholder="__('Search')"
 						type="text"
 						class="w-full lg:min-w-0 lg:w-32 xl:w-40"
 						@input="updateCourses()"
@@ -187,26 +187,6 @@ const setCategories = (data) => {
 	}
 }
 
-const isPersonaCaptured = async () => {
-	let persona = await call('frappe.client.get_single_value', {
-		doctype: 'LMS Settings',
-		field: 'persona_captured',
-	})
-	return persona
-}
-
-const identifyUserPersona = async () => {
-	if (user.data?.is_system_manager && !user.data?.developer_mode) {
-		let personaCaptured = await isPersonaCaptured()
-		if (personaCaptured) return
-		if (!courseCount.value) {
-			router.push({
-				name: 'PersonaForm',
-			})
-		}
-	}
-}
-
 const getCourseCount = () => {
 	if (!user.data) return
 	if (!user.data.is_moderator) return
@@ -214,7 +194,6 @@ const getCourseCount = () => {
 		doctype: 'LMS Course',
 	}).then((data) => {
 		courseCount.value = data
-		identifyUserPersona()
 	})
 }
 

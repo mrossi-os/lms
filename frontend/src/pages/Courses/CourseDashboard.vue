@@ -214,7 +214,7 @@
 						/>
 					</div>
 					<div
-						class="divide-y max-h-[43vh divide-outline-gray-modals text-ink-gray-7 overflow-y-auto"
+						class="divide-y max-h-[40vh] divide-outline-gray-modals text-ink-gray-7 overflow-y-auto"
 					>
 						<div
 							v-for="progress in lessonProgress.data"
@@ -354,14 +354,12 @@ const updateLessonProgress = (value: string) => {
 }
 
 watch([searchFilter], () => {
-	let filterApplied = false
 	let filters: Filters = {
 		course: props.course.data?.name,
 	}
 
 	if (searchFilter.value) {
 		filters.member_name = ['like', `%${searchFilter.value}%`]
-		filterApplied = true
 	}
 
 	progressList.update({
@@ -397,7 +395,7 @@ const progressColumns = computed(() => {
 			width: '30%',
 		},
 		{
-			label: __('Start Date'),
+			label: __('Enrolled On'),
 			key: 'creation',
 			align: 'right',
 		},

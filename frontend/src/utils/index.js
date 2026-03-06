@@ -126,6 +126,7 @@ export function getEditorTools() {
 				defaultStyle: 'ordered',
 			},
 		},
+		upload: Upload,
 		table: {
 			class: Table,
 			inlineToolbar: true,
@@ -133,7 +134,6 @@ export function getEditorTools() {
 		quiz: Quiz,
 		assignment: Assignment,
 		program: Program,
-		upload: Upload,
 		markdown: {
 			class: Markdown,
 			inlineToolbar: true,
@@ -236,10 +236,10 @@ export function getEditorTools() {
 						html: "<iframe style='width: 100%; height: 30rem; border: 1px solid #D3D3D3; border-radius: 12px; margin: 1rem 0;' frameborder='0' allowfullscreen='true'></iframe>",
 					},
 					codesandbox: {
-						regex: /^https:\/\/codesandbox\.io\/(?:embed\/)?([A-Za-z0-9_-]+)(?:\?[^\/]*)?$/,
+						regex: /^https:\/\/codesandbox\.io\/(?:(?:p\/(?:sandbox|devbox)\/)|(?:embed\/)|(?:s\/))?([A-Za-z0-9_-]+)(?:[\/\?].*)?$/,
 						embedUrl:
 							'https://codesandbox.io/embed/<%= remote_id %>?view=editor+%2B+preview&module=%2Findex.html',
-						html: "<iframe style='width: 100%; height: 500px; border: 0; border-radius: 4px; overflow: hidden;' sandbox='allow-mods allow-forms allow-popups allow-scripts allow-same-origin' frameborder='0' allowfullscreen='true'></iframe>",
+						html: "<iframe style='width: 100%; height: 500px; border: 0; border-radius: 4px; overflow: hidden;' sandbox='allow-modals allow-forms allow-popups allow-scripts allow-same-origin' frameborder='0' allowfullscreen='true'></iframe>",
 					},
 				},
 			},
@@ -644,16 +644,25 @@ export const validateFile = async (
 	showToast = true,
 	fileType = 'image'
 ) => {
+	const extension = file.name.split('.').pop().toLowerCase()
 	const error = (msg) => {
 		if (showToast) toast.error(msg)
 		console.error(msg)
 		return msg
 	}
-	if (!file.type.startsWith(`${fileType}/`)) {
-		return error(__('Only {0} file is allowed.').format(fileType))
-	}
 
-	if (file.type === 'image/svg+xml') {
+	if (fileType == 'pdf' && extension != 'pdf') {
+		return error(__('Only PDF files are allowed.'))
+	} else if (fileType == 'document' && !['doc', 'docx'].includes(extension)) {
+		return error(
+			__('Only document file of type .doc or .docx are allowed.')
+		)
+	} else if (
+		['image', 'video'].includes(fileType) &&
+		!file.type.startsWith(`${fileType}/`)
+	) {
+		return error(__('Only {0} file is allowed.').format(fileType))
+	} else if (file.type === 'image/svg+xml') {
 		const text = await file.text()
 
 		const blacklist = [
@@ -680,13 +689,11 @@ export const validateFile = async (
 export const escapeHTML = (text) => {
 	if (!text) return ''
 	let escape_html_mapping = {
-		'&': '&amp;',
 		'<': '&lt;',
 		'>': '&gt;',
 		'"': '&quot;',
 		"'": '&#39;',
 		'`': '&#x60;',
-		'=': '&#x3D;',
 	}
 
 	return String(text).replace(
@@ -699,6 +706,19 @@ export const sanitizeHTML = (text) => {
 	text = DOMPurify.sanitize(decodeEntities(text), {
 		ALLOWED_TAGS: [
 			'b',
+			'br',
+			'h1',
+			'h2',
+			'h3',
+			'h4',
+			'h5',
+			'h6',
+			'table',
+			'thead',
+			'tbody',
+			'tr',
+			'th',
+			'td',
 			'i',
 			'em',
 			'strong',
@@ -709,6 +729,7 @@ export const sanitizeHTML = (text) => {
 			'ol',
 			'li',
 			'img',
+			'blockquote',
 		],
 		ALLOWED_ATTR: ['href', 'target', 'src'],
 	})

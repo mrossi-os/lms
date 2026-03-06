@@ -31,16 +31,19 @@ from pypika import functions as fn
 
 from lms.lms.doctype.course_lesson.course_lesson import save_progress
 from lms.lms.utils import (
+	LMS_ROLES,
 	can_modify_batch,
 	can_modify_course,
 	get_average_rating,
 	get_batch_details,
 	get_course_details,
+	get_field_meta,
 	get_instructors,
 	get_lesson_count,
 	get_lms_route,
 	has_course_instructor_role,
 	has_evaluator_role,
+	has_lms_role,
 	has_moderator_role,
 )
 
@@ -53,7 +56,7 @@ def get_user_info():
 	user = frappe.db.get_value(
 		"User",
 		frappe.session.user,
-		["name", "email", "enabled", "user_image", "full_name", "user_type", "username"],
+		["name", "email", "enabled", "user_image", "full_name", "user_type", "username", "bio", "headline"],
 		as_dict=1,
 	)
 	user["roles"] = frappe.get_roles(user.name)
@@ -101,7 +104,54 @@ def validate_billing_access(billing_type: str, name: str):
 		as_dict=1,
 	)
 
-	return {"access": access, "message": message, "address": address}
+	payment_fields = get_payment_field_meta()
+	address_fields = get_field_meta(
+		"Address",
+		[
+			"address_line1",
+			"address_line2",
+			"city",
+			"state",
+			"country",
+			"pincode",
+			"phone",
+		],
+	)
+	billing_field_meta = {**payment_fields, **address_fields}
+
+	return {
+		"access": access,
+		"message": message,
+		"address": address,
+		"billing_field_meta": billing_field_meta,
+	}
+
+
+@frappe.whitelist()
+def get_payment_field_meta():
+	return get_field_meta(
+		"LMS Payment",
+		[
+			"member",
+			"billing_name",
+			"source",
+			"payment_for_document_type",
+			"payment_for_document",
+			"currency",
+			"amount",
+			"amount_with_gst",
+			"original_amount",
+			"discount_amount",
+			"coupon",
+			"coupon_code",
+			"address",
+			"gstin",
+			"pan",
+			"payment_id",
+			"order_id",
+			"member_consent",
+		],
+	)
 
 
 def verify_billing_access(doctype, name, billing_type):
@@ -393,7 +443,7 @@ def get_all_users():
 @frappe.whitelist(allow_guest=True)
 def get_sidebar_settings():
 	lms_settings = frappe.get_single("LMS Settings")
-	if not lms_settings.allow_guest_access:
+	if frappe.session.user == "Guest" and not lms_settings.allow_guest_access:
 		return []
 
 	sidebar_items = frappe._dict()
@@ -473,7 +523,7 @@ def delete_lesson(lesson: str, chapter: str):
 	update_index(lessons, chapter)
 
 	frappe.db.delete("LMS Course Progress", {"lesson": lesson})
-	frappe.db.delete("Course Lesson", lesson)
+	frappe.delete_doc("Course Lesson", lesson)
 
 
 @frappe.whitelist()
@@ -606,12 +656,7 @@ def check_app_permission():
 	if frappe.session.user == "Administrator":
 		return True
 
-	roles = frappe.get_roles()
-	lms_roles = ["Moderator", "Course Creator", "Batch Evaluator", "LMS Student"]
-	if any(role in roles for role in lms_roles):
-		return True
-
-	return False
+	return has_lms_role()
 
 
 @frappe.whitelist()
@@ -705,7 +750,13 @@ def save_certificate_details(
 @frappe.whitelist()
 def delete_documents(doctype: str, documents: list):
 	frappe.only_for("Moderator")
+	meta = frappe.get_meta(doctype)
+	non_lms_allowed = ["Payment Gateway", "Email Template"]
+	if meta.module != "LMS" and doctype not in non_lms_allowed:
+		frappe.throw(_("Deletion not allowed for {0}").format(doctype))
 	for doc in documents:
+		if not isinstance(doc, str) or not doc.strip():
+			frappe.throw(_("Invalid document name"))
 		frappe.delete_doc(doctype, doc)
 
 
@@ -754,13 +805,25 @@ def get_transformed_fields(meta: list, data: dict = None):
 			else:
 				fieldtype = row.fieldtype
 
-			transformed_fields.append(
-				{
-					"label": row.label,
-					"name": row.fieldname,
-					"type": fieldtype,
-				}
-			)
+			field = {
+				"label": row.label,
+				"name": row.fieldname,
+				"type": fieldtype,
+			}
+
+			if row.reqd:
+				field["reqd"] = 1
+
+			if row.options:
+				field["options"] = row.options
+
+			if row.default:
+				field["default"] = row.default
+
+			if row.description:
+				field["description"] = row.description
+
+			transformed_fields.append(field)
 
 	return transformed_fields
 
@@ -802,10 +865,9 @@ def get_announcements(batch: str):
 	is_batch_student = frappe.db.exists(
 		"LMS Batch Enrollment", {"batch": batch, "member": frappe.session.user}
 	)
-	is_moderator = "Moderator" in roles
-	is_evaluator = "Batch Evaluator" in roles
+	is_admin = "Moderator" in roles or "Batch Evaluator" in roles
 
-	if not (is_batch_student or is_moderator or is_evaluator):
+	if not (is_batch_student or is_admin):
 		frappe.throw(
 			_("You do not have permission to access announcements for this batch."), frappe.PermissionError
 		)
@@ -1296,6 +1358,7 @@ def get_lms_settings():
 		"contact_us_url",
 		"livecode_url",
 		"disable_pwa",
+		"allow_job_posting",
 	]
 
 	settings = frappe._dict()
@@ -1308,8 +1371,16 @@ def get_lms_settings():
 @frappe.whitelist()
 def cancel_evaluation(evaluation: dict):
 	evaluation = frappe._dict(evaluation)
-	print(evaluation.member, frappe.session.user)
 	if evaluation.member != frappe.session.user:
+		frappe.throw(_("You do not have permission to cancel this evaluation."), frappe.PermissionError)
+
+	if not frappe.db.exists(
+		"LMS Certificate Request",
+		{
+			"name": evaluation.name,
+			"member": frappe.session.user,
+		},
+	):
 		frappe.throw(_("You do not have permission to cancel this evaluation."), frappe.PermissionError)
 
 	frappe.db.set_value("LMS Certificate Request", evaluation.name, "status", "Cancelled")
@@ -1369,6 +1440,9 @@ def get_certification_details(course: str):
 @frappe.whitelist()
 def save_role(user: str, role: str, value: int):
 	frappe.only_for("Moderator")
+	if role not in LMS_ROLES:
+		frappe.throw(_("You do not have permission to modify this role."), frappe.PermissionError)
+
 	if cint(value):
 		doc = frappe.get_doc(
 			{
@@ -1716,8 +1790,12 @@ def get_profile_details(username: str):
 		],
 		as_dict=True,
 	)
-
-	details.roles = frappe.get_roles(details.name)
+	roles = frappe.get_roles(details.name)
+	if not has_lms_role():
+		frappe.throw(
+			_("User does not have permission to access this user's profile details."), frappe.PermissionError
+		)
+	details.roles = roles
 	return details
 
 
@@ -2204,3 +2282,17 @@ def get_assessment_from_lesson(course: str, assessmentType: str):
 					assessments.append(quiz_name)
 
 	return assessments
+
+
+@frappe.whitelist()
+def get_badges(member: str):
+	if not has_lms_role():
+		frappe.throw(_("You do not have permission to access badges."), frappe.PermissionError)
+
+	badges = frappe.get_all(
+		"LMS Badge Assignment",
+		{"member": member},
+		["name", "member", "badge", "badge_image", "badge_description", "issued_on"],
+	)
+
+	return badges
