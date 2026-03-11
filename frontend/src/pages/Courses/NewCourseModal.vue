@@ -113,7 +113,10 @@ const course = ref<Course>({
 })
 
 const validateFields = () => {
+	console.log('---before sanitize:', course.value.description)
+
 	course.value.description = sanitizeHTML(course.value.description)
+	console.log('---after sanitize:', course.value.description)
 
 	Object.keys(course.value).forEach((key) => {
 		if (
@@ -121,7 +124,7 @@ const validateFields = () => {
 			typeof course.value[key as keyof Course] === 'string'
 		) {
 			course.value[key as keyof Course] = escapeHTML(
-				course.value[key as keyof Course] as string
+				course.value[key as keyof Course] as string,
 			)
 		}
 	})
@@ -129,6 +132,16 @@ const validateFields = () => {
 
 const saveCourse = (close: () => void = () => {}) => {
 	validateFields()
+
+	const tempDiv = document.createElement('div')
+	tempDiv.innerHTML = course.value.description
+	const hasMedia = tempDiv.querySelector('video, iframe') !== null
+	const hasText = tempDiv.innerText.trim() !== ''
+
+	if (hasMedia && !hasText) {
+		course.value.description += '<p>&#8203;</p>'
+	}
+
 	props.courses.insert.submit(
 		{
 			...course.value,
@@ -157,7 +170,7 @@ const saveCourse = (close: () => void = () => {}) => {
 				toast.error(cleanError(err.messages?.[0]))
 				console.error(err)
 			},
-		}
+		},
 	)
 }
 

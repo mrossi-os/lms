@@ -141,7 +141,7 @@
 							:label="__('Short Introduction')"
 							:placeholder="
 								__(
-									'A one line introduction to the course that appears on the course card'
+									'A one line introduction to the course that appears on the course card',
 								)
 							"
 							:required="true"
@@ -171,7 +171,7 @@
 							:label="__('Preview Video')"
 							:placeholder="
 								__(
-									'Paste a YouTube link of a short video introducing the course'
+									'Paste a YouTube link of a short video introducing the course',
 								)
 							"
 							@input="makeFormDirty()"
@@ -373,7 +373,7 @@ watch(
 		getMetaInfo('courses', courseResource.doc?.name, meta)
 		updateCourseData()
 		checkPermission()
-	}
+	},
 )
 
 const updateCourseData = () => {
@@ -421,6 +421,15 @@ const validateFields = () => {
 }
 
 const updateCourse = () => {
+	const tempDiv = document.createElement('div')
+	tempDiv.innerHTML = courseResource.doc.description
+	const hasMedia = tempDiv.querySelector('video, iframe') !== null
+	const hasText = tempDiv.innerText.trim() !== ''
+
+	if (hasMedia && !hasText) {
+		courseResource.doc.description += '<p>&#8203;</p>'
+	}
+
 	courseResource.setValue.submit(
 		{
 			...courseResource.doc,
@@ -442,7 +451,7 @@ const updateCourse = () => {
 				toast.error(err.messages?.[0] || err)
 				console.error(err)
 			},
-		}
+		},
 	)
 }
 
@@ -478,7 +487,7 @@ const trashCourse = () => {
 	$dialog({
 		title: __('Delete Course'),
 		message: __(
-			'Deleting the course will also delete all its chapters and lessons. Are you sure you want to delete this course?'
+			'Deleting the course will also delete all its chapters and lessons. Are you sure you want to delete this course?',
 		),
 		actions: [
 			{

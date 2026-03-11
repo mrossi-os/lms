@@ -597,13 +597,13 @@ const checkIfCanAddProgram = () => {
 export function getFormattedDateRange(
 	startDate,
 	endDate,
-	format = 'DD MMM YYYY'
+	format = 'DD MMM YYYY',
 ) {
 	if (startDate === endDate) {
 		return dayjs(startDate).format(format)
 	}
 	return `${dayjs(startDate).format(format)} - ${dayjs(endDate).format(
-		format
+		format,
 	)}`
 }
 
@@ -635,14 +635,14 @@ export function singularize(word) {
 	}
 	return word.replace(
 		new RegExp(`(${Object.keys(endings).join('|')})$`),
-		(r) => endings[r]
+		(r) => endings[r],
 	)
 }
 
 export const validateFile = async (
 	file,
 	showToast = true,
-	fileType = 'image'
+	fileType = 'image',
 ) => {
 	const extension = file.name.split('.').pop().toLowerCase()
 	const error = (msg) => {
@@ -655,7 +655,7 @@ export const validateFile = async (
 		return error(__('Only PDF files are allowed.'))
 	} else if (fileType == 'document' && !['doc', 'docx'].includes(extension)) {
 		return error(
-			__('Only document file of type .doc or .docx are allowed.')
+			__('Only document file of type .doc or .docx are allowed.'),
 		)
 	} else if (
 		['image', 'video'].includes(fileType) &&
@@ -698,12 +698,27 @@ export const escapeHTML = (text) => {
 
 	return String(text).replace(
 		/[&<>"'`=]/g,
-		(char) => escape_html_mapping[char] || char
+		(char) => escape_html_mapping[char] || char,
 	)
 }
 
 export const sanitizeHTML = (text) => {
-	text = DOMPurify.sanitize(decodeEntities(text), {
+	const iframes = {}
+
+	const textWithoutIframes = text.replace(
+		/<iframe[\s\S]*?<\/iframe>/gi,
+		(match) => {
+			const id = 'iframe_' + Math.random().toString(36).substr(2, 9)
+			iframes[id] = match
+			console.log('--- extracted iframe:', match, 'id:', id)
+			return `<div data-iframe-id="${id}"></div>`
+		},
+	)
+
+	console.log('--- textWithoutIframes:', textWithoutIframes)
+	const decoded = decodeEntities(textWithoutIframes)
+
+	let sanitized = DOMPurify.sanitize(decoded, {
 		ALLOWED_TAGS: [
 			'b',
 			'br',
@@ -730,10 +745,48 @@ export const sanitizeHTML = (text) => {
 			'li',
 			'img',
 			'blockquote',
+			'iframe',
+			'video',
+			'source',
+			'div',
 		],
-		ALLOWED_ATTR: ['href', 'target', 'src'],
+		ALLOWED_ATTR: [
+			'href',
+			'target',
+			'src',
+			// video
+			'controls',
+			'autoplay',
+			'loop',
+			'muted',
+			'width',
+			'height',
+			'loading',
+			'uploadid',
+			// iframe
+			'frameborder',
+			'allowfullscreen',
+			'allow',
+			'data-align',
+			'data-interactive',
+			'data-iframe-id',
+		],
+		ADD_TAGS: ['iframe'],
+		ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder'],
 	})
-	return text
+
+	console.log('--- after DOMPurify:', sanitized)
+
+	Object.entries(iframes).forEach(([id, iframe]) => {
+		console.log('--- replacing placeholder:', id)
+		sanitized = sanitized.replace(
+			`<div data-iframe-id="${id}"></div>`,
+			iframe,
+		)
+	})
+
+	console.log('--- final result:', sanitized)
+	return sanitized
 }
 
 export const canCreateCourse = () => {
@@ -938,7 +991,7 @@ const wrapRangeInHighlight = (
 	{ node, startIndex, endIndex },
 	color,
 	name,
-	scrollIntoView
+	scrollIntoView,
 ) => {
 	const range = document.createRange()
 	range.setStart(node, startIndex)

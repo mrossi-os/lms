@@ -61,8 +61,12 @@
 				<div class="md:hidden my-4">
 					<CourseCardOverlay :course="course" />
 				</div>
-				<div
+				<!-- <div
 					v-html="course.data.description"
+					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-10"
+				></div> -->
+				<div
+					v-html="unescapeDescription(course.data.description)"
 					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-10"
 				></div>
 				<div class="mt-10">
@@ -95,8 +99,16 @@ import CourseReviews from '@/components/CourseReviews.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import CourseInstructors from '@/components/CourseInstructors.vue'
 import RelatedCourses from '@/components/RelatedCourses.vue'
+import { computed } from 'vue'
 
 const props = defineProps<{
 	course: any
 }>()
+
+const unescapeDescription = (html: string) => {
+	if (!html) return ''
+	const textarea = document.createElement('textarea')
+	textarea.innerHTML = html
+	return textarea.value
+}
 </script>
