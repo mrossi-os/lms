@@ -1,30 +1,25 @@
 <template>
-	<header
-		class="sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5"
-	>
+	<header class="sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
 		<Breadcrumbs :items="breadcrumbs" />
-		<Dropdown
-			v-if="canCreateBatch()"
-			:options="[
-				{
-					label: __('New Batch'),
-					icon: 'users',
-					onClick() {
-						showBatchModal = true
-					},
+		<Dropdown v-if="canCreateBatch()" :options="[
+			{
+				label: __('New Batch'),
+				icon: 'users',
+				onClick() {
+					showBatchModal = true
 				},
-				{
-					label: __('Import Batch'),
-					icon: 'upload',
-					onClick() {
-						router.push({
-							name: 'NewDataImport',
-							params: { doctype: 'LMS Batch' },
-						})
-					},
+			},
+			{
+				label: __('Import Batch'),
+				icon: 'upload',
+				onClick() {
+					router.push({
+						name: 'NewDataImport',
+						params: { doctype: 'LMS Batch' },
+					})
 				},
-			]"
-		>
+			},
+		]">
 			<template v-slot="{ open }">
 				<Button variant="solid">
 					<template #prefix>
@@ -32,87 +27,49 @@
 					</template>
 					{{ __('Create') }}
 					<template #suffix>
-						<ChevronDown
-							:class="[
-								'w-4 h-4 stroke-1.5 ml-1 transform transition-transform',
-								open ? 'rotate-180' : '',
-							]"
-						/>
+						<ChevronDown :class="[
+							'w-4 h-4 stroke-1.5 ml-1 transform transition-transform',
+							open ? 'rotate-180' : '',
+						]" />
 					</template>
 				</Button>
 			</template>
 		</Dropdown>
 	</header>
 	<div class="p-5 pb-10">
-		<div
-			class="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:items-center justify-between mb-5"
-		>
+		<div class="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:items-center justify-between mb-5">
 			<div class="text-lg text-ink-gray-9 font-semibold">
 				{{ __('All Batches') }}
 			</div>
-			<div
-				class="flex flex-col space-y-3 lg:space-y-0 lg:flex-row lg:items-center lg:space-x-4"
-			>
-				<TabButtons
-					v-if="user.data"
-					:buttons="batchTabs"
-					v-model="currentTab"
-					class="w-fit"
-				/>
+			<div class="flex flex-col space-y-3 lg:space-y-0 lg:flex-row lg:items-center lg:space-x-4">
+				<TabButtons v-if="user.data" :buttons="batchTabs" v-model="currentTab" class="w-fit" />
 				<div class="grid grid-cols-2 gap-2">
-					<FormControl
-						v-model="title"
-						:placeholder="__('Search by Title')"
-						type="text"
-						class="min-w-40 lg:min-w-0 lg:w-32 xl:w-40"
-						@input="updateBatches()"
-					/>
+					<FormControl v-model="title" :placeholder="__('Search by Title')" type="text"
+						class="min-w-40 lg:min-w-0 lg:w-32 xl:w-40" @input="updateBatches()" />
 					<div class="min-w-40 lg:min-w-0 lg:w-32 xl:w-40">
-						<Select
-							v-if="categories.length"
-							v-model="currentCategory"
-							:options="categories"
-							:placeholder="__('Category')"
-							@update:modelValue="updateBatches()"
-						/>
+						<Select v-if="categories.length" v-model="currentCategory" :options="categories"
+							:placeholder="__('Category')" @update:modelValue="updateBatches()" />
 					</div>
 				</div>
 
-				<FormControl
-					v-model="certification"
-					:label="__('Certification')"
-					type="checkbox"
-					@change="updateBatches()"
-				/>
+				<FormControl v-model="certification" :label="__('Certification')" type="checkbox"
+					@change="updateBatches()" />
 			</div>
 		</div>
-		<div
-			v-if="batches.data?.length"
-			class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
-		>
-			<router-link
-				v-for="batch in batches.data"
-				:to="{ name: 'BatchDetail', params: { batchName: batch.name } }"
-			>
+		<div v-if="batches.data?.length" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+			<router-link v-for="batch in batches.data" :to="{ name: 'BatchDetail', params: { batchName: batch.name } }">
 				<BatchCard :batch="batch" />
 			</router-link>
 		</div>
 		<EmptyState v-else-if="!batches.list.loading" :type="__('Batches')" />
 
-		<div
-			v-if="!batches.list.loading && batches.hasNextPage"
-			class="flex justify-center mt-5"
-		>
+		<div v-if="!batches.list.loading && batches.hasNextPage" class="flex justify-center mt-5">
 			<Button @click="batches.next()">
 				{{ __('Load More') }}
 			</Button>
 		</div>
 	</div>
-	<NewBatchModal
-		v-if="showBatchModal"
-		v-model="showBatchModal"
-		:batches="batches"
-	/>
+	<NewBatchModal v-if="showBatchModal" v-model="showBatchModal" :batches="batches" />
 </template>
 <script setup>
 import {
@@ -179,7 +136,7 @@ const batches = createListResource({
 const setCategories = (data) => {
 	let allCategories = data.map((batch) => batch.category)
 	allCategories = allCategories.filter(
-		(category, index) => allCategories.indexOf(category) === index && category
+		(category, index) => allCategories.indexOf(category) === index && category,
 	)
 	if (categories.value.length <= allCategories.length) {
 		updateCategories(data)
@@ -231,31 +188,33 @@ const updateCertificationFilter = () => {
 }
 
 const updateTabFilter = () => {
-	orderBy.value = 'start_date'
-	if (!user.data) {
-		return
-	}
-	if (currentTab.value == 'enrolled' && is_student.value) {
-		filters.value['enrolled'] = 1
-		delete filters.value['start_date']
-		delete filters.value['published']
-		orderBy.value = 'start_date desc'
-	} else if (is_student.value) {
-		delete filters.value['enrolled']
-	} else {
-		delete filters.value['start_date']
-		delete filters.value['published']
-		orderBy.value = 'start_date desc'
-		if (currentTab.value == 'upcoming') {
-			filters.value['start_date'] = ['>=', dayjs().format('YYYY-MM-DD')]
-			filters.value['published'] = 1
-			orderBy.value = 'start_date'
-		} else if (currentTab.value == 'archived') {
-			filters.value['start_date'] = ['<=', dayjs().format('YYYY-MM-DD')]
-		} else if (currentTab.value == 'unpublished') {
-			filters.value['published'] = 0
-		}
-	}
+    orderBy.value = 'start_date'
+    if (!user.data) {
+        return
+    }
+    if (currentTab.value == 'enrolled' && is_student.value) {
+        filters.value['enrolled'] = 1
+        delete filters.value['start_date']
+        delete filters.value['end_date']  // ← aggiungi
+        delete filters.value['published']
+        orderBy.value = 'start_date desc'
+    } else if (is_student.value) {
+        delete filters.value['enrolled']
+    } else {
+        delete filters.value['start_date']
+        delete filters.value['end_date']  // ← aggiungi
+        delete filters.value['published']
+        orderBy.value = 'start_date desc'
+        if (currentTab.value == 'upcoming') {
+            filters.value['start_date'] = ['>=', dayjs().format('YYYY-MM-DD')]
+            filters.value['published'] = 1
+            orderBy.value = 'start_date'
+        } else if (currentTab.value == 'archived') {
+            filters.value['end_date'] = ['<=', dayjs().format('YYYY-MM-DD')]
+        } else if (currentTab.value == 'unpublished') {
+            filters.value['published'] = 0
+        }
+    }
 }
 
 const updateStudentFilter = () => {
@@ -284,7 +243,7 @@ const setQueryParams = () => {
 	history.replaceState(
 		{},
 		'',
-		`${location.pathname}${queries.size > 0 ? `?${queries.toString()}` : ''}`
+		`${location.pathname}${queries.size > 0 ? `?${queries.toString()}` : ''}`,
 	)
 }
 
