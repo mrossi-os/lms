@@ -27,3 +27,7 @@ development/
 frappe_docker/
 make_image.sh
 sites/
+
+frontend/.env
+
+common_site_config.json
