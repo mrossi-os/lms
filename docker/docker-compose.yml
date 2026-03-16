@@ -23,13 +23,12 @@ services:
     platform: ${DOCKER_PLATFORM:-linux/amd64}
     user: root
     command: bash /workspace/docker/init.sh
-    env_file:
-      - ./.env
     environment:
       - UV_LINK_MODE=copy
       - SHELL=/bin/bash
       - DEBUG_MODE=${DEBUG_MODE:-0}
       - BUILD_FRONTEND=${BUILD_FRONTEND:-1}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     working_dir: /home/frappe
     volumes:
       - frappe-bench:/home/frappe/bench-data
