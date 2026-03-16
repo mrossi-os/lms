@@ -72,7 +72,11 @@ Conventional Commits enforced by commitlint. Allowed types: `feat`, `fix`, `docs
 
 ### Backend (Frappe Doctypes)
 
-The app follows Frappe's doctype pattern — each entity is a directory under `lms/lms/doctype/` containing a Python class, JSON schema, and optional test file. Key doctypes:
+The app follows Frappe's doctype pattern — each entity is a directory containing a Python class, JSON schema, and optional test file. Doctypes are defined in two locations:
+- `lms/lms/doctype/` — base LMS doctypes
+- `apps/os_lms/os_lms/doctype/` — custom/extended doctypes for this project
+
+Key doctypes:
 
 - **LMS Course / Course Chapter / Course Lesson** — 3-level content hierarchy
 - **LMS Batch / LMS Batch Enrollment** — grouping learners with time-bound access
