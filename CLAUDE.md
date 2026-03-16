@@ -74,7 +74,7 @@ Conventional Commits enforced by commitlint. Allowed types: `feat`, `fix`, `docs
 
 The app follows Frappe's doctype pattern — each entity is a directory containing a Python class, JSON schema, and optional test file. Doctypes are defined in two locations:
 - `lms/lms/doctype/` — base LMS doctypes
-- `apps/os_lms/os_lms/doctype/` — custom/extended doctypes for this project
+- `apps/os_lms/os_lms/os_lms/doctype/` — custom/extended doctypes for this project
 
 Key doctypes:
 
@@ -107,7 +107,13 @@ Built with **Frappe UI** component library and **Tailwind CSS**. Build config in
 
 ### Custom Extension: `apps/os_lms`
 
-A local extension app at `apps/os_lms/` with overrides. This is project-specific customization layered on top of the base LMS.
+A local extension app at `apps/os_lms/`. Source code is at `apps/os_lms/os_lms/os_lms/` (note the nested structure). Contains:
+- `doctype/` — custom doctypes (e.g. `LMSA Settings` for AI config, `LMSA Material`, `LMSA Chunk`, `LMSA Query Log`)
+- `ai/` — AI assistant implementation and RAG pipeline:
+  - `ingestion.py` — document chunking and embedding (OpenAI embeddings)
+  - `api.py` — AI assistant API endpoints
+  - `scheduler.py` — scheduled AI tasks
+- `overrides/` — Frappe doctype overrides
 
 ### Route Configuration
 
