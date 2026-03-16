@@ -23,3 +23,4 @@ frappe-semgrep-rules
 .env
 docker/.env
 common_site_config.json
+frontend/yarn-error.log
