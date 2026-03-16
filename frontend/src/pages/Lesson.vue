@@ -293,6 +293,12 @@
 				</div>
 			</div>
 			<div class="sticky top-10">
+				<div
+					v-if="lesson.data?.name"
+					class="border-b p-4"
+				>
+					<ChatBot :courseId="lesson.data?.course" :lessonId="lesson.data?.name" />
+				</div>
 				<div class="bg-surface-menu-bar p-5 border-b">
 					<div class="text-lg font-semibold text-ink-gray-9">
 						{{ lesson.data.course_title }}
@@ -380,6 +386,8 @@ import UserAvatar from '@/components/UserAvatar.vue'
 import Notes from '@/components/Notes/Notes.vue'
 import InlineLessonMenu from '@/components/Notes/InlineLessonMenu.vue'
 import { getLmsRoute } from '@/utils/basePath'
+
+import ChatBot from '@/oslms/components/ai/ChatBot.vue'
 
 const user = inject('$user')
 const socket = inject('$socket')
