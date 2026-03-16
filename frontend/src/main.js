@@ -15,7 +15,9 @@ let pinia = createPinia()
 let app = createApp(App)
 setConfig('resourceFetcher', frappeRequest)
 
-app.use(FrappeUI)
+app.use(FrappeUI,{socketio:{
+	port:__SOCKETIO_PORT__
+}})
 app.use(pinia)
 app.use(router)
 app.use(translationPlugin)

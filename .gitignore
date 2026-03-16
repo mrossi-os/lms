@@ -15,3 +15,11 @@ lms/www/lms.html
 lms/www/_lms.html
 frappe-ui
 frappe-semgrep-rules
+
+
+
+# ---------------
+#   OVERSIDE 
+.env
+docker/.env
+common_site_config.json

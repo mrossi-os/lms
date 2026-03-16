@@ -2,14 +2,17 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
 import { VitePWA } from 'vite-plugin-pwa'
+import { readFileSync } from 'fs'
 
 export default defineConfig(async ({ mode }) => {
 	const isDev = mode === 'development'
 	const frappeui = await importFrappeUIPlugin(isDev)
+	const configSite = await importConfigSite(isDev);
 
 	const config = {
 		define: {
 			__VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'false',
+			__SOCKETIO_PORT__: configSite.socketio_port
 		},
 		plugins: [
 			frappeui({
@@ -83,4 +86,14 @@ async function importFrappeUIPlugin(isDev) {
 	// Fall back to npm package if local import fails
 	const module = await import('frappe-ui/vite')
 	return module.default
+}
+
+
+async function importConfigSite(isDev) {
+	let relativePath = '../../../sites/common_site_config.json'
+	if (isDev) {
+		relativePath = '../common_site_config.json';
+	}
+	const filePath = path.resolve(__dirname, relativePath)
+	return JSON.parse(readFileSync(filePath, 'utf-8'))
 }

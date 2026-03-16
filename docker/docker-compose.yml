@@ -1,5 +1,4 @@
-version: "3.7"
-name: lms
+name: dev-elite
 services:
   mariadb:
     image: mariadb:10.8
@@ -7,26 +6,55 @@ services:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
       - --skip-character-set-client-handshake
-      - --skip-innodb-read-only-compressed # Temporary fix for MariaDB 10.6
+      - --skip-innodb-read-only-compressed
     environment:
-      MYSQL_ROOT_PASSWORD: 123
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_HOST: "%" 
     volumes:
       - mariadb-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
 
   redis:
-    image: redis:alpine
+    image: redis/redis-stack-server:latest
 
   frappe:
     image: frappe/bench:latest
-    command: bash /workspace/init.sh
+    platform: ${DOCKER_PLATFORM:-linux/amd64}
+    user: root
+    command: bash /workspace/docker/init.sh
+    env_file:
+      - ./.env
     environment:
+      - UV_LINK_MODE=copy
       - SHELL=/bin/bash
+      - DEBUG_MODE=${DEBUG_MODE:-0}
+      - BUILD_FRONTEND=${BUILD_FRONTEND:-1}
     working_dir: /home/frappe
     volumes:
-      - .:/workspace
+      - frappe-bench:/home/frappe/bench-data
+      - ../:/workspace
     ports:
-      - 8000:8000
-      - 9000:9000
+      - "${FRAPPE_PORT:-8000}:8000"
+      - "${API_API_PORT:-9000}:9000"
+      - "5678:5678"  # debugpy remote debugging port
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+  mailer:
+    image: axllent/mailpit:latest
+    logging:
+      driver: 'none'
+    environment:
+      MP_SMTP_AUTH: "user:password"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+      MP_SMTP_MAX_MESSAGE_SIZE: 10485760  
+    ports:
+      - 1025:1025 
+      - 8025:8025  
 
 volumes:
   mariadb-data:
+    name: dev-elite-db-data
+  frappe-bench:
+    name: dev-elite-site-data

@@ -1,5 +1,5 @@
 import { io } from 'socket.io-client'
-import { socketio_port } from '../../../../sites/common_site_config.json'
+const socketio_port = __SOCKETIO_PORT__
 
 export function initSocket() {
 	let host = window.location.hostname
