@@ -1,0 +1,23 @@
+@import './variables.css';
+
+body {
+	background-color: var(--surface-white);
+}
+
+.sidebar-menu {
+	border-color: var(--surface-selected);
+}
+
+.card {
+	background-color: var(--color-company-secondary);
+	border: 1px solid var(--surface-selected);
+}
+
+[role='radiogroup'] {
+	border: 1px solid var(--surface-selected);
+	border-radius: 0.625rem;
+}
+
+input:where([type='text']):focus {
+	outline: 0px;
+}
