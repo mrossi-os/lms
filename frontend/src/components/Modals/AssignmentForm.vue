@@ -19,10 +19,13 @@
 						v-model="assignment.title"
 						:label="__('Title')"
 						:required="true"
+						:placeholder="__('Insert title')"
+
 					/>
 					<FormControl
 						v-model="assignment.type"
 						type="select"
+						:placeholder="__('Select option')"
 						:options="assignmentOptions"
 						:label="__('Submission Type')"
 						:required="true"
@@ -31,7 +34,7 @@
 						v-model="assignment.course"
 						:label="__('Course')"
 						doctype="LMS Course"
-						placeholder=" "
+						:placeholder="__('Select option')"
 					/>
 					<div>
 						<div class="text-xs text-ink-gray-5 mb-2">

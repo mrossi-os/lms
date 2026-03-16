@@ -109,7 +109,7 @@
 				</ListSelectBanner>
 			</ListView>
 		</div>
-		<EmptyState v-else type="Programming Exercises" />
+		<EmptyState v-else :type="__('Programming Exercises')" />
 		<div
 			v-if="exercises.data && exercises.hasNextPage"
 			class="flex justify-center my-5"

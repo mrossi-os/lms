@@ -42,7 +42,7 @@
 			>
 				{{ instructors[0].first_name }}
 			</router-link>
-			{{ __('and') }} {{ instructors?.length - 1 }} {{ __('others') }}
+			{{ __('and') }} {{ __('{0} others').format(instructors?.length - 1) }}
 		</span>
 	</div>
 </template>

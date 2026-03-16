@@ -1,0 +1,46 @@
+/* 
+	--surface-white: Colore sfondo pricipale
+	--surface-menu-bar: Colore sfondo sidebar
+	--surface-modal: Colore sfondo modal
+	--surface-gray-2: Colore sfondo elementi UI(combobox,tabs)
+	--surface-gray-3: Colore sfondo elementi hover
+	--surface-gray-7: Call to Action
+	
+	--ink-gray-9: Colore testi titoli e sottotitoli
+	--ink-gray-8 = Colori testi: sidebar, elementi in active
+	--ink-gray-7 = Testi secondari
+	--ink-gray-5 = Colori testi: sidebar, elementi non active
+	--outline-gray-1: Colore bordi
+
+*/
+
+:root {
+	--color-company-primary:#111D2E;
+	--color-company-secondary:#123456;
+
+	--surface-white: #0D263F;
+	--surface-menu-bar: #123456;
+	--surface-selected: #344F6C;
+	--surface-modal: #111D2E;
+
+	--surface-gray-2: #124679;
+	--surface-gray-3: #344F6C;
+	--surface-gray-7: #256ab0;
+	--outline-gray-1: #344F6C;
+
+
+	--ink-gray-9: #ffffff;
+	--ink-gray-8: #ffffff;
+	--ink-gray-7: #fff;
+	--ink-gray-5: #bcd4f1;
+	--ink-gray-6: #ffffff;
+	--ink-gray-10: #123456;
+
+	--surface-card: #123456;
+	--color-menu-bar: #193553;
+
+	--surface-gray-2:#204065;
+
+	--outline-gray-modals:#344F6C;
+
+}

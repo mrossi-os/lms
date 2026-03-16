@@ -13,7 +13,7 @@
 			</Button>
 			<TabButtons
 				class="inline-block"
-				:buttons="[{ label: 'Unread', active: true }, { label: 'Read' }]"
+				:buttons="[{ label: __('Unread'), active: true }, { label: __('Read') }]"
 				v-model="activeTab"
 			/>
 		</div>
@@ -285,7 +285,7 @@ onUnmounted(() => {
 const breadcrumbs = computed(() => {
 	let crumbs = [
 		{
-			label: 'Notifications',
+			label: __('Notifications'),
 			route: {
 				name: 'Notifications',
 			},

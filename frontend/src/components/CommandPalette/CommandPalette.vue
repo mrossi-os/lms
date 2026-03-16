@@ -7,7 +7,7 @@
 					<input
 						ref="inputRef"
 						type="text"
-						placeholder="Search"
+						:placeholder="__('Search')"
 						class="w-full border-none bg-transparent py-3 !pl-2 pr-4.5 text-base text-ink-gray-7 placeholder-ink-gray-4 focus:ring-0"
 						@input="onInput"
 						v-model="query"

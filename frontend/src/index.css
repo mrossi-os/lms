@@ -1,2 +1,3 @@
 @import 'frappe-ui/style.css';
 @import './styles/codemirror.css';
+@import './styles/theme/elite/main.css';

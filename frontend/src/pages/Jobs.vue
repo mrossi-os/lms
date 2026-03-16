@@ -110,7 +110,7 @@
 					</router-link>
 				</div>
 			</div>
-			<EmptyState v-else type="Job Openings" />
+			<EmptyState v-else :type="__('Job Openings')" />
 		</div>
 	</div>
 </template>

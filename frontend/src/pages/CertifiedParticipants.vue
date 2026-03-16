@@ -109,7 +109,7 @@
 				</router-link>
 			</template>
 		</div>
-		<EmptyState v-else type="Certified Members" />
+		<EmptyState v-else :type="__('Certified Members')" />
 		<div
 			v-if="!participants.list.loading && participants.hasNextPage"
 			class="flex justify-center mt-5"
