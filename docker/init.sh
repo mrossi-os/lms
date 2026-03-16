@@ -124,7 +124,7 @@ if ! su -s /bin/bash frappe -c "${bench_cmd} --site ${site_name} list-apps" >/de
         --force \
         --mariadb-root-password ${MYSQL_PASSWORD} \
         --admin-password admin \
-        --no-mariadb-socket"
+        --mariadb-user-host-login-scope='%'"
 fi
 
 echo " --- Install apps on frappe site "

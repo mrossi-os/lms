@@ -6,6 +6,7 @@ app_publisher = "ELITE"
 app_description = "ELITE OS LMS - Extension for Frappe LMS"
 app_email = "info@overside.it"
 app_license = "MIT"
+required_apps = ["lms"]
 
 # activate debug if needed
 before_request = ["os_lms.debug.active_debug"]
