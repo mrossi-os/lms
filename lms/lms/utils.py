@@ -1834,11 +1834,13 @@ def get_lesson_creation_details(course: str, chapter: int, lesson: int) -> dict:
 			],
 			as_dict=1,
 		)
+	lesson_count = frappe.db.count("Lesson Reference", {"parent": chapter_name})
 
 	return {
 		"course_title": frappe.db.get_value("LMS Course", course, "title"),
 		"chapter": frappe.db.get_value("Course Chapter", chapter_name, ["title", "name"], as_dict=True),
 		"lesson": lesson_details if lesson_name else None,
+		"lesson_count": lesson_count,
 	}
 
 
