@@ -1,0 +1,18 @@
+[project]
+name = "os_lms"
+authors = [
+    { name = "ELITE LMS", email = "info@overside.it" }
+]
+description = "ELITE OS LMS - Extension for Frappe LMS"
+requires-python = ">=3.10"
+dynamic = ["version"]
+dependencies = [
+    "debugpy"
+]
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.bench.frappe-dependencies]
+frappe = ">=15.0.0,<=17.0.0-dev"
