@@ -26,3 +26,10 @@ doc_events = {
         "after_insert": "os_lms.badge_utils.clear_cache_on_badge_create"
     }
 }
+
+
+scheduler_events = {
+	"daily": [
+		"os_lms.os_lms.ai.scheduler.sync_stale_materials",
+	],
+}
