@@ -102,7 +102,7 @@
 					</Button>
 				</div>
 			</div>
-			<EmptyState v-else-if="!applications.loading" type="Job Applications" />
+			<EmptyState v-else-if="!applications.loading" :type="__('Job Applications')" />
 		</div>
 
 		<Dialog

@@ -15,7 +15,7 @@
 			<div class="text-lg font-semibold text-ink-gray-9">
 				{{ __('{0} Quizzes').format(quizzes.data.length) }}
 			</div>
-			<FormControl v-model="search" type="text" placeholder="Search">
+			<FormControl v-model="search" type="text" :placeholder="__('Search')">
 				<template #prefix>
 					<FeatherIcon name="search" class="size-4 text-ink-gray-5" />
 				</template>
@@ -84,7 +84,7 @@
 				</template>
 			</ListSelectBanner>
 		</ListView>
-		<EmptyState v-else type="Quizzes" />
+		<EmptyState v-else :type="__('Quizzes')" />
 		<div v-if="quizzes.hasNextPage" class="flex justify-center my-5">
 			<Button @click="quizzes.next()">
 				{{ __('Load More') }}

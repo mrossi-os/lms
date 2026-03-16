@@ -57,7 +57,7 @@
 			}"
 		>
 		</ListView>
-		<EmptyState v-else type="Assignments" />
+		<EmptyState v-else :type="__('Assignments')" />
 		<div
 			v-if="assignments.data && assignments.hasNextPage"
 			class="flex justify-center my-5"

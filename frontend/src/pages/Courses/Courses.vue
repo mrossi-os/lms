@@ -96,7 +96,7 @@
 				<CourseCard :course="course" />
 			</router-link>
 		</div>
-		<EmptyState v-else-if="!courses.list.loading" type="Courses" />
+		<EmptyState v-else-if="!courses.list.loading" :type="__('Courses')" />
 		<div
 			v-if="!courses.list.loading && courses.hasNextPage"
 			class="flex justify-center mt-5"

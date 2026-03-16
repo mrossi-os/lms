@@ -46,7 +46,7 @@
 						</div>
 					</div>
 				</div>
-				<EmptyState v-else :type="convertToTitleCase(category) + ' Programs'" />
+				<EmptyState v-else :type="convertToTitleCase(category) + __(' Programs')" />
 				<!-- <div v-else class="col-span-3 text-center text-ink-gray-5">
                     {{ __('No programs found in this category.') }}
                 </div> -->
