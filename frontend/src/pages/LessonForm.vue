@@ -34,6 +34,9 @@
 						/>
 					</div>
 					<div class="border-t mt-4">
+						<LessonAIIngestion :lessonId="lessonDetails?.data?.lesson?.name" />
+					</div>
+					<div class="border-t">
 						<div class="w-5/6 mx-auto pt-4">
 							<div
 								class="flex justify-between cursor-pointer"
@@ -106,6 +109,8 @@ import LessonHelp from '@/components/LessonHelp.vue'
 import { ChevronRight } from 'lucide-vue-next'
 import { getEditorTools, enablePlyr } from '@/utils'
 import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
+
+import LessonAIIngestion from '@/oslms/components/ai/Course/LessonAIIngestion.vue'
 
 const { brand } = sessionStore()
 const editor = ref(null)
