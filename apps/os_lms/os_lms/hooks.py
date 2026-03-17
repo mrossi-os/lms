@@ -18,11 +18,14 @@ after_migrate = ["os_lms.setup.ensure_italian_language"]
 override_doctype_class = {
     "Email Account": "os_lms.overrides.email_account.CustomEmailAccount"
 }
+# override sqlite search to add custom doctypes
+sqlite_search = ["os_lms.overrides.sqlite.CustomLearningSearch"]
 
 # override api
 override_whitelisted_methods = {
     "lms.lms.api.get_sidebar_settings": "os_lms.os_lms.ovverride_api.get_sidebar_settings",
     "lms.lms.utils.get_lesson_creation_details": "os_lms.os_lms.ovverride_api.get_lesson_creation_details",
+    "lms.command_palette.search_sqlite": "os_lms.os_lms.ovverride_api.search_sqlite",
 }
 
 fixtures = [

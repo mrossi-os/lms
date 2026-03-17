@@ -9,7 +9,7 @@
 			<TextInput
 				ref="searchInput"
 				class="flex-1"
-				placeholder="Search for a keyword or phrase and press enter"
+				:placeholder="__('Search for a keyword or phrase and press enter')"
 				autocomplete="off"
 				:model-value="query"
 				@update:model-value="updateQuery"
@@ -61,10 +61,10 @@
 							'border-b': index !== searchResults.length - 1,
 						}"
 					>
-						<Tooltip :text="result.author_info.full_name">
+						<Tooltip :text="result.author_info?.full_name || ''">
 							<Avatar
-								:label="result.author_info.full_name"
-								:image="result.author_info.user_image"
+								:label="result.author_info?.full_name || ''"
+								:image="result.author_info?.user_image || ''"
 								size="md"
 							/>
 						</Tooltip>
@@ -91,7 +91,7 @@
 											result.published_on ||
 												result.start_date ||
 												result.creation ||
-												result.modified
+												result.modified,
 										).format('DD MMM YYYY')
 									}}
 								</div>
@@ -107,6 +107,7 @@
 		</div>
 	</div>
 </template>
+
 <script setup lang="ts">
 import {
 	Avatar,
@@ -175,37 +176,43 @@ const generateSearchResults = () => {
 const sortResults = () => {
 	searchResults.value.sort((a, b) => {
 		const dateA = new Date(
-			a.published_on || a.start_date || a.creation || a.modified
+			a.published_on || a.start_date || a.creation || a.modified,
 		).getTime()
 		const dateB = new Date(
-			b.published_on || b.start_date || b.creation || b.modified
+			b.published_on || b.start_date || b.creation || b.modified,
 		).getTime()
 		return dateB - dateA
 	})
 }
 
 const navigate = (result: any) => {
-	if (result.doctype == 'LMS Course') {
+	if (result.doctype === 'LMS Course') {
 		router.push({
 			name: 'CourseDetail',
-			params: {
-				courseName: result.name,
-			},
+			params: { courseName: result.name },
 		})
-	} else if (result.doctype == 'LMS Batch') {
+	} else if (result.doctype === 'LMS Batch') {
 		router.push({
 			name: 'BatchDetail',
-			params: {
-				batchName: result.name,
-			},
+			params: { batchName: result.name },
 		})
-	} else if (result.doctype == 'Job Opportunity') {
+	} else if (result.doctype === 'Job Opportunity') {
 		router.push({
 			name: 'JobDetail',
-			params: {
-				job: result.name,
-			},
+			params: { job: result.name },
 		})
+	} else if (result.doctype === 'LMS Program') {
+		router.push({
+			name: 'ProgramDetail',
+			params: { programName: result.name },
+		})
+	} else if (result.doctype === 'LMS Quiz') {
+		router.push({
+			name: 'QuizForm',
+			params: { quizID: result.name },
+		})
+	} else if (result.doctype === 'LMS Assignment') {
+		router.push({ name: 'Assignments' })
 	}
 }
 
@@ -225,19 +232,17 @@ watch(
 			query.value = newQ as string
 			submit()
 		}
-	}
+	},
 )
 
 const getDocTypeTitle = (doctype: string) => {
-	if (doctype === 'LMS Course') {
-		return __('Course')
-	} else if (doctype === 'LMS Batch') {
-		return __('Batch')
-	} else if (doctype === 'Job Opportunity') {
-		return __('Job')
-	} else {
-		return doctype
-	}
+	if (doctype === 'LMS Course') return __('Course')
+	else if (doctype === 'LMS Batch') return __('Batch')
+	else if (doctype === 'Job Opportunity') return __('Job')
+	else if (doctype === 'LMS Program') return __('Program')
+	else if (doctype === 'LMS Quiz') return __('Quiz')
+	else if (doctype === 'LMS Assignment') return __('Assignment')
+	else return doctype
 }
 
 const clearSearch = () => {
