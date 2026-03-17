@@ -1,9 +1,8 @@
 <template>
-
 	<div class="">
 		<div
 			v-if="title && (outline.data?.length || allowEdit)"
-			class="flex items-center justify-between space-x-2 mb-4 px-2"
+			class="flex items-center justify-between space-x-2 mb-2 px-2"
 			:class="{
 				'sticky top-0 z-10 bg-surface-white border-b px-3 py-2.5 sm:px-5':
 					allowEdit,
@@ -126,9 +125,7 @@
 														class="h-4 w-4 text-ink-gray-9 stroke-1 mr-2"
 													/>
 													{{ lesson.title }}
-													
 													<div class="flex items-center ml-auto space-x-2">
-												
 														<LessonAIStatus
 															v-if="allowEdit"
 															:lessonId="lesson.name"
@@ -145,7 +142,6 @@
 															class="h-4 w-4 text-green-700"
 														/>
 													</div>
-
 												</div>
 											</router-link>
 										</div>
@@ -199,6 +195,7 @@ import {
 	Plus,
 	SquareCode,
 	Trash2,
+	Notebook,
 } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import ChapterModal from '@/components/Modals/ChapterModal.vue'
@@ -255,14 +252,14 @@ watch(
 	() => props.courseName,
 	() => {
 		outline.reload()
-	}
+	},
 )
 
 watch(
 	() => props.lessonProgress,
 	() => {
 		outline.reload()
-	}
+	},
 )
 
 const deleteLesson = createResource({
@@ -312,7 +309,7 @@ const trashLesson = (lessonName, chapterName) => {
 	$dialog({
 		title: __('Delete this lesson?'),
 		message: __(
-			'Deleting this lesson will permanently remove it from the course. This action cannot be undone. Are you sure you want to continue?'
+			'Deleting this lesson will permanently remove it from the course. This action cannot be undone. Are you sure you want to continue?',
 		),
 		actions: [
 			{
@@ -378,7 +375,7 @@ const trashChapter = (chapterName) => {
 	$dialog({
 		title: __('Delete this chapter?'),
 		message: __(
-			'Deleting this chapter will also delete all its lessons and permanently remove it from the course. This action cannot be undone. Are you sure you want to continue?'
+			'Deleting this chapter will also delete all its lessons and permanently remove it from the course. This action cannot be undone. Are you sure you want to continue?',
 		),
 		actions: [
 			{
