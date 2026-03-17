@@ -18,6 +18,7 @@
 					<div class="grid grid-cols-2 gap-5 w-5/6 mx-auto">
 						<FormControl v-model="lesson.title" :label="__('Title')" class="mb-4" :required="true"
 							autocomplete="off" />
+						<FormControl v-model="lesson.duration" :label="__('Duration (minutes)')" type="number" class="mb-4" autocomplete="off" :description="__('Estimated time to complete this lesson')" />
 						<Switch v-model="lesson.include_in_preview" :label="__('Include in Preview')" :description="__(
 							'If enabled, the lesson will also be accessible to users who are not enrolled in the course.'
 						)
@@ -207,6 +208,7 @@ const lesson = reactive({
 	body: '',
 	instructor_notes: '',
 	content: '',
+	duration: 0,
 })
 
 const lessonDetails = createResource({

@@ -19,5 +19,15 @@
         "fieldtype": "Check",
         "default": "1",
         "insert_after": "courses"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "Course Lesson-duration",
+        "dt": "Course Lesson",
+        "fieldname": "duration",
+        "fieldtype": "Data",
+        "in_list_view": 1,
+        "label": "Duration",
+        "reqd": 1
     }
 ]

@@ -21,13 +21,14 @@ override_doctype_class = {
 
 # override api
 override_whitelisted_methods = {
-    "lms.lms.api.get_sidebar_settings": "os_lms.os_lms.ovverride_api.get_sidebar_settings"
+    "lms.lms.api.get_sidebar_settings": "os_lms.os_lms.ovverride_api.get_sidebar_settings",
+    "lms.lms.utils.get_lesson_creation_details": "os_lms.os_lms.ovverride_api.get_lesson_creation_details",
 }
 
 fixtures = [
     {
         "dt": "Custom Field",
-        "filters": [["dt", "in", ["LMS Program", "LMS Settings"]]]
+        "filters": [["dt", "in", ["LMS Program", "LMS Settings", "Course Lesson"]]]
     }
 ]
 
