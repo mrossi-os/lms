@@ -2,6 +2,7 @@
 	<div>
 		<div class="mt-10 space-y-10">
 			<UpcomingEvaluations :forHome="true" />
+			<WelcomeWithOverallProgress />
 			<div v-if="myLiveClasses.data?.length">
 				<div class="font-semibold text-lg mb-3 text-ink-gray-9">
 					{{ __('Upcoming Live Classes') }}
@@ -152,6 +153,7 @@ import {
 import CourseCard from '@/components/CourseCard.vue'
 import BatchCard from '@/pages/Batches/components/BatchCard.vue'
 import UpcomingEvaluations from '@/components/UpcomingEvaluations.vue'
+import WelcomeWithOverallProgress from '@/oslms/components/Home/WelcomeWithOverallProgress.vue'
 
 const dayjs = inject<any>('$dayjs')
 const user = inject<any>('$user')

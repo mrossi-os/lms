@@ -1,0 +1,53 @@
+import frappe
+
+@frappe.whitelist()
+def get_lesson_position(lesson_name):
+    """
+    Restituisce chapter_number e lesson_number (1-based) per costruire
+    l'URL /courses/:courseName/learn/:chapterNumber-:lessonNumber
+    Usa Chapter Reference e Lesson Reference, come fa mark_lesson_progress.
+    """
+    lesson = frappe.db.get_value(
+        "Course Lesson",
+        lesson_name,
+        ["chapter", "course"],
+        as_dict=True,
+    )
+    if not lesson:
+        return None
+
+    # chapter_number = idx del Chapter Reference nel corso
+    chapter_number = frappe.db.get_value(
+        "Chapter Reference",
+        {"parent": lesson.course, "chapter": lesson.chapter},
+        "idx",
+    )
+
+    # lesson_number = idx del Lesson Reference nel chapter
+    lesson_number = frappe.db.get_value(
+        "Lesson Reference",
+        {"parent": lesson.chapter, "lesson": lesson_name},
+        "idx",
+    )
+
+    return {
+        "course": lesson.course,
+        "chapter_number": chapter_number,
+        "lesson_number": lesson_number,
+    }
+
+@frappe.whitelist(allow_guest=True)
+def get_course_duration(course: str):
+    """
+    Somma il campo duration (minuti) di tutte le lezioni del corso.
+    Restituisce il totale in minuti.
+    """
+    result = frappe.db.sql("""
+        SELECT COALESCE(SUM(cl.duration), 0) as total_minutes
+        FROM `tabLesson Reference` lr
+        JOIN `tabChapter Reference` cr ON lr.parent = cr.chapter
+        JOIN `tabCourse Lesson` cl ON lr.lesson = cl.name
+        WHERE cr.parent = %s
+    """, course, as_dict=True)
+
+    return result[0].total_minutes if result else 0
