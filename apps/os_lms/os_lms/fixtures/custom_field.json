@@ -1,0 +1,13 @@
+[
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Program-description",
+        "dt": "LMS Program",
+        "label": "Description",
+        "fieldname": "description",
+        "fieldtype":  "Text Editor",
+        "insert_after": "title",
+        "reqd": 0,
+        "hidden": 0
+    }
+]

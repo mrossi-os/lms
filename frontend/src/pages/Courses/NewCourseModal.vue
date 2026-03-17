@@ -113,11 +113,7 @@ const course = ref<Course>({
 })
 
 const validateFields = () => {
-	console.log('---before sanitize:', course.value.description)
-
 	course.value.description = sanitizeHTML(course.value.description)
-	console.log('---after sanitize:', course.value.description)
-
 	Object.keys(course.value).forEach((key) => {
 		if (
 			key != 'description' &&

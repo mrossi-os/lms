@@ -19,6 +19,13 @@ override_doctype_class = {
     "Email Account": "os_lms.overrides.email_account.CustomEmailAccount"
 }
 
+fixtures = [
+    {
+        "dt": "Custom Field",
+        "filters": [["dt", "in", ["LMS Program"]]]
+    }
+]
+
 
 doc_events = {
     "Badge": {

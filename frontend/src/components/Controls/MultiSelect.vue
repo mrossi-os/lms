@@ -6,41 +6,23 @@
 		</label>
 		<Combobox v-model="selectedValue" nullable v-slot="{ open }">
 			<div class="relative w-full">
-				<ComboboxInput
-					ref="search"
-					class="form-input w-full focus-visible:!ring-0"
-					type="text"
-					@change="
-						(e) => {
-							query = e.target.value
-						}
-					"
-					autocomplete="off"
-					@focus="onFocus"
-				/>
+				<ComboboxInput ref="search" class="form-input w-full focus-visible:!ring-0" type="text" @change="
+					(e) => {
+						query = e.target.value
+					}
+				" autocomplete="off" @focus="onFocus" />
 				<ComboboxButton ref="trigger" class="hidden" />
-				<ComboboxOptions
-					v-show="open"
-					static
-					class="absolute z-20 mt-1 w-full rounded-lg bg-surface-modal border-2 border-outline-gray-modals max-h-[13rem] flex flex-col"
-				>
-					<div
-						class="flex-1 my-1 overflow-y-auto px-1.5"
-						:class="options.length ? 'min-h-[6rem]' : 'min-h-[3.8rem]'"
-					>
+				<ComboboxOptions v-show="open" static
+					class="absolute z-20 mt-1 w-full rounded-lg bg-surface-modal border-2 border-outline-gray-modals max-h-[13rem] flex flex-col">
+					<div class="flex-1 my-1 overflow-y-auto px-1.5"
+						:class="options.length ? 'min-h-[6rem]' : 'min-h-[3.8rem]'">
 						<template v-if="options.length">
-							<ComboboxOption
-								v-for="option in options"
-								:key="option.value"
-								:value="option"
-								v-slot="{ active }"
-							>
-								<li
-									:class="[
-										'flex cursor-pointer items-center rounded px-2 py-1 text-base',
-										{ 'bg-surface-gray-2': active },
-									]"
-								>
+							<ComboboxOption v-for="option in options" :key="option.value" :value="option"
+								v-slot="{ active }">
+								<li :class="[
+									'flex cursor-pointer items-center rounded px-2 py-1 text-base',
+									{ 'bg-surface-gray-2': active },
+								]">
 									<div class="flex flex-col gap-1 p-1">
 										<div class="text-base font-medium text-ink-gray-8">
 											{{
@@ -62,16 +44,9 @@
 						</div>
 					</div>
 
-					<div
-						v-if="attrs.onCreate"
-						class="p-1 bg-surface-white border-t rounded-b-lg"
-					>
-						<Button
-							variant="ghost"
-							class="w-full !justify-start"
-							:label="__('Create New')"
-							@click="attrs.onCreate()"
-						>
+					<div v-if="attrs.onCreate" class="p-1 bg-surface-white border-t rounded-b-lg">
+						<Button variant="ghost" class="w-full !justify-start" :label="__('Create New')"
+							@click="attrs.onCreate()">
 							<template #prefix>
 								<Plus class="h-4 w-4 stroke-1.5" />
 							</template>
@@ -83,16 +58,10 @@
 
 		<!-- Selected values -->
 		<div v-if="values?.length" class="grid grid-cols-2 gap-2 mt-1">
-			<div
-				v-for="value in values"
-				:key="value"
-				class="flex items-center justify-between break-all bg-surface-gray-2 text-ink-gray-7 p-2 rounded-md"
-			>
+			<div v-for="value in values" :key="value"
+				class="flex items-center justify-between break-all bg-surface-gray-2 text-ink-gray-7 p-2 rounded-md">
 				<span>{{ value }}</span>
-				<X
-					class="size-4 stroke-1.5 cursor-pointer"
-					@click="removeValue(value)"
-				/>
+				<X class="size-4 stroke-1.5 cursor-pointer" @click="removeValue(value)" />
 			</div>
 		</div>
 	</div>
@@ -107,7 +76,7 @@ import {
 	ComboboxOption,
 } from '@headlessui/vue'
 import { createResource, Button } from 'frappe-ui'
-import { ref, computed, useAttrs, watch } from 'vue'
+import { ref, computed, useAttrs, watch, nextTick } from 'vue'
 import { watchDebounced } from '@vueuse/core'
 import { X, Plus } from 'lucide-vue-next'
 
@@ -122,6 +91,7 @@ const props = defineProps({
 		default: (value) => `${value} is an Invalid value`,
 	},
 	required: Boolean,
+	exclude: { type: Array, default: () => [] },
 })
 
 const values = defineModel()
@@ -133,13 +103,19 @@ const selectedValue = ref(null)
 const error = ref(null)
 
 const emit = defineEmits(['update:modelValue'])
+const cachedOptions = ref([])
 
-watch(selectedValue, (val) => {
+defineExpose({ cachedOptions })
+
+watch(selectedValue, async (val) => {
 	if (!val?.value) return
-	query.value = ''
 	addValue(val.value)
 	selectedValue.value = null
+	query.value = ''
 	emit('update:modelValue', values.value)
+	await nextTick()
+	reload(query.value)
+	trigger.value?.$el.click()
 })
 
 watchDebounced(
@@ -161,11 +137,18 @@ const filterOptions = createResource({
 		txt: text.value,
 		doctype: props.doctype,
 	},
+	onSuccess(data) {
+		cachedOptions.value = data || []
+	}
 })
 
 const options = computed(() => {
-	const allOptions = filterOptions.data || []
-	return allOptions.filter((option) => !values.value?.includes(option.value))
+	const allOptions = cachedOptions.value || []
+	return allOptions.filter(
+		(option) =>
+			!values.value?.includes(option.value) &&
+			!props.exclude?.includes(option.value)
+	)
 })
 
 function reload(val) {

@@ -715,7 +715,6 @@ export const sanitizeHTML = (text) => {
 		},
 	)
 
-	console.log('--- textWithoutIframes:', textWithoutIframes)
 	const decoded = decodeEntities(textWithoutIframes)
 
 	let sanitized = DOMPurify.sanitize(decoded, {
@@ -775,8 +774,6 @@ export const sanitizeHTML = (text) => {
 		ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder'],
 	})
 
-	console.log('--- after DOMPurify:', sanitized)
-
 	Object.entries(iframes).forEach(([id, iframe]) => {
 		console.log('--- replacing placeholder:', id)
 		sanitized = sanitized.replace(
@@ -785,9 +782,9 @@ export const sanitizeHTML = (text) => {
 		)
 	})
 
-	console.log('--- final result:', sanitized)
 	return sanitized
 }
+
 
 export const canCreateCourse = () => {
 	const { userResource } = usersStore()

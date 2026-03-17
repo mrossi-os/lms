@@ -9,24 +9,14 @@
 					{{ course.data.short_introduction }}
 				</div>
 				<div class="flex items-center">
-					<Tooltip
-						v-if="parseInt(course.data.rating) > 0"
-						:text="__('Average Rating')"
-						class="flex items-center"
-					>
+					<Tooltip v-if="parseInt(course.data.rating) > 0" :text="__('Average Rating')" class="flex items-center">
 						<Star class="size-4 text-transparent fill-yellow-500" />
 						<span class="ml-1 text-ink-gray-7">
 							{{ course.data.rating }}
 						</span>
 					</Tooltip>
-					<span v-if="parseInt(course.data.rating) > 0" class="mx-3"
-						>&middot;</span
-					>
-					<Tooltip
-						v-if="course.data.enrollment_count"
-						:text="__('Enrolled Students')"
-						class="flex items-center"
-					>
+					<span v-if="parseInt(course.data.rating) > 0" class="mx-3">&middot;</span>
+					<Tooltip v-if="course.data.enrollment_count" :text="__('Enrolled Students')" class="flex items-center">
 						<Users class="h-4 w-4 text-ink-gray-7" />
 						<span class="ml-1">
 							{{ course.data.enrollment_count_formatted }}
@@ -40,21 +30,13 @@
 								'avatar-group overlap': course.data.instructors.length > 1,
 							}"
 						>
-							<UserAvatar
-								v-for="instructor in course.data.instructors"
-								:user="instructor"
-							/>
+							<UserAvatar v-for="instructor in course.data.instructors" :user="instructor" />
 						</span>
 						<CourseInstructors :instructors="course.data.instructors" />
 					</div>
 				</div>
 				<div v-if="course.data.tags" class="flex my-4 w-fit">
-					<Badge
-						theme="gray"
-						size="lg"
-						class="mr-2 text-ink-gray-9"
-						v-for="tag in course.data.tags.split(', ')"
-					>
+					<Badge theme="gray" size="lg" class="mr-2 text-ink-gray-9" v-for="tag in course.data.tags.split(', ')">
 						{{ tag }}
 					</Badge>
 				</div>
@@ -69,19 +51,10 @@
 					v-html="unescapeDescription(course.data.description)"
 					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-10"
 				></div>
-				<div class="mt-10">
-					<CourseOutline
-						:title="__('Course Outline')"
-						:courseName="course.data.name"
-						:showOutline="true"
-						:getProgress="course.data.membership ? true : false"
-					/>
-				</div>
-				<CourseReviews
-					:courseName="course.data.name"
-					:avg_rating="course.data.rating"
-					:membership="course.data.membership || null"
-				/>
+				<!-- <div class="mt-10">
+					<CourseOutline :title="__('Course Outline')" :courseName="course.data.name" :showOutline="true" :getProgress="course.data.membership ? true : false" />
+				</div> -->
+				<CourseReviews :courseName="course.data.name" :avg_rating="course.data.rating" :membership="course.data.membership || null" />
 			</div>
 			<div class="hidden md:block">
 				<CourseCardOverlay :course="course" />
@@ -94,12 +67,11 @@
 import { Star, Users } from 'lucide-vue-next'
 import { Badge, Tooltip } from 'frappe-ui'
 import CourseCardOverlay from '@/components/CourseCardOverlay.vue'
-import CourseOutline from '@/components/CourseOutline.vue'
 import CourseReviews from '@/components/CourseReviews.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import CourseInstructors from '@/components/CourseInstructors.vue'
 import RelatedCourses from '@/components/RelatedCourses.vue'
-import { computed } from 'vue'
+
 
 const props = defineProps<{
 	course: any

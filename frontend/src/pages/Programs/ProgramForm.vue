@@ -1,10 +1,7 @@
 <template>
-	<Dialog
-		v-model="show"
-		:options="{
-			size: '2xl',
-		}"
-	>
+	<Dialog v-model="show" :options="{
+		size: '2xl',
+	}">
 		<template #body-title>
 			<div class="flex items-center justify-between space-x-2 text-base w-full">
 				<div class="text-xl font-semibold text-ink-gray-9">
@@ -20,29 +17,27 @@
 		<template #body-content>
 			<div class="text-base">
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-5 pb-5">
-					<FormControl
-						v-model="program.name"
-						:label="__('Title')"
-						type="text"
-						:required="true"
-						@change="dirty = true"
-					/>
+					<FormControl v-model="program.title" :label="__('Title')" type="text" :required="true"
+						@change="dirty = true" />
 					<div class="flex flex-col space-y-3">
-						<FormControl
-							v-model="program.published"
-							:label="__('Published')"
-							type="checkbox"
-							@change="dirty = true"
-						/>
-						<FormControl
-							v-model="program.enforce_course_order"
-							:label="__('Enforce Course Order')"
-							type="checkbox"
-							@change="dirty = true"
-						/>
+						<FormControl v-model="program.published" :label="__('Published')" type="checkbox"
+							@change="dirty = true" />
+						<FormControl v-model="program.enforce_course_order" :label="__('Enforce Course Order')"
+							type="checkbox" @change="dirty = true" />
 					</div>
 				</div>
-
+				<div class="pb-5 col-span-2">
+					<div class="mb-1.5 text-sm text-ink-gray-5">
+						{{ __('Description') }}
+					</div>
+					<TextEditor :content="program.description" @change="
+						(val) => {
+							program.description = val
+							dirty = true
+						}
+					" :editable="true" :fixedMenu="true"
+						editorClass="prose-sm max-w-none border-b border-x border-outline-gray-modals bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]" />
+				</div>
 				<div class="pb-5">
 					<div class="flex items-center justify-between mt-5 mb-4">
 						<div class="text-lg font-semibold text-ink-gray-9">
@@ -57,30 +52,19 @@
 							</span>
 						</Button>
 					</div>
-					<ListView
-						v-if="program.program_courses?.length > 0"
-						:columns="courseColumns"
-						:rows="program.program_courses"
-						:options="{
+					<ListView v-if="program.program_courses?.length > 0" :columns="courseColumns"
+						:rows="program.program_courses" :options="{
 							selectable: true,
 							resizeColumn: true,
 							showTooltip: false,
-						}"
-						:rowKey="programName === 'new' ? 'course' : 'name'"
-					>
-						<ListHeader
-							class="mb-2 grid items-center space-x-4 rounded bg-surface-gray-2 p-2"
-						>
+						}" :rowKey="programName === 'new' ? 'course' : 'name'">
+						<ListHeader class="mb-2 grid items-center space-x-4 rounded bg-surface-gray-2 p-2">
 							<ListHeaderItem :item="item" v-for="item in courseColumns" />
 						</ListHeader>
 						<ListRows>
-							<Draggable
-								:list="program.program_courses"
-								:item-key="programName === 'new' ? 'course' : 'name'"
-								group="items"
-								@end="updateOrder"
-								class="cursor-move"
-							>
+							<Draggable :list="program.program_courses"
+								:item-key="programName === 'new' ? 'course' : 'name'" group="items" @end="updateOrder"
+								class="cursor-move">
 								<template #item="{ element: row }">
 									<ListRow :row="row" />
 								</template>
@@ -89,10 +73,7 @@
 						<ListSelectBanner>
 							<template #actions="{ unselectAll, selections }">
 								<div class="flex gap-2">
-									<Button
-										variant="ghost"
-										@click="remove(selections, unselectAll, 'courses')"
-									>
+									<Button variant="ghost" @click="remove(selections, unselectAll, 'courses')">
 										<Trash2 class="h-4 w-4 stroke-1.5" />
 									</Button>
 								</div>
@@ -109,42 +90,33 @@
 						<div class="text-lg font-semibold text-ink-gray-9">
 							{{ __('Members') }}
 						</div>
-
 						<div class="space-x-2">
-							<Button
-								v-if="programMembers.data.length > 0"
-								@click="
-									() => {
-										showProgressDialog = true
-									}
-								"
-							>
+							<Button v-if="programMembers.data.length > 0" @click="showProgressDialog = true">
 								<template #prefix>
 									<TrendingUp class="size-4 stroke-1.5" />
 								</template>
 								{{ __('Progress Summary') }}
 							</Button>
-							<Button @click="openForm('member')">
+							<Button @click="openMemberForm('direct')">
 								<template #prefix>
 									<Plus class="h-4 w-4 stroke-1.5" />
 								</template>
-								{{ __('Add') }}
+								{{ __('Add Member') }}
+							</Button>
+							<Button @click="openMemberForm('batch')">
+								<template #prefix>
+									<Plus class="h-4 w-4 stroke-1.5" />
+								</template>
+								{{ __('Add Group') }}
 							</Button>
 						</div>
 					</div>
-					<ListView
-						v-if="program.program_members?.length > 0"
-						:columns="memberColumns"
-						:rows="program.program_members"
-						:options="{
+					<ListView v-if="program.program_members?.length > 0" :columns="memberColumns"
+						:rows="program.program_members" :options="{
 							selectable: true,
 							resizeColumn: true,
-						}"
-						:rowKey="programName === 'new' ? 'member' : 'name'"
-					>
-						<ListHeader
-							class="mb-2 grid items-center space-x-4 rounded bg-surface-gray-2 p-2"
-						>
+						}" :rowKey="programName === 'new' ? 'member' : 'name'">
+						<ListHeader class="mb-2 grid items-center space-x-4 rounded bg-surface-gray-2 p-2">
 							<ListHeaderItem :item="item" v-for="item in memberColumns" />
 						</ListHeader>
 						<ListRows>
@@ -153,10 +125,7 @@
 						<ListSelectBanner>
 							<template #actions="{ unselectAll, selections }">
 								<div class="flex gap-2">
-									<Button
-										variant="ghost"
-										@click="remove(selections, unselectAll, 'members')"
-									>
+									<Button variant="ghost" @click="remove(selections, unselectAll, 'members')">
 										<Trash2 class="h-4 w-4 stroke-1.5" />
 									</Button>
 								</div>
@@ -168,62 +137,103 @@
 					</div>
 				</div>
 			</div>
-			<Dialog
-				v-model="showFormDialog"
-				:options="{
-					title:
-						currentForm == 'course'
-							? __('Add Course to Program')
-							: __('Enroll Member to Program'),
-					actions: [
-						{
-							label: __('Add'),
-							variant: 'solid',
-							onClick: ({ close }: { close: () => void }) =>
-								currentForm == 'course'
-									? addCourse(close)
-									: addMember(close),
-						},
-					],
-				}"
-			>
+			<Dialog v-model="showFormDialog" :options="{
+				size: 'lg',
+				title:
+					currentForm == 'course'
+						? __('Add Course to Program')
+						: __('Enroll Member to Program'),
+				actions: [
+					{
+						label: __('Add'),
+						variant: 'solid',
+						onClick: ({ close }: { close: () => void }) =>
+							currentForm == 'course'
+								? addCourses(close)
+								: addMember(close),
+					},
+				],
+			}">
 				<template #body-content>
-					<div @click.stop>
-						<Link
-							v-if="currentForm == 'course'"
-							v-model="course"
-							doctype="LMS Course"
-							:label="__('Course')"
-						/>
-
-						<Link
-							v-if="currentForm == 'member'"
-							v-model="member"
-							doctype="User"
-							:filters="{
-								ignore_user_type: 1,
-							}"
-							:label="__('Program Member')"
-							:onCreate="(value: string, close: () => void) => openSettings('Members', close)"
-						/>
+					<div @click.stop class="min-h-[300px]">
+						<MultiSelect v-if="currentForm == 'course'" v-model="selectedCourses" doctype="LMS Course"
+							:label="__('Courses')" :autofocus="false" ref="multiSelectRef"
+							:exclude="program.program_courses.map((c: any) => c.course)" />
+						<Link v-if="currentForm == 'member'" v-model="member" doctype="User"
+							:filters="{ ignore_user_type: 1 }" :label="__('Program Member')"
+							:onCreate="(value: string, close: () => void) => openSettings('Members', close)" />
+					</div>
+				</template>
+			</Dialog>
+			<!-- Dialog aggiungi membro diretto -->
+			<Dialog v-model="showMemberDialog" :options="{
+				size: 'lg',
+				title: __('Add Members'),
+				actions: [
+					{
+						label: __('Add'),
+						variant: 'solid',
+						onClick: ({ close }: { close: () => void }) => addMembers(close),
+					},
+				],
+			}">
+				<template #body-content>
+					<div @click.stop class="min-h-[300px]">
+						<MultiSelect v-model="selectedMembers" doctype="User" :filters="{ ignore_user_type: 1 }"
+							:label="__('Members')" :autofocus="false"
+							:exclude="program.program_members.map((m: any) => m.member)" />
 					</div>
 				</template>
 			</Dialog>
 
-			<ProgramProgressSummary
-				v-model="showProgressDialog"
-				:programName="programName"
-				:programMembers="programMembers.data"
-			/>
+			<!-- Dialog aggiungi da batch -->
+			<Dialog v-model="showBatchDialog" :options="{
+				size: 'lg',
+				title: __('Add Members from Batch'),
+				actions: [
+					{
+						label: __('Add'),
+						variant: 'solid',
+						onClick: ({ close }: { close: () => void }) => addMembersFromBatch(close),
+					},
+				],
+			}">
+				<template #body-content>
+					<div @click.stop class="min-h-[300px] space-y-3">
+						<Link v-model="selectedBatch" doctype="LMS Batch" :label="__('Select Batch')" />
+						<div v-if="batchMembersList.length > 0">
+							<div class="flex items-center justify-between mb-2">
+								<span class="text-sm text-ink-gray-5">
+									{{ batchMembersList.length }} {{ __('members found') }}
+								</span>
+								<Button variant="ghost" @click="selectAllBatchMembers">
+									{{ __('Select All') }}
+								</Button>
+							</div>
+							<div class="max-h-[200px] overflow-y-auto space-y-1 border rounded-md p-2">
+								<div v-for="m in batchMembersList" :key="m.member"
+									class="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-surface-gray-2"
+									:class="{ 'bg-surface-gray-2': selectedMembers.includes(m.member) }"
+									@click="toggleMemberSelection(m.member)">
+									<input type="checkbox" :checked="selectedMembers.includes(m.member)"
+										class="pointer-events-none" />
+									<span class="text-sm text-ink-gray-8">{{ m.member_name }}</span>
+									<span class="text-xs text-ink-gray-5 ml-auto">{{ m.member }}</span>
+								</div>
+							</div>
+						</div>
+						<div v-else-if="selectedBatch && !batchEnrollments.loading" class="text-sm text-ink-gray-5">
+							{{ __('No members found in this batch') }}
+						</div>
+					</div>
+				</template>
+			</Dialog>
+			<ProgramProgressSummary v-model="showProgressDialog" :programName="programName"
+				:programMembers="programMembers.data" />
 		</template>
 		<template #actions="{ close }">
 			<div class="flex justify-end space-x-2">
-				<Button
-					v-if="programName != 'new'"
-					@click="deleteProgram(close)"
-					variant="outline"
-					theme="red"
-				>
+				<Button v-if="programName != 'new'" @click="deleteProgram(close)" variant="outline" theme="red">
 					<template #prefix>
 						<Trash2 class="size-4 stroke-1.5" />
 					</template>
@@ -241,6 +251,7 @@ import {
 	Badge,
 	Button,
 	createListResource,
+	createResource,
 	Dialog,
 	FormControl,
 	ListSelectBanner,
@@ -250,6 +261,7 @@ import {
 	ListRows,
 	ListRow,
 	toast,
+	TextEditor,
 } from 'frappe-ui'
 import { computed, ref, watch, getCurrentInstance } from 'vue'
 import { Plus, Trash2, TrendingUp } from 'lucide-vue-next'
@@ -258,18 +270,26 @@ import { escapeHTML, openSettings } from '@/utils'
 import Link from '@/components/Controls/Link.vue'
 import Draggable from 'vuedraggable'
 import ProgramProgressSummary from '@/pages/Programs/ProgramProgressSummary.vue'
+import { sanitizeHTML } from '@/utils'
+import MultiSelect from '@/components/Controls/MultiSelect.vue'
 
 const show = defineModel<boolean>()
 const programs = defineModel<Programs>('programs')
 const showFormDialog = ref(false)
 const currentForm = ref<'course' | 'member'>('course')
-const course = ref<string>('')
+const selectedCourses = ref<string[]>([])
 const member = ref<string>('')
 const showProgressDialog = ref(false)
 const dirty = ref(false)
+const showMemberDialog = ref(false)
+const showBatchDialog = ref(false)
+const selectedBatch = ref<string>('')
+const selectedMembers = ref<string[]>([])
+const batchMembersList = ref<any[]>([])
 
 const app = getCurrentInstance()
 const { $dialog } = app.appContext.config.globalProperties
+const multiSelectRef = ref(null)
 
 const props = withDefaults(
 	defineProps<{
@@ -283,6 +303,7 @@ const props = withDefaults(
 const program = ref<Program>({
 	name: '',
 	title: '',
+	description: '',
 	published: false,
 	enforce_course_order: false,
 	program_courses: [],
@@ -291,19 +312,99 @@ const program = ref<Program>({
 
 watch(
 	() => props.programName,
-	() => {
+	(val) => {
+		if (!val) return
 		setProgramData()
-		fetchCourses()
-		fetchMembers()
+		if (val !== 'new') {
+			fetchCourses()
+			fetchMembers()
+		}
+	},
+	{ immediate: true }
+)
+
+watch(
+	() => programs.value?.data,
+	() => {
+		if (props.programName && props.programName !== 'new') {
+			setProgramData()
+		}
 	}
 )
 
+watch(selectedBatch, async (val) => {
+	if (!val) return
+	batchMembersList.value = []
+	selectedMembers.value = []
+
+	try {
+		const response = await fetch('/api/method/frappe.client.get_list', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-Frappe-CSRF-Token': (window as any).csrf_token,
+				'Accept': 'application/json',
+			},
+			body: JSON.stringify({
+				doctype: 'LMS Batch Enrollment',
+				fields: ['member', 'member_name'],
+				filters: [['batch', '=', val]],
+				limit_page_length: 500,
+			})
+		})
+		const json = await response.json()
+		const existing = program.value.program_members.map((m: any) => m.member)
+		batchMembersList.value = (json.message || []).filter((d: any) => !existing.includes(d.member))
+	} catch (e) {
+		console.error('fetch error:', e)
+	}
+})
+
+const batchEnrollments = createResource({
+	url: 'frappe.client.get_list',
+	makeParams(values) {
+		return {
+			doctype: 'LMS Batch Enrollment',
+			fields: ['member', 'member_name'],
+			filters: { batch: values.batch },
+			limit: 500,
+		}
+	},
+	onSuccess(data: any[]) {
+		const existing = program.value.program_members.map((m: any) => m.member)
+		batchMembersList.value = data.filter((d) => !existing.includes(d.member))
+	},
+})
+
+const openMemberForm = (mode: 'direct' | 'batch') => {
+	selectedMembers.value = []
+	if (mode === 'direct') {
+		showMemberDialog.value = true
+	} else {
+		selectedBatch.value = ''
+		batchMembersList.value = []
+		showBatchDialog.value = true
+	}
+}
+const toggleMemberSelection = (memberValue: string) => {
+	const idx = selectedMembers.value.indexOf(memberValue)
+	if (idx > -1) selectedMembers.value.splice(idx, 1)
+	else selectedMembers.value.push(memberValue)
+}
+
+const selectAllBatchMembers = () => {
+	selectedMembers.value = batchMembersList.value.map((m) => m.member)
+}
+
+
 const setProgramData = () => {
 	let isNew = true
+
 	programs.value?.data.forEach((p: Program) => {
 		if (p.name === props.programName) {
 			isNew = false
 			program.value = { ...p }
+			program.value.title = p.title || p.name
 		}
 	})
 
@@ -358,18 +459,19 @@ const fetchMembers = () => {
 		filters: {
 			parent: props.programName,
 			parenttype: 'LMS Program',
-			parentfield: 'program_members',
+
 		},
 	})
 	programMembers.reload()
 }
 
 const validateTitle = () => {
-	program.value.name = escapeHTML(program.value.name.trim())
+	program.value.title = escapeHTML(program.value.title.trim())
 }
 
 const saveProgram = (close: () => void) => {
 	validateTitle()
+	program.value.description = sanitizeHTML(program.value.description)
 	if (props.programName === 'new') createNewProgram(close)
 	else updateProgram(close)
 	dirty.value = false
@@ -378,8 +480,12 @@ const saveProgram = (close: () => void) => {
 const createNewProgram = (close: () => void) => {
 	programs.value.insert.submit(
 		{
-			...program.value,
-			title: program.value.name,
+			title: program.value.title,
+			description: program.value.description,
+			published: program.value.published,
+			enforce_course_order: program.value.enforce_course_order,
+			program_courses: program.value.program_courses,
+			program_members: program.value.program_members,
 		},
 		{
 			onSuccess() {
@@ -394,80 +500,167 @@ const createNewProgram = (close: () => void) => {
 	)
 }
 
-const updateProgram = (close: () => void) => {
-	programs.value.setValue.submit(
-		{
-			name: props.programName,
-			...program.value,
-		},
-		{
-			onSuccess() {
-				close()
-				programs.value.reload()
-				toast.success(__('Program updated successfully'))
-			},
-			onError(err: any) {
-				toast.warning(__(err.messages?.[0] || err))
-			},
+const updateProgram = async (close: () => void) => {
+	try {
+		const newTitle = program.value.title
+		const oldName = props.programName
+
+		// Se il titolo è cambiato, prima rinomina il documento
+		if (newTitle !== oldName) {
+			const renameResponse = await fetch('/api/method/frappe.client.rename_doc', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-Frappe-CSRF-Token': (window as any).csrf_token,
+				},
+				body: JSON.stringify({
+					doctype: 'LMS Program',
+					old_name: oldName,
+					new_name: newTitle,
+					merge: false,
+				})
+			})
+			const renameJson = await renameResponse.json()
+			if (renameJson.exc) {
+				toast.warning(renameJson._server_messages
+					? JSON.parse(JSON.parse(renameJson._server_messages)[0]).message
+					: renameJson.exc)
+				return
+			}
 		}
-	)
+
+		const cleanCourses = program.value.program_courses.map((c: any) => ({
+			doctype: 'LMS Program Course',
+			name: c.name || null,
+			course: c.course,
+			course_title: c.course_title,
+			idx: c.idx,
+		}))
+
+		const cleanMembers = program.value.program_members.map((m: any) => ({
+			doctype: 'LMS Program Member',
+			name: m.name || null,
+			member: m.member,
+			full_name: m.full_name,
+			progress: m.progress || 0,
+			idx: m.idx,
+		}))
+
+		const saveResponse = await fetch(
+			`/api/resource/LMS%20Program/${encodeURIComponent(newTitle)}`,
+			{
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-Frappe-CSRF-Token': (window as any).csrf_token,
+				},
+				body: JSON.stringify({
+					title: newTitle,
+					description: program.value.description,
+					published: program.value.published ? 1 : 0,
+					enforce_course_order: program.value.enforce_course_order ? 1 : 0,
+					program_courses: cleanCourses,
+					program_members: cleanMembers,
+				})
+			}
+		)
+
+		const saveJson = await saveResponse.json()
+		if (saveJson.exc) {
+			toast.warning(saveJson._server_messages
+				? JSON.parse(JSON.parse(saveJson._server_messages)[0]).message
+				: saveJson.exc)
+			return
+		}
+
+		await programs.value.reload()
+		close()
+		toast.success(__('Program updated successfully'))
+	} catch (err: any) {
+		toast.warning(err.message)
+	}
 }
 
 const openForm = (formType: 'course' | 'member') => {
 	currentForm.value = formType
 	showFormDialog.value = true
 	if (formType === 'course') {
-		course.value = ''
+		selectedCourses.value = []
 	} else {
 		member.value = ''
 	}
 }
 
-const addCourse = (close: () => void) => {
-	if (!course.value) {
-		toast.warning(__('Please select a course'))
+const addCourses = (close: () => void) => {
+	if (!selectedCourses.value.length) {
+		toast.warning(__('Please select at least one course'))
 		return
 	}
 
-	const existingCourse = program.value.program_courses.find(
-		(c: any) => c.course === course.value
-	)
-	if (!existingCourse) {
-		program.value.program_courses.push({
-			course: course.value,
-			idx: program.value.program_courses.length + 1,
-		})
-		if (props.programName !== 'new') {
-			dirty.value = true
+	let added = 0
+	const availableOptions = multiSelectRef.value?.cachedOptions || []
+
+	selectedCourses.value.forEach((courseValue) => {
+		const existingCourse = program.value.program_courses.find(
+			(c: any) => c.course === courseValue
+		)
+		if (!existingCourse) {
+			const option = availableOptions.find((o: any) => o.value === courseValue)
+			program.value.program_courses.push({
+				course: courseValue,
+				course_title: option?.label || option?.description || courseValue,
+				idx: program.value.program_courses.length + 1,
+			})
+			added++
 		}
-		close()
-		toast.success(__('Course added to program successfully'))
-	} else {
-		toast.warning(__('Course already added to program'))
+	})
+
+	if (added > 0 && props.programName !== 'new') {
+		dirty.value = true
 	}
+
+	close()
+	toast.success(__(`${added} course(s) added to program successfully`))
 }
 
-const addMember = (close: () => void) => {
-	if (!member.value) {
-		toast.warning(__('Please select a member'))
+const addMembers = (close: () => void) => {
+	if (!selectedMembers.value.length) {
+		toast.warning(__('Please select at least one member'))
 		return
 	}
-
-	const existingMember = program.value.program_members.find(
-		(m) => m.member === member.value
-	)
-	if (!existingMember) {
-		program.value.program_members.push({
-			member: member.value,
-		})
-		if (props.programName !== 'new') {
-			dirty.value = true
+	let added = 0
+	selectedMembers.value.forEach((memberValue) => {
+		const existing = program.value.program_members.find((m: any) => m.member === memberValue)
+		if (!existing) {
+			program.value.program_members.push({ member: memberValue })
+			added++
 		}
-		close()
-		toast.success(__('Member added to program successfully'))
-	} else {
-		toast.warning(__('Member already added to program'))
+	})
+	if (added > 0 && props.programName !== 'new') dirty.value = true
+	close()
+	toast.success(__(`${added} member(s) added successfully`))
+}
+
+const addMembersFromBatch = (close: () => void) => {
+	if (!selectedMembers.value.length) {
+		toast.warning(__('Please select at least one member'))
+		return
 	}
+	let added = 0
+	selectedMembers.value.forEach((memberValue) => {
+		const existing = program.value.program_members.find((m: any) => m.member === memberValue)
+		if (!existing) {
+			const found = batchMembersList.value.find((m) => m.member === memberValue)
+			program.value.program_members.push({
+				member: memberValue,
+				full_name: found?.member_name || memberValue,
+			})
+			added++
+		}
+	})
+	if (added > 0 && props.programName !== 'new') dirty.value = true
+	close()
+	toast.success(__(`${added} member(s) added successfully`))
 }
 
 const updateCounts = async (
