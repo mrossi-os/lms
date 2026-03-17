@@ -114,7 +114,7 @@ watch(
 	() => props.courseName,
 	() => {
 		course.reload()
-	}
+	},
 )
 
 watch(course, () => {

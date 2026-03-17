@@ -1,10 +1,10 @@
 <template>
 	<div
-		class="flex h-full flex-col justify-between transition-all duration-300 ease-in-out border-r bg-surface-menu-bar"
+		class="flex h-full flex-col justify-between transition-all duration-300 ease-in-out border-r bg-surface-menu-bar sidebar-menu"
 		:class="sidebarStore.isSidebarCollapsed ? 'w-14' : 'w-56'"
 	>
 		<div
-			class="flex flex-col overflow-y-auto"
+			class="flex flex-col overflow-hidden"
 			:class="sidebarStore.isSidebarCollapsed ? 'items-center' : ''"
 		>
 			<UserDropdown :isCollapsed="sidebarStore.isSidebarCollapsed" />
@@ -37,10 +37,10 @@
 				>
 					<div
 						v-if="!sidebarStore.isSidebarCollapsed"
-						class="flex items-center text-ink-gray-5 my-1"
+						class="flex items-center text-sm text-ink-gray-5 my-1"
 					>
 						<span class="grid h-5 w-6 flex-shrink-0 place-items-center">
-							<ChevronRight
+							<ChevronsRight
 								class="h-4 w-4 stroke-1.5 text-ink-gray-9 transition-all duration-300 ease-in-out"
 								:class="{ 'rotate-90': !sidebarStore.isWebpagesCollapsed }"
 							/>
@@ -86,7 +86,7 @@
 			>
 				{{
 					__(
-						'This site is being updated. You will not be able to make any changes. Full access will be restored shortly.'
+						'This site is being updated. You will not be able to make any changes. Full access will be restoredshortly.',
 					)
 				}}
 			</div>
@@ -176,19 +176,16 @@
 							>
 								{{
 									__(
-										'This site is being updated. You will not be able to make any changes. Full access will be restored shortly.'
+										'This site is being updated. You will not be able to make any changes. Full access will be restored shortly.',
 									)
 								}}
 							</div>
 						</template>
 					</Tooltip>
-					<Tooltip
-						v-if="showAppointmentIcon"
-						:text="__('Book a free onboarding session with the Frappe team')"
-					>
-						<Phone
+					<Tooltip :text="__('Powered by Learning')">
+						<Zap
 							class="size-4 stroke-1.5 text-ink-gray-7 cursor-pointer"
-							@click="redirectToAppointmentScreen()"
+							@click="redirectToWebsite()"
 						/>
 					</Tooltip>
 					<Tooltip v-if="showOnboarding" :text="__('Help')">
@@ -200,12 +197,6 @@
 									minimize = !showHelpModal
 								}
 							"
-						/>
-					</Tooltip>
-					<Tooltip :text="__('Powered by Frappe Learning')">
-						<Zap
-							class="size-4 stroke-1.5 text-ink-gray-7 cursor-pointer"
-							@click="redirectToWebsite()"
 						/>
 					</Tooltip>
 				</div>
@@ -276,11 +267,10 @@ import {
 	CircleAlert,
 	ChevronRight,
 	ChevronsRight,
+	Plus,
 	CircleHelp,
 	FolderTree,
 	FileText,
-	Phone,
-	Plus,
 	User,
 	UserPlus,
 	Users,
@@ -347,13 +337,13 @@ const updateSidebarLinksVisibility = () => {
 					if (!parseInt(data[key])) {
 						sidebarLinks.value.forEach((link) => {
 							link.items = link.items.filter(
-								(item) => item.label.toLowerCase().split(' ').join('_') !== key
+								(item) => item.label.toLowerCase().split(' ').join('_') !== key,
 							)
 						})
 					}
 				})
 			},
-		}
+		},
 	)
 }
 
@@ -422,7 +412,7 @@ const toggleSidebar = () => {
 	sidebarStore.isSidebarCollapsed = !sidebarStore.isSidebarCollapsed
 	localStorage.setItem(
 		'isSidebarCollapsed',
-		JSON.stringify(sidebarStore.isSidebarCollapsed)
+		JSON.stringify(sidebarStore.isSidebarCollapsed),
 	)
 }
 
@@ -430,7 +420,7 @@ const toggleWebPages = () => {
 	sidebarStore.isWebpagesCollapsed = !sidebarStore.isWebpagesCollapsed
 	localStorage.setItem(
 		'isWebpagesCollapsed',
-		JSON.stringify(sidebarStore.isWebpagesCollapsed)
+		JSON.stringify(sidebarStore.isWebpagesCollapsed),
 	)
 }
 
@@ -658,6 +648,7 @@ watch(userResource, async () => {
 		isModerator.value = userResource.data.is_moderator
 		isInstructor.value = userResource.data.is_instructor
 		await programs.reload()
+		updateSidebarLinks()
 		setUpOnboarding()
 	}
 	updateSidebarLinks()
@@ -687,36 +678,6 @@ const profileIsComplete = computed(() => {
 		userResource.data?.bio
 	)
 })
-
-const showAppointmentIcon = computed(() => {
-	let isTrialPlan = userResource.data?.site_info?.plan?.is_trial_plan
-	let trialEndDate = calculateTrialEndDays(
-		userResource.data?.site_info?.trial_end_date
-	)
-	return (
-		userResource.data?.is_system_manager &&
-		userResource.data?.is_fc_site &&
-		isTrialPlan &&
-		trialEndDate > 0
-	)
-})
-
-const calculateTrialEndDays = (trialEndDate) => {
-	if (!trialEndDate) return 0
-
-	trialEndDate = new Date(trialEndDate)
-	const today = new Date()
-	const diffTime = trialEndDate - today
-	const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-	return diffDays
-}
-
-const redirectToAppointmentScreen = () => {
-	window.open(
-		'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ0c7Z3XIpW1WgbeIuktSaoX6qudoYuSdRbIlJty5TW7p4IZaOk5viHQGwTNi6HpNVqzOZOTHcle',
-		'_blank'
-	)
-}
 
 onUnmounted(() => {
 	socket.off('publish_lms_notifications')

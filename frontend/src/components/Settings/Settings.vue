@@ -78,7 +78,6 @@ import Transactions from '@/components/Settings/Transactions/Transactions.vue'
 import ZoomSettings from '@/components/Settings/ZoomSettings.vue'
 import GoogleMeetSettings from '@/components/Settings/GoogleMeetSettings.vue'
 import Badges from '@/components/Settings/Badges.vue'
-
 import AISettings from '@/oslms/components/ai/Settings/AISettings.vue'
 
 const show = defineModel()
@@ -496,6 +495,11 @@ const tabsStructure = computed(() => {
 											type: 'checkbox',
 										},
 										{
+											label: 'Programs',
+											name: 'programs',
+											type: 'checkbox',
+										},
+										{
 											label: 'Programming Exercises',
 											name: 'programming_exercises',
 											type: 'checkbox',
@@ -614,7 +618,8 @@ const tabsStructure = computed(() => {
 				{
 					label: 'AI',
 					icon: 'BrainCircuit',
-					description: 'Configure AI assistant settings for your learning system',
+					description:
+						'Configure AI assistant settings for your learning system',
 					template: markRaw(AISettings),
 					sections: [
 						{
@@ -626,13 +631,15 @@ const tabsStructure = computed(() => {
 											label: 'Enabled',
 											name: 'enabled',
 											type: 'checkbox',
-											description: 'Enable AI features for your learning system.',
+											description:
+												'Enable AI features for your learning system.',
 										},
 										{
 											label: 'Embedding Model',
 											name: 'embedding_model',
 											type: 'text',
-											description: 'The model used to generate embeddings for content indexing.',
+											description:
+												'The model used to generate embeddings for content indexing.',
 										},
 									],
 								},
@@ -642,19 +649,22 @@ const tabsStructure = computed(() => {
 											label: 'Chunk Size',
 											name: 'chunk_size',
 											type: 'number',
-											description: 'Number of characters per text chunk for indexing.',
+											description:
+												'Number of characters per text chunk for indexing.',
 										},
 										{
 											label: 'Chunk Overlap',
 											name: 'chunk_overlap',
 											type: 'number',
-											description: 'Character overlap between consecutive chunks.',
+											description:
+												'Character overlap between consecutive chunks.',
 										},
 										{
 											label: 'Top K',
 											name: 'top_k',
 											type: 'number',
-											description: 'Number of relevant chunks to retrieve for context.',
+											description:
+												'Number of relevant chunks to retrieve for context.',
 										},
 									],
 								},

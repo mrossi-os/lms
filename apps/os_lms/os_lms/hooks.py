@@ -19,10 +19,15 @@ override_doctype_class = {
     "Email Account": "os_lms.overrides.email_account.CustomEmailAccount"
 }
 
+# override api
+override_whitelisted_methods = {
+    "lms.lms.api.get_sidebar_settings": "os_lms.os_lms.ovverride_api.get_sidebar_settings"
+}
+
 fixtures = [
     {
         "dt": "Custom Field",
-        "filters": [["dt", "in", ["LMS Program"]]]
+        "filters": [["dt", "in", ["LMS Program", "LMS Settings"]]]
     }
 ]
 

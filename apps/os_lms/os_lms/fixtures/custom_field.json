@@ -9,5 +9,15 @@
         "insert_after": "title",
         "reqd": 0,
         "hidden": 0
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Settings-programs",
+        "dt": "LMS Settings",
+        "label": "Programs",
+        "fieldname": "programs",
+        "fieldtype": "Check",
+        "default": "1",
+        "insert_after": "courses"
     }
 ]
