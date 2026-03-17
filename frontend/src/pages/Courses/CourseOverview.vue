@@ -50,8 +50,13 @@
 				<div v-html="unescapeDescription(course.data.description)"
 					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-10">
 				</div>
+				<CourseLearningBadges
+					v-if="course.data.learning_items?.length"
+					:items="course.data.learning_items"
+				/>
 				<CourseReviews :courseName="course.data.name" :avg_rating="course.data.rating"
 					:membership="course.data.membership || null" />
+				
 			</div>
 			<div class="hidden md:block">
 				<CourseCardOverlay :course="course" />
@@ -68,6 +73,7 @@ import CourseReviews from '@/components/CourseReviews.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import CourseInstructors from '@/components/CourseInstructors.vue'
 import RelatedCourses from '@/components/RelatedCourses.vue'
+import CourseLearningBadges from '@/oslms/components/CourseLearningBadge.vue'
 
 
 const props = defineProps<{

@@ -1,8 +1,10 @@
 import frappe
+
+
 from lms.lms.api import get_sidebar_settings as _original_get_sidebar_settings
+
 from lms.command_palette import (
 	get_instructor_info,
-	prepare_search_results,
 	can_access_course,
 	can_access_batch,
 	can_access_job,
@@ -17,7 +19,6 @@ def get_sidebar_settings():
         result['programs'] = frappe.get_single("LMS Settings").get("programs")
     
     return result
-
 
 
 @frappe.whitelist()
@@ -54,6 +55,8 @@ def get_lesson_creation_details(course: str, chapter: int, lesson: int) -> dict:
 	}
 
 
+
+#region search_sqlite
 @frappe.whitelist()
 def search_sqlite(query: str):
 	from os_lms.overrides.sqlite import CustomLearningSearch
@@ -104,3 +107,4 @@ def get_grouped_results_custom(result):
 		elif doctype == "LMS Assignment":
 			groups.setdefault("Assignments", []).append(r)
 	return groups
+#endregion

@@ -12,7 +12,10 @@ required_apps = ["lms"]
 before_request = ["os_lms.debug.active_debug"]
 
 # forse to set italian language
-after_migrate = ["os_lms.setup.ensure_italian_language"]
+after_migrate = [
+    "os_lms.setup.ensure_italian_language",
+    "os_lms.setup.create_custom_fields",
+]
 
 # fix error email check content MAX SIZE 
 override_doctype_class = {
@@ -23,15 +26,16 @@ sqlite_search = ["os_lms.overrides.sqlite.CustomLearningSearch"]
 
 # override api
 override_whitelisted_methods = {
-    "lms.lms.api.get_sidebar_settings": "os_lms.os_lms.ovverride_api.get_sidebar_settings",
-    "lms.lms.utils.get_lesson_creation_details": "os_lms.os_lms.ovverride_api.get_lesson_creation_details",
-    "lms.command_palette.search_sqlite": "os_lms.os_lms.ovverride_api.search_sqlite",
+    "lms.lms.api.get_sidebar_settings": "os_lms.os_lms.override_api.get_sidebar_settings",
+    "lms.lms.utils.get_lesson_creation_details": "os_lms.os_lms.override_api.get_lesson_creation_details",
+    "lms.command_palette.search_sqlite": "os_lms.os_lms.override_api.search_sqlite",
+    "lms.lms.utils.get_course_details": "os_lms.os_lms.override_utils.get_course_details"
 }
 
 fixtures = [
     {
         "dt": "Custom Field",
-        "filters": [["dt", "in", ["LMS Program", "LMS Settings", "Course Lesson"]]]
+        "filters": [["dt", "in", ["LMS Program", "LMS Settings", "Course Lesson", "LMS Course"]]]
     }
 ]
 

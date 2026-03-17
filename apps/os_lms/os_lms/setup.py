@@ -22,3 +22,33 @@ def ensure_italian_language():
         print("Ok")
     
     frappe.clear_cache()
+
+
+CUSTOM_FIELDS = {
+    "LMS Course": [
+        {
+            "fieldname": "learning_items",
+            "fieldtype": "Table",
+            "label": "Learning Items",
+            "options": "LMS Course Learning Item",
+            "insert_after": "related_courses",
+        },
+    ],
+}
+
+
+def create_custom_fields():
+    for dt, fields in CUSTOM_FIELDS.items():
+        for field_def in fields:
+            name = f"{dt}-{field_def['fieldname']}"
+            if not frappe.db.exists("Custom Field", name):
+                doc = frappe.get_doc({
+                    "doctype": "Custom Field",
+                    "dt": dt,
+                    **field_def,
+                })
+                doc.insert(ignore_permissions=True)
+                print(f"Created Custom Field: {name}")
+            else:
+                print(f"Custom Field already exists: {name}")
+    frappe.db.commit()

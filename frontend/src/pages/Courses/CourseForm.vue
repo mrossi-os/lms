@@ -76,7 +76,7 @@
 								:label="__('Color')"
 								:description="
 									__(
-										'Select a fallback color for the course card when no image is set.'
+										'Select a fallback color for the course card when no image is set.',
 									)
 								"
 								class="w-full"
@@ -193,6 +193,10 @@
 							@update:modelValue="makeFormDirty()"
 						/>
 					</div>
+					<CourseLearningItemEditor
+						v-model="courseResource.doc"
+						@dirty="makeFormDirty()"
+					/>
 
 					<div class="pr-5 md:pr-10 pb-5 space-y-5 border-b">
 						<div class="text-lg font-semibold mt-5 text-ink-gray-9">
@@ -324,7 +328,7 @@ import {
 	sanitizeHTML,
 	updateMetaInfo,
 } from '@/utils'
-import { Trash2, X } from 'lucide-vue-next'
+import {  X } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { sessionStore } from '../../stores/session'
 import Link from '@/components/Controls/Link.vue'
@@ -332,6 +336,7 @@ import CourseOutline from '@/components/CourseOutline.vue'
 import MultiSelect from '@/components/Controls/MultiSelect.vue'
 import ColorSwatches from '@/components/Controls/ColorSwatches.vue'
 import Uploader from '@/components/Controls/Uploader.vue'
+import CourseLearningItemEditor from '@/oslms/components/CourseLearningItemEditor.vue'
 
 const user = inject('$user')
 const newTag = ref('')
@@ -429,7 +434,6 @@ const updateCourse = () => {
 	if (hasMedia && !hasText) {
 		courseResource.doc.description += '<p>&#8203;</p>'
 	}
-
 	courseResource.setValue.submit(
 		{
 			...courseResource.doc,
@@ -439,9 +443,15 @@ const updateCourse = () => {
 			related_courses: related_courses.value.map((course) => ({
 				course: course,
 			})),
+			learning_items: courseResource.doc.learning_items.map((item) => ({
+				doctype: 'LMS Course Learning Item',
+				title: item.title,
+				description: item.description,
+				icon: item.icon,
+			})),
 		},
 		{
-			onSuccess() {
+			onSuccess(data) {
 				updateMetaInfo('courses', courseResource.doc?.name, meta)
 				toast.success(__('Course updated successfully'))
 				isDirty.value = false

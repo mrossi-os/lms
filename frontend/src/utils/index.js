@@ -753,6 +753,7 @@ export const sanitizeHTML = (text) => {
 			'href',
 			'target',
 			'src',
+			'rel',
 			// video
 			'controls',
 			'autoplay',
