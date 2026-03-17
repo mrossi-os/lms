@@ -7,8 +7,8 @@ description = "ELITE OS LMS - Extension for Frappe LMS"
 requires-python = ">=3.10"
 dynamic = ["version"]
 dependencies = [
-    "debugpy"
-    "numpy>=1.24.0"
+    "debugpy",
+    "numpy>=1.24.0",
     "redis>=7.0.0,<8.0.0",
 ]
 
