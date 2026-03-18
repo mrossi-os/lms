@@ -8,6 +8,10 @@ app_email = "info@overside.it"
 app_license = "MIT"
 required_apps = ["lms"]
 
+
+base_template = "templates/base.html"
+
+
 # activate debug if needed
 before_request = ["os_lms.debug.active_debug"]
 
@@ -17,7 +21,7 @@ after_migrate = [
     "os_lms.setup.create_custom_fields",
 ]
 
-# fix error email check content MAX SIZE 
+# fix error email check content MAX SIZE
 override_doctype_class = {
     "Email Account": "os_lms.overrides.email_account.CustomEmailAccount"
 }
@@ -29,13 +33,15 @@ override_whitelisted_methods = {
     "lms.lms.api.get_sidebar_settings": "os_lms.os_lms.override_api.get_sidebar_settings",
     "lms.lms.utils.get_lesson_creation_details": "os_lms.os_lms.override_api.get_lesson_creation_details",
     "lms.command_palette.search_sqlite": "os_lms.os_lms.override_api.search_sqlite",
-    "lms.lms.utils.get_course_details": "os_lms.os_lms.override_utils.get_course_details"
+    "lms.lms.utils.get_course_details": "os_lms.os_lms.override_utils.get_course_details",
 }
 
 fixtures = [
     {
         "dt": "Custom Field",
-        "filters": [["dt", "in", ["LMS Program", "LMS Settings", "Course Lesson", "LMS Course"]]]
+        "filters": [
+            ["dt", "in", ["LMS Program", "LMS Settings", "Course Lesson", "LMS Course"]]
+        ],
     }
 ]
 
@@ -49,7 +55,7 @@ doc_events = {
 
 
 scheduler_events = {
-	"daily": [
-		"os_lms.os_lms.ai.scheduler.sync_stale_materials",
-	],
+    "daily": [
+        "os_lms.os_lms.ai.scheduler.sync_stale_materials",
+    ],
 }

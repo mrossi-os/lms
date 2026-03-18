@@ -1,0 +1,8 @@
+:root,
+[data-theme=light] {
+    --color-company-primary: #111D2E;
+    --color-company-secondary: #123456;
+
+
+    --bg-light-gray:var(--color-company-primary);
+}

@@ -95,6 +95,13 @@ for app_def in "${APPS[@]}"; do
         ln -s "${app_path}" "${bench_dir}/apps/${app_name}"
     fi
 
+    # Create symlink for assets
+    if [ ! -L "${bench_dir}/sites/assets/${app_name}" ]; then
+        echo " --- Symlinking Assets for app ${app_name} -> ${app_path}"
+        [ -d "${bench_dir}/sites/assets/${app_name}" ] && rm -rf "${bench_dir}/sites/assets/${app_name}"
+        ln -s "${app_path}/${app_name}/public" "${bench_dir}/sites/assets/${app_name}"
+    fi
+
     # Install Python package if not already installed
     if ! "${bench_dir}/env/bin/pip" show "${app_name}" >/dev/null 2>&1; then
         echo " --- pip install -e ${app_name}"
