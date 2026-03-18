@@ -19,16 +19,19 @@ services:
     image: redis/redis-stack-server:latest
 
   frappe:
-    image: frappe/bench:latest
+    build: .
+    image: elite-frappe-dev
     platform: ${DOCKER_PLATFORM:-linux/amd64}
     user: root
-    command: bash /workspace/docker/init.sh
+    command: bash -c "chown -R frappe:frappe /home/frappe/bench-data && exec su -s /bin/bash frappe -c 'bash /workspace/docker/init.sh'"
     environment:
       - UV_LINK_MODE=copy
       - SHELL=/bin/bash
       - DEBUG_MODE=${DEBUG_MODE:-0}
       - BUILD_FRONTEND=${BUILD_FRONTEND:-1}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - ADMIN_START_PASSWORD=${ADMIN_START_PASSWORD}
     working_dir: /home/frappe
     volumes:
       - frappe-bench:/home/frappe/bench-data
