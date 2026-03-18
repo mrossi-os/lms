@@ -28,6 +28,6 @@
         "fieldtype": "Data",
         "in_list_view": 1,
         "label": "Duration",
-        "reqd": 1
+        "reqd": 0
     }
 ]
