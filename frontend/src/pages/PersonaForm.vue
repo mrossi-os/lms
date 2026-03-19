@@ -24,6 +24,7 @@
 						v-model="persona.useCase"
 						type="select"
 						:options="useCaseOptions"
+						:placeholder="__('Select option')"
 					/>
 				</div>
 
@@ -35,6 +36,7 @@
 						v-model="persona.role"
 						type="select"
 						:options="roleOptions"
+						:placeholder="__('Select option')"
 					/>
 				</div>
 

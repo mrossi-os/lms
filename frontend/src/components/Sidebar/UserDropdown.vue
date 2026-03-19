@@ -1,6 +1,6 @@
 <template>
 	<div class="p-2">
-		<Dropdown :options="userDropdownOptions">
+		<Dropdown :options="userDropdownOptions()">
 			<template v-slot="{ open, close }">
 				<button
 					class="flex h-12 py-2 items-center rounded-md duration-300 ease-in-out"
@@ -8,8 +8,8 @@
 						isCollapsed
 							? 'px-0 w-auto'
 							: open
-							? 'bg-surface-white shadow-sm px-2 w-52'
-							: 'hover:bg-surface-gray-3 px-2 w-52'
+								? 'bg-surface-white shadow-sm px-2 w-52'
+								: 'hover:bg-surface-gray-3 px-2 w-52'
 					"
 				>
 					<img
@@ -116,7 +116,7 @@ watch(
 	() => settingsStore.isSettingsOpen,
 	(value) => {
 		showSettingsModal.value = value
-	}
+	},
 )
 
 const toggleTheme = () => {
@@ -126,7 +126,7 @@ const toggleTheme = () => {
 	localStorage.setItem('theme', theme.value)
 }
 
-const userDropdownOptions = computed(() => {
+const userDropdownOptions = () => {
 	return [
 		{
 			group: '',
@@ -152,7 +152,7 @@ const userDropdownOptions = computed(() => {
 					component: markRaw(Apps),
 					condition: () => {
 						let cookies = new URLSearchParams(
-							document.cookie.split('; ').join('&')
+							document.cookie.split('; ').join('&'),
 						)
 						let system_user = cookies.get('system_user')
 						if (system_user === 'yes') return true
@@ -176,7 +176,7 @@ const userDropdownOptions = computed(() => {
 					},
 				},
 				{
-					label: 'Clear Demo Data',
+					label: __('Clear Demo Data'),
 					icon: Trash2,
 					onClick: () => {
 						clearDemoDataConfirmation()
@@ -190,12 +190,12 @@ const userDropdownOptions = computed(() => {
 				},
 				{
 					icon: FrappeCloudIcon,
-					label: 'Login to Frappe Cloud',
+					label: __('Login to Frappe Cloud'),
 					onClick: () => {
 						$dialog({
 							title: __('Login to Frappe Cloud?'),
 							message: __(
-								'Are you sure you want to login to your Frappe Cloud dashboard?'
+								'Are you sure you want to login to your Frappe Cloud dashboard?',
 							),
 							actions: [
 								{
@@ -241,7 +241,7 @@ const userDropdownOptions = computed(() => {
 			],
 		},
 	]
-})
+}
 
 const loginToFrappeCloud = () => {
 	let redirect_to = '/dashboard/sites/' + userResource.data.sitename
@@ -252,7 +252,7 @@ const clearDemoDataConfirmation = () => {
 	$dialog({
 		title: __('Confirm clearing demo data?'),
 		message: __(
-			'Are you sure you want to clear the demo data? This would delete the course "A guide  to Frappe Learning" along with all its associated data. This action cannot be undone.'
+			'Are you sure you want to clear the demo data? This would delete the course "A guide  to Frappe Learning" along with all its associated data. This action cannot be undone.',
 		),
 		actions: [
 			{
@@ -275,7 +275,7 @@ const clearDemoData = () => {
 			toast.success(__('Demo data cleared successfully'))
 		})
 		.catch((error) => {
-			toast.error(__(error.message || 'Error clearing demo data'))
+			toast.error(__(error.message || __('Error clearing demo data')))
 			console.error('Error clearing demo data:', error)
 		})
 }

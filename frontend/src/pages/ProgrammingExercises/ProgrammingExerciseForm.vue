@@ -27,6 +27,7 @@
 						:label="__('Language')"
 						type="select"
 						:options="languageOptions"
+						:placeholder="__('Select option')"
 						:required="true"
 					/>
 					<ChildTable
@@ -154,7 +155,7 @@ const props = withDefaults(
 	}>(),
 	{
 		exerciseID: 'new',
-	}
+	},
 )
 
 watch(
@@ -162,7 +163,7 @@ watch(
 	() => {
 		setExerciseData()
 		fetchTestCases()
-	}
+	},
 )
 
 const setExerciseData = () => {
@@ -221,7 +222,7 @@ watch(
 	() => {
 		isDirty.value = true
 	},
-	{ deep: true }
+	{ deep: true },
 )
 
 watch(testCases, () => {
@@ -236,7 +237,7 @@ const updateTestCasesInExercise = () => {
 			input: tc.input,
 			expected_output: tc.expected_output,
 			idx: index + 1,
-		})
+		}),
 	)
 }
 
@@ -263,7 +264,7 @@ const createNewExercise = (close: () => void) => {
 			onError(err: any) {
 				toast.warning(__(err.messages?.[0] || err))
 			},
-		}
+		},
 	)
 }
 
@@ -283,12 +284,12 @@ const updateExercise = (close: () => void) => {
 			onError(err: any) {
 				toast.warning(__(err.messages?.[0] || err))
 			},
-		}
+		},
 	)
 }
 
 const testCaseColumns = computed(() => {
-	return ['Input', 'Expected Output']
+	return [__('Input'), __('Expected Output')]
 })
 
 const deleteExercise = (close: () => void) => {

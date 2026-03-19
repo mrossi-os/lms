@@ -20,7 +20,7 @@
 					:options="assessmentTypes"
 					v-model="assessmentType"
 					:label="__('Type')"
-					placeholder=" "
+					:placeholder="__('Select option')"
 					@update:modelValue="() => (assessment = null)"
 				/>
 				<Link
@@ -95,7 +95,7 @@ const addAssessment = (close) => {
 				toast.success(__('Assessment added successfully'))
 				close()
 			},
-		}
+		},
 	)
 }
 

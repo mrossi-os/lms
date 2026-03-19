@@ -26,6 +26,7 @@
 					:label="__('Select Payment Gateway')"
 					type="select"
 					:options="allGatewayOptions"
+					:placeholder="__('Select option')"
 					:required="true"
 				/>
 				<SettingFields
@@ -116,12 +117,12 @@ watch(
 		} else if (props.gatewayID == 'new') {
 			allGateways.reload()
 		}
-	}
+	},
 )
 
 const getNewGateway = () => {
 	return allGateways.data?.find((gateway: any) =>
-		gateway.name.includes(newGateway.value)
+		gateway.name.includes(newGateway.value),
 	)
 }
 
@@ -142,7 +143,7 @@ const saveSettings = (close: () => void) => {
 		saveExistingGateway(
 			paymentGateway.data.doctype,
 			paymentGateway.data.docname,
-			close
+			close,
 		)
 	}
 }
@@ -167,7 +168,7 @@ const saveNewGateway = (close: () => void) => {
 const saveExistingGateway = (
 	doctype: string,
 	docname: string,
-	close: () => void
+	close: () => void,
 ) => {
 	call('frappe.client.set_value', {
 		doctype: doctype,

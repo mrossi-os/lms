@@ -29,6 +29,7 @@
 							v-model="job.type"
 							:label="__('Type')"
 							type="select"
+							:placeholder="__('Select option')"
 							:options="jobTypes"
 							:required="true"
 						/>
@@ -36,6 +37,7 @@
 							v-model="job.work_mode"
 							:label="__('Work Mode')"
 							type="select"
+							:placeholder="__('Select option')"
 							:options="workModes"
 							:required="true"
 						/>
@@ -57,6 +59,7 @@
 							v-model="job.status"
 							:label="__('Status')"
 							type="select"
+							:placeholder="__('Select option')"
 							:options="jobStatuses"
 							:required="true"
 						/>
@@ -200,7 +203,7 @@ watch(
 			Object.assign(job, jobDetails.doc)
 			originalJobData.value = JSON.parse(JSON.stringify(jobDetails.doc))
 		}
-	}
+	},
 )
 
 watch(
@@ -210,7 +213,7 @@ watch(
 			return job[key] != originalJobData.value?.[key]
 		})
 	},
-	{ deep: true }
+	{ deep: true },
 )
 
 const saveJob = () => {
@@ -264,7 +267,7 @@ const editJobDetails = () => {
 				toast.error(err.messages?.[0] || err)
 				console.error(err)
 			},
-		}
+		},
 	)
 }
 

@@ -182,7 +182,7 @@ const props = withDefaults(
 	}>(),
 	{
 		submissionID: 'new',
-	}
+	},
 )
 
 onMounted(() => {
@@ -257,7 +257,7 @@ const updateBoilerPlate = () => {
 const checkIfUserIsPermitted = (doc: any = null) => {
 	if (!user.data) {
 		const redirectPath = getLmsRoute(
-			`programming-exercises/${props.exerciseID}/submission/${props.submissionID}`
+			`programming-exercises/${props.exerciseID}/submission/${props.submissionID}`,
 		)
 		window.location.href = `/login?redirect-to=${redirectPath}`
 	}
@@ -291,7 +291,7 @@ watch(
 			updateCode(doc.code)
 		}
 	},
-	{ immediate: true }
+	{ immediate: true },
 )
 
 const loadFalcon = () => {
@@ -364,7 +364,7 @@ const createSubmission = () => {
 		.catch((error: any) => {
 			console.error('Error creating submission:', error)
 			toast.error(
-				__('Failed to submit. Please try again. {0}').format({ error })
+				__('Failed to submit. Please try again. {0}').format({ error }),
 			)
 		})
 }

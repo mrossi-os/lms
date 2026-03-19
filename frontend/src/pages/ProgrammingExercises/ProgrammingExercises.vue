@@ -222,12 +222,12 @@ const getFilters = () => {
 
 const showDeleteConfirmation = (
 	selections: Set<string>,
-	unselectAll: () => void
+	unselectAll: () => void,
 ) => {
 	$dialog({
 		title: __('Confirm Your Action'),
 		message: __(
-			'Deleting these exercises will permanently remove them from the system, along with all associated submissions. This action is irreversible. Are you sure you want to proceed?'
+			'Deleting these exercises will permanently remove them from the system, along with all associated submissions. This action is irreversible. Are you sure you want to proceed?',
 		),
 		actions: [
 			{

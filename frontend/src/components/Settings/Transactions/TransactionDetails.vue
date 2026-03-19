@@ -71,6 +71,7 @@
 				<FormControl
 					type="select"
 					:options="documentTypeOptions"
+					:placeholder="__('Select option')"
 					:label="__('Payment For Document Type')"
 					v-model="transactionData.payment_for_document_type"
 					doctype="DocType"
@@ -277,7 +278,7 @@ watch(
 	(newVal) => {
 		transactionData.value = newVal ? { ...newVal } : getEmptyTransactionData()
 	},
-	{ immediate: true }
+	{ immediate: true },
 )
 
 const documentTypeOptions = computed(() => {

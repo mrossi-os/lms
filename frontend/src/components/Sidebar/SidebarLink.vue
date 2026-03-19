@@ -11,7 +11,7 @@
 			class="flex items-center w-full duration-300 ease-in-out group"
 			:class="isCollapsed ? 'p-1 relative' : 'px-2 py-1'"
 		>
-			<Tooltip :text="__(link.label)" placement="right">
+			<Tooltip :text="link.label" placement="right">
 				<slot name="icon">
 					<span class="grid h-5 w-6 flex-shrink-0 place-items-center">
 						<component
@@ -29,7 +29,7 @@
 						: 'ml-2 w-auto opacity-100'
 				"
 			>
-				{{ __(link.label) }}
+				{{ link.label }}
 			</span>
 			<span
 				v-if="link.count && !isCollapsed"
@@ -106,9 +106,11 @@ function handleClick() {
 }
 
 const isActive = computed(() => {
+	// Usa key (stringa invariante) se disponibile, altrimenti label
+	const linkKey = props.link?.key || props.link?.label
 	return (
 		props.link?.activeFor?.includes(router.currentRoute.value.name) ||
-		(props.activeTab && props.link?.label?.includes(props.activeTab))
+		(props.activeTab && linkKey?.includes(props.activeTab))
 	)
 })
 

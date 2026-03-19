@@ -1,8 +1,13 @@
 <template>
 	<div v-if="batch.data" class="">
-		<header class="sticky top-0 z-10 border-b flex items-center justify-between bg-surface-white px-3 py-2.5 sm:px-5">
+		<header
+			class="sticky top-0 z-10 border-b flex items-center justify-between bg-surface-white px-3 py-2.5 sm:px-5"
+		>
 			<Breadcrumbs :items="breadcrumbs" />
-			<div v-if="tabIndex == 5 && isAdmin" class="flex items-center space-x-2">
+			<div
+				v-if="tabs[tabIndex]?.label === __('Settings') && isAdmin"
+				class="flex items-center space-x-2"
+			>
 				<Badge v-if="childRef?.isDirty" theme="orange">
 					{{ __('Not Saved') }}
 				</Badge>
@@ -15,7 +20,12 @@
 					{{ __('Save') }}
 				</Button>
 			</div>
-			<Dropdown v-else-if="isAdmin && batchMenu.length" :options="batchMenu" placement="left" side="left">
+			<Dropdown
+				v-else-if="isAdmin && batchMenu.length"
+				:options="batchMenu"
+				placement="left"
+				side="left"
+			>
 				<template v-slot="{ open }">
 					<Button variant="ghost">
 						<template #icon>
@@ -30,24 +40,67 @@
 			<div v-else>
 				<Tabs :tabs="tabs" v-model="tabIndex">
 					<template #tab-panel="{ tab }">
-						<div v-if="tab.label == 'Discussions'" class="w-[90%] lg:w-[75%] mx-auto mt-5">
-							<Discussions doctype="LMS Batch" :docname="batch.data.name" :title="__('Discussions')" :key="batch.data.name" :singleThread="true" :scrollToBottom="false" />
+						<div
+							v-if="tab.label == 'Discussions'"
+							class="w-[90%] lg:w-[75%] mx-auto mt-5"
+						>
+							<Discussions
+								doctype="LMS Batch"
+								:docname="batch.data.name"
+								:title="__('Discussions')"
+								:key="batch.data.name"
+								:singleThread="true"
+								:scrollToBottom="false"
+							/>
 						</div>
 
-						<component v-else :is="tab.component" :batch="batch" ref="childRef" />
+						<component
+							v-else
+							:is="tab.component"
+							:batch="batch"
+							ref="childRef"
+						/>
 					</template>
 				</Tabs>
 			</div>
 		</div>
 	</div>
-	<BulkCertificates v-if="batch.data" v-model="openCertificateDialog" :batch="batch.data" />
-	<AnnouncementModal v-if="showAnnouncementModal" v-model="showAnnouncementModal" :batch="batch.data.name" :students="batch.data.students" />
+	<BulkCertificates
+		v-if="batch.data"
+		v-model="openCertificateDialog"
+		:batch="batch.data"
+	/>
+	<AnnouncementModal
+		v-if="showAnnouncementModal"
+		v-model="showAnnouncementModal"
+		:batch="batch.data.name"
+		:students="batch.data.students"
+	/>
 </template>
 <script setup>
-import { ClipboardPen, EllipsisVertical, Laptop, List, Mail, MessageCircle, SendIcon, Settings2, Trash2, TrendingUp } from 'lucide-vue-next'
+import {
+	ClipboardPen,
+	EllipsisVertical,
+	Laptop,
+	List,
+	Mail,
+	MessageCircle,
+	SendIcon,
+	Settings2,
+	Trash2,
+	TrendingUp,
+} from 'lucide-vue-next'
 import { computed, inject, markRaw, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Badge, Breadcrumbs, Button, createResource, Dropdown, Tabs, usePageMeta } from 'frappe-ui'
+import {
+	Badge,
+	Breadcrumbs,
+	Button,
+	createResource,
+	Dropdown,
+	Tabs,
+	usePageMeta,
+} from 'frappe-ui'
 import { sessionStore } from '@/stores/session'
 import AdminBatchDashboard from '@/pages/Batches/components/AdminBatchDashboard.vue'
 import StudentBatchDashboard from '@/pages/Batches/components/BatchDashboard.vue'
@@ -115,7 +168,7 @@ watch(batch, () => {
 })
 
 const updateTabs = () => {
-	addToTabs('Overview', markRaw(BatchOverview), List)
+	addToTabs(__('Overview'), markRaw(BatchOverview), List)
 	if (!user.data) return
 	if (isAdmin.value) {
 		addToTabs('Dashboard', markRaw(AdminBatchDashboard), TrendingUp)
@@ -123,10 +176,8 @@ const updateTabs = () => {
 		addToTabs('Dashboard', markRaw(StudentBatchDashboard), ClipboardPen)
 	}
 	addToTabs(__('Classes'), markRaw(LiveClass), Laptop)
-	// addToTabs(__('Announcements'), markRaw(Announcements), Mail)
-	// addToTabs(__('Discussions'), markRaw(Discussions), MessageCircle)
 	if (isAdmin.value) {
-		addToTabs('Settings', markRaw(BatchForm), Settings2)
+		addToTabs(__('Settings'), markRaw(BatchForm), Settings2)
 	}
 }
 

@@ -21,7 +21,9 @@
 						:required="true"
 					/>
 					<Autocomplete
-						@update:modelValue="(opt: any) => (badge.reference_doctype = opt.value)"
+						@update:modelValue="
+							(opt: any) => (badge.reference_doctype = opt.value)
+						"
 						:modelValue="badge.reference_doctype"
 						:options="referenceDoctypeOptions"
 						:required="true"
@@ -51,12 +53,14 @@
 						:label="__('Event')"
 						type="select"
 						:options="eventOptions"
+						:placeholder="__('Select option')"
 						:required="true"
 					/>
 					<FormControl
 						v-model="badge.user_field"
 						:label="__('Assign To')"
 						type="select"
+						:placeholder="__('Select option')"
 						:options="userFieldOptions"
 						:required="true"
 					/>
@@ -123,7 +127,7 @@ watch(
 		} else {
 			badge.value = { ...defaultBadge }
 		}
-	}
+	},
 )
 
 const saveBadge = (close: () => void) => {
@@ -165,7 +169,7 @@ const setValue = (close: () => void) => {
 				close()
 				toast.error(cleanError(err.messages[0]) || err)
 			},
-		}
+		},
 	)
 }
 
@@ -185,7 +189,7 @@ const createBadge = (close: () => void) => {
 				close()
 				toast.error(cleanError(err.messages[0]) || __('Error creating badge'))
 			},
-		}
+		},
 	)
 }
 

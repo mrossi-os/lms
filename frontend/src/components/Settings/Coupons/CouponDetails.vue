@@ -31,6 +31,7 @@
 					:required="true"
 					type="select"
 					:options="['Percentage', 'Fixed Amount']"
+					:placeholder="__('Select option')"
 				/>
 
 				<FormControl
@@ -114,7 +115,7 @@ const editCoupon = () => {
 					couponItems.value.saveItems()
 				}
 			},
-		}
+		},
 	)
 }
 
@@ -136,7 +137,7 @@ const createCoupon = () => {
 				toast.error(err.messages?.[0] || err.message || err)
 				console.error(err)
 			},
-		}
+		},
 	)
 }
 </script>

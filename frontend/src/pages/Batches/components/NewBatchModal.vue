@@ -68,6 +68,7 @@
 						type="select"
 						:options="mediumOptions"
 						:label="__('Medium')"
+						:placeholder="__('Select option')"
 						class="mb-4"
 					/>
 				</div>
@@ -86,7 +87,9 @@
 							doctype="Course Evaluator"
 							:label="__('Instructors')"
 							:required="true"
-							:onCreate="(close: () => void) => openSettings('Evaluators', close)"
+							:onCreate="
+								(close: () => void) => openSettings('Evaluators', close)
+							"
 							:filters="{ ignore_user_type: 1 }"
 						/>
 					</div>
@@ -173,7 +176,7 @@ const validateFields = () => {
 			typeof batch.value[key as keyof Batch] === 'string'
 		) {
 			batch.value[key as keyof Batch] = escapeHTML(
-				batch.value[key as keyof Batch] as string
+				batch.value[key as keyof Batch] as string,
 			)
 		}
 	})
@@ -208,7 +211,7 @@ const saveBatch = (close: () => void = () => {}) => {
 				toast.error(cleanError(err.messages?.[0]))
 				console.error(err)
 			},
-		}
+		},
 	)
 }
 

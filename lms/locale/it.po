@@ -8439,11 +8439,11 @@ msgstr "lezioni dal vivo"
 
 #: frontend/src/pages/Search/Search.vue:38
 msgid "match"
-msgstr "incontro"
+msgstr "riscontro"
 
 #: frontend/src/pages/Search/Search.vue:38
 msgid "matches"
-msgstr "partite"
+msgstr "riscontri"
 
 #: frontend/src/pages/Programs/Programs.vue:42
 #: frontend/src/pages/Programs/StudentPrograms.vue:36

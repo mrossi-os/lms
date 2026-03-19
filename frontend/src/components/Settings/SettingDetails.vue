@@ -7,7 +7,7 @@
 						{{ __(label) }}
 					</div>
 					<div class="text-ink-gray-6 leading-5">
-						{{ __(description) }}
+						{{ description }}
 					</div>
 				</div>
 				<div class="space-x-2">
@@ -57,7 +57,7 @@ const update = () => {
 			onError(err) {
 				toast.error(err.messages?.[0] || err)
 			},
-		}
+		},
 	)
 }
 </script>

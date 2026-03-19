@@ -62,7 +62,7 @@
 					{{ __("You've successfully submitted the assignment.") }}
 					{{
 						__(
-							"Once the moderator grades your submission, you'll find the details here."
+							"Once the moderator grades your submission, you'll find the details here.",
 						)
 					}}
 					{{ __('Feel free to make edits to your submission if needed.') }}
@@ -175,6 +175,7 @@
 						v-model="submissionResource.doc.status"
 						:label="__('Grade')"
 						type="select"
+						:placeholder="__('Select option')"
 						:options="submissionStatusOptions"
 					/>
 					<div>
@@ -362,7 +363,7 @@ const updateSubmission = () => {
 				toast.error(err.messages?.[0] || err)
 				console.error(err)
 			},
-		}
+		},
 	)
 }
 

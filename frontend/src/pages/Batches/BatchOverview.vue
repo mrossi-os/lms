@@ -28,8 +28,9 @@
 					v-html="batch.data.batch_details"
 				></div>
 			</div>
+
 			<div class="hidden md:block">
-				<BatchOverlay :batch="batch" />
+				<!-- <BatchOverlay :batch="batch" /> -->
 			</div>
 		</div>
 		<div v-if="courses.data?.length">

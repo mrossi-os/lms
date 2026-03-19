@@ -22,6 +22,7 @@
 							<FormControl
 								type="select"
 								v-model="row.reference_doctype"
+								:placeholder="__('Select option')"
 								:options="[
 									{ label: 'Course', value: 'LMS Course' },
 									{ label: 'Batch', value: 'LMS Batch' },
@@ -115,7 +116,7 @@ watch(
 			addRow()
 		}
 	},
-	{ immediate: true }
+	{ immediate: true },
 )
 
 const saveItems = (parent = null) => {

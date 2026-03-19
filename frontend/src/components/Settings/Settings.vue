@@ -9,19 +9,19 @@
 						{{ __('Settings') }}
 					</h1>
 					<div class="space-y-5">
-						<div v-for="tab in tabs" :key="tab.label">
+						<div v-for="tab in tabs" :key="tab.key">
 							<div
 								v-if="!tab.hideLabel"
 								class="mb-2 mt-3 flex cursor-pointer gap-1.5 px-1 text-base text-ink-gray-5 transition-all duration-300 ease-in-out"
 							>
-								<span>{{ __(tab.label) }}</span>
+								<span>{{ tab.label }}</span>
 							</div>
 							<nav class="space-y-1">
 								<div v-for="item in tab.items" @click="activeTab = item">
 									<SidebarLink
 										:link="item"
-										:key="item.label"
-										:activeTab="activeTab?.label"
+										:key="item.key"
+										:activeTab="activeTab?.key"
 									/>
 								</div>
 							</nav>
@@ -30,7 +30,7 @@
 				</div>
 				<div
 					v-if="activeTab && data.doc"
-					:key="activeTab.label"
+					:key="activeTab.key"
 					class="flex flex-1 flex-col p-8 bg-surface-modal overflow-x-auto"
 				>
 					<component
@@ -39,12 +39,12 @@
 						v-bind="{
 							label: activeTab.label,
 							description: activeTab.description,
-							...(activeTab.label == 'Branding' || activeTab.label == 'AI'
+							...(activeTab.key == 'Branding' || activeTab.key == 'AI'
 								? { sections: activeTab.sections }
 								: {}),
-							...(activeTab.label == 'Evaluators' ||
-							activeTab.label == 'Members' ||
-							activeTab.label == 'Transactions'
+							...(activeTab.key == 'Evaluators' ||
+							activeTab.key == 'Members' ||
+							activeTab.key == 'Transactions'
 								? { 'onUpdate:show': (val) => (show = val), show }
 								: {}),
 						}"
@@ -96,48 +96,54 @@ const data = createDocumentResource({
 const tabsStructure = computed(() => {
 	return [
 		{
-			label: 'Configuration',
+			key: 'Configuration',
+			label: __('Configuration'),
 			hideLabel: true,
 			items: [
 				{
-					label: 'General',
+					key: 'General',
+					label: __('General'),
 					icon: 'Wrench',
 					sections: [
 						{
-							label: 'System Configurations',
+							label: __('System Configurations'),
 							columns: [
 								{
 									fields: [
 										{
-											label: 'Allow Guest Access',
+											label: __('Allow Guest Access'),
 											name: 'allow_guest_access',
-											description:
+											description: __(
 												'If enabled, users can access the course and batch lists without logging in.',
+											),
 											type: 'checkbox',
 										},
 										{
-											label: 'Prevent Skipping Videos',
+											label: __('Prevent Skipping Videos'),
 											name: 'prevent_skipping_videos',
 											type: 'checkbox',
-											description:
+											description: __(
 												'If enabled, users will no able to move forward in a video',
+											),
 										},
 									],
 								},
 								{
 									fields: [
 										{
-											label: 'Disable PWA',
+											label: __('Disable PWA'),
 											name: 'disable_pwa',
 											type: 'checkbox',
-											description:
+											description: __(
 												'If checked, users will not be able to install the application as a Progressive Web App.',
+											),
 										},
 										{
-											label: 'Send calendar invite for evaluations',
+											label: __('Send calendar invite for evaluations'),
 											name: 'send_calendar_invite_for_evaluations',
-											description:
+											description: __(
 												'If enabled, it sends google calendar invite to the student for evaluations.',
+											),
 											type: 'checkbox',
 										},
 									],
@@ -145,12 +151,12 @@ const tabsStructure = computed(() => {
 							],
 						},
 						{
-							label: 'Notifications',
+							label: __('Notifications'),
 							columns: [
 								{
 									fields: [
 										{
-											label: 'Send Notification for Published Courses',
+											label: __('Send Notification for Published Courses'),
 											name: 'send_notification_for_published_courses',
 											type: 'select',
 											options: [' ', 'Email', 'In-app'],
@@ -160,7 +166,7 @@ const tabsStructure = computed(() => {
 								{
 									fields: [
 										{
-											label: 'Send Notification for Published Batches',
+											label: __('Send Notification for Published Batches'),
 											name: 'send_notification_for_published_batches',
 											type: 'select',
 											options: [' ', 'Email', 'In-app'],
@@ -170,12 +176,12 @@ const tabsStructure = computed(() => {
 							],
 						},
 						{
-							label: 'Email Templates',
+							label: __('Email Templates'),
 							columns: [
 								{
 									fields: [
 										{
-											label: 'Batch Confirmation Email Template',
+											label: __('Batch Confirmation Email Template'),
 											name: 'batch_confirmation_template',
 											doctype: 'Email Template',
 											type: 'Link',
@@ -185,7 +191,7 @@ const tabsStructure = computed(() => {
 								{
 									fields: [
 										{
-											label: 'Certification Email Template',
+											label: __('Certification Email Template'),
 											name: 'certification_template',
 											doctype: 'Email Template',
 											type: 'Link',
@@ -195,43 +201,46 @@ const tabsStructure = computed(() => {
 							],
 						},
 						{
-							label: 'Contact Information',
+							label: __('Contact Information'),
 							columns: [
 								{
 									fields: [
 										{
-											label: 'Email',
+											label: __('Email'),
 											name: 'contact_us_email',
 											type: 'text',
-											description:
+											description: __(
 												'Users can reach out to this email for support or inquiries.',
+											),
 										},
 									],
 								},
 								{
 									fields: [
 										{
-											label: 'URL',
+											label: __('URL'),
 											name: 'contact_us_url',
 											type: 'text',
-											description:
+											description: __(
 												'Users can reach out to this URL for support or inquiries.',
+											),
 										},
 									],
 								},
 							],
 						},
 						{
-							label: 'Jobs',
+							label: __('Jobs'),
 							columns: [
 								{
 									fields: [
 										{
-											label: 'Allow Job Posting',
+											label: __('Allow Job Posting'),
 											name: 'allow_job_posting',
 											type: 'checkbox',
-											description:
+											description: __(
 												'If enabled, users can post job openings on the job board. Else only admins can post jobs.',
+											),
 										},
 									],
 								},
@@ -246,7 +255,7 @@ const tabsStructure = computed(() => {
 								{
 									fields: [
 										{
-											label: 'Livecode URL',
+											label: __('Livecode URL'),
 											name: 'livecode_url',
 											doctype: 'Livecode URL',
 											type: 'text',
@@ -258,10 +267,11 @@ const tabsStructure = computed(() => {
 								{
 									fields: [
 										{
-											label: 'Unsplash Access Key',
+											label: __('Unsplash Access Key'),
 											name: 'unsplash_access_key',
-											description:
+											description: __(
 												'Allows users to pick a profile cover image from Unsplash. https://unsplash.com/documentation#getting-started.',
+											),
 											type: 'password',
 										},
 									],
@@ -271,123 +281,142 @@ const tabsStructure = computed(() => {
 					],
 				},
 				{
-					label: 'Badges',
-					description:
+					key: 'Badges',
+					label: __('Badges'),
+					description: __(
 						'Create badges and assign them to students to acknowledge their achievements',
+					),
 					icon: 'Award',
 					template: markRaw(Badges),
 				},
 				{
-					label: 'Categories',
-					description: 'Double click to edit the category',
+					key: 'Categories',
+					label: __('Categories'),
+					description: __('Double click to edit the category'),
 					icon: 'Network',
 					template: markRaw(Categories),
 				},
 				{
-					label: 'Email Templates',
-					description: 'Manage the email templates for your learning system',
+					key: 'Email Templates',
+					label: __('Email Templates'),
+					description: __(
+						'Manage the email templates for your learning system',
+					),
 					icon: 'MailPlus',
 					template: markRaw(EmailTemplates),
 				},
 			],
 		},
 		{
-			label: 'Users',
+			key: 'Users',
+			label: __('Users'),
 			hideLabel: false,
 			items: [
 				{
-					label: 'Members',
-					description:
+					key: 'Members',
+					label: __('Members'),
+					description: __(
 						'Add new members or manage roles and permissions of existing members',
+					),
 					icon: 'User',
 					template: markRaw(Members),
 				},
 				{
-					label: 'Evaluators',
-					description: '',
+					key: 'Evaluators',
+					label: __('Evaluators'),
 					icon: 'UserCircle2',
-					description:
+					description: __(
 						'Add new evaluators or check the slots of existing evaluators',
+					),
 					template: markRaw(Evaluators),
 				},
 			],
 		},
 		{
-			label: 'Payment',
+			key: 'Payment',
+			label: __('Payment'),
 			hideLabel: false,
 			items: [
 				{
-					label: 'Configuration',
+					key: 'Configuration',
+					label: __('Configuration'),
 					icon: 'CreditCard',
-					description: 'Manage all your payment related settings and defaults',
+					description: __(
+						'Manage all your payment related settings and defaults',
+					),
 					sections: [
 						{
 							columns: [
 								{
 									fields: [
 										{
-											label: 'Default Currency',
+											label: __('Default Currency'),
 											name: 'default_currency',
 											type: 'Link',
 											doctype: 'Currency',
 										},
 										{
-											label: 'Show USD equivalent amount',
+											label: __('Show USD equivalent amount'),
 											name: 'show_usd_equivalent',
 											type: 'checkbox',
-											description:
+											description: __(
 												'If enabled, it shows the USD equivalent amount for all transactions based on the current exchange rate.',
+											),
 										},
 										{
-											label: 'Apply rounding on equivalent',
+											label: __('Apply rounding on equivalent'),
 											name: 'apply_rounding',
 											type: 'checkbox',
-											description:
+											description: __(
 												'If enabled, it applies rounding on the USD equivalent amount.',
+											),
 										},
 									],
 								},
 								{
 									fields: [
 										{
-											label: 'Payment Gateway',
+											label: __('Payment Gateway'),
 											name: 'payment_gateway',
 											type: 'Link',
 											doctype: 'Payment Gateway',
 										},
 										{
-											label: 'Apply GST for India',
+											label: __('Apply GST for India'),
 											name: 'apply_gst',
 											type: 'checkbox',
-											description:
+											description: __(
 												'If enabled, GST will be applied to the price for students from India.',
+											),
 										},
 									],
 								},
 							],
 						},
 						{
-							label: 'Payment Reminders',
+							label: __('Payment Reminders'),
 							columns: [
 								{
 									fields: [
 										{
-											label: 'Send payment reminders for batch',
+											label: __('Send payment reminders for batch'),
 											name: 'send_payment_reminders_for_batch',
 											type: 'checkbox',
-											description:
+											description: __(
 												'If enabled, it sends payment reminders to students who left the payment incomplete for a batch.',
+											),
 										},
 									],
 								},
 								{
 									fields: [
 										{
-											label: 'Send payment reminders for course',
+											label: __('Send payment reminders for course'),
 											name: 'send_payment_reminders_for_course',
 											type: 'checkbox',
-											description:
+											description: __(
 												'If enabled, it sends payment reminders to students who left the payment incomplete for a course.',
+											),
 										},
 									],
 								},
@@ -396,54 +425,65 @@ const tabsStructure = computed(() => {
 					],
 				},
 				{
-					label: 'Gateways',
+					key: 'Gateways',
+					label: __('Gateways'),
 					icon: 'DollarSign',
 					template: markRaw(PaymentGateways),
-					description: 'Add and manage all your payment gateways',
+					description: __('Add and manage all your payment gateways'),
 				},
 				{
-					label: 'Transactions',
+					key: 'Transactions',
+					label: __('Transactions'),
 					icon: 'Landmark',
 					template: markRaw(Transactions),
-					description: 'View all your payment transactions',
+					description: __('View all your payment transactions'),
 				},
 				{
-					label: 'Coupons',
+					key: 'Coupons',
+					label: __('Coupons'),
 					icon: 'Ticket',
 					template: markRaw(Coupons),
-					description: 'Manage discount coupons for courses and batches',
+					description: __('Manage discount coupons for courses and batches'),
 				},
 			],
 		},
 		{
-			label: 'Conferencing',
+			key: 'Conferencing',
+			label: __('Conferencing'),
 			hideLabel: false,
 			items: [
 				{
-					label: 'Zoom',
-					description:
+					key: 'Zoom',
+					label: __('Zoom'),
+					description: __(
 						'Manage zoom accounts to conduct live classes from batches',
+					),
 					icon: 'Video',
 					template: markRaw(ZoomSettings),
 				},
 				{
-					label: 'Google Meet',
-					description:
+					key: 'Google Meet',
+					label: __('Google Meet'),
+					description: __(
 						'Manage Google Meet accounts to conduct live classes from batches',
+					),
 					icon: 'Presentation',
 					template: markRaw(GoogleMeetSettings),
 				},
 			],
 		},
 		{
-			label: 'Customize',
+			key: 'Customize',
+			label: __('Customize'),
 			hideLabel: false,
 			items: [
 				{
-					label: 'Branding',
+					key: 'Branding',
+					label: __('Branding'),
 					icon: 'Blocks',
-					description:
+					description: __(
 						'Customize the brand name and logo to make the application your own',
+					),
 					template: markRaw(BrandSettings),
 					sections: [
 						{
@@ -451,23 +491,25 @@ const tabsStructure = computed(() => {
 								{
 									fields: [
 										{
-											label: 'Brand Name',
+											label: __('Brand Name'),
 											name: 'app_name',
 											type: 'text',
 										},
 										{
-											label: 'Logo',
+											label: __('Logo'),
 											name: 'banner_image',
 											type: 'Upload',
-											description:
+											description: __(
 												'Appears in the top left corner of the application to represent your brand.',
+											),
 										},
 										{
-											label: 'Favicon',
+											label: __('Favicon'),
 											name: 'favicon',
 											type: 'Upload',
-											description:
+											description: __(
 												'Appears in the browser tab next to the page title to help users quickly identify the application.',
+											),
 										},
 									],
 								},
@@ -476,36 +518,37 @@ const tabsStructure = computed(() => {
 					],
 				},
 				{
-					label: 'Sidebar',
+					key: 'Sidebar',
+					label: __('Sidebar'),
 					icon: 'PanelLeftIcon',
-					description: 'Choose the items you want to show in the sidebar',
+					description: __('Choose the items you want to show in the sidebar'),
 					sections: [
 						{
 							columns: [
 								{
 									fields: [
 										{
-											label: 'Courses',
+											label: __('Courses'),
 											name: 'courses',
 											type: 'checkbox',
 										},
 										{
-											label: 'Batches',
+											label: __('Batches'),
 											name: 'batches',
 											type: 'checkbox',
 										},
 										{
-											label: 'Programs',
+											label: __('Programs'),
 											name: 'programs',
 											type: 'checkbox',
 										},
 										{
-											label: 'Programming Exercises',
+											label: __('Programming Exercises'),
 											name: 'programming_exercises',
 											type: 'checkbox',
 										},
 										{
-											label: 'Certifications',
+											label: __('Certifications'),
 											name: 'certifications',
 											type: 'checkbox',
 										},
@@ -514,17 +557,17 @@ const tabsStructure = computed(() => {
 								{
 									fields: [
 										{
-											label: 'Jobs',
+											label: __('Jobs'),
 											name: 'jobs',
 											type: 'checkbox',
 										},
 										{
-											label: 'Statistics',
+											label: __('Statistics'),
 											name: 'statistics',
 											type: 'checkbox',
 										},
 										{
-											label: 'Notifications',
+											label: __('Notifications'),
 											name: 'notifications',
 											type: 'checkbox',
 										},
@@ -535,31 +578,35 @@ const tabsStructure = computed(() => {
 					],
 				},
 				{
-					label: 'Signup',
+					key: 'Signup',
+					label: __('Signup'),
 					icon: 'LogIn',
-					description:
+					description: __(
 						'Manage the settings related to user signup and registration',
+					),
 					sections: [
 						{
 							columns: [
 								{
 									fields: [
 										{
-											label: 'Identify User Category',
+											label: __('Identify User Category'),
 											name: 'user_category',
 											type: 'checkbox',
-											description:
+											description: __(
 												'Enable this option to identify the user category during signup.',
+											),
 										},
 										{
-											label: 'Disable signup',
+											label: __('Disable signup'),
 											name: 'disable_signup',
 											type: 'checkbox',
-											description:
+											description: __(
 												'New users will have to be manually registered by Admins.',
+											),
 										},
 										{
-											label: 'Signup Consent HTML',
+											label: __('Signup Consent HTML'),
 											name: 'custom_signup_content',
 											type: 'Code',
 											mode: 'htmlmixed',
@@ -572,33 +619,37 @@ const tabsStructure = computed(() => {
 					],
 				},
 				{
-					label: 'SEO',
+					key: 'SEO',
+					label: __('SEO'),
 					icon: 'Search',
-					description:
+					description: __(
 						'Manage the SEO settings to improve your website ranking on search engines',
+					),
 					sections: [
 						{
 							columns: [
 								{
 									fields: [
 										{
-											label: 'Meta Description',
+											label: __('Meta Description'),
 											name: 'meta_description',
 											type: 'textarea',
 											rows: 4,
-											description:
+											description: __(
 												"This description will be shown on lists and pages that don't have meta description",
+											),
 										},
 										{
-											label: 'Meta Keywords',
+											label: __('Meta Keywords'),
 											name: 'meta_keywords',
 											type: 'textarea',
 											rows: 4,
-											description:
+											description: __(
 												'Comma separated keywords for search engines to find your website.',
+											),
 										},
 										{
-											label: 'Meta Image',
+											label: __('Meta Image'),
 											name: 'meta_image',
 											type: 'Upload',
 											size: 'lg',
@@ -612,59 +663,67 @@ const tabsStructure = computed(() => {
 			],
 		},
 		{
-			label: 'AI',
+			key: 'AI',
+			label: __('AI'),
 			hideLabel: false,
 			items: [
 				{
-					label: 'AI',
+					key: 'AI',
+					label: __('AI'),
 					icon: 'BrainCircuit',
-					description:
+					description: __(
 						'Configure AI assistant settings for your learning system',
+					),
 					template: markRaw(AISettings),
 					sections: [
 						{
-							label: 'Configuration',
+							label: __('Configuration'),
 							columns: [
 								{
 									fields: [
 										{
-											label: 'Enabled',
+											label: __('Enabled'),
 											name: 'enabled',
 											type: 'checkbox',
-											description:
+											description: __(
 												'Enable AI features for your learning system.',
+											),
 										},
 										{
-											label: 'Embedding Model',
+											label: __('Embedding Model'),
 											name: 'embedding_model',
 											type: 'text',
-											description:
+											description: __(
 												'The model used to generate embeddings for content indexing.',
+											),
 										},
 									],
 								},
 								{
 									fields: [
 										{
-											label: 'Chunk Size',
+											label: __('Chunk Size'),
 											name: 'chunk_size',
 											type: 'number',
-											description:
+											description: __(
 												'Number of characters per text chunk for indexing.',
+											),
 										},
 										{
-											label: 'Chunk Overlap',
+											label: __('Chunk Overlap'),
 											name: 'chunk_overlap',
 											type: 'number',
-											description:
+											description: __(
 												'Character overlap between consecutive chunks.',
+											),
 										},
 										{
-											label: 'Top K',
+											label: __('Top K'),
 											name: 'top_k',
 											type: 'number',
-											description:
+											description: __(
 												'Number of relevant chunks to retrieve for context.',
+											),
 										},
 									],
 								},
@@ -692,7 +751,7 @@ watch(show, async () => {
 	if (show.value) {
 		const currentTab = await tabs.value
 			.flatMap((tab) => tab.items)
-			.find((item) => item.label === settingsStore.activeTab)
+			.find((item) => item.key === settingsStore.activeTab)
 		activeTab.value = currentTab || tabs.value[0].items[0]
 	} else {
 		activeTab.value = null

@@ -19,6 +19,7 @@
 					v-model="evaluation.course"
 					type="select"
 					:label="__('Course')"
+					:placeholder="__('Select option')"
 					:options="getCourses()"
 				/>
 				<div v-if="slots.data?.length" class="space-y-4 overflow-y-auto mt-4">
@@ -163,7 +164,7 @@ watch(
 	() => evaluation.value.course,
 	(course) => {
 		slots.reload(evaluation.value)
-	}
+	},
 )
 
 const saveSlot = (slot, row) => {

@@ -41,9 +41,10 @@
 							:label="__('Type')"
 							v-model="question.type"
 							type="select"
-							:options="['Choices', 'User Input', 'Open Ended']"
+							:options="[__('Choices'), __('User Input'), __('Open Ended')]"
 							class="pb-2"
 							:required="true"
+							:placeholder="__('Select option')"
 						/>
 					</div>
 					<div
@@ -263,7 +264,7 @@ const addQuestion = () => {
 				onError(err) {
 					toast.error(err.messages?.[0] || err)
 				},
-			}
+			},
 		)
 	}
 }
@@ -287,7 +288,7 @@ const addQuestionRow = (question) => {
 				toast.error(err.messages?.[0] || err)
 				show.value = false
 			},
-		}
+		},
 	)
 }
 
@@ -332,13 +333,13 @@ const updateQuestion = () => {
 							toast.success(__('Question updated successfully'))
 							quiz.value.reload()
 						},
-					}
+					},
 				)
 			},
 			onError(err) {
 				toast.error(err.messages?.[0] || err)
 			},
-		}
+		},
 	)
 }
 </script>

@@ -42,7 +42,7 @@
 						<Tooltip
 							:text="
 								__(
-									'Time must be in 24 hour format (HH:mm). Example 11:30 or 22:00'
+									'Time must be in 24 hour format (HH:mm). Example 11:30 or 22:00',
 								)
 							"
 						>
@@ -72,6 +72,7 @@
 							type="select"
 							:options="getRecordingOptions()"
 							:label="__('Auto Recording')"
+							:placeholder="__('Select option')"
 						/>
 					</div>
 				</div>
@@ -208,12 +209,12 @@ const validateFormFields = () => {
 	}
 	const liveClassDateTime = dayjs(`${liveClass.date}T${liveClass.time}`).tz(
 		liveClass.timezone,
-		true
+		true,
 	)
 	if (
 		liveClassDateTime.isSameOrBefore(
 			dayjs().tz(liveClass.timezone, false),
-			'minute'
+			'minute',
 		)
 	) {
 		return __('Please select a future date and time.')

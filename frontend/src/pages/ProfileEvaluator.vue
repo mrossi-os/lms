@@ -12,7 +12,7 @@
 			<span>
 				{{
 					__(
-						'You cannot change the availability when the site is being updated.'
+						'You cannot change the availability when the site is being updated.',
 					)
 				}}
 			</span>
@@ -41,6 +41,7 @@
 					<FormControl
 						type="select"
 						:options="days"
+						:placeholder="__('Select option')"
 						v-model="slot.day"
 						@focusout.stop="update(slot.name, 'day', slot.day)"
 						:disabled="!isSessionUser()"
@@ -72,6 +73,7 @@
 						type="select"
 						:options="days"
 						v-model="newSlot.day"
+						:placeholder="__('Select option')"
 						@focusout.stop="add()"
 						:disabled="!isSessionUser()"
 					/>
@@ -298,7 +300,7 @@ const update = (name, field, value) => {
 					return `Please enter a value for ${convertToTitleCase(field)}`
 				}
 			},
-		}
+		},
 	)
 }
 

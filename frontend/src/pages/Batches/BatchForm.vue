@@ -151,6 +151,7 @@
 								v-model="batchDetail.doc.medium"
 								type="select"
 								:options="mediumOptions"
+								:placeholder="__('Select option')"
 								:label="__('Medium')"
 								class="mb-4"
 							/>
@@ -183,6 +184,7 @@
 							v-model="batchDetail.doc.conferencing_provider"
 							type="select"
 							:options="conferencingOptions"
+							:placeholder="__('Select option')"
 							:label="__('Conferencing Provider')"
 						/>
 						<Link
@@ -366,7 +368,7 @@ watch(
 		if (!batchDetail.doc) return
 		getMetaInfo('batches', batchDetail.doc?.name, meta)
 		updateBatchData()
-	}
+	},
 )
 
 const updateBatchData = () => {
@@ -440,7 +442,7 @@ const updateBatch = () => {
 				toast.error(err.messages?.[0] || err)
 				console.error(err)
 			},
-		}
+		},
 	)
 }
 
@@ -452,14 +454,14 @@ watch(
 				JSON.stringify(batchDetail.doc) !== JSON.stringify(originalDoc.value)
 		}
 	},
-	{ deep: true }
+	{ deep: true },
 )
 
 const deleteBatch = () => {
 	$dialog({
 		title: __('Confirm your action to delete'),
 		message: __(
-			'Deleting this batch will also delete all its data including enrolled students, linked courses, assessments, feedback and discussions. Are you sure you want to continue?'
+			'Deleting this batch will also delete all its data including enrolled students, linked courses, assessments, feedback and discussions. Are you sure you want to continue?',
 		),
 		actions: [
 			{
