@@ -1,8 +1,17 @@
 :root,
-[data-theme=light] {
-    --color-company-primary: #111D2E;
-    --color-company-secondary: #123456;
+[data-theme="light"] {
+	--color-company-primary: #111d2e;
+	--color-company-secondary: #123456;
+	--color-company-tertiary: #124679;
+	--bg-light-gray: var(--color-company-primary);
+	--outline-gray-1: #344f6c;
+}
 
+.login-content {
+	background-color: var(--color-company-secondary);
+	border-color: var(--outline-gray-1);
+}
 
-    --bg-light-gray:var(--color-company-primary);
+input {
+	background-color: var(--color-company-tertiary);
 }
