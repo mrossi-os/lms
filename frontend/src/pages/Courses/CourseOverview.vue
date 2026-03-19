@@ -33,7 +33,14 @@
 						</span>
 					</Tooltip>
 					<span v-if="course.data.enrollment_count" class="mx-3">&middot;</span>
-					<div class="flex items-center">
+					<div
+						v-if="
+							user?.data?.is_moderator ||
+							user?.data?.is_evaluator ||
+							user?.data?.is_instructor
+						"
+						class="flex items-center"
+					>
 						<span
 							class="h-6 mr-1"
 							:class="{
@@ -95,10 +102,13 @@ import UserAvatar from '@/components/UserAvatar.vue'
 import CourseInstructors from '@/components/CourseInstructors.vue'
 import RelatedCourses from '@/components/RelatedCourses.vue'
 import CourseFeaturedSections from '@/oslms/components/CourseFeaturedSections.vue'
+import { inject } from 'vue'
 
 const props = defineProps<{
 	course: any
 }>()
+
+const user = inject<any>('$user') // aggiungi questa riga
 
 const unescapeDescription = (html: string) => {
 	if (!html) return ''
