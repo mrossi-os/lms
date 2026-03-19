@@ -76,3 +76,16 @@ docker compose build frappe
 # Reset everything (destroys data)
 docker compose down -v
 ```
+
+
+
+## TADUZIONI 
+comandi utili
+```bash
+# converte traduzioni da csv a .po
+bench migrate-csv-to-po --app lms 
+#ricompila tutti i po in mo
+bench compile-po-to-mo  
+# cancessla cache
+bench clear-cache && bench restart
+```
