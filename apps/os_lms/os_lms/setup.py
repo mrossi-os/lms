@@ -27,10 +27,9 @@ def ensure_italian_language():
 CUSTOM_FIELDS = {
     "LMS Course": [
         {
-            "fieldname": "learning_items",
-            "fieldtype": "Table",
-            "label": "Learning Items",
-            "options": "LMS Course Learning Item",
+            "fieldname": "feature_sections",
+            "fieldtype": "Long Text",
+            "label": "Feature Sections",
             "insert_after": "related_courses",
         },
     ],
@@ -51,4 +50,18 @@ def create_custom_fields():
                 print(f"Created Custom Field: {name}")
             else:
                 print(f"Custom Field already exists: {name}")
+    frappe.db.commit()
+
+
+def remove_deprecated_custom_fields():
+    """
+    Rimuove i campi custom non più utilizzati.
+    """
+    deprecated = [
+        ("LMS Course", "LMS Course-learning_items"),
+    ]
+    for dt, name in deprecated:
+        if frappe.db.exists("Custom Field", name):
+            frappe.delete_doc("Custom Field", name, ignore_permissions=True)
+            print(f"Removed deprecated Custom Field: {name}")
     frappe.db.commit()

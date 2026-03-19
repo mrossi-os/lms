@@ -193,7 +193,7 @@
 							@update:modelValue="makeFormDirty()"
 						/>
 					</div>
-					<CourseLearningItemEditor
+					<FeatureSectionEditor
 						v-model="courseResource.doc"
 						@dirty="makeFormDirty()"
 					/>
@@ -328,7 +328,7 @@ import {
 	sanitizeHTML,
 	updateMetaInfo,
 } from '@/utils'
-import {  X } from 'lucide-vue-next'
+import { X } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { sessionStore } from '../../stores/session'
 import Link from '@/components/Controls/Link.vue'
@@ -336,7 +336,7 @@ import CourseOutline from '@/components/CourseOutline.vue'
 import MultiSelect from '@/components/Controls/MultiSelect.vue'
 import ColorSwatches from '@/components/Controls/ColorSwatches.vue'
 import Uploader from '@/components/Controls/Uploader.vue'
-import CourseLearningItemEditor from '@/oslms/components/CourseLearningItemEditor.vue'
+import FeatureSectionEditor from '@/oslms/components/FeatureSectionEditor.vue'
 
 const user = inject('$user')
 const newTag = ref('')
@@ -418,8 +418,13 @@ const submitCourse = () => {
 const validateFields = () => {
 	courseResource.doc.description = sanitizeHTML(courseResource.doc.description)
 
+	const skipFields = ['description', 'feature_sections']
+
 	Object.keys(courseResource.doc).forEach((key) => {
-		if (key != 'description' && typeof courseResource.doc[key] === 'string') {
+		if (
+			!skipFields.includes(key) &&
+			typeof courseResource.doc[key] === 'string'
+		) {
 			courseResource.doc[key] = escapeHTML(courseResource.doc[key])
 		}
 	})
@@ -434,35 +439,38 @@ const updateCourse = () => {
 	if (hasMedia && !hasText) {
 		courseResource.doc.description += '<p>&#8203;</p>'
 	}
-	courseResource.setValue.submit(
-		{
-			...courseResource.doc,
-			instructors: instructors.value.map((instructor) => ({
-				instructor: instructor,
-			})),
-			related_courses: related_courses.value.map((course) => ({
-				course: course,
-			})),
-			learning_items: courseResource.doc.learning_items.map((item) => ({
-				doctype: 'LMS Course Learning Item',
-				title: item.title,
-				description: item.description,
-				icon: item.icon,
-			})),
+
+	const saveResource = createResource({
+		url: 'frappe.client.save',
+		makeParams() {
+			return {
+				doc: {
+					...courseResource.doc,
+					doctype: 'LMS Course',
+					instructors: instructors.value.map((instructor) => ({
+						doctype: 'Course Instructor',
+						instructor: instructor,
+					})),
+					related_courses: related_courses.value.map((course) => ({
+						doctype: 'Related Courses',
+						course: course,
+					})),
+				},
+			}
 		},
-		{
-			onSuccess(data) {
-				updateMetaInfo('courses', courseResource.doc?.name, meta)
-				toast.success(__('Course updated successfully'))
-				isDirty.value = false
-				courseResource.reload()
-			},
-			onError(err) {
-				toast.error(err.messages?.[0] || err)
-				console.error(err)
-			},
+		onSuccess() {
+			updateMetaInfo('courses', courseResource.doc?.name, meta)
+			toast.success(__('Course updated successfully'))
+			isDirty.value = false
+			courseResource.reload()
 		},
-	)
+		onError(err) {
+			toast.error(err.messages?.[0] || err)
+			console.error(err)
+		},
+	})
+
+	saveResource.submit()
 }
 
 const keyboardShortcut = (e) => {
