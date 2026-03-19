@@ -175,7 +175,7 @@ const updateTabs = () => {
 	} else if (isStudent.value) {
 		addToTabs('Dashboard', markRaw(StudentBatchDashboard), ClipboardPen)
 	}
-	addToTabs(__('Classes'), markRaw(LiveClass), Laptop)
+	// addToTabs(__('Classes'), markRaw(LiveClass), Laptop)
 	if (isAdmin.value) {
 		addToTabs(__('Settings'), markRaw(BatchForm), Settings2)
 	}
