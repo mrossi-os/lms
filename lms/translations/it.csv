@@ -1619,3 +1619,4 @@ restrict_ip
 "Deleting this batch will also delete all its data including enrolled students, linked courses, assessments, feedback and discussions. Are you sure you want to continue?","Eliminando questo gruppo verranno eliminati anche tutti i dati inclusi gli studenti iscritti, i corsi collegati, le valutazioni, i feedback e le discussioni. Sei sicuro di voler continuare?"
 "Delete","Elimina"
 "Batch deleted successfully","Classe eliminata con successo"
+"Select a fallback color for the course card when no image is set.","Seleziona un colore di fallback per la card del corso quando non è impostata un'immagine."
