@@ -7,7 +7,11 @@
 						{{ __('Curriculum') }}
 					</div>
 					<div class="text-ink-gray-7">
-						{{ __("As a part of this batch's curriculum you will have to complete the following courses and assessments.") }}
+						{{
+							__(
+								"As a part of this batch's curriculum you will have to complete the following courses and assessments.",
+							)
+						}}
 					</div>
 				</div>
 				<div class="space-y-10">
@@ -30,12 +34,21 @@
 								}),
 							}"
 						>
-							<ListHeader class="mb-2 grid items-center space-x-4 rounded-none rounded-t bg-surface-gray-2 p-2"> </ListHeader>
+							<ListHeader
+								class="mb-2 grid items-center space-x-4 rounded-none rounded-t bg-surface-gray-2 p-2"
+							>
+							</ListHeader>
 							<ListRows>
-								<ListRow :row="row" v-for="row in batch.data?.courses" class="!rounded-none text-sm">
+								<ListRow
+									:row="row"
+									v-for="row in batch.data?.courses"
+									class="!rounded-none text-sm"
+								>
 									<template #default="{ column, item }">
 										<ListRowItem :item="row[column.key]" :align="column.align">
-											<div v-if="column.key === 'progress'">{{ getProgress(row.course) }}%</div>
+											<div v-if="column.key === 'progress'">
+												{{ getProgress(row.course) }}%
+											</div>
 											<div v-else>
 												{{ row[column.key] }}
 											</div>
@@ -54,7 +67,11 @@
 			</div>
 			<div class="border-l h-[88vh] divide-y">
 				<div v-if="batch.data?.evaluation" class="p-4 mb-5">
-					<UpcomingEvaluations :batch="batch.data.name" :endDate="batch.data.evaluation_end_date" :courses="batch.data.courses" />
+					<UpcomingEvaluations
+						:batch="batch.data.name"
+						:endDate="batch.data.evaluation_end_date"
+						:courses="batch.data.courses"
+					/>
 				</div>
 				<!-- <div class="p-5">
 					<BatchFeedback :batch="batch.data?.name" />
@@ -65,10 +82,15 @@
 </template>
 <script setup>
 import { inject } from 'vue'
-import { createListResource, ListView, ListHeader, ListRows, ListRow, ListRowItem } from 'frappe-ui'
+import {
+	createListResource,
+	ListView,
+	ListHeader,
+	ListRows,
+	ListRow,
+	ListRowItem,
+} from 'frappe-ui'
 import Assessments from '@/pages/Batches/components/Assessments.vue'
-import BatchCourses from '@/pages/Batches/components/BatchCourses.vue'
-import BatchFeedback from '@/pages/Batches/components/BatchFeedback.vue'
 import UpcomingEvaluations from '@/components/UpcomingEvaluations.vue'
 
 const user = inject('$user')

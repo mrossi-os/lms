@@ -6,7 +6,7 @@
 			size: 'lg',
 			actions: [
 				{
-					label: 'Submit',
+					label: __('Submit'),
 					variant: 'solid',
 					onClick: (close) => addStudent(close),
 				},
@@ -89,7 +89,7 @@ const addStudent = (close) => {
 				toast.error(err.messages?.[0] || err)
 				console.error(err)
 			},
-		}
+		},
 	)
 }
 </script>
