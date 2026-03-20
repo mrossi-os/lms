@@ -1,5 +1,8 @@
 <template>
 	<div class="mt-7 mb-20">
+		<h2 class="mb-4 text-lg font-semibold text-ink-gray-9">
+			{{ __('Booked Evaluations') }}
+		</h2>
 		<div class="flex h-screen flex-col overflow-hidden">
 			<Calendar
 				v-if="evaluations.data?.length"
@@ -34,6 +37,9 @@
 					</div>
 				</template>
 			</Calendar>
+			<div v-else class="text-ink-gray-6 text-sm mt-4">
+				{{ __('No evaluations scheduled yet') }}
+			</div>
 		</div>
 	</div>
 	<Event v-model="showEvent" :event="currentEvent" />
