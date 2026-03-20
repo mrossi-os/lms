@@ -28,7 +28,7 @@
 					"
 					:required="true"
 				/>
-				<Link
+				<!-- <Link
 					doctype="LMS Payment"
 					v-model="payment"
 					placeholder=" "
@@ -39,7 +39,7 @@
 							show = false
 						}
 					"
-				/>
+				/> -->
 			</div>
 		</template>
 	</Dialog>

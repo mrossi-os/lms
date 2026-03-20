@@ -25,7 +25,7 @@
 		</div>
 
 		<div class="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-5 items-start">
-			<div class="border rounded-lg py-3 px-4 order-2 lg:order-1">
+			<div class="border rounded-lg py-3 px-4 order-2 lg:order-1 card">
 				<div class="flex items-center justify-between space-x-2 mb-3">
 					<div class="text-lg text-ink-gray-9 font-semibold">
 						{{ __('Students') }}
@@ -33,6 +33,7 @@
 					<div class="flex items-center space-x-2">
 						<FormControl
 							v-model="searchFilter"
+							class="small-form"
 							:placeholder="__('Search by name')"
 							type="text"
 						/>
@@ -150,9 +151,7 @@
 					}"
 				/>
 
-				<div class="p-4 border rounded-lg mt-5">
-					<BatchFeedback v-if="batch.data" :batch="batch.data.name" />
-				</div>
+				<BatchFeedback v-if="batch.data" :batch="batch.data.name" />
 			</div>
 		</div>
 	</div>
@@ -237,7 +236,7 @@ const students = createListResource({
 })
 
 const filteredChartData = computed(() =>
-	(chartData.data || []).filter((item: { value: number }) => item.value > 0)
+	(chartData.data || []).filter((item: { value: number }) => item.value > 0),
 )
 
 watch(searchFilter, () => {
@@ -272,6 +271,6 @@ const showProgressChart = computed(
 	() =>
 		students.data?.length &&
 		(props.batch?.data?.courses?.length ||
-			props.batch?.data?.assessments?.length)
+			props.batch?.data?.assessments?.length),
 )
 </script>

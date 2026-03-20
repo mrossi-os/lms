@@ -430,7 +430,7 @@ watch(
 		updateBatchData()
 		getMetaInfo('batches', batchDetail.doc?.name, meta)
 	},
-	{ deep: true }
+	{ deep: true },
 )
 
 const updateBatchData = () => {

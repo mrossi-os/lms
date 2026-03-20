@@ -4,7 +4,6 @@ body {
 	background-color: var(--color-company-secondary);
 }
 
-
 /* ═══ LAYOUT PAGE ═══ */
 
 .sidebar-menu {
@@ -26,22 +25,20 @@ body {
 }
 
 .bg-gradient-overlay {
-	content: " ";
+	content: ' ';
 	display: block;
 	position: absolute;
 	top: 0;
 	left: 0rem;
 	width: 60vw;
 	height: 100%;
-	background: linear-gradient(to right, #0A2E5A, #1D5A9B);
+	background: linear-gradient(to right, #0a2e5a, #1d5a9b);
 	z-index: 1;
 }
 
-
-div[role="tablist"] .bg-surface-gray-7 {
+div[role='tablist'] .bg-surface-gray-7 {
 	background: var(--ink-gray-9);
 }
-
 
 /* ═══ CARDS ═══ */
 
@@ -55,7 +52,6 @@ div[role="tablist"] .bg-surface-gray-7 {
 	border: 1px solid var(--outline-gray-1);
 	border-radius: 0.625rem;
 }
-
 
 /* ═══ FORM ELEMENTS ═══ */
 input:where([type='text']),
@@ -74,8 +70,6 @@ select,
 	color: var(--ink-gray-9);
 	padding: 1rem 0.75rem;
 }
-
-
 
 input:where([type='text']):focus,
 input:where([type='email']):focus,
@@ -98,10 +92,9 @@ textarea::placeholder {
 	opacity: 1;
 }
 
-
 /* replace tailwind style input/combo */
 .link-component button.py-1\.5,
-input.py-1\.5{
+input.py-1\.5 {
 	padding-top: var(--form-padding-y) !important;
 	padding-bottom: var(--form-padding-y) !important;
 }
@@ -109,61 +102,59 @@ input.py-1\.5{
 .values-container.bg-surface-gray-2,
 textarea.bg-surface-gray-2,
 .component-text-editor .bg-surface-gray-2,
-input.bg-surface-gray-2{
+input.bg-surface-gray-2 {
 	background-color: var(--color-company-primary) !important;
 }
 .link-component button.border-\[--surface-gray-2\],
 .values-container.border-\[--surface-gray-2\],
 textarea.border-\[--surface-gray-2\],
-input.border-\[--surface-gray-2\]{
+input.border-\[--surface-gray-2\] {
 	border: 1px solid var(--ink-gray-9) !important;
 }
 .link-component button.focus\:ring-0:focus,
 .values-container.focus\:ring-0:focus,
-input.focus\:ring-0:focus{
+input.focus\:ring-0:focus {
 	background-color: var(--color-company-primary) !important;
 }
 
-.values-container input{
+.values-container input {
 	padding-top: 0.2rem;
 	padding-bottom: 0.2rem;
 }
 
-label.block{
-	color:#fff;
-	font-size:13px;
+label.block {
+	color: #fff;
+	font-size: 13px;
 }
 
-
 /* date input icon */
-input[type="date"]::-webkit-calendar-picker-indicator {
+input[type='date']::-webkit-calendar-picker-indicator {
 	filter: invert(1);
 }
 
 /* autocomplete */
-.autocomplete-dialog-input input{
-	padding-top:0.5rem;
-	padding-bottom:0.5rem;
+.autocomplete-dialog-input input {
+	padding-top: 0.5rem;
+	padding-bottom: 0.5rem;
 }
-.autocomplete-dialog-input input:hover{
+.autocomplete-dialog-input input:hover {
 	background-color: var(--color-company-primary);
-	border:1px solid var(--ink-gray-9);
+	border: 1px solid var(--ink-gray-9);
 }
 
 /* switch active */
-.component-switch button.bg-surface-gray-7{
-	background:var(--ink-gray-9);
+.component-switch button.bg-surface-gray-7 {
+	background: var(--ink-gray-9);
 }
-.component-switch button.bg-surface-gray-4{
-	background:rgba(255,255,255,0.2);
-	border:1px solid rgba(255,255,255,0.3);
+.component-switch button.bg-surface-gray-4 {
+	background: rgba(255, 255, 255, 0.2);
+	border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 /* Text editor */
-.component-text-editor .border-outline-gray-modals{
-	border-color:var(--ink-gray-9);
+.component-text-editor .border-outline-gray-modals {
+	border-color: var(--ink-gray-9);
 }
-
 
 .small-form .link-component button.py-1\.5,
 .small-form input.py-1\.5 {
@@ -173,7 +164,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 /* ═══ EDITOR ═══ */
 
-.codex-editor .ce-toolbar__actions svg path {
+.codex-editor .ce-toolbar__actions svg:not(.ce-popover-item__icon svg) path {
 	stroke: #fff;
 }
 
@@ -187,4 +178,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .ce-toolbar__actions.ce-toolbar__actions--opened {
 	background: rgba(255, 255, 255, 0.1);
 	border-radius: 8px;
+}
+
+.ce-toolbar__actions--opened {
+	margin-right: 5px;
 }

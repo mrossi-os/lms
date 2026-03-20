@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div class="">
 		<div class="flex items-center justify-between mb-4">
 			<div class="text-ink-gray-9 font-semibold">
 				{{ __('Courses') }}

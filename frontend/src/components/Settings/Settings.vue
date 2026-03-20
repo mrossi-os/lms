@@ -1,7 +1,7 @@
 <template>
 	<Dialog v-model="show" :options="{ size: '5xl' }">
 		<template #body>
-			<div class="flex h-[calc(100vh_-_8rem)]">
+			<div class="flex h-[calc(100vh_-_8rem)] card">
 				<div
 					class="flex w-52 shrink-0 flex-col bg-surface-gray-2 p-2 overflow-y-auto"
 				>

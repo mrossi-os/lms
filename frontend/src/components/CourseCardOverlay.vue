@@ -1,7 +1,11 @@
 <template>
 	<div class="flex flex-col gap-4">
 		<div class="border-2 rounded-md min-w-80 max-w-sm card">
-			<iframe v-if="course.data.video_link" :src="video_link" class="rounded-t-md min-h-56 w-full" />
+			<iframe
+				v-if="course.data.video_link"
+				:src="video_link"
+				class="rounded-t-md min-h-56 w-full"
+			/>
 			<div class="p-5">
 				<div v-if="course.data.paid_course" class="text-2xl font-semibold mb-3">
 					{{ course.data.price }}
@@ -13,8 +17,12 @@
 								name: 'Lesson',
 								params: {
 									courseName: course.name,
-									chapterNumber: course.data.current_lesson ? course.data.current_lesson.split('-')[0] : 1,
-									lessonNumber: course.data.current_lesson ? course.data.current_lesson.split('-')[1] : 1,
+									chapterNumber: course.data.current_lesson
+										? course.data.current_lesson.split('-')[0]
+										: 1,
+									lessonNumber: course.data.current_lesson
+										? course.data.current_lesson.split('-')[1]
+										: 1,
 								},
 							}"
 						>
@@ -48,10 +56,21 @@
 							</span>
 						</Button>
 					</router-link>
-					<Badge v-else-if="course.data.disable_self_learning && !isAdmin" theme="blue" size="lg" class="mb-4">
+					<Badge
+						v-else-if="course.data.disable_self_learning && !isAdmin"
+						theme="blue"
+						size="lg"
+						class="mb-4"
+					>
 						{{ __('Contact the Administrator to enroll for this course') }}
 					</Badge>
-					<Button v-else-if="!isAdmin" @click="enrollStudent()" variant="solid" class="w-full mb-8" size="md">
+					<Button
+						v-else-if="!isAdmin"
+						@click="enrollStudent()"
+						variant="solid"
+						class="w-full mb-8"
+						size="md"
+					>
 						<template #prefix>
 							<BookText class="size-4 stroke-1.5" />
 						</template>
@@ -59,7 +78,13 @@
 							{{ __('Start Learning') }}
 						</span>
 					</Button>
-					<Button v-if="canGetCertificate" @click="fetchCertificate()" variant="subtle" class="w-full mt-2" size="md">
+					<Button
+						v-if="canGetCertificate"
+						@click="fetchCertificate()"
+						variant="subtle"
+						class="w-full mt-2"
+						size="md"
+					>
 						<template #prefix>
 							<GraduationCap class="size-4 stroke-1.5" />
 						</template>
@@ -67,15 +92,20 @@
 					</Button>
 				</div>
 				<div class="mt-4">
-					<CourseOutline :title="__('Course Outline')" :courseName="course.data.name" :showOutline="false" :getProgress="course.data.membership ? true : false" />
+					<CourseOutline
+						:title="__('Course Outline')"
+						:courseName="course.data.name"
+						:showOutline="false"
+						:getProgress="course.data.membership ? true : false"
+					/>
 				</div>
 			</div>
 		</div>
 	</div>
 </template>
 <script setup>
-import { BookText, CreditCard, GraduationCap, } from 'lucide-vue-next'
-import { computed, inject,  } from 'vue'
+import { BookText, CreditCard, GraduationCap } from 'lucide-vue-next'
+import { computed, inject } from 'vue'
 import { Badge, Button, call, createResource, toast } from 'frappe-ui'
 import { useRouter } from 'vue-router'
 import CertificationLinks from '@/components/CertificationLinks.vue'
@@ -149,7 +179,10 @@ const is_instructor = () => {
 }
 
 const canGetCertificate = computed(() => {
-	if (props.course.data?.enable_certification && props.course.data?.membership?.progress == 100) {
+	if (
+		props.course.data?.enable_certification &&
+		props.course.data?.membership?.progress == 100
+	) {
 		return true
 	}
 	return false
@@ -163,7 +196,10 @@ const certificate = createResource({
 		}
 	},
 	onSuccess(data) {
-		window.open(`/api/method/frappe.utils.print_format.download_pdf?doctype=LMS+Certificate&name=${data.name}&format=${encodeURIComponent(data.template)}`, '_blank')
+		window.open(
+			`/api/method/frappe.utils.print_format.download_pdf?doctype=LMS+Certificate&name=${data.name}&format=${encodeURIComponent(data.template)}`,
+			'_blank',
+		)
 	},
 })
 
