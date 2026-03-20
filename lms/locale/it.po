@@ -509,6 +509,10 @@ msgstr "Sei sicuro di voler accedere alla dashboard di Frappe Cloud?"
 msgid "Are you sure you want to submit the quiz?"
 msgstr ""
 
+#: frontend/src/components/Quiz.vue:378
+msgid "Are you sure you want to submit the quiz?"
+msgstr ""
+
 #: frontend/src/pages/Batches/components/BatchDashboard.vue:11
 msgid "As a part of this batch's curriculum you will have to complete the following courses and assessments."
 msgstr ""
@@ -2298,6 +2302,10 @@ msgstr ""
 #: lms/lms/doctype/lms_settings/lms_settings.json
 msgid "Discussions"
 msgstr "Discussioni"
+
+#: frontend/src/components/Quiz.vue:19
+msgid "Do not refresh the page or close this window. If you do, the quiz will be submitted automatically."
+msgstr ""
 
 #: frontend/src/components/Quiz.vue:19
 msgid "Do not refresh the page or close this window. If you do, the quiz will be submitted automatically."
@@ -5548,6 +5556,10 @@ msgstr "Fornisci il tuo consenso per procedere con il pagamento."
 msgid "Please read the following instructions carefully before starting the quiz"
 msgstr ""
 
+#: frontend/src/components/Quiz.vue:8
+msgid "Please read the following instructions carefully before starting the quiz"
+msgstr ""
+
 #: frontend/src/pages/ProgrammingExercises/ProgrammingExerciseSubmission.vue:139
 msgid "Please run the code to execute the test cases."
 msgstr "Esegui il codice per eseguire i casi di test."
@@ -6490,6 +6502,12 @@ msgstr "Invia Notifica per Corsi Pubblicati"
 msgid "Send Payment Reminders for Batch"
 msgstr ""
 
+#. Label of the send_payment_reminders_for_batch (Check) field in DocType 'LMS
+#. Settings'
+#: lms/lms/doctype/lms_settings/lms_settings.json
+msgid "Send Payment Reminders for Batch"
+msgstr ""
+
 #. Label of the send_payment_reminders_for_course (Check) field in DocType 'LMS
 #. Settings'
 #: lms/lms/doctype/lms_settings/lms_settings.json
@@ -7389,6 +7407,10 @@ msgstr "Totale"
 #: lms/lms/doctype/lms_quiz/lms_quiz.json
 msgid "Total Marks"
 msgstr "Punteggio Totale"
+
+#: frontend/src/components/Quiz.vue:397
+msgid "Total Questions"
+msgstr ""
 
 #: frontend/src/components/Quiz.vue:397
 msgid "Total Questions"
@@ -8323,6 +8345,10 @@ msgstr "es. IST, UTC, GMT..."
 msgid "enrolled student"
 msgstr ""
 
+#: frontend/src/components/CourseCardOverlay.vue:111
+msgid "enrolled student"
+msgstr ""
+
 #: frontend/src/components/CourseCardOverlay.vue:110
 msgid "enrolled students"
 msgstr ""
@@ -8349,7 +8375,7 @@ msgstr ""
 
 #: frontend/src/components/CourseCardOverlay.vue:101
 msgid "lesson"
-msgstr ""
+msgstr "lezione"
 
 #: frontend/src/components/CourseCardOverlay.vue:101
 #: frontend/src/pages/Programs/ProgramEnrollment.vue:65
