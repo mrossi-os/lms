@@ -192,7 +192,7 @@ const newSlot = reactive({
 })
 
 const evaluator = createResource({
-	url: 'lms.lms.api.get_evaluator_details',
+	url: 'os_lms.os_lms.api.get_evaluator_details',
 	params: {
 		evaluator: props.profile.data?.name,
 	},
@@ -306,6 +306,8 @@ const update = (name, field, value) => {
 
 const add = () => {
 	if (!newSlot.day || !newSlot.start_time || !newSlot.end_time) {
+		toast.warning(__('Please fill in all fields: day, start time and end time'))
+
 		return
 	}
 	createSlot.submit()

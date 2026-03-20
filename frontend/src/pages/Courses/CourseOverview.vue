@@ -44,7 +44,7 @@
 						<span
 							class="h-6 mr-1"
 							:class="{
-								'avatar-group overlap': course.data.instructors.length > 1,
+								'avatar-group overlap': course.data.instructors?.length > 1,
 							}"
 						>
 							<UserAvatar

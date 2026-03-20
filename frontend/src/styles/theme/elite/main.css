@@ -131,6 +131,10 @@ label.block {
 input[type='date']::-webkit-calendar-picker-indicator {
 	filter: invert(1);
 }
+/* time */
+input[type='time']::-webkit-calendar-picker-indicator {
+	filter: invert(1);
+}
 
 /* autocomplete */
 .autocomplete-dialog-input input {
