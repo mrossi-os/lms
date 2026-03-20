@@ -5,10 +5,15 @@
 		</div>
 		<div
 			ref="messagesContainer"
+			id="messagesContainer"
 			class="flex-1 overflow-y-auto space-y-4 mb-4 min-h-[200px] max-h-[400px]"
 		>
 			<div v-if="messages.length === 0" class="text-ink-gray-5 text-sm">
-				{{ __('Ask a question about this lesson to get help from the AI assistant.') }}
+				{{
+					__(
+						'Ask a question about this lesson to get help from the AI assistant.',
+					)
+				}}
 			</div>
 			<div
 				v-for="(message, index) in messages"
@@ -17,7 +22,7 @@
 					'p-3 rounded-lg',
 					message.role === 'user'
 						? 'bg-surface-gray-2 ml-8'
-						: 'bg-blue-50 mr-8',
+						: 'bg-blue-700 mr-8',
 				]"
 			>
 				<div class="text-xs font-medium text-ink-gray-5 mb-1">
@@ -47,8 +52,12 @@
 			<div v-if="isLoading" class="flex items-center space-x-2 p-3">
 				<div class="animate-pulse flex space-x-1">
 					<div class="w-2 h-2 bg-ink-gray-4 rounded-full"></div>
-					<div class="w-2 h-2 bg-ink-gray-4 rounded-full animation-delay-200"></div>
-					<div class="w-2 h-2 bg-ink-gray-4 rounded-full animation-delay-400"></div>
+					<div
+						class="w-2 h-2 bg-ink-gray-4 rounded-full animation-delay-200"
+					></div>
+					<div
+						class="w-2 h-2 bg-ink-gray-4 rounded-full animation-delay-400"
+					></div>
 				</div>
 				<span class="text-sm text-ink-gray-5">{{ __('Thinking...') }}</span>
 			</div>
@@ -126,10 +135,14 @@ const sendQuestion = async () => {
 		messages.value.push({
 			role: 'assistant',
 			content: response.answer || __('Sorry, I could not find an answer.'),
-			sources: response.sources?.map((s: any) => s.chunk_id || s.material_id || 'Source') || [],
+			sources:
+				response.sources?.map(
+					(s: any) => s.chunk_id || s.material_id || 'Source',
+				) || [],
 		})
 	} catch (error: any) {
-		const errorMessage = error?.message || error?.exc || __('Failed to get response')
+		const errorMessage =
+			error?.message || error?.exc || __('Failed to get response')
 		messages.value.push({
 			role: 'assistant',
 			content: __('Error: ') + errorMessage,
