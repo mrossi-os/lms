@@ -102,11 +102,14 @@ input.py-1\.5{
 }
 .link-component button.bg-surface-gray-2,
 .values-container.bg-surface-gray-2,
+textarea.bg-surface-gray-2,
+.component-text-editor .bg-surface-gray-2,
 input.bg-surface-gray-2{
 	background-color: var(--color-company-primary) !important;
 }
 .link-component button.border-\[--surface-gray-2\],
 .values-container.border-\[--surface-gray-2\],
+textarea.border-\[--surface-gray-2\],
 input.border-\[--surface-gray-2\]{
 	border: 1px solid var(--ink-gray-9) !important;
 }
@@ -140,6 +143,20 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .autocomplete-dialog-input input:hover{
 	background-color: var(--color-company-primary);
 	border:1px solid var(--ink-gray-9);
+}
+
+/* switch active */
+.component-switch button.bg-surface-gray-7{
+	background:var(--ink-gray-9);
+}
+.component-switch button.bg-surface-gray-4{
+	background:rgba(255,255,255,0.2);
+	border:1px solid rgba(255,255,255,0.3);
+}
+
+/* Text editor */
+.component-text-editor .border-outline-gray-modals{
+	border-color:var(--ink-gray-9);
 }
 
 

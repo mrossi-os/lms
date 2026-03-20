@@ -64,7 +64,8 @@
 	</Dialog>
 </template>
 <script setup lang="ts">
-import { call, Dialog, FormControl, Switch, toast } from 'frappe-ui'
+import { call, Dialog, FormControl, toast } from 'frappe-ui'
+import Switch from '@/oslms/components/Form/Switch.vue'
 import { inject, reactive, watch } from 'vue'
 import { User } from '@/components/Settings/types'
 import { openSettings, cleanError } from '@/utils'

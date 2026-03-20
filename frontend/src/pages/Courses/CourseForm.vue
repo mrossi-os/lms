@@ -171,6 +171,7 @@
 								<span class="text-ink-red-3">*</span>
 							</div>
 							<TextEditor
+								class="component-text-editor"
 								:content="courseResource.doc.description"
 								@change="
 									(val) => {
@@ -336,7 +337,6 @@
 <script setup>
 import {
 	TextEditor,
-	Switch,
 	createResource,
 	createDocumentResource,
 	FormControl,
@@ -371,6 +371,7 @@ import ColorSwatches from '@/components/Controls/ColorSwatches.vue'
 import Uploader from '@/components/Controls/Uploader.vue'
 import FeatureSectionEditor from '@/oslms/components/FeatureSectionEditor.vue'
 import NewMemberModal from '@/components/Modals/NewMemberModal.vue'
+import Switch from '@/oslms/components/Form/Switch.vue'
 
 const user = inject('$user')
 const newTag = ref('')

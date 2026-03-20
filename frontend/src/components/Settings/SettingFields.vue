@@ -126,7 +126,8 @@
 	</div>
 </template>
 <script setup>
-import { FormControl, FileUploader, Button, Switch } from 'frappe-ui'
+import { FormControl, FileUploader, Button } from 'frappe-ui'
+import Switch from '@/oslms/components/Form/Switch.vue'
 import { computed, onMounted, watch } from 'vue'
 import { getFileSize, validateFile } from '@/utils'
 import { X } from 'lucide-vue-next'
