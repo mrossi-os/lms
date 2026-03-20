@@ -277,7 +277,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="border-l min-w-0">
+			<div class="border-l min-w-0 flex flex-col gap-2">
 				<div class="border-b p-4">
 					<BatchCourses :batch="batch" />
 				</div>

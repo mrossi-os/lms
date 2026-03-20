@@ -123,10 +123,10 @@
 				</div>
 			</div>
 
-			<div class="order-1 lg:order-2">
+			<div class="order-1 lg:order-2 flex flex-col gap-2">
 				<AxisChart
 					v-if="showProgressChart"
-					class="border rounded-lg p-3 min-h-[300px]"
+					class="border rounded-lg p-3 min-h-[300px] card"
 					:config="{
 						data: filteredChartData,
 						title: __('Batch Summary'),
