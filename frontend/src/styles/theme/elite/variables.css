@@ -1,46 +1,63 @@
-/* 
-	--surface-white: Colore sfondo pricipale
-	--surface-menu-bar: Colore sfondo sidebar
-	--surface-modal: Colore sfondo modal
-	--surface-gray-2: Colore sfondo elementi UI(combobox,tabs)
-	--surface-gray-3: Colore sfondo elementi hover
-	--surface-gray-7: Call to Action
-	
-	--ink-gray-9: Colore testi titoli e sottotitoli
-	--ink-gray-8 = Colori testi: sidebar, elementi in active
-	--ink-gray-7 = Testi secondari
-	--ink-gray-5 = Colori testi: sidebar, elementi non active
-	--outline-gray-1: Colore bordi
+/*
+	=== ELITE DARK THEME - Ottimizzato per leggibilità ===
 
+	Brand:
+	  --color-company-primary:   #0A1E33  → sidebar, card, header
+	  --color-company-secondary: #1D5A9B  → sfondo pagina
+
+	Superfici (dal più scuro al più chiaro):
+	  --surface-white:    sfondo principale contenuti
+	  --surface-menu-bar: sfondo sidebar
+	  --surface-modal:    sfondo modale
+	  --surface-gray-2:   elementi UI (combobox, tab, input)
+	  --surface-gray-3:   hover state
+	  --surface-gray-7:   call-to-action
+
+	Testi (dal più chiaro al più tenue):
+	  --ink-gray-9:  titoli e sottotitoli (bianco pieno)
+	  --ink-gray-8:  testi attivi sidebar
+	  --ink-gray-7:  testi corpo
+	  --ink-gray-6:  testi secondari
+	  --ink-gray-5:  testi inattivi / placeholder
+
+	Bordi:
+	  --outline-gray-1:      bordi generali
+	  --outline-gray-modals: bordi modali
 */
 
 :root {
-	--color-company-primary:#111D2E;
-	--color-company-secondary:#123456;
+	/* ── Brand ── */
+	--color-company-primary: #0A1E33;
+	--color-company-secondary: #1D5A9B;
 
-	--surface-white: #0D263F;
-	--surface-menu-bar: #123456;
-	--surface-selected: #344F6C;
-	--surface-modal: #111D2E;
+	/* ── Superfici ── */
+	--surface-white: #0E2742;
+	--surface-menu-bar: #0A1E33;
+	--surface-selected: #2A4A6B;
+	--surface-modal: #0C1F35;
 
-	--surface-gray-2: #124679;
-	--surface-gray-3: #344F6C;
-	--surface-gray-7: #256ab0;
-	--outline-gray-1: #344F6C;
+	--surface-gray-2: #163A5C;
+	--surface-gray-3: #1E4872;
+	--surface-gray-7: #2878C0;
+
+	/* ── Testi — gerarchia chiara ── */
+	--ink-gray-9: #FFFFFF;
+	--ink-gray-8: #E8F0FA;
+	--ink-gray-7: #D0E0F2;
+	--ink-gray-6: #A8C4E0;
+	--ink-gray-5: #A8C4E0;
+	--ink-gray-10: #0A1E33;
 
 
-	--ink-gray-9: #ffffff;
-	--ink-gray-8: #ffffff;
-	--ink-gray-7: #fff;
-	--ink-gray-5: #bcd4f1;
-	--ink-gray-6: #ffffff;
-	--ink-gray-10: #123456;
+	/* ── Bordi — visibili ma non invasivi ── */
+	--outline-gray-1: #2A4A6B;
+	--outline-gray-modals: #3A5F85;
 
-	--surface-card: #123456;
-	--color-menu-bar: #193553;
+	/* ── Layout ── */
+	--color-sidebar-menu: var(--color-company-primary);
+	--surface-card: var(--color-company-primary);
+	--color-menu-bar: #0F2A45;
 
-	--surface-gray-2:#204065;
-
-	--outline-gray-modals:#344F6C;
-
+	/** FORM **/
+	--form-padding-y:1.2rem;
 }

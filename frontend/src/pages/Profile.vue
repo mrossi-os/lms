@@ -2,7 +2,7 @@
 	<NoPermission v-if="!$user.data" />
 	<div v-else-if="profile.data">
 		<header
-			class="sticky group top-0 z-10 flex flex-col md:flex-row md:items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
+			class="sticky group top-0 z-10 flex flex-col md:flex-row md:items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5"
 		>
 			<Breadcrumbs class="h-7" :items="breadcrumbs" />
 			<Button v-if="isSessionUser()" class="invisible group-hover:visible">

@@ -50,7 +50,7 @@
 						<div
 							class="mt-1 rounded-lg bg-surface-white py-1 text-base border-2"
 						>
-							<div class="relative px-1.5 pt-0.5">
+							<div class="relative px-1.5 pt-0.5 autocomplete-dialog-input">
 								<ComboboxInput
 									ref="search"
 									class="form-input w-full"

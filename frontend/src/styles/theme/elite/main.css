@@ -1,23 +1,162 @@
 @import './variables.css';
 
 body {
-	background-color: var(--surface-white);
+	background-color: var(--color-company-secondary);
 }
+
+
+/* ═══ LAYOUT PAGE ═══ */
 
 .sidebar-menu {
-	border-color: var(--surface-selected);
+	border-right: 1px solid var(--outline-gray-1);
+	background-color: var(--color-sidebar-menu);
+	z-index: 2;
+	position: relative;
 }
 
+.main-page-header {
+	background-color: var(--color-sidebar-menu);
+	border-bottom: 1px solid var(--outline-gray-1);
+}
+
+.app-content-main {
+	background: transparent;
+	position: relative;
+	z-index: 2;
+}
+
+.bg-gradient-overlay {
+	content: " ";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: 14rem;
+	width: 30%;
+	height: 100%;
+	background: linear-gradient(to right, #0A2E5A, #1D5A9B);
+	z-index: 1;
+}
+
+
+/* ═══ CARDS ═══ */
+
 .card {
-	background-color: var(--color-company-secondary);
-	border: 1px solid var(--surface-selected);
+	background-color: var(--surface-card);
+	border: 1px solid var(--outline-gray-1);
+	border-radius: 0.5rem;
 }
 
 [role='radiogroup'] {
-	border: 1px solid var(--surface-selected);
+	border: 1px solid var(--outline-gray-1);
 	border-radius: 0.625rem;
 }
 
-input:where([type='text']):focus {
+
+/* ═══ FORM ELEMENTS ═══ */
+input:where([type='text']),
+input:where([type='email']),
+input:where([type='password']),
+input:where([type='number']),
+input:where([type='search']),
+input:where([type='url']),
+input:where([type='tel']),
+textarea,
+select,
+.form-control {
+	background-color: var(--color-company-primary);
+	border: 1px solid var(--ink-gray-9);
+	border-radius: 0.5rem;
+	color: var(--ink-gray-9);
+	padding: 1rem 0.75rem;
+}
+
+
+
+input:where([type='text']):focus,
+input:where([type='email']):focus,
+input:where([type='password']):focus,
+input:where([type='number']):focus,
+input:where([type='search']):focus,
+input:where([type='url']):focus,
+input:where([type='tel']):focus,
+textarea:focus,
+select:focus,
+.form-control:focus {
 	outline: 0px;
+	border-color: #fff;
+	box-shadow: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+	color: var(--ink-gray-5);
+	opacity: 1;
+}
+
+
+/* replace tailwind style input/combo */
+.link-component button.py-1\.5,
+input.py-1\.5{
+	padding-top: var(--form-padding-y) !important;
+	padding-bottom: var(--form-padding-y) !important;
+}
+.link-component button.bg-surface-gray-2,
+.values-container.bg-surface-gray-2,
+input.bg-surface-gray-2{
+	background-color: var(--color-company-primary) !important;
+}
+.link-component button.border-\[--surface-gray-2\],
+.values-container.border-\[--surface-gray-2\],
+input.border-\[--surface-gray-2\]{
+	border: 1px solid var(--ink-gray-9) !important;
+}
+.link-component button.focus\:ring-0:focus,
+.values-container.focus\:ring-0:focus,
+input.focus\:ring-0:focus{
+	background-color: var(--color-company-primary) !important;
+}
+
+.values-container input{
+	padding-top: 0.2rem;
+	padding-bottom: 0.2rem;
+}
+
+label.block{
+	color:#fff;
+	font-size:13px;
+}
+
+
+/* date input icon */
+input[type="date"]::-webkit-calendar-picker-indicator {
+	filter: invert(1);
+}
+
+/* autocomplete */
+.autocomplete-dialog-input input{
+	padding-top:0.5rem;
+	padding-bottom:0.5rem;
+}
+.autocomplete-dialog-input input:hover{
+	background-color: var(--color-company-primary);
+	border:1px solid var(--ink-gray-9);
+}
+
+
+/* ═══ EDITOR ═══ */
+
+.codex-editor .ce-toolbar__actions svg path {
+	stroke: #fff;
+}
+
+.codex-editor .ce-toolbar__plus:hover,
+.ce-toolbar__settings-btn:hover {
+	background-color: var(--color-company-primary);
+	border: 1px solid var(--outline-gray-modals);
+	border-radius: 8px;
+}
+
+.ce-toolbar__actions.ce-toolbar__actions--opened {
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 8px;
 }

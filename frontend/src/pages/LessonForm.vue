@@ -3,7 +3,7 @@
 		<div class="grid md:grid-cols-[75%,25%] h-screen">
 			<div class="border-r">
 				<header
-					class="sticky top-0 z-10 flex flex-col md:flex-row md:items-center justify-between border-b overflow-hidden bg-surface-white px-3 py-2.5 sm:px-5">
+					class="sticky top-0 z-10 flex flex-col md:flex-row md:items-center justify-between border-b overflow-hidden main-page-header px-3 py-2.5 sm:px-5">
 					<Breadcrumbs class="text-ellipsis" :items="breadcrumbs" />
 					<div class="flex gap-2">
 						<Button variant="solid" v-if="lessonDetails.data?.lesson" @click="saveAndAddAnother()">

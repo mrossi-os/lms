@@ -1,5 +1,5 @@
 <template>
-	<div class="space-y-1.5">
+	<div class="space-y-1.5 link-component">
 		<label class="block" :class="labelClasses" v-if="attrs.label">
 			{{ attrs.label }}
 			<span class="text-ink-red-3" v-if="attrs.required">*</span>

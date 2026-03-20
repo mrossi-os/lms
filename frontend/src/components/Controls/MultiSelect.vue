@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div class="multiselect-component">
 		<label v-if="label" class="block mb-1" :class="labelClasses">
 			{{ label }}
 			<span v-if="required" class="text-ink-red-3">*</span>
@@ -7,7 +7,7 @@
 		<Combobox v-model="selectedValue" nullable v-slot="{ open }">
 			<div class="relative w-full">
 				<div
-					class="flex flex-wrap items-center gap-1.5 w-full rounded-lg border border-[--surface-gray-2] bg-surface-gray-2 px-2 py-1.5 cursor-text transition-colors focus-within:bg-surface-white focus-within:border-outline-gray-4 focus-within:shadow-sm focus-within:ring-0 focus-within:ring-2 focus-within:ring-outline-gray-3"
+					class="values-container flex flex-wrap items-center gap-1.5 w-full rounded border border-[--surface-gray-2] bg-surface-gray-2 px-2 py-1.5 cursor-text transition-colors focus-within:bg-surface-white focus-within:border-outline-gray-4 focus-within:shadow-sm focus-within:ring-0 focus-within:ring-2 focus-within:ring-outline-gray-3"
 					@click="focusInput"
 				>
 					<button
@@ -45,12 +45,18 @@
 						:class="options.length ? 'min-h-[6rem]' : 'min-h-[1rem]'"
 					>
 						<template v-if="options.length">
-							<ComboboxOption v-for="option in options" :key="option.value" :value="option"
-								v-slot="{ active }">
-								<li :class="[
-									'flex cursor-pointer items-center rounded px-2 py-1 text-base',
-									{ 'bg-surface-gray-2': active },
-								]">
+							<ComboboxOption
+								v-for="option in options"
+								:key="option.value"
+								:value="option"
+								v-slot="{ active }"
+							>
+								<li
+									:class="[
+										'flex cursor-pointer items-center rounded px-2 py-1 text-base',
+										{ 'bg-surface-gray-2': active },
+									]"
+								>
 									<div class="flex flex-col gap-1 p-1">
 										<div class="text-base font-medium text-ink-gray-8">
 											{{
@@ -72,9 +78,16 @@
 						</div>
 					</div>
 
-					<div v-if="attrs.onCreate" class="p-1 bg-surface-white border-t rounded-b-lg">
-						<Button variant="ghost" class="w-full !justify-start" :label="__('Create New')"
-							@click="attrs.onCreate()">
+					<div
+						v-if="attrs.onCreate"
+						class="p-1 bg-surface-white border-t rounded-b-lg"
+					>
+						<Button
+							variant="ghost"
+							class="w-full !justify-start"
+							:label="__('Create New')"
+							@click="attrs.onCreate()"
+						>
 							<template #prefix>
 								<Plus class="h-4 w-4 stroke-1.5" />
 							</template>
@@ -112,7 +125,6 @@ const props = defineProps({
 		default: (value) => `${value} is an Invalid value`,
 	},
 	required: Boolean,
-	exclude: { type: Array, default: () => [] },
 })
 
 const values = defineModel({ default: () => [] })
@@ -124,6 +136,7 @@ const selectedValue = ref(null)
 
 watch(selectedValue, (val) => {
 	if (!val?.value) return
+	query.value = ''
 	addValue(val.value)
 	selectedValue.value = null
 })
@@ -163,12 +176,8 @@ const filterOptions = createResource({
 })
 
 const options = computed(() => {
-	const allOptions = cachedOptions.value || []
-	return allOptions.filter(
-		(option) =>
-			!values.value?.includes(option.value) &&
-			!props.exclude?.includes(option.value)
-	)
+	const allOptions = filterOptions.data || []
+	return allOptions.filter((option) => !values.value?.includes(option.value))
 })
 
 function reload(val) {

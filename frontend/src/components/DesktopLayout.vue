@@ -1,9 +1,10 @@
 <template>
 	<div class="flex h-screen w-screen">
-		<div class="h-full border-r bg-surface-menu-bar">
+		<div class="bg-gradient-overlay"></div>
+		<div class="h-full">
 			<AppSidebar />
 		</div>
-		<div class="flex-1 flex flex-col h-full overflow-auto bg-surface-white">
+		<div class="flex-1 flex flex-col h-full overflow-auto app-content-main">
 			<slot />
 		</div>
 	</div>
