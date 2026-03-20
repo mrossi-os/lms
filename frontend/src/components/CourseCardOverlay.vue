@@ -1,6 +1,6 @@
 <template>
 	<div class="flex flex-col gap-4">
-		<div class="border-2 rounded-md min-w-80 max-w-sm">
+		<div class="border-2 rounded-md min-w-80 max-w-sm card">
 			<iframe v-if="course.data.video_link" :src="video_link" class="rounded-t-md min-h-56 w-full" />
 			<div class="p-5">
 				<div v-if="course.data.paid_course" class="text-2xl font-semibold mb-3">

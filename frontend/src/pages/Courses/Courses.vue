@@ -63,7 +63,7 @@
 						v-model="title"
 						:placeholder="__('Search')"
 						type="text"
-						class="w-full lg:min-w-0 lg:w-32 xl:w-40"
+						class="w-full lg:min-w-0 lg:w-32 xl:w-40 small-form"
 						@input="updateCourses()"
 					/>
 					<div class="w-full lg:min-w-0 lg:w-32 xl:w-40">

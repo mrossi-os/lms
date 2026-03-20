@@ -60,4 +60,5 @@
 
 	/** FORM **/
 	--form-padding-y:1.2rem;
+	--form-padding-small-y: 0.5rem;
 }

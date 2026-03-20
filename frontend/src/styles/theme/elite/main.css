@@ -30,11 +30,16 @@ body {
 	display: block;
 	position: absolute;
 	top: 0;
-	left: 14rem;
-	width: 30%;
+	left: 0rem;
+	width: 60vw;
 	height: 100%;
 	background: linear-gradient(to right, #0A2E5A, #1D5A9B);
 	z-index: 1;
+}
+
+
+div[role="tablist"] .bg-surface-gray-7 {
+	background: var(--ink-gray-9);
 }
 
 
@@ -159,6 +164,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 	border-color:var(--ink-gray-9);
 }
 
+
+.small-form .link-component button.py-1\.5,
+.small-form input.py-1\.5 {
+	padding-top: var(--form-padding-small-y) !important;
+	padding-bottom: var(--form-padding-small-y) !important;
+}
 
 /* ═══ EDITOR ═══ */
 

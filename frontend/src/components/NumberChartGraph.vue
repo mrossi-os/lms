@@ -1,5 +1,5 @@
 <template>
-	<div class="border rounded-lg p-3 space-y-2">
+	<div class="border rounded-lg p-3 space-y-2 card">
 		<div class="text-ink-gray-5">
 			{{ __(title) }}
 		</div>
