@@ -53,6 +53,8 @@ bench set-redis-cache-host redis://redis:6379
 bench set-redis-queue-host redis://redis:6379
 bench set-redis-socketio-host redis://redis:6379
 
+
+
 # Remove redis, watch from Procfile
 if [ -f "${bench_dir}/Procfile" ]; then
     echo " --- Remove redis watch files"
@@ -135,9 +137,38 @@ for app_def in "${APPS[@]}"; do
 done
 
 cd "$bench_dir"
+
 bench --site "${site_name}" set-config developer_mode 1
-bench --site "${site_name}" clear-cache
+
+#configure ai vector db
+bench --site "${site_name}" set-config vector_db_store redis
+bench --site "${site_name}" set-config redis_vector_store redis://redis_rag:6379
+bench --site "${site_name}" set-config regenerate_rag_index 1
+
+
+
+bench --site "${site_name}" clear-cache 
+
 bench use "${site_name}"
+
+# ================== CHECK PYTHON DEPENDENCIES ============================
+echo " --- Checking Python dependencies"
+pip_deps=(
+    "debugpy:debugpy"
+    "redisvl:redisvl"
+    "numpy:numpy>=1.24.0"
+    "redis:redis>=7.0.0,<8.0.0"
+    "youtube_transcript_api:youtube_transcript_api"
+)
+
+for dep_def in "${pip_deps[@]}"; do
+    mod_name="${dep_def%%:*}"
+    pkg_spec="${dep_def#*:}"
+    if ! "${bench_dir}/env/bin/python3" -c "import ${mod_name}" 2>/dev/null; then
+        echo " ----- Installing missing dependency: ${pkg_spec}"
+        "${bench_dir}/env/bin/pip" install "${pkg_spec}"
+    fi
+done
 
 bench migrate
 

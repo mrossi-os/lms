@@ -17,6 +17,12 @@ services:
 
   redis:
     image: redis/redis-stack-server:latest
+    ports:
+      - "6379:6379"
+  redis_rag:
+    image: redis/redis-stack-server:latest
+    ports:
+      - "6380:6379"
 
   frappe:
     build: .

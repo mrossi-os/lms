@@ -176,3 +176,10 @@ The LMS path is configurable via `site_config.lms_path` (defaults to `"lms"`). R
 - `ui-tests.yml` — Cypress E2E tests (Node 24, Chrome)
 - `linters.yml` — commitlint, Semgrep, pre-commit checks
 - `build.yml` — Docker image builds
+
+
+## Code Style
+
+- All code comments must be written in English
+- Variable names, function names, and identifiers in English
+- Commit messages in English

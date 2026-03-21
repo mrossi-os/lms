@@ -19,8 +19,8 @@ before_request = ["os_lms.debug.active_debug"]
 after_migrate = [
     "os_lms.setup.ensure_italian_language",
     "os_lms.setup.remove_deprecated_custom_fields",
-    "os_lms.setup.create_custom_fields",      
-    
+    "os_lms.setup.create_custom_fields",
+    "os_lms.setup.create_redis_index",
 ]
 
 # fix error email check content MAX SIZE
