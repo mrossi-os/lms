@@ -166,6 +166,20 @@ input[type='time']::-webkit-calendar-picker-indicator {
 	padding-bottom: var(--form-padding-small-y) !important;
 }
 
+::selection,
+#editor ::selection,
+#instructor-content ::selection {
+	background: #256ab0;
+	color: #ffffff;
+}
+
+::-moz-selection,
+#editor ::-moz-selection,
+#instructor-content ::-moz-selection {
+	background: #256ab0;
+	color: #ffffff;
+}
+
 /* ═══ EDITOR ═══ */
 
 .codex-editor .ce-toolbar__actions svg:not(.ce-popover-item__icon svg) path {
