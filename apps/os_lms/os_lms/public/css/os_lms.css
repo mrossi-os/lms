@@ -15,3 +15,6 @@
 input {
 	background-color: var(--color-company-tertiary);
 }
+.page-card-head h4 {
+	color: white;
+}
