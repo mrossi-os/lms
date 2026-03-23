@@ -129,6 +129,10 @@ watch(
 )
 
 const saveBadge = (close: () => void) => {
+	if (!badge.value.condition?.trim()) {
+		toast.error(__('Condition is required'))
+		return
+	}
 	if (props.badgeName == 'new') {
 		createBadge(close)
 	} else {
