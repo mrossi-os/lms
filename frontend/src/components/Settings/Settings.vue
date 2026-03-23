@@ -332,121 +332,121 @@ const tabsStructure = computed(() => {
 				},
 			],
 		},
-		{
-			key: 'Payment',
-			label: __('Payment'),
-			hideLabel: false,
-			items: [
-				{
-					key: 'Configuration',
-					label: __('Configuration'),
-					icon: 'CreditCard',
-					description: __(
-						'Manage all your payment related settings and defaults',
-					),
-					sections: [
-						{
-							columns: [
-								{
-									fields: [
-										{
-											label: __('Default Currency'),
-											name: 'default_currency',
-											type: 'Link',
-											doctype: 'Currency',
-										},
-										{
-											label: __('Show USD equivalent amount'),
-											name: 'show_usd_equivalent',
-											type: 'checkbox',
-											description: __(
-												'If enabled, it shows the USD equivalent amount for all transactions based on the current exchange rate.',
-											),
-										},
-										{
-											label: __('Apply rounding on equivalent'),
-											name: 'apply_rounding',
-											type: 'checkbox',
-											description: __(
-												'If enabled, it applies rounding on the USD equivalent amount.',
-											),
-										},
-									],
-								},
-								{
-									fields: [
-										{
-											label: __('Payment Gateway'),
-											name: 'payment_gateway',
-											type: 'Link',
-											doctype: 'Payment Gateway',
-										},
-										{
-											label: __('Apply GST for India'),
-											name: 'apply_gst',
-											type: 'checkbox',
-											description: __(
-												'If enabled, GST will be applied to the price for students from India.',
-											),
-										},
-									],
-								},
-							],
-						},
-						{
-							label: __('Payment Reminders'),
-							columns: [
-								{
-									fields: [
-										{
-											label: __('Send payment reminders for batch'),
-											name: 'send_payment_reminders_for_batch',
-											type: 'checkbox',
-											description: __(
-												'If enabled, it sends payment reminders to students who left the payment incomplete for a batch.',
-											),
-										},
-									],
-								},
-								{
-									fields: [
-										{
-											label: __('Send payment reminders for course'),
-											name: 'send_payment_reminders_for_course',
-											type: 'checkbox',
-											description: __(
-												'If enabled, it sends payment reminders to students who left the payment incomplete for a course.',
-											),
-										},
-									],
-								},
-							],
-						},
-					],
-				},
-				{
-					key: 'Gateways',
-					label: __('Gateways'),
-					icon: 'DollarSign',
-					template: markRaw(PaymentGateways),
-					description: __('Add and manage all your payment gateways'),
-				},
-				{
-					key: 'Transactions',
-					label: __('Transactions'),
-					icon: 'Landmark',
-					template: markRaw(Transactions),
-					description: __('View all your payment transactions'),
-				},
-				{
-					key: 'Coupons',
-					label: __('Coupons'),
-					icon: 'Ticket',
-					template: markRaw(Coupons),
-					description: __('Manage discount coupons for courses and batches'),
-				},
-			],
-		},
+		// {
+		// 	key: 'Payment',
+		// 	label: __('Payment'),
+		// 	hideLabel: false,
+		// 	items: [
+		// 		{
+		// 			key: 'Configuration',
+		// 			label: __('Configuration'),
+		// 			icon: 'CreditCard',
+		// 			description: __(
+		// 				'Manage all your payment related settings and defaults',
+		// 			),
+		// 			sections: [
+		// 				{
+		// 					columns: [
+		// 						{
+		// 							fields: [
+		// 								{
+		// 									label: __('Default Currency'),
+		// 									name: 'default_currency',
+		// 									type: 'Link',
+		// 									doctype: 'Currency',
+		// 								},
+		// 								{
+		// 									label: __('Show USD equivalent amount'),
+		// 									name: 'show_usd_equivalent',
+		// 									type: 'checkbox',
+		// 									description: __(
+		// 										'If enabled, it shows the USD equivalent amount for all transactions based on the current exchange rate.',
+		// 									),
+		// 								},
+		// 								{
+		// 									label: __('Apply rounding on equivalent'),
+		// 									name: 'apply_rounding',
+		// 									type: 'checkbox',
+		// 									description: __(
+		// 										'If enabled, it applies rounding on the USD equivalent amount.',
+		// 									),
+		// 								},
+		// 							],
+		// 						},
+		// 						{
+		// 							fields: [
+		// 								{
+		// 									label: __('Payment Gateway'),
+		// 									name: 'payment_gateway',
+		// 									type: 'Link',
+		// 									doctype: 'Payment Gateway',
+		// 								},
+		// 								{
+		// 									label: __('Apply GST for India'),
+		// 									name: 'apply_gst',
+		// 									type: 'checkbox',
+		// 									description: __(
+		// 										'If enabled, GST will be applied to the price for students from India.',
+		// 									),
+		// 								},
+		// 							],
+		// 						},
+		// 					],
+		// 				},
+		// 				{
+		// 					label: __('Payment Reminders'),
+		// 					columns: [
+		// 						{
+		// 							fields: [
+		// 								{
+		// 									label: __('Send payment reminders for batch'),
+		// 									name: 'send_payment_reminders_for_batch',
+		// 									type: 'checkbox',
+		// 									description: __(
+		// 										'If enabled, it sends payment reminders to students who left the payment incomplete for a batch.',
+		// 									),
+		// 								},
+		// 							],
+		// 						},
+		// 						{
+		// 							fields: [
+		// 								{
+		// 									label: __('Send payment reminders for course'),
+		// 									name: 'send_payment_reminders_for_course',
+		// 									type: 'checkbox',
+		// 									description: __(
+		// 										'If enabled, it sends payment reminders to students who left the payment incomplete for a course.',
+		// 									),
+		// 								},
+		// 							],
+		// 						},
+		// 					],
+		// 				},
+		// 			],
+		// 		},
+		// 		{
+		// 			key: 'Gateways',
+		// 			label: __('Gateways'),
+		// 			icon: 'DollarSign',
+		// 			template: markRaw(PaymentGateways),
+		// 			description: __('Add and manage all your payment gateways'),
+		// 		},
+		// 		{
+		// 			key: 'Transactions',
+		// 			label: __('Transactions'),
+		// 			icon: 'Landmark',
+		// 			template: markRaw(Transactions),
+		// 			description: __('View all your payment transactions'),
+		// 		},
+		// 		{
+		// 			key: 'Coupons',
+		// 			label: __('Coupons'),
+		// 			icon: 'Ticket',
+		// 			template: markRaw(Coupons),
+		// 			description: __('Manage discount coupons for courses and batches'),
+		// 		},
+		// 	],
+		// },
 		{
 			key: 'Conferencing',
 			label: __('Conferencing'),
