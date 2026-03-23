@@ -241,7 +241,7 @@ watch(
 	() => props.username,
 	() => {
 		profile.reload()
-	}
+	},
 )
 
 const editProfile = () => {
@@ -272,10 +272,10 @@ const getTabButtons = () => {
 		buttons.push({ label: __('Roles'), value: 'Roles' })
 	}
 
-	if (currentUserHasHigherAccess() && isEvaluatorOrModerator()) {
-		buttons.push({ label: __('Slots'), value: 'Slots' })
-		buttons.push({ label: __('Schedule'), value: 'Schedule' })
-	}
+	// if (currentUserHasHigherAccess() && isEvaluatorOrModerator()) {
+	// 	buttons.push({ label: __('Slots'), value: 'Slots' })
+	// 	buttons.push({ label: __('Schedule'), value: 'Schedule' })
+	// }
 	return buttons
 }
 
