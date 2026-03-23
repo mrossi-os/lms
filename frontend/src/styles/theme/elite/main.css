@@ -180,6 +180,11 @@ input[type='time']::-webkit-calendar-picker-indicator {
 	color: #ffffff;
 }
 
+input:disabled {
+	background-color: var(--color-company-primary);
+	opacity: 1;
+	cursor: default;
+}
 /* ═══ EDITOR ═══ */
 
 .codex-editor .ce-toolbar__actions svg:not(.ce-popover-item__icon svg) path {
@@ -200,4 +205,17 @@ input[type='time']::-webkit-calendar-picker-indicator {
 
 .ce-toolbar__actions--opened {
 	margin-right: 5px;
+}
+
+/* List header */
+.os-list-view > div:first-of-type {
+	margin-bottom: 0px;
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+}
+/* List rows */
+.os-list-view > div:nth-of-type(2) {
+	background-color: var(--color-company-primary);
+	border-bottom-left-radius: 0.5rem !important;
+	border-bottom-right-radius: 0.5rem !important;
 }

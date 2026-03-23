@@ -31,6 +31,7 @@
 			>
 				<FormControl
 					v-model="titleFilter"
+					class="small-form"
 					:placeholder="__('Search by title')"
 				/>
 				<FormControl
@@ -46,6 +47,7 @@
 			:columns="assignmentColumns"
 			:rows="assignments.data"
 			row-key="name"
+			class="os-list-view"
 			:options="{
 				showTooltip: false,
 				selectable: false,

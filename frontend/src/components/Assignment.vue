@@ -40,7 +40,7 @@
 							:theme="statusTheme"
 							size="lg"
 						>
-							{{ submissionResource.doc?.status }}
+							{{ __(submissionResource.doc?.status) }}
 						</Badge>
 						<Button
 							v-if="canModifyAssignment || canGradeSubmission"
@@ -67,13 +67,15 @@
 					}}
 					{{ __('Feel free to make edits to your submission if needed.') }}
 				</div>
-				<div v-if="showUploader()" class="border rounded-lg p-3">
-					<div class="font-semibold mb-2">
+				<div v-if="showUploader()" class="border rounded-lg p-3 card">
+					<div class="font-semibold mb-2 text-white">
 						{{ __('Upload Assignment') }}
 					</div>
 					<div class="text-ink-gray-5 text-sm mt-1 mb-4">
 						{{
-							__('You can only upload {0} files').format(assignment.data.type)
+							__('You can only upload {0} files').format(
+								__(assignment.data.type),
+							)
 						}}
 					</div>
 					<FileUploader
@@ -432,9 +434,9 @@ const canModifyAssignment = computed(() => {
 
 const submissionStatusOptions = computed(() => {
 	return [
-		{ label: 'Not Graded', value: 'Not Graded' },
-		{ label: 'Pass', value: 'Pass' },
-		{ label: 'Fail', value: 'Fail' },
+		{ label: __('Not Graded'), value: 'Not Graded' },
+		{ label: __('Pass'), value: 'Pass' },
+		{ label: __('Fail'), value: 'Fail' },
 	]
 })
 

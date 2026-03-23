@@ -26,10 +26,11 @@
 			:columns="quizColumns"
 			:rows="quizzes.data"
 			row-key="name"
+			class="os-list-view"
 			:options="{ showTooltip: false, selectable: true }"
 		>
 			<ListHeader
-				class="mb-2 grid items-center space-x-4 rounded bg-surface-gray-2 p-2"
+				class="grid items-center space-x-4 rounded-none rounded-t bg-surface-gray-2 p-2"
 			>
 				<ListHeaderItem :item="item" v-for="item in quizColumns">
 					<template #prefix="{ item }">
@@ -47,7 +48,7 @@
 						},
 					}"
 				>
-					<ListRow :row="row">
+					<ListRow :row="row" class="rounded-none">
 						<template #default="{ column, item }">
 							<ListRowItem :item="row[column.key]" :align="column.align">
 								<div v-if="column.key == 'show_answers'">
@@ -226,7 +227,7 @@ const insertQuiz = (close) => {
 			onError(error) {
 				toast.error(__('Error creating quiz: {0}', error.message))
 			},
-		}
+		},
 	)
 }
 

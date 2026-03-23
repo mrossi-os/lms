@@ -151,8 +151,8 @@ const validateMandatoryFields = () => {
 	if (missingFields.length) {
 		toast.error(
 			__('Please fill the mandatory fields: {0}').format(
-				missingFields.join(', ')
-			)
+				missingFields.join(', '),
+			),
 		)
 		console.error('Missing mandatory fields:', missingFields)
 	}
@@ -162,7 +162,7 @@ const validateMandatoryFields = () => {
 const saveProfile = () => {
 	let missingMandatoryFields = validateMandatoryFields()
 	if (missingMandatoryFields) return
-	profile.bio = sanitizeHTML(profile.bio)
+	profile.bio = sanitizeHTML(profile.bio || '')
 	updateProfile.submit(
 		{},
 		{
@@ -177,7 +177,7 @@ const saveProfile = () => {
 			onError(err) {
 				toast.error(err.messages?.[0] || err)
 			},
-		}
+		},
 	)
 }
 
@@ -199,7 +199,7 @@ watch(
 		}
 		isDirty.value = false
 	},
-	{ deep: true }
+	{ deep: true },
 )
 
 watch(
@@ -218,7 +218,7 @@ watch(
 			profile.image = newVal.user_image
 			isDirty.value = false
 		}
-	}
+	},
 )
 
 watch(
@@ -227,6 +227,6 @@ watch(
 		if (profile.language !== props.profile.data.language) {
 			hasLanguageChanged.value = true
 		}
-	}
+	},
 )
 </script>

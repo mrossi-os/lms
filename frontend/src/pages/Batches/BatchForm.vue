@@ -484,13 +484,12 @@ const submitBatch = () => {
 }
 
 const updateBatch = () => {
-	batchDetail.setValue.submit(
-		{
-			...batchDetail.doc,
-			instructors: instructors.value.map((instructor) => ({
-				instructor: instructor,
-			})),
-		},
+	batchDetail.doc.instructors = instructors.value.map((instructor) => ({
+		instructor: instructor,
+	}))
+
+	batchDetail.save.submit(
+		{},
 		{
 			onSuccess(data) {
 				updateMetaInfo('batches', data.name, meta)

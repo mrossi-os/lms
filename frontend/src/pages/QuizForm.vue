@@ -153,9 +153,10 @@
 				:options="{
 					showTooltip: false,
 				}"
+				class="os-list-view"
 			>
 				<ListHeader
-					class="mb-2 grid items-center space-x-4 rounded bg-surface-gray-2 p-2"
+					class="grid items-center space-x-4 rounded bg-surface-gray-2 p-2"
 				>
 					<ListHeaderItem :item="item" v-for="item in questionColumns" />
 				</ListHeader>
@@ -304,7 +305,7 @@ const submitQuiz = () => {
 			onError(err) {
 				toast.error(err.messages?.[0] || err)
 			},
-		}
+		},
 	)
 }
 
@@ -378,7 +379,7 @@ const deleteQuestions = (selections, unselectAll) => {
 				quizDetails.reload()
 				unselectAll()
 			},
-		}
+		},
 	)
 }
 
