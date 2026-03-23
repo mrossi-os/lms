@@ -219,3 +219,27 @@ input:disabled {
 	border-bottom-left-radius: 0.5rem !important;
 	border-bottom-right-radius: 0.5rem !important;
 }
+
+/* SCROLBAR */
+/* larghezza scrollbar */
+::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+
+/* sfondo barra */
+::-webkit-scrollbar-track {
+	background: #e5e7eb;
+	border-radius: 999px;
+}
+
+/* cursore della barra */
+::-webkit-scrollbar-thumb {
+	background: #143350;
+	border-radius: 999px;
+}
+
+/* hover */
+::-webkit-scrollbar-thumb:hover {
+	background: #256ab0;
+}

@@ -22,7 +22,7 @@
 					selectable: user.data?.is_student ? false : true,
 					getRowRoute: (row) => ({
 						name: 'CourseDetail',
-						params: { courseName: row.name },
+						params: { courseName: row.course },
 					}),
 				}"
 			>
