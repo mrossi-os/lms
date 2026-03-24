@@ -1,13 +1,17 @@
+from os_lms.os_lms.ai.utils.rag.redis_rag_storage import RedisRagStorage
 import frappe
+
 
 def ensure_italian_language():
     if not frappe.db.exists("Language", "it"):
-        frappe.get_doc({
-            "doctype": "Language",
-            "language_code": "it",
-            "language_name": "Italiano",
-            "enabled": 1
-        }).insert(ignore_permissions=True)
+        frappe.get_doc(
+            {
+                "doctype": "Language",
+                "language_code": "it",
+                "language_name": "Italiano",
+                "enabled": 1,
+            }
+        ).insert(ignore_permissions=True)
         frappe.db.commit()
         print("Create italian language and enabled it")
         return
@@ -20,7 +24,7 @@ def ensure_italian_language():
         print("Enable italian language")
     else:
         print("Ok")
-    
+
     frappe.clear_cache()
 
 
@@ -41,11 +45,13 @@ def create_custom_fields():
         for field_def in fields:
             name = f"{dt}-{field_def['fieldname']}"
             if not frappe.db.exists("Custom Field", name):
-                doc = frappe.get_doc({
-                    "doctype": "Custom Field",
-                    "dt": dt,
-                    **field_def,
-                })
+                doc = frappe.get_doc(
+                    {
+                        "doctype": "Custom Field",
+                        "dt": dt,
+                        **field_def,
+                    }
+                )
                 doc.insert(ignore_permissions=True)
                 print(f"Created Custom Field: {name}")
             else:
@@ -65,3 +71,11 @@ def remove_deprecated_custom_fields():
             frappe.delete_doc("Custom Field", name, ignore_permissions=True)
             print(f"Removed deprecated Custom Field: {name}")
     frappe.db.commit()
+
+
+def create_redis_index():
+    redis_url = frappe.conf.get("redis_vector_store")
+    if not redis_url:
+        return
+    storage = RedisRagStorage()
+    storage.create_index()

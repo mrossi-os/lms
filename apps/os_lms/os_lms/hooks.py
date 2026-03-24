@@ -19,8 +19,8 @@ before_request = ["os_lms.debug.active_debug"]
 after_migrate = [
     "os_lms.setup.ensure_italian_language",
     "os_lms.setup.remove_deprecated_custom_fields",
-    "os_lms.setup.create_custom_fields",      
-    
+    "os_lms.setup.create_custom_fields",
+    "os_lms.setup.create_redis_index",
 ]
 
 # fix error email check content MAX SIZE
@@ -33,9 +33,9 @@ sqlite_search = ["os_lms.overrides.sqlite.CustomLearningSearch"]
 # override api
 override_whitelisted_methods = {
     "lms.lms.api.get_sidebar_settings": "os_lms.os_lms.override_api.get_sidebar_settings",
-    "lms.lms.utils.get_lesson_creation_details": "os_lms.os_lms.override_api.get_lesson_creation_details",
     "lms.command_palette.search_sqlite": "os_lms.os_lms.override_api.search_sqlite",
     "lms.lms.utils.get_course_details": "os_lms.os_lms.override_utils.get_course_details",
+    "lms.lms.utils.get_lesson_creation_details": "os_lms.os_lms.override_utils.get_lesson_creation_details",
 }
 
 fixtures = [

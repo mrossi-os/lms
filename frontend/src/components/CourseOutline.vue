@@ -128,7 +128,7 @@
 													<div class="flex items-center ml-auto space-x-2">
 														<LessonAIStatus
 															v-if="allowEdit"
-															:lessonId="lesson.name"
+															:lesson="lesson"
 														/>
 														<Trash2
 															v-if="allowEdit"
