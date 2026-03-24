@@ -6,7 +6,7 @@
 			<div class="font-medium">
 				{{
 					__(
-						'Please read the following instructions carefully before starting the quiz'
+						'Please read the following instructions carefully before starting the quiz',
 					)
 				}}
 			</div>
@@ -17,7 +17,7 @@
 				<li>
 					{{
 						__(
-							'Do not refresh the page or close this window. If you do, the quiz will be submitted automatically.'
+							'Do not refresh the page or close this window. If you do, the quiz will be submitted automatically.',
 						)
 					}}
 				</li>
@@ -29,21 +29,21 @@
 				<li v-if="quiz.data?.duration">
 					{{
 						__(
-							'Please ensure that you complete all the questions in {0} minutes.'
+							'Please ensure that you complete all the questions in {0} minutes.',
 						).format(quiz.data.duration)
 					}}
 				</li>
 				<li v-if="quiz.data?.duration">
 					{{
 						__(
-							'If you fail to do so, the quiz will be automatically submitted when the timer ends.'
+							'If you fail to do so, the quiz will be automatically submitted when the timer ends.',
 						)
 					}}
 				</li>
 				<li v-if="quiz.data.passing_percentage">
 					{{
 						__(
-							'You will have to get {0}% correct answers in order to pass the quiz.'
+							'You will have to get {0}% correct answers in order to pass the quiz.',
 						).format(quiz.data.passing_percentage)
 					}}
 				</li>
@@ -52,17 +52,17 @@
 						__('You can attempt this quiz {0}.').format(
 							quiz.data.max_attempts == 1
 								? '1 time'
-								: `${quiz.data.max_attempts} times`
+								: `${quiz.data.max_attempts} times`,
 						)
 					}}
 				</li>
 				<li v-if="quiz.data.enable_negative_marking">
 					{{
 						__(
-							'If you answer incorrectly, {0} {1} will be deducted from your score for each incorrect answer.'
+							'If you answer incorrectly, {0} {1} will be deducted from your score for each incorrect answer.',
 						).format(
 							quiz.data.marks_to_cut,
-							quiz.data.marks_to_cut == 1 ? 'mark' : 'marks'
+							quiz.data.marks_to_cut == 1 ? 'mark' : 'marks',
 						)
 					}}
 				</li>
@@ -110,7 +110,7 @@
 				>
 					{{
 						__(
-							'You have already exceeded the maximum number of attempts allowed for this quiz.'
+							'You have already exceeded the maximum number of attempts allowed for this quiz.',
 						)
 					}}
 				</div>
@@ -333,18 +333,18 @@
 			>
 				{{
 					__(
-						"Your submission has been successfully saved. The instructor will review and grade it shortly, and you'll be notified of your final result."
+						"Your submission has been successfully saved. The instructor will review and grade it shortly, and you'll be notified of your final result.",
 					)
 				}}
 			</div>
 			<div v-else class="text-ink-gray-7">
 				{{
 					__(
-						'You got {0}% correct answers with a score of {1} out of {2}'
+						'You got {0}% correct answers with a score of {1} out of {2}',
 					).format(
 						Math.ceil(quizSubmission.data.percentage),
 						quizSubmission.data.score,
-						quizSubmission.data.score_out_of
+						quizSubmission.data.score_out_of,
 					)
 				}}
 			</div>
@@ -406,7 +406,7 @@
 	>
 		<template #body-content>
 			<div class="border border-outline-gray-modals rounded-lg text-base">
-				<div class="divide-y divide-outline-gray-modals">
+				<div class="divide-y divide-outline-gray-modals text-white">
 					<div class="grid grid-cols-2 divide-x divide-outline-gray-modals">
 						<div class="p-2">
 							{{ __('Total Questions') }}
@@ -515,7 +515,7 @@ const handlePageHide = () => {
 
 		navigator.sendBeacon(
 			'/api/method/lms.lms.doctype.lms_quiz.lms_quiz.submit_quiz?' +
-				params.toString()
+				params.toString(),
 		)
 	}
 }
@@ -638,7 +638,7 @@ watch(
 			attempts.reload()
 			resetQuiz()
 		}
-	}
+	},
 )
 
 const quizSubmission = createResource({
@@ -671,7 +671,7 @@ watch(activeQuestion, (value) => {
 						loadSavedAnswers()
 					}
 				},
-			}
+			},
 		)
 	}
 })
@@ -694,7 +694,7 @@ const loadSavedAnswers = () => {
 	let quizData = JSON.parse(localStorage.getItem(quiz.data.title))
 	if (quizData) {
 		let localQuestion = quizData.find(
-			(q) => q.question_name == currentQuestion.value
+			(q) => q.question_name == currentQuestion.value,
 		)
 		if (localQuestion) {
 			let localAnswers = localQuestion.answer
@@ -721,7 +721,7 @@ watch(
 		if (newName) {
 			quiz.reload()
 		}
-	}
+	},
 )
 
 const startQuiz = () => {
@@ -735,7 +735,7 @@ const markAnswer = (index) => {
 		selectedOptions.value.splice(
 			0,
 			selectedOptions.value.length,
-			...[0, 0, 0, 0]
+			...[0, 0, 0, 0],
 		)
 	selectedOptions.value[index - 1] = selectedOptions.value[index - 1] ? 0 : 1
 }
@@ -801,7 +801,7 @@ const addToLocalStorage = () => {
 	}
 	if (quizData) {
 		let existingQuestion = quizData.find(
-			(q) => q.question_name == questionData.question_name
+			(q) => q.question_name == questionData.question_name,
 		)
 		if (existingQuestion) {
 			existingQuestion.answer = questionData.answer
@@ -858,7 +858,7 @@ const createSubmission = () => {
 					}, 3000)
 				}
 			},
-		}
+		},
 	)
 }
 
@@ -934,7 +934,7 @@ const markForReview = (event, questionNumber) => {
 		}
 	} else {
 		reviewQuestions.value = reviewQuestions.value.filter(
-			(num) => num !== questionNumber
+			(num) => num !== questionNumber,
 		)
 	}
 }

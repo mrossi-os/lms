@@ -124,7 +124,7 @@
 									:label="__('Upcoming')"
 									:description="
 										__(
-											'Mark the course as upcoming but not yet open for enrollment.'
+											'Mark the course as upcoming but not yet open for enrollment.',
 										)
 									"
 									@change="makeFormDirty()"
@@ -190,7 +190,7 @@
 							:label="__('Preview Video')"
 							:description="
 								__(
-									'Paste a YouTube link of a short video introducing the course.'
+									'Paste a YouTube link of a short video introducing the course.',
 								)
 							"
 							@input="makeFormDirty()"
@@ -318,7 +318,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="min-h-0 border-l">
+			<div class="min-h-0 p-4">
 				<CourseOutline
 					v-if="courseResource.doc"
 					:courseName="courseResource.doc.name"

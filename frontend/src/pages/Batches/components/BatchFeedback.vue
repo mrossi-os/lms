@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div class="p-4 border rounded-lg card">
 		<div class="flex justify-between mb-5">
 			<div class="space-y-1">
 				<div class="text-lg text-ink-gray-9 font-semibold">
@@ -156,7 +156,7 @@ watch(
 				average[key] = average[key] / data.length
 			})
 		}
-	}
+	},
 )
 
 const submitFeedback = () => {
@@ -175,7 +175,7 @@ const submitFeedback = () => {
 				showFeedbackForm.value = false
 				readOnly.value = true
 			},
-		}
+		},
 	)
 }
 

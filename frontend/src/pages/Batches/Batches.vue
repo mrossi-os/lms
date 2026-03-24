@@ -64,7 +64,7 @@
 						v-model="title"
 						:placeholder="__('Search by Title')"
 						type="text"
-						class="min-w-40 lg:min-w-0 lg:w-32 xl:w-40"
+						class="min-w-40 lg:min-w-0 lg:w-32 xl:w-40 small-form"
 						@input="updateBatches()"
 					/>
 					<div class="min-w-40 lg:min-w-0 lg:w-32 xl:w-40">

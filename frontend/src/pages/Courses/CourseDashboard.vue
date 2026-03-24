@@ -146,10 +146,10 @@
 												row.name.startsWith('Just')
 													? 'red'
 													: row.name.startsWith('In')
-													? 'amber'
-													: row.name.startsWith('Adv')
-													? 'blue'
-													: 'green'
+														? 'amber'
+														: row.name.startsWith('Adv')
+															? 'blue'
+															: 'green'
 											][400],
 									}"
 								></div>
@@ -209,7 +209,9 @@
 						</div>
 						<Select
 							:options="lessonProgressSortingOptions"
-							@update:modelValue="(value: string) => updateLessonProgress(value)"
+							@update:modelValue="
+								(value: string) => updateLessonProgress(value)
+							"
 							:placeholder="__('Sort by')"
 							class="!w-32"
 						/>
@@ -234,7 +236,7 @@
 									{{
 										Math.ceil(
 											(progress.completion_count / course.data?.enrollments) *
-												100
+												100,
 										)
 									}}%
 								</div>
@@ -296,7 +298,7 @@ const searchFilter = ref<string | null>(null)
 const showProgressModal = ref(false)
 const currentStudent = ref<any>(null)
 const theme = ref<'darkMode' | 'lightMode'>(
-	localStorage.getItem('theme') == 'dark' ? 'darkMode' : 'lightMode'
+	localStorage.getItem('theme') == 'dark' ? 'darkMode' : 'lightMode',
 )
 type Filters = {
 	course: string | undefined

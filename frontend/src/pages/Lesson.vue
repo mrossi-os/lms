@@ -77,7 +77,7 @@
 					<div class="mt-1 mb-4 text-ink-gray-7">
 						{{
 							__(
-								'This lesson is not available for preview. Please enroll in the course to access it.'
+								'This lesson is not available for preview. Please enroll in the course to access it.',
 							)
 						}}
 					</div>
@@ -267,12 +267,6 @@
 						class="mt-10 pb-20 pt-5 border-t px-5"
 						ref="discussionsContainer"
 					>
-						<TabButtons
-							v-if="tabs.length > 1"
-							:buttons="tabs"
-							v-model="currentTab"
-							class="w-fit mb-10"
-						/>
 						<Notes
 							v-if="currentTab === 'Notes'"
 							:lesson="lesson.data?.name"
@@ -293,11 +287,11 @@
 				</div>
 			</div>
 			<div class="sticky top-10">
-				<div
-					v-if="lesson.data?.name"
-					class="border-b p-4"
-				>
-					<ChatBot :courseId="lesson.data?.course" :lessonId="lesson.data?.name" />
+				<div v-if="lesson.data?.name" class="border-b p-4">
+					<ChatBot
+						:courseId="lesson.data?.course"
+						:lessonId="lesson.data?.name"
+					/>
 				</div>
 				<div class="bg-surface-menu-bar p-5 border-b">
 					<div class="text-lg font-semibold text-ink-gray-9">
@@ -346,7 +340,6 @@ import {
 	call,
 	createListResource,
 	createResource,
-	TabButtons,
 	Tooltip,
 	usePageMeta,
 	toast,
@@ -493,7 +486,7 @@ const setupLesson = (data) => {
 	)
 		instructorEditor.value = renderEditor(
 			'instructor-content',
-			data.instructor_content
+			data.instructor_content,
 		)
 	editor.value?.isReady.then(() => {
 		checkIfDiscussionsAllowed()
@@ -533,7 +526,7 @@ const markProgress = () => {
 				onError(err) {
 					console.error(err)
 				},
-			}
+			},
 		)
 	}
 }
@@ -609,7 +602,7 @@ watch(
 	[() => route.params.chapterNumber, () => route.params.lessonNumber],
 	async (
 		[newChapterNumber, newLessonNumber],
-		[oldChapterNumber, oldLessonNumber]
+		[oldChapterNumber, oldLessonNumber],
 	) => {
 		if (newChapterNumber || newLessonNumber) {
 			plyrSources.value = []
@@ -619,7 +612,7 @@ watch(
 			checkIfDiscussionsAllowed()
 			checkQuiz()
 		}
-	}
+	},
 )
 
 const resetLessonState = (newChapterNumber, newLessonNumber) => {
@@ -687,7 +680,7 @@ watch(
 		getPlyrSource()
 		updateNotes()
 		if (data.icon == 'icon-youtube') clearInterval(timerInterval)
-	}
+	},
 )
 
 const getPlyrSource = async () => {
@@ -818,7 +811,7 @@ const enrollStudent = () => {
 				toast.error(__(err.messages?.[0] || err))
 				console.error(err)
 			},
-		}
+		},
 	)
 }
 
@@ -913,7 +906,7 @@ watch(allowDiscussions, () => {
 
 const redirectToLogin = () => {
 	window.location.href = `/login?redirect-to=${getLmsRoute(
-		`courses/${props.courseName}`
+		`courses/${props.courseName}`,
 	)}`
 }
 

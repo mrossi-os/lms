@@ -53,7 +53,7 @@
 				<div
 					v-for="(result, index) in searchResults"
 					@click="navigate(result)"
-					class="rounded-md cursor-pointer hover:bg-surface-gray-2 px-2"
+					class="rounded-md cursor-pointer hover:bg-surface-gray-2 px-2 card"
 				>
 					<div
 						class="flex space-x-2 py-3"

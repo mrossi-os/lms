@@ -1,6 +1,6 @@
 <template>
 	<div class="p-2">
-		<Dropdown :options="userDropdownOptions()">
+		<Dropdown :options="userDropdownOptions()" placement="asdaaaaaaaa">
 			<template v-slot="{ open, close }">
 				<button
 					class="flex h-12 py-2 items-center rounded-md duration-300 ease-in-out"

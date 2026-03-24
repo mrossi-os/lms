@@ -44,7 +44,7 @@
 						<span
 							class="h-6 mr-1"
 							:class="{
-								'avatar-group overlap': course.data.instructors.length > 1,
+								'avatar-group overlap': course.data.instructors?.length > 1,
 							}"
 						>
 							<UserAvatar
@@ -80,11 +80,6 @@
 					v-if="course.data.feature_sections"
 					:sections="course.data.feature_sections"
 				/>
-				<CourseReviews
-					:courseName="course.data.name"
-					:avg_rating="course.data.rating"
-					:membership="course.data.membership || null"
-				/>
 			</div>
 			<div class="hidden md:block">
 				<CourseCardOverlay :course="course" />
@@ -97,7 +92,6 @@
 import { Star, Users } from 'lucide-vue-next'
 import { Badge, Tooltip } from 'frappe-ui'
 import CourseCardOverlay from '@/components/CourseCardOverlay.vue'
-import CourseReviews from '@/components/CourseReviews.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import CourseInstructors from '@/components/CourseInstructors.vue'
 import RelatedCourses from '@/components/RelatedCourses.vue'

@@ -73,9 +73,6 @@
 						:courses="batch.data.courses"
 					/>
 				</div>
-				<!-- <div class="p-5">
-					<BatchFeedback :batch="batch.data?.name" />
-				</div> -->
 			</div>
 		</div>
 	</div>

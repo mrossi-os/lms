@@ -12,7 +12,7 @@
 		>
 			<template v-slot="{ file, progress, uploading, openFileSelector }">
 				<div class="flex items-center">
-					<div class="border rounded-md w-fit py-7 px-20">
+					<div class="border rounded-md w-fit py-7 px-20 card">
 						<component
 							:is="props.type === 'image' ? Image : Video"
 							class="size-5 stroke-1 text-ink-gray-7"
@@ -86,7 +86,7 @@ const props = withDefaults(
 		type: 'image',
 		required: true,
 		shape: 'square',
-	}
+	},
 )
 
 const fileType = computed(() => {

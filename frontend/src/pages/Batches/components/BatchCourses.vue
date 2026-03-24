@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div class="">
 		<div class="flex items-center justify-between mb-4">
 			<div class="text-ink-gray-9 font-semibold">
 				{{ __('Courses') }}
@@ -27,13 +27,17 @@
 				}"
 			>
 				<ListHeader
-					class="mb-2 grid items-center space-x-4 rounded-none rounded-t bg-surface-gray-2 p-2"
+					class="mb-0 grid items-center space-x-4 rounded-none rounded-t bg-surface-gray-2 p-2"
 				>
 					<ListHeaderItem :item="item" v-for="item in getCoursesColumns()">
 					</ListHeaderItem>
 				</ListHeader>
 				<ListRows>
-					<ListRow :row="row" v-for="row in courses.data" class="!rounded-none">
+					<ListRow
+						:row="row"
+						v-for="row in courses.data"
+						class="!rounded-none bg-[--surface-white]"
+					>
 						<template #default="{ column, item }">
 							<ListRowItem :item="row[column.key]" :align="column.align">
 								<div>
