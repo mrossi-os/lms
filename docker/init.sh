@@ -9,7 +9,7 @@ bench_env_file="${bench_dir}/.env"
 site_name="lms.localhost"
 
 
-echo "======================================================================"  
+echo "======================================================================"
 echo "============================== START ================================="
 
 if [ -n "${OPENAI_API_KEY:-}" ]; then
@@ -33,7 +33,7 @@ else
         else
             npm install -g yarn
         fi
-    fi  
+    fi
 
     if [ -d "${bench_dir}" ] && [ ! -f "${bench_dir}/Procfile" ]; then
         echo " ----- Empty bench directory detected. Cleaning up."
@@ -144,10 +144,10 @@ bench --site "${site_name}" set-config developer_mode 1
 bench --site "${site_name}" set-config vector_db_store redis
 bench --site "${site_name}" set-config redis_vector_store redis://redis_rag:6379
 bench --site "${site_name}" set-config regenerate_rag_index 1
+bench --site "${site_name}" set-config reuse_smtp_session 0
 
 
-
-bench --site "${site_name}" clear-cache 
+bench --site "${site_name}" clear-cache
 
 bench use "${site_name}"
 

@@ -3,48 +3,82 @@
 		<div class="grid md:grid-cols-[75%,25%] h-screen">
 			<div class="border-r">
 				<header
-					class="sticky top-0 z-10 flex flex-col md:flex-row md:items-center justify-between border-b overflow-hidden main-page-header px-3 py-2.5 sm:px-5">
+					class="sticky top-0 z-10 flex flex-col md:flex-row md:items-center justify-between border-b overflow-hidden main-page-header px-3 py-2.5 sm:px-5"
+				>
 					<Breadcrumbs class="text-ellipsis" :items="breadcrumbs" />
 					<div class="flex gap-2">
-						<Button variant="solid" v-if="lessonDetails.data?.lesson" @click="saveAndAddAnother()">
+						<Button
+							variant="solid"
+							v-if="lessonDetails.data?.lesson"
+							@click="saveAndAddAnother()"
+						>
 							{{ __('Add new Lesson') }}
 						</Button>
-						<Button variant="solid" @click="saveLesson({ showSuccessMessage: true })" class="mt-3 md:mt-0">
+						<Button
+							variant="solid"
+							@click="saveLesson({ showSuccessMessage: true })"
+							class="mt-3 md:mt-0"
+						>
 							{{ __('Save') }}
 						</Button>
 					</div>
 				</header>
 				<div class="py-5">
 					<div class="grid grid-cols-2 gap-5 w-5/6 mx-auto">
-						<FormControl v-model="lesson.title" :label="__('Title')" class="mb-4" :required="true"
-							autocomplete="off" />
-						<FormControl v-model="lesson.duration" :label="__('Duration (minutes)')" type="number" class="mb-4" autocomplete="off" :description="__('Estimated time to complete this lesson')" />
-						<Switch v-model="lesson.include_in_preview" :label="__('Include in Preview')" :description="__(
-							'If enabled, the lesson will also be accessible to users who are not enrolled in the course.'
-						)
-							" />
+						<FormControl
+							v-model="lesson.title"
+							:label="__('Title')"
+							class="mb-4"
+							:required="true"
+							autocomplete="off"
+						/>
+						<FormControl
+							v-model="lesson.duration"
+							:label="__('Duration (minutes)')"
+							type="number"
+							class="mb-4"
+							autocomplete="off"
+							:description="__('Estimated time to complete this lesson')"
+						/>
+						<Switch
+							v-model="lesson.include_in_preview"
+							:label="__('Include in Preview')"
+							:description="
+								__(
+									'If enabled, the lesson will also be accessible to users who are not enrolled in the course.',
+								)
+							"
+						/>
 					</div>
 					<div class="border-t mt-4">
-						<LessonAIIngestion :lessonId="lessonDetails?.data?.lesson?.name" />
+						<LessonAIIngestion :lesson="lessonDetails?.data?.lesson" />
 					</div>
 					<div class="border-t">
 						<div class="w-5/6 mx-auto pt-4">
-							<div class="flex justify-between cursor-pointer" @click="
-								() => {
-									openInstructorEditor = !openInstructorEditor
-								}
-							">
+							<div
+								class="flex justify-between cursor-pointer"
+								@click="
+									() => {
+										openInstructorEditor = !openInstructorEditor
+									}
+								"
+							>
 								<label class="block font-medium text-ink-gray-5 mb-1">
 									{{ __('Instructor Notes') }}
 								</label>
-								<ChevronRight class="stroke-2 h-5 w-5 text-ink-gray-5" :class="{
-									'rotate-90 transform duration-200': openInstructorEditor,
-									'duration-200': !openInstructorEditor,
-								}" />
+								<ChevronRight
+									class="stroke-2 h-5 w-5 text-ink-gray-5"
+									:class="{
+										'rotate-90 transform duration-200': openInstructorEditor,
+										'duration-200': !openInstructorEditor,
+									}"
+								/>
 							</div>
-							<div v-show="openInstructorEditor" id="instructor-notes"
-								class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal py-3">
-							</div>
+							<div
+								v-show="openInstructorEditor"
+								id="instructor-notes"
+								class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal py-3"
+							></div>
 						</div>
 					</div>
 					<div class="border-t mt-4">
@@ -52,9 +86,10 @@
 							<label class="block font-medium text-ink-gray-5 mb-1">
 								{{ __('Content') }}
 							</label>
-							<div id="content"
-								class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal py-3">
-							</div>
+							<div
+								id="content"
+								class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal py-3"
+							></div>
 						</div>
 					</div>
 				</div>
@@ -76,7 +111,7 @@ import {
 	Switch,
 	usePageMeta,
 	toast,
-	call
+	call,
 } from 'frappe-ui'
 import {
 	computed,
@@ -158,10 +193,10 @@ watch(
 				course: props.courseName,
 				chapter: props.chapterNumber,
 				lesson: newVal,
-			}
+			},
 		})
 		lessonDetails.reload()
-	}
+	},
 )
 
 onMounted(() => {
@@ -188,7 +223,6 @@ const saveAndAddAnother = () => {
 			lessonNumber: nextLessonNumber,
 		},
 	})
-
 }
 
 const renderEditor = (holder) => {
@@ -481,13 +515,13 @@ const createNewLesson = () => {
 							toast.success(__('Lesson created successfully'))
 							lessonDetails.reload()
 						},
-					}
+					},
 				)
 			},
 			onError(err) {
 				toast.error(err.messages?.[0] || err)
 			},
-		}
+		},
 	)
 }
 
@@ -508,7 +542,7 @@ const editCurrentLesson = () => {
 			onError(err) {
 				toast.error(err.message)
 			},
-		}
+		},
 	)
 }
 
@@ -708,9 +742,11 @@ iframe {
 }
 
 .plyr__control--overlaid {
-	background: radial-gradient(circle,
-			rgba(0, 0, 0, 0.4) 0%,
-			rgba(0, 0, 0, 0.5) 50%);
+	background: radial-gradient(
+		circle,
+		rgba(0, 0, 0, 0.4) 0%,
+		rgba(0, 0, 0, 0.5) 50%
+	);
 }
 
 .plyr__control:hover {

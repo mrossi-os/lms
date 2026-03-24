@@ -5,13 +5,24 @@ from os_lms.os_lms.doctype.lmsa_transcript_cache.lmsa_transcript_cache import (
     generate_uid,
 )
 import frappe
+from .transcriber.youtube import YoutubeTranscriber
+from .transcriber.vimeo import VimeoTranscriber
 
 
 class VideoTranscriber:
 
     def transcribe(self, provider: str, id: str) -> str:
+        cache = self._from_cache(provider, id)
+        if cache is not None:
+            return cache
+
+        text = ""
         if provider == "youtube":
-            return self._from_youtube(id, "it")
+            text = self._from_youtube(id)
+        if provider == "vimeo":
+            text = self._from_vimeo(id)
+
+        self._save_cache(provider, id, text)
         return ""
 
     def _from_cache(self, provider: str, id: str) -> str:
@@ -39,35 +50,12 @@ class VideoTranscriber:
         )
         doc.insert()
 
-    def _from_youtube(self, id: str, language: str) -> str:
-        """
-        Estrae la trascrizione dai sottotitoli YouTube.
-        Non scarica l'audio — usa i sottotitoli già disponibili.
-        languages: lista di lingue preferite, es. ["it", "en"]
-        """
-        cache = self._from_cache("youtube", id)
-        if cache is not None:
-            return cache
+    def _from_youtube(self, id: str) -> str:
+        transcriber = YoutubeTranscriber()
+        text = transcriber.transcript(id)
+        return text
 
-        from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound
-
-        print(f"Load transcript from youtube video {id}")
-
-        text = ""
-        fetched_transcript = []
-        try:
-            ytt_api = YouTubeTranscriptApi()
-            fetched_transcript = ytt_api.fetch(id, languages=[language])
-
-        except NoTranscriptFound:
-            print(f"No transcripiton found for video {id} in {language} check default")
-            fetched_transcript = ytt_api.fetch(id)
-
-        if hasattr(fetched_transcript, "snippets") and isinstance(
-            fetched_transcript.snippets, list
-        ):
-            for snippet in fetched_transcript.snippets:
-                text += " " + snippet.text
-        text = text.strip()
-        self._save_cache("youtube", id, text)
+    def _from_vimeo(self, id: str) -> str:
+        transcriber = VimeoTranscriber()
+        text = transcriber.transcript(id)
         return text

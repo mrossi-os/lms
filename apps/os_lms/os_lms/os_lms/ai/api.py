@@ -10,19 +10,19 @@ from lms.lms.utils import (
     validate_course_access,
 )
 
-from .ingestion import ask_chat, get_settings, ingest_lesson
+from .ingestion import ask_chat, get_settings
+from .ingestion_service import IngestionService
 
 
-def check_lesson_permission(lesson_id):
-    """Check if current user can manage ingestion for the lesson."""
+def load_lesson(lesson_id):
     lesson = frappe.get_doc("Course Lesson", lesson_id)
-    course_id = lesson.course
-
+    if not lesson:
+        frappe.throw(_("Lesson not found"), frappe.DoesNotExistError)
     if has_moderator_role():
-        return True
+        return lesson
 
-    if has_course_instructor_role() and is_instructor(course_id):
-        return True
+    if has_course_instructor_role() and is_instructor(lesson.course):
+        return lesson
 
     frappe.throw(
         _("You don't have permission to manage this lesson"), frappe.PermissionError
@@ -40,10 +40,10 @@ def start_lesson_ingestion(lesson_id):
     Returns:
             dict with status, message, material name and chunk_count
     """
-    check_lesson_permission(lesson_id)
-
-    result = ingest_lesson(lesson_id)
-    return result
+    lesson = load_lesson(lesson_id)
+    service = IngestionService()
+    service.ingest_lesson(lesson)
+    return {"success": True}
 
 
 @frappe.whitelist()
@@ -95,7 +95,7 @@ def get_lesson_ingestion_status(lesson_id):
 
 
 @frappe.whitelist()
-def ask_lmsa_chat(course_id, lesson_id, question):
+def ask_lmsa_chat(lesson_id, question):
     """
     Ask a question to the LMSA chatbot.
 
@@ -110,26 +110,12 @@ def ask_lmsa_chat(course_id, lesson_id, question):
     if not question or not question.strip():
         frappe.throw(_("Question cannot be empty"))
 
-    validate_course_access(lesson_id)
-
-    lesson = frappe.get_doc("Course Lesson", lesson_id)
-    if lesson.course != course_id:
-        frappe.throw(_("Lesson does not belong to this course"), frappe.ValidationError)
-
-    result = ask_chat(course_id, lesson_id, question)
-    """
-	log = frappe.new_doc("LMSA Query Log")
-	log.course = course_id
-	log.lesson = lesson_id
-	log.member = frappe.session.user
-	log.question = question
-	log.answer = result.get("answer", "")
-	log.context = json.dumps(result.get("sources", []))
-	log.status = "Answered" if result.get("status") == "answered" else "Failed"
-	log.save(ignore_permissions=True)
-	frappe.db.commit()
-	"""
-    return result
+    lesson = load_lesson(lesson_id)
+    service = IngestionService()
+    result = service.ask(lesson, question)
+    if not result:
+        result = "I couldn't find relevant information in the lesson content to answer your question."
+    return {"answer": result}
 
 
 @frappe.whitelist(allow_guest=True)

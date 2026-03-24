@@ -5,7 +5,7 @@
         "dt": "LMS Program",
         "label": "Description",
         "fieldname": "description",
-        "fieldtype":  "Text Editor",
+        "fieldtype": "Text Editor",
         "insert_after": "title",
         "reqd": 0,
         "hidden": 0
@@ -28,6 +28,27 @@
         "fieldtype": "Data",
         "in_list_view": 1,
         "label": "Duration",
+        "reqd": 0
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "Course Index-status",
+        "dt": "Course Lesson",
+        "fieldname": "index_status",
+        "fieldtype": "Select",
+        "in_list_view": 1,
+        "label": "Index Status",
+        "reqd": 0,
+        "options": "pending\nindexed\nfailed\nprocessing"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "Course Lesson-indexed_at",
+        "dt": "Course Lesson",
+        "fieldname": "indexed_at",
+        "fieldtype": "Datetime",
+        "in_list_view": 1,
+        "label": "Indexed At",
         "reqd": 0
     }
 ]

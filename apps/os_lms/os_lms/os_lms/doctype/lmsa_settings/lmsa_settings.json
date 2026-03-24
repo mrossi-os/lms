@@ -9,7 +9,9 @@
   "embedding_model",
   "chunk_size",
   "chunk_overlap",
-  "top_k"
+  "top_k",
+  "llm_model",
+  "system_prompt"
  ],
  "fields": [
   {
@@ -45,6 +47,22 @@
    "fieldname": "top_k",
    "fieldtype": "Int",
    "label": "Top K"
+  },
+  {
+   "default": "gpt-4o-mini",
+   "fieldname": "llm_model",
+   "fieldtype": "Data",
+   "label": "LLM Model"
+  },
+  {
+   "fieldname": "system_prompt",
+   "fieldtype": "Small Text",
+   "label": "System Prompt"
+  },
+  {
+	"fieldname": "vimeo_api_key",
+	"fieldtype": "Data",
+	"label": "Vimeo api key"
   }
  ],
  "grid_page_length": 50,

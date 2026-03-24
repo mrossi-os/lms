@@ -697,6 +697,18 @@ const tabsStructure = computed(() => {
 												'The model used to generate embeddings for content indexing.',
 											),
 										},
+										{
+											label: __('LLM Model'),
+											name: 'llm_model',
+											type: 'text',
+											description: __('The model used to chatbot.'),
+										},
+										{
+											label: __('LLM System Prompt'),
+											name: 'system_prompt',
+											type: 'textarea',
+											description: __('System prompt use with chatbot.'),
+										},
 									],
 								},
 								{
@@ -724,6 +736,12 @@ const tabsStructure = computed(() => {
 											description: __(
 												'Number of relevant chunks to retrieve for context.',
 											),
+										},
+										{
+											label: __('Vimeo Api Key'),
+											name: 'vimeo_api_key',
+											type: 'text',
+											description: __('Api vimeo for transcript.'),
 										},
 									],
 								},

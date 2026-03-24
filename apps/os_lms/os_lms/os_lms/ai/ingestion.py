@@ -491,13 +491,12 @@ def ask_chat(course_id, lesson_id, question):
     }
 
 
-def ingest_lesson(lesson_id):
+def ingest_lesson(lesson):
     """Main ingestion function for a lesson."""
     settings = get_settings()
     if not settings.enabled:
         frappe.throw("LMSA is not enabled")
 
-    lesson = frappe.get_doc("Course Lesson", lesson_id)
     parser = LessonContentParser(lesson)
     text = parser.extract_text()
 

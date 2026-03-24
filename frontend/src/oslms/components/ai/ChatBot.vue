@@ -118,7 +118,6 @@ const sendQuestion = async () => {
 
 	try {
 		const response = await call('os_lms.os_lms.ai.api.ask_lmsa_chat', {
-			course_id: props.courseId,
 			lesson_id: props.lessonId,
 			question: trimmedQuestion,
 		})
@@ -126,7 +125,7 @@ const sendQuestion = async () => {
 		messages.value.push({
 			role: 'assistant',
 			content: response.answer || __('Sorry, I could not find an answer.'),
-			sources: response.sources?.map((s: any) => s.chunk_id || s.material_id || 'Source') || [],
+			sources: [],
 		})
 	} catch (error: any) {
 		const errorMessage = error?.message || error?.exc || __('Failed to get response')

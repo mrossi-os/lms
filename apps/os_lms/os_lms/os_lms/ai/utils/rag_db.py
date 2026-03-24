@@ -1,7 +1,6 @@
-import os
-
 import frappe
 
+from .oslms_settings import OsLmsSettings
 from .rag.openai_api_embedder import OpenAIApiEmbedder
 from .rag.rag_storage import RagStorage
 from .rag.redis_rag_storage import RedisRagStorage
@@ -10,22 +9,13 @@ from .rag.text_embedder import TextEmbedder
 
 class RagDB:
 
-    def __init__(self):
+    def __init__(self, settings: OsLmsSettings):
         self.__db = RedisRagStorage()
-        self.__settings = None
+        self.__settings = settings
         self.__embedder = None
 
     @property
-    def _settings(self) -> frappe._dict:
-        if self.__settings is None:
-            doc = frappe.get_single("LMSA Settings")
-            self.__settings = frappe._dict(
-                enabled=doc.enabled,
-                embedding_model=doc.embedding_model or "text-embedding-3-small",
-                chunk_size=doc.chunk_size or 1000,
-                chunk_overlap=doc.chunk_overlap or 200,
-                top_k=doc.top_k or 6,
-            )
+    def _settings(self) -> OsLmsSettings:
         return self.__settings
 
     @property
@@ -46,22 +36,16 @@ class RagDB:
         # clear db
         self._db.delete_by_lesson(course, lesson)
 
-        try:
-            chunks = self._chunk_text(text)
-            if not chunks:
-                frappe.throw("No chunks generated from content")
+        chunks = self._chunk_text(text)
+        if not chunks:
+            frappe.throw("No chunks generated from content")
 
-            embeddings = self._embedder.embed_text(chunks)
-            self._db.save(course, lesson, embeddings)
-
-        except Exception:
-            raise
-
-        print("")
+        embeddings = self._embedder.embed_text(chunks)
+        self._db.save(course, lesson, embeddings)
 
     def search(self, course: str, lesson: str, query: str):
         query_embeddes = self._embedder.embed_text([query])[0]
-        return self._db.search(course, lesson, query_embeddes)
+        return self._db.search(course, lesson, query_embeddes, self._settings.top_k)
 
     def _chunk_text(self, text):
         """Split text into chunks by characters."""

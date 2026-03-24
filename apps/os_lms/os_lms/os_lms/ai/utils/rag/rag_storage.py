@@ -15,5 +15,5 @@ class RagStorage(ABC):
         pass
 
     @abstractmethod
-    def search(self, course: str, lesson: str, query: EmbeddingItem):
+    def search(self, course: str, lesson: str, query: EmbeddingItem, max_result: int) -> list[str]:
         pass

@@ -82,13 +82,13 @@ class RedisRagStorage(RagStorage):
             ]
         )
 
-    def search(self, course: str, lesson: str, query: EmbeddingItem):
+    def search(self, course: str, lesson: str, query: EmbeddingItem, max_result: int) -> list[str]:
         tag_filter = Tag("course") == course
         tag_filter &= Tag("lesson") == lesson
         q = VectorQuery(
             vector=query.vector,
             vector_field_name="embedding",
-            num_results=5,
+            num_results=max_result,
             return_fields=["content"],
             filter_expression=tag_filter,
         )
