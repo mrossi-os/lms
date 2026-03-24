@@ -109,7 +109,7 @@ input.bg-surface-gray-2 {
 .values-container.border-\[--surface-gray-2\],
 textarea.border-\[--surface-gray-2\],
 input.border-\[--surface-gray-2\] {
-	border: 1px solid var(--ink-gray-9) !important;
+	border: 1px solid var(--ink-gray-8) !important;
 }
 .link-component button.focus\:ring-0:focus,
 .values-container.focus\:ring-0:focus,
@@ -157,7 +157,11 @@ input[type='time']::-webkit-calendar-picker-indicator {
 
 /* Text editor */
 .component-text-editor .border-outline-gray-modals {
-	border-color: var(--ink-gray-9);
+	border-color: var(--ink-gray-8);
+}
+.component-text-editor .ProseMirror {
+	border: 1px solid var(--ink-gray-8);
+	border-top: 0px;
 }
 
 .small-form .link-component button.py-1\.5,
@@ -166,6 +170,25 @@ input[type='time']::-webkit-calendar-picker-indicator {
 	padding-bottom: var(--form-padding-small-y) !important;
 }
 
+::selection,
+#editor ::selection,
+#instructor-content ::selection {
+	background: #256ab0;
+	color: #ffffff;
+}
+
+::-moz-selection,
+#editor ::-moz-selection,
+#instructor-content ::-moz-selection {
+	background: #256ab0;
+	color: #ffffff;
+}
+
+input:disabled {
+	background-color: var(--color-company-primary);
+	opacity: 1;
+	cursor: default;
+}
 /* ═══ EDITOR ═══ */
 
 .codex-editor .ce-toolbar__actions svg:not(.ce-popover-item__icon svg) path {
@@ -186,4 +209,41 @@ input[type='time']::-webkit-calendar-picker-indicator {
 
 .ce-toolbar__actions--opened {
 	margin-right: 5px;
+}
+
+/* List header */
+.os-list-view > div:first-of-type {
+	margin-bottom: 0px;
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+}
+/* List rows */
+.os-list-view > div:nth-of-type(2) {
+	background-color: var(--color-company-primary);
+	border-bottom-left-radius: 0.5rem !important;
+	border-bottom-right-radius: 0.5rem !important;
+}
+
+/* SCROLBAR */
+/* larghezza scrollbar */
+::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+
+/* sfondo barra */
+::-webkit-scrollbar-track {
+	background: #e5e7eb;
+	border-radius: 999px;
+}
+
+/* cursore della barra */
+::-webkit-scrollbar-thumb {
+	background: #143350;
+	border-radius: 999px;
+}
+
+/* hover */
+::-webkit-scrollbar-thumb:hover {
+	background: #256ab0;
 }

@@ -318,13 +318,7 @@
 			</div>
 		</div>
 	</div>
-	<InlineLessonMenu
-		v-if="lesson.data?.name"
-		v-model="showInlineMenu"
-		:lesson="lesson.data?.name"
-		v-model:notes="notes"
-		@updateNotes="updateNotes"
-	/>
+
 	<VideoStatistics
 		v-if="isAdmin"
 		v-model="showStatsDialog"
@@ -377,7 +371,6 @@ import VideoStatistics from '@/components/Modals/VideoStatistics.vue'
 import CourseOutline from '@/components/CourseOutline.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import Notes from '@/components/Notes/Notes.vue'
-import InlineLessonMenu from '@/components/Notes/InlineLessonMenu.vue'
 import { getLmsRoute } from '@/utils/basePath'
 
 import ChatBot from '@/oslms/components/ai/ChatBot.vue'
@@ -817,6 +810,7 @@ const enrollStudent = () => {
 
 const toggleInlineMenu = async () => {
 	showInlineMenu.value = false
+	return
 	await nextTick()
 	let selection = window.getSelection()
 	if (selection.toString()) {

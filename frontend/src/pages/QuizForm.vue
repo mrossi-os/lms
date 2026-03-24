@@ -90,6 +90,7 @@
 					<Switch
 						v-model="quizDetails.doc.show_answers"
 						size="sm"
+						class="card p-4"
 						:label="__('Show Answers')"
 						:description="
 							__('Display correct answers after each question is attempted.')
@@ -98,6 +99,7 @@
 					<Switch
 						v-model="quizDetails.doc.show_submission_history"
 						size="sm"
+						class="card p-4"
 						:label="__('Show Submission History')"
 						:description="__('Allow users to view their past quiz attempts.')"
 					/>
@@ -106,6 +108,7 @@
 					<Switch
 						v-model="quizDetails.doc.shuffle_questions"
 						size="sm"
+						class="card p-4"
 						:label="__('Shuffle Questions')"
 						:description="
 							__('Randomize the order of questions for each attempt.')
@@ -121,6 +124,7 @@
 					<Switch
 						v-model="quizDetails.doc.enable_negative_marking"
 						size="sm"
+						class="card p-4"
 						:label="__('Enable Negative Marking')"
 						:description="__('Deduct marks for incorrect answers.')"
 					/>
@@ -153,9 +157,10 @@
 				:options="{
 					showTooltip: false,
 				}"
+				class="os-list-view"
 			>
 				<ListHeader
-					class="mb-2 grid items-center space-x-4 rounded bg-surface-gray-2 p-2"
+					class="grid items-center space-x-4 rounded bg-surface-gray-2 p-2"
 				>
 					<ListHeaderItem :item="item" v-for="item in questionColumns" />
 				</ListHeader>
@@ -304,7 +309,7 @@ const submitQuiz = () => {
 			onError(err) {
 				toast.error(err.messages?.[0] || err)
 			},
-		}
+		},
 	)
 }
 
@@ -378,7 +383,7 @@ const deleteQuestions = (selections, unselectAll) => {
 				quizDetails.reload()
 				unselectAll()
 			},
-		}
+		},
 	)
 }
 

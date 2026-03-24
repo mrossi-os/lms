@@ -24,6 +24,7 @@
 			:columns="submissionColumns"
 			:rows="submissions.data"
 			rowKey="name"
+			class="os-list-view"
 		>
 			<ListHeader
 				class="mb-2 grid items-center space-x-4 rounded bg-surface-gray-2 p-2"

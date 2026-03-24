@@ -91,7 +91,7 @@
 						{{ __('Get Certificate') }}
 					</Button>
 				</div>
-				<div class="mt-4">
+				<div :class="readOnlyMode ? 'mt-4' : 'mt-0'">
 					<CourseOutline
 						:title="__('Course Outline')"
 						:courseName="course.data.name"

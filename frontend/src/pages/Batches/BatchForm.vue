@@ -10,6 +10,7 @@
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
 						<div class="space-y-5">
 							<Switch
+								class="card p-4"
 								size="sm"
 								v-model="batchDetail.doc.published"
 								:label="__('Published')"
@@ -46,6 +47,7 @@
 						<div class="space-y-5">
 							<Switch
 								size="sm"
+								class="card p-4"
 								v-model="batchDetail.doc.allow_self_enrollment"
 								:label="__('Allow Self Enrollment')"
 								:description="
@@ -94,6 +96,7 @@
 						<div class="flex flex-col space-y-5">
 							<Switch
 								size="sm"
+								class="card p-4"
 								v-model="batchDetail.doc.evaluation"
 								:label="__('Evaluation')"
 								:description="__('Enable evaluations for batch participants.')"
@@ -109,6 +112,7 @@
 						<div>
 							<Switch
 								size="sm"
+								class="card p-4"
 								v-model="batchDetail.doc.certification"
 								:label="__('Certification')"
 								:description="__('Issue certificates to batch participants.')"
@@ -154,7 +158,7 @@
 
 				<div class="px-5 pb-5 space-y-5 border-b mb-5">
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-						<div class="space-y-5">
+						<div class="space-y-5 card p-4">
 							<FormControl
 								v-model="batchDetail.doc.medium"
 								type="select"
@@ -179,6 +183,7 @@
 						<Uploader
 							v-model="batchDetail.doc.video_link"
 							:label="__('Preview Video')"
+							class="card p-4 !mb-0"
 							type="video"
 							:required="false"
 						/>
@@ -193,6 +198,7 @@
 						<FormControl
 							v-model="batchDetail.doc.conferencing_provider"
 							type="select"
+							class="card p-4"
 							:options="conferencingOptions"
 							:placeholder="__('Select option')"
 							:label="__('Conferencing Provider')"
@@ -228,6 +234,7 @@
 					</div>
 					<Switch
 						size="sm"
+						class="card p-4"
 						v-model="batchDetail.doc.paid_batch"
 						:label="__('Paid Batch')"
 						:description="__('Charge a fee for batch enrollment.')"
@@ -272,6 +279,7 @@
 							v-model="batchDetail.doc.meta_image"
 							:label="__('Meta Image')"
 							type="image"
+							class="card p-4"
 							:required="false"
 						/>
 					</div>
@@ -484,13 +492,12 @@ const submitBatch = () => {
 }
 
 const updateBatch = () => {
-	batchDetail.setValue.submit(
-		{
-			...batchDetail.doc,
-			instructors: instructors.value.map((instructor) => ({
-				instructor: instructor,
-			})),
-		},
+	batchDetail.doc.instructors = instructors.value.map((instructor) => ({
+		instructor: instructor,
+	}))
+
+	batchDetail.save.submit(
+		{},
 		{
 			onSuccess(data) {
 				updateMetaInfo('batches', data.name, meta)

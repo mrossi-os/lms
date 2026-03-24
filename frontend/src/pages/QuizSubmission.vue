@@ -15,7 +15,10 @@
 			</Button>
 		</div>
 	</header>
-	<div v-if="submissionDetails.doc" class="w-2/3 border-x mx-auto py-5">
+	<div
+		v-if="submissionDetails.doc"
+		class="w-2/3 border-x mx-auto py-5 bg-[--surface-gray-2]"
+	>
 		<div class="text-xl px-10 font-semibold text-ink-gray-9 mb-5">
 			{{ submissionDetails.doc.member_name }}
 		</div>
@@ -149,7 +152,7 @@ const saveSubmission = () => {
 			onError(err) {
 				toast.error(err.messages?.[0] || err)
 			},
-		}
+		},
 	)
 }
 

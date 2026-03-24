@@ -12,6 +12,7 @@
 			:columns="quizColumns"
 			:rows="submissions.data"
 			row-key="name"
+			class="os-list-view"
 			:options="{ showTooltip: false, selectable: false }"
 		>
 			<ListHeader

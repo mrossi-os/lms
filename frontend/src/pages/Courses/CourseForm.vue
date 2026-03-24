@@ -77,6 +77,7 @@
 								v-model="courseResource.doc.image"
 								:label="__('Course Image')"
 								:required="false"
+								class="card p-4"
 								@update:modelValue="makeFormDirty()"
 							/>
 
@@ -105,6 +106,7 @@
 							>
 								<Switch
 									size="sm"
+									class="card p-4"
 									v-model="courseResource.doc.published"
 									:label="__('Published')"
 									:description="__('Make the course visible to all users.')"
@@ -120,6 +122,7 @@
 							<div class="flex flex-col space-y-5">
 								<Switch
 									size="sm"
+									class="card p-4"
 									v-model="courseResource.doc.upcoming"
 									:label="__('Upcoming')"
 									:description="
@@ -131,6 +134,7 @@
 								/>
 								<Switch
 									size="sm"
+									class="card p-4"
 									v-model="courseResource.doc.featured"
 									:label="__('Featured')"
 									:description="__('Highlight the course on the homepage.')"
@@ -138,6 +142,7 @@
 								/>
 								<Switch
 									size="sm"
+									class="card p-4"
 									v-model="selfEnrollment"
 									:label="__('Allow Self Enrollment')"
 									:description="
@@ -181,7 +186,7 @@
 								"
 								:editable="true"
 								:fixedMenu="true"
-								editorClass="prose-sm max-w-none border-b border-x border-outline-gray-modals bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]"
+								editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]"
 							/>
 						</div>
 
@@ -224,6 +229,7 @@
 						<div class="grid grid-cols-1 md:grid-cols-3 gap-5">
 							<Switch
 								size="sm"
+								class="card p-4"
 								v-model="courseResource.doc.paid_course"
 								:label="__('Paid Course')"
 								:description="__('Charge a fee for course access.')"
@@ -231,6 +237,7 @@
 							/>
 							<Switch
 								size="sm"
+								class="card p-4"
 								v-model="courseResource.doc.enable_certification"
 								:label="__('Completion Certificate')"
 								:description="__('Issue a certificate on course completion.')"
@@ -238,6 +245,7 @@
 							/>
 							<Switch
 								size="sm"
+								class="card p-4"
 								v-model="courseResource.doc.paid_certificate"
 								:label="__('Paid Certificate')"
 								:description="__('Charge a fee for the certificate.')"
