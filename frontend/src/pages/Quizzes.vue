@@ -13,7 +13,7 @@
 	<div class="py-5 mx-5">
 		<div class="flex items-center justify-between mb-4">
 			<div class="text-lg font-semibold text-ink-gray-9">
-				{{ __('{0} Quizzes').format(quizzes.data.length) }}
+				{{ __('{0} Quizzes').format(quizzes.data?.length || 0) }}
 			</div>
 			<FormControl v-model="search" type="text" :placeholder="__('Search')">
 				<template #prefix>

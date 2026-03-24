@@ -169,6 +169,12 @@
 					</div>
 				</template>
 			</Draggable>
+			<div
+				v-if="!outline.loading && !outline.data?.length"
+				class="text-ink-gray-5 text-sm text-center py-6"
+			>
+				{{ __('No content available yet.') }}
+			</div>
 		</div>
 	</div>
 	<ChapterModal

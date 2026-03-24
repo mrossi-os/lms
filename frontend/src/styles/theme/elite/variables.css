@@ -27,38 +27,38 @@
 
 :root {
 	/* ── Brand ── */
-	--color-company-primary: #0A1E33;
-	--color-company-secondary: #1D5A9B;
+	--color-company-primary: #0a1e33;
+	--color-company-secondary: #1d5a9b;
 
 	/* ── Superfici ── */
-	--surface-white: #0E2742;
-	--surface-menu-bar: #0A1E33;
-	--surface-selected: #2A4A6B;
-	--surface-modal: #0C1F35;
+	--surface-white: #0e2742;
+	--surface-menu-bar: #0a1e33;
+	--surface-selected: #2a4a6b;
+	--surface-modal: #0c1f35;
 
-	--surface-gray-2: #163A5C;
-	--surface-gray-3: #1E4872;
-	--surface-gray-7: #2878C0;
+	--surface-gray-2: #163a5c;
+	--surface-gray-3: #1e4872;
+	--surface-gray-7: #2878c0;
 
 	/* ── Testi — gerarchia chiara ── */
-	--ink-gray-9: #FFFFFF;
-	--ink-gray-8: #E8F0FA;
-	--ink-gray-7: #D0E0F2;
-	--ink-gray-6: #A8C4E0;
-	--ink-gray-5: #A8C4E0;
-	--ink-gray-10: #0A1E33;
-
+	--ink-gray-9: #ffffff;
+	--ink-gray-8: #e8f0fa;
+	--ink-gray-7: #d0e0f2;
+	--ink-gray-6: #a8c4e0;
+	--ink-gray-5: #a8c4e0;
+	--ink-gray-8: #65819f;
+	--ink-gray-10: #0a1e33;
 
 	/* ── Bordi — visibili ma non invasivi ── */
-	--outline-gray-1: #2A4A6B;
-	--outline-gray-modals: #3A5F85;
+	--outline-gray-1: #2a4a6b;
+	--outline-gray-modals: #3a5f85;
 
 	/* ── Layout ── */
 	--color-sidebar-menu: var(--color-company-primary);
 	--surface-card: var(--color-company-primary);
-	--color-menu-bar: #0F2A45;
+	--color-menu-bar: #0f2a45;
 
 	/** FORM **/
-	--form-padding-y:1.2rem;
+	--form-padding-y: 1.2rem;
 	--form-padding-small-y: 0.5rem;
 }

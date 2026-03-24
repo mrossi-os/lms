@@ -11,13 +11,19 @@ body {
 }
 
 .login-content {
-	background-color: var(--color-company-secondary);
-	border-color: var(--outline-gray-1);
+	background-color: var(--color-company-secondary) !important;
+	border-color: var(--outline-gray-1) !important;
+}
+
+.btn-login {
+	background-color: var(--color-company-tertiary) !important;
 }
 
 input {
-	background-color: var(--color-company-tertiary);
+	background-color: var(--color-company-tertiary) !important;
+	color: white !important;
 }
+
 .page-card-head h4 {
 	color: white;
 }
