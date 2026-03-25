@@ -27,10 +27,10 @@ import {
 	type ComboboxOption,
 	FormLabel,
 	createResource,
-	frappeRequest,
 	debounce,
 } from 'frappe-ui'
 import { Plus as LucidePlus } from 'lucide-vue-next'
+import { resourceFetcher } from '@/plugins/resourceFetcherPlugin'
 
 interface SelectOption {
 	label: string
@@ -84,7 +84,7 @@ const options = createResource({
 		filters: props.filters,
 	},
 	method: 'POST',
-	resourceFetcher: frappeRequest,
+	resourceFetcher: resourceFetcher,
 	transform: (data: SelectOption[]) => {
 		return data.map((doc) => ({
 			label: doc.label || doc.value,
