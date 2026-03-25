@@ -3,6 +3,7 @@ import frappe
 from frappe.rate_limiter import rate_limit
 from lms.lms.utils import get_course_details as _original_get_course_details
 from lms.lms.utils import get_lesson_details as _original_get_lesson_details
+from lms.lms.utils import get_batch_details as _original_get_batch_details
 from lms.lms.utils import get_progress
 
 
@@ -102,3 +103,20 @@ def custom_get_lesson_details(chapter: dict, progress: bool = False):
 
         lessons.append(lesson_details)
     return lessons
+
+@frappe.whitelist(allow_guest=True)
+@rate_limit(limit=500, seconds=60 * 60)
+def get_batch_details(batch: str):
+    batch_detail = _original_get_batch_details(batch)
+
+    raw = frappe.db.get_value("LMS Batch", batch, "custom_feature_sections")
+    try:
+        if raw:
+            unescaped = raw.replace("&quot;", '"').replace("&amp;", "&")
+            batch_detail.custom_feature_sections = json.loads(unescaped)
+        else:
+            batch_detail.custom_feature_sections = []
+    except (json.JSONDecodeError, TypeError):
+        batch_detail.custom_feature_sections = []
+
+    return batch_detail

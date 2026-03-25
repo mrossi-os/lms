@@ -165,6 +165,10 @@ const props = defineProps({
 		type: Object,
 		required: true,
 	},
+	fieldName: {
+		type: String,
+		default: 'feature_sections',
+	},
 })
 
 const emit = defineEmits(['update:modelValue', 'dirty'])
@@ -177,7 +181,7 @@ const sections = ref([])
 watch(
 	() => props.modelValue?.name,
 	() => {
-		const raw = props.modelValue?.feature_sections
+		const raw = props.modelValue?.[props.fieldName]
 		try {
 			// Unescape HTML entities prima di parsare
 			const unescaped = raw
@@ -195,7 +199,7 @@ watch(
 
 const onChanged = () => {
 	if (props.modelValue) {
-		props.modelValue.feature_sections = JSON.stringify(sections.value)
+		props.modelValue[props.fieldName] = JSON.stringify(sections.value)
 	}
 	emit('dirty')
 }

@@ -27,6 +27,10 @@
 					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-10"
 					v-html="batch.data.batch_details"
 				></div>
+				<FeaturedSectionView
+					v-if="batch.data.custom_feature_sections"
+					:sections="batch.data.custom_feature_sections"
+				/>
 			</div>
 
 			<div class="hidden md:block">
@@ -72,7 +76,7 @@ import CourseCard from '@/components/CourseCard.vue'
 import BatchOverlay from '@/pages/Batches/components/BatchOverlay.vue'
 import CourseInstructors from '@/components/CourseInstructors.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
-
+import FeaturedSectionView from '@/oslms/components/FeaturedSectionView.vue'
 const props = defineProps({
 	batch: {
 		type: Object,
