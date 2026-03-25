@@ -37,13 +37,14 @@ override_whitelisted_methods = {
     "lms.command_palette.search_sqlite": "os_lms.os_lms.override_api.search_sqlite",
     "lms.lms.utils.get_course_details": "os_lms.os_lms.override_utils.get_course_details",
     "lms.lms.utils.get_lesson_creation_details": "os_lms.os_lms.override_utils.get_lesson_creation_details",
+    "lms.lms.utils.get_batch_details": "os_lms.os_lms.override_utils.get_batch_details", 
 }
 
 fixtures = [
     {
         "dt": "Custom Field",
         "filters": [
-            ["dt", "in", ["LMS Program", "LMS Settings", "Course Lesson", "LMS Course"]]
+            ["dt", "in", ["LMS Program", "LMS Settings", "Course Lesson", "LMS Course", "LMS Batch"]]
         ],
     }
 ]

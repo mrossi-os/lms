@@ -154,6 +154,13 @@
 							editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem] max-h-[16rem] overflow-y-scroll mb-4"
 						/>
 					</div>
+					<div>
+						<FeatureSectionEditor
+							v-model="batchDetail.doc"
+							fieldName="custom_feature_sections"
+							@dirty="isDirty = true"
+						/>
+					</div>
 				</div>
 
 				<div class="px-5 pb-5 space-y-5 border-b mb-5">
@@ -347,6 +354,7 @@ import BatchCourses from '@/pages/Batches/components/BatchCourses.vue'
 import Assessments from '@/pages/Batches/components/Assessments.vue'
 import NewMemberModal from '@/components/Modals/NewMemberModal.vue'
 import EmailTemplateModal from '@/components/Modals/EmailTemplateModal.vue'
+import FeatureSectionEditor from '@/oslms/components/FeatureSectionEditor.vue'
 
 const router = useRouter()
 const user = inject('$user')

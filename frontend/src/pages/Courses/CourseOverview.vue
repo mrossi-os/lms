@@ -73,7 +73,7 @@
 					v-html="unescapeDescription(course.data.description)"
 					class="card p-3 ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-10"
 				></div>
-				<CourseFeaturedSections
+				<FeaturedSectionView
 					v-if="course.data.feature_sections"
 					:sections="course.data.feature_sections"
 				/>
@@ -92,7 +92,7 @@ import CourseCardOverlay from '@/components/CourseCardOverlay.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import CourseInstructors from '@/components/CourseInstructors.vue'
 import RelatedCourses from '@/components/RelatedCourses.vue'
-import CourseFeaturedSections from '@/oslms/components/CourseFeaturedSections.vue'
+import FeaturedSectionView from '@/oslms/components/FeaturedSectionView.vue'
 import { inject } from 'vue'
 
 const props = defineProps<{
