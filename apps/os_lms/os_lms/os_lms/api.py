@@ -1,5 +1,6 @@
 import frappe
 
+
 @frappe.whitelist()
 def get_lesson_position(lesson_name):
     """
@@ -36,21 +37,27 @@ def get_lesson_position(lesson_name):
         "lesson_number": lesson_number,
     }
 
+
 @frappe.whitelist(allow_guest=True)
 def get_course_duration(course: str):
     """
     Somma il campo duration (minuti) di tutte le lezioni del corso.
     Restituisce il totale in minuti.
     """
-    result = frappe.db.sql("""
+    result = frappe.db.sql(
+        """
         SELECT COALESCE(SUM(cl.duration), 0) as total_minutes
         FROM `tabLesson Reference` lr
         JOIN `tabChapter Reference` cr ON lr.parent = cr.chapter
         JOIN `tabCourse Lesson` cl ON lr.lesson = cl.name
         WHERE cr.parent = %s
-    """, course, as_dict=True)
+    """,
+        course,
+        as_dict=True,
+    )
 
     return result[0].total_minutes if result else 0
+
 
 @frappe.whitelist()
 def get_evaluator_details(evaluator: str):
@@ -69,7 +76,10 @@ def get_evaluator_details(evaluator: str):
             pass  # Google API non configurata, ignora
     else:
         calendar = frappe.db.get_value(
-            "Google Calendar", {"user": evaluator}, ["name", "authorization_code"], as_dict=1
+            "Google Calendar",
+            {"user": evaluator},
+            ["name", "authorization_code"],
+            as_dict=1,
         )
         calendar_name = calendar.name
         is_authorised = calendar.authorization_code

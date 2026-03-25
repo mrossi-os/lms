@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import path from 'path'
+import path, { resolve } from 'path'
 import { VitePWA } from 'vite-plugin-pwa'
-import { readFileSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 
 export default defineConfig(async ({ mode }) => {
 	const isDev = mode === 'development'
@@ -15,6 +15,7 @@ export default defineConfig(async ({ mode }) => {
 			__SOCKETIO_PORT__: configSite.socketio_port
 		},
 		plugins: [
+			osOverrideTheme(),
 			frappeui({
 				frappeProxy: true,
 				lucideIcons: true,
@@ -96,4 +97,39 @@ async function importConfigSite(isDev) {
 	}
 	const filePath = path.resolve(__dirname, relativePath)
 	return JSON.parse(readFileSync(filePath, 'utf-8'))
+}
+
+
+// Vite plugin that allows overriding Vue components from node_modules
+// (e.g. frappe-ui) with local versions placed in `src/overrides/`.
+//
+// How it works:
+//   1. Intercepts every relative `.vue` import resolved during bundling.
+//   2. Checks whether the resolved absolute path falls inside `node_modules/`.
+//   3. If it does, looks for a file at the same relative path under
+//      `frontend/src/overrides/` (e.g. `src/overrides/frappe-ui/src/Button.vue`).
+//   4. When a matching override exists, the plugin returns its path instead,
+//      so the override is bundled in place of the original component.
+//
+// The plugin runs with `enforce: 'pre'` so it takes priority over other
+// resolve plugins (including Vite's default resolver).
+function osOverrideTheme() {
+	return {
+		name: 'os-override-theme',
+		enforce: 'pre',
+		resolveId(source, importer) {
+			if (!importer) return null
+			if (!source.startsWith('.') || !source.endsWith('.vue')) return null
+			const absoluteSource = resolve(path.dirname(importer), source)
+			const srcDir = resolve(__dirname, 'node_modules')
+			if (!absoluteSource.startsWith(srcDir)) return null
+			const relativeToSrc = absoluteSource.slice(srcDir.length)
+			const overridePath = path.join(__dirname, 'src/overrides', relativeToSrc)
+			if (existsSync(overridePath)) {
+				console.log(`[os-override-theme] Override found: ${overridePath}`)
+				return overridePath
+			}
+			return null
+		}
+	}
 }

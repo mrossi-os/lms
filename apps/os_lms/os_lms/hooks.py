@@ -25,7 +25,8 @@ after_migrate = [
 
 # fix error email check content MAX SIZE
 override_doctype_class = {
-    "Email Account": "os_lms.overrides.email_account.CustomEmailAccount"
+    "Email Account": "os_lms.overrides.email_account.CustomEmailAccount",
+    "Data Import": "os_lms.overrides.data_import.CustomDataImport",
 }
 # override sqlite search to add custom doctypes
 sqlite_search = ["os_lms.overrides.sqlite.CustomLearningSearch"]
