@@ -1,9 +1,9 @@
 import frappe
 import csv
-import io
 from frappe.core.doctype.data_import.data_import import DataImport
 
 from os_lms.data_import.course import course_column_expanders
+from os_lms.data_import.enrollment import enrollment_column_expanders
 
 
 class CustomDataImport(DataImport):
@@ -16,6 +16,8 @@ class CustomDataImport(DataImport):
         column_expanders = None
         if self.reference_doctype == "LMS Course":
             column_expanders = course_column_expanders()
+        if self.reference_doctype == "LMS Batch Enrollment":
+            column_expanders = enrollment_column_expanders()
         if not column_expanders:
             return
         self._expand_csv_columns(column_expanders)

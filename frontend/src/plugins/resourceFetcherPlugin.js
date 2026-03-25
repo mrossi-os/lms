@@ -5,7 +5,8 @@ const AVAILABLE_DOCTYPES = {
 	"Course Chapter": true,
 	"LMS Course": true,
 	"LMS Enrollment": true,
-	"User": true
+	"User": true,
+	"LMS Batch Enrollment": true
 }
 
 

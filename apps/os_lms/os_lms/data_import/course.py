@@ -3,6 +3,7 @@ import secrets
 
 
 def course_column_expanders():
+
     return {
         "email istruttori": expand_instructors,
     }
