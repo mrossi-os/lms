@@ -8,11 +8,11 @@
 	>
 		<template #body-content>
 			<div class="space-y-4">
-				<FormControl
+				<!-- <FormControl
 					type="checkbox"
 					:label="__('Purchased Certificate')"
 					v-model="purchasedCertificate"
-				/>
+				/> -->
 				<Link
 					doctype="User"
 					:label="__('Student')"
