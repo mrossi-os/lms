@@ -1,5 +1,6 @@
 import frappe
 from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound
+from urllib.parse import urlparse, parse_qs
 
 
 class YoutubeTranscriber:
@@ -43,3 +44,22 @@ class YoutubeTranscriber:
             for snippet in fetched_transcript.snippets:
                 text += " " + snippet.text
         return text.strip()
+
+    @staticmethod
+    def extract_id(value: str) -> str:
+        parsed = urlparse(value)
+        # https://youtu.be/V4Pzs5wLKh0
+        if parsed.netloc in ("youtu.be",):
+            return parsed.path.lstrip("/").split("?")[0]
+        if parsed.netloc in ("www.youtube.com", "youtube.com"):
+
+            # /watch?v=VIDEO_ID
+            if parsed.path == "/watch":
+                params = parse_qs(parsed.query)
+                return params.get("v", [None])[0]
+
+            # /embed/VIDEO_ID
+            if parsed.path.startswith("/embed/"):
+                return parsed.path.split("/embed/")[1].split("?")[0]
+
+        return None
