@@ -94,11 +94,6 @@
 				"
 				:isSidebarCollapsed="sidebarStore.isSidebarCollapsed"
 			/>
-			<GettingStartedBanner
-				v-if="showOnboarding && !isOnboardingStepsCompleted"
-				:isSidebarCollapsed="sidebarStore.isSidebarCollapsed"
-				appName="learning"
-			/>
 
 			<div
 				class="flex items-center mt-4"

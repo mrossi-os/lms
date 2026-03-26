@@ -293,7 +293,7 @@
 						:lessonId="lesson.data?.name"
 					/>
 				</div>
-				<div class="bg-surface-menu-bar p-5 border-b">
+				<div class="bg-surface-menu-bar p-5 border-b m-3 rounded-md">
 					<div class="text-lg font-semibold text-ink-gray-9">
 						{{ lesson.data.course_title }}
 					</div>
@@ -309,12 +309,14 @@
 						:progress="lessonProgress"
 					/>
 				</div>
-				<CourseOutline
-					:courseName="courseName"
-					:key="chapterNumber"
-					:getProgress="lesson.data.membership ? true : false"
-					:lessonProgress="lessonProgress"
-				/>
+				<div class="m-3">
+					<CourseOutline
+						:courseName="courseName"
+						:key="chapterNumber"
+						:getProgress="lesson.data.membership ? true : false"
+						:lessonProgress="lessonProgress"
+					/>
+				</div>
 			</div>
 		</div>
 	</div>
