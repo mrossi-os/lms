@@ -2,7 +2,7 @@ import os
 
 import frappe
 import requests
-
+from os_lms.os_lms.ai.utils.oslms_settings import OsLmsSettings
 from .text_embedder import TextEmbedder
 from .embedding_item import EmbeddingItem
 
@@ -11,22 +11,18 @@ class OpenAIApiEmbedder(TextEmbedder):
     """OpenAI API-based text embedder."""
 
     def __init__(self):
-        self._api_key = os.environ.get("OPENAI_API_KEY")
-        if not self._api_key:
-            frappe.throw(
-                "OPENAI_API_KEY environment variable is not set. "
-                "Please configure it before using the OpenAI embedder."
-            )
+        self._api_key = None
         self._model = "text-embedding-3-small"
 
-    def set_model(self, model: str):
-        self._model = model
+    def set_settings(self, settings: OsLmsSettings):
+        self._model = settings.embedding_model
+        self._api_key = settings.openai_key
 
     MAX_TOKENS_PER_REQUEST = 200000
     APPROX_CHARS_PER_TOKEN = 4
 
     def embed_text(self, texts: list[str]) -> list[EmbeddingItem]:
-        if not texts:
+        if not texts or not self._api_key:
             return []
 
         batches = self._split_into_batches(texts)

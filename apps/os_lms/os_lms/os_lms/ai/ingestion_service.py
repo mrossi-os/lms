@@ -28,6 +28,7 @@ class IngestionService:
                 chunk_overlap=doc.chunk_overlap or 200,
                 top_k=doc.top_k or 6,
                 system_prompt=doc.system_prompt,
+                openai_key=doc.openai_key,
             )
         return self._settings
 
@@ -41,8 +42,7 @@ class IngestionService:
     def chatbot(self) -> Chatbot:
         if self._chatbot is None:
             chatbot = GptChatbot()
-            chatbot.set_model(self.settings.llm_model)
-            chatbot.set_system_prompt(self.settings.system_prompt)
+            chatbot.set_settings(self.settings)
             self._chatbot = chatbot
         return self._chatbot
 

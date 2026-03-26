@@ -698,6 +698,14 @@ const tabsStructure = computed(() => {
 											),
 										},
 										{
+											label: __('Embedding Model'),
+											name: 'embedding_model',
+											type: 'text',
+											description: __(
+												'The model used to generate embeddings for content indexing.',
+											),
+										},
+										{
 											label: __('LLM Model'),
 											name: 'llm_model',
 											type: 'text',
@@ -708,6 +716,12 @@ const tabsStructure = computed(() => {
 											name: 'system_prompt',
 											type: 'textarea',
 											description: __('System prompt use with chatbot.'),
+										},
+										{
+											label: __('Open AI Key'),
+											name: 'openai_key',
+											type: 'text',
+											description: __('OpenAI key.'),
 										},
 									],
 								},

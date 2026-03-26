@@ -26,7 +26,7 @@ class RagDB:
     def _embedder(self) -> TextEmbedder:
         if self.__embedder is None:
             self.__embedder = OpenAIApiEmbedder()
-            self.__embedder.set_model(self._settings.embedding_model)
+            self.__embedder.set_settings(self._settings)
         return self.__embedder
 
     def ingest_data(self, course: str, lesson: str, text: str):

@@ -50,7 +50,7 @@ export function useLessonIngestion(lesson, { onSuccess } = {}) {
 	const isIngesting = computed(() => ingestionTrigger.loading)
 
 	const status = computed(() => {
-		if (isIngesting.value) return 'pending'
+		if (isIngesting.value) return 'processing'
 		return normalizeStatus(lesson.value?.index_status)
 	})
 
@@ -81,9 +81,9 @@ export function useLessonIngestion(lesson, { onSuccess } = {}) {
 	})
 
 	const startIngestion = () => {
-		if (!lessonId.value || isIngesting.value || status.value === 'pending')
+		if (!lessonId.value || isIngesting.value || status.value === 'processing')
 			return
-		ingestionTrigger.submit().catch(() => {})
+		ingestionTrigger.submit().catch(() => { })
 	}
 
 	return {

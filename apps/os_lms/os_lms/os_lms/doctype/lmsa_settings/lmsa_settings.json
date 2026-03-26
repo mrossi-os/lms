@@ -1,93 +1,98 @@
 {
- "actions": [],
- "creation": "2026-02-04 12:30:00.000000",
- "doctype": "DocType",
- "engine": "InnoDB",
- "field_order": [
-  "enabled",
-  "column_break_1",
-  "embedding_model",
-  "chunk_size",
-  "chunk_overlap",
-  "top_k",
-  "llm_model",
-  "system_prompt"
- ],
- "fields": [
-  {
-   "default": "0",
-   "fieldname": "enabled",
-   "fieldtype": "Check",
-   "label": "Enabled"
-  },
-  {
-   "fieldname": "column_break_1",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "text-embedding-3-small",
-   "fieldname": "embedding_model",
-   "fieldtype": "Data",
-   "label": "Embedding Model"
-  },
-  {
-   "default": "1000",
-   "fieldname": "chunk_size",
-   "fieldtype": "Int",
-   "label": "Chunk Size"
-  },
-  {
-   "default": "200",
-   "fieldname": "chunk_overlap",
-   "fieldtype": "Int",
-   "label": "Chunk Overlap"
-  },
-  {
-   "default": "6",
-   "fieldname": "top_k",
-   "fieldtype": "Int",
-   "label": "Top K"
-  },
-  {
-   "default": "gpt-4o-mini",
-   "fieldname": "llm_model",
-   "fieldtype": "Data",
-   "label": "LLM Model"
-  },
-  {
-   "fieldname": "system_prompt",
-   "fieldtype": "Small Text",
-   "label": "System Prompt"
-  },
-  {
-	"fieldname": "vimeo_api_key",
-	"fieldtype": "Data",
-	"label": "Vimeo api key"
-  }
- ],
- "grid_page_length": 50,
- "index_web_pages_for_search": 1,
- "issingle": 1,
- "links": [],
- "modified": "2026-02-04 12:30:00.000000",
- "modified_by": "Administrator",
- "module": "OS LMS",
- "name": "LMSA Settings",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "print": 1,
-   "read": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
-  }
- ],
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": [],
- "track_changes": 1
+	"actions": [],
+	"creation": "2026-02-04 12:30:00.000000",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"enabled",
+		"column_break_1",
+		"embedding_model",
+		"chunk_size",
+		"chunk_overlap",
+		"top_k",
+		"llm_model",
+		"system_prompt"
+	],
+	"fields": [
+		{
+			"default": "0",
+			"fieldname": "enabled",
+			"fieldtype": "Check",
+			"label": "Enabled"
+		},
+		{
+			"fieldname": "column_break_1",
+			"fieldtype": "Column Break"
+		},
+		{
+			"default": "text-embedding-3-small",
+			"fieldname": "embedding_model",
+			"fieldtype": "Data",
+			"label": "Embedding Model"
+		},
+		{
+			"default": "1000",
+			"fieldname": "chunk_size",
+			"fieldtype": "Int",
+			"label": "Chunk Size"
+		},
+		{
+			"default": "200",
+			"fieldname": "chunk_overlap",
+			"fieldtype": "Int",
+			"label": "Chunk Overlap"
+		},
+		{
+			"default": "6",
+			"fieldname": "top_k",
+			"fieldtype": "Int",
+			"label": "Top K"
+		},
+		{
+			"default": "gpt-4o-mini",
+			"fieldname": "llm_model",
+			"fieldtype": "Data",
+			"label": "LLM Model"
+		},
+		{
+			"fieldname": "system_prompt",
+			"fieldtype": "Small Text",
+			"label": "System Prompt"
+		},
+		{
+			"fieldname": "openai_key",
+			"fieldtype": "Data",
+			"label": "Open AI Key"
+		},
+		{
+			"fieldname": "vimeo_api_key",
+			"fieldtype": "Data",
+			"label": "Vimeo api key"
+		}
+	],
+	"grid_page_length": 50,
+	"index_web_pages_for_search": 1,
+	"issingle": 1,
+	"links": [],
+	"modified": "2026-02-04 12:30:00.000000",
+	"modified_by": "Administrator",
+	"module": "OS LMS",
+	"name": "LMSA Settings",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"print": 1,
+			"read": 1,
+			"role": "System Manager",
+			"share": 1,
+			"write": 1
+		}
+	],
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": [],
+	"track_changes": 1
 }

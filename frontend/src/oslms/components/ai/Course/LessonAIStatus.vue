@@ -9,7 +9,7 @@
 		<Tooltip :text="tooltipText" placement="top">
 			<button
 				class="flex items-center justify-center p-0.5 rounded hover:bg-surface-gray-3"
-				:disabled="!lessonId || isIngesting || status === 'pending'"
+				:disabled="!lessonId || isIngesting || status === 'processing'"
 				@click.prevent.stop="startIngestion"
 			>
 				<component

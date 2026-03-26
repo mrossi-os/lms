@@ -1,14 +1,12 @@
 from abc import ABC, abstractmethod
 
+from os_lms.os_lms.ai.utils.oslms_settings import OsLmsSettings
+
 
 class Chatbot(ABC):
 
     @abstractmethod
-    def set_model(self, model: str) -> None:
-        pass
-
-    @abstractmethod
-    def set_system_prompt(self, system_prompt: str) -> None:
+    def set_settings(self, settings: OsLmsSettings):
         pass
 
     @abstractmethod

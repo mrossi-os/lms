@@ -33,13 +33,13 @@
 				size="sm"
 				class="w-full"
 				:loading="isIngesting"
-				:disabled="!lessonId || status === 'pending'"
+				:disabled="!lessonId || status === 'processing'"
 				@click="startIngestion"
 			>
 				<template v-if="status === 'not_ingested'">
 					{{ __('Index for AI') }}
 				</template>
-				<template v-else-if="status === 'pending'">
+				<template v-else-if="status === 'processing'">
 					{{ __('Indexing...') }}
 				</template>
 				<template v-else>

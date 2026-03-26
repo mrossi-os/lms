@@ -10,3 +10,4 @@ class OsLmsSettings:
     top_k: int
     llm_model: str
     system_prompt: str
+    openai_key: str
