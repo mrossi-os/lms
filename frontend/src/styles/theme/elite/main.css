@@ -173,14 +173,14 @@ input[type='time']::-webkit-calendar-picker-indicator {
 ::selection,
 #editor ::selection,
 #instructor-content ::selection {
-	background: #256ab0;
+	background: var(--surface-gray-1);
 	color: #ffffff;
 }
 
 ::-moz-selection,
 #editor ::-moz-selection,
 #instructor-content ::-moz-selection {
-	background: #256ab0;
+	background: var(--surface-gray-1);
 	color: #ffffff;
 }
 
@@ -209,6 +209,48 @@ input:disabled {
 
 .ce-toolbar__actions--opened {
 	margin-right: 5px;
+}
+
+.ce-inline-toolbar,
+.ce-conversion-toolbar {
+	background-color: var(--surface-gray-3);
+	border-color: var(--surface-gray-3);
+}
+.ce-inline-tool:hover,
+.ce-inline-toolbar__dropdown:hover {
+	background-color: var(--surface-gray-1);
+	border-radius: 4px;
+}
+.ce-inline-toolbar__toggler-and-button-wrapper svg {
+	fill: black;
+}
+
+.codex-editor .ce-conversion-tool__icon svg {
+	fill: black;
+}
+.codex-editor .ce-conversion-tool__icon svg line {
+	stroke: black;
+}
+.codex-editor .ce-conversion-tool__icon path {
+	stroke: black;
+}
+
+.ProseMirror ::selection,
+.ProseMirror *::selection,
+.ce-paragraph::selection,
+.ce-paragraph *::selection,
+.cdx-block::selection,
+.cdx-block *::selection {
+	background: var(--surface-gray-1);
+	color: #ffffff;
+}
+
+.ProseMirror ::-moz-selection,
+.ProseMirror *::-moz-selection,
+.ce-paragraph::-moz-selection,
+.ce-paragraph *::-moz-selection {
+	background: var(--surface-gray-1);
+	color: #ffffff;
 }
 
 /* List header */
