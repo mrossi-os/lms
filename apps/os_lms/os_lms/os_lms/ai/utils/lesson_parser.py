@@ -2,7 +2,9 @@
 
 import json
 from typing import Any
+
 from .video_transcriber import VideoTranscriber
+from .file_transcriber import FileTranscriber
 
 
 class LessonContentParser:
@@ -59,6 +61,7 @@ class LessonContentParser:
             "code": self._parse_code,
             "image": self._parse_image,
             "embed": self._parse_embed,
+            "upload": self._parse_upload,
         }
 
         handler = handlers.get(block_type, self._parse_unknown)
@@ -108,6 +111,14 @@ class LessonContentParser:
         text = transcriber.transcribe(provider, source)
 
         return caption + " " + text
+
+    def _parse_upload(self, data: dict) -> str:
+        file_url = data.get("file_url", "")
+        file_type = data.get("file_type", "")
+        if not file_url or not file_type:
+            return ""
+        transcriber = FileTranscriber()
+        return transcriber.transcribe(file_url, file_type)
 
     def _parse_unknown(self, data: dict) -> str:
         return data.get("text", "")
