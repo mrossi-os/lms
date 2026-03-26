@@ -532,7 +532,7 @@
 "{0} days ago","{0} giorni fa"
 "Gestisci i tuoi corsi e batch a colpo d'occhio","gestisci i tuoi corsi e le classi a colpo d'occhio"
 "{0} partite","{0} ricerche"
-"Error: value missing for Corso LMS:","Errore: Campo mancante nel Corso LMS"
+"Error: Value missing for {0}: {1}","Errore: Campo {1} mancante in {0}"
 "Data import/ Importing Courses","Importazione/Corsi da Importare"
 "Upload File","Carica File"
 "Map Data",""
@@ -3141,3 +3141,4 @@ restrict_ip
 "Document","Documento"
 "Text","Testo"
 "Ask a question about this lesson...","Fai una domanda su questa lezione..."
+"{0} is required","{0} campo obbligatorio"

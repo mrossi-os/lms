@@ -210,7 +210,7 @@ const canMakeAnnouncement = () => {
 }
 
 const batchMenu = computed(() => {
-	if (!batch.data?.certification) {
+	if (!batch.data?.certification && !canMakeAnnouncement()) {
 		return []
 	}
 	let options = [
@@ -220,6 +220,13 @@ const batchMenu = computed(() => {
 				openCertificateDialog.value = true
 			},
 			condition: () => batch.data?.certification,
+		},
+		{
+			label: __('Make an Announcement'),
+			onClick() {
+				openAnnouncementModal()
+			},
+			condition: () => canMakeAnnouncement(),
 		},
 	]
 	return options

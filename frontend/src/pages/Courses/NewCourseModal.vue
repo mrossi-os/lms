@@ -152,6 +152,23 @@ const validateFields = () => {
 const saveCourse = (close: () => void = () => {}) => {
 	validateFields()
 
+	if (!course.value.title) {
+		toast.warning(__('{0} is required').format(__('Title')))
+		return
+	}
+	if (!course.value.instructors.length) {
+		toast.warning(__('{0} is required').format(__('Instructors')))
+		return
+	}
+	if (!course.value.short_introduction) {
+		toast.warning(__('{0} is required').format(__('Short Introduction')))
+		return
+	}
+	if (!course.value.description) {
+		toast.warning(__('{0} is required').format(__('Course Description')))
+		return
+	}
+
 	const tempDiv = document.createElement('div')
 	tempDiv.innerHTML = course.value.description
 	const hasMedia = tempDiv.querySelector('video, iframe') !== null

@@ -142,6 +142,18 @@ const validateFields = () => {
 
 const saveAssignment = () => {
 	validateFields()
+	if (!assignment.title) {
+		toast.warning(__('{0} is required').format(__('Title')))
+		return
+	}
+	if (!assignment.type) {
+		toast.warning(__('{0} is required').format(__('Submission Type')))
+		return
+	}
+	if (!assignment.question) {
+		toast.warning(__('{0} is required').format(__('Question')))
+		return
+	}
 	if (props.assignmentID == 'new') {
 		createAssignment()
 	} else {

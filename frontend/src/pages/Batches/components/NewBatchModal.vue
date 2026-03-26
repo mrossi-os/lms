@@ -198,6 +198,42 @@ const validateFields = () => {
 
 const saveBatch = (close: () => void = () => {}) => {
 	validateFields()
+	if (!batch.value.title) {
+		toast.warning(__('{0} is required').format(__('Title')))
+		return
+	}
+	if (!batch.value.start_date) {
+		toast.warning(__('{0} is required').format(__('Start Date')))
+		return
+	}
+	if (!batch.value.end_date) {
+		toast.warning(__('{0} is required').format(__('End Date')))
+		return
+	}
+	if (!batch.value.start_time) {
+		toast.warning(__('{0} is required').format(__('Start Time')))
+		return
+	}
+	if (!batch.value.end_time) {
+		toast.warning(__('{0} is required').format(__('End Time')))
+		return
+	}
+	if (!batch.value.timezone) {
+		toast.warning(__('{0} is required').format(__('Timezone')))
+		return
+	}
+	if (!batch.value.description) {
+		toast.warning(__('{0} is required').format(__('Description')))
+		return
+	}
+	if (!batch.value.instructors.length) {
+		toast.warning(__('{0} is required').format(__('Instructors')))
+		return
+	}
+	if (!batch.value.batch_details) {
+		toast.warning(__('{0} is required').format(__('Batch Details')))
+		return
+	}
 	props.batches.insert.submit(
 		{
 			...batch.value,

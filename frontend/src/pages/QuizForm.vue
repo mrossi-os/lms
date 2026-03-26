@@ -296,6 +296,10 @@ const validateTitle = () => {
 
 const submitQuiz = () => {
 	validateTitle()
+	if (!quizDetails.doc.title) {
+		toast.warning(__('{0} is required').format(__('Title')))
+		return
+	}
 	quizDetails.setValue.submit(
 		{
 			...quizDetails.doc,

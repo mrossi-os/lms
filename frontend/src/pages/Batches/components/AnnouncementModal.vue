@@ -16,6 +16,12 @@
 		<template #body-content>
 			<div class="flex flex-col gap-4">
 				<FormControl
+					:label="__('Email Template')"
+					type="select"
+					:options="emailTemplates.data || []"
+					v-model="announcement.template"
+					/>
+				<FormControl
 					:label="__('Subject')"
 					type="text"
 					v-model="announcement.subject"
@@ -34,6 +40,7 @@
 					</div>
 					<TextEditor
 						:fixedMenu="true"
+						:content="announcement.announcement"
 						@change="(val) => (announcement.announcement = val)"
 						editorClass="prose-sm py-2 px-2 min-h-[200px] border-outline-gray-2 hover:border-outline-gray-3 rounded-b-md bg-surface-gray-3"
 					/>
@@ -42,6 +49,7 @@
 		</template>
 	</Dialog>
 </template>
+
 <script setup>
 import {
 	Dialog,
@@ -50,7 +58,7 @@ import {
 	createResource,
 	toast,
 } from 'frappe-ui'
-import { reactive } from 'vue'
+import { reactive, watch } from 'vue'
 
 const show = defineModel()
 
@@ -66,14 +74,60 @@ const props = defineProps({
 })
 
 const announcement = reactive({
+	template: '',
 	subject: '',
 	replyTo: '',
 	announcement: '',
 })
 
+watch(
+	() => announcement.template,
+	(newVal) => {
+		console.log('[AnnouncementModal] template changed:', newVal)
+		applyTemplate(newVal)
+	}
+)
+
+const emailTemplates = createResource({
+	url: 'frappe.client.get_list',
+	params: {
+		doctype: 'Email Template',
+		fields: ['name', 'subject'],
+	},
+	auto: true,
+	transform(data) {
+		return data.map((t) => ({ label: t.name, value: t.name }))
+	},
+})
+
+const templateResource = createResource({
+	url: 'frappe.client.get',
+})
+
+const applyTemplate = async (option) => {
+	const templateName = typeof option === 'object' ? option?.value : option
+	console.log('[AnnouncementModal] applyTemplate called with:', {
+		option,
+		templateName,
+	})
+	if (!templateName) return
+	const result = await templateResource.submit({
+		doctype: 'Email Template',
+		name: templateName,
+	})
+	console.log('[AnnouncementModal] template result:', result)
+	if (result) {
+		announcement.subject = result.subject || ''
+		announcement.announcement = result.response || ''
+		console.log('[AnnouncementModal] announcement after apply:', {
+			...announcement,
+		})
+	}
+}
+
 const announcementResource = createResource({
 	url: 'frappe.core.doctype.communication.email.make',
-	makeParams(values) {
+	makeParams() {
 		return {
 			recipients: announcement.replyTo,
 			bcc: props.students.join(', '),
