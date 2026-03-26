@@ -96,3 +96,18 @@ def get_evaluator_details(evaluator: str):
         "calendar": calendar_name,
         "is_authorised": is_authorised,
     }
+
+
+@frappe.whitelist()
+def try_import():
+    data_import = frappe.get_doc(
+        {
+            "doctype": "Data Import",
+            "reference_doctype": "LMS Batch Enrollment",
+            "import_type": "Insert New Records",  # o "Update Existing Records"
+            "import_file": "/files/LMS Batch Enrollment_full.csv",  # path relativo a site
+        }
+    )
+    data_import.insert()
+    data_import.start_import()
+    frappe.db.commit()

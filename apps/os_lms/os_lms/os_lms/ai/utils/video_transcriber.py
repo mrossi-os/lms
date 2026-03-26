@@ -7,11 +7,13 @@ from os_lms.os_lms.doctype.lmsa_transcript_cache.lmsa_transcript_cache import (
 import frappe
 from .transcriber.youtube import YoutubeTranscriber
 from .transcriber.vimeo import VimeoTranscriber
+from urllib.parse import urlparse
 
 
 class VideoTranscriber:
 
     def transcribe(self, provider: str, id: str) -> str:
+        id = self._parse_id(provider, id)
         cache = self._from_cache(provider, id)
         if cache is not None:
             return cache
@@ -21,9 +23,10 @@ class VideoTranscriber:
             text = self._from_youtube(id)
         if provider == "vimeo":
             text = self._from_vimeo(id)
-
+        if not text:
+            return ""
         self._save_cache(provider, id, text)
-        return ""
+        return text
 
     def _from_cache(self, provider: str, id: str) -> str:
         cache = frappe.db.get_value(
@@ -56,6 +59,19 @@ class VideoTranscriber:
         return text
 
     def _from_vimeo(self, id: str) -> str:
+
         transcriber = VimeoTranscriber()
         text = transcriber.transcript(id)
         return text
+
+    def _is_url(self, value: str) -> bool:
+        parsed = urlparse(value)
+        return bool(parsed.scheme in ("http", "https") and parsed.netloc)
+
+    def _parse_id(self, provider: str, id: str) -> str:
+        if self._is_url(id):
+            if provider == "youtube":
+                return YoutubeTranscriber.extract_id(id)
+            if provider == "vimeo":
+                return VimeoTranscriber.extract_id(id)
+        return id

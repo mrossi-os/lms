@@ -43,6 +43,12 @@
 							</template>
 							{{ __('Enroll') }}
 						</Button>
+						<Button @click="goToImport">
+							<template #prefix>
+								<Import class="size-4 stroke-1.5" />
+							</template>
+							{{ __('Import') }}
+						</Button>
 					</div>
 				</div>
 				<div
@@ -186,12 +192,14 @@ import {
 } from 'frappe-ui'
 import { computed, ref, watch } from 'vue'
 import { formatAmount } from '@/utils'
-import { Plus } from 'lucide-vue-next'
+import { Plus, Import } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
 import BatchFeedback from '@/pages/Batches/components/BatchFeedback.vue'
 import BatchStudentProgress from '@/pages/Batches/components/BatchStudentProgress.vue'
 import NumberChartGraph from '@/components/NumberChartGraph.vue'
 import StudentModal from '@/components/Modals/StudentModal.vue'
 
+const router = useRouter()
 const searchFilter = ref<string | null>(null)
 const showEnrollmentModal = ref<boolean>(false)
 const showProgressModal = ref<boolean>(false)
@@ -200,6 +208,12 @@ const currentStudent = ref<any>(null)
 const props = defineProps<{
 	batch: { [key: string]: any } | null
 }>()
+
+function goToImport() {
+	const now = dayjs().format('YYYY-MM-DD HH:mm:ss')
+	const importName = `LMS Batch Enrollment Import on ${now}`
+	router.push(`/data-import/${encodeURIComponent(importName)}`)
+}
 
 const chartData = createResource({
 	url: 'lms.lms.utils.get_batch_chart_data',

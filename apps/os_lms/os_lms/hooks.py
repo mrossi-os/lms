@@ -37,14 +37,24 @@ override_whitelisted_methods = {
     "lms.command_palette.search_sqlite": "os_lms.os_lms.override_api.search_sqlite",
     "lms.lms.utils.get_course_details": "os_lms.os_lms.override_utils.get_course_details",
     "lms.lms.utils.get_lesson_creation_details": "os_lms.os_lms.override_utils.get_lesson_creation_details",
-    "lms.lms.utils.get_batch_details": "os_lms.os_lms.override_utils.get_batch_details", 
+    "lms.lms.utils.get_batch_details": "os_lms.os_lms.override_utils.get_batch_details",
 }
 
 fixtures = [
     {
         "dt": "Custom Field",
         "filters": [
-            ["dt", "in", ["LMS Program", "LMS Settings", "Course Lesson", "LMS Course", "LMS Batch"]]
+            [
+                "dt",
+                "in",
+                [
+                    "LMS Program",
+                    "LMS Settings",
+                    "Course Lesson",
+                    "LMS Course",
+                    "LMS Batch",
+                ],
+            ]
         ],
     }
 ]
@@ -54,12 +64,15 @@ doc_events = {
     "Badge": {
         # fix bug cache after saving badge
         "after_insert": "os_lms.badge_utils.clear_cache_on_badge_create"
-    }
+    },
+    "Course Lesson": {
+        "before_save": "os_lms.events.lesson.reset_index_status_on_content_change"
+    },
 }
 
 
 scheduler_events = {
     "daily": [
-        "os_lms.os_lms.ai.scheduler.sync_stale_materials",
+        "os_lms.os_lms.ai.scheduler.reindex_lesson_content",
     ],
 }
