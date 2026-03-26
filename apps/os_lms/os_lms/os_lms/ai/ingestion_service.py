@@ -60,6 +60,27 @@ class IngestionService:
         lesson.index_status = "pending"
         lesson.save()
 
+    def reindex_lesson_content(self):
+        """Re-index all lessons with pending or null index_status."""
+        if not self.settings.enabled:
+            self.logger.info("LMSA is not enabled, skipping reindex")
+            return
+
+        lessons = frappe.get_all(
+            "Course Lesson",
+            filters=[["index_status", "in", ["pending", None, ""]]],
+            pluck="name",
+        )
+
+        self.logger.info("Found %d lessons to reindex", len(lessons))
+
+        for lesson_name in lessons:
+            try:
+                lesson = frappe.get_doc("Course Lesson", lesson_name)
+                self.ingest_lesson(lesson)
+            except Exception as e:
+                self.logger.error("Reindex failed for lesson %s: %s", lesson_name, e)
+
     def ingest_lesson(self, lesson):
         """Main ingestion function for a lesson."""
         if not self.settings.enabled:
