@@ -53,6 +53,46 @@
     },
     {
         "doctype": "Custom Field",
+        "name": "LMS Settings-home",
+        "dt": "LMS Settings",
+        "label": "Home",
+        "fieldname": "home",
+        "fieldtype": "Check",
+        "default": "1",
+        "insert_after": "items_in_sidebar_section"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Settings-search",
+        "dt": "LMS Settings",
+        "label": "Search",
+        "fieldname": "search",
+        "fieldtype": "Check",
+        "default": "1",
+        "insert_after": "notifications"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Settings-quizzes",
+        "dt": "LMS Settings",
+        "label": "Quizzes",
+        "fieldname": "quizzes",
+        "fieldtype": "Check",
+        "default": "1",
+        "insert_after": "search"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Settings-assignments",
+        "dt": "LMS Settings",
+        "label": "Assignments",
+        "fieldname": "assignments",
+        "fieldtype": "Check",
+        "default": "1",
+        "insert_after": "quizzes"
+    },
+    {
+        "doctype": "Custom Field",
         "name": "LMS Batch-custom_feature_sections",
         "dt": "LMS Batch",
         "label": "Feature Sections",
