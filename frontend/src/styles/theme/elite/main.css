@@ -266,6 +266,18 @@ input:disabled {
 	border-bottom-right-radius: 0.5rem !important;
 }
 
+/* ═══ SETTINGS MODAL ═══ */
+
+#settings-modal ::selection {
+	background: var(--surface-gray-2);
+	color: #ffffff;
+}
+
+#settings-modal ::-moz-selection {
+	background: var(--surface-gray-2);
+	color: #ffffff;
+}
+
 /* SCROLBAR */
 /* larghezza scrollbar */
 ::-webkit-scrollbar {
