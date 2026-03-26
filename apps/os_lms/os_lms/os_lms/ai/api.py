@@ -6,11 +6,9 @@ from frappe import _
 from lms.lms.utils import (
     has_course_instructor_role,
     has_moderator_role,
-    is_instructor,
-    validate_course_access,
+    is_instructor
 )
 
-from .ingestion import ask_chat, get_settings
 from .ingestion_service import IngestionService
 
 
@@ -24,8 +22,13 @@ def load_lesson(lesson_id):
     if has_course_instructor_role() and is_instructor(lesson.course):
         return lesson
 
+    if frappe.db.exists(
+        "LMS Enrollment", {"member": frappe.session.user, "course": lesson.course}
+    ):
+        return lesson
+
     frappe.throw(
-        _("You don't have permission to manage this lesson"), frappe.PermissionError
+        _("You don't have permission to access this lesson"), frappe.PermissionError
     )
 
 

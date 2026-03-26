@@ -159,6 +159,9 @@ pip_deps=(
     "numpy:numpy>=1.24.0"
     "redis:redis>=7.0.0,<8.0.0"
     "youtube_transcript_api:youtube_transcript_api"
+    "fitz:PyMuPDF>=1.23.0"
+    "docx:python-docx>=1.0.0"
+    "pptx:python-pptx>=0.6.23"
 )
 
 for dep_def in "${pip_deps[@]}"; do
