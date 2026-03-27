@@ -311,5 +311,9 @@ input:disabled {
 /* IFRAME */
 
 .os-frame {
-	height: 650px;
+	height: 100vh;
+}
+
+#scrollContainer {
+	overflow-x: hidden;
 }
