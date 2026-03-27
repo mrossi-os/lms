@@ -136,20 +136,14 @@
 						<div class="flex flex-col space-y-4 flex-1 text-sm">
 							<div
 								class="flex items-center text-ink-gray-7"
-								v-for="row in chartDetails.data?.progress_distribution"
+								v-for="(row, idx) in chartDetails.data?.progress_distribution"
 							>
 								<div
 									class="size-2 rounded"
 									:style="{
 										backgroundColor:
 											colors[theme][
-												row.name.startsWith('Just')
-													? 'red'
-													: row.name.startsWith('In')
-														? 'amber'
-														: row.name.startsWith('Adv')
-															? 'blue'
-															: 'green'
+												['red', 'amber', 'blue', 'green'][idx]
 											][400],
 									}"
 								></div>
@@ -309,10 +303,16 @@ const chartDetails = createResource({
 	url: 'lms.lms.api.get_course_progress_distribution',
 	makeParams() {
 		return {
-			course: props.course.data?.name,
+			course: __(props.course.data?.name),
 		}
 	},
 	auto: true,
+	onSuccess(data) {
+		console.log('data', data)
+		data?.progress_distribution?.forEach((item) => {
+			item.name = __(item.name)
+		})
+	},
 })
 
 const progressList = createListResource({

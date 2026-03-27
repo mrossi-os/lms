@@ -209,7 +209,13 @@
 							</div>
 						</div>
 
-						<div v-if="!zenModeEnabled && (user.data?.is_moderator || user.data?.is_instructor)" class="flex items-center mt-4 md:mt-2">
+						<div
+							v-if="
+								!zenModeEnabled &&
+								(user.data?.is_moderator || user.data?.is_instructor)
+							"
+							class="flex items-center mt-4 md:mt-2"
+						>
 							<span
 								class="h-6 mr-1"
 								:class="{
@@ -219,7 +225,7 @@
 								<UserAvatar
 									v-for="instructor in lesson.data.instructors"
 									:user="instructor"
-								/>s
+								/>
 							</span>
 							<CourseInstructors
 								v-if="lesson.data?.instructors"
@@ -337,7 +343,7 @@
 							v-model:notes="notes"
 							@updateNotes="updateNotes"
 						/>
-						<Discussions
+						<!-- <Discussions
 							v-else-if="allowDiscussions"
 							:title="'Questions'"
 							:doctype="'Course Lesson'"
@@ -346,7 +352,7 @@
 							:emptyStateText="
 								__('Ask a question to get help from the community.')
 							"
-						/>
+						/> -->
 					</div>
 				</div>
 			</div>

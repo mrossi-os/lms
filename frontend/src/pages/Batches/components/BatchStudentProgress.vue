@@ -21,7 +21,7 @@
 								"
 								:theme="studentDetails.data.progress === 100 ? 'green' : 'red'"
 							>
-								{{ studentDetails.data.progress }}% {{ __('Complete') }}
+								{{ studentDetails.data.progress }}% {{ __('Completato') }}
 							</Badge>
 						</div>
 						<div class="text-sm text-ink-gray-7">
@@ -42,7 +42,7 @@
 							showTooltip: false,
 							onRowClick: (row: any) => {
 								redirectToAssessment(row)
-							}
+							},
 						}"
 					>
 						<ListHeader
@@ -61,7 +61,7 @@
 											v-if="column.key == 'status' && isAssignment(row.status)"
 										>
 											<Badge :theme="getStatusTheme(row[column.key])">
-												{{ row[column.key] }}
+												{{ __(row[column.key]) }}
 											</Badge>
 										</div>
 										<div v-else>
@@ -84,7 +84,7 @@
 							showTooltip: false,
 							onRowClick: (row: any) => {
 								redirectToCourse(row)
-							}
+							},
 						}"
 					>
 						<ListHeader
@@ -197,13 +197,13 @@ const redirectToCourse = (row: any) => {
 }
 
 const assessmentColumns = [
-	{ key: 'title', label: 'Assessment', align: 'left', width: '60%' },
-	{ key: 'status', label: 'Percentage/Status', align: 'right' },
+	{ key: 'title', label: __('Assessment'), align: 'left', width: '60%' },
+	{ key: 'status', label: __('Percentage/Status'), align: 'right' },
 ]
 
 const courseColumns = [
-	{ key: 'title', label: 'Course', align: 'left', width: '70%' },
-	{ key: 'progress', label: 'Progress', align: 'right' },
+	{ key: 'title', label: __('Course'), align: 'left', width: '70%' },
+	{ key: 'progress', label: __('Progress'), align: 'right' },
 ]
 
 const isAssignment = (value: any) => {

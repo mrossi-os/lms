@@ -82,7 +82,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_course/lms_course.py:74
 msgid "A course cannot have both paid certificate and certificate of completion."
-msgstr ""
+msgstr "Un corso non può avere sia un certificato a pagamento che un certificato di completamento."
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:217
 msgid "A new batch '{0}' has been published that might interest you. Check it out!"
@@ -255,7 +255,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_question/lms_question.py:69
 msgid "Add at least one possible answer for this question: {0}"
-msgstr ""
+msgstr "Aggiungi almeno una possibile risposta per questa domanda: {0}"
 
 #: frontend/src/components/Sidebar/AppSidebar.vue:547
 msgid "Add courses to your batch"
@@ -332,7 +332,7 @@ msgstr "Tutti i programmi"
 
 #: lms/lms/doctype/lms_quiz/lms_quiz.py:45
 msgid "All questions should have the same marks if the limit is set."
-msgstr ""
+msgstr "Tutte le domande devono avere lo stesso punteggio se è impostato un limite."
 
 #. Label of the allow_guest_access (Check) field in DocType 'LMS Settings'
 #: lms/lms/doctype/lms_settings/lms_settings.json
@@ -386,15 +386,15 @@ msgstr "Importo (USD)"
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:78
 msgid "Amount and currency are required for paid batches."
-msgstr ""
+msgstr "Importo e valuta sono obbligatori per i batch a pagamento."
 
 #: lms/lms/doctype/lms_course/lms_course.py:87
 msgid "Amount and currency are required for paid certificates."
-msgstr ""
+msgstr "Importo e valuta sono obbligatori per i certificati a pagamento."
 
 #: lms/lms/doctype/lms_course/lms_course.py:84
 msgid "Amount and currency are required for paid courses."
-msgstr ""
+msgstr "Importo e valuta sono obbligatori per i corsi a pagamento."
 
 #. Label of the amount_with_gst (Currency) field in DocType 'LMS Payment'
 #: frontend/src/components/Settings/Transactions/TransactionDetails.vue:105
@@ -542,7 +542,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:86
 msgid "Assessment {0} has already been added to this batch."
-msgstr ""
+msgstr "La valutazione {0} è già stata aggiunta a questo batch."
 
 #. Label of the show_assessments (Check) field in DocType 'LMS Settings'
 #: frontend/src/components/Sidebar/AppSidebar.vue:601
@@ -620,7 +620,7 @@ msgstr "Compito creato con successo"
 
 #: lms/lms/doctype/lms_assignment_submission/lms_assignment_submission.py:29
 msgid "Assignment for Lesson {0} by {1} already exists."
-msgstr ""
+msgstr "Il compito per la Lezione {0} di {1} esiste già."
 
 #: frontend/src/components/Assignment.vue:319
 msgid "Assignment submitted successfully"
@@ -644,15 +644,15 @@ msgstr "Compiti"
 
 #: lms/lms/doctype/lms_coupon/lms_coupon.py:27
 msgid "At least one applicable item is required"
-msgstr ""
+msgstr "È richiesto almeno un elemento applicabile"
 
 #: lms/lms/doctype/lms_question/lms_question.py:46
 msgid "At least one option must be correct for this question."
-msgstr "Almeno una risposta deve essere segnata come corretta"
+msgstr "Almeno un'opzione deve essere corretta per questa domanda."
 
 #: lms/lms/doctype/lms_programming_exercise/lms_programming_exercise.py:15
 msgid "At least one test case is required for the programming exercise."
-msgstr ""
+msgstr "È richiesto almeno un caso di test per l'esercizio di programmazione."
 
 #: frontend/src/components/Quiz.vue:405
 msgid "Attempted Questions"
@@ -769,11 +769,11 @@ msgstr ""
 
 #: lms/lms/doctype/lms_badge_assignment/lms_badge_assignment.py:35
 msgid "Badge {0} has already been assigned to this {1}."
-msgstr ""
+msgstr "Il badge {0} è già stato assegnato a questo {1}."
 
 #: lms/lms/doctype/lms_badge/lms_badge.py:75
 msgid "Badge {0} not found"
-msgstr ""
+msgstr "Badge {0} non trovato"
 
 #. Label of the batch (Link) field in DocType 'LMS Batch Enrollment'
 #. Label of the batch (Link) field in DocType 'LMS Batch Feedback'
@@ -894,7 +894,7 @@ msgstr "Classe eliminata con successo"
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:51
 msgid "Batch end date cannot be before the batch start date"
-msgstr ""
+msgstr "La data di fine del batch non può essere precedente alla data di inizio"
 
 #: lms/lms/api.py:194
 msgid "Batch has already started."
@@ -906,7 +906,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:56
 msgid "Batch start time cannot be greater than or equal to end time."
-msgstr ""
+msgstr "L'ora di inizio del batch non può essere maggiore o uguale all'ora di fine."
 
 #: frontend/src/pages/Batches/BatchForm.vue:433
 msgid "Batch updated successfully"
@@ -1113,15 +1113,15 @@ msgstr ""
 
 #: lms/lms/doctype/lms_certificate/lms_certificate.py:94
 msgid "Certification cannot be issued as the member has not completed the course."
-msgstr ""
+msgstr "Il certificato non può essere emesso perché il membro non ha completato il corso."
 
 #: lms/lms/doctype/lms_certificate/lms_certificate.py:77
 msgid "Certification cannot be issued as the member is not enrolled in this batch."
-msgstr ""
+msgstr "Il certificato non può essere emesso perché il membro non è iscritto a questo batch."
 
 #: lms/lms/doctype/lms_certificate/lms_certificate.py:84
 msgid "Certification cannot be issued as the member is not enrolled in this course."
-msgstr ""
+msgstr "Il certificato non può essere emesso perché il membro non è iscritto a questo corso."
 
 #: lms/lms/doctype/lms_certificate/lms_certificate.py:214
 msgid "Certification is not enabled for this course."
@@ -1434,7 +1434,7 @@ msgstr "Messaggio del compilatore"
 #: lms/lms/doctype/lms_course_progress/lms_course_progress.json
 #: lms/lms/widgets/CourseCard.html:75
 msgid "Complete"
-msgstr ""
+msgstr "Completato"
 
 #: lms/templates/emails/lms_invite_request_approved.html:7
 msgid "Complete Sign Up"
@@ -1481,11 +1481,11 @@ msgstr "Condizione"
 
 #: lms/lms/doctype/lms_badge/lms_badge.py:17
 msgid "Condition must be in valid JSON format."
-msgstr ""
+msgstr "La condizione deve essere in formato JSON valido."
 
 #: lms/lms/doctype/lms_badge/lms_badge.py:22
 msgid "Condition must be valid python code."
-msgstr ""
+msgstr "La condizione deve essere codice Python valido."
 
 #: lms/lms/doctype/lms_certificate_request/lms_certificate_request.js:7
 msgid "Conduct Evaluation"
@@ -1552,7 +1552,7 @@ msgstr ""
 #: frontend/src/components/ContactUsEmail.vue:5
 #: lms/lms/doctype/lms_settings/lms_settings.json
 msgid "Contact Us"
-msgstr ""
+msgstr "Contattaci"
 
 #. Label of the contact_us_email (Data) field in DocType 'LMS Settings'
 #: lms/lms/doctype/lms_settings/lms_settings.json
@@ -1857,7 +1857,7 @@ msgstr "Corso eliminato con successo"
 
 #: lms/lms/doctype/lms_certificate/lms_certificate.py:69
 msgid "Course or Batch is required to issue a certificate."
-msgstr ""
+msgstr "Corso o Batch è richiesto per emettere un certificato."
 
 #: frontend/src/pages/Courses/CourseForm.vue:437
 msgid "Course updated successfully"
@@ -1865,11 +1865,11 @@ msgstr "Corso aggiornato con successo"
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:63
 msgid "Course {0} has already been added to this batch."
-msgstr ""
+msgstr "Il corso {0} è già stato aggiunto a questo batch."
 
 #: lms/lms/doctype/lms_program/lms_program.py:22
 msgid "Course {0} has already been added to this program."
-msgstr ""
+msgstr "Il corso {0} è già stato aggiunto a questo programma."
 
 #. Label of the courses (Table) field in DocType 'LMS Batch'
 #. Label of the show_courses (Check) field in DocType 'LMS Settings'
@@ -2331,7 +2331,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_question/lms_question.py:34
 msgid "Duplicate options found for this question."
-msgstr ""
+msgstr "Opzioni duplicate trovate per questa domanda."
 
 #. Label of the duration (Data) field in DocType 'LMS Batch Timetable'
 #. Label of the duration (Int) field in DocType 'LMS Live Class'
@@ -2492,7 +2492,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_settings/lms_settings.py:22
 msgid "Enable Google API in Google Settings to send calendar invites for evaluations."
-msgstr ""
+msgstr "Abilita l'API Google nelle Impostazioni Google per inviare inviti calendario per le valutazioni."
 
 #. Label of the enable_negative_marking (Check) field in DocType 'LMS Quiz'
 #: frontend/src/pages/QuizForm.vue:117 lms/lms/doctype/lms_quiz/lms_quiz.json
@@ -2630,7 +2630,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.py:57
 msgid "Enrollment in this batch is restricted. Please contact the Administrator."
-msgstr ""
+msgstr "L'iscrizione a questo batch è limitata. Contatta l'Amministratore."
 
 #. Label of the enrollments (Int) field in DocType 'LMS Course'
 #. Label of a chart in the Learning Workspace
@@ -2643,7 +2643,7 @@ msgstr "Iscrizioni"
 
 #: lms/lms/doctype/lms_settings/lms_settings.py:27
 msgid "Enter Client Id and Client Secret in Google Settings to send calendar invites for evaluations."
-msgstr ""
+msgstr "Inserisci Client Id e Client Secret nelle Impostazioni Google per inviare inviti calendario per le valutazioni."
 
 #: frontend/src/pages/Billing.vue:64
 msgid "Enter a Coupon Code"
@@ -2679,7 +2679,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:288
 msgid "Error creating live class. Please try again. {0}"
-msgstr ""
+msgstr "Errore durante la creazione della lezione dal vivo. Riprova. {0}"
 
 #: frontend/src/pages/Quizzes.vue:227
 msgid "Error creating quiz: {0}"
@@ -2746,7 +2746,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:91
 msgid "Evaluation end date cannot be less than the batch end date."
-msgstr ""
+msgstr "La data di fine valutazione non può essere precedente alla data di fine del batch."
 
 #: frontend/src/components/Modals/Event.vue:292
 msgid "Evaluation saved successfully"
@@ -2799,7 +2799,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_course/lms_course.py:77
 msgid "Evaluator is required for paid certificates."
-msgstr ""
+msgstr "È richiesto un valutatore per i certificati a pagamento."
 
 #. Label of the event (Select) field in DocType 'LMS Badge'
 #. Label of the event (Link) field in DocType 'LMS Live Class'
@@ -2864,7 +2864,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_coupon/lms_coupon.py:23
 msgid "Expiry date cannot be in the past"
-msgstr ""
+msgstr "La data di scadenza non può essere nel passato"
 
 #. Label of the explanation_1 (Small Text) field in DocType 'LMS Question'
 #. Label of the explanation_3 (Small Text) field in DocType 'LMS Question'
@@ -2917,11 +2917,11 @@ msgstr "Iscrizione al programma fallita: {0}"
 
 #: lms/lms/doctype/lms_live_class/lms_live_class.py:223
 msgid "Failed to fetch attendance data from Zoom for class {0}: {1}"
-msgstr ""
+msgstr "Impossibile recuperare i dati di presenza da Zoom per la classe {0}: {1}"
 
 #: frontend/src/components/ContactUsEmail.vue:63
 msgid "Failed to send email"
-msgstr ""
+msgstr "Invio email non riuscito"
 
 #: frontend/src/pages/ProgrammingExercises/ProgrammingExerciseSubmission.vue:367
 msgid "Failed to submit. Please try again. {0}"
@@ -3426,7 +3426,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_quiz/lms_quiz.py:67
 msgid "If you want open ended questions then make sure each question in the quiz is of open ended type."
-msgstr ""
+msgstr "Se vuoi domande a risposta aperta, assicurati che ogni domanda del quiz sia di tipo a risposta aperta."
 
 #. Option for the 'File Type' (Select) field in DocType 'Course Lesson'
 #. Option for the 'Type' (Select) field in DocType 'LMS Assignment'
@@ -3579,11 +3579,11 @@ msgstr ""
 
 #: lms/lms/doctype/course_lesson/course_lesson.py:47
 msgid "Invalid Quiz ID"
-msgstr ""
+msgstr "ID Quiz non valido"
 
 #: lms/lms/doctype/course_lesson/course_lesson.py:61
 msgid "Invalid Quiz ID in content"
-msgstr ""
+msgstr "ID Quiz non valido nel contenuto"
 
 #: lms/lms/api.py:759
 msgid "Invalid document name"
@@ -4150,7 +4150,7 @@ msgstr "Limita Domande A"
 
 #: lms/lms/doctype/lms_quiz/lms_quiz.py:40
 msgid "Limit cannot be greater than or equal to the number of questions in the quiz."
-msgstr ""
+msgstr "Il limite non può essere maggiore o uguale al numero di domande nel quiz."
 
 #: frontend/src/pages/ProfileAbout.vue:96
 msgid "LinkedIn"
@@ -4299,7 +4299,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_quiz_submission/lms_quiz_submission.py:41
 msgid "Marks for question number {0} cannot be greater than the marks allotted for that question."
-msgstr ""
+msgstr "Il punteggio per la domanda numero {0} non può essere superiore al punteggio assegnato a quella domanda."
 
 #. Label of the marks_out_of (Int) field in DocType 'LMS Quiz Result'
 #: frontend/src/pages/QuizSubmission.vue:67
@@ -4504,15 +4504,15 @@ msgstr "Membro già aggiunto al programma"
 
 #: lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.py:68
 msgid "Member already enrolled in this batch"
-msgstr ""
+msgstr "Membro già iscritto a questo batch"
 
 #: lms/lms/doctype/lms_badge_assignment/lms_badge_assignment.py:66
 msgid "Member does not meet the criteria for the badge {0}."
-msgstr ""
+msgstr "Il membro non soddisfa i criteri per il badge {0}."
 
 #: lms/lms/doctype/lms_program/lms_program.py:32
 msgid "Member {0} has already been added to this program."
-msgstr ""
+msgstr "Il membro {0} è già stato aggiunto a questo programma."
 
 #: frontend/src/pages/Programs/ProgramForm.vue:110
 msgid "Members"
@@ -4600,7 +4600,7 @@ msgstr "Tappa"
 
 #: lms/lms/doctype/lms_question/lms_question.py:51
 msgid "Minimum two options are required for multiple choice questions."
-msgstr ""
+msgstr "Sono richieste almeno due opzioni per le domande a scelta multipla."
 
 #. Name of a role
 #: frontend/src/pages/ProfileRoles.vue:20
@@ -4834,7 +4834,7 @@ msgstr "Nessuna valutazione aggiunta a questo lotto"
 
 #: lms/lms/doctype/lms_live_class/lms_live_class.py:77
 msgid "No calendar is configured for the conferencing provider. Please set up a calendar to create events."
-msgstr ""
+msgstr "Nessun calendario è configurato per il provider di videoconferenza. Configura un calendario per creare eventi."
 
 #: lms/templates/certificates_section.html:23
 msgid "No certificates"
@@ -4936,7 +4936,7 @@ msgstr ""
 
 #: lms/templates/assessments.html:48
 msgid "Not Attempted"
-msgstr "Non tentato"
+msgstr "Da eseguire"
 
 #: lms/lms/widgets/NoPreviewModal.html:6
 msgid "Not Available for Preview"
@@ -5372,7 +5372,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.py:46
 msgid "Payment is required to enroll in this batch."
-msgstr ""
+msgstr "Il pagamento è richiesto per iscriversi a questo batch."
 
 #. Label of the payments_app_is_not_installed (HTML) field in DocType 'LMS
 #. Settings'
@@ -5429,7 +5429,7 @@ msgstr "Rosa"
 
 #: lms/lms/doctype/lms_settings/lms_settings.py:35
 msgid "Please add <a href='{0}'>{1}</a> for <a href='{2}'>{3}</a> to send calendar invites for evaluations."
-msgstr ""
+msgstr "Aggiungi <a href='{0}'>{1}</a> per <a href='{2}'>{3}</a> per inviare inviti calendario per le valutazioni."
 
 #: lms/lms/user.py:75
 msgid "Please ask your administrator to verify your sign-up"
@@ -5449,11 +5449,11 @@ msgstr "Completa il corso precedente per sbloccare questo."
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:306
 msgid "Please enable the Google Meet account to use this feature."
-msgstr ""
+msgstr "Abilita l'account Google Meet per utilizzare questa funzionalità."
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:337
 msgid "Please enable the zoom account to use this feature."
-msgstr ""
+msgstr "Abilita l'account Zoom per utilizzare questa funzionalità."
 
 #: frontend/src/components/CourseOutline.vue:391
 msgid "Please enroll for this course to view this lesson"
@@ -5477,15 +5477,15 @@ msgstr ""
 
 #: lms/lms/doctype/lms_settings/lms_settings.py:51
 msgid "Please enter a valid Contact Us Email."
-msgstr ""
+msgstr "Inserisci un'email di contatto valida."
 
 #: lms/lms/doctype/lms_settings/lms_settings.py:53
 msgid "Please enter a valid Contact Us URL."
-msgstr ""
+msgstr "Inserisci un URL di contatto valido."
 
 #: lms/lms/doctype/lms_assignment_submission/lms_assignment_submission.py:34
 msgid "Please enter a valid URL."
-msgstr ""
+msgstr "Inserisci un URL valido."
 
 #: frontend/src/components/Modals/LiveClassModal.vue:207
 msgid "Please enter a valid time in the format HH:mm."
@@ -5501,11 +5501,11 @@ msgstr ""
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:71
 msgid "Please install the Payments App to create a paid batch. Refer to the documentation for more details. {0}"
-msgstr ""
+msgstr "Installa l'app Pagamenti per creare un batch a pagamento. Consulta la documentazione per maggiori dettagli. {0}"
 
 #: lms/lms/doctype/lms_course/lms_course.py:67
 msgid "Please install the Payments App to create a paid course. Refer to the documentation for more details. {0}"
-msgstr ""
+msgstr "Installa l'app Pagamenti per creare un corso a pagamento. Consulta la documentazione per maggiori dettagli. {0}"
 
 #: frontend/src/pages/Billing.vue:350
 msgid "Please let us know where you heard about us from."
@@ -5554,11 +5554,11 @@ msgstr "Esegui il codice per eseguire i casi di test."
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:136
 msgid "Please select a Google Meet account for this batch."
-msgstr ""
+msgstr "Seleziona un account Google Meet per questo batch."
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:153
 msgid "Please select a Zoom account for this batch."
-msgstr ""
+msgstr "Seleziona un account Zoom per questo batch."
 
 #: frontend/src/pages/Batches/components/LiveClass.vue:10
 msgid "Please select a conferencing provider and add an account to the batch to create live classes."
@@ -6069,7 +6069,7 @@ msgstr "Valutazione"
 
 #: lms/lms/doctype/lms_certificate_evaluation/lms_certificate_evaluation.py:18
 msgid "Rating cannot be 0"
-msgstr ""
+msgstr "La valutazione non può essere 0"
 
 #. Option for the 'Color' (Select) field in DocType 'LMS Course'
 #. Option for the 'Color' (Select) field in DocType 'LMS Lesson Note'
@@ -6224,23 +6224,23 @@ msgstr ""
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:128
 msgid "Row #{0} Date cannot be outside the batch duration."
-msgstr ""
+msgstr "Riga #{0} La data non può essere al di fuori della durata del batch."
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:124
 msgid "Row #{0} End time cannot be outside the batch duration."
-msgstr ""
+msgstr "Riga #{0} L'ora di fine non può essere al di fuori della durata del batch."
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:108
 msgid "Row #{0} Start time cannot be greater than or equal to end time."
-msgstr ""
+msgstr "Riga #{0} L'ora di inizio non può essere maggiore o uguale all'ora di fine."
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:117
 msgid "Row #{0} Start time cannot be outside the batch duration."
-msgstr ""
+msgstr "Riga #{0} L'ora di inizio non può essere al di fuori della durata del batch."
 
 #: lms/lms/doctype/lms_quiz/lms_quiz.py:33
 msgid "Rows {0} have the duplicate questions."
-msgstr ""
+msgstr "Le righe {0} contengono domande duplicate."
 
 #: frontend/src/pages/ProgrammingExercises/ProgrammingExerciseSubmission.vue:56
 msgid "Run"
@@ -6408,7 +6408,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:95
 msgid "Seat count cannot be negative."
-msgstr ""
+msgstr "Il numero di posti non può essere negativo."
 
 #: frontend/src/pages/Batches/components/BatchCard.vue:18
 #: frontend/src/pages/Batches/components/BatchOverlay.vue:16
@@ -6650,7 +6650,7 @@ msgstr "Salta"
 
 #: lms/lms/doctype/course_evaluator/course_evaluator.py:62
 msgid "Slot Times are overlapping for some schedules."
-msgstr ""
+msgstr "Gli orari degli slot si sovrappongono per alcune programmazioni."
 
 #: frontend/src/pages/ProfileEvaluator.vue:223
 msgid "Slot added successfully"
@@ -6734,7 +6734,7 @@ msgstr "Ora di inizio"
 
 #: lms/lms/doctype/course_evaluator/course_evaluator.py:41
 msgid "Start Time cannot be greater than End Time"
-msgstr ""
+msgstr "L'ora di inizio non può essere successiva all'ora di fine"
 
 #. Label of the start_url (Small Text) field in DocType 'LMS Live Class'
 #: lms/lms/doctype/lms_live_class/lms_live_class.json
@@ -6823,7 +6823,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_enrollment/lms_enrollment.py:35
 msgid "Student is already enrolled in this course."
-msgstr ""
+msgstr "Lo studente è già iscritto a questo corso."
 
 #. Label of the show_students (Check) field in DocType 'LMS Settings'
 #: frontend/src/pages/Batches/components/AdminBatchDashboard.vue:31
@@ -7046,7 +7046,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:310
 msgid "The Google Meet account does not have a Google Calendar configured. Please set up a Google Calendar first."
-msgstr ""
+msgstr "L'account Google Meet non ha un Google Calendar configurato. Configura prima un Google Calendar."
 
 #: lms/lms/utils.py:2273
 msgid "The batch does not exist."
@@ -7070,7 +7070,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_certificate_request/lms_certificate_request.py:57
 msgid "The evaluator of this course is unavailable from {0} to {1}. Please select a date after {1}"
-msgstr ""
+msgstr "Il valutatore di questo corso non è disponibile dal {0} al {1}. Seleziona una data dopo il {1}"
 
 #: lms/lms/doctype/lms_assignment_submission/lms_assignment_submission.py:69
 msgid "The instructor has left a comment on your assignment {0}"
@@ -7086,15 +7086,15 @@ msgstr ""
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:148
 msgid "The selected Google Meet account does not have a Google Calendar configured."
-msgstr ""
+msgstr "L'account Google Meet selezionato non ha un Google Calendar configurato."
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:141
 msgid "The selected Google Meet account is disabled. Please enable it or select another account."
-msgstr ""
+msgstr "L'account Google Meet selezionato è disabilitato. Abilitalo o seleziona un altro account."
 
 #: lms/lms/doctype/lms_certificate_request/lms_certificate_request.py:76
 msgid "The slot is already booked by another participant."
-msgstr ""
+msgstr "Lo slot è già prenotato da un altro partecipante."
 
 #: lms/lms/utils.py:1454 lms/lms/utils.py:1954
 msgid "The specified batch does not exist."
@@ -7115,7 +7115,7 @@ msgstr "Non ci sono corsi al momento. Crea il tuo primo corso per iniziare!"
 #: lms/lms/doctype/lms_batch/lms_batch.py:99
 #: lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.py:74
 msgid "There are no seats available in this batch."
-msgstr ""
+msgstr "Non ci sono posti disponibili in questo batch."
 
 #: frontend/src/pages/AssignmentSubmissionList.vue:70
 msgid "There are no submissions for this assignment."
@@ -7301,7 +7301,7 @@ msgstr "Fuso Orario"
 
 #: lms/lms/doctype/lms_course/lms_course.py:80
 msgid "Timezone is required for paid certificates."
-msgstr ""
+msgstr "Il fuso orario è richiesto per i certificati a pagamento."
 
 #: lms/templates/emails/batch_confirmation.html:21
 #: lms/templates/emails/batch_start_reminder.html:16
@@ -7504,7 +7504,7 @@ msgstr "Indisponibilità aggiornata con successo"
 
 #: lms/lms/doctype/course_evaluator/course_evaluator.py:36
 msgid "Unavailable From Date cannot be greater than Unavailable To Date"
-msgstr ""
+msgstr "La data di inizio indisponibilità non può essere successiva alla data di fine indisponibilità"
 
 #. Option for the 'Status' (Select) field in DocType 'LMS Course'
 #: lms/lms/doctype/lms_course/lms_course.json
@@ -7593,7 +7593,7 @@ msgstr "Limite di utilizzo"
 
 #: lms/lms/doctype/lms_coupon/lms_coupon.py:31
 msgid "Usage limit cannot be negative"
-msgstr ""
+msgstr "Il limite di utilizzo non può essere negativo"
 
 #: frontend/src/components/Modals/EmailTemplateModal.vue:38
 msgid "Use HTML"
@@ -7832,7 +7832,7 @@ msgstr "Giallo"
 
 #: lms/lms/doctype/lms_certificate_request/lms_certificate_request.py:98
 msgid "You already have an evaluation on {0} at {1} for the course {2}."
-msgstr ""
+msgstr "Hai già una valutazione il {0} alle {1} per il corso {2}."
 
 #: frontend/src/pages/Courses/CourseCertification.vue:14
 msgid "You are already certified for this course. Click on the card below to open your certificate."
@@ -7917,7 +7917,7 @@ msgstr "Non puoi modificare i ruoli in modalità sola lettura."
 
 #: lms/lms/doctype/lms_enrollment/lms_enrollment.py:59
 msgid "You cannot enroll in an unpublished course."
-msgstr ""
+msgstr "Non puoi iscriverti a un corso non pubblicato."
 
 #: lms/lms/utils.py:2105
 msgid "You cannot enroll in an unpublished program."
@@ -7925,15 +7925,15 @@ msgstr ""
 
 #: lms/lms/doctype/lms_enrollment/lms_enrollment.py:47
 msgid "You cannot enroll in this course as self-learning is disabled. Please contact the Administrator."
-msgstr ""
+msgstr "Non puoi iscriverti a questo corso perché l'apprendimento autonomo è disabilitato. Contatta l'Amministratore."
 
 #: lms/lms/doctype/lms_certificate_request/lms_certificate_request.py:114
 msgid "You cannot schedule evaluations after {0}."
-msgstr ""
+msgstr "Non puoi programmare valutazioni dopo il {0}."
 
 #: lms/lms/doctype/lms_certificate_request/lms_certificate_request.py:105
 msgid "You cannot schedule evaluations for past slots."
-msgstr ""
+msgstr "Non puoi programmare valutazioni per slot passati."
 
 #: lms/lms/utils.py:2285
 msgid "You do not have access to this batch."
@@ -7945,7 +7945,7 @@ msgstr ""
 
 #: lms/lms/api.py:854 lms/lms/doctype/lms_batch/lms_batch.py:365
 msgid "You do not have permission to access announcements for this batch."
-msgstr ""
+msgstr "Non hai il permesso di accedere agli annunci per questo batch."
 
 #: lms/lms/api.py:2303
 msgid "You do not have permission to access badges."
@@ -7977,7 +7977,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:245
 msgid "You do not have permission to create a live class."
-msgstr ""
+msgstr "Non hai il permesso di creare una lezione dal vivo."
 
 #: lms/lms/api.py:924
 msgid "You do not have permission to delete this batch."
@@ -8009,11 +8009,11 @@ msgstr ""
 
 #: lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.py:119
 msgid "You do not have permission to send confirmation emails for this enrollment."
-msgstr ""
+msgstr "Non hai il permesso di inviare email di conferma per questa iscrizione."
 
 #: lms/lms/doctype/lms_certificate_request/lms_certificate_request.py:183
 msgid "You do not have permission to set up calendar events for this evaluation."
-msgstr ""
+msgstr "Non hai il permesso di configurare eventi calendario per questa valutazione."
 
 #: lms/lms/api.py:1588 lms/lms/api.py:1592
 msgid "You do not have permission to update meta tags."
@@ -8050,7 +8050,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_course_review/lms_course_review.py:22
 msgid "You have already reviewed this course"
-msgstr ""
+msgstr "Hai già recensito questo corso"
 
 #: frontend/src/pages/JobDetail.vue:68
 msgid "You have applied"
@@ -8066,7 +8066,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_quiz_submission/lms_quiz_submission.py:30
 msgid "You have exceeded the maximum number of attempts ({0}) for this quiz"
-msgstr ""
+msgstr "Hai superato il numero massimo di tentativi ({0}) per questo quiz"
 
 #: lms/lms/doctype/lms_quiz_submission/lms_quiz_submission.py:56
 msgid "You have got a score of {0} for the quiz {1}"
@@ -8098,19 +8098,19 @@ msgstr ""
 
 #: lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.py:31
 msgid "You must be a Moderator or Batch Evaluator to enroll users in a batch."
-msgstr ""
+msgstr "Devi essere un Moderatore o un Valutatore del batch per iscrivere gli utenti a un batch."
 
 #: lms/lms/doctype/lms_badge_assignment/lms_badge_assignment.py:23
 msgid "You must be an Admin to assign badges to users."
-msgstr ""
+msgstr "Devi essere un Amministratore per assegnare badge agli utenti."
 
 #: lms/lms/doctype/lms_course_review/lms_course_review.py:18
 msgid "You must be enrolled in the course to submit a review"
-msgstr ""
+msgstr "Devi essere iscritto al corso per inviare una recensione"
 
 #: lms/lms/doctype/lms_enrollment/lms_enrollment.py:73
 msgid "You need to complete the payment for this course before enrolling."
-msgstr ""
+msgstr "Devi completare il pagamento per questo corso prima di iscriverti."
 
 #: frontend/src/components/CourseCardOverlay.vue:185
 msgid "You need to login first to enroll for this course"
@@ -8477,15 +8477,15 @@ msgstr ""
 
 #: lms/lms/doctype/lms_course_mentor_mapping/lms_course_mentor_mapping.py:15
 msgid "{0} is already a mentor for course {1}"
-msgstr ""
+msgstr "{0} è già un mentore per il corso {1}"
 
 #: lms/lms/doctype/lms_certificate/lms_certificate.py:134
 msgid "{0} is already certified for the batch {1}"
-msgstr ""
+msgstr "{0} è già certificato per il batch {1}"
 
 #: lms/lms/doctype/lms_certificate/lms_certificate.py:115
 msgid "{0} is already certified for the course {1}"
-msgstr ""
+msgstr "{0} è già certificato per il corso {1}"
 
 #: lms/lms/notification/certificate_request_reminder/certificate_request_reminder.html:5
 msgid "{0} is your evaluator"

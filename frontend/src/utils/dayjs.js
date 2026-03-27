@@ -7,7 +7,9 @@ import isSameOrBefore from 'dayjs/esm/plugin/isSameOrBefore'
 import isSameOrAfter from 'dayjs/esm/plugin/isSameOrAfter'
 import utc from 'dayjs/esm/plugin/utc'
 import timezone from 'dayjs/esm/plugin/timezone'
+import 'dayjs/esm/locale/it'
 
+dayjs.locale('it')
 dayjs.extend(updateLocale)
 dayjs.extend(relativeTime)
 dayjs.extend(localizedFormat)
