@@ -287,7 +287,7 @@
 				</div>
 			</div>
 			<div class="sticky top-10">
-				<div v-if="lesson.data?.name" class="border-b p-4">
+				<div v-if="lesson.data?.name && !hasQuiz">
 					<ChatBot
 						:courseId="lesson.data?.course"
 						:lessonId="lesson.data?.name"

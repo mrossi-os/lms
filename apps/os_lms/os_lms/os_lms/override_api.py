@@ -2,6 +2,8 @@ import frappe
 
 
 from lms.lms.api import get_sidebar_settings as _original_get_sidebar_settings
+from lms.lms.api import get_lms_settings as _original_get_lms_settings
+
 
 from lms.command_palette import (
     get_instructor_info,
@@ -20,6 +22,13 @@ def get_sidebar_settings():
         for field in ("programs", "home", "search", "quizzes", "assignments"):
             result[field] = lms_settings.get(field)
 
+    return result
+
+@frappe.whitelist(allow_guest=True)
+def get_lms_settings():
+    result = _original_get_lms_settings()
+    if isinstance(result, dict):
+         result["ai_enabled"] = frappe.get_single("LMSA Settings").get("enabled")
     return result
 
 
