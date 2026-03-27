@@ -41,7 +41,11 @@
 							:label="__('Type')"
 							v-model="question.type"
 							type="select"
-							:options="[__('Choices'), __('User Input'), __('Open Ended')]"
+							:options="[
+								{ label: __('Choices'), value: 'Choices' },
+								{ label: __('User Input'), value: 'User Input' },
+								{ label: __('Open Ended'), value: 'Open Ended' },
+							]"
 							class="pb-2"
 							:required="true"
 							:placeholder="__('Select option')"

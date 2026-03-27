@@ -300,9 +300,19 @@
 								{{ __('Next') }}
 							</span>
 						</Button>
+						<Button
+							v-else-if="
+								activeQuestion != questions.length && !quiz.data.show_answers
+							"
+							@click="switchQuestion(activeQuestion + 1)"
+						>
+							<span>
+								{{ __('Next') }}
+							</span>
+						</Button>
 						<Button variant="solid" v-else @click="handleSubmitClick()">
 							<span>
-								{{ __('Submit') }}
+								{{ __('Submit Quiz') }}
 							</span>
 						</Button>
 					</div>
