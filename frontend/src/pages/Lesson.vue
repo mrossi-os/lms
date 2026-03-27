@@ -43,13 +43,15 @@
 					</Button>
 				</router-link>
 
-				<Button v-if="lesson.data.next" @click="switchLesson('next')">
+				<Button
+					v-if="lesson.data.next"
+					@click="switchLesson('next')"
+					:disabled="lessonBlocked"
+				>
 					<template #suffix>
 						<ChevronRight class="w-4 h-4 stroke-1" />
 					</template>
-					<span>
-						{{ __('Next') }}
-					</span>
+					<span>{{ __('Next') }}</span>
 				</Button>
 
 				<router-link
@@ -107,7 +109,7 @@
 			<div
 				v-else
 				ref="lessonContainer"
-				class="bg-surface-white"
+				class="bg-surface-white overflow-y-auto"
 				:class="{
 					'overflow-y-auto': zenModeEnabled,
 				}"
@@ -119,6 +121,7 @@
 					}"
 				>
 					<div class="px-5">
+						<!-- Titolo e instructors sempre visibili -->
 						<div
 							class="flex flex-col space-y-3 md:space-y-0 md:flex-row md:items-center justify-between"
 						>
@@ -179,7 +182,11 @@
 									</Button>
 								</router-link>
 
-								<Button v-if="lesson.data.next" @click="switchLesson('next')">
+								<Button
+									v-if="lesson.data.next"
+									@click="switchLesson('next')"
+									:disabled="lessonBlocked"
+								>
 									<template #suffix>
 										<ChevronRight class="w-4 h-4 stroke-1" />
 									</template>
@@ -220,50 +227,107 @@
 							/>
 						</div>
 
+						<!-- STATO BLOCCATO LEZIONE -->
 						<div
-							v-if="
-								lesson.data.instructor_content &&
-								JSON.parse(lesson.data.instructor_content)?.blocks?.length >
-									1 &&
-								allowInstructorContent()
-							"
-							class="bg-surface-gray-2 p-3 rounded-md mt-6"
+							v-if="lessonBlocked"
+							class="flex flex-col items-center justify-center mt-16 text-center"
 						>
-							<div class="text-ink-gray-5 font-medium">
-								{{ __('Instructor Notes') }}
+							<LockKeyholeIcon class="size-12 stroke-1 text-ink-gray-4 mb-4" />
+							<div class="text-lg font-semibold text-ink-gray-7 mb-2">
+								{{ __('Lezione bloccata') }}
+							</div>
+							<div class="text-base text-ink-gray-5 max-w-sm leading-6">
+								{{ blockedReason }}
+							</div>
+						</div>
+
+						<!-- CONTENUTO NORMALE: visibile solo se lezione non bloccata -->
+						<template v-else>
+							<div
+								v-if="
+									lesson.data.instructor_content &&
+									JSON.parse(lesson.data.instructor_content)?.blocks?.length >
+										1 &&
+									allowInstructorContent()
+								"
+								class="bg-surface-gray-2 p-3 rounded-md mt-6"
+							>
+								<div class="text-ink-gray-5 font-medium">
+									{{ __('Instructor Notes') }}
+								</div>
+								<div
+									id="instructor-content"
+									class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal"
+								></div>
 							</div>
 							<div
-								id="instructor-content"
-								class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal"
-							></div>
-						</div>
-						<div
-							v-else-if="lesson.data.instructor_notes"
-							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
-						>
-							<LessonContent :content="lesson.data.instructor_notes" />
-						</div>
-						<div
-							v-if="lesson.data.content"
-							@mouseup="toggleInlineMenu"
-							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
-						>
-							<div id="editor"></div>
-						</div>
-						<div
-							v-else
-							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
-						>
-							<LessonContent
-								v-if="lesson.data?.body"
-								:content="lesson.data.body"
-								:youtube="lesson.data.youtube"
-								:quizId="lesson.data.quiz_id"
-							/>
-						</div>
+								v-else-if="lesson.data.instructor_notes"
+								class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
+							>
+								<LessonContent :content="lesson.data.instructor_notes" />
+							</div>
+
+							<!-- Contenuto EditorJS: può contenere quiz -->
+							<div
+								v-if="lesson.data.content"
+								@mouseup="toggleInlineMenu"
+								class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
+							>
+								<!-- Se il contenuto ha un quiz e il quiz è bloccato, mostra il blocco -->
+								<div
+									v-if="quizBlocked && contentHasQuiz"
+									class="flex flex-col items-center justify-center mt-8 mb-8 text-center"
+								>
+									<LockKeyholeIcon
+										class="size-12 stroke-1 text-ink-gray-4 mb-4"
+									/>
+									<div class="text-lg font-semibold text-ink-gray-7 mb-2">
+										{{ __('Quiz bloccato') }}
+									</div>
+									<div class="text-base text-ink-gray-5 max-w-sm leading-6">
+										{{ quizBlockedReason }}
+									</div>
+								</div>
+								<!-- Altrimenti mostra il contenuto normale -->
+								<div v-else id="editor"></div>
+							</div>
+
+							<!-- Contenuto body (markdown/LessonContent) -->
+							<div
+								v-else
+								class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
+							>
+								<div
+									v-if="quizBlocked && lesson.data?.quiz_id"
+									class="flex flex-col items-center justify-center mt-8 mb-8 text-center"
+								>
+									<LockKeyholeIcon
+										class="size-12 stroke-1 text-ink-gray-4 mb-4"
+									/>
+									<div class="text-lg font-semibold text-ink-gray-7 mb-2">
+										{{ __('Quiz bloccato') }}
+									</div>
+									<div class="text-base text-ink-gray-5 max-w-sm leading-6">
+										{{ quizBlockedReason }}
+									</div>
+								</div>
+								<LessonContent
+									v-else-if="lesson.data?.body"
+									:content="lesson.data.body"
+									:youtube="lesson.data.youtube"
+									:quizId="lesson.data.quiz_id"
+								/>
+							</div>
+						</template>
 					</div>
+
+					<!-- Discussioni: nascoste se bloccato -->
 					<div
-						v-if="lesson.data && (allowDiscussions || tabs.length > 1)"
+						v-if="
+							!lessonBlocked &&
+							lesson.data &&
+							(allowDiscussions || tabs.length > 1)
+						"
 						class="mt-10 pb-20 pt-5 border-t px-5"
 						ref="discussionsContainer"
 					>
@@ -374,7 +438,6 @@ import CourseOutline from '@/components/CourseOutline.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import Notes from '@/components/Notes/Notes.vue'
 import { getLmsRoute } from '@/utils/basePath'
-
 import ChatBot from '@/oslms/components/ai/ChatBot.vue'
 
 const user = inject('$user')
@@ -397,6 +460,12 @@ const plyrSources = ref([])
 const showInlineMenu = ref(false)
 const currentTab = ref(null)
 let timerInterval = null
+const quizBlocked = ref(false)
+const quizBlockedReason = ref('')
+
+// Blocco lezioni sequenziali
+const lessonBlocked = ref(false)
+const blockedReason = ref('')
 
 const tabs = ref([])
 
@@ -414,6 +483,48 @@ const props = defineProps({
 		required: true,
 	},
 })
+
+// Risorsa per il controllo accesso lezione
+const accessCheck = createResource({
+	url: 'os_lms.os_lms.api.check_lesson_access',
+})
+const quizAccessCheck = createResource({
+	url: 'os_lms.os_lms.api.check_quiz_access',
+})
+
+const checkLessonAccess = (lessonName) => {
+	if (!lessonName || !user.data || isAdmin.value) return
+	accessCheck.submit(
+		{
+			course: props.courseName,
+			lesson: lessonName,
+		},
+		{
+			onSuccess(result) {
+				lessonBlocked.value = !result.allowed
+				blockedReason.value = result.reason || ''
+			},
+			onError(err) {
+				console.error('check_lesson_access error:', err)
+			},
+		},
+	)
+}
+const checkQuizAccess = (courseName) => {
+	if (!courseName || !user.data || isAdmin.value) return
+	quizAccessCheck.submit(
+		{ course: courseName },
+		{
+			onSuccess(result) {
+				quizBlocked.value = !result.allowed
+				quizBlockedReason.value = result.reason || ''
+			},
+			onError(err) {
+				console.error('check_quiz_access error:', err)
+			},
+		},
+	)
+}
 
 onMounted(() => {
 	startTimer()
@@ -595,12 +706,13 @@ const switchLesson = (direction) => {
 
 watch(
 	[() => route.params.chapterNumber, () => route.params.lessonNumber],
-	async (
-		[newChapterNumber, newLessonNumber],
-		[oldChapterNumber, oldLessonNumber],
-	) => {
+	async ([newChapterNumber, newLessonNumber]) => {
 		if (newChapterNumber || newLessonNumber) {
 			plyrSources.value = []
+			lessonBlocked.value = false
+			blockedReason.value = ''
+			quizBlocked.value = false
+			quizBlockedReason.value = ''
 			await nextTick()
 			resetLessonState(newChapterNumber, newLessonNumber)
 			updateNotes()
@@ -631,6 +743,16 @@ const trackVideoWatchDuration = () => {
 		videos: videoDetails,
 	})
 }
+
+const contentHasQuiz = computed(() => {
+	if (!lesson.data?.content) return false
+	try {
+		const parsed = JSON.parse(lesson.data.content)
+		return parsed?.blocks?.some((block) => block.type === 'quiz')
+	} catch {
+		return false
+	}
+})
 
 const getVideoDetails = () => {
 	let details = []
@@ -675,6 +797,9 @@ watch(
 		getPlyrSource()
 		updateNotes()
 		if (data.icon == 'icon-youtube') clearInterval(timerInterval)
+
+		checkLessonAccess(data?.name)
+		checkQuizAccess(data?.course)
 	},
 )
 
@@ -700,9 +825,6 @@ const updateVideoWatchDuration = () => {
 
 const updatePlyrVideoTime = (video) => {
 	plyrSources.value.forEach((plyrSource) => {
-		let lastWatchedTime = 0
-		let isSeeking = false
-
 		plyrSource.on('ready', () => {
 			if (plyrSource.source === video.source) {
 				plyrSource.embed.seekTo(video.watch_time, true)

@@ -221,7 +221,37 @@
 						v-model="courseResource.doc"
 						@dirty="makeFormDirty()"
 					/>
-
+					<div class="pr-5 md:pr-10 pb-5 space-y-5 border-b">
+						<div class="text-lg font-semibold mt-5 text-ink-gray-9">
+							{{ __('Regole di Apprendimento') }}
+						</div>
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+							<Switch
+								size="sm"
+								class="card p-4"
+								v-model="courseResource.doc.enforce_lesson_order"
+								:label="__('Blocca lezioni in sequenza')"
+								:description="
+									__(
+										'Lo studente deve completare ogni lezione prima di accedere alla successiva.',
+									)
+								"
+								@change="makeFormDirty()"
+							/>
+							<Switch
+								size="sm"
+								class="card p-4"
+								v-model="courseResource.doc.enforce_quiz_on_completion"
+								:label="__('Blocca quiz al completamento')"
+								:description="
+									__(
+										'Lo studente deve completare tutte le lezioni prima di accedere al quiz.',
+									)
+								"
+								@change="makeFormDirty()"
+							/>
+						</div>
+					</div>
 					<div class="pr-5 md:pr-10 pb-5 space-y-5 border-b">
 						<div class="text-lg font-semibold mt-5 text-ink-gray-9">
 							{{ __('Pricing and Certification') }}
@@ -457,6 +487,8 @@ const updateCourseData = () => {
 		'featured',
 		'enable_certification',
 		'paid_certificate',
+		'enforce_lesson_order',
+		'enforce_quiz_on_completion',
 	]
 	for (let idx in checkboxes) {
 		let key = checkboxes[idx]

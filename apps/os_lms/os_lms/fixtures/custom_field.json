@@ -101,5 +101,25 @@
         "insert_after": "description",
         "reqd": 0,
         "hidden": 0
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Course-enforce_lesson_order",
+        "dt": "LMS Course",
+        "label": "Enforce Lesson Order",
+        "fieldname": "enforce_lesson_order",
+        "fieldtype": "Check",
+        "default": "0",
+        "insert_after": "disable_self_learning"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Course-enforce_quiz_on_completion",
+        "dt": "LMS Course",
+        "label": "Enforce Quiz on Completion",
+        "fieldname": "enforce_quiz_on_completion",
+        "fieldtype": "Check",
+        "default": "0",
+        "insert_after": "enforce_lesson_order"
     }
 ]
