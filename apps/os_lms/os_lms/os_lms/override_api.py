@@ -18,7 +18,9 @@ def get_sidebar_settings():
 
     result = _original_get_sidebar_settings()
     if isinstance(result, dict):
-        result["programs"] = frappe.get_single("LMS Settings").get("programs")
+        lms_settings = frappe.get_single("LMS Settings")
+        for field in ("programs", "home", "search", "quizzes", "assignments"):
+            result[field] = lms_settings.get(field)
 
     return result
 

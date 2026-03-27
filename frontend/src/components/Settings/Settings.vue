@@ -528,6 +528,11 @@ const tabsStructure = computed(() => {
 								{
 									fields: [
 										{
+											label: __('Home'),
+											name: 'home',
+											type: 'checkbox',
+										},
+										{
 											label: __('Courses'),
 											name: 'courses',
 											type: 'checkbox',
@@ -556,6 +561,21 @@ const tabsStructure = computed(() => {
 								},
 								{
 									fields: [
+										{
+											label: __('Search'),
+											name: 'search',
+											type: 'checkbox',
+										},
+										{
+											label: __('Quizzes'),
+											name: 'quizzes',
+											type: 'checkbox',
+										},
+										{
+											label: __('Assignments'),
+											name: 'assignments',
+											type: 'checkbox',
+										},
 										{
 											label: __('Jobs'),
 											name: 'jobs',
