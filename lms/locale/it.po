@@ -648,7 +648,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_question/lms_question.py:46
 msgid "At least one option must be correct for this question."
-msgstr ""
+msgstr "Almeno una risposta deve essere segnata come corretta"
 
 #: lms/lms/doctype/lms_programming_exercise/lms_programming_exercise.py:15
 msgid "At least one test case is required for the programming exercise."
