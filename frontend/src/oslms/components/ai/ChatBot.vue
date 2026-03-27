@@ -1,5 +1,5 @@
 <template>
-	<div class="flex flex-col h-full">
+	<div v-if="settingsStore.settings?.data?.ai_enabled" class="flex flex-col h-full border-b p-4">
 		<div class="text-lg font-semibold mb-4 text-ink-gray-9">
 			{{ __('AI Assistant') }}
 		</div>
@@ -88,6 +88,9 @@
 import { ref, nextTick } from 'vue'
 import { Button, call, toast } from 'frappe-ui'
 import { Send } from 'lucide-vue-next'
+import { useSettings } from '@/stores/settings'
+
+const settingsStore = useSettings()
 
 interface Message {
 	role: 'user' | 'assistant'
