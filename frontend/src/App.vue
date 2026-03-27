@@ -3,7 +3,6 @@
 		<Layout class="isolate text-p-base">
 			<router-view />
 		</Layout>
-		<InstallPrompt v-if="isMobile && !settings.data?.disable_pwa" />
 		<Dialogs />
 	</FrappeUIProvider>
 </template>

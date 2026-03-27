@@ -29,8 +29,11 @@ class VimeoTranscriber:
         tracks = resp.json()
 
         content = ""
-        # Scarica il testo di una traccia
-        for track in tracks["data"]:
+        data = tracks.get("data")
+        if not data:
+            return ""
+    
+        for track in data:
             vtt_url = track["link"]
             vtt = requests.get(vtt_url).text
             content += self._extract_text_from_vtt(vtt) + "\n "
