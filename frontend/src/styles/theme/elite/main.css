@@ -86,6 +86,12 @@ select:focus,
 	box-shadow: none;
 }
 
+input:where([type='radio']):checked,
+input:where([type='radio']):checked:hover,
+input:where([type='radio']):checked:focus {
+	border-color: var(--color-company-primary);
+	background-color: var(--color-company-primary);
+}
 input::placeholder,
 textarea::placeholder {
 	color: var(--ink-gray-5);
@@ -300,4 +306,10 @@ input:disabled {
 /* hover */
 ::-webkit-scrollbar-thumb:hover {
 	background: #256ab0;
+}
+
+/* IFRAME */
+
+.os-frame {
+	height: 650px;
 }
