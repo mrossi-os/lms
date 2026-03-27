@@ -6,7 +6,7 @@
 				:src="video_link"
 				class="rounded-t-md min-h-56 w-full"
 			/>
-			<div class="p-5">
+			<div class="p-5 flex flex-col gap-4">
 				<div v-if="course.data.paid_course" class="text-2xl font-semibold mb-3">
 					{{ course.data.price }}
 				</div>

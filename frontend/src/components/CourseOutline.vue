@@ -126,10 +126,7 @@
 													/>
 													{{ lesson.title }}
 													<div class="flex items-center ml-auto space-x-2">
-														<LessonAIStatus
-															v-if="allowEdit"
-															:lesson="lesson"
-														/>
+														<LessonAIStatus v-if="allowEdit" :lesson="lesson" />
 														<Trash2
 															v-if="allowEdit"
 															@click.prevent="

@@ -24,7 +24,7 @@
 							:columns="courseColumns"
 							:rows="batch.data?.courses"
 							row-key="name"
-							class="border rounded-lg os-list-view"
+							class="border rounded-lg os-list-view !w-auto md:!w-max"
 							:options="{
 								showTooltip: false,
 								selectable: user.data?.is_student ? false : true,

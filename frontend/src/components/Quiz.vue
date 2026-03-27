@@ -222,7 +222,9 @@
 							editorClass="prose-sm max-w-none border-b border-x border-outline-gray-modals bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]"
 						/>
 					</div>
-					<div class="flex items-center justify-between mt-8">
+					<div
+						class="flex flex-col gap-2 md:flex-row items-center justify-between mt-8"
+					>
 						<Checkbox
 							:label="__('Mark for review')"
 							:model-value="reviewQuestions.includes(activeQuestion) ? 1 : 0"

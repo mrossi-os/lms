@@ -1,14 +1,24 @@
 <template>
-	<div class="pr-5 md:pr-10 pb-5 mb-5 space-y-5 border-b">
-		<div class="text-lg font-semibold text-ink-gray-9">
-			{{ __('Sezioni Feature') }}
-		</div>
-		<div class="text-sm text-ink-gray-5">
-			{{
-				__(
-					'Crea sezioni con badge per descrivere cosa imparerà lo studente, le certificazioni, ecc.',
-				)
-			}}
+	<div class="pr-5 md:pr-10 pb-5 mb-5 space-y-5 border-b os-feature-sections">
+		<div class="flex items-center justify-between">
+			<div>
+				<div class="text-lg font-semibold text-ink-gray-9">
+					{{ __('Sezioni Feature') }}
+				</div>
+				<div class="text-sm text-ink-gray-5">
+					{{
+						__(
+							'Crea sezioni con badge per descrivere cosa imparerà lo studente, le certificazioni, ecc.',
+						)
+					}}
+				</div>
+			</div>
+			<Button variant="outline" @click="addSection">
+				<template #prefix>
+					<Plus class="w-4 h-4" />
+				</template>
+				{{ __('Aggiungi Sezione') }}
+			</Button>
 		</div>
 
 		<!-- Sezioni -->
@@ -37,7 +47,7 @@
 			</div>
 
 			<!-- Badge della sezione -->
-			<div class="p-4 space-y-4">
+			<div class="p-4 space-y-4 bg-[--surface-gray-2]">
 				<div
 					v-if="section.items.length"
 					class="grid grid-cols-1 md:grid-cols-3 gap-3"
@@ -108,7 +118,7 @@
 				<!-- Aggiungi badge -->
 				<Button
 					v-if="section.items.length < 9"
-					variant="ghost"
+					variant="outline"
 					@click="addItem(sIndex)"
 				>
 					<template #prefix>
@@ -137,13 +147,6 @@
 			</div>
 		</div>
 
-		<!-- Aggiungi sezione -->
-		<Button variant="outline" @click="addSection">
-			<template #prefix>
-				<Plus class="w-4 h-4" />
-			</template>
-			{{ __('Aggiungi Sezione') }}
-		</Button>
 	</div>
 </template>
 

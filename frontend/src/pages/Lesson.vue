@@ -209,7 +209,7 @@
 							</div>
 						</div>
 
-						<div v-if="!zenModeEnabled" class="flex items-center mt-4 md:mt-2">
+						<div v-if="!zenModeEnabled && (user.data?.is_moderator || user.data?.is_instructor)" class="flex items-center mt-4 md:mt-2">
 							<span
 								class="h-6 mr-1"
 								:class="{
@@ -219,7 +219,7 @@
 								<UserAvatar
 									v-for="instructor in lesson.data.instructors"
 									:user="instructor"
-								/>
+								/>s
 							</span>
 							<CourseInstructors
 								v-if="lesson.data?.instructors"

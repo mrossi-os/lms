@@ -14,7 +14,7 @@
 				<div
 					v-for="(item, iIndex) in section.items"
 					:key="item.id || iIndex"
-					class="flex items-start gap-3 border border-outline-gray-2 rounded-lg p-4 bg-surface-white hover:bg-surface-gray-7 transition-colors"
+					class="flex items-start gap-3 border rounded-lg p-4 bg-surface-white hover:bg-surface-gray-7 transition-colors"
 				>
 					<!-- Icona Lucide -->
 					<div
