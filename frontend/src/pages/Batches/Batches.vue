@@ -54,7 +54,7 @@
 				class="flex flex-col space-y-3 lg:space-y-0 lg:flex-row lg:items-center lg:space-x-4"
 			>
 				<TabButtons
-					v-if="user.data"
+					v-if="user.data && !is_student"
 					:buttons="batchTabs"
 					v-model="currentTab"
 					class="w-fit"
@@ -146,7 +146,7 @@ const title = ref('')
 const certification = ref(false)
 const filters = ref({})
 const is_student = computed(() => user.data?.is_student)
-const currentTab = ref(is_student.value ? 'all' : 'upcoming')
+const currentTab = ref(is_student.value ? 'enrolled' : 'upcoming')
 const orderBy = ref('start_date')
 const readOnlyMode = window.read_only_mode
 const router = useRouter()
