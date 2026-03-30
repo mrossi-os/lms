@@ -12,7 +12,7 @@
 						class="bg-surface-amber-2 px-2 py-1 rounded-md cursor-pointer"
 					>
 						<span> 🔥 </span>
-						<span class="text-ink-gray-9">
+						<span class="text-ink-gray-10">
 							{{ streakInfo.data?.current_streak }}
 						</span>
 					</div>
@@ -138,17 +138,17 @@ const subtitle = computed(() => {
 				adminLiveClasses.data.length,
 				liveClassSuffix,
 				adminEvals.data.length,
-				evalSuffix
+				evalSuffix,
 			)
 		} else if (adminLiveClasses.data?.length > 0) {
 			return __('You have {0} upcoming {1}.').format(
 				adminLiveClasses.data.length,
-				liveClassSuffix
+				liveClassSuffix,
 			)
 		} else if (adminEvals.data?.length > 0) {
 			return __('You have {0} {1} scheduled.').format(
 				adminEvals.data.length,
-				evalSuffix
+				evalSuffix,
 			)
 		}
 		return __('Manage your courses and batches at a glance')
@@ -161,17 +161,17 @@ const subtitle = computed(() => {
 				myLiveClasses.data.length,
 				liveClassSuffix,
 				evalCount.value,
-				evalSuffix
+				evalSuffix,
 			)
 		} else if (myLiveClasses.data?.length > 0) {
 			return __('You have {0} upcoming {1}.').format(
 				myLiveClasses.data.length,
-				liveClassSuffix
+				liveClassSuffix,
 			)
 		} else if (evalCount.value > 0) {
 			return __('You have {0} {1} scheduled.').format(
 				evalCount.value,
-				evalSuffix
+				evalSuffix,
 			)
 		}
 		return __('Resume where you left off')

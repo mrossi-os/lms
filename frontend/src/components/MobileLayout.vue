@@ -21,7 +21,7 @@
 						:is="icons[link.icon]"
 						class="h-4 w-4 stroke-1.5 text-ink-gray-5"
 					/>
-					<div>{{ link.label }}</div>
+					<div class="text-white">{{ __(link.label) }}</div>
 				</div>
 			</div>
 
@@ -84,7 +84,7 @@ onMounted(() => {
 				filterLinksToShow(data)
 				addOtherLinks()
 			},
-		}
+		},
 	)
 })
 
@@ -118,7 +118,7 @@ const filterLinksToShow = (data) => {
 	Object.keys(data).forEach((key) => {
 		if (!parseInt(data[key])) {
 			sidebarLinks.value = sidebarLinks.value.filter(
-				(link) => link.label.toLowerCase().split(' ').join('_') !== key
+				(link) => link.label.toLowerCase().split(' ').join('_') !== key,
 			)
 		}
 	})
