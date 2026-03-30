@@ -19,7 +19,7 @@
 				v-model="course"
 				:label="__('Course')"
 				:required="true"
-				:filters="{ published: 1 }"
+				:filters="{}"
 				:onCreate="
 					(value, close) => {
 						close()
@@ -86,7 +86,7 @@ const addCourse = (close) => {
 				toast.error(err.messages?.[0] || err)
 				console.log(err)
 			},
-		}
+		},
 	)
 }
 </script>
