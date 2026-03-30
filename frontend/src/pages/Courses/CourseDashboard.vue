@@ -49,7 +49,7 @@
 						:rows="progressList.data"
 						rowKey="name"
 						:options="{
-							selectable: false,
+							selectable: true,
 							showTooltip: false,
 						}"
 					>
@@ -111,6 +111,18 @@
 								</template>
 							</ListRow>
 						</ListRows>
+						<ListSelectBanner>
+							<template #actions="{ unselectAll, selections }">
+								<div class="flex gap-2">
+									<Button
+										variant="ghost"
+										@click="unenrollStudents(selections, unselectAll)"
+									>
+										<Trash2 class="h-4 w-4 stroke-1.5" />
+									</Button>
+								</div>
+							</template>
+						</ListSelectBanner>
 					</ListView>
 					<div
 						v-if="progressList.data && progressList.hasNextPage"
@@ -271,11 +283,13 @@ import {
 	ListRows,
 	ListRow,
 	ListRowItem,
+	ListSelectBanner,
 	Select,
 	Tooltip,
+	toast,
 } from 'frappe-ui'
 import { computed, ref, watch } from 'vue'
-import { Plus, Star } from 'lucide-vue-next'
+import { Plus, Star, Trash2 } from 'lucide-vue-next'
 import { formatAmount } from '@/utils'
 import colors from '@/utils/frappe-ui-colors.json'
 import CourseEnrollmentModal from '@/pages/Courses/CourseEnrollmentModal.vue'
@@ -404,6 +418,18 @@ const progressColumns = computed(() => {
 		},
 	]
 })
+
+const unenrollStudents = async (selections: Set<string>, unselectAll: Function) => {
+	const names = Array.from(selections)
+	for (const name of names) {
+		await progressList.delete.submit(name)
+	}
+	unselectAll()
+	progressList.reload()
+	props.course.reload()
+	chartDetails.reload()
+	toast.success(__('Students removed successfully'))
+}
 
 const lessonProgressSortingOptions = [
 	{
