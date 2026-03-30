@@ -60,7 +60,7 @@
 						:rows="students.data"
 						rowKey="name"
 						:options="{
-							selectable: false,
+							selectable: true,
 							showTooltip: false,
 							onRowClick: (row: any) => {
 								currentStudent = row.member
@@ -117,6 +117,18 @@
 								</template>
 							</ListRow>
 						</ListRows>
+						<ListSelectBanner class="!min-w-0">
+							<template #actions="{ unselectAll, selections }">
+								<div class="flex gap-2">
+									<Button
+										variant="ghost"
+										@click="removeStudents(selections, unselectAll)"
+									>
+										<Trash2 class="h-4 w-4 stroke-1.5" />
+									</Button>
+								</div>
+							</template>
+						</ListSelectBanner>
 					</ListView>
 					<div
 						v-if="students.data && students.hasNextPage"
@@ -187,12 +199,14 @@ import {
 	ListRows,
 	ListRow,
 	ListRowItem,
+	ListSelectBanner,
 	Avatar,
 	Button,
+	toast,
 } from 'frappe-ui'
 import { computed, ref, watch } from 'vue'
 import { formatAmount } from '@/utils'
-import { Plus, Import } from 'lucide-vue-next'
+import { Plus, Import, Trash2 } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import BatchFeedback from '@/pages/Batches/components/BatchFeedback.vue'
 import BatchStudentProgress from '@/pages/Batches/components/BatchStudentProgress.vue'
@@ -280,6 +294,14 @@ const studentColumns = computed(() => {
 		},
 	]
 })
+
+const removeStudents = async (selections: string[], unselectAll: () => void) => {
+	for (const student of selections) {
+		await students.delete.submit(student)
+	}
+	unselectAll()
+	toast.success(__('Students removed successfully'))
+}
 
 const showProgressChart = computed(
 	() =>
