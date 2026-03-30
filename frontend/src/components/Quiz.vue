@@ -226,7 +226,7 @@
 						class="flex flex-col gap-2 md:flex-row items-center justify-between mt-8"
 					>
 						<Checkbox
-							:label="__('Mark for review')"
+							:label="__('Flag to review later')"
 							:model-value="reviewQuestions.includes(activeQuestion) ? 1 : 0"
 							@change="markForReview($event, activeQuestion)"
 						/>
@@ -320,15 +320,18 @@
 					</div>
 				</div>
 			</div>
-			<div v-if="reviewQuestions.length" class="border rounded-lg p-4 mt-4">
-				<div class="font-semibold">
+			<div
+				v-if="reviewQuestions.length"
+				class="border rounded-lg p-4 mt-4 caret-dark-gray-200"
+			>
+				<div class="font-semibold text-white">
 					{{ __('Questions marked for review') }}
 				</div>
 				<div class="flex items-center space-x-2 mt-2">
 					<div
 						v-for="index in reviewQuestions"
 						@click="activeQuestion = index"
-						class="w-6 h-6 rounded-full flex items-center justify-center text-sm cursor-pointer bg-surface-gray-3"
+						class="w-6 h-6 rounded-full flex items-center justify-center text-sm cursor-pointer bg-surface-gray-3 text-white"
 					>
 						{{ index }}
 					</div>
