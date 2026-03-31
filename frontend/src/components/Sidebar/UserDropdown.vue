@@ -82,6 +82,7 @@ import {
 	LogIn,
 	LogOut,
 	Moon,
+	Upload,
 	User,
 	Settings,
 	Sun,
@@ -165,6 +166,16 @@ const userDropdownOptions = () => {
 				},
 				{
 					component: markRaw(Configuration),
+					condition: () => {
+						return userResource.data?.is_moderator
+					},
+				},
+				{
+					label: __('Upload Files'),
+					icon: Upload,
+					onClick: () => {
+						router.push({ name: 'FileUpload' })
+					},
 					condition: () => {
 						return userResource.data?.is_moderator
 					},

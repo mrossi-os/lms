@@ -102,6 +102,11 @@
 							:label="__('Descrizione')"
 							@input="onChanged"
 						/>
+						<FilePicker
+							v-model="item.file"
+							:label="__('File allegato')"
+							@update:modelValue="onChanged"
+						/>
 					</div>
 				</div>
 
@@ -156,6 +161,7 @@ import { FormControl, Button } from 'frappe-ui'
 import { X, Plus, Info, LayoutGrid, CheckCircle, Trash2 } from 'lucide-vue-next'
 import * as LucideIcons from 'lucide-vue-next'
 import IconPicker from '@/oslms/components/IconPicker.vue'
+import FilePicker from '@/components/Controls/FilePicker.vue'
 
 // ─── Props & Emits ────────────────────────────────────────────────────────────
 //
@@ -237,6 +243,7 @@ const addItem = (sIndex) => {
 		title: '',
 		description: '',
 		icon: '',
+		file: '',
 	})
 	onChanged()
 }

@@ -230,6 +230,11 @@ const routes = [
 		component: () => import('@/pages/Search/Search.vue'),
 	},
 	{
+		path: '/file-upload',
+		name: 'FileUpload',
+		component: () => import('@/pages/FileUpload.vue'),
+	},
+	{
 		path: '/data-import',
 		name: 'DataImportList',
 		component: () => import('@/pages/DataImport.vue'),
