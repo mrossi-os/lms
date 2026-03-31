@@ -14,7 +14,7 @@
 				<div
 					v-for="(item, iIndex) in section.items"
 					:key="item.id || iIndex"
-					class="flex flex-col border rounded-lg p-4 bg-surface-white hover:bg-surface-gray-7 transition-colors"
+					class="flex flex-col border rounded-lg p-4 bg-surface-white transition-colors"
 				>
 					<div class="flex items-start gap-3">
 						<!-- Icona Lucide -->
@@ -41,19 +41,27 @@
 								{{ item.description }}
 							</span>
 						</div>
-					</div>
+						<!-- Download -->
+						<a
+							v-if="getFileUrl(item.file)"
+							:href="getFileUrl(item.file)"
+							target="_blank"
+							download
+							class="flex flex-col items-center gap-1.5 border-t border-outline-gray-1 text-xs text-ink-gray-5 hover:text-ink-gray-8 hover:bg-surface-gray-7 transition-colors w-fit card p-2"
+						>
+							<Download class="w-5 h-5 shrink-0" />
+							<span class="truncate">{{ getFileName(item.file) }}</span>
+						</a>
 
-					<!-- Download -->
-					<a
-						v-if="getFileUrl(item.file)"
-						:href="getFileUrl(item.file)"
-						target="_blank"
-						download
-						class="flex items-center gap-1.5 mt-3 pt-3 border-t border-outline-gray-1 text-xs text-ink-gray-5 hover:text-ink-gray-8 transition-colors"
-					>
-						<Download class="w-3.5 h-3.5 shrink-0" />
-						<span class="truncate">{{ getFileName(item.file) }}</span>
-					</a>
+						<!-- File not found -->
+						<div
+							v-else-if="isFileMissing(item.file)"
+							class="flex items-center gap-1.5 mt-3 pt-3 border-t border-outline-gray-1 text-xs text-ink-orange-3"
+						>
+							<AlertTriangle class="w-3.5 h-3.5 shrink-0" />
+							<span>{{ __('File not found') }}</span>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -63,7 +71,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { createResource } from 'frappe-ui'
-import { CheckCircle, Download } from 'lucide-vue-next'
+import { AlertTriangle, CheckCircle, Download } from 'lucide-vue-next'
 import * as LucideIcons from 'lucide-vue-next'
 
 interface FeatureItem {
@@ -99,12 +107,17 @@ const sections = computed<FeatureSection[]>(() => {
 // Mappa file name -> { file_url, file_name }
 const fileUrls = ref<Record<string, string>>({})
 const fileDisplayNames = ref<Record<string, string>>({})
+const missingFiles = ref<Set<string>>(new Set())
 
 const fileNames = computed(() => {
 	const names: string[] = []
 	for (const section of sections.value) {
 		for (const item of section.items || []) {
-			if (item.file && !fileUrls.value[item.file]) {
+			if (
+				item.file &&
+				!fileUrls.value[item.file] &&
+				!missingFiles.value.has(item.file)
+			) {
 				names.push(item.file)
 			}
 		}
@@ -136,15 +149,25 @@ watch(
 	fileNames,
 	(names) => {
 		if (names.length) {
+			const requestedNames = [...names]
 			filesResource.update({
 				params: {
 					doctype: 'File',
-					filters: { name: ['in', names] },
+					filters: { name: ['in', requestedNames] },
 					fields: ['name', 'file_name', 'file_url'],
 					limit_page_length: 0,
 				},
 			})
-			filesResource.reload()
+			filesResource.reload().then(() => {
+				const foundNames = new Set(
+					(filesResource.data || []).map((f: { name: string }) => f.name),
+				)
+				for (const n of requestedNames) {
+					if (!foundNames.has(n)) {
+						missingFiles.value.add(n)
+					}
+				}
+			})
 		}
 	},
 	{ immediate: true },
@@ -153,6 +176,11 @@ watch(
 const getFileUrl = (fileName?: string) => {
 	if (!fileName) return ''
 	return fileUrls.value[fileName] || ''
+}
+
+const isFileMissing = (fileName?: string) => {
+	if (!fileName) return false
+	return missingFiles.value.has(fileName)
 }
 
 const getFileName = (fileName?: string) => {

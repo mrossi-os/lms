@@ -3,7 +3,25 @@
 		<label v-if="label" class="block text-xs text-ink-gray-5">
 			{{ __(label) }}
 		</label>
-		<div class="flex items-center gap-2">
+		<!-- File not found warning -->
+		<div
+			v-if="modelValue && fileMissing"
+			class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-orange-1 border border-outline-orange-2"
+		>
+			<AlertTriangle class="w-4 h-4 text-ink-orange-3 shrink-0" />
+			<span class="text-xs text-ink-orange-3 flex-1">
+				{{ __('File not found') }}
+			</span>
+			<button
+				class="text-xs text-ink-orange-3 hover:text-ink-red-3 underline shrink-0"
+				@click="emit('update:modelValue', '')"
+			>
+				{{ __('Remove') }}
+			</button>
+		</div>
+
+		<!-- Normal picker -->
+		<div v-else class="flex items-center gap-2">
 			<Autocomplete
 				ref="autocomplete"
 				:options="filteredOptions"
@@ -66,6 +84,7 @@ import Autocomplete from '@/components/Controls/Autocomplete.vue'
 import { watchDebounced } from '@vueuse/core'
 import { createResource, Button } from 'frappe-ui'
 import {
+	AlertTriangle,
 	FileIcon,
 	FileText,
 	FileSpreadsheet,
@@ -106,6 +125,7 @@ const includePrivate = ref(false)
 
 // Cache per mantenere label e url del file selezionato
 const fileCache = ref({})
+const fileMissing = ref(false)
 
 const selectedOption = computed({
 	get: () => {
@@ -205,11 +225,16 @@ const resolveInitialFile = createResource({
 	url: 'frappe.client.get_list',
 	method: 'POST',
 	auto: false,
-	transform: (data) => {
-		for (const f of data) {
-			fileCache.value[f.name] = {
-				label: f.file_name || f.name,
-				file_url: f.file_url,
+	onSuccess: (data) => {
+		if (data.length === 0) {
+			fileMissing.value = true
+		} else {
+			fileMissing.value = false
+			for (const f of data) {
+				fileCache.value[f.name] = {
+					label: f.file_name || f.name,
+					file_url: f.file_url,
+				}
 			}
 		}
 	},
@@ -218,7 +243,11 @@ const resolveInitialFile = createResource({
 watch(
 	() => props.modelValue,
 	(val) => {
-		if (val && !fileCache.value[val]) {
+		if (!val) {
+			fileMissing.value = false
+			return
+		}
+		if (!fileCache.value[val]) {
 			resolveInitialFile.update({
 				params: {
 					doctype: 'File',
@@ -228,6 +257,8 @@ watch(
 				},
 			})
 			resolveInitialFile.reload()
+		} else {
+			fileMissing.value = false
 		}
 	},
 	{ immediate: true },
