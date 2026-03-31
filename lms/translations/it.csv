@@ -3274,3 +3274,7 @@ restrict_ip
 "OTP setup using OTP App was not completed. Please contact Administrator.","La configurazione OTP tramite app OTP non è stata completata. Contatta l'Amministratore."
 "SMS was not sent. Please contact Administrator.","L'SMS non è stato inviato. Contatta l'Amministratore."
 "Verification code email not sent. Please contact Administrator.","L'email con il codice di verifica non è stata inviata. Contatta l'Amministratore."
+"Log In To {0}","Accedi a {0}"
+"Click on the button to log in to {0}","Clicca sul pulsante per accedere a {0}"
+"The link will expire in {0} minutes","Il link scadrà tra {0} minuti"
+"If you did not request this link, you can safely ignore this email.","Se non hai richiesto questo link, puoi ignorare questa email."

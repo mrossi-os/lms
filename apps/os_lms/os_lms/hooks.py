@@ -41,6 +41,11 @@ override_whitelisted_methods = {
     "lms.lms.utils.get_batch_details": "os_lms.os_lms.override_utils.get_batch_details",
 }
 
+# override email
+standard_email_override = {
+    "login_via_key": "os_lms/templates/emails/login_via_key.html"
+}
+
 fixtures = [
     {
         "dt": "Custom Field",
