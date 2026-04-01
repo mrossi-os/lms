@@ -201,28 +201,50 @@
 				:key="file.name"
 				class="flex items-center gap-3 border rounded-lg px-4 py-3 bg-surface-white hover:bg-surface-gray-7 transition-colors"
 			>
-				<input
-					type="checkbox"
-					:checked="selectedFiles.has(file.name)"
-					class="rounded border-outline-gray-2 text-ink-blue-3 focus:ring-ink-blue-3 shrink-0"
-					@change="toggleSelect(file.name)"
-				/>
-				<component
-					:is="getFileIcon(file.file_name)"
-					class="w-5 h-5 shrink-0"
-					:class="getFileIconColor(file.file_name)"
-				/>
-				<div class="flex flex-col min-w-0 flex-1">
-					<span class="text-sm font-medium text-ink-gray-9 truncate">
-						{{ file.file_name }}
-					</span>
-					<span class="text-xs text-ink-gray-5">
-						{{ formatSize(file.file_size) }}
-						<span class="mx-1">&middot;</span>
-						{{ dayjs(file.modified).format('DD MMM YYYY') }}
-					</span>
+				<div
+					class="flex w-full gap-2 items-center cursor-pointer"
+					@click="toggleSelect(file.name)"
+				>
+					<input
+						type="checkbox"
+						:checked="selectedFiles.has(file.name)"
+						class="rounded border-outline-gray-2 text-ink-blue-3 focus:ring-ink-blue-3 shrink-0 cursor-pointer"
+						@change="toggleSelect(file.name)"
+					/>
+					<component
+						:is="getFileIcon(file.file_name)"
+						class="w-5 h-5 shrink-0"
+						:class="getFileIconColor(file.file_name)"
+					/>
+					<div class="flex flex-col min-w-0 flex-1">
+						<span class="text-sm font-medium text-ink-gray-9 truncate">
+							{{ file.file_name }}
+						</span>
+						<span class="text-xs text-ink-gray-5">
+							{{ formatSize(file.file_size) }}
+							<span class="mx-1">&middot;</span>
+							{{ dayjs(file.modified).format('DD MMM YYYY') }}
+						</span>
+					</div>
 				</div>
 				<div class="flex items-center gap-2 shrink-0">
+					<Tooltip :text="__('Copy path')">
+						<button
+							class="p-1.5 rounded hover:bg-surface-gray-3 text-ink-gray-5 hover:text-ink-gray-7 transition-colors"
+							@click="copyPath(file)"
+						>
+							<Copy class="w-4 h-4" />
+						</button>
+					</Tooltip>
+					<Tooltip v-if="isPreviewable(file.file_name)" :text="__('Open')">
+						<a
+							:href="file.file_url"
+							target="_blank"
+							class="p-1.5 rounded hover:bg-surface-gray-3 text-ink-gray-5 hover:text-ink-gray-7 transition-colors"
+						>
+							<ExternalLink class="w-4 h-4" />
+						</a>
+					</Tooltip>
 					<Tooltip :text="__('Download')">
 						<a
 							:href="file.file_url"
@@ -310,6 +332,8 @@ import {
 	AlertCircle,
 	ChevronLeft,
 	ChevronRight,
+	Copy,
+	ExternalLink,
 	FileIcon,
 	FileText,
 	FileSpreadsheet,
@@ -747,4 +771,35 @@ const getExt = (fileName) => {
 const getFileIcon = (fileName) => extToIcon[getExt(fileName)] || FileIcon
 const getFileIconColor = (fileName) =>
 	extToColor[getExt(fileName)] || 'text-ink-gray-4'
+
+const previewableExts = new Set([
+	'png',
+	'jpg',
+	'jpeg',
+	'gif',
+	'svg',
+	'webp',
+	'bmp',
+	'ico',
+	'pdf',
+	'mp4',
+	'webm',
+	'ogg',
+	'mp3',
+	'wav',
+	'html',
+	'txt',
+	'csv',
+	'json',
+	'xml',
+])
+
+const isPreviewable = (fileName) => previewableExts.has(getExt(fileName))
+
+const copyPath = (file) => {
+	const fullUrl = `${window.location.origin}${file.file_url}`
+	navigator.clipboard.writeText(fullUrl).then(() => {
+		toast.success(__('Path copied'))
+	})
+}
 </script>
