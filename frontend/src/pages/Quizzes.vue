@@ -53,6 +53,7 @@
 							<ListRowItem :item="row[column.key]" :align="column.align">
 								<div v-if="column.key == 'show_answers'">
 									<FormControl
+										v-if="row[column.key]"
 										type="checkbox"
 										v-model="row[column.key]"
 										:disabled="true"

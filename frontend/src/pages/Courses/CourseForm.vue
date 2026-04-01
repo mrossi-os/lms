@@ -16,6 +16,7 @@
 								:label="__('Title')"
 								:required="true"
 								@input="makeFormDirty()"
+								class="custom-selection"
 							/>
 							<Link
 								v-model="courseResource.doc.category"
@@ -153,7 +154,7 @@
 								<span class="text-ink-red-3">*</span>
 							</div>
 							<TextEditor
-								class="component-text-editor"
+								class="component-text-editor custom-selection"
 								:content="courseResource.doc.description"
 								@change="
 									(val) => {
@@ -176,6 +177,7 @@
 								)
 							"
 							@input="makeFormDirty()"
+							class="custom-selection"
 						/>
 
 						<MultiSelect

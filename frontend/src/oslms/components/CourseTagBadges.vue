@@ -1,9 +1,9 @@
 <template>
-	<div v-if="tagObjects.length" class="flex items-center flex-wrap gap-1.5">
+	<div v-if="tagObjects.length" class="flex items-center flex-wrap gap-3">
 		<span
 			v-for="tag in tagObjects"
 			:key="tag.tag_name"
-			class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold text-white leading-4"
+			class="inline-flex items-center px-3 py-1 rounded-full text-md font-semibold text-white leading-4"
 			:style="{ backgroundColor: tag.color }"
 		>
 			{{ tag.tag_name }}

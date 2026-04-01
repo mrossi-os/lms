@@ -34,7 +34,7 @@
 				<FormControl
 					v-model="section.title"
 					:placeholder="__('Nome sezione...')"
-					class="flex-1"
+					class="flex-1 custom-selection"
 					@input="onChanged"
 				/>
 				<button
@@ -151,7 +151,6 @@
 				{{ __('Crea una sezione e aggiungi i badge') }}
 			</div>
 		</div>
-
 	</div>
 </template>
 

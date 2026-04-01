@@ -14,9 +14,9 @@
 				<div
 					v-for="(item, iIndex) in section.items"
 					:key="item.id || iIndex"
-					class="flex flex-col border rounded-lg p-4 bg-surface-white transition-colors"
+					class="flex flex-col border rounded-lg p-4 card transition-colors"
 				>
-					<div class="flex items-start gap-3">
+					<div class="flex flex-wrap items-start gap-3">
 						<!-- Icona Lucide -->
 						<div
 							class="flex-shrink-0 w-9 h-9 flex items-center justify-center bg-surface-gray-2 rounded-md"
@@ -34,12 +34,12 @@
 							<span class="text-sm font-semibold text-ink-gray-9 leading-5">
 								{{ item.title }}
 							</span>
-							<span
+							<div
 								v-if="item.description"
-								class="text-xs text-ink-gray-6 leading-4 mt-0.5"
+								class="text-xs text-ink-gray-6 leading-4 mt-0.5 break-words"
 							>
 								{{ item.description }}
-							</span>
+							</div>
 						</div>
 						<!-- Download -->
 						<a
@@ -50,7 +50,9 @@
 							class="flex flex-col items-center gap-1.5 border-t border-outline-gray-1 text-xs text-ink-gray-5 hover:text-ink-gray-8 hover:bg-surface-gray-7 transition-colors w-fit card p-2"
 						>
 							<Download class="w-5 h-5 shrink-0" />
-							<span class="truncate">{{ getFileName(item.file) }}</span>
+							<span class="truncate max-w-20">{{
+								getFileName(item.file)
+							}}</span>
 						</a>
 
 						<!-- File not found -->

@@ -20,7 +20,7 @@
 								v-model="batchDetail.doc.title"
 								:label="__('Title')"
 								:required="true"
-								class="w-full"
+								class="w-full custom-selection"
 							/>
 							<FormControl
 								v-model="batchDetail.doc.start_date"

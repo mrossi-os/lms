@@ -92,6 +92,14 @@ input:where([type='radio']):checked:focus {
 	border-color: var(--color-company-primary);
 	background-color: var(--color-company-primary);
 }
+
+input:where([type='checkbox']):checked,
+input:where([type='checkbox']):checked:hover,
+input:where([type='checkbox']):checked:focus {
+	border-color: var(--color-company-primary);
+	background-color: var(--color-company-primary);
+}
+
 input::placeholder,
 textarea::placeholder {
 	color: var(--ink-gray-5);
@@ -316,4 +324,43 @@ input:disabled {
 
 #scrollContainer {
 	overflow-x: hidden;
+}
+
+/* ═══ TEXT SELECTION ═══ */
+
+.custom-selection ::selection,
+.custom-selection::selection,
+.custom-selection *::selection {
+	background-color: var(--ink-gray-9);
+	color: var(--color-company-secondary);
+}
+
+.custom-selection ::-moz-selection,
+.custom-selection::-moz-selection,
+.custom-selection *::-moz-selection {
+	background-color: var(--ink-gray-9);
+	color: var(--color-company-secondary);
+}
+
+.card ::selection,
+.card::selection {
+	background-color: var(--ink-gray-9);
+	color: var(--color-company-secondary);
+}
+
+.card ::-moz-selection,
+.card::-moz-selection {
+	background-color: var(--ink-gray-9);
+	color: var(--color-company-secondary);
+}
+
+textarea ::selection,
+textarea::selection {
+	background-color: var(--ink-gray-9);
+	color: var(--color-company-secondary);
+}
+textarea ::-moz-selection,
+textarea::-moz-selection {
+	background-color: var(--ink-gray-9) !important;
+	color: var(--color-company-secondary) !important;
 }
