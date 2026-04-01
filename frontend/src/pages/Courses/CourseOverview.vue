@@ -55,16 +55,11 @@
 						<CourseInstructors :instructors="course.data.instructors" />
 					</div>
 				</div>
-				<div v-if="course.data.tags" class="flex my-4 w-fit">
-					<Badge
-						theme="gray"
-						size="lg"
-						class="mr-2 text-ink-gray-9"
-						v-for="tag in course.data.tags.split(', ')"
-					>
-						{{ tag }}
-					</Badge>
-				</div>
+				<CourseTagBadges
+					v-if="course.data.tags"
+					:tags="course.data.tags"
+					class="my-4"
+				/>
 				<div class="md:hidden my-4">
 					<CourseCardOverlay :course="course" />
 				</div>
@@ -87,12 +82,13 @@
 </template>
 <script setup lang="ts">
 import { Star, Users } from 'lucide-vue-next'
-import { Badge, Tooltip } from 'frappe-ui'
+import { Tooltip } from 'frappe-ui'
 import CourseCardOverlay from '@/components/CourseCardOverlay.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import CourseInstructors from '@/components/CourseInstructors.vue'
 import RelatedCourses from '@/components/RelatedCourses.vue'
 import FeaturedSectionView from '@/oslms/components/FeaturedSectionView.vue'
+import CourseTagBadges from '@/oslms/components/CourseTagBadges.vue'
 import { inject } from 'vue'
 
 const props = defineProps<{

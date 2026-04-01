@@ -37,7 +37,7 @@ import {
 	Tabs,
 	usePageMeta,
 } from 'frappe-ui'
-import { computed, inject, markRaw, onMounted, ref, watch } from 'vue'
+import { computed, inject, markRaw, onMounted, provide, ref, watch } from 'vue'
 import { sessionStore } from '@/stores/session'
 import { useRouter, useRoute } from 'vue-router'
 import { List, Settings2, Trash2, TrendingUp } from 'lucide-vue-next'
@@ -46,6 +46,25 @@ import CourseDashboard from '@/pages/Courses/CourseDashboard.vue'
 import CourseForm from '@/pages/Courses/CourseForm.vue'
 
 const { brand } = sessionStore()
+
+const tagResource = createResource({
+	url: 'frappe.client.get_list',
+	method: 'POST',
+	params: {
+		doctype: 'LMS OS Course Tag',
+		fields: ['tag_name', 'color'],
+		limit_page_length: 0,
+	},
+	auto: true,
+})
+
+const tagColorMap = computed(() => {
+	if (!tagResource.data) return new Map()
+	return new Map(tagResource.data.map((t) => [t.tag_name, t.color]))
+})
+
+provide('tagColorMap', tagColorMap)
+
 const router = useRouter()
 const route = useRoute()
 const user = inject('$user')

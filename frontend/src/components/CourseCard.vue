@@ -58,6 +58,12 @@
 				{{ course.title }}
 			</div>
 
+			<CourseTagBadges
+				v-if="course.tags"
+				:tags="course.tags"
+				class="mb-1"
+			/>
+
 			<div class="short-introduction text-sm">
 				{{ course.short_introduction }}
 			</div>
@@ -83,6 +89,7 @@ import {
 import { sessionStore } from '@/stores/session'
 import { createResource, Tooltip } from 'frappe-ui'
 import ProgressBar from '@/components/ProgressBar.vue'
+import CourseTagBadges from '@/oslms/components/CourseTagBadges.vue'
 import colors from '@/utils/frappe-ui-colors.json'
 
 const { user } = sessionStore()

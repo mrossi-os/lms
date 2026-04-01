@@ -44,33 +44,10 @@
 								:required="true"
 								@update:modelValue="makeFormDirty()"
 							/>
-							<div>
-								<div class="text-xs text-ink-gray-5">
-									{{ __('Tags') }}
-								</div>
-								<FormControl
-									v-model="newTag"
-									:placeholder="__('Add a keyword and then press enter')"
-									:class="['w-full', 'flex-1', 'my-1']"
-									@keyup.enter="updateTags()"
-									id="tags"
-								/>
-								<div>
-									<div class="flex items-center flex-wrap gap-2">
-										<div
-											v-if="courseResource.doc.tags"
-											v-for="tag in courseResource.doc.tags?.split(', ')"
-											class="flex items-center bg-surface-gray-2 text-ink-gray-7 p-2 rounded-md"
-										>
-											{{ tag }}
-											<X
-												class="stroke-1.5 w-3 h-3 ml-2 cursor-pointer"
-												@click="removeTag(tag)"
-											/>
-										</div>
-									</div>
-								</div>
-							</div>
+							<CourseTagPicker
+								v-model="courseResource.doc.tags"
+								@dirty="makeFormDirty()"
+							/>
 						</div>
 						<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
 							<Uploader
@@ -399,7 +376,7 @@ import {
 	createLMSCategory,
 	cleanError,
 } from '@/utils'
-import { X } from 'lucide-vue-next'
+import CourseTagPicker from '@/oslms/components/CourseTagPicker.vue'
 import { useRouter } from 'vue-router'
 import { sessionStore } from '../../stores/session'
 import Link from '@/components/Controls/Link.vue'
@@ -412,7 +389,6 @@ import NewMemberModal from '@/components/Modals/NewMemberModal.vue'
 import Switch from '@/oslms/components/Form/Switch.vue'
 
 const user = inject('$user')
-const newTag = ref('')
 const { brand } = sessionStore()
 const router = useRouter()
 const instructors = ref([])
@@ -615,25 +591,6 @@ const trashCourse = () => {
 			},
 		],
 	})
-}
-
-const updateTags = () => {
-	if (newTag.value) {
-		courseResource.doc.tags = courseResource.doc.tags
-			? `${courseResource.doc.tags}, ${newTag.value}`
-			: newTag.value
-		newTag.value = ''
-		makeFormDirty()
-	}
-}
-
-const removeTag = (tag) => {
-	courseResource.doc.tags = courseResource.doc.tags
-		?.split(', ')
-		.filter((t) => t !== tag)
-		.join(', ')
-	newTag.value = ''
-	makeFormDirty()
 }
 
 const checkPermission = () => {

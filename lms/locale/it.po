@@ -4793,7 +4793,7 @@ msgstr ""
 #: frontend/src/components/Quiz.vue:299 frontend/src/pages/Lesson.vue:51
 #: frontend/src/pages/Lesson.vue:187
 msgid "Next"
-msgstr "Avanti"
+msgstr "Successivo"
 
 #: lms/templates/assessments.html:58
 msgid "No Assessments"
@@ -5072,7 +5072,7 @@ msgstr ""
 #: lms/job/doctype/job_opportunity/job_opportunity.json
 #: lms/job/web_form/job_opportunity/job_opportunity.json
 msgid "Open"
-msgstr "Aperte"
+msgstr "Apri"
 
 #: lms/templates/emails/assignment_submission.html:8
 msgid "Open Assignment"

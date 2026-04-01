@@ -350,6 +350,8 @@ import { watchDebounced } from '@vueuse/core'
 import { createDialog } from '@/utils/dialogs'
 import dayjs from 'dayjs'
 
+document.title = __('Uploaded Files')
+
 const searchQuery = ref('')
 const uploadPrivate = ref(false)
 const isDragging = ref(false)
