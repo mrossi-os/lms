@@ -56,10 +56,10 @@
 						<!-- File not found -->
 						<div
 							v-else-if="isFileMissing(item.file)"
-							class="flex items-center gap-1.5 mt-3 pt-3 border-t border-outline-gray-1 text-xs text-ink-orange-3"
+							class="flex flex-col items-center gap-1.5 text-xs text-ink-orange-3"
 						>
-							<AlertTriangle class="w-3.5 h-3.5 shrink-0" />
-							<span>{{ __('File not found') }}</span>
+							<AlertTriangle class="w-5 h-5 shrink-0 text-yellow-400" />
+							<span class="text-yellow-400">{{ __('File not found') }}</span>
 						</div>
 					</div>
 				</div>
@@ -126,13 +126,10 @@ const fileNames = computed(() => {
 })
 
 const filesResource = createResource({
-	url: 'frappe.client.get_list',
+	url: 'os_lms.os_lms.api.get_file_urls',
 	method: 'POST',
 	params: {
-		doctype: 'File',
-		filters: { name: ['in', fileNames.value] },
-		fields: ['name', 'file_name', 'file_url'],
-		limit_page_length: 0,
+		names: fileNames.value,
 	},
 	auto: false,
 	onSuccess: (
@@ -152,10 +149,7 @@ watch(
 			const requestedNames = [...names]
 			filesResource.update({
 				params: {
-					doctype: 'File',
-					filters: { name: ['in', requestedNames] },
-					fields: ['name', 'file_name', 'file_url'],
-					limit_page_length: 0,
+					names: requestedNames,
 				},
 			})
 			filesResource.reload().then(() => {

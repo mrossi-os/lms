@@ -156,6 +156,20 @@ def check_lesson_access(course, lesson):
 
 
 @frappe.whitelist()
+def get_file_urls(names: list[str]):
+    """Return file_url and file_name for a list of File document names, ignoring permissions."""
+    if not names:
+        return []
+    return frappe.get_all(
+        "File",
+        filters={"name": ["in", names]},
+        fields=["name", "file_name", "file_url"],
+        ignore_permissions=True,
+        limit_page_length=0,
+    )
+
+
+@frappe.whitelist()
 def check_quiz_access(course):
     """
     Verifica se l'utente può accedere al quiz.
