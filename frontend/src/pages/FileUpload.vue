@@ -124,7 +124,7 @@
 					<input
 						type="checkbox"
 						v-model="uploadPrivate"
-						class="rounded border-outline-gray-2 text-ink-blue-3 focus:ring-ink-blue-3"
+						class="border-outline-gray-2 text-ink-blue-3 focus:ring-ink-blue-3"
 					/>
 					{{ __('Upload as private') }}
 				</label>
@@ -208,7 +208,8 @@
 					<input
 						type="checkbox"
 						:checked="selectedFiles.has(file.name)"
-						class="rounded border-outline-gray-2 text-ink-blue-3 focus:ring-ink-blue-3 shrink-0 cursor-pointer"
+						class="border-outline-gray-2 text-ink-blue-3 shrink-0 cursor-pointer"
+						@click="toggleSelect(file.name)"
 						@change="toggleSelect(file.name)"
 					/>
 					<component
