@@ -10,8 +10,8 @@
 			{{ __('Create') }}
 		</Button>
 	</header>
-	<div class="py-5 mx-5">
-		<div class="flex items-center justify-between mb-4">
+	<div class="pt-5 mx-5">
+		<div class="flex items-center justify-between mb-5">
 			<div class="text-lg font-semibold text-ink-gray-9">
 				{{ __('{0} Quizzes').format(quizzes.data?.length || 0) }}
 			</div>
@@ -28,6 +28,7 @@
 			row-key="name"
 			class="os-list-view"
 			:options="{ showTooltip: false, selectable: true }"
+			class="h-[79vh] border-b"
 		>
 			<ListHeader
 				class="grid items-center space-x-4 rounded-none rounded-t bg-surface-gray-2 p-2"
@@ -61,7 +62,7 @@
 								</div>
 								<div
 									v-else-if="column.key == 'modified'"
-									class="text-xs text-ink-gray-5"
+									class="text-sm text-ink-gray-5"
 								>
 									{{ row[column.key] }}
 								</div>
@@ -73,7 +74,7 @@
 					</ListRow>
 				</router-link>
 			</ListRows>
-			<ListSelectBanner>
+			<ListSelectBanner class="bottom-50">
 				<template #actions="{ unselectAll, selections }">
 					<div class="flex gap-2">
 						<Button
@@ -87,10 +88,14 @@
 			</ListSelectBanner>
 		</ListView>
 		<EmptyState v-else :type="__('Quizzes')" />
-		<div v-if="quizzes.hasNextPage" class="flex justify-center my-5">
-			<Button @click="quizzes.next()">
+		<div class="flex items-center justify-end space-x-3 mt-3">
+			<Button v-if="quizzes.hasNextPage" @click="quizzes.next()">
 				{{ __('Load More') }}
 			</Button>
+			<div v-if="quizzes.hasNextPage" class="h-8 border-l"></div>
+			<div class="text-ink-gray-5">
+				{{ quizzes.data?.length }} {{ __('of') }} {{ totalQuizzes.data }}
+			</div>
 		</div>
 	</div>
 	<Dialog
@@ -125,6 +130,7 @@ import {
 	Breadcrumbs,
 	Button,
 	createListResource,
+	createResource,
 	Dialog,
 	FeatherIcon,
 	FormControl,
@@ -142,7 +148,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { computed, inject, onMounted, ref, watch } from 'vue'
 import { Plus } from 'lucide-vue-next'
 import { sessionStore } from '@/stores/session'
-import { escapeHTML } from '@/utils'
+import { sanitizeHTML } from '@/utils'
 import { useTelemetry } from 'frappe-ui/frappe'
 import EmptyState from '@/components/EmptyState.vue'
 
@@ -159,10 +165,12 @@ const showForm = ref(false)
 const title = ref('')
 
 onMounted(() => {
-	if (!user.data?.is_moderator && !user.data?.is_instructor) {
+	if (
+		!user.data?.is_moderator &&
+		!user.data?.is_instructor &&
+		!user.data?.is_evaluator
+	) {
 		router.push({ name: 'Courses' })
-	} else if (!user.data?.is_moderator) {
-		quizFilters.value['owner'] = user.data?.name
 	}
 	if (route.query.new === 'true') {
 		showForm.value = true
@@ -175,6 +183,9 @@ watch(search, () => {
 		filters: quizFilters.value,
 	})
 	quizzes.reload()
+	totalQuizzes.update({
+		filters: quizFilters.value,
+	})
 })
 
 const quizzes = createListResource({
@@ -196,14 +207,28 @@ const quizzes = createListResource({
 		return data.map((quiz) => {
 			return {
 				...quiz,
-				modified: dayjs(quiz.modified).fromNow(),
+				modified: dayjs(quiz.modified).fromNow(true),
 			}
 		})
 	},
 })
 
+const totalQuizzes = createResource({
+	url: 'frappe.client.get_count',
+	params: {
+		doctype: 'LMS Quiz',
+		filters: quizFilters.value,
+	},
+	auto: true,
+	cache: ['quizzes_count', user.data?.name],
+	onError(err) {
+		toast.error(err.messages?.[0] || err)
+		console.error(err)
+	},
+})
+
 const validateTitle = () => {
-	title.value = escapeHTML(title.value.trim())
+	title.value = sanitizeHTML(title.value.trim())
 }
 
 const insertQuiz = (close) => {
@@ -255,7 +280,7 @@ const quizColumns = computed(() => {
 		{
 			label: __('Total Marks'),
 			key: 'total_marks',
-			width: 1,
+			width: 0.5,
 			align: 'center',
 			icon: 'hash',
 		},
@@ -269,7 +294,7 @@ const quizColumns = computed(() => {
 		{
 			label: __('Max Attempts'),
 			key: 'max_attempts',
-			width: 1,
+			width: 0.5,
 			align: 'center',
 			icon: 'repeat',
 		},
@@ -281,7 +306,7 @@ const quizColumns = computed(() => {
 			icon: 'eye',
 		},
 		{
-			label: __('Modified'),
+			label: __('Updated On'),
 			key: 'modified',
 			width: 1,
 			align: 'center',

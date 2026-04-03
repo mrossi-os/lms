@@ -3,14 +3,32 @@ import json
 import frappe
 
 from lms.lms.doctype.lms_course.lms_course import update_course_statistics
-from lms.lms.utils import get_course_progress
+from lms.lms.utils import create_user, get_course_progress
 
 
 def create_demo_data(args: dict = None):
 	course = create_course()
-	student = create_user("Ashley", "Ippolito", "ash@ipp.com", "/assets/lms/images/student.jpg")
-	student1 = create_user("John", "Doe", "john.doe@example.com", "/assets/lms/images/student1.jpeg")
-	student2 = create_user("Jane", "Smith", "jane.smith@example.com", "/assets/lms/images/student2.jpeg")
+	student = create_user(
+		email="ash@ipp.com",
+		first_name="Ashley",
+		last_name="Ippolito",
+		full_name="Ashley Ippolito",
+		user_image="/assets/lms/images/student.jpg",
+	)
+	student1 = create_user(
+		email="john.doe@example.com",
+		first_name="John",
+		last_name="Doe",
+		full_name="John Doe",
+		user_image="/assets/lms/images/student1.jpeg",
+	)
+	student2 = create_user(
+		email="jane.smith@example.com",
+		first_name="Jane",
+		last_name="Smith",
+		full_name="Jane Smith",
+		user_image="/assets/lms/images/student2.jpeg",
+	)
 	create_chapter(course)
 	create_lessons(course)
 	enroll_student_in_course(student, course)
@@ -86,23 +104,19 @@ def create_instructor():
 			pluck="name",
 			limit=1,
 		)[0]
-		return frappe.get_doc("User", user)
+		instructor = frappe.get_doc("User", user)
+		instructor.user_image = "/assets/lms/images/instructor.png"
+		instructor.add_roles("Moderator")
+		instructor.save()
+		return instructor
 
-	return create_user("Jannat", "Patel", "jannat@example.com", "/assets/lms/images/instructor.png")
-
-
-def create_user(first_name, last_name, email, user_image):
-	filters = {"first_name": first_name, "last_name": last_name, "email": email}
-	if frappe.db.exists("User", filters):
-		return frappe.get_doc("User", filters)
-
-	user = frappe.new_doc("User")
-	user.first_name = first_name
-	user.last_name = last_name
-	user.user_image = user_image
-	user.email = email
-	user.save()
-	return user
+	return create_user(
+		email="jannat@example.com",
+		first_name="Jannat",
+		last_name="Patel",
+		user_image="/assets/lms/images/instructor.png",
+		roles=["Moderator"],
+	)
 
 
 def create_chapter(course):

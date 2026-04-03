@@ -138,7 +138,7 @@ import {
 } from 'vue'
 import { sessionStore } from '@/stores/session'
 import { useRouter } from 'vue-router'
-import { escapeHTML, sanitizeHTML } from '@/utils'
+import { sanitizeHTML } from '@/utils'
 import Uploader from '@/components/Controls/Uploader.vue'
 
 const user = inject('$user')
@@ -272,10 +272,9 @@ const editJobDetails = () => {
 }
 
 const validateJobFields = () => {
-	job.description = sanitizeHTML(job.description)
 	Object.keys(job).forEach((key) => {
-		if (key != 'description' && typeof job[key] === 'string') {
-			job[key] = escapeHTML(job[key])
+		if (typeof job[key] === 'string') {
+			job[key] = sanitizeHTML(job[key])
 		}
 	})
 }

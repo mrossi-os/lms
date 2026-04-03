@@ -338,15 +338,13 @@ import {
 } from 'frappe-ui'
 import {
 	createLMSCategory,
-	escapeHTML,
 	getMetaInfo,
 	openSettings,
 	sanitizeHTML,
 	updateMetaInfo,
 } from '@/utils'
 import { useRouter } from 'vue-router'
-import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
-import { sessionStore } from '@/stores/session'
+import { useTelemetry } from 'frappe-ui/frappe'
 import Uploader from '@/components/Controls/Uploader.vue'
 import MultiSelect from '@/components/Controls/MultiSelect.vue'
 import Link from '@/components/Controls/Link.vue'
@@ -358,8 +356,6 @@ import FeatureSectionEditor from '@/oslms/components/FeatureSectionEditor.vue'
 
 const router = useRouter()
 const user = inject('$user')
-const { brand } = sessionStore()
-const { updateOnboardingStep } = useOnboarding('learning')
 const instructors = ref([])
 const app = getCurrentInstance()
 const { capture } = useTelemetry()
@@ -481,15 +477,9 @@ const formatTime = (timeStr) => {
 }
 
 const validateFields = () => {
-	batchDetail.doc.description = sanitizeHTML(batchDetail.doc.description)
-	batchDetail.doc.batch_details = sanitizeHTML(batchDetail.doc.batch_details)
-
 	Object.keys(batchDetail.doc).forEach((key) => {
-		if (
-			!['description', 'batch_details'].includes(key) &&
-			typeof batchDetail.doc[key] === 'string'
-		) {
-			batchDetail.doc[key] = escapeHTML(batchDetail.doc[key])
+		if (typeof batchDetail.doc[key] === 'string') {
+			batchDetail.doc[key] = sanitizeHTML(batchDetail.doc[key])
 		}
 	})
 }

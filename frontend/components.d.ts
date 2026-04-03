@@ -60,6 +60,7 @@ declare module 'vue' {
     Event: typeof import('./src/components/Modals/Event.vue')['default']
     ExplanationVideos: typeof import('./src/components/Modals/ExplanationVideos.vue')['default']
     FeedbackModal: typeof import('./src/components/Modals/FeedbackModal.vue')['default']
+    FilePicker: typeof import('./src/components/Controls/FilePicker.vue')['default']
     FrappeCloudIcon: typeof import('./src/components/Icons/FrappeCloudIcon.vue')['default']
     GoogleMeetAccountModal: typeof import('./src/components/Settings/GoogleMeetAccountModal.vue')['default']
     GoogleMeetSettings: typeof import('./src/components/Settings/GoogleMeetSettings.vue')['default']

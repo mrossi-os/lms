@@ -8,25 +8,7 @@
 			placement="right"
 			side="bottom"
 			v-if="canCreateCourse()"
-			:options="[
-				{
-					label: __('New Course'),
-					icon: 'book-open',
-					onClick() {
-						showCourseModal = true
-					},
-				},
-				{
-					label: __('Import Course'),
-					icon: 'upload',
-					onClick() {
-						router.push({
-							name: 'NewDataImport',
-							params: { doctype: 'LMS Course' },
-						})
-					},
-				},
-			]"
+			:options="courseMenu"
 		>
 			<template v-slot="{ open }">
 				<Button variant="solid">
@@ -77,7 +59,7 @@
 					</div>
 				</div>
 
-				<Tooltip :text="__('Only show courses that offer a certificate.')">
+				<Tooltip :text="__('Only show courses that offer a certificate')">
 					<FormControl
 						type="checkbox"
 						v-model="certification"
@@ -113,6 +95,11 @@
 		v-model="showCourseModal"
 		:courses="courses"
 	/>
+
+	<CourseImportModal
+		v-if="showCourseImportModal"
+		v-model="showCourseImportModal"
+	/>
 </template>
 <script setup>
 import {
@@ -136,6 +123,7 @@ import CourseCard from '@/components/CourseCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import { useRouter } from 'vue-router'
 import NewCourseModal from '@/pages/Courses/NewCourseModal.vue'
+import CourseImportModal from '@/pages/Courses/CourseImportModal.vue'
 
 const user = inject('$user')
 const dayjs = inject('$dayjs')
@@ -156,6 +144,7 @@ const { brand } = sessionStore()
 const courseCount = ref(0)
 const router = useRouter()
 const showCourseModal = ref(false)
+const showCourseImportModal = ref(false)
 
 const tagResource = createResource({
 	url: 'frappe.client.get_list',
@@ -368,6 +357,35 @@ const courseTabs = computed(() => {
 		tabs.push({ label: __('Enrolled'), value: 'enrolled' })
 	}
 	return tabs
+})
+
+const courseMenu = computed(() => {
+	return [
+		{
+			label: __('New Course'),
+			icon: 'book-open',
+			onClick() {
+				showCourseModal.value = true
+			},
+		},
+		{
+			label: __('Import via Data Import Tool'),
+			icon: 'upload',
+			onClick() {
+				router.push({
+					name: 'NewDataImport',
+					params: { doctype: 'LMS Course' },
+				})
+			},
+		},
+		{
+			label: __('Import via ZIP'),
+			icon: 'folder-plus',
+			onClick() {
+				showCourseImportModal.value = true
+			},
+		},
+	]
 })
 
 const breadcrumbs = computed(() => [

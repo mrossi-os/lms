@@ -371,16 +371,13 @@ import {
 	getCurrentInstance,
 } from 'vue'
 import {
-	escapeHTML,
 	getMetaInfo,
 	sanitizeHTML,
 	updateMetaInfo,
 	createLMSCategory,
-	cleanError,
 } from '@/utils'
 import CourseTagPicker from '@/oslms/components/CourseTagPicker.vue'
 import { useRouter } from 'vue-router'
-import { sessionStore } from '../../stores/session'
 import Link from '@/components/Controls/Link.vue'
 import CourseOutline from '@/components/CourseOutline.vue'
 import MultiSelect from '@/components/Controls/MultiSelect.vue'
@@ -391,7 +388,6 @@ import NewMemberModal from '@/components/Modals/NewMemberModal.vue'
 import Switch from '@/oslms/components/Form/Switch.vue'
 
 const user = inject('$user')
-const { brand } = sessionStore()
 const router = useRouter()
 const instructors = ref([])
 const related_courses = ref([])
@@ -432,6 +428,11 @@ const courseResource = createDocumentResource({
 	doctype: 'LMS Course',
 	name: props.course.data?.name,
 	auto: true,
+})
+
+const parsedTags = computed(() => {
+	const tags = courseResource.doc?.tags
+	return tags ? tags.split(', ').filter(Boolean) : []
 })
 
 watch(
@@ -621,13 +622,6 @@ const createCategory = (name, done) => {
 const makeFormDirty = () => {
 	isDirty.value = true
 }
-
-usePageMeta(() => {
-	return {
-		title: courseResource.doc?.title,
-		icon: brand.favicon,
-	}
-})
 
 defineExpose({
 	submitCourse,
