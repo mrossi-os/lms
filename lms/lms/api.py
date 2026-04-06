@@ -1550,6 +1550,9 @@ def update_meta_info(meta_type: str, route: str, meta_tags: list):
 def validate_meta_tags(meta_tags: list):
 	if not isinstance(meta_tags, list):
 		frappe.throw(_("Meta tags should be a list."))
+	for tag in meta_tags:
+		if tag.get("value"):
+			tag["value"] = frappe.utils.strip_html_tags(str(tag["value"]))
 
 
 def create_meta(parent_name: str, tag_properties: dict):
