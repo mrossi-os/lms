@@ -89,8 +89,14 @@ select:focus,
 input:where([type='radio']):checked,
 input:where([type='radio']):checked:hover,
 input:where([type='radio']):checked:focus {
-	border-color: var(--color-company-primary);
-	background-color: var(--color-company-primary);
+	border-color: #fff;
+	background-color: #fff;
+}
+input:where([type='radio']):checked:focus {
+	--tw-ring-offset-color: none;
+}
+input:where([type='radio']):checked {
+	background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='%230a1e33' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='5'/%3e%3c/svg%3e");
 }
 
 input:where([type='checkbox']):checked,
