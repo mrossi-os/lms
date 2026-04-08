@@ -28,7 +28,6 @@
 			row-key="name"
 			class="os-list-view"
 			:options="{ showTooltip: false, selectable: true }"
-			class="h-[79vh] border-b"
 		>
 			<ListHeader
 				class="grid items-center space-x-4 rounded-none rounded-t bg-surface-gray-2 p-2"
