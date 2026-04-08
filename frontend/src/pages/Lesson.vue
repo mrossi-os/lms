@@ -1127,7 +1127,8 @@ usePageMeta(() => {
 	max-width: unset;
 }
 
-.codex-editor__redactor {
+#editor .codex-editor__redactor,
+#instructor-content .codex-editor__redactor {
 	padding-bottom: 0px !important;
 }
 
