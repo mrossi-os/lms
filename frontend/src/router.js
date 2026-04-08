@@ -66,6 +66,11 @@ const routes = [
 		component: () => import('@/pages/Statistics.vue'),
 	},
 	{
+		path: '/trueskills/test',
+		name: 'TrueSkillsTest',
+		component: () => import('@/oslms/pages/TrueSkillsTest.vue'),
+	},
+	{
 		path: '/user/:username',
 		name: 'Profile',
 		component: () => import('@/pages/Profile.vue'),

@@ -121,5 +121,42 @@
         "fieldtype": "Check",
         "default": "0",
         "insert_after": "enforce_lesson_order"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Settings-trueskills_api_enabled",
+        "dt": "LMS Settings",
+        "label": "Enable TrueSkills API",
+        "fieldname": "trueskills_api_enabled",
+        "fieldtype": "Check",
+        "default": "0",
+        "insert_after": "livecode_url"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Settings-trueskills_api_key",
+        "dt": "LMS Settings",
+        "label": "TrueSkills API Key",
+        "fieldname": "trueskills_api_key",
+        "fieldtype": "Password",
+        "insert_after": "trueskills_api_enabled"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Settings-trueskills_api_endpoint",
+        "dt": "LMS Settings",
+        "label": "TrueSkills API Endpoint",
+        "fieldname": "trueskills_api_endpoint",
+        "fieldtype": "Data",
+        "insert_after": "trueskills_api_key"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Settings-trueskills_certificate_template",
+        "dt": "LMS Settings",
+        "label": "TrueSkills Certificate Template",
+        "fieldname": "trueskills_certificate_template",
+        "fieldtype": "Data",
+        "insert_after": "trueskills_api_endpoint"
     }
 ]

@@ -74,6 +74,9 @@ doc_events = {
     "Course Lesson": {
         "before_save": "os_lms.events.lesson.reset_index_status_on_content_change"
     },
+    "LMS Certificate": {
+        "after_insert": "os_lms.events.certificate.issue_on_trueskills"
+    },
 }
 
 
