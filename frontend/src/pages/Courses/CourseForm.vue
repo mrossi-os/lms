@@ -373,6 +373,7 @@ import {
 import {
 	getMetaInfo,
 	sanitizeHTML,
+	escapeHTML,
 	updateMetaInfo,
 	createLMSCategory,
 } from '@/utils'

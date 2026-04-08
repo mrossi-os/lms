@@ -89,12 +89,21 @@
 							:label="__('Icona')"
 							@update:modelValue="onChanged"
 						/>
-						<FormControl
-							v-model="item.title"
-							:label="__('Titolo')"
-							:required="true"
-							@input="onChanged"
-						/>
+						<div class="flex items-end gap-2">
+							<FormControl
+								v-model="item.title"
+								:label="__('Titolo')"
+								:required="true"
+								class="flex-1"
+								@input="onChanged"
+							/>
+							<FormControl
+								v-model="item.visible_to_enrolled"
+								type="checkbox"
+								:label="__('Visibile agli iscritti')"
+								@change="onChanged"
+							/>
+						</div>
 						<FormControl
 							v-model="item.description"
 							type="textarea"
@@ -243,6 +252,7 @@ const addItem = (sIndex) => {
 		description: '',
 		icon: '',
 		file: '',
+		visible_to_enrolled: false,
 	})
 	onChanged()
 }

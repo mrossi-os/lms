@@ -1,6 +1,9 @@
 <template>
-	<div v-if="sections.length" class="mt-10 space-y-8">
-		<div v-for="(section, sIndex) in sections" :key="section.id || sIndex">
+	<div v-if="visibleSections.length" class="mt-10 space-y-8">
+		<div
+			v-for="(section, sIndex) in visibleSections"
+			:key="section.id || sIndex"
+		>
 			<!-- Titolo sezione -->
 			<div class="text-xl font-semibold text-ink-gray-9 mb-4">
 				{{ section.title }}
@@ -71,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, inject, ref, watch } from 'vue'
 import { createResource } from 'frappe-ui'
 import { AlertTriangle, CheckCircle, Download } from 'lucide-vue-next'
 import * as LucideIcons from 'lucide-vue-next'
@@ -82,6 +85,7 @@ interface FeatureItem {
 	description?: string
 	icon?: string
 	file?: string
+	visible_to_enrolled?: boolean
 }
 
 interface FeatureSection {
@@ -90,9 +94,15 @@ interface FeatureSection {
 	items: FeatureItem[]
 }
 
-const props = defineProps<{
-	sections: FeatureSection[] | string
-}>()
+const props = withDefaults(
+	defineProps<{
+		sections: FeatureSection[] | string
+		isEnrolled?: boolean
+	}>(),
+	{
+		isEnrolled: false,
+	},
+)
 
 const sections = computed<FeatureSection[]>(() => {
 	if (!props.sections) return []
@@ -106,6 +116,34 @@ const sections = computed<FeatureSection[]>(() => {
 	return props.sections
 })
 
+// Lo studente vede i badge "solo iscritti" unicamente se iscritto.
+// Amministratori, moderatori, valutatori e istruttori vedono sempre tutti
+// i badge, a prescindere dall'iscrizione.
+const user = inject<any>('$user')
+
+const canBypassEnrollment = computed<boolean>(() => {
+	const data = user?.data
+	if (!data) return false
+	return !!(
+		data.is_moderator ||
+		data.is_evaluator ||
+		data.is_instructor ||
+		data.is_system_manager
+	)
+})
+
+const visibleSections = computed<FeatureSection[]>(() => {
+	const canSeeRestricted = props.isEnrolled || canBypassEnrollment.value
+	return sections.value
+		.map((section) => ({
+			...section,
+			items: (section.items || []).filter(
+				(item) => !item.visible_to_enrolled || canSeeRestricted,
+			),
+		}))
+		.filter((section) => section.items.length > 0)
+})
+
 // Mappa file name -> { file_url, file_name }
 const fileUrls = ref<Record<string, string>>({})
 const fileDisplayNames = ref<Record<string, string>>({})
@@ -113,7 +151,7 @@ const missingFiles = ref<Set<string>>(new Set())
 
 const fileNames = computed(() => {
 	const names: string[] = []
-	for (const section of sections.value) {
+	for (const section of visibleSections.value) {
 		for (const item of section.items || []) {
 			if (
 				item.file &&

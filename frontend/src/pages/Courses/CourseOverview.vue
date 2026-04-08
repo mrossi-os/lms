@@ -71,6 +71,7 @@
 				<FeaturedSectionView
 					v-if="course.data.feature_sections"
 					:sections="course.data.feature_sections"
+					:is-enrolled="!!course.data.membership"
 				/>
 			</div>
 			<div class="hidden md:block">

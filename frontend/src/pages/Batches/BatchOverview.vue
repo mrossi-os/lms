@@ -30,6 +30,7 @@
 				<FeaturedSectionView
 					v-if="batch.data.custom_feature_sections"
 					:sections="batch.data.custom_feature_sections"
+					:is-enrolled="isEnrolledInBatch"
 				/>
 			</div>
 
@@ -71,6 +72,7 @@
 	</div>
 </template>
 <script setup lang="ts">
+import { computed, inject } from 'vue'
 import { createResource } from 'frappe-ui'
 import CourseCard from '@/components/CourseCard.vue'
 import BatchOverlay from '@/pages/Batches/components/BatchOverlay.vue'
@@ -82,6 +84,15 @@ const props = defineProps({
 		type: Object,
 		default: null,
 	},
+})
+
+const user = inject<any>('$user')
+
+const isEnrolledInBatch = computed<boolean>(() => {
+	const students = props.batch?.data?.students
+	const username = user?.data?.name
+	if (!Array.isArray(students) || !username) return false
+	return students.includes(username)
 })
 
 const courses = createResource({
