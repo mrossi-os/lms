@@ -270,7 +270,6 @@ import { sanitizeHTML, openSettings } from '@/utils'
 import Link from '@/components/Controls/Link.vue'
 import Draggable from 'vuedraggable'
 import ProgramProgressSummary from '@/pages/Programs/ProgramProgressSummary.vue'
-import { sanitizeHTML } from '@/utils'
 import MultiSelect from '@/components/Controls/MultiSelect.vue'
 
 const show = defineModel<boolean>()
@@ -412,6 +411,7 @@ const setProgramData = () => {
 		program.value = {
 			name: '',
 			title: '',
+			description: '',
 			published: false,
 			enforce_course_order: false,
 			program_courses: [],
