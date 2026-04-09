@@ -158,7 +158,7 @@ const exportCourse = async () => {
 		const response = await fetch(
 			'/api/method/lms.lms.api.export_course_as_zip',
 			{
-				method: 'POST',
+				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
 				},
