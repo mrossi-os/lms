@@ -36,11 +36,9 @@
 					<li
 						v-for="member in memberList"
 						class="flex items-center justify-between py-2 cursor-pointer"
+						@click="openEditMember(member)"
 					>
-						<div
-							@click="openProfile(member.username)"
-							class="flex items-center space-x-3 col-span-2"
-						>
+						<div class="flex items-center space-x-3 col-span-2">
 							<Avatar
 								:image="member.user_image"
 								:label="member.full_name"
@@ -57,14 +55,23 @@
 								</div>
 							</div>
 						</div>
-						<div
-							class="flex items-center text-ink-gray-9 space-x-1 bg-surface-gray-2 px-2 py-1.5 rounded-md"
-							v-if="member.role && member.role !== 'LMS Student'"
-						>
-							<Shield class="size-4 stroke-1.5" />
-							<span class="text-sm">
-								{{ getRole(member.role) }}
-							</span>
+						<div class="flex items-center gap-2">
+							<div
+								class="flex items-center text-ink-gray-9 space-x-1 bg-surface-gray-2 px-2 py-1.5 rounded-md"
+								v-if="member.role && member.role !== 'LMS Student'"
+							>
+								<Shield class="size-4 stroke-1.5" />
+								<span class="text-sm">
+									{{ getRole(member.role) }}
+								</span>
+							</div>
+							<Button
+								variant="ghost"
+								class="border"
+								@click.stop="openProfile(member.username)"
+							>
+								<UserRound class="size-6 stroke-2 rounded-sm p-1" />
+							</Button>
 						</div>
 					</li>
 				</ul>
@@ -83,15 +90,22 @@
 		</div>
 	</div>
 	<NewMemberModal v-model="showNewMember" @created="onMemberCreated" />
+	<EditMemberModal
+		v-model="showEditMember"
+		:member="selectedMember"
+		@updated="onMemberUpdated"
+		@navigate-profile="onNavigateProfile"
+	/>
 </template>
 <script setup lang="ts">
 import { Avatar, Button, createResource, FormControl } from 'frappe-ui'
 import { useRouter } from 'vue-router'
 import { ref, watch, inject } from 'vue'
-import { RefreshCw, Plus, Search, Shield } from 'lucide-vue-next'
+import { RefreshCw, Plus, Search, Shield, UserRound } from 'lucide-vue-next'
 import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
 import type { User } from '@/components/Settings/types'
 import NewMemberModal from '@/components/Modals/NewMemberModal.vue'
+import EditMemberModal from '@/components/Modals/EditMemberModal.vue'
 
 type Member = {
 	username: string
@@ -108,6 +122,8 @@ const start = ref(0)
 const memberList = ref<Member[]>([])
 const hasNextPage = ref(false)
 const showNewMember = ref(false)
+const showEditMember = ref(false)
+const selectedMember = ref<Member | null>(null)
 const user = inject<User | null>('$user')
 const { updateOnboardingStep } = useOnboarding('learning')
 const { capture } = useTelemetry()
@@ -139,14 +155,25 @@ const members = createResource({
 	auto: true,
 })
 
+const openEditMember = (member: Member) => {
+	selectedMember.value = member
+	showEditMember.value = true
+}
+
 const openProfile = (username: string) => {
 	show.value = false
-	router.push({
-		name: 'Profile',
-		params: {
-			username: username,
-		},
-	})
+	router.push({ name: 'Profile', params: { username } })
+}
+
+const onNavigateProfile = () => {
+	if (!selectedMember.value) return
+	openProfile(selectedMember.value.username)
+}
+
+const onMemberUpdated = () => {
+	memberList.value = []
+	start.value = 0
+	members.reload()
 }
 
 const onMemberCreated = (data: any) => {
