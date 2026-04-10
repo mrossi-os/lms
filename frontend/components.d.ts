@@ -51,6 +51,7 @@ declare module 'vue' {
     DiscussionReplies: typeof import('./src/components/DiscussionReplies.vue')['default']
     Discussions: typeof import('./src/components/Discussions.vue')['default']
     EditCoverImage: typeof import('./src/components/Modals/EditCoverImage.vue')['default']
+    EditMemberModal: typeof import('./src/components/Modals/EditMemberModal.vue')['default']
     EditProfile: typeof import('./src/components/Modals/EditProfile.vue')['default']
     EmailTemplateModal: typeof import('./src/components/Modals/EmailTemplateModal.vue')['default']
     EmailTemplates: typeof import('./src/components/Settings/EmailTemplates.vue')['default']

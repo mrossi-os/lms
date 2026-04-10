@@ -37,6 +37,16 @@ CUSTOM_FIELDS = {
             "insert_after": "related_courses",
         },
     ],
+    "User": [
+        {
+            "fieldname": "codice_fiscale",
+            "fieldtype": "Data",
+            "label": "Codice Fiscale",
+            "insert_after": "last_name",
+            "unique": 1,
+            "length": 16,
+        },
+    ],
 }
 
 
