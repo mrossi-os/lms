@@ -56,11 +56,20 @@ class TrueSkillsService:
 			self.logger.debug("TrueSkills not ready, skipping certificate issue")
 			return None
 
-		template = self.settings.certificate_template
+		course = certificate_doc.course
+		course_doc = frappe.get_cached_doc("LMS Course", course)
+
+		if not course_doc.get("trueskills_certificate_enabled"):
+			self.logger.debug(f"TrueSkills certificate disabled for course {course}")
+			return None
+
+		template = (course_doc.get("trueskills_template_id") or "").strip()
 		if not template:
-			raise TrueSkillsError("TrueSkills certificate template is not configured.")
+			raise TrueSkillsError(f"TrueSkills template is not configured for course {course}.")
 
 		payload = self._build_certificate_payload(certificate_doc, template)
+		self.logger.info(f"Sending POST /certificates with payload: {payload}")
+
 		try:
 			response = self.client.post("/certificates", json=payload)
 		except TrueSkillsError:

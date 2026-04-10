@@ -235,15 +235,7 @@
 						<div class="text-lg font-semibold mt-5 text-ink-gray-9">
 							{{ __('Pricing and Certification') }}
 						</div>
-						<div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-							<Switch
-								size="sm"
-								class="card p-4"
-								v-model="courseResource.doc.paid_course"
-								:label="__('Paid Course')"
-								:description="__('Charge a fee for course access.')"
-								@change="makeFormDirty()"
-							/>
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
 							<Switch
 								size="sm"
 								class="card p-4"
@@ -252,13 +244,15 @@
 								:description="__('Issue a certificate on course completion.')"
 								@change="makeFormDirty()"
 							/>
-							<Switch
-								size="sm"
-								class="card p-4"
-								v-model="courseResource.doc.paid_certificate"
-								:label="__('Paid Certificate')"
-								:description="__('Charge a fee for the certificate.')"
-								@change="makeFormDirty()"
+							<TrueSkillsCertificateCard
+								v-model="courseResource.doc.trueskills_certificate_enabled"
+								:templateValue="courseResource.doc.trueskills_template_id"
+								@update:templateValue="
+									(val) => {
+										courseResource.doc.trueskills_template_id = val
+									}
+								"
+								@dirty="makeFormDirty()"
 							/>
 						</div>
 						<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -387,6 +381,7 @@ import Uploader from '@/components/Controls/Uploader.vue'
 import FeatureSectionEditor from '@/oslms/components/FeatureSectionEditor.vue'
 import NewMemberModal from '@/components/Modals/NewMemberModal.vue'
 import Switch from '@/oslms/components/Form/Switch.vue'
+import TrueSkillsCertificateCard from '@/oslms/components/trueskills/TrueSkillsCertificateCard.vue'
 
 const user = inject('$user')
 const router = useRouter()
@@ -469,6 +464,7 @@ const updateCourseData = () => {
 		'paid_certificate',
 		'enforce_lesson_order',
 		'enforce_quiz_on_completion',
+		'trueskills_certificate_enabled',
 	]
 	for (let idx in checkboxes) {
 		let key = checkboxes[idx]

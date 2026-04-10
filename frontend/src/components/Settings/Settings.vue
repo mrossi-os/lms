@@ -352,14 +352,6 @@ const tabsStructure = computed(() => {
 												'Base URL of the TrueSkills API (e.g. https://api.trueskills.example/v1).',
 											),
 										},
-										{
-											label: __('Certificate Template'),
-											name: 'trueskills_certificate_template',
-											type: 'text',
-											description: __(
-												'Identifier of the TrueSkills template used to issue certificates.',
-											),
-										},
 									],
 								},
 							],

@@ -75,6 +75,7 @@ def remove_deprecated_custom_fields():
     """
     deprecated = [
         ("LMS Course", "LMS Course-learning_items"),
+        ("LMS Settings", "LMS Settings-trueskills_certificate_template"),
     ]
     for dt, name in deprecated:
         if frappe.db.exists("Custom Field", name):

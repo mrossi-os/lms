@@ -19,7 +19,6 @@ def get_status() -> dict:
 		"enabled": settings.enabled,
 		"endpoint": settings.endpoint,
 		"has_api_key": bool(settings.api_key),
-		"certificate_template": settings.certificate_template,
 		"ready": settings.is_ready(),
 	}
 
@@ -32,6 +31,20 @@ def test_connection() -> dict:
 		return TrueSkillsService().test_connection()
 	except TrueSkillsError as exc:
 		return {"ok": False, "error": str(exc)}
+
+
+@frappe.whitelist()
+def get_templates() -> list:
+	"""Return the list of certificate templates available on TrueSkills."""
+	_require_admin()
+	try:
+		service = TrueSkillsService()
+		if not service.is_ready():
+			return []
+		response = service.client.get("/list")
+		return response if isinstance(response, list) else response.get("data", response.get("templates", []))
+	except TrueSkillsError:
+		return []
 
 
 @frappe.whitelist()

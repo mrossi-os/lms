@@ -29,6 +29,8 @@ def get_lms_settings():
     result = _original_get_lms_settings()
     if isinstance(result, dict):
          result["ai_enabled"] = frappe.get_single("LMSA Settings").get("enabled")
+         lms_settings = frappe.get_single("LMS Settings")
+         result["trueskills_api_enabled"] = lms_settings.get("trueskills_api_enabled")
     return result
 
 

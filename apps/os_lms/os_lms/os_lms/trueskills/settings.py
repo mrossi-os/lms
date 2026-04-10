@@ -9,7 +9,6 @@ class TrueSkillsSettings:
 	enabled: bool
 	api_key: str | None
 	endpoint: str | None
-	certificate_template: str | None
 
 	@classmethod
 	def load(cls) -> "TrueSkillsSettings":
@@ -25,12 +24,10 @@ class TrueSkillsSettings:
 				raise_exception=False,
 			)
 		endpoint = (doc.get("trueskills_api_endpoint") or "").strip() or None
-		template = (doc.get("trueskills_certificate_template") or "").strip() or None
 		return cls(
 			enabled=bool(doc.get("trueskills_api_enabled")),
 			api_key=api_key,
 			endpoint=endpoint,
-			certificate_template=template,
 		)
 
 	def is_ready(self) -> bool:
