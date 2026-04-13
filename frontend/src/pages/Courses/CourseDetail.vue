@@ -175,20 +175,17 @@ const isAdmin = computed(() => {
 const exportCourse = async () => {
 	try {
 		const response = await fetch(
-			'/api/method/lms.lms.api.export_course_as_zip',
+			'/api/method/lms.lms.api.export_course_as_zip?course_name=' +
+				course.data.name,
 			{
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					course_name: course.data.name,
-				}),
+				method: 'GET',
 				credentials: 'include',
 			}
 		)
 
 		if (!response.ok) {
+			const errorText = await response.text()
+			console.error('Error response:', errorText)
 			throw new Error('Download failed')
 		}
 

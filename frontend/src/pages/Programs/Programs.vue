@@ -8,7 +8,7 @@
 			{{ __('New') }}
 		</Button>
 	</header>
-	<div v-if="programs.data?.length && !isStudent" class="py-10 w-3/4 mx-auto">
+	<div v-if="programs.data?.length && !isStudent" class="py-10 px-5">
 		<div class="text-lg font-semibold text-ink-gray-9 mb-5">
 			{{
 				__('{0} {1}').format(
@@ -17,9 +17,12 @@
 				)
 			}}
 		</div>
-		<div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-			<div v-for="program in programs.data" @click="openForm(program.name)"
-				class="card border rounded-md p-3 hover:border-outline-gray-3 cursor-pointer space-y-2">
+		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+			<div
+				v-for="program in programs.data"
+				@click="openForm(program.name)"
+				class="border rounded-md p-3 hover:border-outline-gray-3 cursor-pointer space-y-2"
+			>
 				<div class="text-lg font-semibold text-ink-gray-9">
 					{{ program.name }}
 				</div>

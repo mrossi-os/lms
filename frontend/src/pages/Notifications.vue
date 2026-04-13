@@ -42,9 +42,9 @@
 			/>
 			<div class="space-y-1.5 sm:space-y-2 w-full">
 				<div class="flex items-start sm:items-center justify-between gap-2">
-					<div class="flex-1 flex flex-row justify-between">
+					<div class="flex-1 flex flex-row space-x-2 justify-between">
 						<div
-							class="text-ink-gray-9 text-sm sm:text-base"
+							class="text-ink-gray-9 text-sm sm:text-base leading-5"
 							v-html="log.subject"
 						></div>
 						<div class="text-xs text-ink-gray-5 whitespace-nowrap">

@@ -4,7 +4,9 @@ from frappe.rate_limiter import rate_limit
 from lms.lms.utils import get_course_details as _original_get_course_details
 from lms.lms.utils import get_lesson_details as _original_get_lesson_details
 from lms.lms.utils import get_batch_details as _original_get_batch_details
+from lms.lms.utils import get_courses as _orginal_get_courses
 from lms.lms.utils import get_progress
+from os_lms.os_lms.utils import get_courses_total_minutes
 
 
 @frappe.whitelist(allow_guest=True)
@@ -103,6 +105,20 @@ def custom_get_lesson_details(chapter: dict, progress: bool = False):
 
         lessons.append(lesson_details)
     return lessons
+
+@frappe.whitelist(allow_guest=True)
+@rate_limit(limit=500, seconds=60 * 60)
+def get_courses(filters: dict = None, start: int = 0) -> list:
+    courses = _orginal_get_courses(filters, start)
+
+    if courses:
+        course_names = [course.name for course in courses]
+        duration_map = get_courses_total_minutes(course_names)
+        for course in courses:
+            course.total_minutes = duration_map.get(course.name, 0)
+
+    return courses
+
 
 @frappe.whitelist(allow_guest=True)
 @rate_limit(limit=500, seconds=60 * 60)

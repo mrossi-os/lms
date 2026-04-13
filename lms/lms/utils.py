@@ -1909,17 +1909,21 @@ def update_payment_record(doctype: str, docname: str):
 	if len(request):
 		data = request[0].data
 		data = frappe._dict(json.loads(data))
-		payment_doc = get_payment_doc(data.payment)
 
 		update_payment_details(data)
-		update_coupon_redemption(payment_doc)
+		complete_enrollment(data.payment, doctype, docname)
 
-		if payment_doc.payment_for_certificate:
-			update_certificate_purchase(docname, data.payment)
-		elif doctype == "LMS Course":
-			enroll_in_course(docname, data.payment)
-		else:
-			enroll_in_batch(docname, data.payment)
+
+def complete_enrollment(payment_name: str, doctype: str, docname: str):
+	payment_doc = get_payment_doc(payment_name)
+	update_coupon_redemption(payment_doc)
+
+	if payment_doc.payment_for_certificate:
+		update_certificate_purchase(docname, payment_name)
+	elif doctype == "LMS Course":
+		enroll_in_course(docname, payment_name)
+	else:
+		enroll_in_batch(docname, payment_name)
 
 
 def get_integration_requests(doctype: str, docname: str):

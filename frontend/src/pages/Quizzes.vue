@@ -10,8 +10,8 @@
 			{{ __('Create') }}
 		</Button>
 	</header>
-	<div class="pt-5 mx-5">
-		<div class="flex items-center justify-between mb-5">
+	<div class="pt-5">
+		<div class="flex items-center justify-between mb-5 mx-5">
 			<div class="text-lg font-semibold text-ink-gray-9">
 				{{ __('{0} Quizzes').format(quizzes.data?.length || 0) }}
 			</div>
@@ -26,8 +26,8 @@
 			:columns="quizColumns"
 			:rows="quizzes.data"
 			row-key="name"
-			class="os-list-view"
 			:options="{ showTooltip: false, selectable: true }"
+			class="h-[74.5vh] lg:h-[79vh] px-5 os-list-view"
 		>
 			<ListHeader
 				class="grid items-center space-x-4 rounded-none rounded-t bg-surface-gray-2 p-2"
@@ -86,8 +86,10 @@
 				</template>
 			</ListSelectBanner>
 		</ListView>
-		<EmptyState v-else :type="__('Quizzes')" />
-		<div class="flex items-center justify-end space-x-3 mt-3">
+		<div v-else class="h-[49vh] lg:h-[53vh] px-5">
+			<EmptyState type="Quizzes" />
+		</div>
+		<div class="flex items-center justify-end space-x-3 pt-3 border-t px-5">
 			<Button v-if="quizzes.hasNextPage" @click="quizzes.next()">
 				{{ __('Load More') }}
 			</Button>
@@ -185,6 +187,7 @@ watch(search, () => {
 	totalQuizzes.update({
 		filters: quizFilters.value,
 	})
+	totalQuizzes.reload()
 })
 
 const quizzes = createListResource({
@@ -206,7 +209,7 @@ const quizzes = createListResource({
 		return data.map((quiz) => {
 			return {
 				...quiz,
-				modified: dayjs(quiz.modified).fromNow(true),
+				modified: dayjs(quiz.modified).format('DD MMM YYYY'),
 			}
 		})
 	},
@@ -300,7 +303,7 @@ const quizColumns = computed(() => {
 		{
 			label: __('Show Answers'),
 			key: 'show_answers',
-			width: 1,
+			width: 0.5,
 			align: 'center',
 			icon: 'eye',
 		},
@@ -308,7 +311,7 @@ const quizColumns = computed(() => {
 			label: __('Updated On'),
 			key: 'modified',
 			width: 1,
-			align: 'center',
+			align: 'right',
 			icon: 'clock',
 		},
 	]

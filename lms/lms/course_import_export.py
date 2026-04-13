@@ -456,6 +456,7 @@ def create_evaluator(zip_file):
 		return
 
 	if not frappe.db.exists("User", evaluator_data["evaluator"]):
+		evaluator_data["email"] = evaluator_data["evaluator"]
 		create_user(evaluator_data)
 
 	if not frappe.db.exists("Course Evaluator", evaluator_data["name"]):

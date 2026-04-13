@@ -1,6 +1,6 @@
 <template>
 	<div class="p-2">
-		<Dropdown :options="userDropdownOptions()" placement="asdaaaaaaaa">
+		<Dropdown :options="userDropdownOptions" placement="asdaaaaaaaa">
 			<template v-slot="{ open, close }">
 				<button
 					class="flex h-12 py-2 items-center rounded-md duration-300 ease-in-out"
@@ -68,6 +68,7 @@ import { sessionStore } from '@/stores/session'
 import { call, Dropdown, toast } from 'frappe-ui'
 import { useRouter } from 'vue-router'
 import { convertToTitleCase } from '@/utils'
+import { applyTheme, theme } from '@/utils/theme'
 import { usersStore } from '@/stores/user'
 import { useSettings } from '@/stores/settings'
 import { markRaw, watch, ref, onMounted, computed } from 'vue'
@@ -95,7 +96,6 @@ let { userResource } = usersStore()
 const settingsStore = useSettings()
 let { isLoggedIn } = sessionStore()
 const showSettingsModal = ref(false)
-const theme = ref('light')
 const frappeCloudBaseEndpoint = 'https://frappecloud.com'
 const $dialog = createDialog
 
@@ -107,9 +107,8 @@ const props = defineProps({
 })
 
 onMounted(() => {
-	theme.value = localStorage.getItem('theme') || 'light'
 	if (['light', 'dark'].includes(theme.value)) {
-		document.documentElement.setAttribute('data-theme', theme.value)
+		applyTheme(theme.value)
 	}
 })
 
@@ -120,21 +119,14 @@ watch(
 	},
 )
 
-const toggleTheme = () => {
-	const currentTheme = document.documentElement.getAttribute('data-theme')
-	theme.value = currentTheme === 'dark' ? 'light' : 'dark'
-	document.documentElement.setAttribute('data-theme', theme.value)
-	localStorage.setItem('theme', theme.value)
-}
-
-const userDropdownOptions = () => {
+const userDropdownOptions = computed(() => {
 	return [
 		{
 			group: '',
 			items: [
 				{
 					icon: User,
-					label: __('My Profile'),
+					label: 'My Profile',
 					onClick: () => {
 						router.push(`/user/${userResource.data?.username}`)
 					},
@@ -142,12 +134,11 @@ const userDropdownOptions = () => {
 						return isLoggedIn
 					},
 				},
-
 				{
 					component: markRaw(Apps),
 					condition: () => {
 						let cookies = new URLSearchParams(
-							document.cookie.split('; ').join('&'),
+							document.cookie.split('; ').join('&')
 						)
 						let system_user = cookies.get('system_user')
 						if (system_user === 'yes') return true
@@ -156,7 +147,7 @@ const userDropdownOptions = () => {
 				},
 				{
 					icon: Settings,
-					label: __('Settings'),
+					label: 'Settings',
 					onClick: () => {
 						settingsStore.isSettingsOpen = true
 					},
@@ -171,17 +162,7 @@ const userDropdownOptions = () => {
 					},
 				},
 				{
-					label: __('Upload Files'),
-					icon: Upload,
-					onClick: () => {
-						router.push({ name: 'FileUpload' })
-					},
-					condition: () => {
-						return userResource.data?.is_moderator
-					},
-				},
-				{
-					label: __('Clear Demo Data'),
+					label: 'Clear Demo Data',
 					icon: Trash2,
 					onClick: () => {
 						clearDemoDataConfirmation()
@@ -195,12 +176,12 @@ const userDropdownOptions = () => {
 				},
 				{
 					icon: FrappeCloudIcon,
-					label: __('Login to Frappe Cloud'),
+					label: 'Login to Frappe Cloud',
 					onClick: () => {
 						$dialog({
 							title: __('Login to Frappe Cloud?'),
 							message: __(
-								'Are you sure you want to login to your Frappe Cloud dashboard?',
+								'Are you sure you want to login to your Frappe Cloud dashboard?'
 							),
 							actions: [
 								{
@@ -223,7 +204,7 @@ const userDropdownOptions = () => {
 				},
 				{
 					icon: LogOut,
-					label: __('Log out'),
+					label: 'Log out',
 					onClick: () => {
 						logout.submit().then(() => {
 							isLoggedIn = false
@@ -235,7 +216,7 @@ const userDropdownOptions = () => {
 				},
 				{
 					icon: LogIn,
-					label: __('Log in'),
+					label: 'Log in',
 					onClick: () => {
 						window.location.href = '/login'
 					},
@@ -246,7 +227,7 @@ const userDropdownOptions = () => {
 			],
 		},
 	]
-}
+})
 
 const loginToFrappeCloud = () => {
 	let redirect_to = '/dashboard/sites/' + userResource.data.sitename

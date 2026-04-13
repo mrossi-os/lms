@@ -10,7 +10,7 @@
 				course.image
 					? { backgroundImage: `url('${encodeURI(course.image)}')` }
 					: {
-							backgroundImage: getGradientColor(),
+							backgroundImage: gradientColor,
 							backgroundBlendMode: 'screen',
 						}
 			"
@@ -81,13 +81,14 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
 import {
 	BookOpen,
 	Clock,
 } from 'lucide-vue-next'
 import { sessionStore } from '@/stores/session'
-import { createResource, Tooltip } from 'frappe-ui'
+import { Tooltip } from 'frappe-ui'
+import { theme } from '@/utils/theme'
+import { computed } from 'vue'
 import ProgressBar from '@/components/ProgressBar.vue'
 import CourseTagBadges from '@/oslms/components/CourseTagBadges.vue'
 import colors from '@/utils/frappe-ui-colors.json'
@@ -101,17 +102,11 @@ const props = defineProps({
 	},
 })
 
-// Carica la durata totale sommando il campo `duration` (Int, minuti)
-// di tutte le lezioni del corso tramite API custom
-const courseDuration = createResource({
-	url: 'os_lms.os_lms.api.get_course_duration',
-	auto: true,
-	params: { course: props.course?.name },
-})
+
 
 // Converte i minuti totali in formato leggibile: "1h 30m", "2h", "45m"
 const formattedDuration = computed(() => {
-	const total = courseDuration.data
+	const total = props.course.total_minutes
 	if (!total) return null
 	const hours = Math.floor(total / 60)
 	const minutes = total % 60
@@ -120,12 +115,13 @@ const formattedDuration = computed(() => {
 	return `${minutes}m`
 })
 
-const getGradientColor = () => {
-	let theme = localStorage.getItem('theme') == 'dark' ? 'darkMode' : 'lightMode'
+const gradientColor = computed(() => {
+	let themeMode = theme.value === 'dark' ? 'darkMode' : 'lightMode'
 	let color = props.course.card_gradient?.toLowerCase() || 'blue'
-	let colorMap = colors[theme][color]
+	let colorMap = colors[themeMode][color]
 	return `linear-gradient(to top right, black, ${colorMap[400]})`
-}
+})
+
 </script>
 
 <style>
