@@ -64,10 +64,37 @@
 					<CourseCardOverlay :course="course" />
 				</div>
 
-				<div
-					v-html="unescapeDescription(course.data.description)"
-					class="card p-3 ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-10"
-				></div>
+				<div class="mt-10">
+					<div
+						ref="descriptionRef"
+						v-html="unescapeDescription(course.data.description)"
+						class="card p-3 ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal overflow-hidden transition-all duration-300"
+						:style="
+							!isExpanded && showToggle
+								? `max-height: ${collapsedHeight}px`
+								: ''
+						"
+					></div>
+					<div
+						v-if="showToggle"
+						class="relative flex justify-center"
+						:class="!isExpanded ? '-mt-10 pt-12' : 'mt-2'"
+					>
+						<Button
+							variant="outline"
+							size="sm"
+							@click="isExpanded = !isExpanded"
+						>
+							<template #prefix>
+								<ChevronDown
+									class="h-4 w-4 transition-transform duration-300"
+									:class="isExpanded ? 'rotate-180' : ''"
+								/>
+							</template>
+							{{ isExpanded ? __('Mostra meno') : __('Mostra altro') }}
+						</Button>
+					</div>
+				</div>
 				<FeaturedSectionView
 					v-if="course.data.feature_sections"
 					:sections="course.data.feature_sections"
@@ -82,21 +109,36 @@
 	</div>
 </template>
 <script setup lang="ts">
-import { Star, Users } from 'lucide-vue-next'
-import { Tooltip } from 'frappe-ui'
+import { Star, Users, ChevronDown } from 'lucide-vue-next'
+import { Tooltip, Button } from 'frappe-ui'
 import CourseCardOverlay from '@/components/CourseCardOverlay.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import CourseInstructors from '@/components/CourseInstructors.vue'
 import RelatedCourses from '@/components/RelatedCourses.vue'
 import FeaturedSectionView from '@/oslms/components/FeaturedSectionView.vue'
 import CourseTagBadges from '@/oslms/components/CourseTagBadges.vue'
-import { inject } from 'vue'
+import { inject, ref, onMounted, nextTick } from 'vue'
 
 const props = defineProps<{
 	course: any
 }>()
 
-const user = inject<any>('$user') // aggiungi questa riga
+const user = inject<any>('$user')
+
+const isExpanded = ref(false)
+const showToggle = ref(false)
+const descriptionRef = ref<HTMLElement | null>(null)
+const collapsedHeight = 156
+const charLimit = 400
+
+onMounted(async () => {
+	await nextTick()
+	const descriptionText =
+		props.course.data.description?.replace(/<[^>]*>/g, '') || ''
+	if (descriptionText.length > charLimit) {
+		showToggle.value = true
+	}
+})
 
 const unescapeDescription = (html: string) => {
 	if (!html) return ''
