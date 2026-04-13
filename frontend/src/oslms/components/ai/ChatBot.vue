@@ -1,7 +1,10 @@
 <template>
-	<div v-if="settingsStore.settings?.data?.ai_enabled" class="flex flex-col h-full border-b p-4">
+	<div
+		v-if="settingsStore.settings?.data?.ai_enabled"
+		class="flex flex-col h-full border-b p-4"
+	>
 		<div class="text-lg font-semibold mb-4 text-ink-gray-9">
-			{{ __('AI Assistant') }}
+			{{ __('AI Tutor') }}
 		</div>
 		<div
 			ref="messagesContainer"
