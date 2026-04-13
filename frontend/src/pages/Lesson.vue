@@ -600,8 +600,10 @@ const setupLesson = (data) => {
 			'instructor-content',
 			data.instructor_content,
 		)
-	editor.value?.isReady.then(() => {
+	editor.value?.isReady.then(async () => {
 		checkIfDiscussionsAllowed()
+		await nextTick()
+		attachVideoEndedListeners()
 	})
 	checkQuiz()
 }
