@@ -46,7 +46,6 @@
 			:columns="assignmentColumns"
 			:rows="assignments.data"
 			row-key="name"
-			class="os-list-view"
 			:options="{
 				showTooltip: false,
 				selectable: true,
@@ -56,7 +55,7 @@
 					showAssignmentForm = true
 				},
 			}"
-			class="h-[71vh] lg:h-[79vh] px-5"
+			class="h-[71vh] lg:h-[79vh] px-5 os-list-view"
 		>
 			<ListHeader
 				class="mb-2 grid items-center rounded bg-surface-white border-b rounded-none p-2"
