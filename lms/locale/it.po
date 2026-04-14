@@ -8869,3 +8869,6 @@ msgstr ""
 msgid "{} Published"
 msgstr ""
 
+#: frappe/core/doctype/user/user.py:1141
+msgid "Password reset instructions have been sent to {}'s email"
+msgstr "Le istruzioni per reimpostare la password sono state inviate all'indirizzo email di {}"

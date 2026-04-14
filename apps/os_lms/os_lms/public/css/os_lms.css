@@ -27,3 +27,17 @@ input {
 .page-card-head h4 {
 	color: white;
 }
+
+.forgot-section {
+	padding: 45px 10px;
+	background-color: var(--color-company-secondary) !important;
+	border-color: var(--outline-gray-1) !important;
+	max-width: 400px;
+	margin: 0 auto;
+	border-radius: var(--border-radius-md);
+	border: 1px solid var(--border-color);
+}
+
+.sign-up-message a {
+	color: white !important;
+}
