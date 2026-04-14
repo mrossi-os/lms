@@ -82,7 +82,39 @@ def get_grouped_results_custom(result):
             groups.setdefault("Quizzes", []).append(r)
         elif doctype == "LMS Assignment":
             groups.setdefault("Assignments", []).append(r)
+        elif doctype == "Course Lesson" and can_access_lesson(r, roles):
+            groups.setdefault("Lessons", []).append(r)
     return groups
+
+
+def can_access_lesson(lesson, roles):
+    """Learners see lessons of published courses; creators/moderators see all their own drafts too."""
+    course = lesson.get("parent") or lesson.get("course")
+    if not course:
+        return False
+
+    if "Moderator" in roles:
+        return True
+
+    course_info = frappe.db.get_value(
+        "LMS Course", course, ["published", "owner"], as_dict=True
+    )
+    if not course_info:
+        return False
+
+    if course_info.published:
+        return True
+
+    user = frappe.session.user
+    if course_info.owner == user:
+        return True
+
+    if "Course Creator" in roles and frappe.db.exists(
+        "Course Instructor", {"parent": course, "instructor": user}
+    ):
+        return True
+
+    return False
 
 
 # endregion

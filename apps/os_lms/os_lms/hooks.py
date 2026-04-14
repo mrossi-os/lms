@@ -21,6 +21,7 @@ after_migrate = [
     "os_lms.setup.remove_deprecated_custom_fields",
     "os_lms.setup.create_custom_fields",
     "os_lms.setup.create_redis_index",
+    "os_lms.setup.rebuild_search_index",
 ]
 
 # fix error email check content MAX SIZE
@@ -39,6 +40,7 @@ override_whitelisted_methods = {
     "lms.lms.utils.get_course_details": "os_lms.os_lms.override_utils.get_course_details",
     "lms.lms.utils.get_courses": "os_lms.os_lms.override_utils.get_courses",
     "lms.lms.utils.get_lesson_creation_details": "os_lms.os_lms.override_utils.get_lesson_creation_details",
+    "lms.lms.utils.get_lesson": "os_lms.os_lms.override_utils.get_lesson",
     "lms.lms.utils.get_batch_details": "os_lms.os_lms.override_utils.get_batch_details",
 }
 

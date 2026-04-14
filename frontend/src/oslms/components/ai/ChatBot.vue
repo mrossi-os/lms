@@ -1,7 +1,10 @@
 <template>
-	<div v-if="settingsStore.settings?.data?.ai_enabled" class="flex flex-col h-full border-b p-4">
+	<div
+		v-if="settingsStore.settings?.data?.ai_enabled"
+		class="flex flex-col h-full border-b p-4"
+	>
 		<div class="text-lg font-semibold mb-4 text-ink-gray-9">
-			{{ __('AI Assistant') }}
+			{{ __('AI Tutor') }}
 		</div>
 		<div
 			ref="messagesContainer"
@@ -28,7 +31,15 @@
 				<div class="text-xs font-medium text-ink-gray-5 mb-1">
 					{{ message.role === 'user' ? __('You') : __('AI Assistant') }}
 				</div>
-				<div class="text-sm text-ink-gray-9 whitespace-pre-wrap">
+				<div
+					v-if="message.role === 'assistant'"
+					class="text-sm text-ink-gray-9 prose prose-sm max-w-none chatbot-markdown"
+					v-html="renderMarkdown(message.content)"
+				></div>
+				<div
+					v-else
+					class="text-sm text-ink-gray-9 whitespace-pre-wrap"
+				>
 					{{ message.content }}
 				</div>
 				<div
@@ -89,6 +100,15 @@ import { ref, nextTick } from 'vue'
 import { Button, call, toast } from 'frappe-ui'
 import { Send } from 'lucide-vue-next'
 import { useSettings } from '@/stores/settings'
+import MarkdownIt from 'markdown-it'
+
+const md = new MarkdownIt({
+	html: false,
+	linkify: true,
+	breaks: true,
+})
+
+const renderMarkdown = (text: string): string => md.render(text || '')
 
 const settingsStore = useSettings()
 
@@ -146,12 +166,7 @@ const sendQuestion = async () => {
 			role: 'assistant',
 			content: __('Error: ') + errorMessage,
 		})
-		toast({
-			title: __('Error'),
-			text: errorMessage,
-			icon: 'alert-circle',
-			iconClasses: 'text-red-500',
-		})
+		toast.error(errorMessage)
 	} finally {
 		isLoading.value = false
 		scrollToBottom()
@@ -165,5 +180,41 @@ const sendQuestion = async () => {
 }
 .animation-delay-400 {
 	animation-delay: 0.4s;
+}
+.chatbot-markdown {
+	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+.chatbot-markdown :deep(pre),
+.chatbot-markdown :deep(code) {
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+.chatbot-markdown :deep(a) {
+	overflow-wrap: anywhere;
+}
+.chatbot-markdown :deep(p) {
+	margin: 0 0 0.5rem;
+}
+.chatbot-markdown :deep(p:last-child) {
+	margin-bottom: 0;
+}
+.chatbot-markdown :deep(ul),
+.chatbot-markdown :deep(ol) {
+	padding-left: 1.25rem;
+	margin: 0.25rem 0;
+}
+.chatbot-markdown :deep(code) {
+	background: rgba(0, 0, 0, 0.15);
+	padding: 0.1rem 0.3rem;
+	border-radius: 3px;
+	font-size: 0.85em;
+}
+.chatbot-markdown :deep(strong) {
+	font-weight: 600;
+}
+.chatbot-markdown :deep(a) {
+	text-decoration: underline;
 }
 </style>

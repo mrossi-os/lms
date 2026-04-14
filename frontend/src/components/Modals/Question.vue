@@ -65,7 +65,7 @@
 					</div>
 					<div
 						v-if="question.type == 'Choices'"
-						class="grid grid-cols-2 gap-x-8 gap-y-4"
+						class="grid md:grid-cols-2 gap-x-8 gap-y-4"
 					>
 						<div v-for="n in 4" class="space-y-4 py-2">
 							<FormControl
@@ -87,7 +87,7 @@
 					</div>
 					<div
 						v-else-if="question.type == 'User Input'"
-						class="grid grid-cols-2 gap-x-8 gap-y-4 py-2"
+						class="grid md:grid-cols-2 gap-x-8 gap-y-4 py-2"
 					>
 						<div v-for="n in 4">
 							<FormControl

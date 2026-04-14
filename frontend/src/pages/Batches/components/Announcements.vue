@@ -13,7 +13,7 @@
 								{{ comm.sender_full_name }}
 							</div>
 						</div>
-						<div class="text-sm">
+						<div class="text-sm text-white">
 							{{ timeAgo(comm.communication_date) }}
 						</div>
 					</div>

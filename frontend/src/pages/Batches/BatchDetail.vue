@@ -5,7 +5,7 @@
 		>
 			<Breadcrumbs :items="breadcrumbs" />
 			<div
-				v-if="tabs[tabIndex]?.label === __('Settings') && isAdmin"
+				v-if="tabs[tabIndex]?.key === 'Settings' && isAdmin"
 				class="flex items-center space-x-2"
 			>
 				<Badge v-if="childRef?.isDirty" theme="orange">
@@ -41,7 +41,7 @@
 				<Tabs :tabs="tabs" v-model="tabIndex">
 					<template #tab-panel="{ tab }">
 						<div
-							v-if="tab.label == 'Discussions'"
+							v-if="tab.key == 'Discussions'"
 							class="w-[90%] lg:w-[75%] mx-auto mt-5"
 						>
 							<Discussions
@@ -134,7 +134,7 @@ const updateTabIndex = () => {
 	const hash = route.hash
 	if (hash) {
 		tabs.value.forEach((tab, index) => {
-			if (tab.label?.toLowerCase() === hash.replace('#', '')) {
+			if (tab.key?.toLowerCase() === hash.replace('#', '')) {
 				tabIndex.value = index
 			}
 		})
@@ -143,8 +143,8 @@ const updateTabIndex = () => {
 
 watch(tabIndex, () => {
 	const tab = tabs.value[tabIndex.value]
-	if (tab.label != route.hash.replace('#', '')) {
-		router.push({ ...route, hash: `#${tab.label.toLowerCase()}` })
+	if (tab.key.toLowerCase() != route.hash.replace('#', '')) {
+		router.push({ ...route, hash: `#${tab.key.toLowerCase()}` })
 	}
 })
 
@@ -168,22 +168,35 @@ watch(batch, () => {
 })
 
 const updateTabs = () => {
-	addToTabs(__('Overview'), markRaw(BatchOverview), List)
+	addToTabs('Overview', __('Overview'), markRaw(BatchOverview), List)
 	if (!user.data) return
 	if (isAdmin.value) {
-		addToTabs('Dashboard', markRaw(AdminBatchDashboard), TrendingUp)
+		addToTabs(
+			'Dashboard',
+			__('Dashboard'),
+			markRaw(AdminBatchDashboard),
+			TrendingUp,
+		)
 	} else if (isStudent.value) {
-		addToTabs('Dashboard', markRaw(StudentBatchDashboard), ClipboardPen)
+		addToTabs(
+			'Dashboard',
+			__('Dashboard'),
+			markRaw(StudentBatchDashboard),
+			ClipboardPen,
+		)
 	}
-	// addToTabs(__('Classes'), markRaw(LiveClass), Laptop)
+	addToTabs('Classes', __('Classes'), markRaw(LiveClass), Laptop)
+	addToTabs('Announcements', __('Announcements'), markRaw(Announcements), Mail)
+	addToTabs('Discussions', __('Discussions'), markRaw(Discussions), MessageCircle)
 	if (isAdmin.value) {
-		addToTabs(__('Settings'), markRaw(BatchForm), Settings2)
+		addToTabs('Settings', __('Settings'), markRaw(BatchForm), Settings2)
 	}
 }
 
-const addToTabs = (label, component, icon) => {
-	if (!tabs.value.some((tab) => tab.label === label)) {
+const addToTabs = (key, label, component, icon) => {
+	if (!tabs.value.some((tab) => tab.key === key)) {
 		tabs.value.push({
+			key,
 			label,
 			component,
 			icon,

@@ -34,7 +34,7 @@
 				<div v-if="course.lessons">
 					<Tooltip :text="__('Lessons')">
 						<span class="flex items-center">
-							<BookOpen class="h-4 w-4 stroke-1.5 mr-1" />
+							<BookOpen class="h-4 w-4 stroke-2 mr-1" />
 							{{ course.lessons }}
 						</span>
 					</Tooltip>
@@ -43,8 +43,16 @@
 				<div v-if="formattedDuration">
 					<Tooltip :text="__('Duration')">
 						<span class="flex items-center">
-							<Clock class="h-4 w-4 stroke-1.5 mr-1" />
+							<Clock class="h-4 w-4 stroke-2 mr-1" />
 							{{ formattedDuration }}
+						</span>
+					</Tooltip>
+				</div>
+
+				<div v-if="course.enable_certification">
+					<Tooltip :text="__('Certification available')">
+						<span class="flex items-center">
+							<Award class="h-4 w-4 stroke-2" />
 						</span>
 					</Tooltip>
 				</div>
@@ -58,11 +66,7 @@
 				{{ course.title }}
 			</div>
 
-			<CourseTagBadges
-				v-if="course.tags"
-				:tags="course.tags"
-				class="mb-1"
-			/>
+			<CourseTagBadges v-if="course.tags" :tags="course.tags" class="my-1" />
 
 			<div class="short-introduction text-sm">
 				{{ course.short_introduction }}
@@ -81,10 +85,7 @@
 </template>
 
 <script setup>
-import {
-	BookOpen,
-	Clock,
-} from 'lucide-vue-next'
+import { BookOpen, Clock, Award } from 'lucide-vue-next'
 import { sessionStore } from '@/stores/session'
 import { Tooltip } from 'frappe-ui'
 import { theme } from '@/utils/theme'
@@ -101,8 +102,6 @@ const props = defineProps({
 		default: null,
 	},
 })
-
-
 
 // Converte i minuti totali in formato leggibile: "1h 30m", "2h", "45m"
 const formattedDuration = computed(() => {
@@ -121,7 +120,6 @@ const gradientColor = computed(() => {
 	let colorMap = colors[themeMode][color]
 	return `linear-gradient(to top right, black, ${colorMap[400]})`
 })
-
 </script>
 
 <style>

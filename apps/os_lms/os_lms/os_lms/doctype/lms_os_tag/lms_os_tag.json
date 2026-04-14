@@ -27,10 +27,10 @@
 	],
 	"index_web_pages_for_search": 0,
 	"links": [],
-	"modified": "2026-04-01 10:00:00.000000",
+	"modified": "2026-04-14 10:00:00.000000",
 	"modified_by": "Administrator",
 	"module": "OS LMS",
-	"name": "LMS OS Course Tag",
+	"name": "LMS OS Tag",
 	"naming_rule": "By fieldname",
 	"owner": "Administrator",
 	"permissions": [

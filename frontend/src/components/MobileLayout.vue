@@ -75,19 +75,6 @@ const menu = ref(null)
 const isModerator = ref(false)
 const isInstructor = ref(false)
 
-onMounted(() => {
-	sidebarSettings.reload(
-		{},
-		{
-			onSuccess(data) {
-				destructureSidebarLinks()
-				filterLinksToShow(data)
-				addOtherLinks()
-			},
-		},
-	)
-})
-
 const handleOutsideClick = (e) => {
 	if (menu.value && !menu.value.contains(e.target)) {
 		showMenu.value = false
@@ -159,7 +146,7 @@ const updateSidebarLinks = () => {
 				}
 				addOtherLinks()
 			},
-		}
+		},
 	)
 }
 
@@ -200,7 +187,7 @@ watch(
 		}
 		updateSidebarLinks()
 	},
-	{ immediate: true }
+	{ immediate: true },
 )
 
 const checkIfCanAddProgram = async () => {
