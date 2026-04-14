@@ -65,8 +65,8 @@
 					:fixedMenu="reply.editable || false"
 					:editorClass="
 						reply.editable
-							? 'ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none'
-							: 'prose-sm'
+							? 'ProseMirror bg-surface-gray-2  prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none'
+							: 'bg-surface-gray-2  prose-sm'
 					"
 				/>
 			</div>
@@ -80,7 +80,7 @@
 			@change="(val) => (newReply = val)"
 			:placeholder="__('Type your reply here...')"
 			:fixedMenu="true"
-			editorClass="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none border border-outline-gray-2 rounded-b-md min-h-[7rem] py-1 px-2"
+			editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem] max-h-[16rem] overflow-y-scroll mb-4"
 		/>
 		<div v-if="!readOnlyMode" class="flex justify-between mt-2">
 			<span> </span>
@@ -168,7 +168,7 @@ const fetchMentionUsers = () => {
 					})
 					renderEditor.value = true
 				},
-			}
+			},
 		)
 	}
 }
