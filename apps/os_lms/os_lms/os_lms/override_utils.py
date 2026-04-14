@@ -2,6 +2,7 @@ import json
 import frappe
 from frappe.rate_limiter import rate_limit
 from lms.lms.utils import get_course_details as _original_get_course_details
+from lms.lms.utils import get_lesson as _original_get_lesson
 from lms.lms.utils import get_lesson_details as _original_get_lesson_details
 from lms.lms.utils import get_batch_details as _original_get_batch_details
 from lms.lms.utils import get_courses as _orginal_get_courses
@@ -22,6 +23,16 @@ def get_course_details(course: str):
         course_detail.feature_sections = []
 
     return course_detail
+
+
+@frappe.whitelist(allow_guest=True)
+def get_lesson(course: str, chapter: int, lesson: int) -> dict:
+    lesson_details = _original_get_lesson(course, chapter, lesson)
+    if isinstance(lesson_details, dict) and lesson_details.get("name"):
+        lesson_details["tags"] = frappe.db.get_value(
+            "Course Lesson", lesson_details["name"], "tags"
+        )
+    return lesson_details
 
 
 @frappe.whitelist()
@@ -51,6 +62,7 @@ def get_lesson_creation_details(course: str, chapter: int, lesson: int) -> dict:
                 "duration",
                 "index_status",
                 "indexed_at",
+                "tags",
             ],
             as_dict=1,
         )
@@ -91,6 +103,7 @@ def custom_get_lesson_details(chapter: dict, progress: bool = False):
                 "content",
                 "index_status",
                 "indexed_at",
+                "tags",
             ],
             as_dict=True,
         )

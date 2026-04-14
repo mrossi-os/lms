@@ -213,6 +213,11 @@ const navigate = (result: any) => {
 		})
 	} else if (result.doctype === 'LMS Assignment') {
 		router.push({ name: 'Assignments' })
+	} else if (result.doctype === 'Course Lesson') {
+		router.push({
+			name: 'CourseDetail',
+			params: { courseName: result.parent || result.course },
+		})
 	}
 }
 
@@ -242,6 +247,7 @@ const getDocTypeTitle = (doctype: string) => {
 	else if (doctype === 'LMS Program') return __('Program')
 	else if (doctype === 'LMS Quiz') return __('Quiz')
 	else if (doctype === 'LMS Assignment') return __('Assignment')
+	else if (doctype === 'Course Lesson') return __('Lesson')
 	else return doctype
 }
 

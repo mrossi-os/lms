@@ -4,5 +4,5 @@
 from frappe.model.document import Document
 
 
-class LMSOSCourseTag(Document):
+class LMSOSTag(Document):
 	pass

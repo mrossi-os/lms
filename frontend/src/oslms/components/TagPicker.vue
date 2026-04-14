@@ -222,7 +222,7 @@ const allTags = createResource({
 	url: 'frappe.client.get_list',
 	method: 'POST',
 	params: {
-		doctype: 'LMS OS Course Tag',
+		doctype: 'LMS OS Tag',
 		fields: ['tag_name', 'color'],
 		limit_page_length: 0,
 		order_by: 'tag_name asc',
@@ -271,7 +271,7 @@ const createTag = async () => {
 	try {
 		await call('frappe.client.insert', {
 			doc: {
-				doctype: 'LMS OS Course Tag',
+				doctype: 'LMS OS Tag',
 				tag_name: name,
 				color: newTagColor.value,
 			},
@@ -290,7 +290,7 @@ const createTag = async () => {
 const updateTagColor = async (tag, newColor) => {
 	try {
 		await call('frappe.client.set_value', {
-			doctype: 'LMS OS Course Tag',
+			doctype: 'LMS OS Tag',
 			name: tag.tag_name,
 			fieldname: 'color',
 			value: newColor,
@@ -323,7 +323,7 @@ const confirmDeleteTag = (tag) => {
 const deleteTag = async (tagName) => {
 	try {
 		await call('frappe.client.delete', {
-			doctype: 'LMS OS Course Tag',
+			doctype: 'LMS OS Tag',
 			name: tagName,
 		})
 		toast.success(__('Tag deleted'))

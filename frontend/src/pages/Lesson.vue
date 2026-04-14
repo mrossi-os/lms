@@ -129,6 +129,12 @@
 								<div class="text-3xl font-semibold text-ink-gray-9">
 									{{ lesson.data.title }}
 								</div>
+								<CourseTagBadges
+									v-if="lesson.data.tags"
+									:tags="lesson.data.tags"
+									size="xs"
+									class="mt-2"
+								/>
 
 								<div
 									v-if="zenModeEnabled"
@@ -414,6 +420,7 @@ import {
 	computed,
 	watch,
 	inject,
+	provide,
 	ref,
 	onMounted,
 	onBeforeUnmount,
@@ -445,6 +452,7 @@ import UserAvatar from '@/components/UserAvatar.vue'
 import Notes from '@/components/Notes/Notes.vue'
 import { getLmsRoute } from '@/utils/basePath'
 import ChatBot from '@/oslms/components/ai/ChatBot.vue'
+import CourseTagBadges from '@/oslms/components/CourseTagBadges.vue'
 
 const user = inject('$user')
 const socket = inject('$socket')
@@ -474,6 +482,24 @@ const lessonBlocked = ref(false)
 const blockedReason = ref('')
 
 const tabs = ref([])
+
+const tagResource = createResource({
+	url: 'frappe.client.get_list',
+	method: 'POST',
+	params: {
+		doctype: 'LMS OS Tag',
+		fields: ['tag_name', 'color'],
+		limit_page_length: 0,
+	},
+	auto: true,
+})
+
+const tagColorMap = computed(() => {
+	if (!tagResource.data) return new Map()
+	return new Map(tagResource.data.map((t) => [t.tag_name, t.color]))
+})
+
+provide('tagColorMap', tagColorMap)
 
 const props = defineProps({
 	courseName: {

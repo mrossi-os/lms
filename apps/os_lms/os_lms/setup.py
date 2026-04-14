@@ -79,3 +79,10 @@ def create_redis_index():
         return
     storage = RedisRagStorage()
     storage.create_index()
+
+
+def rebuild_search_index():
+    from os_lms.overrides.sqlite import CustomLearningSearch
+
+    CustomLearningSearch().build_index()
+    print("Rebuilt SQLite search index with CustomLearningSearch")

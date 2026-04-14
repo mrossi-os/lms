@@ -53,6 +53,16 @@
     },
     {
         "doctype": "Custom Field",
+        "name": "Course Lesson-tags",
+        "dt": "Course Lesson",
+        "fieldname": "tags",
+        "fieldtype": "Small Text",
+        "label": "Tags",
+        "reqd": 0,
+        "insert_after": "title"
+    },
+    {
+        "doctype": "Custom Field",
         "name": "LMS Settings-home",
         "dt": "LMS Settings",
         "label": "Home",

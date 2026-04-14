@@ -45,7 +45,7 @@
 								:required="true"
 								@update:modelValue="makeFormDirty()"
 							/>
-							<CourseTagPicker
+							<TagPicker
 								v-model="courseResource.doc.tags"
 								@dirty="makeFormDirty()"
 							/>
@@ -377,7 +377,7 @@ import {
 	updateMetaInfo,
 	createLMSCategory,
 } from '@/utils'
-import CourseTagPicker from '@/oslms/components/CourseTagPicker.vue'
+import TagPicker from '@/oslms/components/TagPicker.vue'
 import { useRouter } from 'vue-router'
 import Link from '@/components/Controls/Link.vue'
 import CourseOutline from '@/components/CourseOutline.vue'

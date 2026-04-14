@@ -65,7 +65,7 @@ const tagResource = createResource({
 	url: 'frappe.client.get_list',
 	method: 'POST',
 	params: {
-		doctype: 'LMS OS Course Tag',
+		doctype: 'LMS OS Tag',
 		fields: ['tag_name', 'color'],
 		limit_page_length: 0,
 	},

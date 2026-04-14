@@ -48,7 +48,11 @@
 									'If enabled, the lesson will also be accessible to users who are not enrolled in the course.',
 								)
 							"
+							class="card p-4"
 						/>
+						<div class="card p-4 col-span-2">
+							<TagPicker v-model="lesson.tags" />
+						</div>
 					</div>
 					<div class="border-t mt-4">
 						<LessonAIIngestion :lesson="lessonDetails?.data?.lesson" />
@@ -131,6 +135,7 @@ import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
 import { useRouter, useRoute } from 'vue-router'
 
 import LessonAIIngestion from '@/oslms/components/ai/Course/LessonAIIngestion.vue'
+import TagPicker from '@/oslms/components/TagPicker.vue'
 
 const { brand } = sessionStore()
 const editor = ref(null)
@@ -170,6 +175,7 @@ watch(
 		lesson.instructor_notes = ''
 		lesson.content = ''
 		lesson.instructor_content = ''
+		lesson.tags = ''
 
 		// Distruggi e ricrea gli editor
 		if (editor.value) {
@@ -243,6 +249,7 @@ const lesson = reactive({
 	instructor_notes: '',
 	content: '',
 	duration: 0,
+	tags: '',
 })
 
 const lessonDetails = createResource({

@@ -1,9 +1,18 @@
 <template>
-	<div v-if="tagObjects.length" class="flex items-center flex-wrap gap-3">
+	<div
+		v-if="tagObjects.length"
+		class="flex items-center flex-wrap"
+		:class="size === 'xs' ? 'gap-1' : 'gap-3'"
+	>
 		<span
 			v-for="tag in tagObjects"
 			:key="tag.tag_name"
-			class="inline-flex items-center px-2 py-1 rounded-full text-sm font-semibold text-white leading-4"
+			class="inline-flex items-center rounded-full font-semibold text-white leading-4"
+			:class="
+				size === 'xs'
+					? 'px-1.5 py-0.5 text-[10px]'
+					: 'px-2 py-1 text-sm'
+			"
 			:style="{ backgroundColor: tag.color }"
 		>
 			{{ tag.tag_name }}
@@ -18,6 +27,10 @@ const props = defineProps({
 	tags: {
 		type: String,
 		default: '',
+	},
+	size: {
+		type: String,
+		default: 'md',
 	},
 })
 

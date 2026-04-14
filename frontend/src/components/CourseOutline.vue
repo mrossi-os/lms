@@ -94,7 +94,7 @@
 								>
 									<template #item="{ element: lesson }">
 										<div
-											class="outline-lesson pl-8 py-2 pr-4 text-ink-gray-9"
+											class="outline-lesson pl-8 py-2 pr-4 text-ink-gray-9 flex flex-col gap-0.5"
 											:class="
 												isActiveLesson(lesson.number) ? 'bg-surface-gray-3' : ''
 											"
@@ -147,6 +147,12 @@
 													</div>
 												</div>
 											</router-link>
+											<CourseTagBadges
+												v-if="lesson.tags"
+												:tags="lesson.tags"
+												size="xs"
+												class=""
+											/>
 										</div>
 									</template>
 								</Draggable>
@@ -209,6 +215,7 @@ import {
 import { useRoute, useRouter } from 'vue-router'
 import ChapterModal from '@/components/Modals/ChapterModal.vue'
 import LessonAIStatus from '@/oslms/components/ai/Course/LessonAIStatus.vue'
+import CourseTagBadges from '@/oslms/components/CourseTagBadges.vue'
 
 const route = useRoute()
 const router = useRouter()
