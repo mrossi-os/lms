@@ -5189,7 +5189,7 @@ msgstr "Non Valutato"
 #: frontend/src/components/NoPermission.vue:5
 #: frontend/src/components/NoPermission.vue:46
 msgid "Not Permitted"
-msgstr "Non consentito"
+msgstr "Non Consentito"
 
 #: frontend/src/components/Assignment.vue:36
 #: frontend/src/components/Modals/EditProfile.vue:15
@@ -7959,7 +7959,7 @@ msgstr ""
 #. Label of the username (Data) field in DocType 'Course Evaluator'
 #: lms/lms/doctype/course_evaluator/course_evaluator.json
 msgid "Username"
-msgstr ""
+msgstr "Nome utente"
 
 #. Label of a shortcut in the Learning Workspace
 #: lms/lms/workspace/learning/learning.json
