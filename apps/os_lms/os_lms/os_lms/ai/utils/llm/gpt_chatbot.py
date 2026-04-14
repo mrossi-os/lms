@@ -19,7 +19,7 @@ class GptChatbot(Chatbot):
     _api_key: str = None
 
     def set_settings(self, settings: OsLmsSettings):
-        self._system_prompt = settings.system_prompt
+        self._system_prompt = settings.system_prompt or DEFAULT_SYSTEM_PROMPT
         self._api_key = settings.openai_key
 
     def ask(self, question: str, contexts: list[str]) -> str:
