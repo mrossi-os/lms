@@ -2331,7 +2331,7 @@ msgstr "Dettagli"
 
 #: frontend/src/components/Modals/DiscussionModal.vue:71
 msgid "Details cannot be empty."
-msgstr ""
+msgstr "I dettagli non possono essere vuoti."
 
 #: frontend/src/pages/Courses/CourseImportModal.vue:33
 msgid "Device"
@@ -2363,7 +2363,7 @@ msgstr ""
 #: frontend/src/components/DiscussionReplies.vue:57
 #: lms/lms/widgets/NoPreviewModal.html:25
 msgid "Discard"
-msgstr ""
+msgstr "Annulla"
 
 #: frontend/src/components/Settings/Coupons/CouponList.vue:169
 #: frontend/src/pages/Billing.vue:41
@@ -5018,7 +5018,7 @@ msgstr ""
 #: frontend/src/components/Discussions.vue:11
 #: frontend/src/components/Discussions.vue:66
 msgid "New {0}"
-msgstr ""
+msgstr "Nuovo {0}"
 
 #: frontend/src/components/Quiz.vue:297 frontend/src/pages/Lesson.vue:51
 #: frontend/src/pages/Lesson.vue:187
@@ -5106,7 +5106,7 @@ msgstr "Nessuna presentazione"
 
 #: frontend/src/pages/Batches/components/LiveClass.vue:105
 msgid "No live classes scheduled"
-msgstr ""
+msgstr "Nessuna lezione in diretta programmata"
 
 #: frontend/src/pages/Programs/ProgramForm.vue:167
 msgid "No members added yet."
@@ -5526,7 +5526,7 @@ msgstr "Superato"
 #: lms/lms/doctype/lms_quiz/lms_quiz.json
 #: lms/lms/doctype/lms_quiz_submission/lms_quiz_submission.json
 msgid "Passing Percentage"
-msgstr "Percentuale di Superamento"
+msgstr "Tasso di successo"
 
 #. Label of the password (Password) field in DocType 'LMS Live Class'
 #: lms/lms/doctype/lms_live_class/lms_live_class.json
@@ -6432,7 +6432,7 @@ msgstr "Il campo Rispondi a è obbligatorio"
 #: frontend/src/components/DiscussionReplies.vue:178
 #: frontend/src/components/DiscussionReplies.vue:201
 msgid "Reply cannot be empty."
-msgstr ""
+msgstr "La risposta non può essere vuota."
 
 #: lms/lms/widgets/RequestInvite.html:7
 msgid "Request Invite"
@@ -7644,7 +7644,7 @@ msgstr "Titolo"
 
 #: frontend/src/components/Modals/DiscussionModal.vue:67
 msgid "Title cannot be empty."
-msgstr ""
+msgstr "Il titolo non può essere vuoto."
 
 #: frontend/src/components/Modals/ChapterModal.vue:177
 msgid "Title is required"
@@ -8869,6 +8869,3 @@ msgstr ""
 msgid "{} Published"
 msgstr ""
 
-#: frappe/core/doctype/user/user.py:1141
-msgid "Password reset instructions have been sent to {}'s email"
-msgstr "Le istruzioni per reimpostare la password sono state inviate all'indirizzo email di {}"
