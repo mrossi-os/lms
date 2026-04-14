@@ -3,7 +3,7 @@
 		<span
 			v-for="tag in tagObjects"
 			:key="tag.tag_name"
-			class="inline-flex items-center px-3 py-1 rounded-full text-md font-semibold text-white leading-4"
+			class="inline-flex items-center px-2 py-1 rounded-full text-sm font-semibold text-white leading-4"
 			:style="{ backgroundColor: tag.color }"
 		>
 			{{ tag.tag_name }}
