@@ -335,7 +335,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="min-h-0 p-4">
+			<div class="min-h-0 pr-5 md:p-4">
 				<CourseOutline
 					v-if="courseResource.doc"
 					:courseName="courseResource.doc.name"

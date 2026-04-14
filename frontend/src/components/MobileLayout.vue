@@ -57,7 +57,7 @@
 import { getSidebarLinks } from '@/utils'
 import { useRouter } from 'vue-router'
 import { call } from 'frappe-ui'
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { sessionStore } from '@/stores/session'
 import { useSettings } from '@/stores/settings'
 import { usersStore } from '@/stores/user'
@@ -74,19 +74,6 @@ const showMenu = ref(false)
 const menu = ref(null)
 const isModerator = ref(false)
 const isInstructor = ref(false)
-
-onMounted(() => {
-	sidebarSettings.reload(
-		{},
-		{
-			onSuccess(data) {
-				destructureSidebarLinks()
-				filterLinksToShow(data)
-				addOtherLinks()
-			},
-		},
-	)
-})
 
 const handleOutsideClick = (e) => {
 	if (menu.value && !menu.value.contains(e.target)) {
@@ -159,7 +146,7 @@ const updateSidebarLinks = () => {
 				}
 				addOtherLinks()
 			},
-		}
+		},
 	)
 }
 
@@ -200,7 +187,7 @@ watch(
 		}
 		updateSidebarLinks()
 	},
-	{ immediate: true }
+	{ immediate: true },
 )
 
 const checkIfCanAddProgram = async () => {

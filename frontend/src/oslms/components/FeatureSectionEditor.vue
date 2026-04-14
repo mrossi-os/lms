@@ -25,7 +25,8 @@
 		<div
 			v-for="(section, sIndex) in sections"
 			:key="section.id"
-			class="border border-outline-gray-7 rounded-lg overflow-hidden"
+			:ref="(el) => (sectionRefs[section.id] = el)"
+			class="border border-outline-gray-7 rounded-lg overflow-hidden scroll-mt-4"
 		>
 			<!-- Header sezione -->
 			<div
@@ -89,7 +90,9 @@
 							:label="__('Icona')"
 							@update:modelValue="onChanged"
 						/>
-						<div class="flex items-end gap-2">
+						<div
+							class="flex flex-col-reverse md:flex-row md:items-end gap-2"
+						>
 							<FormControl
 								v-model="item.title"
 								:label="__('Titolo')"
@@ -107,7 +110,7 @@
 						<FormControl
 							v-model="item.description"
 							type="textarea"
-							:rows="2"
+							:rows="5"
 							:label="__('Descrizione')"
 							@input="onChanged"
 						/>
@@ -164,7 +167,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import { FormControl, Button } from 'frappe-ui'
 import { X, Plus, Info, LayoutGrid, CheckCircle, Trash2 } from 'lucide-vue-next'
 import * as LucideIcons from 'lucide-vue-next'
@@ -193,6 +196,7 @@ const emit = defineEmits(['update:modelValue', 'dirty'])
 // ─── Stato locale ─────────────────────────────────────────────────────────────
 
 const sections = ref([])
+const sectionRefs = ref({})
 
 // Quando il doc cambia (es. dopo reload), aggiorna lo stato locale
 watch(
@@ -232,9 +236,15 @@ const getIconComponent = (iconName) => {
 
 // ─── Sezioni ─────────────────────────────────────────────────────────────────
 
-const addSection = () => {
-	sections.value.push({ id: generateId(), title: '', items: [] })
+const addSection = async () => {
+	const newSection = { id: generateId(), title: '', items: [] }
+	sections.value.push(newSection)
 	onChanged()
+	await nextTick()
+	sectionRefs.value[newSection.id]?.scrollIntoView({
+		behavior: 'smooth',
+		block: 'start',
+	})
 }
 
 const removeSection = (sIndex) => {
@@ -262,3 +272,20 @@ const removeItem = (sIndex, iIndex) => {
 	onChanged()
 }
 </script>
+
+<style scoped>
+.os-feature-sections :deep(textarea) {
+	background-image: repeating-linear-gradient(
+		135deg,
+		transparent 0 2px,
+		#ffffff 2px 3px,
+		transparent 3px 5px
+	);
+	background-repeat: no-repeat;
+	background-position: bottom 2px right 2px;
+	background-size: 12px 12px;
+}
+.os-feature-sections :deep(textarea::-webkit-resizer) {
+	display: none;
+}
+</style>

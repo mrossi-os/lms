@@ -45,11 +45,11 @@
 		</div>
 	</header>
 	<div v-if="quizDetails.doc" class="py-5">
-		<div class="px-20 pb-5 space-y-5 border-b mb-5">
+		<div class="px-4 lg:px-20 pb-5 space-y-5 border-b mb-5">
 			<div class="text-lg text-ink-gray-9 font-semibold mb-4">
 				{{ __('Details') }}
 			</div>
-			<div class="grid grid-cols-2 gap-5">
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
 				<div class="space-y-5">
 					<FormControl
 						v-model="quizDetails.doc.title"
@@ -81,45 +81,43 @@
 				</div>
 			</div>
 		</div>
-		<div class="px-20 pb-5 space-y-5 border-b mb-5">
+		<div class="px-4 lg:px-20 pb-5 space-y-5 border-b mb-5">
 			<div class="text-lg text-ink-gray-9 font-semibold mb-4">
 				{{ __('Settings') }}
 			</div>
-			<div class="grid grid-cols-3 gap-5">
-				<div class="flex flex-col space-y-10">
-					<Switch
-						v-model="quizDetails.doc.show_answers"
-						size="sm"
-						class="card p-4"
-						:label="__('Show Answers')"
-						:description="
-							__('Display correct answers after each question is attempted.')
-						"
-					/>
-					<Switch
-						v-model="quizDetails.doc.show_submission_history"
-						size="sm"
-						class="card p-4"
-						:label="__('Show Submission History')"
-						:description="__('Allow users to view their past quiz attempts.')"
-					/>
-				</div>
-				<div class="flex flex-col space-y-5">
-					<Switch
-						v-model="quizDetails.doc.shuffle_questions"
-						size="sm"
-						class="card p-4"
-						:label="__('Shuffle Questions')"
-						:description="
-							__('Randomize the order of questions for each attempt.')
-						"
-					/>
-					<FormControl
-						v-if="quizDetails.doc.shuffle_questions"
-						v-model="quizDetails.doc.limit_questions_to"
-						:label="__('Limit Questions To')"
-					/>
-				</div>
+			<div class="grid grid-cols-2 gap-5">
+				<Switch
+					v-model="quizDetails.doc.show_answers"
+					size="sm"
+					class="card p-4"
+					:label="__('Show Answers')"
+					:description="
+						__('Display correct answers after each question is attempted.')
+					"
+				/>
+				<Switch
+					v-model="quizDetails.doc.show_submission_history"
+					size="sm"
+					class="card p-4"
+					:label="__('Show Submission History')"
+					:description="__('Allow users to view their past quiz attempts.')"
+				/>
+
+				<Switch
+					v-model="quizDetails.doc.shuffle_questions"
+					size="sm"
+					class="card p-4"
+					:label="__('Shuffle Questions')"
+					:description="
+						__('Randomize the order of questions for each attempt.')
+					"
+				/>
+				<FormControl
+					v-if="quizDetails.doc.shuffle_questions"
+					v-model="quizDetails.doc.limit_questions_to"
+					:label="__('Limit Questions To')"
+				/>
+
 				<div class="flex flex-col space-y-5">
 					<Switch
 						v-model="quizDetails.doc.enable_negative_marking"
@@ -137,7 +135,7 @@
 			</div>
 		</div>
 
-		<div class="px-20 pb-5 space-y-5 mb-5">
+		<div class="px-4 lg:px-20 pb-5 space-y-5 mb-5">
 			<div class="flex items-center justify-between mb-4">
 				<div class="text-lg font-semibold text-ink-gray-9">
 					{{ __('Questions') }}
@@ -159,9 +157,7 @@
 				}"
 				class="os-list-view"
 			>
-				<ListHeader
-					class="grid items-center space-x-4 rounded bg-surface-gray-2 p-2"
-				>
+				<ListHeader class="grid items-center rounded bg-surface-gray-2 p-2">
 					<ListHeaderItem :item="item" v-for="item in questionColumns" />
 				</ListHeader>
 				<ListRows>
@@ -241,6 +237,7 @@ import { sessionStore } from '../stores/session'
 import { ClipboardList, ListChecks, Plus, Trash2 } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { sanitizeHTML } from '@/utils'
+import { useScreenSize } from '@/utils/composables'
 import Question from '@/components/Modals/Question.vue'
 
 const { brand } = sessionStore()
@@ -253,6 +250,7 @@ const currentQuestion = reactive({
 const user = inject('$user')
 const router = useRouter()
 const readOnlyMode = window.read_only_mode
+const { isMobile } = useScreenSize()
 
 const props = defineProps({
 	quizID: {
@@ -338,17 +336,17 @@ const questionColumns = computed(() => {
 		{
 			label: __('ID'),
 			key: 'question',
-			width: '10rem',
+			width: isMobile.value ? '5rem' : '10rem',
 		},
 		{
 			label: __('Question'),
 			key: __('question_detail'),
-			width: '40rem',
+			width: isMobile.value ? '10rem' : '40rem',
 		},
 		{
 			label: __('Marks'),
 			key: 'marks',
-			width: '5rem',
+			width: isMobile.value ? '2.5rem' : '5rem',
 		},
 	]
 })

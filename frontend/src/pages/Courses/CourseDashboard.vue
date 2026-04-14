@@ -1,6 +1,6 @@
 <template>
 	<div class="p-5">
-		<div class="grid grid-cols-4 gap-5 mb-5 text-ink-gray-9">
+		<div class="grid grid-cols-2 md:grid-cols-4 gap-5 mb-5 text-ink-gray-9">
 			<NumberChartGraph
 				:title="__('Enrolled')"
 				:value="formatAmount(course.data?.enrollments)"
@@ -19,7 +19,7 @@
 			</NumberChartGraph>
 			<NumberChartGraph :title="__('Lessons')" :value="course.data?.lessons" />
 		</div>
-		<div class="grid grid-cols-[2fr_1fr] gap-5 items-start">
+		<div class="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-5 items-start">
 			<div class="border rounded-lg py-3 px-4 card">
 				<div class="flex items-center justify-between mb-3">
 					<div class="text-lg text-ink-gray-9 font-semibold">
@@ -54,7 +54,7 @@
 						}"
 					>
 						<ListHeader
-							class="mb-2 grid items-center space-x-4 rounded bg-surface-white border-b rounded-none p-2"
+							class="mb-2 grid items-center md:space-x-4 rounded bg-surface-white border-b rounded-none p-2"
 						>
 							<ListHeaderItem
 								:item="item"
@@ -81,7 +81,7 @@
 										class="w-full"
 									>
 										<template #prefix>
-											<div v-if="column.key == 'member_name'">
+											<div v-if="column.key == 'member_name' && !isMobile">
 												<Avatar
 													class="flex items-center"
 													:image="row['member_image']"
@@ -92,10 +92,13 @@
 											<ProgressBar
 												v-else-if="column.key == 'progress'"
 												:progress="Math.ceil(row[column.key])"
-												class="!mx-0 !mr-4"
+												class="!mx-0 !md:mr-4"
 											/>
 										</template>
-										<div v-if="column.key == 'creation'">
+										<div
+											v-if="column.key == 'creation'"
+											:class="isMobile ? 'text-xs' : ''"
+										>
 											{{ dayjs(row[column.key]).format('DD MMM YYYY') }}
 										</div>
 										<div
@@ -103,6 +106,12 @@
 											class="text-xs !mx-0 w-5"
 										>
 											{{ Math.ceil(row[column.key]) }}%
+										</div>
+										<div
+											v-else-if="column.key == 'member_name'"
+											:class="isMobile ? 'text-xs' : ''"
+										>
+											{{ row[column.key].toString() }}
 										</div>
 										<div v-else>
 											{{ row[column.key].toString() }}
@@ -274,7 +283,6 @@ import {
 	createListResource,
 	createResource,
 	dayjs,
-	Dropdown,
 	ECharts,
 	FormControl,
 	ListView,
@@ -291,6 +299,7 @@ import {
 import { computed, ref, watch } from 'vue'
 import { Plus, Star, Trash2 } from 'lucide-vue-next'
 import { formatAmount } from '@/utils'
+import { useScreenSize } from '@/utils/composables'
 import colors from '@/utils/frappe-ui-colors.json'
 import CourseEnrollmentModal from '@/pages/Courses/CourseEnrollmentModal.vue'
 import NumberChartGraph from '@/components/NumberChartGraph.vue'
@@ -308,6 +317,7 @@ const currentStudent = ref<any>(null)
 const theme = ref<'darkMode' | 'lightMode'>(
 	localStorage.getItem('theme') == 'dark' ? 'darkMode' : 'lightMode',
 )
+const { isMobile } = useScreenSize()
 type Filters = {
 	course: string | undefined
 	member_name?: string[]
@@ -404,12 +414,12 @@ const progressColumns = computed(() => {
 		{
 			label: __('Name'),
 			key: 'member_name',
-			width: '40%',
+			width: isMobile.value ? '30%' : '40%',
 		},
 		{
 			label: __('Progress'),
 			key: 'progress',
-			width: '30%',
+			width: isMobile.value ? '30%' : '30%',
 		},
 		{
 			label: __('Enrolled On'),
@@ -419,7 +429,10 @@ const progressColumns = computed(() => {
 	]
 })
 
-const unenrollStudents = async (selections: Set<string>, unselectAll: Function) => {
+const unenrollStudents = async (
+	selections: Set<string>,
+	unselectAll: Function,
+) => {
 	const names = Array.from(selections)
 	for (const name of names) {
 		await progressList.delete.submit(name)

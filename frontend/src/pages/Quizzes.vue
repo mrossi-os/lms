@@ -27,13 +27,13 @@
 			:rows="quizzes.data"
 			row-key="name"
 			:options="{ showTooltip: false, selectable: true }"
-			class="h-[74.5vh] lg:h-[79vh] px-5 os-list-view"
+			class="px-2 sm:px-5 os-list-view !w-auto md:w-max"
 		>
 			<ListHeader
 				class="grid items-center space-x-4 rounded-none rounded-t bg-surface-gray-2 p-2"
 			>
 				<ListHeaderItem :item="item" v-for="item in quizColumns">
-					<template #prefix="{ item }">
+					<template v-if="!isMobile" #prefix="{ item }">
 						<FeatherIcon :name="item.icon?.toString()" class="h-4 w-4" />
 					</template>
 				</ListHeaderItem>
@@ -65,7 +65,7 @@
 								>
 									{{ row[column.key] }}
 								</div>
-								<div v-else>
+								<div v-else class="text-sm">
 									{{ row[column.key] }}
 								</div>
 							</ListRowItem>
@@ -150,6 +150,7 @@ import { computed, inject, onMounted, ref, watch } from 'vue'
 import { Plus } from 'lucide-vue-next'
 import { sessionStore } from '@/stores/session'
 import { sanitizeHTML } from '@/utils'
+import { useScreenSize } from '@/utils/composables'
 import { useTelemetry } from 'frappe-ui/frappe'
 import EmptyState from '@/components/EmptyState.vue'
 
@@ -164,6 +165,7 @@ const readOnlyMode = window.read_only_mode
 const quizFilters = ref({})
 const showForm = ref(false)
 const title = ref('')
+const { isMobile } = useScreenSize()
 
 onMounted(() => {
 	if (
@@ -272,7 +274,7 @@ const deleteQuiz = (selections, unselectAll) => {
 }
 
 const quizColumns = computed(() => {
-	return [
+	const columns = [
 		{
 			label: __('Title'),
 			key: 'title',
@@ -315,6 +317,11 @@ const quizColumns = computed(() => {
 			icon: 'clock',
 		},
 	]
+	if (isMobile.value) {
+		const mobileKeys = ['title', 'passing_percentage', 'modified']
+		return columns.filter((col) => mobileKeys.includes(col.key))
+	}
+	return columns
 })
 
 const breadcrumbs = computed(() => {

@@ -35,7 +35,10 @@
 					</div>
 				</div>
 
-				<div class="grid gap-5" :class="hasAssessmentData ? 'grid-cols-2' : ''">
+				<div
+					class="grid gap-5"
+					:class="hasAssessmentData ? 'grid-cols-1 md:grid-cols-2' : ''"
+				>
 					<div
 						v-if="lessons.data"
 						class="border border-outline-gray-modals rounded-lg px-3 pt-3 max-h-[60vh] overflow-y-auto"
