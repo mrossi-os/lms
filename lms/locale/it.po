@@ -21,12 +21,22 @@ msgid " Please evaluate and grade it."
 msgstr ""
 
 #: frontend/src/pages/Programs/ProgramEnrollment.vue:32
-msgid " designed as a learning path to guide your progress. You may take the courses in any order that suits you. "
-msgstr " progettati come un percorso di apprendimento per guidare i tuoi progressi. Puoi seguire i corsi nell'ordine che preferisci. "
+msgid ""
+" designed as a learning path to guide your progress. You may take the "
+"courses in any order that suits you. "
+msgstr ""
+" progettati come un percorso di apprendimento per guidare i tuoi progressi. "
+"Puoi seguire i corsi nell'ordine che preferisci. "
 
 #: frontend/src/pages/Programs/ProgramEnrollment.vue:25
-msgid " designed as a structured learning path to guide your progress. Courses in this program must be taken in order, and each course will unlock as you complete the previous one. "
-msgstr " progettati come un percorso di apprendimento strutturato per guidare i tuoi progressi. I corsi di questo programma devono essere seguiti in ordine e ogni corso si sbloccherà al completamento del precedente. "
+msgid ""
+" designed as a structured learning path to guide your progress. Courses in "
+"this program must be taken in order, and each course will unlock as you "
+"complete the previous one. "
+msgstr ""
+" progettati come un percorso di apprendimento strutturato per guidare i tuoi"
+" progressi. I corsi di questo programma devono essere seguiti in ordine e "
+"ogni corso si sbloccherà al completamento del precedente. "
 
 #: lms/templates/emails/published_batch_notification.html:19
 msgid " to "
@@ -62,7 +72,10 @@ msgid "<a href=\"https://docs.frappe.io/learning\">Documentation</a>"
 msgstr ""
 
 #: frontend/src/components/Modals/EmailTemplateModal.vue:51
-msgid "<p>Dear {{ member_name }},</p>\\n\\n<p>You have been enrolled in our upcoming batch {{ batch_name }}.</p>\\n\\n<p>Thanks,</p>\\n<p>Frappe Learning</p>"
+msgid ""
+"<p>Dear {{ member_name }},</p>\\n\\n<p>You have been enrolled in our "
+"upcoming batch {{ batch_name }}.</p>\\n\\n<p>Thanks,</p>\\n<p>Frappe "
+"Learning</p>"
 msgstr ""
 
 #. Header text in the Learning Workspace
@@ -81,11 +94,15 @@ msgid "<span style=\"font-size: 18px;\"><b>Statistics</b></span>"
 msgstr ""
 
 #: lms/lms/doctype/lms_course/lms_course.py:74
-msgid "A course cannot have both paid certificate and certificate of completion."
-msgstr "Un corso non può avere sia un certificato a pagamento che un certificato di completamento."
+msgid ""
+"A course cannot have both paid certificate and certificate of completion."
+msgstr ""
+"Un corso non può avere sia un certificato a pagamento che un certificato di "
+"completamento."
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:217
-msgid "A new batch '{0}' has been published that might interest you. Check it out!"
+msgid ""
+"A new batch '{0}' has been published that might interest you. Check it out!"
 msgstr ""
 
 #: lms/templates/emails/published_batch_notification.html:7
@@ -93,7 +110,8 @@ msgid "A new batch has been published on "
 msgstr ""
 
 #: lms/lms/doctype/lms_course/lms_course.py:208
-msgid "A new course '{0}' has been published that might interest you. Check it out!"
+msgid ""
+"A new course '{0}' has been published that might interest you. Check it out!"
 msgstr ""
 
 #: lms/templates/emails/published_course_notification.html:7
@@ -107,7 +125,8 @@ msgstr ""
 
 #: frontend/src/pages/Courses/CourseForm.vue:166
 msgid "A one line introduction to the course that appears on the course card"
-msgstr "Un'introduzione in una riga al corso che appare sulla scheda del corso"
+msgstr ""
+"Un'introduzione in una riga al corso che appare sulla scheda del corso"
 
 #: frontend/src/pages/Profile.vue:268 frontend/src/pages/ProfileAbout.vue:4
 msgid "About"
@@ -134,7 +153,8 @@ msgstr ""
 msgid "Account ID"
 msgstr ""
 
-#. Label of the account_name (Data) field in DocType 'LMS Google Meet Settings'
+#. Label of the account_name (Data) field in DocType 'LMS Google Meet
+#. Settings'
 #. Label of the account_name (Data) field in DocType 'LMS Zoom Settings'
 #: frontend/src/components/Modals/ZoomAccountModal.vue:33
 #: frontend/src/components/Settings/GoogleMeetAccountModal.vue:35
@@ -344,7 +364,8 @@ msgstr "Tutti i programmi"
 
 #: lms/lms/doctype/lms_quiz/lms_quiz.py:45
 msgid "All questions should have the same marks if the limit is set."
-msgstr "Tutte le domande devono avere lo stesso punteggio se è impostato un limite."
+msgstr ""
+"Tutte le domande devono avere lo stesso punteggio se è impostato un limite."
 
 #. Label of the allow_guest_access (Check) field in DocType 'LMS Settings'
 #: lms/lms/doctype/lms_settings/lms_settings.json
@@ -382,7 +403,8 @@ msgstr "Consenti agli utenti di iscriversi autonomamente a questo corso."
 
 #: frontend/src/pages/QuizForm.vue:102
 msgid "Allow users to view their past quiz attempts."
-msgstr "Consenti agli utenti di visualizzare i loro tentativi di quiz passati."
+msgstr ""
+"Consenti agli utenti di visualizzare i loro tentativi di quiz passati."
 
 #: lms/lms/user.py:34
 msgid "Already Registered"
@@ -515,16 +537,27 @@ msgid "Archived"
 msgstr "Archiviati"
 
 #: frontend/src/components/UpcomingEvaluations.vue:205
-msgid "Are you sure you want to cancel this evaluation? This action cannot be undone."
+msgid ""
+"Are you sure you want to cancel this evaluation? This action cannot be "
+"undone."
 msgstr ""
 
 #: frontend/src/components/Sidebar/UserDropdown.vue:246
-msgid "Are you sure you want to clear the demo data? This would delete the course \"A guide  to Frappe Learning\" along with all its associated data. This action cannot be undone."
-msgstr "Sei sicuro di voler cancellare i dati demo? Questo eliminerà il corso \"Guida a Frappe Learning\" insieme a tutti i dati associati. Questa azione non può essere annullata."
+msgid ""
+"Are you sure you want to clear the demo data? This would delete the course "
+"\"A guide  to Frappe Learning\" along with all its associated data. This "
+"action cannot be undone."
+msgstr ""
+"Sei sicuro di voler cancellare i dati demo? Questo eliminerà il corso "
+"\"Guida a Frappe Learning\" insieme a tutti i dati associati. Questa azione "
+"non può essere annullata."
 
 #: frontend/src/pages/Programs/ProgramForm.vue:562
-msgid "Are you sure you want to delete this program? This action cannot be undone."
-msgstr "Sei sicuro di voler eliminare questo programma? Questa azione non può essere annullata."
+msgid ""
+"Are you sure you want to delete this program? This action cannot be undone."
+msgstr ""
+"Sei sicuro di voler eliminare questo programma? Questa azione non può essere"
+" annullata."
 
 #: frontend/src/pages/Programs/ProgramEnrollment.vue:38
 msgid "Are you sure you want to enroll?"
@@ -539,8 +572,12 @@ msgid "Are you sure you want to submit the quiz?"
 msgstr "Sei sicuro di voler inviare il quiz?"
 
 #: frontend/src/pages/Batches/components/BatchDashboard.vue:11
-msgid "As a part of this batch's curriculum you will have to complete the following courses and assessments."
-msgstr "Come parte del programma di questo corso dovrai completare i seguenti corsi e valutazioni."
+msgid ""
+"As a part of this batch's curriculum you will have to complete the following"
+" courses and assessments."
+msgstr ""
+"Come parte del programma di questo corso dovrai completare i seguenti corsi "
+"e valutazioni."
 
 #: frontend/src/pages/Lesson.vue:289
 msgid "Ask a question to get help from the community."
@@ -615,7 +652,8 @@ msgstr ""
 msgid "Assignment"
 msgstr "Compito"
 
-#. Label of the assignment_attachment (Attach) field in DocType 'LMS Assignment
+#. Label of the assignment_attachment (Attach) field in DocType 'LMS
+#. Assignment
 #. Submission'
 #: lms/lms/doctype/lms_assignment_submission/lms_assignment_submission.json
 msgid "Assignment Attachment"
@@ -734,7 +772,7 @@ msgstr ""
 
 #: frontend/src/pages/Programs/ProgramProgressSummary.vue:22
 msgid "Average Progress %"
-msgstr ""
+msgstr "Progresso medio %"
 
 #: frontend/src/components/CourseCard.vue:71
 #: frontend/src/pages/Courses/CourseDashboard.vue:13
@@ -895,7 +933,8 @@ msgstr ""
 msgid "Batch Feedback"
 msgstr ""
 
-#. Label of the batch_name (Link) field in DocType 'LMS Certificate Evaluation'
+#. Label of the batch_name (Link) field in DocType 'LMS Certificate
+#. Evaluation'
 #: lms/lms/doctype/lms_certificate_evaluation/lms_certificate_evaluation.json
 msgid "Batch Name"
 msgstr ""
@@ -935,7 +974,8 @@ msgstr "Classe eliminata con successo"
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:51
 msgid "Batch end date cannot be before the batch start date"
-msgstr "La data di fine del batch non può essere precedente alla data di inizio"
+msgstr ""
+"La data di fine del batch non può essere precedente alla data di inizio"
 
 #: lms/lms/api.py:193
 msgid "Batch has already started."
@@ -947,7 +987,8 @@ msgstr ""
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:56
 msgid "Batch start time cannot be greater than or equal to end time."
-msgstr "L'ora di inizio del batch non può essere maggiore o uguale all'ora di fine."
+msgstr ""
+"L'ora di inizio del batch non può essere maggiore o uguale all'ora di fine."
 
 #: frontend/src/pages/Batches/BatchForm.vue:485
 msgid "Batch updated successfully"
@@ -1080,7 +1121,8 @@ msgstr ""
 #: frontend/src/pages/Courses/NewCourseModal.vue:21
 #: lms/lms/doctype/lms_batch/lms_batch.json
 #: lms/lms/doctype/lms_category/lms_category.json
-#: lms/lms/doctype/lms_course/lms_course.json lms/templates/signup-form.html:22
+#: lms/lms/doctype/lms_course/lms_course.json
+#: lms/templates/signup-form.html:22
 msgid "Category"
 msgstr "Categoria"
 
@@ -1142,7 +1184,8 @@ msgstr ""
 #. Label of the certification (Table) field in DocType 'User'
 #. Name of a DocType
 #. Label of the certification (Check) field in DocType 'LMS Batch'
-#. Label of the section_break_cssv (Section Break) field in DocType 'LMS Batch'
+#. Label of the section_break_cssv (Section Break) field in DocType 'LMS
+#. Batch'
 #. Label of the certification_section (Section Break) field in DocType 'LMS
 #. Enrollment'
 #. Label of a chart in the Learning Workspace
@@ -1174,16 +1217,25 @@ msgid "Certification Name"
 msgstr ""
 
 #: lms/lms/doctype/lms_certificate/lms_certificate.py:94
-msgid "Certification cannot be issued as the member has not completed the course."
-msgstr "Il certificato non può essere emesso perché il membro non ha completato il corso."
+msgid ""
+"Certification cannot be issued as the member has not completed the course."
+msgstr ""
+"Il certificato non può essere emesso perché il membro non ha completato il "
+"corso."
 
 #: lms/lms/doctype/lms_certificate/lms_certificate.py:77
-msgid "Certification cannot be issued as the member is not enrolled in this batch."
-msgstr "Il certificato non può essere emesso perché il membro non è iscritto a questo batch."
+msgid ""
+"Certification cannot be issued as the member is not enrolled in this batch."
+msgstr ""
+"Il certificato non può essere emesso perché il membro non è iscritto a "
+"questo batch."
 
 #: lms/lms/doctype/lms_certificate/lms_certificate.py:84
-msgid "Certification cannot be issued as the member is not enrolled in this course."
-msgstr "Il certificato non può essere emesso perché il membro non è iscritto a questo corso."
+msgid ""
+"Certification cannot be issued as the member is not enrolled in this course."
+msgstr ""
+"Il certificato non può essere emesso perché il membro non è iscritto a "
+"questo corso."
 
 #: lms/lms/doctype/lms_certificate/lms_certificate.py:214
 msgid "Certification is not enabled for this course."
@@ -1464,7 +1516,8 @@ msgstr ""
 msgid "Company Details"
 msgstr "Dettagli azienda"
 
-#. Label of the company_email_address (Data) field in DocType 'Job Opportunity'
+#. Label of the company_email_address (Data) field in DocType 'Job
+#. Opportunity'
 #: frontend/src/pages/JobForm.vue:87
 #: lms/job/doctype/job_opportunity/job_opportunity.json
 msgid "Company Email Address"
@@ -1524,7 +1577,9 @@ msgid "Complete Your Enrollment - Don't miss out!"
 msgstr ""
 
 #: frontend/src/components/VideoBlock.vue:149
-msgid "Complete the upcoming quiz to continue watching the video. The quiz will open in {0} {1}."
+msgid ""
+"Complete the upcoming quiz to continue watching the video. The quiz will "
+"open in {0} {1}."
 msgstr ""
 
 #: frontend/src/components/Sidebar/AppSidebar.vue:103
@@ -1614,7 +1669,8 @@ msgstr "Conferma l'azione di eliminazione"
 msgid "Confirmation Email Sent"
 msgstr ""
 
-#. Label of the confirmation_email_template (Link) field in DocType 'LMS Batch'
+#. Label of the confirmation_email_template (Link) field in DocType 'LMS
+#. Batch'
 #: lms/lms/doctype/lms_batch/lms_batch.json
 msgid "Confirmation Email Template"
 msgstr ""
@@ -1683,7 +1739,8 @@ msgid "Correct Answer"
 msgstr "Risposta Corretta"
 
 #: lms/lms/course_import_export.py:196
-msgid "Could not create the course ZIP file. Please try again later. Error: {0}"
+msgid ""
+"Could not create the course ZIP file. Please try again later. Error: {0}"
 msgstr ""
 
 #. Label of the country (Link) field in DocType 'User'
@@ -1968,8 +2025,8 @@ msgstr "Il corso {0} è già stato aggiunto a questo programma."
 #: frontend/src/pages/Courses/CourseCertification.vue:127
 #: frontend/src/pages/Courses/CourseDetail.vue:224
 #: frontend/src/pages/Courses/Courses.vue:374
-#: frontend/src/pages/Courses/Courses.vue:381 frontend/src/pages/Lesson.vue:564
-#: frontend/src/pages/LessonForm.vue:475
+#: frontend/src/pages/Courses/Courses.vue:381
+#: frontend/src/pages/Lesson.vue:564 frontend/src/pages/LessonForm.vue:475
 #: frontend/src/pages/Programs/ProgramForm.vue:49
 #: frontend/src/pages/Programs/Programs.vue:35
 #: frontend/src/pages/SCORMChapter.vue:234
@@ -1997,8 +2054,12 @@ msgid "Courses in this Program"
 msgstr "Corsi in questo programma"
 
 #: frontend/src/pages/Programs/ProgramDetail.vue:21
-msgid "Courses must be completed in order. You can only start the next course after completing the previous one."
-msgstr "I corsi devono essere completati in ordine. Puoi iniziare il corso successivo solo dopo aver completato quello precedente."
+msgid ""
+"Courses must be completed in order. You can only start the next course after"
+" completing the previous one."
+msgstr ""
+"I corsi devono essere completati in ordine. Puoi iniziare il corso "
+"successivo solo dopo aver completato quello precedente."
 
 #. Label of the cover_image (Attach Image) field in DocType 'User'
 #: lms/fixtures/custom_field.json
@@ -2205,7 +2266,9 @@ msgid "Dear "
 msgstr ""
 
 #: frontend/src/components/Modals/EmailTemplateModal.vue:67
-msgid "Dear {{ member_name }},\\n\\nYou have been enrolled in our upcoming batch {{ batch_name }}.\\n\\nThanks,\\nFrappe Learning"
+msgid ""
+"Dear {{ member_name }},\\n\\nYou have been enrolled in our upcoming batch {{"
+" batch_name }}.\\n\\nThanks,\\nFrappe Learning"
 msgstr ""
 
 #: frontend/src/pages/QuizForm.vue:125
@@ -2263,24 +2326,50 @@ msgid "Delete this lesson?"
 msgstr "Eliminare questa lezione?"
 
 #: frontend/src/pages/Courses/CourseForm.vue:539
-msgid "Deleting the course will also delete all its chapters and lessons. Are you sure you want to delete this course?"
-msgstr "L'eliminazione del corso eliminerà anche tutti i suoi capitoli e le sue lezioni. Sei sicuro di voler eliminare questo corso?"
+msgid ""
+"Deleting the course will also delete all its chapters and lessons. Are you "
+"sure you want to delete this course?"
+msgstr ""
+"L'eliminazione del corso eliminerà anche tutti i suoi capitoli e le sue "
+"lezioni. Sei sicuro di voler eliminare questo corso?"
 
 #: frontend/src/pages/ProgrammingExercises/ProgrammingExercises.vue:225
-msgid "Deleting these exercises will permanently remove them from the system, along with all associated submissions. This action is irreversible. Are you sure you want to proceed?"
-msgstr "L'eliminazione di questi esercizi li rimuoverà definitivamente dal sistema, insieme a tutti gli invii associati. Questa azione è irreversibile. Sei sicuro di voler procedere?"
+msgid ""
+"Deleting these exercises will permanently remove them from the system, along"
+" with all associated submissions. This action is irreversible. Are you sure "
+"you want to proceed?"
+msgstr ""
+"L'eliminazione di questi esercizi li rimuoverà definitivamente dal sistema, "
+"insieme a tutti gli invii associati. Questa azione è irreversibile. Sei "
+"sicuro di voler procedere?"
 
 #: frontend/src/pages/Batches/BatchForm.vue:502
-msgid "Deleting this batch will also delete all its data including enrolled students, linked courses, assessments, feedback and discussions. Are you sure you want to continue?"
-msgstr "Eliminando questa classe verranno eliminati anche tutti i dati inclusi gli studenti iscritti, i corsi collegati, le valutazioni, i feedback e le discussioni. Sei sicuro di voler continuare?"
+msgid ""
+"Deleting this batch will also delete all its data including enrolled "
+"students, linked courses, assessments, feedback and discussions. Are you "
+"sure you want to continue?"
+msgstr ""
+"Eliminando questa classe verranno eliminati anche tutti i dati inclusi gli "
+"studenti iscritti, i corsi collegati, le valutazioni, i feedback e le "
+"discussioni. Sei sicuro di voler continuare?"
 
 #: frontend/src/components/CourseOutline.vue:375
-msgid "Deleting this chapter will also delete all its lessons and permanently remove it from the course. This action cannot be undone. Are you sure you want to continue?"
-msgstr "L'eliminazione di questo capitolo eliminerà anche tutte le sue lezioni e lo rimuoverà definitivamente dal corso. Questa azione non può essere annullata. Sei sicuro di voler continuare?"
+msgid ""
+"Deleting this chapter will also delete all its lessons and permanently "
+"remove it from the course. This action cannot be undone. Are you sure you "
+"want to continue?"
+msgstr ""
+"L'eliminazione di questo capitolo eliminerà anche tutte le sue lezioni e lo "
+"rimuoverà definitivamente dal corso. Questa azione non può essere annullata."
+" Sei sicuro di voler continuare?"
 
 #: frontend/src/components/CourseOutline.vue:309
-msgid "Deleting this lesson will permanently remove it from the course. This action cannot be undone. Are you sure you want to continue?"
-msgstr "L'eliminazione di questa lezione la rimuoverà definitivamente dal corso. Questa azione non può essere annullata. Sei sicuro di voler continuare?"
+msgid ""
+"Deleting this lesson will permanently remove it from the course. This action"
+" cannot be undone. Are you sure you want to continue?"
+msgstr ""
+"L'eliminazione di questa lezione la rimuoverà definitivamente dal corso. "
+"Questa azione non può essere annullata. Sei sicuro di voler continuare?"
 
 #: lms/lms/api.py:756
 msgid "Deletion not allowed for {0}"
@@ -2398,8 +2487,12 @@ msgid "Display correct answers after each question is attempted."
 msgstr "Visualizza le risposte corrette dopo ogni tentativo di risposta."
 
 #: frontend/src/components/Quiz.vue:19
-msgid "Do not refresh the page or close this window. If you do, the quiz will be submitted automatically."
-msgstr "Non aggiornare la pagina o chiudere questa finestra. In caso contrario, il quiz verrà inviato automaticamente."
+msgid ""
+"Do not refresh the page or close this window. If you do, the quiz will be "
+"submitted automatically."
+msgstr ""
+"Non aggiornare la pagina o chiudere questa finestra. In caso contrario, il "
+"quiz verrà inviato automaticamente."
 
 #. Option for the 'File Type' (Select) field in DocType 'Course Lesson'
 #. Option for the 'Type' (Select) field in DocType 'LMS Assignment'
@@ -2419,7 +2512,9 @@ msgid "Document Type"
 msgstr ""
 
 #: lms/templates/emails/payment_reminder.html:11
-msgid "Don’t miss this opportunity to enhance your skills. Click below to complete your enrollment"
+msgid ""
+"Don’t miss this opportunity to enhance your skills. Click below to complete "
+"your enrollment"
 msgstr ""
 
 #: frontend/src/pages/Courses/CourseImportModal.vue:28
@@ -2562,7 +2657,8 @@ msgstr ""
 msgid "Email Template updated successfully"
 msgstr ""
 
-#. Label of the email_templates_tab (Tab Break) field in DocType 'LMS Settings'
+#. Label of the email_templates_tab (Tab Break) field in DocType 'LMS
+#. Settings'
 #: lms/lms/doctype/lms_settings/lms_settings.json
 msgid "Email Templates"
 msgstr "Modelli Email"
@@ -2596,8 +2692,12 @@ msgid "Enable"
 msgstr ""
 
 #: lms/lms/doctype/lms_settings/lms_settings.py:22
-msgid "Enable Google API in Google Settings to send calendar invites for evaluations."
-msgstr "Abilita l'API Google nelle Impostazioni Google per inviare inviti calendario per le valutazioni."
+msgid ""
+"Enable Google API in Google Settings to send calendar invites for "
+"evaluations."
+msgstr ""
+"Abilita l'API Google nelle Impostazioni Google per inviare inviti calendario"
+" per le valutazioni."
 
 #. Label of the enable_negative_marking (Check) field in DocType 'LMS Quiz'
 #: frontend/src/pages/QuizForm.vue:124 lms/lms/doctype/lms_quiz/lms_quiz.json
@@ -2610,7 +2710,9 @@ msgstr "Abilita le valutazioni per i partecipanti alla classe.."
 
 #: frontend/src/components/Modals/ChapterModal.vue:29
 msgid "Enable this only if you want to upload a SCORM package as a chapter."
-msgstr "Abilita questa opzione solo se desideri caricare un pacchetto SCORM come capitolo."
+msgstr ""
+"Abilita questa opzione solo se desideri caricare un pacchetto SCORM come "
+"capitolo."
 
 #. Label of the enabled (Check) field in DocType 'LMS Badge'
 #. Label of the enabled (Check) field in DocType 'LMS Coupon'
@@ -2634,7 +2736,9 @@ msgid "Enabled"
 msgstr "Abilitato"
 
 #: frontend/src/pages/Batches/components/BulkCertificates.vue:53
-msgid "Enabling this will publish the certificate on the certified participants page."
+msgid ""
+"Enabling this will publish the certificate on the certified participants "
+"page."
 msgstr ""
 
 #. Label of the end_date (Date) field in DocType 'LMS Batch'
@@ -2742,7 +2846,8 @@ msgid "Enrollment from Batch"
 msgstr ""
 
 #: lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.py:57
-msgid "Enrollment in this batch is restricted. Please contact the Administrator."
+msgid ""
+"Enrollment in this batch is restricted. Please contact the Administrator."
 msgstr "L'iscrizione a questo batch è limitata. Contatta l'Amministratore."
 
 #. Label of the enrollments (Int) field in DocType 'LMS Course'
@@ -2751,13 +2856,18 @@ msgstr "L'iscrizione a questo batch è limitata. Contatta l'Amministratore."
 #. Label of a Workspace Sidebar Item
 #: frontend/src/pages/Programs/ProgramProgressSummary.vue:15
 #: lms/lms/doctype/lms_course/lms_course.json
-#: lms/lms/workspace/learning/learning.json lms/workspace_sidebar/learning.json
+#: lms/lms/workspace/learning/learning.json
+#: lms/workspace_sidebar/learning.json
 msgid "Enrollments"
 msgstr "Iscrizioni"
 
 #: lms/lms/doctype/lms_settings/lms_settings.py:27
-msgid "Enter Client Id and Client Secret in Google Settings to send calendar invites for evaluations."
-msgstr "Inserisci Client Id e Client Secret nelle Impostazioni Google per inviare inviti calendario per le valutazioni."
+msgid ""
+"Enter Client Id and Client Secret in Google Settings to send calendar "
+"invites for evaluations."
+msgstr ""
+"Inserisci Client Id e Client Secret nelle Impostazioni Google per inviare "
+"inviti calendario per le valutazioni."
 
 #: frontend/src/pages/Billing.vue:64
 msgid "Enter a Coupon Code"
@@ -2873,7 +2983,9 @@ msgstr ""
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:91
 msgid "Evaluation end date cannot be less than the batch end date."
-msgstr "La data di fine valutazione non può essere precedente alla data di fine del batch."
+msgstr ""
+"La data di fine valutazione non può essere precedente alla data di fine del "
+"batch."
 
 #: frontend/src/components/Modals/Event.vue:296
 msgid "Evaluation saved successfully"
@@ -3037,7 +3149,8 @@ msgstr "Non Superato"
 
 #. Option for the 'Status' (Select) field in DocType 'LMS Programming Exercise
 #. Submission'
-#. Option for the 'Status' (Select) field in DocType 'LMS Test Case Submission'
+#. Option for the 'Status' (Select) field in DocType 'LMS Test Case
+#. Submission'
 #: frontend/src/pages/ProgrammingExercises/ProgrammingExerciseSubmissions.vue:39
 #: lms/lms/doctype/lms_programming_exercise_submission/lms_programming_exercise_submission.json
 #: lms/lms/doctype/lms_test_case_submission/lms_test_case_submission.json
@@ -3058,7 +3171,8 @@ msgstr "Iscrizione al programma fallita: {0}"
 
 #: lms/lms/doctype/lms_live_class/lms_live_class.py:223
 msgid "Failed to fetch attendance data from Zoom for class {0}: {1}"
-msgstr "Impossibile recuperare i dati di presenza da Zoom per la classe {0}: {1}"
+msgstr ""
+"Impossibile recuperare i dati di presenza da Zoom per la classe {0}: {1}"
 
 #: frontend/src/pages/Profile.vue:291
 msgid "Failed to refresh session"
@@ -3326,7 +3440,8 @@ msgstr ""
 msgid "Google Calendar"
 msgstr ""
 
-#. Option for the 'Conferencing Provider' (Select) field in DocType 'LMS Batch'
+#. Option for the 'Conferencing Provider' (Select) field in DocType 'LMS
+#. Batch'
 #. Option for the 'Conferencing Provider' (Select) field in DocType 'LMS Live
 #. Class'
 #: frontend/src/pages/Batches/BatchForm.vue:542
@@ -3519,7 +3634,9 @@ msgid "I am currently working here"
 msgstr ""
 
 #: lms/templates/emails/certification.html:6
-msgid "I am delighted to inform you that you have successfully earned your certification for the {0} course. Congratulations!"
+msgid ""
+"I am delighted to inform you that you have successfully earned your "
+"certification for the {0} course. Congratulations!"
 msgstr ""
 
 #: frontend/src/pages/ProfileAbout.vue:166
@@ -3532,7 +3649,8 @@ msgstr "Non sono disponibile"
 
 #: frontend/src/pages/Billing.vue:185
 msgid "I consent to my personal information being stored for invoicing"
-msgstr "Acconsento alla memorizzazione dei miei dati personali per la fatturazione"
+msgstr ""
+"Acconsento alla memorizzazione dei miei dati personali per la fatturazione"
 
 #: frontend/src/pages/QuizForm.vue:330
 msgid "ID"
@@ -3550,41 +3668,62 @@ msgid "Identify User Category"
 msgstr "Identifica Categoria Utente"
 
 #: frontend/src/pages/LessonForm.vue:30
-msgid "If enabled, the lesson will also be accessible to users who are not enrolled in the course."
-msgstr "Se abilitato, la lezione sarà accessibile anche agli utenti non iscritti al corso."
+msgid ""
+"If enabled, the lesson will also be accessible to users who are not enrolled"
+" in the course."
+msgstr ""
+"Se abilitato, la lezione sarà accessibile anche agli utenti non iscritti al "
+"corso."
 
 #: frontend/src/components/Quiz.vue:61
-msgid "If you answer incorrectly, {0} {1} will be deducted from your score for each incorrect answer."
-msgstr "Se rispondi in modo errato, {0} {1} verranno sottratti dal tuo punteggio per ogni risposta errata."
+msgid ""
+"If you answer incorrectly, {0} {1} will be deducted from your score for each"
+" incorrect answer."
+msgstr ""
+"Se rispondi in modo errato, {0} {1} verranno sottratti dal tuo punteggio per"
+" ogni risposta errata."
 
 #: lms/templates/emails/mentor_request_creation_email.html:5
 msgid "If you are not any more interested to mentor the course"
 msgstr ""
 
 #: frontend/src/components/Quiz.vue:38
-msgid "If you fail to do so, the quiz will be automatically submitted when the timer ends."
-msgstr "In caso contrario, il quiz verrà inviato automaticamente allo scadere del tempo."
+msgid ""
+"If you fail to do so, the quiz will be automatically submitted when the "
+"timer ends."
+msgstr ""
+"In caso contrario, il quiz verrà inviato automaticamente allo scadere del "
+"tempo."
 
 #: lms/templates/emails/payment_reminder.html:19
-msgid "If you have any questions or need assistance, feel free to reach out to our support team."
+msgid ""
+"If you have any questions or need assistance, feel free to reach out to our "
+"support team."
 msgstr ""
 
 #: lms/templates/emails/batch_confirmation.html:29
 #: lms/templates/emails/batch_start_reminder.html:27
 #: lms/templates/emails/live_class_reminder.html:24
-msgid "If you have any questions or require assistance, feel free to contact us."
+msgid ""
+"If you have any questions or require assistance, feel free to contact us."
 msgstr ""
 
 #. Description of the 'Amount (USD)' (Currency) field in DocType 'LMS Batch'
 #. Description of the 'Amount (USD)' (Currency) field in DocType 'LMS Course'
 #: lms/lms/doctype/lms_batch/lms_batch.json
 #: lms/lms/doctype/lms_course/lms_course.json
-msgid "If you set an amount here, then the USD equivalent setting will not get applied."
+msgid ""
+"If you set an amount here, then the USD equivalent setting will not get "
+"applied."
 msgstr ""
 
 #: lms/lms/doctype/lms_quiz/lms_quiz.py:67
-msgid "If you want open ended questions then make sure each question in the quiz is of open ended type."
-msgstr "Se vuoi domande a risposta aperta, assicurati che ogni domanda del quiz sia di tipo a risposta aperta."
+msgid ""
+"If you want open ended questions then make sure each question in the quiz is"
+" of open ended type."
+msgstr ""
+"Se vuoi domande a risposta aperta, assicurati che ogni domanda del quiz sia "
+"di tipo a risposta aperta."
 
 #. Option for the 'File Type' (Select) field in DocType 'Course Lesson'
 #. Option for the 'Type' (Select) field in DocType 'LMS Assignment'
@@ -3714,8 +3853,13 @@ msgid "Instructor Notes"
 msgstr "Note del docente"
 
 #: frontend/src/components/LessonHelp.vue:11
-msgid "Instructor Notes are private notes that only instructors can see. They can be used to provide additional context or guidance for the lesson."
-msgstr "Le note dell'insegnante sono note private visibili solo agli insegnanti. Possono essere utilizzate per fornire ulteriori contestualizzazioni o indicazioni relative alla lezione."
+msgid ""
+"Instructor Notes are private notes that only instructors can see. They can "
+"be used to provide additional context or guidance for the lesson."
+msgstr ""
+"Le note dell'insegnante sono note private visibili solo agli insegnanti. "
+"Possono essere utilizzate per fornire ulteriori contestualizzazioni o "
+"indicazioni relative alla lezione."
 
 #. Label of the instructors (Table MultiSelect) field in DocType 'LMS Batch'
 #. Label of the instructors (Rating) field in DocType 'LMS Batch Feedback'
@@ -3788,7 +3932,8 @@ msgstr "Invita il tuo team e i tuoi studenti"
 msgid "Is Correct"
 msgstr ""
 
-#. Label of the is_scorm_chapter (Check) field in DocType 'LMS Course Progress'
+#. Label of the is_scorm_chapter (Check) field in DocType 'LMS Course
+#. Progress'
 #: lms/lms/doctype/lms_course_progress/lms_course_progress.json
 msgid "Is SCORM Chapter"
 msgstr ""
@@ -3883,9 +4028,9 @@ msgstr ""
 
 #. Label of the jobs (Check) field in DocType 'LMS Settings'
 #. Label of the jobs_tab (Tab Break) field in DocType 'LMS Settings'
-#: frontend/src/pages/JobApplications.vue:9 frontend/src/pages/JobDetail.vue:10
-#: frontend/src/pages/JobForm.vue:317 frontend/src/pages/Jobs.vue:8
-#: frontend/src/pages/Jobs.vue:297
+#: frontend/src/pages/JobApplications.vue:9
+#: frontend/src/pages/JobDetail.vue:10 frontend/src/pages/JobForm.vue:317
+#: frontend/src/pages/Jobs.vue:8 frontend/src/pages/Jobs.vue:297
 #: lms/lms/doctype/lms_settings/lms_settings.json
 msgid "Jobs"
 msgstr "Lavori"
@@ -4232,7 +4377,8 @@ msgstr ""
 
 #. Name of a Workspace
 #. Title of a Workspace Sidebar
-#: lms/lms/workspace/learning/learning.json lms/workspace_sidebar/learning.json
+#: lms/lms/workspace/learning/learning.json
+#: lms/workspace_sidebar/learning.json
 msgid "Learning"
 msgstr ""
 
@@ -4328,7 +4474,9 @@ msgid "Lessons Completed"
 msgstr ""
 
 #: lms/templates/onboarding_header.html:11
-msgid "Lets start setting up your content on the LMS so that you can reclaim time and focus on growth."
+msgid ""
+"Lets start setting up your content on the LMS so that you can reclaim time "
+"and focus on growth."
 msgstr ""
 
 #. Option for the 'Grade Type' (Select) field in DocType 'Education Detail'
@@ -4342,8 +4490,11 @@ msgid "Limit Questions To"
 msgstr "Limita Domande A"
 
 #: lms/lms/doctype/lms_quiz/lms_quiz.py:40
-msgid "Limit cannot be greater than or equal to the number of questions in the quiz."
-msgstr "Il limite non può essere maggiore o uguale al numero di domande nel quiz."
+msgid ""
+"Limit cannot be greater than or equal to the number of questions in the "
+"quiz."
+msgstr ""
+"Il limite non può essere maggiore o uguale al numero di domande nel quiz."
 
 #: frontend/src/pages/ProfileAbout.vue:96
 msgid "LinkedIn"
@@ -4359,7 +4510,8 @@ msgstr ""
 msgid "Live"
 msgstr ""
 
-#. Label of the live_class (Link) field in DocType 'LMS Live Class Participant'
+#. Label of the live_class (Link) field in DocType 'LMS Live Class
+#. Participant'
 #. Label of the show_live_class (Check) field in DocType 'LMS Settings'
 #: frontend/src/pages/Batches/components/LiveClass.vue:19
 #: lms/lms/doctype/lms_live_class_participant/lms_live_class_participant.json
@@ -4445,7 +4597,8 @@ msgstr "Fai un annuncio"
 
 #: frontend/src/components/Notes/Notes.vue:7
 msgid "Make notes for quick revision. Press / for menu."
-msgstr "Prendi appunti per un ripasso veloce. Premi / per visualizzare il menu."
+msgstr ""
+"Prendi appunti per un ripasso veloce. Premi / per visualizzare il menu."
 
 #: frontend/src/pages/Batches/BatchForm.vue:16
 msgid "Make the batch visible to all users."
@@ -4496,7 +4649,8 @@ msgstr "Segna per revisione"
 
 #: frontend/src/pages/Courses/CourseForm.vue:131
 msgid "Mark the course as upcoming but not yet open for enrollment."
-msgstr "Contrassegna il corso come imminente ma non ancora aperto alle iscrizioni."
+msgstr ""
+"Contrassegna il corso come imminente ma non ancora aperto alle iscrizioni."
 
 #: frontend/src/components/Modals/Question.vue:78
 msgid "Mark this option as a correct answer."
@@ -4519,8 +4673,12 @@ msgid "Marks To Cut"
 msgstr ""
 
 #: lms/lms/doctype/lms_quiz_submission/lms_quiz_submission.py:41
-msgid "Marks for question number {0} cannot be greater than the marks allotted for that question."
-msgstr "Il punteggio per la domanda numero {0} non può essere maggiore del punteggio assegnato a quella domanda."
+msgid ""
+"Marks for question number {0} cannot be greater than the marks allotted for "
+"that question."
+msgstr ""
+"Il punteggio per la domanda numero {0} non può essere maggiore del punteggio"
+" assegnato a quella domanda."
 
 #. Label of the marks_out_of (Int) field in DocType 'LMS Quiz Result'
 #: frontend/src/pages/QuizSubmission.vue:67
@@ -4658,7 +4816,8 @@ msgstr ""
 msgid "Member Image"
 msgstr ""
 
-#. Label of the member_name (Data) field in DocType 'LMS Assignment Submission'
+#. Label of the member_name (Data) field in DocType 'LMS Assignment
+#. Submission'
 #. Label of the member_name (Data) field in DocType 'LMS Badge Assignment'
 #. Label of the member_name (Data) field in DocType 'LMS Batch Enrollment'
 #. Label of the member_name (Data) field in DocType 'LMS Batch Feedback'
@@ -4750,7 +4909,8 @@ msgstr "Membri"
 msgid "Mentor"
 msgstr ""
 
-#. Label of the mentor_name (Data) field in DocType 'LMS Course Mentor Mapping'
+#. Label of the mentor_name (Data) field in DocType 'LMS Course Mentor
+#. Mapping'
 #: lms/lms/doctype/lms_course_mentor_mapping/lms_course_mentor_mapping.json
 msgid "Mentor Name"
 msgstr ""
@@ -5063,8 +5223,12 @@ msgid "No assessments added to this batch"
 msgstr "Nessuna valutazione aggiunta a questo lotto"
 
 #: lms/lms/doctype/lms_live_class/lms_live_class.py:77
-msgid "No calendar is configured for the conferencing provider. Please set up a calendar to create events."
-msgstr "Nessun calendario è configurato per il provider di videoconferenza. Configura un calendario per creare eventi."
+msgid ""
+"No calendar is configured for the conferencing provider. Please set up a "
+"calendar to create events."
+msgstr ""
+"Nessun calendario è configurato per il provider di videoconferenza. "
+"Configura un calendario per creare eventi."
 
 #: lms/templates/certificates_section.html:23
 msgid "No certificates"
@@ -5274,8 +5438,11 @@ msgid "Once again, congratulations on this significant accomplishment."
 msgstr ""
 
 #: frontend/src/components/Assignment.vue:64
-msgid "Once the moderator grades your submission, you'll find the details here."
-msgstr "Una volta che il moderatore valuterà il tuo elaborato, troverai i dettagli qui."
+msgid ""
+"Once the moderator grades your submission, you'll find the details here."
+msgstr ""
+"Una volta che il moderatore valuterà il tuo elaborato, troverai i dettagli "
+"qui."
 
 #. Option for the 'Medium' (Select) field in DocType 'LMS Batch'
 #: frontend/src/pages/Batches/BatchForm.vue:551
@@ -5513,7 +5680,8 @@ msgstr "Superato"
 
 #. Option for the 'Status' (Select) field in DocType 'LMS Programming Exercise
 #. Submission'
-#. Option for the 'Status' (Select) field in DocType 'LMS Test Case Submission'
+#. Option for the 'Status' (Select) field in DocType 'LMS Test Case
+#. Submission'
 #: frontend/src/pages/ProgrammingExercises/ProgrammingExerciseSubmissions.vue:38
 #: lms/lms/doctype/lms_programming_exercise_submission/lms_programming_exercise_submission.json
 #: lms/lms/doctype/lms_test_case_submission/lms_test_case_submission.json
@@ -5521,7 +5689,8 @@ msgid "Passed"
 msgstr "Superato"
 
 #. Label of the passing_percentage (Int) field in DocType 'LMS Quiz'
-#. Label of the passing_percentage (Int) field in DocType 'LMS Quiz Submission'
+#. Label of the passing_percentage (Int) field in DocType 'LMS Quiz
+#. Submission'
 #: frontend/src/pages/QuizForm.vue:78 frontend/src/pages/Quizzes.vue:282
 #: lms/lms/doctype/lms_quiz/lms_quiz.json
 #: lms/lms/doctype/lms_quiz_submission/lms_quiz_submission.json
@@ -5535,7 +5704,8 @@ msgstr ""
 
 #: frontend/src/pages/Courses/CourseForm.vue:196
 msgid "Paste a YouTube link of a short video introducing the course."
-msgstr "Inserisci un link YouTube a un breve video di presentazione del corso."
+msgstr ""
+"Inserisci un link YouTube a un breve video di presentazione del corso."
 
 #. Label of the payment (Link) field in DocType 'LMS Batch Enrollment'
 #. Label of the payment (Link) field in DocType 'LMS Enrollment'
@@ -5686,8 +5856,12 @@ msgid "Pink"
 msgstr "Rosa"
 
 #: lms/lms/doctype/lms_settings/lms_settings.py:35
-msgid "Please add <a href='{0}'>{1}</a> for <a href='{2}'>{3}</a> to send calendar invites for evaluations."
-msgstr "Aggiungi <a href='{0}'>{1}</a> per <a href='{2}'>{3}</a> per inviare inviti calendario per le valutazioni."
+msgid ""
+"Please add <a href='{0}'>{1}</a> for <a href='{2}'>{3}</a> to send calendar "
+"invites for evaluations."
+msgstr ""
+"Aggiungi <a href='{0}'>{1}</a> per <a href='{2}'>{3}</a> per inviare inviti "
+"calendario per le valutazioni."
 
 #: lms/lms/user.py:77
 msgid "Please ask your administrator to verify your sign-up"
@@ -5718,8 +5892,12 @@ msgid "Please enroll for this course to view this lesson"
 msgstr "Iscriviti a questo corso per visualizzare questa lezione"
 
 #: frontend/src/pages/Billing.vue:99
-msgid "Please ensure that the billing name you enter is correct, as it will be used on your invoice."
-msgstr "Assicurati che il nome di fatturazione inserito sia corretto, poiché verrà utilizzato sulla tua fattura."
+msgid ""
+"Please ensure that the billing name you enter is correct, as it will be used"
+" on your invoice."
+msgstr ""
+"Assicurati che il nome di fatturazione inserito sia corretto, poiché verrà "
+"utilizzato sulla tua fattura."
 
 #: frontend/src/components/Quiz.vue:31
 msgid "Please ensure that you complete all the questions in {0} minutes."
@@ -5758,12 +5936,20 @@ msgid "Please fill the mandatory fields: {0}"
 msgstr ""
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:71
-msgid "Please install the Payments App to create a paid batch. Refer to the documentation for more details. {0}"
-msgstr "Installa l'app Pagamenti per creare un batch a pagamento. Consulta la documentazione per maggiori dettagli. {0}"
+msgid ""
+"Please install the Payments App to create a paid batch. Refer to the "
+"documentation for more details. {0}"
+msgstr ""
+"Installa l'app Pagamenti per creare un batch a pagamento. Consulta la "
+"documentazione per maggiori dettagli. {0}"
 
 #: lms/lms/doctype/lms_course/lms_course.py:67
-msgid "Please install the Payments App to create a paid course. Refer to the documentation for more details. {0}"
-msgstr "Installa l'app Pagamenti per creare un corso a pagamento. Consulta la documentazione per maggiori dettagli. {0}"
+msgid ""
+"Please install the Payments App to create a paid course. Refer to the "
+"documentation for more details. {0}"
+msgstr ""
+"Installa l'app Pagamenti per creare un corso a pagamento. Consulta la "
+"documentazione per maggiori dettagli. {0}"
 
 #: frontend/src/pages/Billing.vue:351
 msgid "Please let us know where you heard about us from."
@@ -5807,7 +5993,8 @@ msgid "Please provide your consent to proceed with the payment."
 msgstr "Fornisci il tuo consenso per procedere con il pagamento."
 
 #: frontend/src/components/Quiz.vue:8
-msgid "Please read the following instructions carefully before starting the quiz"
+msgid ""
+"Please read the following instructions carefully before starting the quiz"
 msgstr "Leggi attentamente le seguenti istruzioni prima di iniziare il quiz"
 
 #: frontend/src/pages/ProgrammingExercises/ProgrammingExerciseSubmission.vue:142
@@ -5823,8 +6010,12 @@ msgid "Please select a Zoom account for this batch."
 msgstr "Seleziona un account Zoom per questo batch."
 
 #: frontend/src/pages/Batches/components/LiveClass.vue:10
-msgid "Please select a conferencing provider and add an account to the batch to create live classes."
-msgstr "Seleziona un fornitore di servizi di videoconferenza e aggiungi un account alla classe per creare lezioni in diretta."
+msgid ""
+"Please select a conferencing provider and add an account to the batch to "
+"create live classes."
+msgstr ""
+"Seleziona un fornitore di servizi di videoconferenza e aggiungi un account "
+"alla classe per creare lezioni in diretta."
 
 #: frontend/src/pages/Programs/ProgramForm.vue:428
 msgid "Please select a course"
@@ -5941,7 +6132,8 @@ msgstr ""
 msgid "Preferred Function"
 msgstr ""
 
-#. Label of the preferred_functions (Table MultiSelect) field in DocType 'User'
+#. Label of the preferred_functions (Table MultiSelect) field in DocType
+#. 'User'
 #: lms/fixtures/custom_field.json
 msgid "Preferred Functions"
 msgstr ""
@@ -5966,7 +6158,8 @@ msgstr ""
 msgid "Press enter to search"
 msgstr "Premi invio per cercare"
 
-#. Label of the prevent_skipping_videos (Check) field in DocType 'LMS Settings'
+#. Label of the prevent_skipping_videos (Check) field in DocType 'LMS
+#. Settings'
 #: lms/lms/doctype/lms_settings/lms_settings.json
 msgid "Prevent Skipping Videos"
 msgstr "Impedisci Salto Video"
@@ -6008,7 +6201,8 @@ msgstr ""
 #. Description of the 'Hide my Private Information from others' (Check) field
 #. in DocType 'User'
 #: lms/fixtures/custom_field.json
-msgid "Private Information includes your Grade and Work Environment Preferences"
+msgid ""
+"Private Information includes your Grade and Work Environment Preferences"
 msgstr ""
 
 #. Label of the problem_statement (Text Editor) field in DocType 'LMS
@@ -6121,7 +6315,7 @@ msgstr "Progressi"
 #: frontend/src/pages/Programs/ProgramProgressSummary.vue:131
 #: lms/lms/report/course_progress_summary/course_progress_summary.py:77
 msgid "Progress (%)"
-msgstr ""
+msgstr "Progresso (%)"
 
 #: frontend/src/pages/Programs/ProgramProgressSummary.vue:30
 msgid "Progress Distribution"
@@ -6176,7 +6370,8 @@ msgstr "Pubblicato Il "
 msgid "Publishing Settings"
 msgstr "Impostazioni di pubblicazione"
 
-#. Label of the purchased_certificate (Check) field in DocType 'LMS Enrollment'
+#. Label of the purchased_certificate (Check) field in DocType 'LMS
+#. Enrollment'
 #: frontend/src/pages/Courses/CourseEnrollmentModal.vue:13
 #: lms/lms/doctype/lms_enrollment/lms_enrollment.json
 msgid "Purchased Certificate"
@@ -6204,7 +6399,8 @@ msgstr ""
 #. Label of the question (Text) field in DocType 'LMS Quiz Result'
 #: frontend/src/components/Modals/AssignmentForm.vue:38
 #: frontend/src/components/Modals/Question.vue:24
-#: frontend/src/pages/QuizForm.vue:335 frontend/src/pages/QuizSubmission.vue:56
+#: frontend/src/pages/QuizForm.vue:335
+#: frontend/src/pages/QuizSubmission.vue:56
 #: lms/lms/doctype/course_lesson/course_lesson.json
 #: lms/lms/doctype/lms_assignment/lms_assignment.json
 #: lms/lms/doctype/lms_assignment_submission/lms_assignment_submission.json
@@ -6364,7 +6560,8 @@ msgstr "Conteggio dei riscatti"
 msgid "Reference DocName"
 msgstr ""
 
-#. Label of the reference_doctype (Link) field in DocType 'LMS Batch Timetable'
+#. Label of the reference_doctype (Link) field in DocType 'LMS Batch
+#. Timetable'
 #. Label of the reference_doctype (Select) field in DocType 'LMS Coupon Item'
 #. Label of the reference_doctype (Link) field in DocType 'LMS Timetable
 #. Legend'
@@ -6499,15 +6696,18 @@ msgstr "Riga #{0} La data non può essere al di fuori della durata del batch."
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:124
 msgid "Row #{0} End time cannot be outside the batch duration."
-msgstr "Riga #{0} L'ora di fine non può essere al di fuori della durata del batch."
+msgstr ""
+"Riga #{0} L'ora di fine non può essere al di fuori della durata del batch."
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:108
 msgid "Row #{0} Start time cannot be greater than or equal to end time."
-msgstr "Riga #{0} L'ora di inizio non può essere maggiore o uguale all'ora di fine."
+msgstr ""
+"Riga #{0} L'ora di inizio non può essere maggiore o uguale all'ora di fine."
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:117
 msgid "Row #{0} Start time cannot be outside the batch duration."
-msgstr "Riga #{0} L'ora di inizio non può essere al di fuori della durata del batch."
+msgstr ""
+"Riga #{0} L'ora di inizio non può essere al di fuori della durata del batch."
 
 #: lms/lms/doctype/lms_quiz/lms_quiz.py:33
 msgid "Rows {0} have the duplicate questions."
@@ -6527,7 +6727,8 @@ msgstr ""
 msgid "Rust"
 msgstr ""
 
-#. Label of the scorm_section (Section Break) field in DocType 'Course Chapter'
+#. Label of the scorm_section (Section Break) field in DocType 'Course
+#. Chapter'
 #: lms/lms/doctype/course_chapter/course_chapter.json
 msgid "SCORM"
 msgstr ""
@@ -6716,7 +6917,9 @@ msgstr "Seleziona un esercizio di programmazione"
 
 #: frontend/src/pages/Courses/CourseForm.vue:92
 msgid "Select a fallback color for the course card when no image is set."
-msgstr "Seleziona un colore di riserva per la scheda del corso quando non è stata impostata alcuna immagine."
+msgstr ""
+"Seleziona un colore di riserva per la scheda del corso quando non è stata "
+"impostata alcuna immagine."
 
 #: frontend/src/components/Modals/Question.vue:99
 msgid "Select a question"
@@ -6770,7 +6973,8 @@ msgstr "Invia Notifica per Corsi Pubblicati"
 msgid "Send Payment Reminders for Batch"
 msgstr ""
 
-#. Label of the send_payment_reminders_for_course (Check) field in DocType 'LMS
+#. Label of the send_payment_reminders_for_course (Check) field in DocType
+#. 'LMS
 #. Settings'
 #: lms/lms/doctype/lms_settings/lms_settings.json
 msgid "Send Payment Reminders for Course"
@@ -6897,7 +7101,8 @@ msgstr "La registrazione è disabilitata"
 msgid "Sign up"
 msgstr ""
 
-#. Label of the signup_settings_tab (Tab Break) field in DocType 'LMS Settings'
+#. Label of the signup_settings_tab (Tab Break) field in DocType 'LMS
+#. Settings'
 #: lms/lms/doctype/lms_settings/lms_settings.json
 msgid "Signup Settings"
 msgstr ""
@@ -6928,7 +7133,8 @@ msgstr ""
 msgid "Skills"
 msgstr ""
 
-#: frontend/src/pages/PersonaForm.vue:51 lms/templates/onboarding_header.html:6
+#: frontend/src/pages/PersonaForm.vue:51
+#: lms/templates/onboarding_header.html:6
 msgid "Skip"
 msgstr "Salta"
 
@@ -7002,7 +7208,8 @@ msgstr "Inizia a imparare"
 #. Label of the start_time (Time) field in DocType 'Evaluator Schedule'
 #. Label of the start_time (Time) field in DocType 'LMS Batch'
 #. Label of the start_time (Time) field in DocType 'LMS Batch Timetable'
-#. Label of the start_time (Time) field in DocType 'LMS Certificate Evaluation'
+#. Label of the start_time (Time) field in DocType 'LMS Certificate
+#. Evaluation'
 #. Label of the start_time (Time) field in DocType 'LMS Certificate Request'
 #. Label of the start_time (Time) field in DocType 'Scheduled Flow'
 #: frontend/src/pages/Batches/components/NewBatchModal.vue:32
@@ -7119,7 +7326,8 @@ msgstr "Studenti"
 
 #. Description of the 'Paid Batch' (Check) field in DocType 'LMS Batch'
 #: lms/lms/doctype/lms_batch/lms_batch.json
-msgid "Students will be enrolled in a paid batch once they complete the payment"
+msgid ""
+"Students will be enrolled in a paid batch once they complete the payment"
 msgstr ""
 
 #: frontend/src/components/ContactUsEmail.vue:13
@@ -7176,7 +7384,9 @@ msgid "Submit and Continue"
 msgstr "Invia e continua"
 
 #: frontend/src/components/Modals/JobApplicationModal.vue:23
-msgid "Submit your resume to proceed with your application for this position. Upon submission, it will be shared with the job poster."
+msgid ""
+"Submit your resume to proceed with your application for this position. Upon "
+"submission, it will be shared with the job poster."
 msgstr ""
 
 #: frontend/src/pages/Programs/ProgramEnrollment.vue:145
@@ -7330,15 +7540,21 @@ msgid "Thanks and Regards"
 msgstr ""
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:310
-msgid "The Google Meet account does not have a Google Calendar configured. Please set up a Google Calendar first."
-msgstr "L'account Google Meet non ha un Google Calendar configurato. Configura prima un Google Calendar."
+msgid ""
+"The Google Meet account does not have a Google Calendar configured. Please "
+"set up a Google Calendar first."
+msgstr ""
+"L'account Google Meet non ha un Google Calendar configurato. Configura prima"
+" un Google Calendar."
 
 #: lms/lms/utils.py:2321
 msgid "The batch does not exist."
 msgstr ""
 
 #: lms/templates/emails/batch_start_reminder.html:6
-msgid "The batch you have enrolled for is starting tomorrow. Please be prepared and be on time for the session."
+msgid ""
+"The batch you have enrolled for is starting tomorrow. Please be prepared and"
+" be on time for the session."
 msgstr ""
 
 #: lms/lms/utils.py:1800
@@ -7350,12 +7566,18 @@ msgid "The course {0} is now available on {1}."
 msgstr ""
 
 #: frontend/src/components/UpcomingEvaluations.vue:26
-msgid "The deadline to schedule evaluations has passed. Please contact the Instructor for assistance."
+msgid ""
+"The deadline to schedule evaluations has passed. Please contact the "
+"Instructor for assistance."
 msgstr ""
 
 #: lms/lms/doctype/lms_certificate_request/lms_certificate_request.py:57
-msgid "The evaluator of this course is unavailable from {0} to {1}. Please select a date after {1}"
-msgstr "Il valutatore di questo corso non è disponibile dal {0} al {1}. Seleziona una data dopo il {1}"
+msgid ""
+"The evaluator of this course is unavailable from {0} to {1}. Please select a"
+" date after {1}"
+msgstr ""
+"Il valutatore di questo corso non è disponibile dal {0} al {1}. Seleziona "
+"una data dopo il {1}"
 
 #: lms/lms/doctype/lms_assignment_submission/lms_assignment_submission.py:69
 msgid "The instructor has left a comment on your assignment {0}"
@@ -7370,12 +7592,18 @@ msgid "The lesson does not exist."
 msgstr ""
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:148
-msgid "The selected Google Meet account does not have a Google Calendar configured."
-msgstr "L'account Google Meet selezionato non ha un Google Calendar configurato."
+msgid ""
+"The selected Google Meet account does not have a Google Calendar configured."
+msgstr ""
+"L'account Google Meet selezionato non ha un Google Calendar configurato."
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:141
-msgid "The selected Google Meet account is disabled. Please enable it or select another account."
-msgstr "L'account Google Meet selezionato è disabilitato. Abilitalo o seleziona un altro account."
+msgid ""
+"The selected Google Meet account is disabled. Please enable it or select "
+"another account."
+msgstr ""
+"L'account Google Meet selezionato è disabilitato. Abilitalo o seleziona un "
+"altro account."
 
 #: lms/lms/doctype/lms_certificate_request/lms_certificate_request.py:76
 msgid "The slot is already booked by another participant."
@@ -7390,11 +7618,13 @@ msgid "The status of your application has changed."
 msgstr ""
 
 #: frontend/src/components/CreateOutline.vue:12
-msgid "There are no chapters in this course. Create and manage chapters from here."
+msgid ""
+"There are no chapters in this course. Create and manage chapters from here."
 msgstr ""
 
 #: frontend/src/pages/Home/AdminHome.vue:178
-msgid "There are no courses currently. Create your first course to get started!"
+msgid ""
+"There are no courses currently. Create your first course to get started!"
 msgstr "Non ci sono corsi al momento. Crea il tuo primo corso per iniziare!"
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:99
@@ -7407,16 +7637,24 @@ msgid "There are no submissions for this assignment."
 msgstr "Non ci sono invii per questo compito."
 
 #: frontend/src/components/EmptyState.vue:9
-msgid "There are no {0} currently. Keep an eye out, fresh learning experiences are on the way!"
-msgstr "Al momento non ci sono {0} disponibili. Tieni d'occhio la pagina: nuove esperienze di apprendimento stanno arrivando!"
+msgid ""
+"There are no {0} currently. Keep an eye out, fresh learning experiences are "
+"on the way!"
+msgstr ""
+"Al momento non ci sono {0} disponibili. Tieni d'occhio la pagina: nuove "
+"esperienze di apprendimento stanno arrivando!"
 
 #: lms/templates/course_list.html:14
 msgid "There are no {0} on this site."
 msgstr ""
 
 #: lms/lms/doctype/lms_quiz_submission/lms_quiz_submission.py:59
-msgid "There has been an update on your submission. You have got a score of {0} for the quiz {1}"
-msgstr "C'è stato un aggiornamento sul tuo elaborato. Hai ottenuto un punteggio di {0} per il quiz {1}"
+msgid ""
+"There has been an update on your submission. You have got a score of {0} for"
+" the quiz {1}"
+msgstr ""
+"C'è stato un aggiornamento sul tuo elaborato. Hai ottenuto un punteggio di "
+"{0} per il quiz {1}"
 
 #. Description of the 'section_break_ubxi' (Section Break) field in DocType
 #. 'LMS Batch'
@@ -7466,13 +7704,16 @@ msgstr ""
 #. Description of the 'Meta Description' (Small Text) field in DocType 'LMS
 #. Settings'
 #: lms/lms/doctype/lms_settings/lms_settings.json
-msgid "This description will be shown on lists and pages without meta description"
+msgid ""
+"This description will be shown on lists and pages without meta description"
 msgstr ""
 
 #. Description of the 'Meta Image' (Attach Image) field in DocType 'LMS
 #. Settings'
 #: lms/lms/doctype/lms_settings/lms_settings.json
-msgid "This image will be shown on lists and pages that don't have an image by default"
+msgid ""
+"This image will be shown on lists and pages that don't have an image by "
+"default"
 msgstr ""
 
 #: frontend/src/pages/Lesson.vue:74
@@ -7480,11 +7721,17 @@ msgid "This lesson is locked"
 msgstr "Questa lezione è bloccata"
 
 #: frontend/src/pages/Lesson.vue:79
-msgid "This lesson is not available for preview. Please enroll in the course to access it."
-msgstr "Questa lezione non è disponibile in anteprima. Iscriviti al corso per accedervi."
+msgid ""
+"This lesson is not available for preview. Please enroll in the course to "
+"access it."
+msgstr ""
+"Questa lezione non è disponibile in anteprima. Iscriviti al corso per "
+"accedervi."
 
 #: lms/lms/widgets/NoPreviewModal.html:16
-msgid "This lesson is not available for preview. Please join the course to access it."
+msgid ""
+"This lesson is not available for preview. Please join the course to access "
+"it."
 msgstr ""
 
 #: frontend/src/pages/Programs/ProgramEnrollment.vue:18
@@ -7497,7 +7744,9 @@ msgstr "Questo quiz è composto da {0} domande."
 
 #: frontend/src/components/Sidebar/AppSidebar.vue:88
 #: frontend/src/components/Sidebar/AppSidebar.vue:178
-msgid "This site is being updated. You will not be able to make any changes. Full access will be restored shortly."
+msgid ""
+"This site is being updated. You will not be able to make any changes. Full "
+"access will be restored shortly."
 msgstr ""
 
 #: frontend/src/components/VideoBlock.vue:5
@@ -7505,7 +7754,9 @@ msgid "This video contains {0} {1}:"
 msgstr ""
 
 #: frontend/src/components/Settings/Coupons/CouponList.vue:128
-msgid "This will permanently delete the coupon and the code will no longer be valid."
+msgid ""
+"This will permanently delete the coupon and the code will no longer be "
+"valid."
 msgstr ""
 
 #. Option for the 'Day' (Select) field in DocType 'Evaluator Schedule'
@@ -7666,8 +7917,12 @@ msgid "To join this batch, please contact the Administrator."
 msgstr ""
 
 #: lms/lms/user.py:43
-msgid "Too many users signed up recently, so the registration is disabled. Please try back in an hour"
-msgstr "Troppi utenti si sono registrati di recente, la registrazione è disabilitata. Riprova tra un'ora."
+msgid ""
+"Too many users signed up recently, so the registration is disabled. Please "
+"try back in an hour"
+msgstr ""
+"Troppi utenti si sono registrati di recente, la registrazione è "
+"disabilitata. Riprova tra un'ora."
 
 #: frontend/src/pages/Billing.vue:54
 msgid "Total"
@@ -7738,7 +7993,8 @@ msgstr ""
 #. Label of the type (Select) field in DocType 'LMS Quiz Question'
 #: frontend/src/components/Modals/AssessmentModal.vue:22
 #: frontend/src/components/Modals/Question.vue:41
-#: frontend/src/pages/Assignments.vue:37 frontend/src/pages/Assignments.vue:243
+#: frontend/src/pages/Assignments.vue:37
+#: frontend/src/pages/Assignments.vue:243
 #: frontend/src/pages/Batches/components/Assessments.vue:213
 #: frontend/src/pages/JobForm.vue:30 frontend/src/pages/Jobs.vue:85
 #: frontend/src/pages/ProgrammingExercises/ProgrammingExercises.vue:52
@@ -7793,7 +8049,8 @@ msgstr "Impossibile creare la categoria"
 msgid "Unattempted Questions"
 msgstr "Domande Non Tentate"
 
-#. Label of the unavailability_section (Section Break) field in DocType 'Course
+#. Label of the unavailability_section (Section Break) field in DocType
+#. 'Course
 #. Evaluator'
 #: lms/lms/doctype/course_evaluator/course_evaluator.json
 msgid "Unavailability"
@@ -7805,7 +8062,9 @@ msgstr "Indisponibilità aggiornata con successo"
 
 #: lms/lms/doctype/course_evaluator/course_evaluator.py:36
 msgid "Unavailable From Date cannot be greater than Unavailable To Date"
-msgstr "La data di inizio indisponibilità non può essere successiva alla data di fine indisponibilità"
+msgstr ""
+"La data di inizio indisponibilità non può essere successiva alla data di "
+"fine indisponibilità"
 
 #. Option for the 'Status' (Select) field in DocType 'LMS Course'
 #: lms/lms/doctype/lms_course/lms_course.json
@@ -7892,7 +8151,7 @@ msgstr ""
 
 #: frontend/src/components/Assignment.vue:95
 msgid "Uploading {0}%"
-msgstr ""
+msgstr "Caricamento {0}%"
 
 #. Label of the usage_limit (Int) field in DocType 'LMS Coupon'
 #: frontend/src/components/Settings/Coupons/CouponDetails.vue:59
@@ -8044,11 +8303,14 @@ msgid "Watch Time (mins)"
 msgstr ""
 
 #: lms/templates/emails/batch_confirmation.html:6
-msgid "We are pleased to inform you that you have been enrolled in our upcoming batch. Congratulations!"
+msgid ""
+"We are pleased to inform you that you have been enrolled in our upcoming "
+"batch. Congratulations!"
 msgstr ""
 
 #: lms/templates/emails/payment_reminder.html:7
-msgid "We have a limited number of seats, and they won't be available for long!"
+msgid ""
+"We have a limited number of seats, and they won't be available for long!"
 msgstr ""
 
 #: lms/templates/emails/payment_reminder.html:4
@@ -8097,7 +8359,11 @@ msgid "Where did you hear about us?"
 msgstr "Come ci hai conosciuto?"
 
 #: lms/templates/emails/certification.html:10
-msgid "With this certification, you can now showcase your updated skills and share your achievement with your colleagues and on LinkedIn. To access your certificate, please click on the link provided below. Make sure you are logged in to the portal."
+msgid ""
+"With this certification, you can now showcase your updated skills and share "
+"your achievement with your colleagues and on LinkedIn. To access your "
+"certificate, please click on the link provided below. Make sure you are "
+"logged in to the portal."
 msgstr ""
 
 #. Option for the 'Open to' (Select) field in DocType 'User'
@@ -8117,7 +8383,8 @@ msgstr ""
 msgid "Work Experience"
 msgstr ""
 
-#. Label of the work_experience_details (Section Break) field in DocType 'User'
+#. Label of the work_experience_details (Section Break) field in DocType
+#. 'User'
 #: lms/fixtures/custom_field.json
 msgid "Work Experience Details"
 msgstr ""
@@ -8149,7 +8416,9 @@ msgid "You already have an evaluation on {0} at {1} for the course {2}."
 msgstr "Hai già una valutazione il {0} alle {1} per il corso {2}."
 
 #: frontend/src/pages/Courses/CourseCertification.vue:14
-msgid "You are already certified for this course. Click on the card below to open your certificate."
+msgid ""
+"You are already certified for this course. Click on the card below to open "
+"your certificate."
 msgstr ""
 
 #: lms/lms/api.py:182
@@ -8193,8 +8462,10 @@ msgid "You are not enrolled in this course."
 msgstr ""
 
 #: frontend/src/pages/SCORMChapter.vue:25
-msgid "You are not enrolled in this course. Please enroll to access this lesson."
-msgstr "Non sei iscritto a questo corso. Iscriviti per accedere a questa lezione."
+msgid ""
+"You are not enrolled in this course. Please enroll to access this lesson."
+msgstr ""
+"Non sei iscritto a questo corso. Iscriviti per accedere a questa lezione."
 
 #: frontend/src/components/NoPermission.vue:23
 msgid "You are not permitted to access this page."
@@ -8223,7 +8494,8 @@ msgstr "Puoi caricare solo file {0}"
 
 #: frontend/src/pages/ProfileEvaluator.vue:14
 msgid "You cannot change the availability when the site is being updated."
-msgstr "Non puoi modificare la disponibilità mentre il sito è in aggiornamento."
+msgstr ""
+"Non puoi modificare la disponibilità mentre il sito è in aggiornamento."
 
 #: frontend/src/pages/ProfileRoles.vue:12
 msgid "You cannot change the roles in read-only mode."
@@ -8238,8 +8510,12 @@ msgid "You cannot enroll in an unpublished program."
 msgstr ""
 
 #: lms/lms/doctype/lms_enrollment/lms_enrollment.py:47
-msgid "You cannot enroll in this course as self-learning is disabled. Please contact the Administrator."
-msgstr "Non puoi iscriverti a questo corso perché l'apprendimento autonomo è disabilitato. Contatta l'Amministratore."
+msgid ""
+"You cannot enroll in this course as self-learning is disabled. Please "
+"contact the Administrator."
+msgstr ""
+"Non puoi iscriverti a questo corso perché l'apprendimento autonomo è "
+"disabilitato. Contatta l'Amministratore."
 
 #: lms/lms/doctype/lms_certificate_request/lms_certificate_request.py:114
 msgid "You cannot schedule evaluations after {0}."
@@ -8326,12 +8602,16 @@ msgid "You do not have permission to modify this role."
 msgstr ""
 
 #: lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.py:119
-msgid "You do not have permission to send confirmation emails for this enrollment."
-msgstr "Non hai il permesso di inviare email di conferma per questa iscrizione."
+msgid ""
+"You do not have permission to send confirmation emails for this enrollment."
+msgstr ""
+"Non hai il permesso di inviare email di conferma per questa iscrizione."
 
 #: lms/lms/doctype/lms_certificate_request/lms_certificate_request.py:183
-msgid "You do not have permission to set up calendar events for this evaluation."
-msgstr "Non hai il permesso di configurare eventi calendario per questa valutazione."
+msgid ""
+"You do not have permission to set up calendar events for this evaluation."
+msgstr ""
+"Non hai il permesso di configurare eventi calendario per questa valutazione."
 
 #: lms/lms/api.py:1580 lms/lms/api.py:1584
 msgid "You do not have permission to update meta tags."
@@ -8349,9 +8629,12 @@ msgstr ""
 #, python-format
 msgid "You got {0}% correct answers with a score of {1} out of {2}"
 msgstr ""
+"Hai ottenuto il {0}% di risposte corrette con un punteggio di {1} su {2}"
 
 #: lms/templates/emails/live_class_reminder.html:6
-msgid "You have a live class scheduled tomorrow. Please be prepared and be on time for the session."
+msgid ""
+"You have a live class scheduled tomorrow. Please be prepared and be on time "
+"for the session."
 msgstr ""
 
 #: lms/job/doctype/lms_job_application/lms_job_application.py:26
@@ -8359,8 +8642,11 @@ msgid "You have already applied for this job."
 msgstr ""
 
 #: frontend/src/components/Quiz.vue:112
-msgid "You have already exceeded the maximum number of attempts allowed for this quiz."
-msgstr "Hai già superato il numero massimo di tentativi consentiti per questo quiz."
+msgid ""
+"You have already exceeded the maximum number of attempts allowed for this "
+"quiz."
+msgstr ""
+"Hai già superato il numero massimo di tentativi consentiti per questo quiz."
 
 #: lms/lms/api.py:206
 msgid "You have already purchased the certificate for this course."
@@ -8399,7 +8685,9 @@ msgid "You have not received any certificates yet."
 msgstr "Non hai ancora ricevuto nessun certificato."
 
 #: lms/lms/widgets/NoPreviewModal.html:12
-msgid "You have opted to be notified for this course. You will receive an email when the course becomes available."
+msgid ""
+"You have opted to be notified for this course. You will receive an email "
+"when the course becomes available."
 msgstr ""
 
 #: frontend/src/pages/Home/Home.vue:137 frontend/src/pages/Home/Home.vue:160
@@ -8416,7 +8704,9 @@ msgstr ""
 
 #: lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.py:31
 msgid "You must be a Moderator or Batch Evaluator to enroll users in a batch."
-msgstr "Devi essere un Moderatore o un Valutatore del batch per iscrivere gli utenti a un batch."
+msgstr ""
+"Devi essere un Moderatore o un Valutatore del batch per iscrivere gli utenti"
+" a un batch."
 
 #: lms/lms/doctype/lms_badge_assignment/lms_badge_assignment.py:23
 msgid "You must be an Admin to assign badges to users."
@@ -8445,14 +8735,16 @@ msgstr "Dovrai completare il quiz per continuare il video"
 #: frontend/src/components/Quiz.vue:45
 #, python-format
 msgid "You will have to get {0}% correct answers in order to pass the quiz."
-msgstr ""
+msgstr "Dovrai ottenere il {0}% di risposte corrette per superare il quiz."
 
 #: frontend/src/pages/Notifications.vue:159
 msgid "You're all caught up! Check back later for updates."
 msgstr "Sei in pari! Torna a controllare più tardi per aggiornamenti."
 
 #: lms/templates/emails/mentor_request_creation_email.html:4
-msgid "You've applied to become a mentor for this course. Your request is currently under review."
+msgid ""
+"You've applied to become a mentor for this course. Your request is currently"
+" under review."
 msgstr ""
 
 #: frontend/src/components/Assignment.vue:62
@@ -8499,11 +8791,14 @@ msgid "Your enrollment in {{ batch_name }} is confirmed"
 msgstr "La tua iscrizione al corso {{ batch_name }} è stata confermata"
 
 #: lms/templates/emails/certificate_request_notification.html:3
-msgid "Your evaluation for the course {0} has been scheduled on {1} at {2} ({3} time)."
+msgid ""
+"Your evaluation for the course {0} has been scheduled on {1} at {2} ({3} "
+"time)."
 msgstr ""
 
 #: lms/lms/notification/certificate_request_reminder/certificate_request_reminder.html:3
-msgid "Your evaluation for the course {0} has been scheduled on {1} at {2} {3}."
+msgid ""
+"Your evaluation for the course {0} has been scheduled on {1} at {2} {3}."
 msgstr ""
 
 #: lms/lms/doctype/lms_certificate_request/lms_certificate_request.py:129
@@ -8515,22 +8810,34 @@ msgid "Your evaluator is {0}"
 msgstr ""
 
 #: frontend/src/pages/Home/Streak.vue:54
-msgid "Your learning streak counts the number of days in a row you’ve kept up your learning, whether it’s a lesson, quiz, or assignment. Don’t worry, weekends don’t break your streak."
-msgstr "La tua serie di giorni consecutivi di studio tiene conto del numero di giorni di fila in cui hai continuato a studiare, che si tratti di una lezione, di un quiz o di un compito. Non preoccuparti, i fine settimana non interrompono la tua serie."
+msgid ""
+"Your learning streak counts the number of days in a row you’ve kept up your "
+"learning, whether it’s a lesson, quiz, or assignment. Don’t worry, weekends "
+"don’t break your streak."
+msgstr ""
+"La tua serie di giorni consecutivi di studio tiene conto del numero di "
+"giorni di fila in cui hai continuato a studiare, che si tratti di una "
+"lezione, di un quiz o di un compito. Non preoccuparti, i fine settimana non "
+"interrompono la tua serie."
 
 #: lms/templates/emails/mentor_request_status_update_email.html:4
 msgid "Your request to join us as a mentor for the course"
 msgstr ""
 
 #: frontend/src/components/Quiz.vue:337
-msgid "Your submission has been successfully saved. The instructor will review and grade it shortly, and you'll be notified of your final result."
-msgstr "Il tuo elaborato è stato salvato con successo. L'istruttore lo esaminerà e lo valuterà a breve, e verrai notificato del risultato finale."
+msgid ""
+"Your submission has been successfully saved. The instructor will review and "
+"grade it shortly, and you'll be notified of your final result."
+msgstr ""
+"Il tuo elaborato è stato salvato con successo. L'istruttore lo esaminerà e "
+"lo valuterà a breve, e verrai notificato del risultato finale."
 
 #: frontend/src/pages/Lesson.vue:8
 msgid "Zen Mode"
 msgstr "Modalità zen"
 
-#. Option for the 'Conferencing Provider' (Select) field in DocType 'LMS Batch'
+#. Option for the 'Conferencing Provider' (Select) field in DocType 'LMS
+#. Batch'
 #. Option for the 'Conferencing Provider' (Select) field in DocType 'LMS Live
 #. Class'
 #: frontend/src/pages/Batches/BatchForm.vue:538
@@ -8869,6 +9176,3874 @@ msgstr ""
 msgid "{} Published"
 msgstr ""
 
+msgid "Search for a keyword or phrase and press enter"
+msgstr "Cerca una parola chiave o una frase e premi invio"
+
+msgid "{0} others"
+msgstr "altri {0}"
+
+msgid ""
+"There are no batches currently. Keep an eye out, fresh learning experiences "
+"are on the way!"
+msgstr ""
+"Al momento non ci sono Classi disponibili. Tieni d'occhio la pagina: nuove "
+"esperienze di apprendimento stanno arrivando!"
+
+msgid ""
+"Your learning streak counts the number of days in a row you've kept up your "
+"learning, whether it's a lesson, quiz, or assignment. Don't worry, weekends "
+"don't break your streak."
+msgstr ""
+"La tua serie di apprendimento conta il numero di giorni consecutivi in cui "
+"hai mantenuto l'impegno, che si tratti di una lezione, un quiz o un compito."
+" Non preoccuparti, i fine settimana non interrompono la tua serie."
+
+msgid "{0} {1}"
+msgstr "{0} {1}"
+
+msgid " Programs"
+msgstr " Programmi"
+
+msgid "Search by title"
+msgstr "Cerca per titolo"
+
+msgid "Assignmentsz"
+msgstr "Compiti"
+
+msgid "Job Applications"
+msgstr "Candidature lavoro"
+
+msgid "Unread"
+msgstr "Non letto"
+
+msgid "Read"
+msgstr "Letto"
+
+msgid "Nothing to see here."
+msgstr "Niente da vedere qui."
+
+msgid "Trainer / Instructor"
+msgstr "Formatore / Docente"
+
+msgid "Freelancer / Consultant"
+msgstr "Freelancer / Consulente"
+
+msgid "HR / L&D Professional"
+msgstr "Professionista HR / L&D"
+
+msgid "School / University Admin"
+msgstr "Amministratore scolastico / universitario"
+
+msgid "Software Developer"
+msgstr "Sviluppatore software"
+
+msgid "Community Manager"
+msgstr "Community Manager"
+
+msgid "Business Owner / Team Lead"
+msgstr "Titolare / Team Lead"
+
+msgid "Other"
+msgstr "Altro"
+
+msgid "Less than 50"
+msgstr "Meno di 50"
+
+msgid "50-200"
+msgstr "50-200"
+
+msgid "200-1000"
+msgstr "200-1000"
+
+msgid "1000+"
+msgstr "1000+"
+
+msgid "Not sure yet"
+msgstr "Non ancora sicuro"
+
+msgid "Teaching students in a school/university"
+msgstr "Insegnamento a studenti in una scuola/università"
+
+msgid "Training employees in my company"
+msgstr "Formazione dei dipendenti nella mia azienda"
+
+msgid "Onboarding and educating my users/community"
+msgstr "Onboarding e formazione dei miei utenti/community"
+
+msgid "Selling courses and earning income"
+msgstr "Vendita di corsi e generazione di reddito"
+
+msgid "Persona"
+msgstr "Persona"
+
+msgid "Edit the question"
+msgstr "Modifica la domanda"
+
+msgid "Add a new question"
+msgstr "Aggiungi una nuova domanda"
+
+msgid "No Quizzes"
+msgstr "Nessun quiz"
+
+msgid "Advanced Search"
+msgstr "Ricerca avanzata"
+
+msgid "Import Course"
+msgstr "Importa Corso"
+
+msgid "Select option"
+msgstr "Seleziona opzione"
+
+msgid "Insert title"
+msgstr "Inserisci titolo"
+
+msgid "Log out"
+msgstr "Esci"
+
+msgid "Toggle Theme"
+msgstr "Cambia Tema"
+
+msgid "Add a keyword and then press enter"
+msgstr "Aggiungi una parola chiave e premi invio"
+
+msgid "Choose a color for the course card"
+msgstr "Scegli un colore per la scheda del corso"
+
+msgid "Disable Self Enrollment"
+msgstr "Disabilita iscrizione autonoma"
+
+msgid "Paste a YouTube link of a short video introducing the course"
+msgstr "Incolla un link YouTube di un breve video di presentazione del corso"
+
+msgid "Classes"
+msgstr "Lezioni"
+
+msgid "Add new Lesson"
+msgstr "Aggiungi nuova lezione"
+
+msgid "{0} enrolled students"
+msgstr "{0} Studente/i Inscritto/i"
+
+msgid "Nuovo Question"
+msgstr "Nuova Domanda"
+
+msgid "No Published Programmi"
+msgstr "Nessun Programma Pubblicato"
+
+msgid "No Classi"
+msgstr "Nussuna Classe"
+
+msgid "Highlight what makes you unique and show your skills"
+msgstr "Metti in evidenza ciò che ti rende unico e mostra le tue capacità."
+
+msgid "Please fill the mandaroty fields:"
+msgstr "Si prega di compilare i campi obbligatori:"
+
+msgid "Search by keyword"
+msgstr "Cerca "
+
+msgid "Upload Image"
+msgstr "Carica immagine"
+
+msgid "{0} days ago"
+msgstr "{0} giorni fa"
+
+msgid "Gestisci i tuoi corsi e batch a colpo d'occhio"
+msgstr "gestisci i tuoi corsi e le classi a colpo d'occhio"
+
+msgid "{0} partite"
+msgstr "{0} ricerche"
+
+msgid "Error: Value missing for {0}: {1}"
+msgstr "Errore: Campo {1} mancante in {0}"
+
+msgid "Data import/ Importing Courses"
+msgstr "Importazione dati/ Importazione Corsi"
+
+msgid "Map Data"
+msgstr "Mappa dati"
+
+msgid "Review e Import"
+msgstr ""
+
+msgid "Choose Import"
+msgstr "Scegli Importa"
+
+msgid "Import data into your system using CSV files or Google Sheets"
+msgstr "Importa i dati nel tuo sistema utilizzando file CSV o Fogli Google"
+
+msgid "Continue"
+msgstr "Continua"
+
+msgid "Download CSV Template"
+msgstr "Scarica il modello CSV"
+
+msgid "Drag and drop a CSV file, or upload from your device or Google Sheet"
+msgstr ""
+"Trascina e rilascia un file CSV oppure caricalo dal tuo dispositivo o da un "
+"foglio di lavoro Google"
+
+msgid "Mandatory Fields"
+msgstr "Campi obbligatori"
+
+msgid "All Fields"
+msgstr "Tutti i campi"
+
+msgid "Custom Template"
+msgstr "Modello personalizzato"
+
+msgid "Export Data"
+msgstr "Esporta Dati"
+
+msgid "Select the fields you want to include in the template."
+msgstr "Seleziona i campi che vuoi includere nel tuo Modello"
+
+msgid "Select All "
+msgstr "Seleziona Tutti"
+
+msgid "Select Mandatory Fields"
+msgstr "Seleziona i campi obbligatori"
+
+msgid "Unselect All"
+msgstr "Deseleziona Tutto"
+
+msgid "Video Embed link"
+msgstr "Link Video"
+
+msgid "Export "
+msgstr "Esporta"
+
+msgid "Import data into your system using CSV files"
+msgstr "Importa dati nel tuo sistema utilizzando file CSV"
+
+msgid "Search imported files"
+msgstr "Cerca file importati"
+
+msgid "No data imports found"
+msgstr "Nessuna importazione di dati trovata"
+
+msgid "Seccess"
+msgstr "Completate"
+
+msgid "Partial Seccess"
+msgstr "Completate parzialmente"
+
+msgid "Error"
+msgstr "Errore"
+
+msgid "Timed Out"
+msgstr "Timeout"
+
+msgid "Add Member"
+msgstr "Aggiungi Membri "
+
+msgid "Add Members From Batch"
+msgstr "Aggiungi membri della Classe"
+
+msgid "Select Batch"
+msgstr "Seleziona la Classe"
+
+msgid "Chiaro"
+msgstr "Chiudi"
+
+msgid "Select Opiton"
+msgstr "Seleziona l'opzione"
+
+msgid "In linea "
+msgstr "Online"
+
+msgid "Non in linea"
+msgstr "Offline"
+
+msgid "{0} posti a sinistra"
+msgstr "{0} porti rimanenti "
+
+msgid "Percentage/Status"
+msgstr "Percentuale/Stato"
+
+msgid "No recording"
+msgstr "Nessuna Registrazione"
+
+msgid "Local "
+msgstr "Locale"
+
+msgid "Start a Discussion"
+msgstr "Avvia una discussione"
+
+msgid "Enrollment Confirmation Email template"
+msgstr "Modello di email di conferma dell'iscrizione"
+
+msgid "Conto Zoom"
+msgstr "Account Zoom "
+
+msgid "Comma separeted keywords"
+msgstr "Parole chiave separate da virgola "
+
+msgid "Title "
+msgstr "Titolo"
+
+msgid "Evaluetor"
+msgstr "Valutatore"
+
+msgid "Aignment"
+msgstr "Compito"
+
+msgid "Add Question "
+msgstr "Aggiungi domanda"
+
+msgid "Submitted "
+msgstr "Inviato"
+
+msgid "Assignment Question"
+msgstr "Domanda dell'Elaborato"
+
+msgid "Sottomissione"
+msgstr "Invio "
+
+msgid "You can only upload Document Files"
+msgstr "E' possibile caricare solo documenti "
+
+msgid "Pass "
+msgstr "Superato "
+
+msgid "Fail "
+msgstr "Non superato "
+
+msgid "Not graded"
+msgstr "Non valutato"
+
+msgid "Desk --> Learning "
+msgstr ""
+
+msgid "LMS Setings"
+msgstr "Impostazioni LMS"
+
+msgid "Attachments"
+msgstr "Allegati"
+
+msgid "Last Edited by you"
+msgstr "Ultima modifica da parte tua"
+
+msgid "{0} hours ago"
+msgstr "{0} ore fa"
+
+msgid "Created by you"
+msgstr "Creato da te "
+
+msgid "Activity "
+msgstr "Attività"
+
+msgid "New Email"
+msgstr "Nuova e-mail"
+
+msgid "Configure Columns"
+msgstr "Configura colonne"
+
+msgid "Fieldname"
+msgstr "Nome campo"
+
+msgid "Column Width "
+msgstr "Larghezza colonna"
+
+msgid "Sticky"
+msgstr "Fissa"
+
+msgid "Reset to default"
+msgstr "Ripristina impostazioni predefinite"
+
+msgid "Select fields"
+msgstr "Seleziona campi"
+
+msgid "Copy to clipboard"
+msgstr "Copia negli appunti"
+
+msgid "Last synced just now"
+msgstr "Ultima sincronizzazione ora"
+
+msgid "Select Date Range"
+msgstr "Seleziona intervallo di date"
+
+msgid "Last Year"
+msgstr "Ultimo anno"
+
+msgid "Last Quarter"
+msgstr "Ultimo tremestre"
+
+msgid "Last month"
+msgstr "Ultimo mese"
+
+msgid "last Week"
+msgstr "Ultima settimana"
+
+msgid "Yearly"
+msgstr "Annuale"
+
+msgid "Quarterly"
+msgstr "Trimestrale"
+
+msgid "Monthly"
+msgstr "Mensile"
+
+msgid "Weekly"
+msgstr "Settimanale"
+
+msgid "Daily"
+msgstr "Giornaliera"
+
+msgid "Refresh"
+msgstr "Aggiorna"
+
+msgid "Reset Chart"
+msgstr "Ripristina Grafico"
+
+msgid "Utente List"
+msgstr "Elenco Utenti"
+
+msgid "Save Current Filter"
+msgstr "Salva filtro corrente"
+
+msgid "Custumize Quick Filters"
+msgstr "Personalizza filtri rapidi"
+
+msgid "Created On "
+msgstr "Data creazione"
+
+msgid "Edit Full Form "
+msgstr "Modifica modulo completo "
+
+msgid "You haven't created a Valutazione del certificato LMS yet"
+msgstr "Non hai ancora creato una valutazione del certificato LMS "
+
+msgid "Filter"
+msgstr "Filtro"
+
+msgid "Send Welcome email"
+msgstr "Invia Email di benvenuto"
+
+msgid "Role Profiles"
+msgstr "Ruolo dei profili"
+
+msgid "Not Equals"
+msgstr "Non uguale a "
+
+msgid "In "
+msgstr "In "
+
+msgid "Not In "
+msgstr "Non in "
+
+msgid "Is "
+msgstr "E'"
+
+msgid "Like "
+msgstr "Simile a "
+
+msgid "Not Like"
+msgstr "Non simile a "
+
+msgid "values separeted by commans "
+msgstr "valori separati da virgole"
+
+msgid "Now "
+msgstr "Ora "
+
+msgid "Notification"
+msgstr "Notifica"
+
+msgid "Last synced {0} minutes ago"
+msgstr "Ultima sincronizzazione alle {0}"
+
+msgid "Framework --> Automation"
+msgstr ""
+
+msgid "Assignment Rule"
+msgstr "Regola di assegnazione"
+
+msgid "Auto Repeat"
+msgstr "Ripetizione automatica"
+
+msgid "Auto Email Report "
+msgstr "Report automatico via email"
+
+msgid "Automatically Assign Documents to Users"
+msgstr "Assegnazione automatica dei documenti agli utenti "
+
+msgid "Higher priority rule will be applied firt "
+msgstr "Verrà applicata per prima la regola con priorità più alta"
+
+msgid "Automatic Assignment"
+msgstr "Assegnazione automatica dei documenti agli utenti "
+
+msgid "Example: {{ subject }}"
+msgstr "Esempio: {{ Soggetto }}"
+
+msgid "Assign Condition "
+msgstr "Condizione di assegnazione"
+
+msgid "Unassign Condition"
+msgstr "Condizione di annullamento dell'assegnazione"
+
+msgid "Simple Python Expression, Example: "
+msgstr "Espressione Python semplice, Esempio:"
+
+msgid "Close Condition"
+msgstr "Condizione di chiusura"
+
+msgid "Assignment Days"
+msgstr "Giorni di assegnazione"
+
+msgid "All day"
+msgstr "Tutto il giorno"
+
+msgid "Weekdays"
+msgstr "Giorni feriali"
+
+msgid "Weekends"
+msgstr "Fine settimana"
+
+msgid "Add row"
+msgstr "Aggiungi riga"
+
+msgid "Assign to users"
+msgstr "Assegna agli utenti"
+
+msgid "Rule"
+msgstr "Regola di Assegnazione"
+
+msgid "Assign one by one, in sequence"
+msgstr "Assegna uno per uno, in sequenza"
+
+msgid "Round robin"
+msgstr "A turno"
+
+msgid "Load Balancing"
+msgstr "Bilanciamento del carico "
+
+msgid "Based on Field"
+msgstr "In base al campo"
+
+msgid "Last User"
+msgstr "Ultimo utente"
+
+msgid "Assign to the one who has the least assignments"
+msgstr "Assegna a chi ha il minor numero di incarichi "
+
+msgid "assign to the user set in this field"
+msgstr "Assegna all'utente impostato in questo campo"
+
+msgid "You haven't created a Milestone yet"
+msgstr "Non hai ancora creato una Tappa"
+
+msgid "You haven't created a Auto Reapeat yet"
+msgstr "Non hai ancora creato una Ripetizione Automatica"
+
+msgid "Reference Document"
+msgstr "Documento di riferimento "
+
+msgid ""
+"To configure Auto Repeat, enable \"Allow Auto Repeat\" from Personalizza "
+"modulo."
+msgstr ""
+"Per configurare la Ripetizione Automatica, abilita \"Consenti Ripetizione "
+"Automatica\" da Personalizza Modulo."
+
+msgid "Submit on Creation"
+msgstr "Invia alla creazione"
+
+msgid "today"
+msgstr "Oggi"
+
+msgid "Frequency"
+msgstr "Frequenza"
+
+msgid "Fortnightly"
+msgstr "Quindicinale"
+
+msgid "Half-yearly"
+msgstr "Semestrale"
+
+msgid "Next Schedule Date"
+msgstr "Prossima data di pianificazione "
+
+msgid "Generate Separate Documents For Each Assignee"
+msgstr "Genera documenti separati per ciascun Assegnatario "
+
+msgid "Assignee"
+msgstr "Destinatario"
+
+msgid "Notification "
+msgstr "Notifica"
+
+msgid "Notify by Email"
+msgstr "Notifica via Email"
+
+msgid "You haven't created a Auto Email Report yet"
+msgstr "Non hai ancora creato un report automatico via Email"
+
+msgid "Report"
+msgstr "Report"
+
+msgid "Report Type"
+msgstr "Tipo di rapporto"
+
+msgid "Based on Permissions For User"
+msgstr "In base alle autorizzazioni dell'utente"
+
+msgid "Filter Data"
+msgstr "Filtra dati"
+
+msgid "Send only if there is any data"
+msgstr "Invia solo se sono presenti dati"
+
+msgid "Report Filters"
+msgstr "Filtri del report"
+
+msgid "Dynamic Report Filters"
+msgstr "Filtri dinamici del report"
+
+msgid "From Date Field "
+msgstr "Campo Data da"
+
+msgid "To date Field"
+msgstr "Campo Data a "
+
+msgid "Period"
+msgstr "Periodo "
+
+msgid "Use First day of period "
+msgstr "Usa il primo giorno del periodo "
+
+msgid ""
+"To begin the date range at the start of the chosen period. For example, if "
+"'Year' is selected as the period, the report will start from January 1st of "
+"the current year."
+msgstr ""
+"Per iniziare l'intervallo di date all'inizio del periodo scelto. Ad Esempio,"
+" se come periodo è selezionato \"Anno\", il report inizierà del 1° Gennaio "
+"dell'anno in corso."
+
+msgid "Email Settings"
+msgstr "Impostazioni Email"
+
+msgid "Email to "
+msgstr "Invia Email a "
+
+msgid "For multiple addresses, enter the address on different line. "
+msgstr "Per indirizzi multipli, inserisci l'indirizzo su una riga diversa"
+
+msgid "Format"
+msgstr "Formato"
+
+msgid "Normal "
+msgstr "Normale"
+
+msgid "Heading {0}"
+msgstr "Intestazione {0}"
+
+msgid "Table"
+msgstr "Tabella"
+
+msgid "Insert table"
+msgstr "Inserisci tabella"
+
+msgid "Insert Row Above"
+msgstr "Inserisci Riga sopra"
+
+msgid "Insert row below"
+msgstr "Inserisci Riga sotto"
+
+msgid "insert column right"
+msgstr "Inserisci colonna a destra"
+
+msgid "Insert column Left"
+msgstr "Inserisci colonna a sinistra"
+
+msgid "Delete row"
+msgstr "Elimina Riga"
+
+msgid "Delete column"
+msgstr "Elimina Colonna"
+
+msgid "Delete table"
+msgstr "Elimina Tabella"
+
+msgid "You haven't created a Reminder yet"
+msgstr "Non hai ancora creato un promemoria "
+
+msgid "Restrictions "
+msgstr "Restrizioni "
+
+msgid "Field"
+msgstr "Campo"
+
+msgid "Remind at"
+msgstr "Promemoria alle"
+
+msgid "Framework --> Crea"
+msgstr ""
+
+msgid "Is Submittable"
+msgstr "E' inviabile"
+
+msgid ""
+"Once submitted, submittable documents cannot be changed. they can only be "
+"cancelled and amended "
+msgstr ""
+"Una volta inviati, i documenti non possono essere modificati. Possono solo "
+"essere annullati o corretti. "
+
+msgid "Is Child Table"
+msgstr "E' una tabella figlia"
+
+msgid "Child Tables are shown as a grid in other DocTypes"
+msgstr ""
+"Le tabelle figlie vengono visualizzate come una griglia in altri tipi di "
+"documento"
+
+msgid "Is Single"
+msgstr "E' singolo"
+
+msgid ""
+"Single Types have only one record no tables associated. Values are stored in"
+" tabSingles"
+msgstr ""
+"I tipi singoli hanno un solo record e nessuna tabella associata. I valori "
+"sono memorizzati in tabSingles"
+
+msgid "Is Tree"
+msgstr "E' un albero "
+
+msgid "Tree structures are implemented using Nested Set"
+msgstr "Le strutture ad albero sono implementate utilizzando Nested Set "
+
+msgid "Custom?"
+msgstr "Personalizzato?"
+
+msgid "DocTypes cannot be modified, please use Personalizza Modulo instead"
+msgstr ""
+"i tipi di documento non possono essere modificati, si prega di utilizzare "
+"\"Personalizza modulo\"."
+
+msgid "Context"
+msgstr "Contesto"
+
+msgid "Add field"
+msgstr "Aggiungi campo"
+
+msgid "Level "
+msgstr "Livello"
+
+msgid "Write"
+msgstr "Scrivi"
+
+msgid "Restrict to domain"
+msgstr "Limita al dominio"
+
+msgid "User Cannot Search"
+msgstr "L'utente non può cercare"
+
+msgid "User Cannot Create"
+msgstr "L'utente non può creare"
+
+msgid "Protect Attached Files"
+msgstr "Proteggi file allegati"
+
+msgid ""
+"Users are only able to delete attached files if the document is either in "
+"draft or if the document is canceled and they are also able to delete the "
+"document"
+msgstr ""
+"Gli utenti possono eliminare i file allegati solo se il documento è in bozza"
+" o se il documento è stato annnullato e possono anche eliminarlo"
+
+msgid "Naming"
+msgstr "Denominazione"
+
+msgid "Naming rule"
+msgstr "Regola di denominazione"
+
+msgid "Auto Name"
+msgstr "Nome automatico"
+
+msgid "Title Field"
+msgstr "Campo titolo "
+
+msgid "Allowe Rename"
+msgstr "Consenti rinomina"
+
+msgid "Is Calendar and gantt"
+msgstr "E' callendar e gantt"
+
+msgid "Enables Calendar and Gantt views."
+msgstr "Abilita le visualizzazioni Calendario e Gantt"
+
+msgid "Quick Entry"
+msgstr "Inserimento rapido"
+
+msgid ""
+"Open a dialog with mandatory field to create a new record quickly. There "
+"must be at least one mandatory field to show in dialog."
+msgstr ""
+"Apri una finestra di dialogo con un campo obbligatorio per creare "
+"rapidamente un nuovo record. Deve esserci almeno un campo obbligatorio da "
+"mostrare nella finestra di dialogo. "
+
+msgid "Track Changes"
+msgstr "Tieni traccia delle modifiche"
+
+msgid "If enable, changes to the docment are tracked and shown in timeline"
+msgstr ""
+"Se abilitato, le modifiche del documento vengono tracciate e mostrate nella "
+"cronologia"
+
+msgid "Track Seen "
+msgstr "Tieni traccia delle visualizzazioni"
+
+msgid ""
+"If enable, the document is marked as seen, the first time a user opens it"
+msgstr ""
+"Se abilitato, il documento viene contrassegnato come visto la prima volta "
+"che un utente lo apre"
+
+msgid "Track Views"
+msgstr "Tieni traccia delle visite"
+
+msgid "If enable, document views are tracked, this can happen multiple times"
+msgstr ""
+"Se abilitato, vengono registrate le visite del documento, ciò può avvenire "
+"più volte"
+
+msgid "Beta"
+msgstr "Beta"
+
+msgid "Is Virtual "
+msgstr "E' virtuale"
+
+msgid "Form Settings"
+msgstr "Impostazioni modulo"
+
+msgid "Image Field "
+msgstr "Campo immagine"
+
+msgid "Must be of type \"Attach image\""
+msgstr "Deve essere di tipo \"Allega immagine\""
+
+msgid "Timeline Field"
+msgstr "Campo cronologia"
+
+msgid ""
+"Comments and Communications will be associated with this linked document"
+msgstr ""
+"i commenti e le comunicazioni saranno associati a questo documento collegato"
+
+msgid "Max Attachments"
+msgstr "Numero massimo di allegati"
+
+msgid "Documentation Link"
+msgstr "Link alla documentazione"
+
+msgid "URL for documentation or help "
+msgstr "URL della documentazione o della guida"
+
+msgid "Hide sidebar, menu, and comments"
+msgstr "Nascondi barra laterale, munù e commenti"
+
+msgid "Hide Copy"
+msgstr "Nascondi copia"
+
+msgid "Allow Import (via data import Tool)"
+msgstr "Consenti importazione (tramite lo strumento di importazione dati)"
+
+msgid "Allow events in timeline"
+msgstr "Consenti eventi nella cronologia"
+
+msgid "Allow Auto Repeat"
+msgstr "Consenti ripetizione automatica"
+
+msgid "Make Attachments Public by Default"
+msgstr "Rendi pubblici gli allegati per impostazione predefinita"
+
+msgid "View Settings"
+msgstr "Impostazioni di visualizzazione"
+
+msgid "Show title in link fields"
+msgstr "Mostra titolo nei campi link"
+
+msgid "Translate link fields "
+msgstr "Traduci campi link "
+
+msgid "Search fields"
+msgstr "Campi di ricerca"
+
+msgid "Default print format"
+msgstr "Formato di stampa predefinito"
+
+msgid "Default sort field "
+msgstr "Campo di ordinamento predefinito"
+
+msgid "modified"
+msgstr "modificato"
+
+msgid "Default sort order"
+msgstr "Ordine di ordinamento predefinito"
+
+msgid "Default view"
+msgstr "Visualizzazione predefinita"
+
+msgid "Force re-route to default viwe"
+msgstr "Forza reindirizzamento alla visualizzazione predefinita"
+
+msgid "Show in module section "
+msgstr "Mostra nella sezione del modulo"
+
+msgid "Show preview popup"
+msgstr "Mostra Popup di anteprima"
+
+msgid "Make \"name\" searchable in global search"
+msgstr "Rendi \"nome\" ricercabile nella ricerca globale"
+
+msgid "Email settings"
+msgstr "Impostazioni Email"
+
+msgid "Default email template"
+msgstr "Modello Email predefinito"
+
+msgid "Allow document creation via email"
+msgstr "Consenti la creazione di documenti tramite Email"
+
+msgid "Fields"
+msgstr "Campi di ricerca"
+
+msgid "Actions"
+msgstr "Azioni"
+
+msgid "Document actions"
+msgstr "Azioni documento"
+
+msgid "Action type"
+msgstr "Tipo di azione"
+
+msgid "Action/Route"
+msgstr "Azione / Percorso"
+
+msgid "Grup"
+msgstr "Classe"
+
+msgid "Document links"
+msgstr "Collegamenti al documento "
+
+msgid "Link fieldname"
+msgstr "Nome campo collegamento"
+
+msgid "States"
+msgstr "Stati"
+
+msgid "Document states"
+msgstr "Stati del documento"
+
+msgid "Web view"
+msgstr "Visualizzazione Web"
+
+msgid "Has web view"
+msgstr "Ha visualizzazione Web"
+
+msgid "Index web pages for search"
+msgstr "Indicizzare le pagine web per la ricerca"
+
+msgid "Connections"
+msgstr "Connessioni"
+
+msgid "Views"
+msgstr "Visualizzazioni"
+
+msgid "Print format"
+msgstr "Formato di stampa"
+
+msgid "Calendar View"
+msgstr "Visualizzazione Calendario"
+
+msgid "Workflow"
+msgstr "Flusso di lavoro"
+
+msgid "Webhook"
+msgstr "Webhook "
+
+msgid "Onboarding step"
+msgstr "Fase di Onboarding"
+
+msgid "Customization"
+msgstr "Personalizzazione"
+
+msgid "Script Client"
+msgstr "Client script"
+
+msgid "Script Server"
+msgstr "Server Script"
+
+msgid "Rules "
+msgstr "Regole"
+
+msgid "System Page"
+msgstr "Pagina d sitema"
+
+msgid "Page HTML"
+msgstr "Codice HTML della pagina"
+
+msgid "Restric to domain"
+msgstr "Limita al dominio"
+
+msgid "Reference Report "
+msgstr "Rapporto di riferimento"
+
+msgid "IS standard"
+msgstr "E' Standard "
+
+msgid "Letter Head"
+msgstr "Intestazione"
+
+msgid "Prepared Report"
+msgstr "Rapporto predefinito"
+
+msgid "Add translate data"
+msgstr "Aggiungi dati di traduzione"
+
+msgid "Client code"
+msgstr "Codice cliente"
+
+msgid "Dashboard Name"
+msgstr "Nome Dashboard"
+
+msgid "You haven't created a dashboard yet "
+msgstr "Non hai ancora creato una dashboard"
+
+msgid "Is default"
+msgstr "E' predefinito"
+
+msgid "Charts"
+msgstr "Grafici"
+
+msgid "Width"
+msgstr "Larghezza"
+
+msgid "Chart Options"
+msgstr "Opzioni grafici"
+
+msgid "Set default otions for all charts on this dashoard (Ex: \"colors\": [])"
+msgstr ""
+"Imposta le opzioni predefinite per tutti i grafici di questa dashboard "
+"(es:\"colori\":[])"
+
+msgid "Cards"
+msgstr "Schede"
+
+msgid "Card"
+msgstr "Scheda"
+
+msgid "Show Dashboard"
+msgstr "Mostra Dashboard"
+
+msgid "Module name"
+msgstr "Nome del modulo"
+
+msgid "Custom"
+msgstr "Personalizzato?"
+
+msgid "Defines workflow states and rules for a document"
+msgstr "Definisce gli stati e le regole del flusso di lavoro per un documento"
+
+msgid ""
+"Create your workflow visualy using the workflow builder +Workflow builder "
+"allows you to create workflow visually. You can drag and drop states and "
+"link them to create transition. Also you can update their properties from "
+"the sidebar."
+msgstr ""
+"Crea il tuo flusso di lavoro visivo utilizzando il generatore di flussi di "
+"lavoro. Puoi trascinare e rilasciare gli stati e collegarli per creare "
+"transizioni. Inoltre puoi aggiornare le proprietà dalla barra laterale."
+
+msgid "Workflow Builder"
+msgstr "Generatore di flussi di lavoro"
+
+msgid "Workflow name"
+msgstr "Nome del flusso di lavoro"
+
+msgid "Doctype on which this workflow is applicable"
+msgstr "Tipo di documento a cui si applica questo flusso di lavoro"
+
+msgid "Is active"
+msgstr "E' attivo"
+
+msgid "If checked, all other workflow become inactive"
+msgstr "Se selezionato, tutti gli altri flussi di lavoro diventno inattivi "
+
+msgid "Don't override status"
+msgstr "Non sovrascrivere lo stato"
+
+msgid "If checked workflow status will not override status in list view"
+msgstr ""
+"Se selezionato, lo stato del flusso di lavoro non sovrascriverà lo stato "
+"nella vista elenco"
+
+msgid "Send Email Alert "
+msgstr "Invia avviso via Email"
+
+msgid "Emails wil be sent with next possible workflow actions"
+msgstr ""
+"Le Email verranno inviate con le prossime azioni possibili del flusso di "
+"lavoro"
+
+msgid "Enable action Confirmation "
+msgstr "Abilita Conferma Azione"
+
+msgid ""
+"If checked, a confirmation will be required before performing workflow "
+"actions"
+msgstr ""
+"Se selezionato, verrà richiesta una conferma prima di eseguire le azioni del"
+" flusso di lavoro"
+
+msgid ""
+"Different \"States\" this document can exist in. Like \"Open\" , \"Pending "
+"Approval\" etc."
+msgstr ""
+"I diversi \"Stati\" in cui può trovarsi questo documento. Ad esempio "
+"\"Aperto\", \"In attesa di approvazione\" ect."
+
+msgid ""
+"All possible workflow states and roles of the workflow. Docstatus options: 0"
+" is \"Saved\", 1 is \"Submitted\" and 2 is \"Cancelled\""
+msgstr ""
+"Tutti i possibili stati del flusso di lavoro e i ruoli del flusso di lavoro."
+" Opzioni Stato del Documento: 0 corrisponde a \"Salvato\", 1 a \"Inviato\" e"
+" 2 \"Annullato\""
+
+msgid "Doc Status"
+msgstr "Stato documento"
+
+msgid "Update Field"
+msgstr "Campo di aggiornamento"
+
+msgid "Update value"
+msgstr "Valore di aggiornamento"
+
+msgid "Only Allow Edit for"
+msgstr "Consenti modifica solo per "
+
+msgid "Transition Rules"
+msgstr "Regole di transizione"
+
+msgid ""
+"Rules for how states are transitions, like next state and which role is "
+"alllowed to change state ect."
+msgstr ""
+"Regole relative alle transizioni tra gli Stati, come lo stato successivo e "
+"quale ruolo è autorizzato a cambiate stato, ect. "
+
+msgid "Transitions"
+msgstr "Transizioni"
+
+msgid "Rules defining transition of state in the workflow"
+msgstr "Regole che definiscono la transizione di stato nel flusso di lavoro  "
+
+msgid "Action"
+msgstr "Azione "
+
+msgid "Next state"
+msgstr "Stato successivo"
+
+msgid "Allowed "
+msgstr "Consentito"
+
+msgid "Workflow state field"
+msgstr "Modifica modulo completo"
+
+msgid ""
+"Field that represents the workflow state of the transaction (if field is not"
+" present, a new hidden custom field will be created)"
+msgstr ""
+"Campo che rappresenta lo stato del flusso di lavoro della transazione (se il"
+" campo non è presente, verrà creato un nuovo campo personalizzato nasconsto)"
+
+msgid "Select document Type"
+msgstr "Seleziona tipo di documento"
+
+msgid "New workflow name"
+msgstr "Nuovo nome del flusso di lavoro"
+
+msgid "Nuovo Workflow Action Master"
+msgstr "Nuovo flusso di lavoro"
+
+msgid "Edit full form"
+msgstr "Nuovo Flusso di lavoro azione master"
+
+msgid "State"
+msgstr "Campo stato del flusso di lavoro "
+
+msgid "Style"
+msgstr "Stile"
+
+msgid ""
+"Style represent the button color: Success - Green, Danger - Red, Inverse - "
+"Black, Primary - dark blue, info - light blue, warning - orange"
+msgstr "Stile"
+
+msgid "Success"
+msgstr "Successo"
+
+msgid "Danger"
+msgstr "Successo"
+
+msgid "Inverse"
+msgstr "Pericolo"
+
+msgid "Primary"
+msgstr "Inverso"
+
+msgid "Info"
+msgstr "Primario"
+
+msgid "Warning"
+msgstr "Informazioni "
+
+msgid "Framework --> Dati"
+msgstr ""
+
+msgid "Import type"
+msgstr "Tipo d'importazione"
+
+msgid "Use if the default settings don't seem to detect your data correctly"
+msgstr ""
+"Da utilizzare se le impostazioni predefinite non sembrano rilevare "
+"correttamente i dati"
+
+msgid "Don't send emails"
+msgstr "Non inviare Email"
+
+msgid "Data Export "
+msgstr "Esportazione dati"
+
+msgid "Select DocType"
+msgstr "Seleziona tipo di documento"
+
+msgid "Export without main header"
+msgstr "Esporta senza intestazione principale"
+
+msgid "Export the data without any header notes and column descriptions"
+msgstr ""
+"Esporta i dati senza note di intestazione nè descrizione delle colonne"
+
+msgid "Bulk Update"
+msgstr "Aggiornamento in blocco"
+
+msgid "Update Value"
+msgstr "Aggiorna valore"
+
+msgid "SQL conditions, Example: status0\"Open\""
+msgstr "Condizioni SQL, Esempio: stato\"Aperto\""
+
+msgid "Limit"
+msgstr "Limite"
+
+msgid "Max 500 records at a time"
+msgstr "Massimo 500 record alla volta"
+
+msgid "Backups"
+msgstr "Backup"
+
+msgid "Set number of backup"
+msgstr "Imposta numero di backup"
+
+msgid "Get backup encryption key"
+msgstr "Ottieni chiave di crittografia del backup"
+
+msgid "Deleted document"
+msgstr "Documento eliminato"
+
+msgid "Deleted name"
+msgstr "Nome eliminato"
+
+msgid "Deleted doctype"
+msgstr "DocType eliminato"
+
+msgid "Restored"
+msgstr "Ripristinato"
+
+msgid "Framework --> Email"
+msgstr ""
+
+msgid "Domain"
+msgstr "Dominio"
+
+msgid "Apped to"
+msgstr "Associato a"
+
+msgid "Email Adress"
+msgstr "Indirizzo Email"
+
+msgid "Email account name"
+msgstr "Nome account Email"
+
+msgid "Service"
+msgstr "Servizio"
+
+msgid "Enable incoming"
+msgstr "Abilita posta in arrivo"
+
+msgid "Enable outgoing"
+msgstr "Abilita posta in uscita"
+
+msgid "Method"
+msgstr "Metodo"
+
+msgid "Awaiting password"
+msgstr "In attesa di password"
+
+msgid "use ASCII encoding for password"
+msgstr "Usa codifica ASCII per la password"
+
+msgid "Use different Email ID "
+msgstr "Usa un ID Email diverso"
+
+msgid "Alternative Email ID"
+msgstr "ID Email alternativo"
+
+msgid "Communication"
+msgstr "Comunicazione"
+
+msgid "Communication Type"
+msgstr "Tipi di comunicazione"
+
+msgid "Sent or Received"
+msgstr "Inviata o ricevuta"
+
+msgid "Email Domain"
+msgstr "Dominio Email"
+
+msgid "You haven't created a Email Domain yet"
+msgstr "Non hai ancora creato un dominio Email"
+
+msgid "Domain name"
+msgstr "Nome dominio"
+
+msgid "Incoming settings"
+msgstr "Impostazioni posta in arrivo"
+
+msgid "Incoming server"
+msgstr "Server in entrata"
+
+msgid "Port"
+msgstr "Porta"
+
+msgid "If non-standard port "
+msgstr "Se porta non è sandard"
+
+msgid "Attachment limit (MB)"
+msgstr "Limite allegati (MB)"
+
+msgid "Ignore attachments over thi size"
+msgstr "Ignora allegati superiori a questa dimensione"
+
+msgid "Use IMAP"
+msgstr "Usa IMAP"
+
+msgid "Use SSL"
+msgstr "Usa SSL"
+
+msgid "Outgoing Settings"
+msgstr "Impostazioni in uscita"
+
+msgid "Outgoing Server"
+msgstr "Server in uscita"
+
+msgid "Use TLS "
+msgstr "Usa TLS"
+
+msgid "Email Queue"
+msgstr "Coda Email"
+
+msgid "Suspend sending"
+msgstr "Sospendi invio"
+
+msgid "Recipient"
+msgstr "Destinatario"
+
+msgid "Show as cc"
+msgstr "Mostra come cc"
+
+msgid "Message ID"
+msgstr "ID messaggio"
+
+msgid "Send After"
+msgstr "Invia dopo"
+
+msgid "Add unsubscribe link"
+msgstr "Aggiungi link di annullamento iscrizione"
+
+msgid "Unsubscribe params"
+msgstr "Parametri di annullamento dell'iscrizione"
+
+msgid "Unsubscribe method"
+msgstr "Metodo di annullamento dell'iscrizione"
+
+msgid "Expose recipients"
+msgstr "Mostra destinatari"
+
+msgid "attachments"
+msgstr "Allegati"
+
+msgid "retry"
+msgstr "Riprova"
+
+msgid "Send as raw HTML"
+msgstr "Invia come HTML grazzo"
+
+msgid ""
+"Raw HTML emails are rendered as complete jinja templates. Otherwise, emails "
+"are wrapped in the standard.html email template, which inserts brand_logo, "
+"header and footer"
+msgstr ""
+"Le email in HTML grazzo vengono visualizzate come modelli Jinja completi. In"
+" cosa contrario, le Email vengono iserite nel modello Email standard.html, "
+"che inserisce brand_logo, intestazione e piè di pagina"
+
+msgid "Retry sending"
+msgstr "Riprova l'invio"
+
+msgid "Response"
+msgstr "Risposta"
+
+msgid "Unhandled Email"
+msgstr "Email non gestita"
+
+msgid "You haven't created a unhandled email yet"
+msgstr "Non hai ancora creato un'email non gestita"
+
+msgid "Framework --> Integrazioni"
+msgstr ""
+
+msgid "Connected app "
+msgstr "App collegata "
+
+msgid "You haven't created a connected app yet"
+msgstr "Non hai ancora creato un'app collegata"
+
+msgid "Privider name"
+msgstr "Nome del provider"
+
+msgid "OpenID configuration"
+msgstr "Configurazione OpenID"
+
+msgid "Scopes"
+msgstr "Ambiti"
+
+msgid "Scope"
+msgstr "Ambito"
+
+msgid "Endpoints"
+msgstr "Endpoint"
+
+msgid "Authorization URI"
+msgstr "URI di autorizzazione"
+
+msgid "Userinfo Uri"
+msgstr "URI delle informazioni utente"
+
+msgid "Introspection URI"
+msgstr "URI di introspezione"
+
+msgid "Token URI"
+msgstr "URI del Token"
+
+msgid "revocation URI"
+msgstr "URI di revoca"
+
+msgid "Extra parameters"
+msgstr "Parametri aggiuntivi"
+
+msgid "Query Parameters"
+msgstr "Parametri di query"
+
+msgid "Key"
+msgstr "Chiave"
+
+msgid "Get OpenID configuration"
+msgstr "Ottieni configurazione openID"
+
+msgid "Push notification"
+msgstr "Notifiche push"
+
+msgid "Relay settings"
+msgstr "Impostazioni relay"
+
+msgid ""
+"Enabling this will register your site on a central relay server to send push"
+" notifications for all installed apps through firebase cloud messaging. This"
+" server only stores user tokens and error logs, and no messages are saved."
+msgstr ""
+"Abilitando questa opzione, il tuo sito verrà registrato  su un server relay "
+"centrale per inviare notifiche push per tutte le app installate tramite "
+"Firebase Cloud Messaging. Questo server memorizza solo i token utente e i "
+"log degli errori; nessun messaggio viene salvato."
+
+msgid "Enable push notification relay"
+msgstr "Abilita replay notifiche push"
+
+msgid ""
+"API key and secret to interact with the relay server. These will be auto-"
+"generated when the first push notification is send from any of the apps "
+"installed on this site."
+msgstr ""
+"Chiave API e secret per interagire con il server di inoltro. Questi saranno "
+"generati automaticamente quando verrà inviata la prima notifica push da una "
+"qualsiasi delle app installate su questo sito."
+
+msgid "API Secret"
+msgstr "ApPI secret"
+
+msgid "You haven't created a webhook yet"
+msgstr "Non hai ancora creato un webhook"
+
+msgid "Doc Events"
+msgstr "Intestazioni Webhook"
+
+msgid "Webhook Trigger"
+msgstr "Attivazione Webhook"
+
+msgid "The webhook will be triggered if this expression is true"
+msgstr "Il Webhook verrà attivato se questa espressione è vera"
+
+msgid "Webhook request"
+msgstr "Richiesta Webhook"
+
+msgid "request URL"
+msgstr "URL della richiesta"
+
+msgid "Request method"
+msgstr "Metodo della richiesta"
+
+msgid "Request structure"
+msgstr "Struttura della richiesta"
+
+msgid "Is dynamic URL?"
+msgstr "E' un URL dinamico?"
+
+msgid ""
+"On checking this optin, URL will be treated like a jinja template string"
+msgstr ""
+"Selezionando questa opzione, l'URL verrà trattato come stringa di modello "
+"Jinja"
+
+msgid "Request timeout"
+msgstr "Timeout della richiesta"
+
+msgid "The number of seconds until the request expires "
+msgstr "Numero di secondi prima della scadenza della richiesta"
+
+msgid "Background jobs queue"
+msgstr "Coda dei processi in Background"
+
+msgid "Webhook security"
+msgstr "Sicurezza Webhook"
+
+msgid "Enable Security"
+msgstr "Abilita sicurezza"
+
+msgid "Webhook Headers"
+msgstr "Intestazioni Webhook"
+
+msgid "headers"
+msgstr "Intestazioni Webhook"
+
+msgid "Webhook Data"
+msgstr "Datii Webhook"
+
+msgid "To use Google contacts, enable Impostazioni Google"
+msgstr "Per utilizzare i contatti Google abilita Impostazioni Google"
+
+msgid "calendar name"
+msgstr "Nome calendario"
+
+msgid "The name that will appear in Google calendar"
+msgstr "Il nome che apparirà nel calendario Google"
+
+msgid "Sync"
+msgstr "Sincronizzazione"
+
+msgid "Pull from Google calendar"
+msgstr "Recupera dal calendario Google"
+
+msgid "Sync events from Google as public"
+msgstr "Sincronizza gli eventi da Google come pubblici"
+
+msgid "Push to Google Calendar"
+msgstr "Invia a Google Calendar"
+
+msgid "Google Calendar ID"
+msgstr "ID Google Calendar"
+
+msgid ""
+"The client ID obtained from the Google Cloud console under \"API & "
+"Services\" > \"Credentials\""
+msgstr ""
+"l'ID del cliente ottenuto dalla console di Google. Cloud in \"API e "
+"servizi\" > \"Credenziali\""
+
+msgid ""
+"The browser API Key obtained from the Google Cloud Console under \"API & "
+"Services\"> \"Credentials\""
+msgstr ""
+"La chiave API del browser ottenuta dalla console Google Cloud in “API e servizi” > “Credenziali”\n"
+"Selettore Google Drive"
+
+msgid "Google drive Picker"
+msgstr "Selettore di Google Drive"
+
+msgid "Google drive Picker Enabled "
+msgstr "Selettore di Google Drive abilitato"
+
+msgid "Enable social login"
+msgstr "Abilita accesso tramite social network"
+
+msgid "Client Credentials"
+msgstr "Credenziali del cliente"
+
+msgid "Social login provider"
+msgstr "Fornitore di accesso tramite social network"
+
+msgid "Provider Name"
+msgstr "Nome del fornitore"
+
+msgid "Client secret"
+msgstr "Segreto client"
+
+msgid "Identity details"
+msgstr "Dettagli dell'identità"
+
+msgid "configuration"
+msgstr "Configurazione OpenID"
+
+msgid "Sing up"
+msgstr "Registrazione"
+
+msgid ""
+"Controls whether new user can sing up using this social login key. If unset,"
+" website settings is respected"
+msgstr ""
+"Determina se i nuovi utenti possono registrarsi utilizzando questa chiave di"
+" accesso tramite social network. Se non impostato, vengono rispettate le "
+"impostazioni del sito web"
+
+msgid "Show in resource metadata"
+msgstr "Mostra nei Metadati delle risorse"
+
+msgid ""
+"Allows clients to view this as an authorization server when querying the [] "
+"end point"
+msgstr ""
+"Consente ai client di visualizzarlo come server di autorizzazione quando "
+"interrogano l'endpoint []"
+
+msgid "Client URLs "
+msgstr "URL del cliente"
+
+msgid "Authorize URL"
+msgstr "URL di autorizzazione"
+
+msgid "Access token URL "
+msgstr "URL del token di accesso"
+
+msgid "Redirect URL"
+msgstr "URL di reindirizzamento"
+
+msgid "API endpoint"
+msgstr "Endpoint API"
+
+msgid "Client infornation"
+msgstr "Informazioni sul cliente"
+
+msgid "API endpoint Args"
+msgstr "Argomenti dell'endpoint API "
+
+msgid "Auth URL date"
+msgstr "Data URL di autenticazione"
+
+msgid "User ID Property"
+msgstr "Proprietà ID utente"
+
+msgid "LDAP Settings"
+msgstr "Impostazioni LDAP"
+
+msgid "LDAP Server settings"
+msgstr "Impostazioni server LDAP"
+
+msgid "Directory server"
+msgstr "Server d'indirizzamento"
+
+msgid "Please select the LPDA directory being used"
+msgstr "Selezionare indirizzamento LDAP in uso"
+
+msgid "LDAP server Url"
+msgstr "URL del server LDAP"
+
+msgid "LDAP Auth"
+msgstr "Autenticazione LDAP"
+
+msgid "Base distinguished name (DN)"
+msgstr "Nome distinto di base (DN)"
+
+msgid "Password for Base DN"
+msgstr "Password per DN di base"
+
+msgid "LDAP search and paths"
+msgstr "Ricerca e persorsi LDAP"
+
+msgid "LDAP search path for users"
+msgstr "Percorso di ricerca LDAP per gli utenti"
+
+msgid "Requires any valid fdn path. i.e. ou=users, dc=com"
+msgstr "Richiede un percorso fdn valido. Ad es. ou=users, dc=com"
+
+msgid "LDAP search string "
+msgstr "Stringa di ricerca LDAP\n"
+
+msgid ""
+"Must be enclosed in '()' and include '{0}', which is a placeholder for the "
+"user/login name. i.e (&([])"
+msgstr ""
+"Deve essere racchiusa tra ‘()’ e includere ‘{0}’, che è un segnaposto per il"
+" nome utente/login. Ad es. (&([])"
+
+msgid "LDAP search path for groups "
+msgstr "Percorso di ricerca LDAP per i Classi"
+
+msgid "Requires any valid ()"
+msgstr "Richiede un percorso valido ()"
+
+msgid "LDAP user creation and mapping"
+msgstr "Creazione e mappatura utenti LDAP"
+
+msgid "LDAP Email field"
+msgstr "Campo e-mail LDAP"
+
+msgid "LDAP username field"
+msgstr "Campo nome utente LDAP"
+
+msgid "LDAP first name field"
+msgstr "Campo nome LDAP"
+
+msgid "LDAP middle name field"
+msgstr "Campo secondo nome LDAP"
+
+msgid "LDAP last name field"
+msgstr "Campo cognome LDAP"
+
+msgid " LDAP phone field"
+msgstr "Campo telefono LDAP"
+
+msgid "LDAP mibile field"
+msgstr "Campo cellulare LDAP"
+
+msgid "Do not create new user if user with email does not exist in the system"
+msgstr ""
+"Non creare un nuovo utente se nel sistema non esiste un utente con "
+"quell'indirizzo e-mail"
+
+msgid "LDAP security"
+msgstr "Sicurezza LDAP"
+
+msgid "Require trusted certificate"
+msgstr "Richiedi certificato attendibile"
+
+msgid "path to private key file"
+msgstr "Percorso del file della chiave privata"
+
+msgid "Path to server certificate"
+msgstr "Percorso del certificato del server"
+
+msgid "path to CA certs file"
+msgstr "Percorso del file dei certificati CA"
+
+msgid "LDAP Custom settings"
+msgstr "Impostazioni personalizzate LDAP"
+
+msgid "These settings are required if 'custom' LDAP directory is used"
+msgstr ""
+"Queste impostazioni sono necessarie se si utilizza una directory LDAP "
+"“personalizzata”"
+
+msgid "Group object class"
+msgstr "Classe oggetto Classe"
+
+msgid "String value,i.e. group"
+msgstr "Valore stringa, ad es. group"
+
+msgid "Custom group search"
+msgstr "Ricerca Classi personalizzata"
+
+msgid " LDAP group member attribute"
+msgstr "Attributo membro Classe LDAP"
+
+msgid "LDAP group mapping"
+msgstr "Mappatura Classi LDAP"
+
+msgid "Default user type"
+msgstr "Tipo utente predefinito"
+
+msgid "user role"
+msgstr "Ruolo utente"
+
+msgid "LDAP group field "
+msgstr "Campo Classe LDAP"
+
+msgid ""
+" NOTE: This box is due for depreciation. Please re-setup LDAP to work with "
+"the newer settings"
+msgstr ""
+"NOTA: questa casella è destinata a essere dismessa. Si prega di "
+"riconfigurare LDAP per utilizzare le impostazioni più recenti"
+
+msgid "Client OAuth"
+msgstr "Client OAuth"
+
+msgid "App name "
+msgstr "Nome dell'app"
+
+msgid "Grant Type"
+msgstr "Tipo di autorizzazione"
+
+msgid "Response Type"
+msgstr "Tipo di risposta"
+
+msgid "You haven't created a Client OAuth yet"
+msgstr "Non hai ancora creato un client OAuth"
+
+msgid "Client ID "
+msgstr "ID client"
+
+msgid "Allowed roles"
+msgstr "Ruoli consentiti"
+
+msgid "Default redirect URI"
+msgstr "URI di reindirizzamento predefinito"
+
+msgid "Skip Authorization"
+msgstr "Salta autorizzazione"
+
+msgid "IF checked, users will not see the Confirm Access dialog"
+msgstr ""
+"Se selezionato, agli utenti non verrà visualizzata la finestra di dialogo "
+"“Conferma accesso”"
+
+msgid "client Metadata"
+msgstr "Metadati client"
+
+msgid "App name (client name)"
+msgstr "Nome dell'app (nome client)"
+
+msgid ""
+"A list of resouces which the Client App will have access to after the user "
+"allows it. es. project"
+msgstr ""
+"Un elenco di risorse a cui l'app client avrà accesso dopo che l'utente lo "
+"avrà consentito. Es. progetto"
+
+msgid "Redirect URIs"
+msgstr "URI di reindirizzamento"
+
+msgid ""
+"URIs for receiving authorization code once the user allows access, as well as failure responses. Typically a REST endpoint exposed by the Client App.\n"
+"e.g. http://hostname/api/method/frappe.integrations.oauth2_logins.login_via_facebook"
+msgstr ""
+"URI per ricevere il codice di autorizzazione una volta che l'utente ha consentito l'accesso, nonché le risposte di errore. In genere un endpoint REST esposto dall'app client.\n"
+"Es. http://hostname/api/method/frappe.integrations.oauth2_logins.login_via_facebook"
+
+msgid "Advanced settings"
+msgstr "Impostazioni avanzate"
+
+msgid "Grant type"
+msgstr "Tipo di concessione"
+
+msgid "Authorization code"
+msgstr "Codice di autorizzazione"
+
+msgid "Implicit"
+msgstr "Implicito"
+
+msgid "Token endpoint auth method"
+msgstr "Metodo di autenticazione endpoint token"
+
+msgid "Client secret basic"
+msgstr "Segreto client basic"
+
+msgid "Client secret post"
+msgstr "Segreto client post"
+
+msgid "none"
+msgstr "nessuno"
+
+msgid ""
+"Value of \"None\" implies a public client. In such a case Client Secret is "
+"not given to the client and token exchange makes use of PKCE."
+msgstr ""
+"Il valore “Nessuno” implica un client pubblico. In tal caso, il segreto "
+"client non viene fornito al client e lo scambio di token utilizza PKCE."
+
+msgid "Responsive type"
+msgstr "Tipo di risposta"
+
+msgid "OAuth provider"
+msgstr "Fornitore OAuth"
+
+msgid "Force Auto"
+msgstr "Forza automatico"
+
+msgid "Framework --> printing"
+msgstr ""
+
+msgid "Custom format"
+msgstr "Formato personalizzato"
+
+msgid "Default print language"
+msgstr "Lingua di stampa predefinita"
+
+msgid "Style Settings"
+msgstr "Impostazioni stile"
+
+msgid "Margin top"
+msgstr "Margine superiore"
+
+msgid "Margin bottom"
+msgstr "Margine inferiore"
+
+msgid "Margin left"
+msgstr "Margine sinistro"
+
+msgid "Margin Right"
+msgstr "Margine destro"
+
+msgid "Google font"
+msgstr "Carattere Google"
+
+msgid "Page number"
+msgstr "Numero di pagina"
+
+msgid "Align labels to the right"
+msgstr "Allinea le etichette a destra"
+
+msgid "Show section headings"
+msgstr "Mostra intestazioni di sezione"
+
+msgid "Show line breaks after sections"
+msgstr "Mostra interruzioni di riga dopo le sezioni"
+
+msgid "Custom CSS"
+msgstr "CSS personalizzato"
+
+msgid "Print Format Builder "
+msgstr "Generatore di formati di stampa"
+
+msgid "Select an existing format to edit or start a new format"
+msgstr "Seleziona un formato esistente da modificare o avvia un nuovo formato"
+
+msgid "Select print format to edit"
+msgstr "Seleziona il formato di stampa da modificare"
+
+msgid "Select a Doctype to make a new format"
+msgstr "Seleziona un Doctype per creare un nuovo formato"
+
+msgid "Name of the new print format"
+msgstr "Nome del nuovo formato di stampa"
+
+msgid "Print settings"
+msgstr "Impostazioni di stampa"
+
+msgid "PDF settings"
+msgstr "Impostazioni PDF"
+
+msgid "Send print as PDF "
+msgstr "Invia la stampa come PDF"
+
+msgid "Send Email print attachments as PDF (recommended)"
+msgstr "Invia allegati di stampa via e-mail come PDF (consigliato)"
+
+msgid "Repeat header and footer"
+msgstr "Ripeti intestazione e piè di pagina"
+
+msgid "PDF page size"
+msgstr "Dimensione pagina PDF"
+
+msgid "Page settings"
+msgstr "Impostazioni pagina"
+
+msgid "Print with letterhead"
+msgstr "Stampa con intestazione"
+
+msgid "Allow print for draft"
+msgstr "Consenti stampa per bozza"
+
+msgid "Always add \"Draft\" heading for printing draft documents"
+msgstr ""
+"Aggiungi sempre l'intestazione “Bozza” per la stampa di documenti in bozza"
+
+msgid "Allow page breack inside tables"
+msgstr "Consenti interruzioni di pagina all'interno delle tabelle"
+
+msgid "Allow print for cancelled "
+msgstr "Consenti stampa per cancellato"
+
+msgid "Raw Printing"
+msgstr "Stampa grezza"
+
+msgid "Enable raw printing"
+msgstr "Abilita stampa grezza"
+
+msgid "Print style"
+msgstr "Stile di stampa"
+
+msgid "Redesign"
+msgstr "Riprogetta"
+
+msgid "No preview"
+msgstr "Nessuna anteprima"
+
+msgid "Fonts"
+msgstr "Caratteri"
+
+msgid "Font size"
+msgstr "Dimensione carattere"
+
+msgid "In points. Default is 9"
+msgstr "In punti. Il valore predefinito è 9"
+
+msgid "Framework --> Utenti"
+msgstr ""
+
+msgid "Login Activity"
+msgstr "Attività di accesso"
+
+msgid "System Users"
+msgstr "Utenti di sistema"
+
+msgid "Webside Users"
+msgstr "Utenti del sito web"
+
+msgid "Failed login attempts"
+msgstr "Tentativi di accesso non riusciti"
+
+msgid "Role profiles"
+msgstr "Profili di ruolo"
+
+msgid "User details"
+msgstr "Dettagli utente"
+
+msgid "Basic info"
+msgstr "Informazioni di base"
+
+msgid "Middle name"
+msgstr "Secondo nome"
+
+msgid "Roles & Permissions"
+msgstr "Ruoli e autorizzazioni"
+
+msgid "Knowledge base contributor"
+msgstr "Collaboratore della knowledge base"
+
+msgid "Knowledge base editor"
+msgstr "Redattore della knowledge base"
+
+msgid "maintenance manager"
+msgstr "Responsabile della manutenzione"
+
+msgid "Maintenance user"
+msgstr "Utente di manutenzione"
+
+msgid "Prepared report  user"
+msgstr "Utente incaricato dei report"
+
+msgid "Purchase manager"
+msgstr "Responsabile acquisti"
+
+msgid "Purchase master manager"
+msgstr "Responsabile capo acquisti"
+
+msgid "Purchase user"
+msgstr "Utente acquisti"
+
+msgid "Gender"
+msgstr "Sesso"
+
+msgid "Birth date"
+msgstr "Data di nascita"
+
+msgid "Phone"
+msgstr "Telefono"
+
+msgid "Desk settings"
+msgstr "Impostazioni desktop"
+
+msgid "Mute sound"
+msgstr "Disattiva audio"
+
+msgid "Desk theme"
+msgstr "Tema desktop"
+
+msgid "Light"
+msgstr "Chiaro"
+
+msgid "Dark"
+msgstr "Scuro"
+
+msgid "Automatic"
+msgstr "Automatico"
+
+msgid "Nome del college"
+msgstr "Nome dell'istituto"
+
+msgid "Code editor type"
+msgstr "Tipo di editor di codice"
+
+msgid "Banner image"
+msgstr "Immagine banner"
+
+msgid "Navigation settings"
+msgstr "Impostazioni di navigazione"
+
+msgid "Search bar"
+msgstr "Barra di ricerca"
+
+msgid "Bulk Actions"
+msgstr "Azioni collettive"
+
+msgid "View switcher"
+msgstr "Selettore di visualizzazione"
+
+msgid "Navigation buttons"
+msgstr "Pulsanti di navigazione"
+
+msgid "Timeline"
+msgstr "Cronologia"
+
+msgid "Show absolute datetime in timeline"
+msgstr "Mostra data e ora assolute nella cronologia"
+
+msgid "Change password"
+msgstr "Cambia password"
+
+msgid "Set new password"
+msgstr "Imposta nuova password"
+
+msgid "Logout from all devices after changing password"
+msgstr "Esci da tutti i dispositivi dopo aver cambiato la password"
+
+msgid "Document follow"
+msgstr "Documenti seguiti"
+
+msgid "Send notifications for documents followed by me"
+msgstr "Invia notifiche per i documenti che seguo"
+
+msgid "Email signature"
+msgstr "Firma e-mail"
+
+msgid "Send notifications for Email threads"
+msgstr "Invia notifiche per le conversazioni e-mail"
+
+msgid "Send me a copy of outgoing emails"
+msgstr "Inviami una copia delle e-mail in uscita"
+
+msgid "Allowed in mentions"
+msgstr "Consentito nelle menzioni"
+
+msgid "User Emails"
+msgstr "Email utente"
+
+msgid "Awaiting Password"
+msgstr "In attesa di password"
+
+msgid "Used OAuth"
+msgstr "OAuth utilizzato"
+
+msgid "Default workspace"
+msgstr "Area di lavoro predefinita"
+
+msgid ""
+"If left empty, the default workspace will be the last visited workspace"
+msgstr ""
+"Se lasciato vuoto, l'area di lavoro predefinita sarà l'ultima visitata"
+
+msgid "Redirect to the selected app after login"
+msgstr "Reindirizza all'app selezionata dopo l'accesso"
+
+msgid "Security settings"
+msgstr "Impostazioni di sicurezza"
+
+msgid "Simultaneous sessions"
+msgstr "Sessioni simultanee"
+
+msgid "Login after"
+msgstr "Accedi dopo"
+
+msgid "Allow user to login only after this hour (0-24)"
+msgstr "Consenti all'utente di accedere solo dopo questa ora (0-24)"
+
+msgid "Login before"
+msgstr "Accedi prima"
+
+msgid "Allow user to login only before this hour (0-24)"
+msgstr "Consenti all'utente di accedere solo prima di questa ora (0-24)"
+
+msgid "Restrict IP"
+msgstr "Limita IP"
+
+msgid ""
+"Restrict user from this IP address only. Multiple IP addresses can be added by separating with commas. Also accepts partial IP addresses like (111.111.111)\n"
+"restrict_ip\n"
+msgstr ""
+"Limita l'utente solo da questo indirizzo IP. È possibile aggiungere più indirizzi IP separandoli con virgole. Accetta anche indirizzi IP parziali come (111.111.111)\n"
+"restrict_ip\n"
+
+msgid ""
+"If the user has any role checked, then the user becomes a \"System User\". "
+"\"System User\" has access to the desktop"
+msgstr ""
+"Se l'utente ha un ruolo selezionato, allora l'utente diventa un “Utente di "
+"sistema”. L'“Utente di sistema” ha accesso al desktop"
+
+msgid "Last login"
+msgstr "Ultimo accesso"
+
+msgid "Last active"
+msgstr "Ultima attività"
+
+msgid "Last IP"
+msgstr "Ultimo IP"
+
+msgid "Third part authentication"
+msgstr "Autenticazione di terze parti"
+
+msgid "Social logins"
+msgstr "Accessi tramite social"
+
+msgid "Provider"
+msgstr "Fornitore"
+
+msgid "API Access"
+msgstr "Accesso API"
+
+msgid "API key"
+msgstr "Chiave API"
+
+msgid "API Key cannot be regenerated "
+msgstr "La chiave API non può essere rigenerata"
+
+msgid "Generate Keys"
+msgstr "Genera chiavi"
+
+msgid "Click here to learn about token-based authentication"
+msgstr "Clicca qui per saperne di più sull'autenticazione basata su token"
+
+msgid "Profile"
+msgstr "Profilo"
+
+msgid "Contact"
+msgstr "Contatti"
+
+msgid "Log"
+msgstr "Registro"
+
+msgid "Route History"
+msgstr "Cronologia percorsi"
+
+msgid "Activity"
+msgstr "Attività"
+
+msgid "Communcation"
+msgstr "Comunicazione"
+
+msgid "Is Custom"
+msgstr "È personalizzato"
+
+msgid "Desk Access"
+msgstr "Accesso al desktop"
+
+msgid "Role name"
+msgstr "Nome ruolo"
+
+msgid "Route: Example \"/Desk\""
+msgstr "Percorso: Esempio “/Desk”"
+
+msgid "If disabled, this role will be removed from all users"
+msgstr "Se disabilitato, questo ruolo verrà rimosso da tutti gli utenti"
+
+msgid "Is custom"
+msgstr "È personalizzato"
+
+msgid "Desk access"
+msgstr "Accesso al desktop"
+
+msgid "Two factor"
+msgstr "Autenticazione"
+
+msgid "authentication"
+msgstr "a due fattori"
+
+msgid "Permettere"
+msgstr "Permesso"
+
+msgid "For value"
+msgstr "Per valore"
+
+msgid "Please set filters"
+msgstr "Imposta i filtri"
+
+msgid "Permission insperctor"
+msgstr "Ispettore delle autorizzazioni"
+
+msgid "Permession type"
+msgstr "Tipo di autorizzazione"
+
+msgid "Audits"
+msgstr "Controlli"
+
+msgid "Invalid login credentials"
+msgstr "Credenziali di accesso non valide"
+
+msgid "Operation "
+msgstr "Operazione"
+
+msgid "IP address"
+msgstr "Indirizzo IP"
+
+msgid "Reference"
+msgstr "Riferimento"
+
+msgid "Reference owner"
+msgstr "Proprietario del riferimento"
+
+msgid "Timeline DocType"
+msgstr "Cronologia Tipo di documento"
+
+msgid "Timeline name"
+msgstr "Nome cronologia"
+
+msgid "Link name"
+msgstr "Nome collegamento"
+
+msgid "Permission log"
+msgstr "Registro autorizzazioni"
+
+msgid "Changed by"
+msgstr "Modificato da"
+
+msgid "For document"
+msgstr "Per documento"
+
+msgid "Reference type"
+msgstr "Tipo di riferimento"
+
+msgid "Changed at"
+msgstr "Modificato alle"
+
+msgid "For Doctype"
+msgstr "Per tipo di documento"
+
+msgid "more info"
+msgstr "ulteriori informazioni"
+
+msgid "Ignore user permissions"
+msgstr "Ignora autorizzazioni utente"
+
+msgid "Permlevel"
+msgstr "Livello di autorizzazione"
+
+msgid "Export from"
+msgstr "Esporta da"
+
+msgid "Reference document"
+msgstr "Documento di riferimento"
+
+msgid "Timestamp"
+msgstr "Timestamp"
+
+msgid "Show document"
+msgstr "Mostra documento"
+
+msgid "File information"
+msgstr "Informazioni file"
+
+msgid "Print"
+msgstr "Stampa"
+
+msgid "Report information"
+msgstr "Informazioni report"
+
+msgid "Raw information log"
+msgstr "Registro informazioni grezze"
+
+msgid "HTLM page"
+msgstr "Pagina HTML"
+
+msgid "Print format. certificate"
+msgstr "Formato di stampa. Certificato"
+
+msgid "Columns/Fields"
+msgstr "Colonne/Campi"
+
+msgid "Completions"
+msgstr "Completamenti"
+
+msgid "Signups per day"
+msgstr "Registrazioni al giorno"
+
+msgid "Enrollments per day"
+msgstr "Iscrizioni al giorno"
+
+msgid "Certifications per day"
+msgstr "Certificazioni al giorno"
+
+msgid "Course Completion"
+msgstr "Completamento Corsi"
+
+msgid "Log in"
+msgstr "Accedi"
+
+msgid "Clear Demo Data"
+msgstr "Cancella Dati Demo"
+
+msgid "Login to Frappe Cloud"
+msgstr "Accedi a Frappe Cloud"
+
+msgid "Error clearing demo data"
+msgstr "Errore nella cancellazione dei dati demo"
+
+msgid "System Configurations"
+msgstr "Configurazioni di Sistema"
+
+msgid ""
+"If enabled, users can access the course and batch lists without logging in."
+msgstr ""
+"Se abilitato, gli utenti possono accedere alle liste di corsi e classi senza"
+" effettuare il login."
+
+msgid "If enabled, users will no able to move forward in a video"
+msgstr "Se abilitato, gli utenti non potranno avanzare in un video"
+
+msgid ""
+"If checked, users will not be able to install the application as a "
+"Progressive Web App."
+msgstr ""
+"Se selezionato, gli utenti non potranno installare l'applicazione come "
+"Progressive Web App."
+
+msgid ""
+"If enabled, it sends google calendar invite to the student for evaluations."
+msgstr ""
+"Se abilitato, invia un invito Google Calendar allo studente per le "
+"valutazioni."
+
+msgid "Batch Confirmation Email Template"
+msgstr "Modello Email di Conferma Classe"
+
+msgid "Certification Email Template"
+msgstr "Modello Email di Certificazione"
+
+msgid "Contact Information"
+msgstr "Informazioni di Contatto"
+
+msgid "Users can reach out to this email for support or inquiries."
+msgstr ""
+"Gli utenti possono contattare questa email per assistenza o richieste."
+
+msgid "Users can reach out to this URL for support or inquiries."
+msgstr "Gli utenti possono contattare questo URL per assistenza o richieste."
+
+msgid ""
+"If enabled, users can post job openings on the job board. Else only admins "
+"can post jobs."
+msgstr ""
+"Se abilitato, gli utenti possono pubblicare offerte di lavoro. Altrimenti "
+"solo gli amministratori possono farlo."
+
+msgid "Livecode URL"
+msgstr "URL Livecode"
+
+msgid ""
+"Allows users to pick a profile cover image from Unsplash. "
+"https://unsplash.com/documentation#getting-started."
+msgstr ""
+"Consente agli utenti di scegliere un'immagine di copertina del profilo da "
+"Unsplash."
+
+msgid ""
+"Create badges and assign them to students to acknowledge their achievements"
+msgstr "Crea badge e assegnali agli studenti per riconoscere i loro risultati"
+
+msgid "Double click to edit the category"
+msgstr "Doppio click per modificare la categoria"
+
+msgid "Manage the email templates for your learning system"
+msgstr "Gestisci i modelli email per il tuo sistema di apprendimento"
+
+msgid "Add new members or manage roles and permissions of existing members"
+msgstr ""
+"Aggiungi nuovi membri o gestisci ruoli e permessi dei membri esistenti"
+
+msgid "Add new evaluators or check the slots of existing evaluators"
+msgstr ""
+"Aggiungi nuovi valutatori o controlla gli slot dei valutatori esistenti"
+
+msgid "Manage all your payment related settings and defaults"
+msgstr ""
+"Gestisci tutte le impostazioni e i valori predefiniti relativi ai pagamenti"
+
+msgid "Show USD equivalent amount"
+msgstr "Mostra importo equivalente in USD"
+
+msgid ""
+"If enabled, it shows the USD equivalent amount for all transactions based on"
+" the current exchange rate."
+msgstr ""
+"Se abilitato, mostra l'importo equivalente in USD per tutte le transazioni "
+"in base al tasso di cambio corrente."
+
+msgid "Apply rounding on equivalent"
+msgstr "Applica arrotondamento sull'equivalente"
+
+msgid "If enabled, it applies rounding on the USD equivalent amount."
+msgstr ""
+"Se abilitato, applica l'arrotondamento sull'importo equivalente in USD."
+
+msgid "If enabled, GST will be applied to the price for students from India."
+msgstr ""
+"Se abilitato, la GST verrà applicata al prezzo per gli studenti dall'India."
+
+msgid "Payment Reminders"
+msgstr "Promemoria di Pagamento"
+
+msgid "Send payment reminders for batch"
+msgstr "Invia promemoria di pagamento per la classe"
+
+msgid ""
+"If enabled, it sends payment reminders to students who left the payment "
+"incomplete for a batch."
+msgstr ""
+"Se abilitato, invia promemoria di pagamento agli studenti che hanno lasciato"
+" il pagamento incompleto per una classe."
+
+msgid "Send payment reminders for course"
+msgstr "Invia promemoria di pagamento per il corso"
+
+msgid ""
+"If enabled, it sends payment reminders to students who left the payment "
+"incomplete for a course."
+msgstr ""
+"Se abilitato, invia promemoria di pagamento agli studenti che hanno lasciato"
+" il pagamento incompleto per un corso."
+
+msgid "Add and manage all your payment gateways"
+msgstr "Aggiungi e gestisci tutti i gateway di pagamento"
+
+msgid "View all your payment transactions"
+msgstr "Visualizza tutte le transazioni di pagamento"
+
+msgid "Manage discount coupons for courses and batches"
+msgstr "Gestisci i coupon sconto per corsi e classi"
+
+msgid "Manage zoom accounts to conduct live classes from batches"
+msgstr "Gestisci gli account Zoom per condurre classi live dai classi"
+
+msgid "Manage Google Meet accounts to conduct live classes from batches"
+msgstr "Gestisci gli account Google Meet per condurre classi live dai classi"
+
+msgid "Customize the brand name and logo to make the application your own"
+msgstr ""
+"Personalizza il nome del brand e il logo per rendere l'applicazione tua"
+
+msgid "Brand Name"
+msgstr "Nome Brand"
+
+msgid "Logo"
+msgstr "Logo"
+
+msgid ""
+"Appears in the top left corner of the application to represent your brand."
+msgstr ""
+"Appare nell'angolo in alto a sinistra dell'applicazione per rappresentare il"
+" tuo brand."
+
+msgid "Favicon"
+msgstr "Favicon"
+
+msgid ""
+"Appears in the browser tab next to the page title to help users quickly "
+"identify the application."
+msgstr ""
+"Appare nella scheda del browser accanto al titolo della pagina per aiutare "
+"gli utenti a identificare rapidamente l'applicazione."
+
+msgid "Choose the items you want to show in the sidebar"
+msgstr "Scegli gli elementi da mostrare nella barra laterale"
+
+msgid "Manage the settings related to user signup and registration"
+msgstr "Gestisci le impostazioni relative alla registrazione degli utenti"
+
+msgid "Enable this option to identify the user category during signup."
+msgstr ""
+"Abilita questa opzione per identificare la categoria utente durante la "
+"registrazione."
+
+msgid "Disable signup"
+msgstr "Disabilita registrazione"
+
+msgid "New users will have to be manually registered by Admins."
+msgstr ""
+"I nuovi utenti dovranno essere registrati manualmente dagli Amministratori."
+
+msgid "Signup Consent HTML"
+msgstr "HTML Consenso Registrazione"
+
+msgid ""
+"Manage the SEO settings to improve your website ranking on search engines"
+msgstr ""
+"Gestisci le impostazioni SEO per migliorare il posizionamento del sito sui "
+"motori di ricerca"
+
+msgid ""
+"This description will be shown on lists and pages that don't have meta "
+"description"
+msgstr ""
+"Questa descrizione verrà mostrata su liste e pagine prive di meta "
+"description"
+
+msgid "Comma separated keywords for search engines to find your website."
+msgstr "Parole chiave separate da virgola per i motori di ricerca."
+
+msgid "Configure AI assistant settings for your learning system"
+msgstr ""
+"Configura le impostazioni dell'assistente AI per il tuo sistema di "
+"apprendimento"
+
+msgid "Enable AI features for your learning system."
+msgstr "Abilita le funzionalità AI per il tuo sistema di apprendimento."
+
+msgid "Embedding Model"
+msgstr "Modello di Embedding"
+
+msgid "The model used to generate embeddings for content indexing."
+msgstr ""
+"Il modello utilizzato per generare gli embedding per l'indicizzazione dei "
+"contenuti."
+
+msgid "Chunk Size"
+msgstr "Dimensione Chunk"
+
+msgid "Number of characters per text chunk for indexing."
+msgstr "Numero di caratteri per chunk di testo per l'indicizzazione."
+
+msgid "Chunk Overlap"
+msgstr "Sovrapposizione Chunk"
+
+msgid "Character overlap between consecutive chunks."
+msgstr "Sovrapposizione di caratteri tra chunk consecutivi."
+
+msgid "Top K"
+msgstr "Top K"
+
+msgid "Number of relevant chunks to retrieve for context."
+msgstr "Numero di chunk rilevanti da recuperare per il contesto."
+
+msgid "Badges"
+msgstr "Badge"
+
+msgid "Categories"
+msgstr "Categorie"
+
+msgid "Evaluators"
+msgstr "Valutatori"
+
+msgid "Gateways"
+msgstr "Gateway"
+
+msgid "Transactions"
+msgstr "Transazioni"
+
+msgid "Coupons"
+msgstr "Coupon"
+
+msgid "Customize"
+msgstr "Personalizza"
+
+msgid "Branding"
+msgstr "Brand"
+
+msgid "Signup"
+msgstr "Registrazione"
+
+msgid "AI"
+msgstr "AI"
+
+msgid "Only show batches that offer a certificate."
+msgstr "Solo corsi con certificato."
+
+msgid "Just Started"
+msgstr "Appena iniziato"
+
+msgid "In progress"
+msgstr "In corso"
+
+msgid "Advanced"
+msgstr "Avanzato"
+
+msgid "Lesson progress"
+msgstr "Progressi della lezione"
+
+msgid "red"
+msgstr "rosso"
+
+msgid "blue"
+msgstr "blu"
+
+msgid "green"
+msgstr "verde"
+
+msgid "Duration (minutes)"
+msgstr "Durata (minuti)"
+
+msgid "Estimated time to complete this lesson"
+msgstr "Tempo stimato per completare questa lezione"
+
+msgid "AI Assistant"
+msgstr "Assistente AI"
+
+msgid "Index for AI"
+msgstr "Indice per AI"
+
+msgid "Content not indexed. Index to enable AI chat."
+msgstr "Contenuto non indicizzato. Indice per abilitare la chat AI."
+
+msgid "Filter "
+msgstr "Filtro"
+
+msgid "Heading"
+msgstr "Intestazione"
+
+msgid "List"
+msgstr "Elenco"
+
+msgid "Codebox"
+msgstr "Codebox"
+
+msgid "How to add a Quiz?"
+msgstr "Come aggiungere un quiz?"
+
+msgid ""
+"Click on the add icon in the editor and select Quiz from the menu. It opens "
+"up a dialog, where you can either select a quiz from the list or create a "
+"new quiz. When you select the Create New option it redirects you to the quiz"
+" creation page."
+msgstr ""
+"Clicca sull'icona “Aggiungi” nell'editor e seleziona ‘Quiz’ dal menu. Si "
+"aprirà una finestra di dialogo in cui potrai selezionare un quiz dall'elenco"
+" o crearne uno nuovo. Quando selezioni l'opzione “Crea nuovo”, verrai "
+"reindirizzato alla pagina di creazione del quiz."
+
+msgid "How to upload content from your system?"
+msgstr "Come caricare contenuti dal tuo sistema?"
+
+msgid ""
+"To upload Image, Video, Audio or PDF from your system, click on the add icon"
+" and select upload from the menu. Then choose the file you want to add to "
+"the lesson and it gets added to your lesson."
+msgstr ""
+"Per caricare immagini, video, audio o PDF dal tuo sistema, clicca sull'icona"
+" “Aggiungi” e seleziona “Carica” dal menu. Scegli quindi il file che "
+"desideri aggiungere alla lezione e questo verrà aggiunto alla tua lezione."
+
+msgid "How to add a YouTube Video?"
+msgstr "Come aggiungere un video di YouTube?"
+
+msgid "Copy the URL of the video from YouTube and paste it in the editor."
+msgstr "Copia l'URL del video da YouTube e incollalo nell'editor."
+
+msgid "How to remove an embed?"
+msgstr "Come rimuovere un contenuto incorporato?"
+
+msgid ""
+"To remove an embed like YouTube or Vimeo, put your cursor on the line below "
+"the embed, then drag your mouse cursor upwards to select the embed. Once the"
+" embed is selected press BackSpace."
+msgstr ""
+"Per rimuovere un contenuto incorporato come YouTube o Vimeo, posiziona il "
+"cursore sulla riga sotto il contenuto incorporato, quindi trascina il "
+"cursore del mouse verso l'alto per selezionarlo. Una volta selezionato il "
+"contenuto incorporato, premi il tasto Backspace."
+
+msgid "Community studenti"
+msgstr "Comunità studenti"
+
+msgid "Mark for rewiew"
+msgstr "Contrassegna per la revisione"
+
+msgid "Unattampted Questions"
+msgstr "Domande non tentate"
+
+msgid "a few seconds ago"
+msgstr "pochi secondi fa"
+
+msgid "Failed to send email with subject:"
+msgstr "Impossibile inviare l'e-mail con oggetto:"
+
+msgid "Advanced search"
+msgstr "Ricerca avanzata"
+
+msgid "An image that represents the badge."
+msgstr "Un'immagine che rappresenta il badge."
+
+msgid "Add transaction"
+msgstr "Aggiungi transazione"
+
+msgid "The HTML you add here will be shown on your sign up page."
+msgstr ""
+"Il codice HTML che aggiungi qui verrà visualizzato nella tua pagina di "
+"registrazione."
+
+msgid "no data imports found"
+msgstr "nessuna importazione di dati trovata"
+
+msgid "Partial Success"
+msgstr "Riuscita parzialmente"
+
+msgid "Timed out"
+msgstr "Tempo scaduto"
+
+msgid "Score out of"
+msgstr "Punteggio su"
+
+msgid "You can only upload PDF files"
+msgstr "Puoi solo inserire file PDF"
+
+msgid "Framework --> Website"
+msgstr "Framework --> Sito"
+
+msgid "Website visits"
+msgstr "Visite al sito web"
+
+msgid "Published web pages"
+msgstr "Pagine web pubblicate"
+
+msgid "Published web forms"
+msgstr "Moduli web pubblicati"
+
+msgid "Website themes avaible "
+msgstr "Temi disponibili per il sito web"
+
+msgid "Dynamic route"
+msgstr "Percorso dinamico"
+
+msgid "Map route parameters into form variables. Example "
+msgstr ""
+"Mappatura dei parametri del percorso nelle variabili del modulo. Esempio"
+
+msgid "Module (for export)"
+msgstr "Modulo (per l'esportazione)"
+
+msgid "Content type"
+msgstr "Tipo di contenuto"
+
+msgid "Pge builder"
+msgstr "Generatore di pagine"
+
+msgid "Rich text"
+msgstr "Testo formattato"
+
+msgid "Markdown"
+msgstr "Markdown"
+
+msgid "Sideshow"
+msgstr "Sideshow"
+
+msgid "Dynamic template"
+msgstr "Modello dinamico"
+
+msgid "Page building blocks"
+msgstr "Blocchi di costruzione della pagina"
+
+msgid "Main section (HTML)"
+msgstr "Sezione principale (HTML)"
+
+msgid "Main section (Markdown)"
+msgstr "Sezione principale (Markdown)"
+
+msgid "Main section "
+msgstr "Sezione principale"
+
+msgid "Script"
+msgstr "Script"
+
+msgid "Set context before rendering a template. Example:"
+msgstr "Imposta il contesto prima di visualizzare un modello. Esempio:"
+
+msgid "Insert style"
+msgstr "Inserisci stile"
+
+msgid "Text Align"
+msgstr "Allineamento testo"
+
+msgid "Left"
+msgstr "Sinistra"
+
+msgid "center"
+msgstr "Centrale"
+
+msgid "Full Width"
+msgstr "Larghezza intera"
+
+msgid "Show title"
+msgstr "Mostra titolo"
+
+msgid "Publishing dates"
+msgstr "Date di pubblicazione"
+
+msgid "Add custom tags"
+msgstr "Aggiungi tag personalizzati"
+
+msgid "Sidebar and comments"
+msgstr "Barra laterale e commenti"
+
+msgid "Show sidebar"
+msgstr "Mostra barra laterale"
+
+msgid "Enable comments"
+msgstr "Abilita commenti"
+
+msgid "{0} is highest"
+msgstr "{0} è il valore più alto"
+
+msgid "Select Doctype"
+msgstr "Seleziona Doctype"
+
+msgid "Questo quiz è composto da 4 domande."
+msgstr "Questo quiz è composto da 4 domande."
+
+msgid "Dovrai ottenere il 60% corrette risposte per superare il quiz."
+msgstr "Dovrai ottenere il 60% di risposte corrette per superare il quiz."
+
+msgid "Puoi provare questo quiz 1 time."
+msgstr "Puoi provare questo quiz 1 volta."
+
+msgid ""
+"Se rispondi in modo errato, 0 marks verrà detratto dal tuo punteggio per "
+"ogni risposta errata."
+msgstr ""
+"Se rispondi in modo errato, 0 punti verranno detratti dal tuo punteggio per "
+"ogni risposta errata."
+
+msgid "AI Tutor"
+msgstr "Tutor AI"
+
+msgid "Ask a question about this lesson to get help from the AI assistant."
+msgstr ""
+"Fai una domanda su questa lezione per ricevere aiuto dall'assistente AI."
+
+msgid "No."
+msgstr "N."
+
+msgid "Please fill in all fields: day, start time and end time"
+msgstr "Compila tutti i campi: giorno, orario di inizio e orario di fine"
+
+msgid "Booked Evaluations"
+msgstr "Valutazioni Prenotate"
+
+msgid "No evaluations scheduled yet"
+msgstr "Nessuna valutazione programmata"
+
+msgid "Login with Email Link"
+msgstr "Accedi con l'e-mail Link"
+
+msgid "or"
+msgstr "o"
+
+msgid "Forgot Password?"
+msgstr "Password dimenticata?"
+
+msgid "Forgot Password"
+msgstr "Password dimenticata"
+
+msgid "Login to {0}"
+msgstr "Accedi a {0}"
+
+msgid "Don't have an account?"
+msgstr "Non hai un account?"
+
+msgid "Continue learning"
+msgstr "Continua a studiare"
+
+msgid "Satus/Percentage"
+msgstr "Stato/Percentuale"
+
+msgid "Sunmission by [utente]"
+msgstr "Inviato da [utente]"
+
+msgid "You can only upload [nome file] files"
+msgstr "Puoi caricare solo [nome file] file"
+
+msgid "Not Granded"
+msgstr "Non valutato"
+
+msgid "search by keyword"
+msgstr "Cerca per parola chiave"
+
+msgid "Just Started {0}"
+msgstr "Appena iniziato {0}"
+
+msgid "In Progress {0}"
+msgstr "In corso {0}"
+
+msgid "Advanced {0}"
+msgstr "Avanzato {0}"
+
+msgid "Completed {0}"
+msgstr "Completato {0}"
+
+msgid "Add chapter"
+msgstr "Aggiungi capitolo"
+
+msgid "Deduct marks for incorrect answers.\n"
+msgstr "Sottrai punti per le risposte errate.\n"
+
+msgid "Granding"
+msgstr "Valutazione"
+
+msgid "Just now"
+msgstr "Appena ora"
+
+msgid "Can browse courses, enroll in batches, and view content."
+msgstr ""
+"Può sfogliare i corsi, iscriversi in gruppi e visualizzare i contenuti."
+
+msgid "Can create, edit, and manage courses, chapters, and lessons."
+msgstr "Può creare, modificare e gestire corsi, capitoli e lezioni."
+
+msgid "Can create batches/live classes and grade student assignments."
+msgstr ""
+"Può creare gruppi/lezioni dal vivo e valutare i compiti degli studenti."
+
+msgid "Full access to all content, users, and system-wide settings."
+msgstr ""
+"Accesso completo a tutti i contenuti, agli utenti e alle impostazioni di "
+"sistema."
+
+msgid "Assing for"
+msgstr "Assegnazione per"
+
+msgid "Assing to"
+msgstr "Assegnazione a"
+
+msgid "Name Subject"
+msgstr "Oggetto"
+
+msgid "Use HTML content for the email response "
+msgstr "Utilizza contenuto HTML per la risposta via e-mail"
+
+msgid ""
+"Dear  {{ member_name }}, You have been enrolled in our upcoming batch {{ "
+"batch_name }}. Thanks,"
+msgstr ""
+"Gentile {{ member_name }}, sei stato iscritto al nostro prossimo batch {{ "
+"batch_name }}. Grazie,"
+
+msgid "Nw Evaluator"
+msgstr "Nuovo valutatore"
+
+msgid "Existing User "
+msgstr "Utente esistente"
+
+msgid "Add Transection"
+msgstr "Aggiungi transazione"
+
+msgid "Mark the payment as received."
+msgstr "Contrassegna il pagamento come ricevuto."
+
+msgid "This payment is for a certificate."
+msgstr "Questo pagamento è per un certificato."
+
+msgid "No cupons created yet "
+msgstr "Nessun coupon creato ancora"
+
+msgid "Nwe Coupon"
+msgstr "Nuovo coupon"
+
+msgid "Cupon Code"
+msgstr "Codice coupon"
+
+msgid "Activate this Google Meet account for scheduling meetings.\n"
+msgstr "Attiva questo account Google Meet per pianificare le riunioni.\n"
+
+msgid "Account Name "
+msgstr "Nome account"
+
+msgid "Upload an image"
+msgstr "Carica un'immagine"
+
+msgid "No data imports found."
+msgstr "Nessuna importazione di dati trovata."
+
+msgid "Nwe Data Import"
+msgstr "Nuova importazione dati"
+
+msgid "Choose a Document Type to import"
+msgstr "Scegli un tipo di documento da importare"
+
+msgid "Custom DocPerm"
+msgstr "DocPerm personalizzato"
+
+msgid "Custom Role"
+msgstr "Ruolo personalizzato"
+
+msgid "Desktop Icon"
+msgstr "Icona desktop"
+
+msgid "DocShare"
+msgstr "DocShare"
+
+msgid "Email Group"
+msgstr "Gruppo e-mail"
+
+msgid "Email Group Member"
+msgstr "Membro del gruppo e-mail"
+
+msgid "Email Template"
+msgstr "Modello e-mail"
+
+msgid "File"
+msgstr "File"
+
+msgid "Help Article"
+msgstr "Articolo della guida"
+
+msgid "Web Page View"
+msgstr "Visualizzazione pagina web"
+
+msgid "Website Theme"
+msgstr "Tema sito web"
+
+msgid "Workflow State"
+msgstr "Stato flusso di lavoro"
+
+msgid "Review & Import"
+msgstr "Revisione ed Importa"
+
+msgid "Import data into your system using CSV files or Google Sheets."
+msgstr "Importa i dati nel tuo sistema utilizzando file CSV o Fogli Google."
+
+msgid "Drag and drop a CSV file, or upload from your Device or Google Sheet"
+msgstr ""
+"Trascina e rilascia un file CSV oppure caricalo dal tuo dispositivo o da "
+"Google Sheets"
+
+msgid "Dowload CSV Template"
+msgstr "Scarica modello CSV"
+
+msgid "Name "
+msgstr "Nome"
+
+msgid "Change the mapping of columns from your file to fields in the system"
+msgstr "Modifica la mappatura delle colonne del tuo file ai campi nel sistema"
+
+msgid "Fields in File"
+msgstr "Campi nel file"
+
+msgid "Fields in System"
+msgstr "Campi nel sistema"
+
+msgid "Verify the data before starting the import process"
+msgstr "Verifica i dati prima di avviare il processo di importazione"
+
+msgid "Import Logs"
+msgstr "Log di Importazione"
+
+msgid "{0} rows imported successfully, {0} rows failed."
+msgstr "{0} righe importate con successo, {0} righe non riuscite."
+
+msgid "Successful"
+msgstr "Riusciti"
+
+msgid "Row no."
+msgstr "N. riga"
+
+msgid "No logs to display."
+msgstr "Nessun log da visualizzare."
+
+msgid "Retry"
+msgstr "Riprova"
+
+msgid "Highlight "
+msgstr "Evidenzia "
+
+msgid "No content available yet."
+msgstr "Nessun contenuto ancora disponibile"
+
+msgid "Import data into your system using CSV files."
+msgstr "Importa i dati nel tuo sistema utilizzando file CSV."
+
+msgid "New Data Import"
+msgstr "Nuova importazione dati"
+
+msgid "Review and Import"
+msgstr "Rivedi e importa"
+
+msgid "Done"
+msgstr "Fatto"
+
+msgid "Column Mapping"
+msgstr "Mappatura Colonne"
+
+msgid "row"
+msgstr "riga"
+
+msgid "rows"
+msgstr "righe"
+
+msgid "{0} {1} imported successfully, {2} {3} failed."
+msgstr "{0} {1} importate con successo, {2} {3} fallite."
+
+msgid "Failed to import"
+msgstr "Importazione fallita"
+
+msgid "Successfully imported"
+msgstr "Importato con successo"
+
+msgid "Drag and drop a CSV file, or upload from your"
+msgstr "Trascina e rilascia un file CSV, o caricalo dal tuo"
+
+msgid "Google Sheet"
+msgstr "Google Sheet"
+
+msgid "Add Google Sheets Link"
+msgstr "Aggiungi Link Google Sheets"
+
+msgid "Make sure the link is publically accessible to fetch the data."
+msgstr ""
+"Assicurati che il link sia accessibile pubblicamente per recuperare i dati."
+
+msgid "Please upload a valid CSV file."
+msgstr "Carica un file CSV valido."
+
+msgid "Getting started"
+msgstr "Per iniziare"
+
+msgid "Welcome to Frappe Learning"
+msgstr "Benvenuto su Frappe Learning"
+
+msgid "{0} steps completed"
+msgstr "{0} passaggi completati"
+
+msgid "{0} completed"
+msgstr "{0} completati"
+
+msgid "Skip all"
+msgstr "Salta tutto"
+
+msgid "Help centre"
+msgstr "Centro assistenza"
+
+msgid "Start now"
+msgstr "Inizia ora"
+
+msgid "Assign to"
+msgstr "Assegna a"
+
+msgid "Assing For"
+msgstr "Assegna per"
+
+msgid "Activate this Google Meet account for sheduling meetings"
+msgstr "Attiva questo account Google Meet per pianificare riunioni"
+
+msgid "LLM Model"
+msgstr "Modello LLM"
+
+msgid "The model used to chatbot."
+msgstr "Il modello utilizzato per il chatbot."
+
+msgid "LLM System Prompt"
+msgstr "Prompt di sistema LLM"
+
+msgid "System prompt use with chatbot."
+msgstr "Prompt di sistema da utilizzare con il chatbot."
+
+msgid "Api vimeo for transcript."
+msgstr "API Vimeo per la trascrizione."
+
+msgid "Map Data "
+msgstr "Mappatura dati"
+
+msgid "Columm Mapping"
+msgstr "Mappatura colonne"
+
+msgid "{0} Complete"
+msgstr "{0} Completato"
+
+msgid "Make the batch visible to all users. "
+msgstr "Rendi il lotto visibile a tutti gli utenti."
+
+msgid "Sezioni Feature"
+msgstr "Funzionalità Sezioni"
+
+msgid "Aggiungi un corso al lotto"
+msgstr "Aggiungi un corso alla classe"
+
+msgid "Ad an assessment"
+msgstr "Aggiungi una valutazione"
+
+msgid "Ask a question about this lesson..."
+msgstr "Fai una domanda su questa lezione..."
+
+msgid "{0} is required"
+msgstr "{0} campo obbligatorio"
+
+msgid "Submit Quiz"
+msgstr "Invia Quiz"
+
+msgid "Just Started (0-30%)"
+msgstr "Appena iniziato (0-30%)"
+
+msgid "In Progress (30-60%)"
+msgstr "In corso (30-60%)"
+
+msgid "Advanced (60-99%)"
+msgstr "Avanzato (60-99%)"
+
+msgid "Completed (100%)"
+msgstr "Completato (100%)"
+
+msgid "Flag to review later"
+msgstr "Segna per tornare dopo alla domanda"
+
+msgid "Send login link"
+msgstr "Invia link di accesso"
+
+msgid "Back to Login"
+msgstr "Torna al login"
+
+msgid "Email Address"
+msgstr "Indirizzo email"
+
+msgid "Invalid Login. Try again."
+msgstr "Accesso non valido. Riprova."
+
+msgid "User with email address {0} does not exist"
+msgstr "L'utente con indirizzo email {0} non esiste"
+
+msgid ""
+"You hit the rate limit because of too many requests. Please try after "
+"sometime."
+msgstr "Hai superato il limite di richieste. Per favore, riprova più tardi."
+
+msgid "Both login and password required"
+msgstr "Email e password sono obbligatorie"
+
+msgid "Valid Login id required."
+msgstr "ID di accesso valido obbligatorio."
+
+msgid "Login link sent to your email"
+msgstr "Link di accesso inviato alla tua email"
+
+msgid "Hide"
+msgstr "Nascondi"
+
+msgid "Show"
+msgstr "Mostra"
+
+msgid "Verifying..."
+msgstr "Verifica in corso..."
+
+msgid "Not a valid user"
+msgstr "Utente non valido"
+
+msgid "Not Allowed: Disabled User"
+msgstr "Non Consentito: Utente Disabilitato"
+
+msgid "Instructions Emailed"
+msgstr "Istruzioni inviate via email"
+
+msgid "Oops! Something went wrong."
+msgstr "Ops! Qualcosa è andato storto."
+
+msgid "User does not exist."
+msgstr "L'utente non esiste."
+
+msgid "Too many requests. Please try again later."
+msgstr "Troppe richieste. Riprova più tardi."
+
+msgid "Something went wrong."
+msgstr "Qualcosa è andato storto."
+
+msgid "Login token required"
+msgstr "Token di accesso obbligatorio"
+
+msgid "Verification"
+msgstr "Verifica"
+
+msgid "Verification Code"
+msgstr "Codice di Verifica"
+
+msgid "Verify"
+msgstr "Verifica"
+
+msgid "Enter Code displayed in OTP App."
+msgstr "Inserisci il codice visualizzato nell'app OTP."
+
+msgid ""
+"OTP setup using OTP App was not completed. Please contact Administrator."
+msgstr ""
+"La configurazione OTP tramite app OTP non è stata completata. Contatta "
+"l'Amministratore."
+
+msgid "SMS was not sent. Please contact Administrator."
+msgstr "L'SMS non è stato inviato. Contatta l'Amministratore."
+
+msgid "Verification code email not sent. Please contact Administrator."
+msgstr ""
+"L'email con il codice di verifica non è stata inviata. Contatta "
+"l'Amministratore."
+
+msgid "Log In To {0}"
+msgstr "Accedi a {0}"
+
+msgid "Click on the button to log in to {0}"
+msgstr "Clicca sul bottone per accedere a {0}\""
+
+msgid "The link will expire in {0} minutes"
+msgstr "Il link scadrà fra {0} minuti"
+
+msgid "If you did not request this link, you can safely ignore this email."
+msgstr "Se non hai richiesto questo link, puoi ignorare questa email."
+
+msgid "Upload Files"
+msgstr "Carica File"
+
+msgid "Click to select files or drag them here"
+msgstr "Clicca per selezionare i file o trascinali qui"
+
+msgid "Any file type"
+msgstr "Qualsiasi tipo di file"
+
+msgid "Upload as private"
+msgstr "Carica come privato"
+
+msgid "Uploaded Files"
+msgstr "File Caricati"
+
+msgid "No files uploaded yet"
+msgstr "Nessun file caricato"
+
+msgid "File uploaded successfully"
+msgstr "File caricato con successo"
+
+msgid "File deleted"
+msgstr "File eliminato"
+
+msgid "Download"
+msgstr "Scarica"
+
+msgid "Delete {0}?"
+msgstr "Eliminare {0}?"
+
+msgid "This action cannot be undone."
+msgstr "Questa azione non può essere annullata."
+
+msgid "Selected files ({0})"
+msgstr "File selezionati ({0})"
+
+msgid "Clear all"
+msgstr "Rimuovi tutti"
+
+msgid "Upload failed"
+msgstr "Caricamento fallito"
+
+msgid "Newest first"
+msgstr "Più recenti"
+
+msgid "Oldest first"
+msgstr "Meno recenti"
+
+msgid "Name A-Z"
+msgstr "Nome A-Z"
+
+msgid "Name Z-A"
+msgstr "Nome Z-A"
+
+msgid "Deselect all"
+msgstr "Deseleziona tutti"
+
+msgid "Delete selected"
+msgstr "Elimina selezionati"
+
+msgid "Delete {0} files?"
+msgstr "Eliminare {0} file?"
+
+msgid "Deleted {0} files"
+msgstr "{0} file eliminati"
+
+msgid "Page {0} of {1}"
+msgstr "Pagina {0} di {1}"
+
+msgid "Select all"
+msgstr "Seleziona tutti"
+
+msgid "Copy path"
+msgstr "Copia percorso"
+
+msgid "Path copied"
+msgstr "Percorso copiato"
+
+msgid "Add Tag"
+msgstr "Aggiungi Tag"
+
+msgid "Search tags..."
+msgstr "Cerca tag..."
+
+msgid "No tags found"
+msgstr "Nessun tag trovato"
+
+msgid "New tag name"
+msgstr "Nome nuovo tag"
+
+msgid "Tag created"
+msgstr "Tag creato"
+
+msgid "Failed to create tag"
+msgstr "Errore nella creazione del tag"
+
+msgid "Delete tag \"{0}\"?"
+msgstr "Eliminare il tag \"{0}\"?"
+
+msgid "This tag will be removed from all courses."
+msgstr "Questo tag verrà rimosso da tutti i corsi."
+
+msgid "Tag deleted"
+msgstr "Tag eliminato"
+
+msgid "Failed to delete tag"
+msgstr "Errore nell'eliminazione del tag"
+
+msgid "No tags selected"
+msgstr "Nessun tag selezionato"
+
+msgid "Manage Tags"
+msgstr "Gestisci Tag"
+
+msgid "No tags available"
+msgstr "Nessun tag disponibile"
+
+msgid "No tags created yet"
+msgstr "Nessun tag creato"
+
+msgid "Tag updated"
+msgstr "Tag aggiornato"
+
+msgid "Failed to update tag"
+msgstr "Errore nell'aggiornamento del tag"
+
+msgid "Type your reply here..."
+msgstr "Scrivi qui la tua risposta..."
+
+msgid "Thinking..."
+msgstr "Sto pensando..."
+
+msgid "You"
+msgstr "Tu"
+
+msgid "Use a few words, avoid common phrases."
+msgstr "Usa poche parole, evita frasi comuni."
+
+msgid "No need for symbols, digits, or uppercase letters."
+msgstr "Non servono simboli, cifre o lettere maiuscole."
+
+msgid "Better add a few more letters or another word"
+msgstr "Meglio aggiungere qualche lettera in più o un'altra parola"
+
+msgid "Short keyboard patterns are easy to guess"
+msgstr "Le sequenze brevi di tasti sono facili da indovinare"
+
+msgid "Make use of longer keyboard patterns"
+msgstr "Usa sequenze di tasti più lunghe"
+
+msgid "Straight rows of keys are easy to guess"
+msgstr "Le righe dritte di tasti sono facili da indovinare"
+
+msgid "Try to use a longer keyboard pattern with more turns"
+msgstr ""
+"Prova a usare una sequenza di tasti più lunga con più cambi di direzione"
+
+msgid "Repeats like \"abcabcabc\" are only slightly harder to guess than \"abc\""
+msgstr ""
+"Ripetizioni come \"abcabcabc\" sono solo leggermente più difficili da "
+"indovinare di \"abc\""
+
+msgid "Try to avoid repeated words and characters"
+msgstr "Cerca di evitare parole e caratteri ripetuti"
+
+msgid "Repeats like \"aaa\" are easy to guess"
+msgstr "Ripetizioni come \"aaa\" sono facili da indovinare"
+
+msgid "Let's avoid repeated words and characters"
+msgstr "Evitiamo parole e caratteri ripetuti"
+
+msgid "Avoid sequences like abc or 6543 as they are easy to guess"
+msgstr "Evita sequenze come abc o 6543 perché sono facili da indovinare"
+
+msgid "Recent years are easy to guess."
+msgstr "Gli anni recenti sono facili da indovinare."
+
+msgid "Avoid recent years."
+msgstr "Evita gli anni recenti."
+
+msgid "Avoid years that are associated with you."
+msgstr "Evita gli anni associati a te."
+
+msgid "Dates are often easy to guess."
+msgstr "Le date sono spesso facili da indovinare."
+
+msgid "Avoid dates and years that are associated with you."
+msgstr "Evita date e anni associati a te."
+
+msgid "This is a top-10 common password."
+msgstr "Questa è una delle 10 password più comuni."
+
+msgid "This is a top-100 common password."
+msgstr "Questa è una delle 100 password più comuni."
+
+msgid "This is a very common password."
+msgstr "Questa è una password molto comune."
+
+msgid "This is similar to a commonly used password."
+msgstr "È simile a una password comunemente usata."
+
+msgid "A word by itself is easy to guess."
+msgstr "Una singola parola è facile da indovinare."
+
+msgid "Names and surnames by themselves are easy to guess."
+msgstr "Nomi e cognomi da soli sono facili da indovinare."
+
+msgid "Common names and surnames are easy to guess."
+msgstr "Nomi e cognomi comuni sono facili da indovinare."
+
+msgid "Capitalization doesn't help very much."
+msgstr "Le maiuscole non aiutano molto."
+
+msgid "All-uppercase is almost as easy to guess as all-lowercase."
+msgstr "Tutto maiuscolo è quasi facile da indovinare quanto tutto minuscolo."
+
+msgid ""
+"Predictable substitutions like '@' instead of 'a' don't help very much."
+msgstr "Sostituzioni prevedibili come '@' al posto di 'a' non aiutano molto."
+
+msgid "Common words are easy to guess."
+msgstr "Le parole comuni sono facili da indovinare."
+
+msgid "Use a few uncommon words together."
+msgstr "Usa alcune parole non comuni insieme."
+
+msgid "Add numbers or special characters."
+msgstr "Aggiungi numeri o caratteri speciali."
+
+msgid "The reset password link has either been used before or is invalid"
+msgstr ""
+"Il link per reimpostare la password è già stato utilizzato o non è valido"
+
+msgid "Mobile"
+msgstr "Cellulare"
+
+msgid "Invalid Request"
+msgstr "Richiesta non valida"
+
+msgid "Invalid Login Token"
+msgstr "Token di accesso non valido"
+
+msgid "Login To {0}"
+msgstr "Accedi a {0}"
+
+msgid "The link you trying to login is invalid or expired."
+msgstr "Il link che stai usando per accedere non è valido o è scaduto."
+
+msgid "Not a valid User Image."
+msgstr "Immagine utente non valida."
+
+msgid "User {0} cannot be disabled"
+msgstr "L'utente {0} non può essere disabilitato"
+
+msgid ""
+"Your password has been changed and you might have been logged out of all "
+"systems.<br>Please contact the Administrator for further assistance."
+msgstr ""
+"La tua password è stata modificata e potresti essere stato disconnesso da "
+"tutti i sistemi.<br>Contatta l'Amministratore per ulteriore assistenza."
+
+msgid "Security Alert: Your password has been changed."
+msgstr "Avviso di sicurezza: la tua password è stata modificata."
+
+msgid "Role has been set as per the user type {0}"
+msgstr "Il ruolo è stato impostato in base al tipo di utente {0}"
+
+msgid "Welcome email sent"
+msgstr "Email di benvenuto inviata"
+
+msgid ""
+"Please setup default outgoing Email Account from Settings > Email Account"
+msgstr ""
+"Configura l'account email predefinito per l'invio da Impostazioni > Account "
+"Email"
+
+msgid "Password Reset"
+msgstr "Reimposta Password"
+
+msgid "Welcome to {0}"
+msgstr "Benvenuto su {0}"
+
+msgid "Complete Registration"
+msgstr "Completa la Registrazione"
+
+msgid "User {0} cannot be deleted"
+msgstr "L'utente {0} non può essere eliminato"
+
+msgid "User {0} cannot be renamed"
+msgstr "L'utente {0} non può essere rinominato"
+
+msgid "Username {0} already exists"
+msgstr "Il nome utente {0} esiste già"
+
+msgid "Suggested Username: {0}"
+msgstr "Nome utente suggerito: {0}"
+
+msgid "Email Account added multiple times"
+msgstr "Account email aggiunto più volte"
+
+msgid "Newly created user {0} has no roles enabled."
+msgstr "L'utente appena creato {0} non ha ruoli abilitati."
+
+msgid "No Roles Specified"
+msgstr "Nessun Ruolo Specificato"
+
+msgid "Add Roles"
+msgstr "Aggiungi Ruoli"
+
+msgid "Password size exceeded the maximum allowed size."
+msgstr "La dimensione della password supera la dimensione massima consentita."
+
+msgid ""
+"New password cannot be the same as your current password. Please choose a "
+"different password."
+msgstr ""
+"La nuova password non può essere uguale alla password attuale. Scegli una "
+"password diversa."
+
+msgid "Invalid Password"
+msgstr "Password non valida"
+
+msgid "Password requirements not met"
+msgstr "Requisiti password non soddisfatti"
+
+msgid "The reset password link has been expired"
+msgstr "Il link per reimpostare la password è scaduto"
+
+msgid "Password reset instructions have been sent to {}'s email"
+msgstr ""
+"Le istruzioni per reimpostare la password sono state inviate all'email di {}"
+
+msgid "Throttled"
+msgstr "Limitato"
+
+msgid "Administrator accessed {0} on {1} via IP Address {2}."
+msgstr "L'amministratore ha accesso a {0} il {1} dall'indirizzo IP {2}."
+
+msgid "Administrator Logged In"
+msgstr "Amministratore Connesso"
+
+msgid "User {0} impersonated as {1}"
+msgstr "L'utente {0} si è sostituito a {1}"
+
+msgid "{0} just impersonated as you. They gave this reason: {1}"
+msgstr "{0} si è appena sostituito a te. Ha fornito questo motivo: {1}"
+
+msgid "Security Alert: Your account is being impersonated"
+msgstr ""
+"Avviso di sicurezza: il tuo account è stato oggetto di impersonificazione"
+
+msgid ""
+"User {0} has started an impersonation session as you. <br><br><b>Reason "
+"provided:</b> {1}"
+msgstr ""
+"L'utente {0} ha avviato una sessione di impersonificazione come te. "
+"<br><br><b>Motivo fornito:</b> {1}"
+
+msgid "Successfully signed out"
+msgstr "Disconnessione avvenuta con successo"
+
+msgid "No Email field found in {0}"
+msgstr "Nessun campo Email trovato in {0}"
+
+msgid "Invalid Doctype"
+msgstr "Tipo di documento non valido"
+
+msgid "{0} subscribers added"
+msgstr "{0} iscritti aggiunti"
+
+msgid "{0} is not a valid Email Address"
+msgstr "{0} non è un indirizzo email valido"
+
+msgid "now"
+msgstr "adesso"
+
+msgid "{0} m"
+msgstr "{0} m"
+
+msgid "{0} h"
+msgstr "{0} h"
+
+msgid "{0} d"
+msgstr "{0} g"
+
+msgid "{0} w"
+msgstr "{0} sett"
+
+msgid "{0} M"
+msgstr "{0} mesi"
+
+msgid "{0} y"
+msgstr "{0} anni"
+
+msgid "just now"
+msgstr "proprio adesso"
+
+msgid "1 minute ago"
+msgstr "1 minuto fa"
+
+msgid "{0} minutes ago"
+msgstr "{0} minuti fa"
+
+msgid "1 hour ago"
+msgstr "1 ora fa"
+
+msgid "yesterday"
+msgstr "ieri"
+
+msgid "1 week ago"
+msgstr "1 settimana fa"
+
+msgid "{0} weeks ago"
+msgstr "{0} settimane fa"
+
+msgid "1 month ago"
+msgstr "1 mese fa"
+
+msgid "{0} months ago"
+msgstr "{0} mesi fa"
+
+msgid "1 year ago"
+msgstr "1 anno fa"
+
+msgid "{0} years ago"
+msgstr "{0} anni fa"
+
 msgid "Password Email Sent"
 msgstr "Email Password Inviata"
-

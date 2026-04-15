@@ -3415,7 +3415,6 @@ restrict_ip
 "Please check your email for verification","Controlla la tua email per la verifica"
 "Please ask your administrator to verify your sign-up","Chiedi al tuo amministratore di verificare la tua registrazione"
 "Password reset instructions have been sent to {}'s email","Le istruzioni per reimpostare la password sono state inviate all'email di {}"
-"Password Email Sent","Email Password Inviata"
 "Throttled","Limitato"
 "Administrator accessed {0} on {1} via IP Address {2}.","L'amministratore ha accesso a {0} il {1} dall'indirizzo IP {2}."
 "Administrator Logged In","Amministratore Connesso"
@@ -3470,3 +3469,4 @@ restrict_ip
 "Marks for question number {0} cannot be greater than the marks allotted for that question.","Il punteggio per la domanda numero {0} non può essere maggiore del punteggio assegnato a quella domanda."
 "You have got a score of {0} for the quiz {1}","Hai ottenuto un punteggio di {0} per il quiz {1}"
 "There has been an update on your submission. You have got a score of {0} for the quiz {1}","C'è stato un aggiornamento sul tuo elaborato. Hai ottenuto un punteggio di {0} per il quiz {1}"
+"Password Email Sent","Email Password Inviata"
