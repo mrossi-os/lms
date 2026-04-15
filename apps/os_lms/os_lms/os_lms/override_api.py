@@ -118,3 +118,62 @@ def can_access_lesson(lesson, roles):
 
 
 # endregion
+
+
+@frappe.whitelist()
+def get_announcements(batch: str):
+    """
+    Override: per studenti, ritorna solo gli annunci in cui sono destinatari
+    (recipients o cc). Moderatori/Batch Evaluator vedono tutto.
+    """
+    from frappe import _
+
+    roles = frappe.get_roles()
+    is_batch_student = frappe.db.exists(
+        "LMS Batch Enrollment", {"batch": batch, "member": frappe.session.user}
+    )
+    is_admin = "Moderator" in roles or "Batch Evaluator" in roles
+
+    if not (is_batch_student or is_admin):
+        frappe.throw(
+            _("You do not have permission to access announcements for this batch."),
+            frappe.PermissionError,
+        )
+
+    communications = frappe.get_all(
+        "Communication",
+        filters={
+            "reference_doctype": "LMS Batch",
+            "reference_name": batch,
+        },
+        fields=[
+            "subject",
+            "content",
+            "recipients",
+            "cc",
+            "bcc",
+            "communication_date",
+            "sender",
+            "sender_full_name",
+        ],
+        order_by="communication_date desc",
+    )
+
+    if not is_admin:
+        user_email = frappe.session.user
+        filtered = []
+        for comm in communications:
+            fields_combined = " ".join(
+                filter(None, [comm.get("recipients"), comm.get("cc"), comm.get("bcc")])
+            )
+            if user_email in fields_combined:
+                filtered.append(comm)
+        communications = filtered
+
+    for communication in communications:
+        communication.image = frappe.get_cached_value(
+            "User", communication.sender, "user_image"
+        )
+
+    return communications
+

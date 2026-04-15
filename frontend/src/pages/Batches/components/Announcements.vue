@@ -1,7 +1,19 @@
 <template>
 	<div class="w-[90%] lg:w-[75%] mx-auto mt-5">
-		<div class="text-ink-gray-9 font-semibold text-lg mb-5">
-			{{ __('Announcements') }}
+		<div class="flex items-center justify-between mb-5">
+			<div class="text-ink-gray-9 font-semibold text-lg">
+				{{ __('Announcements') }}
+			</div>
+			<Button
+				v-if="canMakeAnnouncement"
+				variant="solid"
+				@click="showAnnouncementModal = true"
+			>
+				<template #prefix>
+					<Plus class="w-4 h-4" />
+				</template>
+				{{ __('Make an Announcement') }}
+			</Button>
 		</div>
 		<div v-if="communications.data?.length">
 			<div v-for="comm in communications.data">
@@ -27,17 +39,36 @@
 		<div v-else class="text-ink-gray-7 leading-5">
 			{{ __('No announcements have been made yet for this batch') }}
 		</div>
+		<AnnouncementModal
+			v-if="showAnnouncementModal"
+			v-model="showAnnouncementModal"
+			:batch="props.batch.data.name"
+			:students="props.batch.data.students"
+		/>
 	</div>
 </template>
 <script setup>
-import { createResource, Avatar } from 'frappe-ui'
+import { createResource, Avatar, Button } from 'frappe-ui'
+import { Plus } from 'lucide-vue-next'
+import { computed, inject, ref } from 'vue'
 import { timeAgo } from '@/utils'
+import AnnouncementModal from '@/pages/Batches/components/AnnouncementModal.vue'
+
+const user = inject('$user')
+const readOnlyMode = window.read_only_mode
+const showAnnouncementModal = ref(false)
 
 const props = defineProps({
 	batch: {
 		type: Object,
 		required: true,
 	},
+})
+
+const canMakeAnnouncement = computed(() => {
+	if (readOnlyMode) return false
+	if (!props.batch.data?.students?.length) return false
+	return user.data?.is_moderator || user.data?.is_evaluator
 })
 
 const communications = createResource({

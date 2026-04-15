@@ -70,12 +70,6 @@
 		v-model="openCertificateDialog"
 		:batch="batch.data"
 	/>
-	<AnnouncementModal
-		v-if="showAnnouncementModal"
-		v-model="showAnnouncementModal"
-		:batch="batch.data.name"
-		:students="batch.data.students"
-	/>
 </template>
 <script setup>
 import {
@@ -107,7 +101,6 @@ import StudentBatchDashboard from '@/pages/Batches/components/BatchDashboard.vue
 import BatchOverview from '@/pages/Batches/BatchOverview.vue'
 import LiveClass from '@/pages/Batches/components/LiveClass.vue'
 import Announcements from '@/pages/Batches/components/Announcements.vue'
-import AnnouncementModal from '@/pages/Batches/components/AnnouncementModal.vue'
 import BatchForm from '@/pages/Batches/BatchForm.vue'
 import BulkCertificates from '@/pages/Batches/components/BulkCertificates.vue'
 import Discussions from '@/components/Discussions.vue'
@@ -120,8 +113,6 @@ const childRef = ref(null)
 const tabIndex = ref(0)
 const tabs = ref([])
 const openCertificateDialog = ref(false)
-const showAnnouncementModal = ref(false)
-const readOnlyMode = window.read_only_mode
 
 const props = defineProps({
 	batchName: {
@@ -187,7 +178,12 @@ const updateTabs = () => {
 	}
 	addToTabs('Classes', __('Classes'), markRaw(LiveClass), Laptop)
 	addToTabs('Announcements', __('Announcements'), markRaw(Announcements), Mail)
-	addToTabs('Discussions', __('Discussions'), markRaw(Discussions), MessageCircle)
+	addToTabs(
+		'Discussions',
+		__('Discussions'),
+		markRaw(Discussions),
+		MessageCircle,
+	)
 	if (isAdmin.value) {
 		addToTabs('Settings', __('Settings'), markRaw(BatchForm), Settings2)
 	}
@@ -212,18 +208,8 @@ const isStudent = computed(() => {
 	return batch.data?.students?.includes(user.data?.name)
 })
 
-const openAnnouncementModal = () => {
-	showAnnouncementModal.value = true
-}
-
-const canMakeAnnouncement = () => {
-	if (readOnlyMode) return false
-	if (!batch.data?.students?.length) return false
-	return user.data?.is_moderator || user.data?.is_evaluator
-}
-
 const batchMenu = computed(() => {
-	if (!batch.data?.certification && !canMakeAnnouncement()) {
+	if (!batch.data?.certification) {
 		return []
 	}
 	let options = [
@@ -233,13 +219,6 @@ const batchMenu = computed(() => {
 				openCertificateDialog.value = true
 			},
 			condition: () => batch.data?.certification,
-		},
-		{
-			label: __('Make an Announcement'),
-			onClick() {
-				openAnnouncementModal()
-			},
-			condition: () => canMakeAnnouncement(),
 		},
 	]
 	return options

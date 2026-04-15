@@ -28,13 +28,86 @@
 					v-model="announcement.subject"
 					:required="true"
 				/>
-				<FormControl
+				<!-- <FormControl
 					:label="__('Reply To')"
 					type="text"
 					v-model="announcement.replyTo"
 					:required="true"
+				/> -->
+				<FormControl
+					:label="__('Send To')"
+					type="select"
+					:options="[
+						{ label: __('Whole class'), value: 'all' },
+						{ label: __('Specific students'), value: 'specific' },
+					]"
+					v-model="recipientMode"
 				/>
-				<div class="mb-4">
+				<div v-if="recipientMode === 'specific'" class="flex flex-col gap-2">
+					<div class="text-sm text-ink-gray-5">
+						{{ __('Select students') }}
+						<span class="text-ink-red-3">*</span>
+					</div>
+					<div
+						class="border rounded-md p-2 max-h-[180px] overflow-auto bg-surface-white"
+					>
+						<div v-if="!props.students.length" class="text-ink-gray-5 text-sm">
+							{{ __('No students in this batch') }}
+						</div>
+						<label
+							v-for="email in props.students"
+							:key="email"
+							class="flex items-center gap-2 py-1 cursor-pointer text-sm"
+						>
+							<input
+								type="checkbox"
+								:value="email"
+								v-model="selectedStudents"
+								class="cursor-pointer"
+							/>
+							<span class="text-white">
+								{{ studentLabels[email] || email }}
+							</span>
+						</label>
+					</div>
+					<div class="text-xs text-ink-gray-5">
+						{{ selectedStudents.length }} {{ __('selected') }}
+					</div>
+				</div>
+				<div v-if="isHtmlMode" class="mb-4 flex flex-col gap-3">
+					<div v-if="hasMessagePlaceholder">
+						<div class="mb-1.5 text-sm text-ink-gray-5">
+							{{ __('Message') }}
+							<span class="text-ink-red-3">*</span>
+						</div>
+						<textarea
+							v-model="announcement.message"
+							class="w-full min-h-[120px] max-h-[240px] border rounded-md p-2 text-sm bg-surface-gray-3 border-outline-gray-2"
+							:placeholder="__('Write your message here. It will be inserted into the template.')"
+						></textarea>
+					</div>
+					<div>
+						<div class="mb-1.5 flex items-center justify-between">
+							<div class="text-sm text-ink-gray-5">
+								{{ __('Preview') }}
+							</div>
+							<Button size="sm" @click="showAdvanced = !showAdvanced">
+								{{ showAdvanced ? __('Hide HTML') : __('Edit HTML (advanced)') }}
+							</Button>
+						</div>
+						<div
+							class="border rounded-md p-4 bg-surface-white min-h-[200px] max-h-[400px] overflow-auto"
+							v-html="previewHtml"
+						></div>
+						<textarea
+							v-if="showAdvanced"
+							v-model="announcement.announcement"
+							class="mt-2 w-full min-h-[200px] max-h-[400px] border rounded-md p-2 text-sm font-mono bg-surface-gray-3 border-outline-gray-2"
+							spellcheck="false"
+						></textarea>
+					</div>
+				</div>
+				<div v-else class="mb-4">
 					<div class="mb-1.5 text-sm text-ink-gray-5">
 						{{ __('Announcement') }}
 						<span class="text-ink-red-3">*</span>
@@ -53,13 +126,14 @@
 
 <script setup>
 import {
+	Button,
 	Dialog,
 	FormControl,
 	TextEditor,
 	createResource,
 	toast,
 } from 'frappe-ui'
-import { reactive, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 
 const show = defineModel()
 
@@ -79,6 +153,50 @@ const announcement = reactive({
 	subject: '',
 	replyTo: '',
 	announcement: '',
+	message: '',
+})
+
+const isHtmlMode = ref(false)
+const showAdvanced = ref(false)
+const recipientMode = ref('all')
+const selectedStudents = ref([])
+
+const hasMessagePlaceholder = computed(() =>
+	/\{\{\s*message\s*\}\}/.test(announcement.announcement || ''),
+)
+
+const escapeHtml = (str) =>
+	String(str)
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+
+const previewHtml = computed(() => {
+	const msg = escapeHtml(announcement.message || '').replace(/\n/g, '<br>')
+	return (announcement.announcement || '')
+		.replace(/\{\{\s*message\s*\}\}/g, msg)
+		.replace(/\{\{\s*frappe\.utils\.get_url\(\)\s*\}\}/g, window.location.origin)
+})
+
+const studentsInfo = createResource({
+	url: 'frappe.client.get_list',
+	makeParams() {
+		return {
+			doctype: 'User',
+			filters: [['name', 'in', props.students]],
+			fields: ['name', 'full_name'],
+			limit_page_length: 0,
+		}
+	},
+	auto: true,
+})
+
+const studentLabels = computed(() => {
+	const map = {}
+	;(studentsInfo.data || []).forEach((u) => {
+		map[u.name] = u.full_name ? `${u.full_name} <${u.name}>` : u.name
+	})
+	return map
 })
 
 watch(
@@ -119,7 +237,12 @@ const applyTemplate = async (option) => {
 	console.log('[AnnouncementModal] template result:', result)
 	if (result) {
 		announcement.subject = result.subject || ''
-		announcement.announcement = result.response || ''
+		isHtmlMode.value = !!result.use_html
+		showAdvanced.value = false
+		announcement.message = ''
+		announcement.announcement = result.use_html
+			? result.response_html || ''
+			: result.response || ''
 		console.log('[AnnouncementModal] announcement after apply:', {
 			...announcement,
 		})
@@ -127,16 +250,18 @@ const applyTemplate = async (option) => {
 }
 
 const announcementResource = createResource({
-	url: 'frappe.core.doctype.communication.email.make',
+	url: 'os_lms.os_lms.api.send_batch_announcement',
 	makeParams() {
+		const recipients =
+			recipientMode.value === 'specific'
+				? selectedStudents.value
+				: props.students
 		return {
-			recipients: announcement.replyTo,
-			bcc: props.students.join(', '),
+			batch: props.batch,
+			recipients: recipients,
 			subject: announcement.subject,
 			content: announcement.announcement,
-			doctype: 'LMS Batch',
-			name: props.batch,
-			send_email: 1,
+			message: announcement.message,
 		}
 	},
 })
@@ -149,14 +274,20 @@ const makeAnnouncement = (close) => {
 				if (!props.students.length) {
 					return __('No students in this batch')
 				}
+				if (
+					recipientMode.value === 'specific' &&
+					!selectedStudents.value.length
+				) {
+					return __('Select at least one student')
+				}
 				if (!announcement.subject) {
 					return __('Subject is required')
 				}
 				if (!announcement.announcement) {
 					return __('Announcement is required')
 				}
-				if (!announcement.replyTo) {
-					return __('Reply To is required')
+				if (hasMessagePlaceholder.value && !announcement.message) {
+					return __('Message is required')
 				}
 			},
 			onSuccess() {

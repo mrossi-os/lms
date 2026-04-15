@@ -215,4 +215,51 @@ def check_quiz_access(course, lesson=None):
                 "reason": "Completa tutte le lezioni precedenti prima di accedere al quiz."
             }
 
+
+@frappe.whitelist()
+def send_batch_announcement(batch: str, recipients, subject: str, content: str, message: str = "") -> dict:
+    """
+    Invia un annuncio a una LMS Batch con rendering Jinja dell'HTML.
+    Il parametro `message` viene iniettato nel context come {{ message }}
+    per permettere all'utente di scrivere il testo senza toccare l'HTML.
+    """
+    if not frappe.db.exists("LMS Batch", batch):
+        frappe.throw("Batch non trovata")
+
+    user_roles = frappe.get_roles(frappe.session.user)
+    if not any(role in user_roles for role in ["Moderator", "Batch Evaluator", "System Manager"]):
+        frappe.throw("Non hai i permessi per inviare annunci", frappe.PermissionError)
+
+    if isinstance(recipients, str):
+        recipients = [r.strip() for r in recipients.split(",") if r.strip()]
+    if not recipients:
+        frappe.throw("Nessun destinatario specificato")
+
+    message_html = (message or "").replace("\n", "<br>")
+    context = {"message": message_html}
+    rendered_content = frappe.render_template(content, context)
+    rendered_subject = frappe.render_template(subject, context)
+
+    from frappe.core.doctype.communication.email import make
+    make(
+        recipients=", ".join(recipients),
+        subject=rendered_subject,
+        content=rendered_content,
+        doctype="LMS Batch",
+        name=batch,
+        send_email=1,
+    )
+
+    from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
+    batch_title = frappe.db.get_value("LMS Batch", batch, "title") or batch
+    notification = frappe._dict({
+        "subject": frappe._("Hai un nuovo messaggio in annunci: {0}").format(batch_title),
+        "from_user": frappe.session.user,
+        "type": "Alert",
+        "link": f"/lms/batches/details/{batch}",
+    })
+    make_notification_logs(notification, recipients)
+
+    return {"ok": True, "recipients_count": len(recipients)}
+
     return {"allowed": True}

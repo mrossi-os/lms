@@ -36,6 +36,7 @@ sqlite_search = ["os_lms.overrides.sqlite.CustomLearningSearch"]
 override_whitelisted_methods = {
     "lms.lms.api.get_sidebar_settings": "os_lms.os_lms.override_api.get_sidebar_settings",
     "lms.lms.api.get_lms_settings":"os_lms.os_lms.override_api.get_lms_settings",
+    "lms.lms.api.get_announcements": "os_lms.os_lms.override_api.get_announcements",
     "lms.command_palette.search_sqlite": "os_lms.os_lms.override_api.search_sqlite",
     "lms.lms.utils.get_course_details": "os_lms.os_lms.override_utils.get_course_details",
     "lms.lms.utils.get_courses": "os_lms.os_lms.override_utils.get_courses",
