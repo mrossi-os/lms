@@ -54,9 +54,13 @@ export default defineConfig(async ({ mode }) => {
 			allowedHosts: true,
 		},
 		resolve: {
-			alias: {
-				'@': path.resolve(__dirname, 'src'),
-			},
+			alias: [
+				{
+					find: /^@\/utils$/,
+					replacement: path.resolve(__dirname, 'src/oslms/utils/index.js'),
+				},
+				{ find: '@', replacement: path.resolve(__dirname, 'src') },
+			],
 		},
 		optimizeDeps: {
 			include: [
