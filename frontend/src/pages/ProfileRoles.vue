@@ -1,5 +1,5 @@
 <template>
-	<div class="mt-7">
+	<div class="mt-7 mb-12">
 		<h2 class="mb-3 text-lg font-semibold text-ink-gray-9">
 			{{ __('Settings') }}
 		</h2>
@@ -93,7 +93,7 @@ watch(
 			member: newValue.data?.name,
 		})
 	},
-	{ immediate: true }
+	{ immediate: true },
 )
 
 const saveRole = async (role) => {

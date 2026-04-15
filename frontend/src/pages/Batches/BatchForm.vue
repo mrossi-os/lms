@@ -122,7 +122,7 @@
 				</div>
 
 				<div class="px-5 pb-5 space-y-5 border-b mb-5">
-					<div class="grid grid-cols-2 gap-5">
+					<div class="grid md:grid-cols-2 gap-5">
 						<MultiSelect
 							v-model="instructors"
 							doctype="User"

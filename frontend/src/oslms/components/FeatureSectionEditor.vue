@@ -1,6 +1,8 @@
 <template>
 	<div class="pr-5 md:pr-10 pb-5 mb-5 space-y-5 border-b os-feature-sections">
-		<div class="flex items-center justify-between">
+		<div
+			class="flex flex-col md:flex-row gap-2 md:gap-0 items-center justify-between"
+		>
 			<div>
 				<div class="text-lg font-semibold text-ink-gray-9">
 					{{ __('Sezioni Feature') }}
@@ -13,7 +15,7 @@
 					}}
 				</div>
 			</div>
-			<Button variant="outline" @click="addSection">
+			<Button variant="outline" @click="addSection" class="w-full">
 				<template #prefix>
 					<Plus class="w-4 h-4" />
 				</template>
@@ -90,9 +92,7 @@
 							:label="__('Icona')"
 							@update:modelValue="onChanged"
 						/>
-						<div
-							class="flex flex-col-reverse md:flex-row md:items-end gap-2"
-						>
+						<div class="flex flex-col-reverse md:flex-row md:items-end gap-2">
 							<FormControl
 								v-model="item.title"
 								:label="__('Titolo')"

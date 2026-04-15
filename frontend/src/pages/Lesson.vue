@@ -4,25 +4,25 @@
 			class="sticky top-0 z-10 flex items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5"
 		>
 			<Breadcrumbs class="h-7" :items="breadcrumbs" />
-			<div class="flex items-center space-x-2">
+			<div class="hidden md:flex fixed top-3 z-11 items-center space-x-2">
 				<Tooltip v-if="canGoZen()" :text="__('Zen Mode')">
-					<Button @click="goFullScreen()">
+					<Button size="sm" @click="goFullScreen()">
 						<template #icon>
-							<Focus class="w-4 h-4 stroke-2" />
+							<Focus class="w-3.5 h-3.5 stroke-2" />
 						</template>
 					</Button>
 				</Tooltip>
-				<Button v-if="isAdmin" @click="showVideoStats()">
+				<Button size="sm" v-if="isAdmin" @click="showVideoStats()">
 					<template #icon>
-						<TrendingUp class="size-4 stroke-1.5" />
+						<TrendingUp class="size-3.5 stroke-1.5" />
 					</template>
 				</Button>
 				<CertificationLinks :courseName="courseName" />
-				<Button v-if="lesson.data.prev" @click="switchLesson('prev')">
+				<Button size="sm" v-if="lesson.data.prev" @click="switchLesson('prev')">
 					<template #prefix>
-						<ChevronLeft class="w-4 h-4 stroke-1" />
+						<ChevronLeft class="w-3.5 h-3.5 stroke-1" />
 					</template>
-					<span>
+					<span class="text-xs sm:text-sm">
 						{{ __('Previous') }}
 					</span>
 				</Button>
@@ -38,20 +38,21 @@
 						},
 					}"
 				>
-					<Button>
-						{{ __('Edit') }}
+					<Button size="sm">
+						<span class="text-xs sm:text-sm">{{ __('Edit') }}</span>
 					</Button>
 				</router-link>
 
 				<Button
+					size="sm"
 					v-if="lesson.data.next"
 					@click="switchLesson('next')"
 					:disabled="lessonBlocked"
 				>
 					<template #suffix>
-						<ChevronRight class="w-4 h-4 stroke-1" />
+						<ChevronRight class="w-3.5 h-3.5 stroke-1" />
 					</template>
-					<span>{{ __('Next') }}</span>
+					<span class="text-xs sm:text-sm">{{ __('Next') }}</span>
 				</Button>
 
 				<router-link
@@ -61,10 +62,20 @@
 						params: { courseName: courseName },
 					}"
 				>
-					<Button>
-						{{ __('Back to Course') }}
+					<Button size="sm">
+						<span class="text-xs sm:text-sm">{{ __('Back to Course') }}</span>
 					</Button>
 				</router-link>
+			</div>
+			<div class="flex md:hidden items-center space-x-2">
+				<CertificationLinks :courseName="courseName" />
+				<Dropdown :options="mobileHeaderMenu" side="left">
+					<Button size="sm">
+						<template #icon>
+							<MoreVertical class="w-4 h-4 stroke-1.5" />
+						</template>
+					</Button>
+				</Dropdown>
 			</div>
 		</header>
 		<div class="grid md:grid-cols-[70%,30%] md:h-[94vh]">
@@ -412,6 +423,7 @@ import {
 	call,
 	createListResource,
 	createResource,
+	Dropdown,
 	Tooltip,
 	usePageMeta,
 	toast,
@@ -435,6 +447,9 @@ import {
 	Focus,
 	Info,
 	MessageCircleQuestion,
+	MoreVertical,
+	Pencil,
+	ArrowLeft,
 	TrendingUp,
 } from 'lucide-vue-next'
 import { getEditorTools, enablePlyr, highlightText } from '@/utils'
@@ -699,6 +714,66 @@ const notes = createListResource({
 			}, 500)
 		})
 	},
+})
+
+const mobileHeaderMenu = computed(() => {
+	const options = []
+	if (canGoZen()) {
+		options.push({
+			label: __('Zen Mode'),
+			icon: Focus,
+			onClick: () => goFullScreen(),
+		})
+	}
+	if (isAdmin.value) {
+		options.push({
+			label: __('Video Stats'),
+			icon: TrendingUp,
+			onClick: () => showVideoStats(),
+		})
+	}
+	if (lesson.data?.prev) {
+		options.push({
+			label: __('Previous'),
+			icon: ChevronLeft,
+			onClick: () => switchLesson('prev'),
+		})
+	}
+	if (allowEdit()) {
+		options.push({
+			label: __('Edit'),
+			icon: Pencil,
+			onClick: () =>
+				router.push({
+					name: 'LessonForm',
+					params: {
+						courseName: props.courseName,
+						chapterNumber: props.chapterNumber,
+						lessonNumber: props.lessonNumber,
+					},
+				}),
+		})
+	}
+	if (lesson.data?.next) {
+		options.push({
+			label: __('Next'),
+			icon: ChevronRight,
+			onClick: () => {
+				if (!lessonBlocked.value) switchLesson('next')
+			},
+		})
+	} else {
+		options.push({
+			label: __('Back to Course'),
+			icon: ArrowLeft,
+			onClick: () =>
+				router.push({
+					name: 'CourseDetail',
+					params: { courseName: props.courseName },
+				}),
+		})
+	}
+	return options
 })
 
 const breadcrumbs = computed(() => {

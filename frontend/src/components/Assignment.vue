@@ -1,11 +1,11 @@
 <template>
 	<div
 		v-if="assignment.data"
-		class="grid grid-cols-2 h-full"
+		class="grid grid-cols-1 md:grid-cols-2 h-full"
 		:class="{ 'border rounded-lg overflow-auto': !showTitle }"
 	>
 		<div
-			class="border-r p-5 overflow-y-auto h-[calc(100vh-3.2rem)]"
+			class="border-b md:border-b-0 md:border-r p-5 overflow-y-auto md:h-[calc(100vh-3.2rem)]"
 			:class="{ 'h-full': !showTitle }"
 		>
 			<div v-if="showTitle" class="text-lg font-semibold mb-5 text-ink-gray-9">
@@ -321,7 +321,7 @@ const addNewSubmission = () => {
 	let doc = prepareSubmissionDoc()
 	if (!doc.assignment_attachment && !doc.answer) {
 		toast.error(
-			__('Please provide an answer or upload a file before submitting.')
+			__('Please provide an answer or upload a file before submitting.'),
 		)
 		return
 	}

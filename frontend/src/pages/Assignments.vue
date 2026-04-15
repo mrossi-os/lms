@@ -55,14 +55,17 @@
 					showAssignmentForm = true
 				},
 			}"
-			class="h-[71vh] lg:h-[79vh] px-5 os-list-view"
+			class="!w-auto lg:h-[79vh] px-2 sm:px-5 os-list-view"
 		>
 			<ListHeader
-				class="mb-2 grid items-center rounded bg-surface-white border-b rounded-none p-2"
+				class="mb-2 grid items-center rounded bg-surface-white border-b p-2 text-xs sm:text-sm"
 			>
 				<ListHeaderItem :item="item" v-for="item in assignmentColumns">
 					<template #prefix="{ item }">
-						<FeatherIcon :name="item.icon?.toString()" class="h-4 w-4" />
+						<FeatherIcon
+							:name="item.icon?.toString()"
+							class="hidden sm:block h-4 w-4"
+						/>
 					</template>
 				</ListHeaderItem>
 			</ListHeader>
@@ -70,7 +73,7 @@
 				<ListRow
 					v-for="row in assignments.data"
 					:row="row"
-					class="hover:bg-surface-gray-2"
+					class="hover:bg-surface-gray-2 text-xs sm:text-sm"
 				>
 					<template #default="{ column, item }">
 						<ListRowItem :item="row[column.key]" :align="column.align">
@@ -83,11 +86,11 @@
 							</div>
 							<div
 								v-else-if="column.key == 'modified'"
-								class="text-sm text-ink-gray-5"
+								class="text-xs sm:text-sm text-ink-gray-5"
 							>
 								{{ row[column.key] }}
 							</div>
-							<div v-else>
+							<div v-else class="text-xs sm:text-sm">
 								{{ row[column.key] }}
 							</div>
 						</ListRowItem>
