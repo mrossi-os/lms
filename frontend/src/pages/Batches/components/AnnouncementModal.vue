@@ -18,9 +18,10 @@
 				<FormControl
 					:label="__('Email Template')"
 					type="select"
+					:placeholder="__('Select option')"
 					:options="emailTemplates.data || []"
 					v-model="announcement.template"
-					/>
+				/>
 				<FormControl
 					:label="__('Subject')"
 					type="text"
@@ -85,7 +86,7 @@ watch(
 	(newVal) => {
 		console.log('[AnnouncementModal] template changed:', newVal)
 		applyTemplate(newVal)
-	}
+	},
 )
 
 const emailTemplates = createResource({

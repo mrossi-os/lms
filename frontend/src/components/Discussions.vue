@@ -10,9 +10,7 @@
 			</template>
 			{{ __('New {0}').format(singularize(title)) }}
 		</Button>
-		<div class="text-xl font-semibold text-ink-gray-9">
-			{{ __(title) }}
-		</div>
+		<div class="text-xl font-semibold text-ink-gray-9">{{ __(title) }}</div>
 	</div>
 	<div v-if="topics.data?.length && !singleThread">
 		<div v-if="showTopics" v-for="(topic, index) in topics.data">

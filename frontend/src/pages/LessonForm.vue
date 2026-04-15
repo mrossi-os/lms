@@ -555,10 +555,10 @@ const editCurrentLesson = () => {
 
 const validateLesson = () => {
 	if (!lesson.title) {
-		return 'Title is required'
+		return __('Title is required')
 	}
 	if (!lesson.content) {
-		return 'Content is required'
+		return __('Content is required')
 	}
 }
 

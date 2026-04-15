@@ -1094,7 +1094,7 @@ msgstr ""
 
 #: frontend/src/utils/index.js:839
 msgid "Category created successfully"
-msgstr ""
+msgstr "Categoria creata con successo"
 
 #: frontend/src/components/Settings/Categories.vue:193
 msgid "Category deleted successfully"
@@ -3078,7 +3078,7 @@ msgstr ""
 
 #: frontend/src/utils/index.js:903
 msgid "Failed to update meta tags {0}"
-msgstr ""
+msgstr "Impossibile aggiornare i meta tag {0}"
 
 #. Label of the featured (Check) field in DocType 'LMS Course'
 #: frontend/src/components/CourseCard.vue:25
@@ -4954,7 +4954,7 @@ msgstr "Nuovo"
 #: frontend/src/pages/Batches/components/NewBatchModal.vue:5
 #: frontend/src/pages/Notifications.vue:95 lms/www/_lms.py:154
 msgid "New Batch"
-msgstr "Nuova Classe"
+msgstr "Nuovo Gruppo"
 
 #: frontend/src/components/Settings/Coupons/CouponDetails.vue:9
 msgid "New Coupon"
@@ -4964,7 +4964,7 @@ msgstr ""
 #: frontend/src/pages/Courses/NewCourseModal.vue:5
 #: frontend/src/pages/Notifications.vue:94 lms/www/_lms.py:98
 msgid "New Course"
-msgstr "Nuovo corso"
+msgstr "Nuovo Corso"
 
 #: frontend/src/components/Modals/EmailTemplateModal.vue:7
 msgid "New Email Template"
@@ -5130,7 +5130,7 @@ msgstr ""
 
 #: frontend/src/pages/Notifications.vue:153
 msgid "No read notifications"
-msgstr ""
+msgstr "Nessuna notifica letta"
 
 #: frontend/src/components/Controls/Autocomplete.vue:136
 #: frontend/src/components/Controls/MultiSelect.vue:77
@@ -5156,7 +5156,7 @@ msgstr "Nessun invio"
 
 #: frontend/src/pages/Notifications.vue:152
 msgid "No unread notifications"
-msgstr ""
+msgstr "Nessuna notifica non letta"
 
 #: frontend/src/components/EmptyState.vue:5 lms/templates/course_list.html:13
 msgid "No {0}"
@@ -5229,7 +5229,7 @@ msgstr "Notifiche"
 
 #: frontend/src/pages/Notifications.vue:160
 msgid "Notifications you have read will appear here."
-msgstr ""
+msgstr "Le notifiche che hai letto appariranno qui."
 
 #: lms/lms/widgets/NoPreviewModal.html:30
 msgid "Notify me when available"
@@ -5286,15 +5286,15 @@ msgstr "Online"
 
 #: frontend/src/utils/index.js:657
 msgid "Only PDF files are allowed."
-msgstr ""
+msgstr "Sono consentiti solo file PDF."
 
 #: frontend/src/utils/index.js:663
 msgid "Only ZIP files are allowed."
-msgstr ""
+msgstr "Sono consentiti solo file ZIP."
 
 #: frontend/src/utils/index.js:660
 msgid "Only document file of type .doc or .docx are allowed."
-msgstr ""
+msgstr "Sono consentiti solo file di tipo .doc o .docx."
 
 #: lms/templates/assignment.html:6
 msgid "Only files of type {0} will be accepted."
@@ -5318,7 +5318,7 @@ msgstr ""
 
 #: frontend/src/utils/index.js:668
 msgid "Only {0} file is allowed."
-msgstr ""
+msgstr "È consentito solo un file {0}."
 
 #. Option for the 'Status' (Select) field in DocType 'Job Opportunity'
 #. Option in a Select field in the job-opportunity Web Form
@@ -6556,7 +6556,7 @@ msgstr "SEO"
 
 #: frontend/src/utils/index.js:685
 msgid "SVG contains potentially unsafe content."
-msgstr ""
+msgstr "L'SVG contiene contenuto potenzialmente non sicuro."
 
 #. Option for the 'Day' (Select) field in DocType 'Evaluator Schedule'
 #. Option for the 'Day' (Select) field in DocType 'LMS Certificate Request'
@@ -7787,7 +7787,7 @@ msgstr ""
 
 #: frontend/src/utils/index.js:844
 msgid "Unable to create category"
-msgstr ""
+msgstr "Impossibile creare la categoria"
 
 #: frontend/src/components/Quiz.vue:430
 msgid "Unattempted Questions"
@@ -8449,7 +8449,7 @@ msgstr ""
 
 #: frontend/src/pages/Notifications.vue:159
 msgid "You're all caught up! Check back later for updates."
-msgstr ""
+msgstr "Sei in pari! Torna a controllare più tardi per aggiornamenti."
 
 #: lms/templates/emails/mentor_request_creation_email.html:4
 msgid "You've applied to become a mentor for this course. Your request is currently under review."
