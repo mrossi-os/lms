@@ -4365,7 +4365,7 @@ msgstr ""
 #: lms/lms/doctype/lms_live_class_participant/lms_live_class_participant.json
 #: lms/lms/doctype/lms_settings/lms_settings.json
 msgid "Live Class"
-msgstr ""
+msgstr "Lezione in diretta"
 
 #. Label of the livecode_url (Data) field in DocType 'LMS Settings'
 #: lms/lms/doctype/lms_settings/lms_settings.json
@@ -4520,7 +4520,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_quiz_submission/lms_quiz_submission.py:41
 msgid "Marks for question number {0} cannot be greater than the marks allotted for that question."
-msgstr "Il punteggio per la domanda numero {0} non può essere superiore al punteggio assegnato a quella domanda."
+msgstr "Il punteggio per la domanda numero {0} non può essere maggiore del punteggio assegnato a quella domanda."
 
 #. Label of the marks_out_of (Int) field in DocType 'LMS Quiz Result'
 #: frontend/src/pages/QuizSubmission.vue:67
@@ -5926,7 +5926,7 @@ msgstr ""
 #: frontend/src/components/DiscussionReplies.vue:54
 #: frontend/src/components/DiscussionReplies.vue:89
 msgid "Post"
-msgstr "Posta"
+msgstr "Pubblica"
 
 #: frontend/src/pages/Billing.vue:149
 msgid "Postal Code"
@@ -7416,7 +7416,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_quiz_submission/lms_quiz_submission.py:59
 msgid "There has been an update on your submission. You have got a score of {0} for the quiz {1}"
-msgstr ""
+msgstr "C'è stato un aggiornamento sul tuo elaborato. Hai ottenuto un punteggio di {0} per il quiz {1}"
 
 #. Description of the 'section_break_ubxi' (Section Break) field in DocType
 #. 'LMS Batch'
@@ -8388,7 +8388,7 @@ msgstr "Hai superato il numero massimo di tentativi ({0}) per questo quiz"
 
 #: lms/lms/doctype/lms_quiz_submission/lms_quiz_submission.py:56
 msgid "You have got a score of {0} for the quiz {1}"
-msgstr ""
+msgstr "Hai ottenuto un punteggio di {0} per il quiz {1}"
 
 #: lms/lms/doctype/lms_certificate/lms_certificate.py:220
 msgid "You have not completed the course yet."
@@ -8868,4 +8868,7 @@ msgstr ""
 #: lms/lms/workspace/learning/learning.json
 msgid "{} Published"
 msgstr ""
+
+msgid "Password Email Sent"
+msgstr "Email Password Inviata"
 

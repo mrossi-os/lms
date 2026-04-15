@@ -13,10 +13,12 @@
 
 		<div v-for="(reply, index) in replies.data">
 			<div
-				class="py-3"
+				class="py-3 flex flex-col"
 				:class="{ 'border-b': index + 1 != replies.data.length }"
 			>
-				<div class="flex items-center justify-between mb-2">
+				<div
+					class="flex items-center justify-between mb-2 flex-shrink max-w-[65ch]"
+				>
 					<div class="flex items-center text-ink-gray-5">
 						<UserAvatar :user="reply.user" class="mr-2" />
 						<span>
@@ -46,7 +48,9 @@
 						]"
 					>
 						<template v-slot="{ open }">
-							<MoreHorizontal class="w-4 h-4 stroke-1.5 cursor-pointer" />
+							<MoreHorizontal
+								class="w-4 h-4 stroke-2 text-white cursor-pointer"
+							/>
 						</template>
 					</Dropdown>
 					<div v-if="reply.editable">
