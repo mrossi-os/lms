@@ -170,18 +170,20 @@ def get_file_urls(names: list[str]):
 
 
 @frappe.whitelist()
-def check_quiz_access(course):
+def check_quiz_access(course, lesson=None):
     """
     Verifica se l'utente può accedere al quiz.
     Se il corso ha enforce_quiz_on_completion attivo, controlla
-    che tutte le lezioni siano completate.
+    che tutte le lezioni precedenti alla lezione-quiz siano completate.
+    Se `lesson` non è specificata, esclude dal controllo le lezioni
+    che contengono un quiz (fallback per evitare deadlock).
     """
     course_doc = frappe.get_doc("LMS Course", course)
 
     if not course_doc.get("enforce_quiz_on_completion"):
         return {"allowed": True}
 
-    # Recupera tutte le lezioni del corso
+    # Recupera tutte le lezioni del corso nell'ordine (capitoli + lezioni)
     all_lessons = []
     for chapter_ref in course_doc.chapters:
         chapter = frappe.get_doc("Course Chapter", chapter_ref.chapter)
@@ -191,18 +193,26 @@ def check_quiz_access(course):
     if not all_lessons:
         return {"allowed": True}
 
-    # Controlla che ogni lezione abbia un record Complete
-    for lesson in all_lessons:
+    if lesson and lesson in all_lessons:
+        idx = all_lessons.index(lesson)
+        lessons_to_check = all_lessons[:idx]
+    else:
+        lessons_to_check = [
+            l for l in all_lessons
+            if not frappe.db.get_value("Course Lesson", l, "quiz_id")
+        ]
+
+    for l in lessons_to_check:
         is_completed = frappe.db.exists("LMS Course Progress", {
             "member": frappe.session.user,
-            "lesson": lesson,
+            "lesson": l,
             "course": course,
             "status": "Complete",
         })
         if not is_completed:
             return {
                 "allowed": False,
-                "reason": "Completa tutte le lezioni del corso prima di accedere al quiz."
+                "reason": "Completa tutte le lezioni precedenti prima di accedere al quiz."
             }
 
     return {"allowed": True}

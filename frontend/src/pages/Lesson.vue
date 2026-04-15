@@ -542,10 +542,10 @@ const checkLessonAccess = (lessonName) => {
 		},
 	)
 }
-const checkQuizAccess = (courseName) => {
+const checkQuizAccess = (courseName, lessonName) => {
 	if (!courseName || !user.data || isAdmin.value) return
 	quizAccessCheck.submit(
-		{ course: courseName },
+		{ course: courseName, lesson: lessonName },
 		{
 			onSuccess(result) {
 				quizBlocked.value = !result.allowed
@@ -833,7 +833,7 @@ watch(
 		if (data.icon == 'icon-youtube') clearInterval(timerInterval)
 
 		checkLessonAccess(data?.name)
-		checkQuizAccess(data?.course)
+		checkQuizAccess(data?.course, data?.name)
 	},
 )
 

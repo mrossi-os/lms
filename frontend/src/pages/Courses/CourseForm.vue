@@ -224,7 +224,7 @@
 								:label="__('Blocca quiz al completamento')"
 								:description="
 									__(
-										'Lo studente deve completare tutte le lezioni prima di accedere al quiz.',
+										'Lo studente deve completare tutte le lezioni precedenti al quiz per accedervi.',
 									)
 								"
 								@change="makeFormDirty()"

@@ -386,7 +386,7 @@ msgstr "Consenti agli utenti di visualizzare i loro tentativi di quiz passati."
 
 #: lms/lms/user.py:34
 msgid "Already Registered"
-msgstr ""
+msgstr "Già registrato"
 
 #. Option for the 'Color' (Select) field in DocType 'LMS Course'
 #: lms/lms/doctype/lms_course/lms_course.json
@@ -5691,11 +5691,11 @@ msgstr "Aggiungi <a href='{0}'>{1}</a> per <a href='{2}'>{3}</a> per inviare inv
 
 #: lms/lms/user.py:77
 msgid "Please ask your administrator to verify your sign-up"
-msgstr ""
+msgstr "Chiedi al tuo amministratore di verificare la tua registrazione"
 
 #: lms/lms/user.py:75
 msgid "Please check your email for verification"
-msgstr ""
+msgstr "Controlla la tua email per la verifica"
 
 #: lms/templates/emails/community_course_membership.html:7
 msgid "Please click on the following button to set your new password"
@@ -6395,7 +6395,7 @@ msgstr ""
 
 #: lms/lms/user.py:36
 msgid "Registered but disabled"
-msgstr ""
+msgstr "Registrato ma disabilitato"
 
 #. Label of the related_courses (Table) field in DocType 'LMS Course'
 #. Name of a DocType
@@ -6891,7 +6891,7 @@ msgstr ""
 
 #: lms/lms/user.py:29
 msgid "Sign Up is disabled"
-msgstr ""
+msgstr "La registrazione è disabilitata"
 
 #: lms/templates/signup-form.html:53
 msgid "Sign up"
@@ -7287,7 +7287,7 @@ msgstr ""
 
 #: lms/lms/user.py:42
 msgid "Temporarily Disabled"
-msgstr ""
+msgstr "Temporaneamente disabilitato"
 
 #. Label of the test_cases (Table) field in DocType 'LMS Programming Exercise'
 #. Label of the test_cases (Table) field in DocType 'LMS Programming Exercise
@@ -7667,7 +7667,7 @@ msgstr ""
 
 #: lms/lms/user.py:43
 msgid "Too many users signed up recently, so the registration is disabled. Please try back in an hour"
-msgstr ""
+msgstr "Troppi utenti si sono registrati di recente, la registrazione è disabilitata. Riprova tra un'ora."
 
 #: frontend/src/pages/Billing.vue:54
 msgid "Total"
