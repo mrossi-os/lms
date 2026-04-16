@@ -8,13 +8,14 @@ msgstr ""
 "Project-Id-Version: Learning VERSION\n"
 "Report-Msgid-Bugs-To: jannat@frappe.io\n"
 "POT-Creation-Date: 2026-04-10 16:17+0000\n"
-"PO-Revision-Date: 2026-04-16 10:52+0000\n"
+"PO-Revision-Date: 2026-04-16 12:09+0000\n"
 "Last-Translator: jannat@frappe.io\n"
 "Language-Team: jannat@frappe.io\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
+
 
 
 #: lms/templates/emails/assignment_submission.html:5
@@ -87,7 +88,7 @@ msgstr "Un corso non può avere sia un certificato a pagamento che un certificat
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:217
 msgid "A new batch '{0}' has been published that might interest you. Check it out!"
-msgstr ""
+msgstr "È stata pubblicata una nuova classe '{0}' che potrebbe interessarti. Dai un'occhiata!"
 
 #: lms/templates/emails/published_batch_notification.html:7
 msgid "A new batch has been published on "
@@ -95,7 +96,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_course/lms_course.py:208
 msgid "A new course '{0}' has been published that might interest you. Check it out!"
-msgstr ""
+msgstr "È stato pubblicato un nuovo corso '{0}' che potrebbe interessarti. Dai un'occhiata!"
 
 #: lms/templates/emails/published_course_notification.html:7
 msgid "A new course has been published on "
@@ -104,7 +105,7 @@ msgstr ""
 #: lms/lms/doctype/lms_batch/lms_batch.py:179
 #: lms/lms/doctype/lms_course/lms_course.py:172
 msgid "A new course has been published on {0}"
-msgstr ""
+msgstr "Un nuovo corso è stato pubblicato su {0}"
 
 #: frontend/src/pages/Courses/CourseForm.vue:166
 msgid "A one line introduction to the course that appears on the course card"
@@ -940,11 +941,11 @@ msgstr "La data di fine del batch non può essere precedente alla data di inizio
 
 #: lms/lms/api.py:193
 msgid "Batch has already started."
-msgstr ""
+msgstr "La classe è già iniziata."
 
 #: lms/lms/api.py:188
 msgid "Batch is sold out."
-msgstr ""
+msgstr "La classe è al completo."
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:56
 msgid "Batch start time cannot be greater than or equal to end time."
@@ -1056,7 +1057,7 @@ msgstr ""
 
 #: lms/lms/api.py:2338
 msgid "Cannot search for roles: {0}"
-msgstr ""
+msgstr "Impossibile cercare i ruoli: {0}"
 
 #. Label of the carrer_preference_details (Section Break) field in DocType
 #. 'User'
@@ -1188,7 +1189,7 @@ msgstr "Il certificato non può essere emesso perché il membro non è iscritto 
 
 #: lms/lms/doctype/lms_certificate/lms_certificate.py:214
 msgid "Certification is not enabled for this course."
-msgstr ""
+msgstr "La certificazione non è abilitata per questo corso."
 
 #. Label of the certifications (Check) field in DocType 'LMS Settings'
 #: lms/lms/doctype/lms_settings/lms_settings.json
@@ -1522,7 +1523,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_payment/lms_payment.py:89
 msgid "Complete Your Enrollment - Don't miss out!"
-msgstr ""
+msgstr "Completa la tua iscrizione - Non perdere l'occasione!"
 
 #: frontend/src/components/VideoBlock.vue:149
 msgid "Complete the upcoming quiz to continue watching the video. The quiz will open in {0} {1}."
@@ -1622,7 +1623,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_certificate/lms_certificate.py:33
 msgid "Congratulations on getting certified!"
-msgstr ""
+msgstr "Congratulazioni per aver ottenuto la certificazione!"
 
 #. Label of the contact_us_tab (Tab Break) field in DocType 'LMS Settings'
 #: frontend/src/components/ContactUsEmail.vue:5
@@ -1685,7 +1686,7 @@ msgstr "Risposta Corretta"
 
 #: lms/lms/course_import_export.py:196
 msgid "Could not create the course ZIP file. Please try again later. Error: {0}"
-msgstr ""
+msgstr "Impossibile creare il file ZIP del corso. Riprova più tardi. Errore: {0}"
 
 #. Label of the country (Link) field in DocType 'User'
 #. Label of the country (Link) field in DocType 'Job Opportunity'
@@ -1878,7 +1879,7 @@ msgstr ""
 
 #: lms/lms/report/course_progress_summary/course_progress_summary.py:58
 msgid "Course Name"
-msgstr ""
+msgstr "Nome Corso"
 
 #: frontend/src/pages/Courses/CourseOverview.vue:70
 msgid "Course Outline"
@@ -2285,7 +2286,7 @@ msgstr "L'eliminazione di questa lezione la rimuoverà definitivamente dal corso
 
 #: lms/lms/api.py:756
 msgid "Deletion not allowed for {0}"
-msgstr ""
+msgstr "Eliminazione non consentita per {0}"
 
 #. Label of the demo_data_present (Check) field in DocType 'LMS Settings'
 #: lms/lms/doctype/lms_settings/lms_settings.json
@@ -2726,7 +2727,7 @@ msgstr "Modello Email Conferma Iscrizione"
 
 #: lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.py:147
 msgid "Enrollment Confirmation for {0}"
-msgstr ""
+msgstr "Conferma iscrizione per {0}"
 
 #: lms/lms/web_template/lms_statistics/lms_statistics.html:14
 #: lms/templates/statistics.html:20
@@ -2822,7 +2823,7 @@ msgstr ""
 
 #: lms/lms/course_import_export.py:298
 msgid "Error downloading file"
-msgstr ""
+msgstr "Errore durante il download del file"
 
 #: frontend/src/components/Settings/GoogleMeetAccountModal.vue:194
 msgid "Error updating Google Meet Account"
@@ -3605,7 +3606,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_quiz/lms_quiz.py:243
 msgid "Image: Corrupted Data Stream"
-msgstr ""
+msgstr "Immagine: flusso dati corrotto"
 
 #: frontend/src/components/Sidebar/Configuration.vue:36
 #: frontend/src/pages/Courses/CourseImportModal.vue:83
@@ -3755,23 +3756,23 @@ msgstr "ID Quiz non valido nel contenuto"
 
 #: lms/lms/course_import_export.py:771
 msgid "Invalid ZIP file"
-msgstr ""
+msgstr "File ZIP non valido"
 
 #: lms/lms/course_import_export.py:339
 msgid "Invalid course ZIP: Missing course.json"
-msgstr ""
+msgstr "ZIP del corso non valido: course.json mancante"
 
 #: lms/lms/api.py:1010
 msgid "Invalid course or chapter name"
-msgstr ""
+msgstr "Nome del corso o del capitolo non valido"
 
 #: lms/lms/api.py:759
 msgid "Invalid document name"
-msgstr ""
+msgstr "Nome documento non valido"
 
 #: lms/lms/api.py:1017
 msgid "Invalid file path in package"
-msgstr ""
+msgstr "Percorso file non valido nel pacchetto"
 
 #: frontend/src/components/Sidebar/AppSidebar.vue:515
 msgid "Invite your team and students"
@@ -4694,7 +4695,7 @@ msgstr ""
 #: lms/lms/doctype/lms_zoom_settings/lms_zoom_settings.json
 #: lms/lms/report/course_progress_summary/course_progress_summary.py:71
 msgid "Member Name"
-msgstr ""
+msgstr "Nome Membro"
 
 #. Label of the member_type (Select) field in DocType 'LMS Enrollment'
 #: lms/lms/doctype/lms_enrollment/lms_enrollment.json
@@ -4714,7 +4715,7 @@ msgstr ""
 #: lms/lms/doctype/lms_live_class_participant/lms_live_class_participant.json
 #: lms/lms/doctype/lms_video_watch_duration/lms_video_watch_duration.json
 msgid "Member Username"
-msgstr ""
+msgstr "Nome Utente Membro"
 
 #: frontend/src/components/Modals/NewMemberModal.vue:163
 msgid "Member added successfully"
@@ -4817,7 +4818,7 @@ msgstr "Meta Tag"
 
 #: lms/lms/api.py:1552
 msgid "Meta tags should be a list."
-msgstr ""
+msgstr "I meta tag devono essere una lista."
 
 #. Label of the milestone (Check) field in DocType 'LMS Batch Timetable'
 #: lms/lms/doctype/lms_batch_timetable/lms_batch_timetable.json
@@ -4878,11 +4879,11 @@ msgstr ""
 
 #: lms/lms/api.py:170
 msgid "Module Name is incorrect or does not exist."
-msgstr ""
+msgstr "Il nome del modulo non è corretto o non esiste."
 
 #: lms/lms/api.py:166
 msgid "Module is incorrect."
-msgstr ""
+msgstr "Il modulo non è corretto."
 
 #. Option for the 'Day' (Select) field in DocType 'Evaluator Schedule'
 #. Option for the 'Day' (Select) field in DocType 'LMS Certificate Request'
@@ -5010,11 +5011,11 @@ msgstr "Nuovo account Zoom"
 
 #: lms/lms/utils.py:471
 msgid "New comment in batch {0}"
-msgstr ""
+msgstr "Nuovo commento nella classe {0}"
 
 #: lms/lms/utils.py:462
 msgid "New reply on the topic {0} in course {1}"
-msgstr ""
+msgstr "Nuova risposta sull'argomento {0} nel corso {1}"
 
 #: frontend/src/components/Discussions.vue:11
 #: frontend/src/components/Discussions.vue:66
@@ -5776,15 +5777,15 @@ msgstr ""
 
 #: lms/lms/api.py:162
 msgid "Please login to continue with payment."
-msgstr ""
+msgstr "Effettua il login per procedere con il pagamento."
 
 #: lms/lms/utils.py:2085
 msgid "Please login to view program details."
-msgstr ""
+msgstr "Effettua il login per visualizzare i dettagli del programma."
 
 #: lms/lms/utils.py:2050
 msgid "Please login to view programs."
-msgstr ""
+msgstr "Effettua il login per visualizzare i programmi."
 
 #: frontend/src/components/UpcomingEvaluations.vue:19
 msgid "Please make sure to schedule your evaluation before this date."
@@ -7200,7 +7201,7 @@ msgstr "Domenica"
 
 #: lms/lms/api.py:1043
 msgid "Suspicious pattern found in {0}: {1}"
-msgstr ""
+msgstr "Pattern sospetto trovato in {0}: {1}"
 
 #: frontend/src/components/Controls/ColorSwatches.vue:52
 msgid "Swatches"
@@ -7336,7 +7337,7 @@ msgstr "L'account Google Meet non ha un Google Calendar configurato. Configura p
 
 #: lms/lms/utils.py:2321
 msgid "The batch does not exist."
-msgstr ""
+msgstr "La classe non esiste."
 
 #: lms/templates/emails/batch_start_reminder.html:6
 msgid "The batch you have enrolled for is starting tomorrow. Please be prepared and be on time for the session."
@@ -7344,7 +7345,7 @@ msgstr ""
 
 #: lms/lms/utils.py:1800
 msgid "The coupon code '{0}' is invalid."
-msgstr ""
+msgstr "Il codice coupon '{0}' non è valido."
 
 #: lms/templates/emails/lms_course_interest.html:5
 msgid "The course {0} is now available on {1}."
@@ -7360,7 +7361,7 @@ msgstr "Il valutatore di questo corso non è disponibile dal {0} al {1}. Selezio
 
 #: lms/lms/doctype/lms_assignment_submission/lms_assignment_submission.py:69
 msgid "The instructor has left a comment on your assignment {0}"
-msgstr ""
+msgstr "L'istruttore ha lasciato un commento sul tuo compito {0}"
 
 #: frontend/src/components/UpcomingEvaluations.vue:15
 msgid "The last day to schedule your evaluations is "
@@ -7368,7 +7369,7 @@ msgstr ""
 
 #: lms/lms/utils.py:2305
 msgid "The lesson does not exist."
-msgstr ""
+msgstr "La lezione non esiste."
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:148
 msgid "The selected Google Meet account does not have a Google Calendar configured."
@@ -7384,7 +7385,7 @@ msgstr "Lo slot è già prenotato da un altro partecipante."
 
 #: lms/lms/utils.py:1498 lms/lms/utils.py:2002
 msgid "The specified batch does not exist."
-msgstr ""
+msgstr "La classe specificata non esiste."
 
 #: lms/patches/create_mentor_request_email_templates.py:36
 msgid "The status of your application has changed."
@@ -7431,7 +7432,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_enrollment/lms_enrollment.py:56
 msgid "This batch is not associated with this course."
-msgstr ""
+msgstr "Questa classe non è associata a questo corso."
 
 #. Label of the expire (Check) field in DocType 'Certification'
 #: lms/lms/doctype/certification/certification.json
@@ -7446,15 +7447,15 @@ msgstr "Questa lezione è terminata"
 
 #: lms/lms/utils.py:1829
 msgid "This coupon has expired."
-msgstr ""
+msgstr "Questo coupon è scaduto."
 
 #: lms/lms/utils.py:1832
 msgid "This coupon has reached its maximum usage limit."
-msgstr ""
+msgstr "Questo coupon ha raggiunto il limite massimo di utilizzi."
 
 #: lms/lms/utils.py:1841
 msgid "This coupon is not applicable to this {0}."
-msgstr ""
+msgstr "Questo coupon non è applicabile a questo {0}."
 
 #: frontend/src/components/CourseCardOverlay.vue:95
 msgid "This course has:"
@@ -7462,7 +7463,7 @@ msgstr "Il Corso ha:"
 
 #: lms/lms/utils.py:1760
 msgid "This course is free."
-msgstr ""
+msgstr "Questo corso è gratuito."
 
 #. Description of the 'Meta Description' (Small Text) field in DocType 'LMS
 #. Settings'
@@ -7664,7 +7665,7 @@ msgstr ""
 
 #: lms/lms/utils.py:1774
 msgid "To join this batch, please contact the Administrator."
-msgstr ""
+msgstr "Per unirti a questa classe, contatta l'Amministratore."
 
 #: lms/lms/user.py:43
 msgid "Too many users signed up recently, so the registration is disabled. Please try back in an hour"
@@ -7820,7 +7821,7 @@ msgstr "Non Pubblicati"
 
 #: lms/lms/course_import_export.py:774
 msgid "Unsafe file path detected"
-msgstr ""
+msgstr "Rilevato percorso file non sicuro"
 
 #: frontend/src/components/Modals/EditCoverImage.vue:60
 #: frontend/src/components/UnsplashImageBrowser.vue:54
@@ -7951,7 +7952,7 @@ msgstr ""
 
 #: lms/lms/api.py:1796
 msgid "User does not have permission to access this user's profile details."
-msgstr ""
+msgstr "L'utente non ha il permesso di accedere ai dettagli del profilo di questo utente."
 
 #: lms/job/doctype/job_opportunity/job_opportunity.py:41
 msgid "User {0} has reported the job post {1}"
@@ -8155,43 +8156,43 @@ msgstr ""
 
 #: lms/lms/api.py:182
 msgid "You are already enrolled for this batch."
-msgstr ""
+msgstr "Sei già iscritto a questa classe."
 
 #: lms/lms/api.py:176
 msgid "You are already enrolled for this course."
-msgstr ""
+msgstr "Sei già iscritto a questo corso."
 
 #: lms/lms/utils.py:1294
 msgid "You are not authorized to view the assessments of this batch."
-msgstr ""
+msgstr "Non sei autorizzato a visualizzare le valutazioni di questa classe."
 
 #: lms/lms/utils.py:1496
 msgid "You are not authorized to view the chart data of this batch."
-msgstr ""
+msgstr "Non sei autorizzato a visualizzare i dati del grafico di questa classe."
 
 #: lms/lms/utils.py:2092
 msgid "You are not authorized to view the details of this program."
-msgstr ""
+msgstr "Non sei autorizzato a visualizzare i dettagli di questo programma."
 
 #: lms/lms/utils.py:1706
 msgid "You are not authorized to view the discussion replies for this topic."
-msgstr ""
+msgstr "Non sei autorizzato a visualizzare le risposte della discussione per questo argomento."
 
 #: lms/lms/utils.py:1659
 msgid "You are not authorized to view the discussion topics for this item."
-msgstr ""
+msgstr "Non sei autorizzato a visualizzare gli argomenti di discussione per questo elemento."
 
 #: lms/lms/utils.py:1260
 msgid "You are not authorized to view the question details."
-msgstr ""
+msgstr "Non sei autorizzato a visualizzare i dettagli della domanda."
 
 #: lms/lms/utils.py:1405
 msgid "You are not authorized to view the students of this batch."
-msgstr ""
+msgstr "Non sei autorizzato a visualizzare gli studenti di questa classe."
 
 #: lms/lms/doctype/lms_certificate/lms_certificate.py:211
 msgid "You are not enrolled in this course."
-msgstr ""
+msgstr "Non sei iscritto a questo corso."
 
 #: frontend/src/pages/SCORMChapter.vue:25
 msgid "You are not enrolled in this course. Please enroll to access this lesson."
@@ -8236,7 +8237,7 @@ msgstr "Non puoi iscriverti a un corso non pubblicato."
 
 #: lms/lms/utils.py:2153
 msgid "You cannot enroll in an unpublished program."
-msgstr ""
+msgstr "Non puoi iscriverti a un programma non pubblicato."
 
 #: lms/lms/doctype/lms_enrollment/lms_enrollment.py:47
 msgid "You cannot enroll in this course as self-learning is disabled. Please contact the Administrator."
@@ -8252,11 +8253,11 @@ msgstr "Non puoi programmare valutazioni per slot passati."
 
 #: lms/lms/utils.py:2333
 msgid "You do not have access to this batch."
-msgstr ""
+msgstr "Non hai accesso a questa classe."
 
 #: lms/lms/utils.py:2316
 msgid "You do not have access to this course."
-msgstr ""
+msgstr "Non hai accesso a questo corso."
 
 #: lms/lms/api.py:854 lms/lms/doctype/lms_batch/lms_batch.py:365
 msgid "You do not have permission to access announcements for this batch."
@@ -8264,23 +8265,23 @@ msgstr "Non hai il permesso di accedere agli annunci per questo batch."
 
 #: lms/lms/api.py:2295
 msgid "You do not have permission to access badges."
-msgstr ""
+msgstr "Non hai il permesso di accedere ai badge."
 
 #: lms/lms/api.py:1155
 msgid "You do not have permission to access heatmap data."
-msgstr ""
+msgstr "Non hai il permesso di accedere ai dati della heatmap."
 
 #: lms/lms/api.py:2134
 msgid "You do not have permission to access lesson completion stats."
-msgstr ""
+msgstr "Non hai il permesso di accedere alle statistiche di completamento delle lezioni."
 
 #: lms/lms/api.py:2174
 msgid "You do not have permission to access this course's assessment data."
-msgstr ""
+msgstr "Non hai il permesso di accedere ai dati di valutazione di questo corso."
 
 #: lms/lms/api.py:1697
 msgid "You do not have permission to access this course's progress data."
-msgstr ""
+msgstr "Non hai il permesso di accedere ai dati di progresso di questo corso."
 
 #: frontend/src/components/NoPermission.vue:9
 msgid "You do not have permission to access this page."
@@ -8288,7 +8289,7 @@ msgstr ""
 
 #: lms/lms/api.py:1372 lms/lms/api.py:1381
 msgid "You do not have permission to cancel this evaluation."
-msgstr ""
+msgstr "Non hai il permesso di annullare questa valutazione."
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:245
 msgid "You do not have permission to create a live class."
@@ -8296,35 +8297,35 @@ msgstr "Non hai il permesso di creare una lezione dal vivo."
 
 #: lms/lms/api.py:924
 msgid "You do not have permission to delete this batch."
-msgstr ""
+msgstr "Non hai il permesso di eliminare questa classe."
 
 #: lms/lms/api.py:1109
 msgid "You do not have permission to delete this chapter."
-msgstr ""
+msgstr "Non hai il permesso di eliminare questo capitolo."
 
 #: lms/lms/api.py:884
 msgid "You do not have permission to delete this course."
-msgstr ""
+msgstr "Non hai il permesso di eliminare questo corso."
 
 #: lms/lms/api.py:513
 msgid "You do not have permission to delete this lesson."
-msgstr ""
+msgstr "Non hai il permesso di eliminare questa lezione."
 
 #: lms/lms/api.py:2375
 msgid "You do not have permission to export this course."
-msgstr ""
+msgstr "Non hai il permesso di esportare questo corso."
 
 #: lms/lms/api.py:596 lms/lms/api.py:972
 msgid "You do not have permission to modify this chapter."
-msgstr ""
+msgstr "Non hai il permesso di modificare questo capitolo."
 
 #: lms/lms/api.py:533
 msgid "You do not have permission to modify this lesson."
-msgstr ""
+msgstr "Non hai il permesso di modificare questa lezione."
 
 #: lms/lms/api.py:1441
 msgid "You do not have permission to modify this role."
-msgstr ""
+msgstr "Non hai il permesso di modificare questo ruolo."
 
 #: lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.py:119
 msgid "You do not have permission to send confirmation emails for this enrollment."
@@ -8336,11 +8337,11 @@ msgstr "Non hai il permesso di configurare eventi calendario per questa valutazi
 
 #: lms/lms/api.py:1580 lms/lms/api.py:1584
 msgid "You do not have permission to update meta tags."
-msgstr ""
+msgstr "Non hai il permesso di aggiornare i meta tag."
 
 #: lms/lms/api.py:1621
 msgid "You do not have permission to update this submission."
-msgstr ""
+msgstr "Non hai il permesso di aggiornare questa consegna."
 
 #: lms/templates/notifications.html:27
 msgid "You don't have any notifications."
@@ -8365,7 +8366,7 @@ msgstr "Hai già superato il numero massimo di tentativi consentiti per questo q
 
 #: lms/lms/api.py:206
 msgid "You have already purchased the certificate for this course."
-msgstr ""
+msgstr "Hai già acquistato il certificato per questo corso."
 
 #: lms/lms/doctype/lms_course_review/lms_course_review.py:22
 msgid "You have already reviewed this course"
@@ -8393,7 +8394,7 @@ msgstr "Hai ottenuto un punteggio di {0} per il quiz {1}"
 
 #: lms/lms/doctype/lms_certificate/lms_certificate.py:220
 msgid "You have not completed the course yet."
-msgstr ""
+msgstr "Non hai ancora completato il corso."
 
 #: frontend/src/pages/ProfileCertificates.vue:26
 msgid "You have not received any certificates yet."
@@ -8481,7 +8482,7 @@ msgstr "Il tuo output"
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:459
 msgid "Your batch {0} is starting tomorrow"
-msgstr ""
+msgstr "La tua classe {0} inizia domani"
 
 #: frontend/src/components/Controls/Uploader.vue:47
 msgid "Your browser does not support the video tag."
@@ -8493,7 +8494,7 @@ msgstr "Il tuo calendario è configurato."
 
 #: lms/lms/doctype/lms_live_class/lms_live_class.py:173
 msgid "Your class on {0} is today"
-msgstr ""
+msgstr "La tua lezione su {0} è oggi"
 
 #: frontend/src/components/Modals/EmailTemplateModal.vue:35
 msgid "Your enrollment in {{ batch_name }} is confirmed"
@@ -8509,7 +8510,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_certificate_request/lms_certificate_request.py:129
 msgid "Your evaluation slot has been booked"
-msgstr ""
+msgstr "Il tuo slot di valutazione è stato prenotato"
 
 #: lms/templates/emails/certificate_request_notification.html:5
 msgid "Your evaluator is {0}"
@@ -12449,4 +12450,93 @@ msgstr "{0} {1}"
 
 msgid "{0} {1} imported successfully, {2} {3} failed."
 msgstr "{0} {1} importate con successo, {2} {3} fallite."
+
+msgid "1 hour ago"
+msgstr "1 ora fa"
+
+msgid "All possible workflow states and roles of the workflow. Docstatus options: 0 is \"Saved\", 1 is \"Submitted\" and 2 is \"Cancelled\""
+msgstr "Tutti i possibili stati del flusso di lavoro e i ruoli del flusso di lavoro. Opzioni Stato del Documento: 0 corrisponde a \"Salvato\", 1 a \"Inviato\" e 2 \"Annullato\""
+
+msgid "Always add \"Draft\" heading for printing draft documents"
+msgstr "Aggiungi sempre l'intestazione “Bozza” per la stampa di documenti in bozza"
+
+msgid "Are you sure you want to clear the demo data? This would delete the course \"A guide  to Frappe Learning\" along with all its associated data. This action cannot be undone."
+msgstr "Sei sicuro di voler cancellare i dati demo? Questo eliminerà il corso \"Guida a Frappe Learning\" insieme a tutti i dati associati. Questa azione non può essere annullata."
+
+msgid "Could not connect to outgoing email server"
+msgstr "Impossibile connettersi al server email in uscita"
+
+msgid "Delete tag \"{0}\"?"
+msgstr "Eliminare il tag \"{0}\"?"
+
+msgid "Different \"States\" this document can exist in. Like \"Open\" , \"Pending Approval\" etc."
+msgstr "I diversi \"Stati\" in cui può trovarsi questo documento. Ad esempio \"Aperto\", \"In attesa di approvazione\" ect."
+
+msgid "If the user has any role checked, then the user becomes a \"System User\". \"System User\" has access to the desktop"
+msgstr "Se l'utente ha un ruolo selezionato, allora l'utente diventa un “Utente di sistema”. L'“Utente di sistema” ha accesso al desktop"
+
+msgid "Incorrect Configuration"
+msgstr "Configurazione non corretta"
+
+msgid "Invalid Outgoing Mail Server or Port: {0}"
+msgstr "Server email in uscita o porta non validi: {0}"
+
+msgid "Lesson not found"
+msgstr "Lezione non trovata"
+
+msgid "Make \"name\" searchable in global search"
+msgstr "Rendi \"nome\" ricercabile nella ricerca globale"
+
+msgid "Must be of type \"Attach image\""
+msgstr "Deve essere di tipo \"Allega immagine\""
+
+msgid "My Account"
+msgstr "Il mio Account"
+
+msgid "Question cannot be empty"
+msgstr "La domanda non può essere vuota"
+
+msgid "Repeats like \"aaa\" are easy to guess"
+msgstr "Ripetizioni come \"aaa\" sono facili da indovinare"
+
+msgid "Repeats like \"abcabcabc\" are only slightly harder to guess than \"abc\""
+msgstr "Ripetizioni come \"abcabcabc\" sono solo leggermente più difficili da indovinare di \"abc\""
+
+msgid "Restrict user from this IP address only. Multiple IP addresses can be added by separating with commas. Also accepts partial IP addresses like (111.111.111)
+restrict_ip"
+msgstr "Limita l'utente solo da questo indirizzo IP. È possibile aggiungere più indirizzi IP separandoli con virgole. Accetta anche indirizzi IP parziali come (111.111.111)
+restrict_ip"
+
+msgid "Route: Example \"/Desk\""
+msgstr "Percorso: Esempio “/Desk”"
+
+msgid "SQL conditions, Example: status0\"Open\""
+msgstr "Condizioni SQL, Esempio: stato\"Aperto\""
+
+msgid "Set default otions for all charts on this dashoard (Ex: \"colors\": [])"
+msgstr "Imposta le opzioni predefinite per tutti i grafici di questa dashboard (es:\"colori\":[])"
+
+msgid "The browser API Key obtained from the Google Cloud Console under \"API & Services\"> \"Credentials\""
+msgstr "La chiave API del browser ottenuta dalla console Google Cloud in “API e servizi” > “Credenziali”
+Selettore Google Drive"
+
+msgid "The client ID obtained from the Google Cloud console under \"API & Services\" > \"Credentials\""
+msgstr "l'ID del cliente ottenuto dalla console di Google. Cloud in \"API e servizi\" > \"Credenziali\""
+
+msgid "To configure Auto Repeat, enable \"Allow Auto Repeat\" from Personalizza modulo."
+msgstr "Per configurare la Ripetizione Automatica, abilita \"Consenti Ripetizione Automatica\" da Personalizza Modulo."
+
+msgid "URIs for receiving authorization code once the user allows access, as well as failure responses. Typically a REST endpoint exposed by the Client App.
+e.g. http://hostname/api/method/frappe.integrations.oauth2_logins.login_via_facebook"
+msgstr "URI per ricevere il codice di autorizzazione una volta che l'utente ha consentito l'accesso, nonché le risposte di errore. In genere un endpoint REST esposto dall'app client.
+Es. http://hostname/api/method/frappe.integrations.oauth2_logins.login_via_facebook"
+
+msgid "Value of \"None\" implies a public client. In such a case Client Secret is not given to the client and token exchange makes use of PKCE."
+msgstr "Il valore “Nessuno” implica un client pubblico. In tal caso, il segreto client non viene fornito al client e lo scambio di token utilizza PKCE."
+
+msgid "You don't have permission to access this lesson"
+msgstr "Non hai il permesso di accedere a questa lezione"
+
+msgid "You need to be logged in to access this page"
+msgstr "Devi effettuare il login per accedere a questa pagina"
 
