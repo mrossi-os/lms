@@ -1,5 +1,7 @@
 <template>
-	<header class="sticky top-0 z-10 flex items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5">
+	<header
+		class="sticky top-0 z-10 flex items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5"
+	>
 		<Breadcrumbs :items="breadcrumbs" />
 		<Button v-if="canCreateProgram()" @click="openForm('new')" variant="solid">
 			<template #prefix>
@@ -13,7 +15,7 @@
 			{{
 				__('{0} {1}').format(
 					programs.data.length,
-					programs.data.length == 1 ? __('Program') : __('Programs')
+					programs.data.length == 1 ? __('Program') : __('Programs'),
 				)
 			}}
 		</div>
@@ -21,7 +23,7 @@
 			<div
 				v-for="program in programs.data"
 				@click="openForm(program.name)"
-				class="border rounded-md p-3 hover:border-outline-gray-3 cursor-pointer space-y-2"
+				class="border rounded-md p-3 hover:border-outline-gray-3 cursor-pointer space-y-2 card"
 			>
 				<div class="text-lg font-semibold text-ink-gray-9">
 					{{ program.name }}
@@ -45,7 +47,11 @@
 	</div>
 	<StudentPrograms v-else-if="isStudent" />
 	<EmptyState v-else :type="__('Programs')" />
-	<ProgramForm v-model="showForm" :programName="currentProgram" v-model:programs="programs" />
+	<ProgramForm
+		v-model="showForm"
+		:programName="currentProgram"
+		v-model:programs="programs"
+	/>
 </template>
 <script setup>
 import { Breadcrumbs, Button, usePageMeta, createListResource } from 'frappe-ui'
