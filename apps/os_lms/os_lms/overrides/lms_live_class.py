@@ -2,9 +2,11 @@ from datetime import timedelta
 
 import frappe
 from frappe import _
+from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
 from frappe.utils import cint, format_date, format_time, get_datetime
 
 from lms.lms.doctype.lms_live_class.lms_live_class import LMSLiveClass
+from lms.lms.utils import get_lms_route
 
 
 class CustomLMSLiveClass(LMSLiveClass):
@@ -44,6 +46,7 @@ class CustomLMSLiveClass(LMSLiveClass):
 		event.save()
 
 		self.send_invitation_email()
+		self.send_notification()
 
 	def send_invitation_email(self):
 		participants = self.get_participants()
@@ -64,3 +67,25 @@ class CustomLMSLiveClass(LMSLiveClass):
 				},
 				header=[_("Invito lezione dal vivo"), "green"],
 			)
+
+	def send_notification(self):
+		students = frappe.get_all(
+			"LMS Batch Enrollment", {"batch": self.batch_name}, pluck="member"
+		)
+		if not students:
+			return
+
+		notification = frappe._dict(
+			{
+				"subject": _("Nuova lezione dal vivo: {0}").format(frappe.bold(self.title)),
+				"email_content": _("È stata programmata una lezione dal vivo il {0} alle {1}.").format(
+					format_date(self.date, "medium"), format_time(self.time, "hh:mm a")
+				),
+				"document_type": "LMS Batch",
+				"document_name": self.batch_name,
+				"from_user": frappe.session.user,
+				"type": "Alert",
+				"link": get_lms_route(f"batches/{self.batch_name}"),
+			}
+		)
+		make_notification_logs(notification, students)
