@@ -95,7 +95,9 @@
 							{{
 								log.document_type === 'LMS Course'
 									? __('New Course')
-									: __('New Batch')
+									: log.document_type === 'LMS Live Class'
+										? __('Live Class')
+										: __('New Batch')
 							}}
 						</div>
 						<div class="font-semibold mb-1 text-ink-gray-9">
@@ -251,17 +253,22 @@ const handleMarkAsRead = (logName) => {
 const navigateToPage = (log) => {
 	if (!log.link) return
 	handleMarkAsRead(log.name)
-	let link = log.link.split('/')
+
+	const [path, hash] = log.link.split('#')
+	const link = path.split('/')
+
 	if (link[2] == 'courses') {
 		router.push({
 			name: 'CourseDetail',
 			params: { courseName: link[3] },
+			hash: hash ? `#${hash}` : undefined,
 		})
 	} else if (link.includes('batches')) {
 		if (link.includes('details')) {
 			router.push({
 				name: 'BatchDetail',
-				params: { batchName: link.pop() },
+				params: { batchName: link[link.indexOf('details') + 1] },
+				hash: hash ? `#${hash}` : undefined,
 			})
 		} else {
 			router.push({
@@ -295,7 +302,7 @@ const isMentionOrComment = (log) => {
 
 const showDetails = (log) => {
 	return (
-		['LMS Course', 'LMS Batch'].includes(log.document_type) &&
+		['LMS Course', 'LMS Batch', 'LMS Live Class'].includes(log.document_type) &&
 		log.document_details
 	)
 }

@@ -149,6 +149,28 @@ def get_most_followed_courses():
 
 
 @frappe.whitelist()
+def get_notifications(filters: dict = None):
+    from lms.lms.api import get_notifications as _original_get_notifications
+
+    notifications = _original_get_notifications(filters)
+
+    for notification in notifications:
+        if notification.get("document_type") == "LMS Live Class":
+            details = frappe.db.get_value(
+                "LMS Live Class",
+                notification["document_name"],
+                ["title", "date as start_date", "time as start_time", "duration", "description as short_introduction", "batch_name"],
+                as_dict=True,
+            )
+            if details:
+                details["instructors"] = []
+                details["video_link"] = None
+                notification["document_details"] = details
+
+    return notifications
+
+
+@frappe.whitelist()
 def get_announcements(batch: str):
     """
     Override: per studenti, ritorna solo gli annunci in cui sono destinatari

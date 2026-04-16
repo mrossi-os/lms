@@ -256,7 +256,7 @@ def send_batch_announcement(batch: str, recipients, subject: str, content: str, 
         "subject": frappe._("Hai un nuovo messaggio in annunci: {0}").format(batch_title),
         "from_user": frappe.session.user,
         "type": "Alert",
-        "link": f"/lms/batches/details/{batch}",
+        "link": f"/lms/batches/details/{batch}#announcements",
     })
     make_notification_logs(notification, recipients)
 

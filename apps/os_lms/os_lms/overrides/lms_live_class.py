@@ -77,15 +77,19 @@ class CustomLMSLiveClass(LMSLiveClass):
 
 		notification = frappe._dict(
 			{
-				"subject": _("Nuova lezione dal vivo: {0}").format(frappe.bold(self.title)),
+				"subject": _("Nuova lezione dal vivo: {0} - {1} alle {2}").format(
+					frappe.bold(self.title),
+					format_date(self.date, "medium"),
+					format_time(self.time, "hh:mm a"),
+				),
 				"email_content": _("È stata programmata una lezione dal vivo il {0} alle {1}.").format(
 					format_date(self.date, "medium"), format_time(self.time, "hh:mm a")
 				),
-				"document_type": "LMS Batch",
-				"document_name": self.batch_name,
+				"document_type": "LMS Live Class",
+				"document_name": self.name,
 				"from_user": frappe.session.user,
 				"type": "Alert",
-				"link": get_lms_route(f"batches/{self.batch_name}"),
+				"link": get_lms_route(f"batches/details/{self.batch_name}#classes"),
 			}
 		)
 		make_notification_logs(notification, students)
