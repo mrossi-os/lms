@@ -10,7 +10,7 @@
 				<div class="grid grid-cols-1 md:grid-cols-4 gap-5">
 					<div
 						v-for="cls in myLiveClasses.data"
-						class="border rounded-md hover:border-outline-gray-3 p-3"
+						class="border rounded-md hover:border-outline-gray-3 p-3 card"
 					>
 						<div class="font-semibold text-ink-gray-9 leading-5 mb-1">
 							{{ cls.title }}
