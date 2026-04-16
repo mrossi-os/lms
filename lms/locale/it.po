@@ -8,13 +8,14 @@ msgstr ""
 "Project-Id-Version: Learning VERSION\n"
 "Report-Msgid-Bugs-To: jannat@frappe.io\n"
 "POT-Creation-Date: 2026-04-10 16:17+0000\n"
-"PO-Revision-Date: 2026-04-16 12:09+0000\n"
+"PO-Revision-Date: 2026-04-16 15:30+0000\n"
 "Last-Translator: jannat@frappe.io\n"
 "Language-Team: jannat@frappe.io\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
+
 
 
 
@@ -716,7 +717,7 @@ msgstr "Autorizza l'accesso a Google Calendar"
 #: frontend/src/components/Modals/LiveClassModal.vue:72
 #: lms/lms/doctype/lms_live_class/lms_live_class.json
 msgid "Auto Recording"
-msgstr ""
+msgstr "Registrazione Automatica"
 
 #: frontend/src/pages/ProfileEvaluator.vue:260
 msgid "Availability updated successfully"
@@ -747,7 +748,7 @@ msgstr "Valutazione media"
 
 #: frontend/src/components/Modals/VideoStatistics.vue:77
 msgid "Average Watch Time (mins)"
-msgstr ""
+msgstr "Tempo Medio di Visione (min)"
 
 #: frontend/src/pages/Lesson.vue:63 frontend/src/pages/Lesson.vue:199
 msgid "Back to Course"
@@ -1388,7 +1389,7 @@ msgstr "Chiuse"
 #. Option for the 'Auto Recording' (Select) field in DocType 'LMS Live Class'
 #: lms/lms/doctype/lms_live_class/lms_live_class.json
 msgid "Cloud"
-msgstr "Cluod"
+msgstr "Cloud"
 
 #. Label of the code (Data) field in DocType 'LMS Coupon'
 #. Label of the code (Code) field in DocType 'LMS Programming Exercise
@@ -2050,7 +2051,7 @@ msgstr ""
 
 #: frontend/src/components/Modals/LiveClassModal.vue:5
 msgid "Create a Live Class"
-msgstr ""
+msgstr "Crea una Classe Live"
 
 #: frontend/src/pages/Quizzes.vue:102
 msgid "Create a Quiz"
@@ -4467,7 +4468,7 @@ msgstr ""
 
 #: frontend/src/pages/Home/Home.vue:154
 msgid "Manage your courses and batches at a glance"
-msgstr "Gestisci i tuoi corsi"
+msgstr "Gestisci i tuoi corsi e gruppi a colpo d'occhio"
 
 #. Option for the 'User Category' (Select) field in DocType 'User'
 #: lms/fixtures/custom_field.json lms/templates/signup-form.html:24
@@ -5046,7 +5047,7 @@ msgstr "Nessun invio quiz trovato"
 #. Option for the 'Auto Recording' (Select) field in DocType 'LMS Live Class'
 #: lms/lms/doctype/lms_live_class/lms_live_class.json
 msgid "No Recording"
-msgstr ""
+msgstr "Nessuna Registrazione"
 
 #: frontend/src/pages/ProgrammingExercises/ProgrammingExerciseSubmissions.vue:13
 msgid "No Submissions"
@@ -5146,7 +5147,7 @@ msgstr ""
 
 #: frontend/src/components/Modals/VideoStatistics.vue:92
 msgid "No statistics available for this video."
-msgstr ""
+msgstr "Nessuna statistica disponibile per questo video."
 
 #: frontend/src/pages/Batches/components/AnnouncementModal.vue:95
 msgid "No students in this batch"
@@ -5733,7 +5734,7 @@ msgstr "Inserisci un codice coupon"
 
 #: frontend/src/components/Modals/LiveClassModal.vue:194
 msgid "Please enter a title."
-msgstr ""
+msgstr "Inserisci un titolo."
 
 #: lms/lms/doctype/lms_settings/lms_settings.py:51
 msgid "Please enter a valid Contact Us Email."
@@ -5749,7 +5750,7 @@ msgstr "Inserisci un URL valido."
 
 #: frontend/src/components/Modals/LiveClassModal.vue:206
 msgid "Please enter a valid time in the format HH:mm."
-msgstr ""
+msgstr "Inserisci un orario valido nel formato HH:mm."
 
 #: frontend/src/components/Modals/QuizInVideo.vue:181
 msgid "Please enter a valid timestamp"
@@ -5838,15 +5839,15 @@ msgstr ""
 
 #: frontend/src/components/Modals/LiveClassModal.vue:197
 msgid "Please select a date."
-msgstr ""
+msgstr "Seleziona una data."
 
 #: frontend/src/components/Modals/LiveClassModal.vue:221
 msgid "Please select a duration."
-msgstr ""
+msgstr "Seleziona una durata."
 
 #: frontend/src/components/Modals/LiveClassModal.vue:218
 msgid "Please select a future date and time."
-msgstr ""
+msgstr "Seleziona una data e un orario futuri."
 
 #: frontend/src/pages/Programs/ProgramForm.vue:452
 msgid "Please select a member"
@@ -5870,11 +5871,11 @@ msgstr ""
 
 #: frontend/src/components/Modals/LiveClassModal.vue:200
 msgid "Please select a time."
-msgstr ""
+msgstr "Seleziona un orario."
 
 #: frontend/src/components/Modals/LiveClassModal.vue:203
 msgid "Please select a timezone."
-msgstr ""
+msgstr "Seleziona un fuso orario."
 
 #: frontend/src/components/Modals/AddEvaluatorModal.vue:45
 msgid "Please select a user"
@@ -6460,7 +6461,7 @@ msgstr "Riprendi il Video"
 
 #: frontend/src/pages/Home/Home.vue:177
 msgid "Resume where you left off"
-msgstr "Riprendi da dove avevi interrotto"
+msgstr "Riprendi da dove hai lasciato"
 
 #. Label of the review (Small Text) field in DocType 'LMS Course Review'
 #. Label of a Link in the Learning Workspace
@@ -7523,7 +7524,7 @@ msgstr "Giovedì"
 #: frontend/src/components/Quiz.vue:74
 #: lms/lms/doctype/lms_live_class/lms_live_class.json
 msgid "Time"
-msgstr "Tempo"
+msgstr "Orario"
 
 #. Label of the time (Select) field in DocType 'User'
 #: lms/fixtures/custom_field.json
@@ -7548,7 +7549,7 @@ msgstr ""
 
 #: frontend/src/components/Modals/LiveClassModal.vue:42
 msgid "Time must be in 24 hour format (HH:mm). Example 11:30 or 22:00"
-msgstr ""
+msgstr "L'orario deve essere nel formato 24 ore (HH:mm). Esempio: 11:30 o 22:00"
 
 #: lms/templates/emails/published_batch_notification.html:29
 msgid "Time: "
@@ -7994,7 +7995,7 @@ msgstr ""
 
 #: frontend/src/components/Modals/VideoStatistics.vue:6
 msgid "Video Statistics"
-msgstr ""
+msgstr "Statistiche Video"
 
 #: frontend/src/pages/JobDetail.vue:31
 msgid "View Applications"
@@ -8043,7 +8044,7 @@ msgstr ""
 
 #: frontend/src/components/Modals/VideoStatistics.vue:39
 msgid "Watch Time (mins)"
-msgstr ""
+msgstr "Tempo di Visione (min)"
 
 #: lms/templates/emails/batch_confirmation.html:6
 msgid "We are pleased to inform you that you have been enrolled in our upcoming batch. Congratulations!"
@@ -8406,15 +8407,15 @@ msgstr ""
 
 #: frontend/src/pages/Home/Home.vue:137 frontend/src/pages/Home/Home.vue:160
 msgid "You have {0} upcoming {1} and {2} {3} scheduled."
-msgstr ""
+msgstr "Hai {0} {1} in programma e {2} {3} pianificate."
 
 #: frontend/src/pages/Home/Home.vue:144 frontend/src/pages/Home/Home.vue:167
 msgid "You have {0} upcoming {1}."
-msgstr ""
+msgstr "Hai {0} {1} in programma."
 
 #: frontend/src/pages/Home/Home.vue:149 frontend/src/pages/Home/Home.vue:172
 msgid "You have {0} {1} scheduled."
-msgstr ""
+msgstr "Hai {0} {1} pianificate."
 
 #: lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.py:31
 msgid "You must be a Moderator or Batch Evaluator to enroll users in a batch."
@@ -8653,11 +8654,11 @@ msgstr ""
 
 #: frontend/src/pages/Home/Home.vue:135 frontend/src/pages/Home/Home.vue:158
 msgid "evaluation"
-msgstr ""
+msgstr "valutazione"
 
 #: frontend/src/pages/Home/Home.vue:135 frontend/src/pages/Home/Home.vue:158
 msgid "evaluations"
-msgstr ""
+msgstr "valutazioni"
 
 #: lms/templates/emails/mentor_request_status_update_email.html:4
 msgid "has been"
@@ -8682,11 +8683,11 @@ msgstr "lezioni"
 
 #: frontend/src/pages/Home/Home.vue:133 frontend/src/pages/Home/Home.vue:157
 msgid "live class"
-msgstr ""
+msgstr "classe live"
 
 #: frontend/src/pages/Home/Home.vue:133 frontend/src/pages/Home/Home.vue:157
 msgid "live classes"
-msgstr ""
+msgstr "classi live"
 
 #: frontend/src/pages/Search/Search.vue:38
 msgid "match"
@@ -12539,4 +12540,69 @@ msgstr "Non hai il permesso di accedere a questa lezione"
 
 msgid "You need to be logged in to access this page"
 msgstr "Devi effettuare il login per accedere a questa pagina"
+
+msgid "All possible workflow states and roles of the workflow. Docstatus options: 0 is \"Saved\", 1 is \"Submitted\" and 2 is \"Cancelled\""
+msgstr "Tutti i possibili stati del flusso di lavoro e i ruoli del flusso di lavoro. Opzioni Stato del Documento: 0 corrisponde a \"Salvato\", 1 a \"Inviato\" e 2 \"Annullato\""
+
+msgid "Always add \"Draft\" heading for printing draft documents"
+msgstr "Aggiungi sempre l'intestazione “Bozza” per la stampa di documenti in bozza"
+
+msgid "Are you sure you want to clear the demo data? This would delete the course \"A guide  to Frappe Learning\" along with all its associated data. This action cannot be undone."
+msgstr "Sei sicuro di voler cancellare i dati demo? Questo eliminerà il corso \"Guida a Frappe Learning\" insieme a tutti i dati associati. Questa azione non può essere annullata."
+
+msgid "Delete tag \"{0}\"?"
+msgstr "Eliminare il tag \"{0}\"?"
+
+msgid "Different \"States\" this document can exist in. Like \"Open\" , \"Pending Approval\" etc."
+msgstr "I diversi \"Stati\" in cui può trovarsi questo documento. Ad esempio \"Aperto\", \"In attesa di approvazione\" ect."
+
+msgid "If the user has any role checked, then the user becomes a \"System User\". \"System User\" has access to the desktop"
+msgstr "Se l'utente ha un ruolo selezionato, allora l'utente diventa un “Utente di sistema”. L'“Utente di sistema” ha accesso al desktop"
+
+msgid "Make \"name\" searchable in global search"
+msgstr "Rendi \"nome\" ricercabile nella ricerca globale"
+
+msgid "Must be of type \"Attach image\""
+msgstr "Deve essere di tipo \"Allega immagine\""
+
+msgid "Repeats like \"aaa\" are easy to guess"
+msgstr "Ripetizioni come \"aaa\" sono facili da indovinare"
+
+msgid "Repeats like \"abcabcabc\" are only slightly harder to guess than \"abc\""
+msgstr "Ripetizioni come \"abcabcabc\" sono solo leggermente più difficili da indovinare di \"abc\""
+
+msgid "Restrict user from this IP address only. Multiple IP addresses can be added by separating with commas. Also accepts partial IP addresses like (111.111.111)
+restrict_ip"
+msgstr "Limita l'utente solo da questo indirizzo IP. È possibile aggiungere più indirizzi IP separandoli con virgole. Accetta anche indirizzi IP parziali come (111.111.111)
+restrict_ip"
+
+msgid "Route: Example \"/Desk\""
+msgstr "Percorso: Esempio “/Desk”"
+
+msgid "SQL conditions, Example: status0\"Open\""
+msgstr "Condizioni SQL, Esempio: stato\"Aperto\""
+
+msgid "Set default otions for all charts on this dashoard (Ex: \"colors\": [])"
+msgstr "Imposta le opzioni predefinite per tutti i grafici di questa dashboard (es:\"colori\":[])"
+
+msgid "The browser API Key obtained from the Google Cloud Console under \"API & Services\"> \"Credentials\""
+msgstr "La chiave API del browser ottenuta dalla console Google Cloud in “API e servizi” > “Credenziali”
+Selettore Google Drive"
+
+msgid "The client ID obtained from the Google Cloud console under \"API & Services\" > \"Credentials\""
+msgstr "l'ID del cliente ottenuto dalla console di Google. Cloud in \"API e servizi\" > \"Credenziali\""
+
+msgid "To configure Auto Repeat, enable \"Allow Auto Repeat\" from Personalizza modulo."
+msgstr "Per configurare la Ripetizione Automatica, abilita \"Consenti Ripetizione Automatica\" da Personalizza Modulo."
+
+msgid "URIs for receiving authorization code once the user allows access, as well as failure responses. Typically a REST endpoint exposed by the Client App.
+e.g. http://hostname/api/method/frappe.integrations.oauth2_logins.login_via_facebook"
+msgstr "URI per ricevere il codice di autorizzazione una volta che l'utente ha consentito l'accesso, nonché le risposte di errore. In genere un endpoint REST esposto dall'app client.
+Es. http://hostname/api/method/frappe.integrations.oauth2_logins.login_via_facebook"
+
+msgid "Value of \"None\" implies a public client. In such a case Client Secret is not given to the client and token exchange makes use of PKCE."
+msgstr "Il valore “Nessuno” implica un client pubblico. In tal caso, il segreto client non viene fornito al client e lo scambio di token utilizza PKCE."
+
+msgid "Video {0}"
+msgstr "Video {0}"
 
