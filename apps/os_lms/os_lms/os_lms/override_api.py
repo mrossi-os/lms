@@ -120,6 +120,34 @@ def can_access_lesson(lesson, roles):
 # endregion
 
 
+@frappe.whitelist(allow_guest=True)
+def get_new_courses():
+	from lms.lms.utils import get_course_details
+
+	courses = frappe.get_all(
+		"LMS Course",
+		{"published": 1},
+		order_by="published_on desc, enrollments desc",
+		limit=6,
+		pluck="name",
+	)
+	return [get_course_details(c) for c in courses if get_course_details(c)]
+
+
+@frappe.whitelist(allow_guest=True)
+def get_most_followed_courses():
+	from lms.lms.utils import get_course_details
+
+	courses = frappe.get_all(
+		"LMS Course",
+		{"published": 1, "enrollments": [">", 0]},
+		order_by="enrollments desc",
+		limit=6,
+		pluck="name",
+	)
+	return [get_course_details(c) for c in courses if get_course_details(c)]
+
+
 @frappe.whitelist()
 def get_announcements(batch: str):
     """
