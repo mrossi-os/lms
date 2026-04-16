@@ -28,6 +28,7 @@ after_migrate = [
 override_doctype_class = {
     "Email Account": "os_lms.overrides.email_account.CustomEmailAccount",
     "Data Import": "os_lms.overrides.data_import.CustomDataImport",
+    "LMS Live Class": "os_lms.overrides.lms_live_class.CustomLMSLiveClass",
 }
 # override sqlite search to add custom doctypes
 sqlite_search = ["os_lms.overrides.sqlite.CustomLearningSearch"]
