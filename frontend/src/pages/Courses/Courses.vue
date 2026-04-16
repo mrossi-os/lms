@@ -285,7 +285,7 @@ const updateTabFilter = () => {
 }
 
 const updateStudentFilter = () => {
-	if (!user.data || (user.data?.is_student && currentTab.value != 'enrolled')) {
+	if (!user.data || (user.data?.is_student && currentTab.value != 'enrolled' && currentTab.value != 'upcoming')) {
 		filters.value['published'] = 1
 	}
 }
