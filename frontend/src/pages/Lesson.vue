@@ -729,7 +729,7 @@ const mobileHeaderMenu = computed(() => {
 	}
 	if (isAdmin.value) {
 		options.push({
-			label: __('Video Stats'),
+			label: __('Statistiche'),
 			icon: TrendingUp,
 			onClick: () => showVideoStats(),
 		})
