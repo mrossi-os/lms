@@ -8871,3 +8871,6 @@ msgstr ""
 
 msgid "You have got a score of {0} for the quiz {1}"
 msgstr "Hai ottenuto un punteggio di {0} per il quiz {1}"
+
+msgid "Jump to"
+msgstr "Vai a"

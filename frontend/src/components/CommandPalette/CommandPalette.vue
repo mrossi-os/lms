@@ -66,19 +66,15 @@
 </template>
 <script setup lang="ts">
 import { createResource, debounce, Dialog } from 'frappe-ui'
-import { nextTick, onMounted, ref, watch } from 'vue'
+import { nextTick, onMounted, ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import {
-	BookOpen,
-	Briefcase,
-	CornerDownLeft,
-	FileSearch,
-	MoveUp,
-	MoveDown,
-	Search,
-	Users,
-} from 'lucide-vue-next'
+import * as icons from 'lucide-vue-next'
+import { getSidebarLinks } from '@/utils'
+import { useSettings } from '@/stores/settings'
 import CommandPaletteGroup from './CommandPaletteGroup.vue'
+
+const { CornerDownLeft, FileSearch, MoveUp, MoveDown, Search } = icons
+const { sidebarSettings } = useSettings()
 
 const show = defineModel<boolean>({ required: true, default: false })
 const router = useRouter()
@@ -129,7 +125,7 @@ const appendSearchPage = () => {
 		title: '',
 		items: [],
 	}
-	searchPage.title = __('Jump to')
+	searchPage.title = 'Jump to'
 	searchPage.items = [
 		{
 			title: __('Search for ') + `"${query.value}"`,
@@ -151,7 +147,7 @@ watch(
 	() => {
 		appendSearchPage()
 	},
-	{ immediate: true }
+	{ immediate: true },
 )
 
 watch(show, () => {
@@ -196,7 +192,7 @@ const shortcutForArrowKey = (direction: number) => {
 
 const scrollActiveItemIntoView = () => {
 	const activeItem = document.querySelector(
-		'.hover\\:bg-surface-gray-2.bg-surface-gray-2'
+		'.hover\\:bg-surface-gray-2.bg-surface-gray-2',
 	) as HTMLElement
 	if (activeItem) {
 		activeItem.scrollIntoView({ block: 'nearest' })
@@ -224,45 +220,30 @@ const navigateTo = (route: {
 	router.replace({ name: route.name, params: route.params, query: route.query })
 }
 
-const jumpToOptions = ref([
-	{
-		title: __('Jump to'),
-		items: [
-			{
-				title: 'Advanced Search',
-				icon: Search,
-				route: {
-					name: 'Search',
-				},
-				isActive: true,
-			},
-			{
-				title: 'Courses',
-				icon: BookOpen,
-				route: {
-					name: 'Courses',
-				},
-				isActive: false,
-			},
-			{
-				title: 'Batches',
-				icon: Users,
-				route: {
-					name: 'Batches',
-				},
-				isActive: false,
-			},
-			{
-				title: 'Jobs',
-				icon: Briefcase,
-				route: {
-					name: 'Jobs',
-				},
-				isActive: false,
-			},
-		],
-	},
-])
+const jumpToOptions = computed(() => {
+	const links = getSidebarLinks()
+	const hiddenKeys = sidebarSettings.data
+		? Object.keys(sidebarSettings.data).filter(
+				(key) => !parseInt(sidebarSettings.data[key]),
+			)
+		: []
+
+	const items = links
+		.flatMap((group) => group.items)
+		.filter((item) => {
+			if (!item.to || item.to.startsWith('http') || item.to.startsWith('mailto:')) return false
+			const key = item.label.toLowerCase().split(' ').join('_')
+			return !hiddenKeys.includes(key)
+		})
+		.map((item, index) => ({
+			title: __(item.label),
+			icon: icons[item.icon] || Search,
+			route: { name: item.to },
+			isActive: index === 0,
+		}))
+
+	return [{ title: 'Jump to', items }]
+})
 </script>
 <style>
 mark {
