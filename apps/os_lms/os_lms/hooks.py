@@ -11,6 +11,10 @@ required_apps = ["lms"]
 
 base_template = "templates/base.html"
 
+# Inject welcome video assets on public web pages (e.g. /login)
+web_include_js = ["/assets/os_lms/js/welcome_video.js"]
+web_include_css = ["/assets/os_lms/css/welcome_video.css"]
+
 
 # activate debug if needed
 before_request = ["os_lms.debug.active_debug"]
