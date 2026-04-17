@@ -484,13 +484,11 @@ const zenModeEnabled = ref(false)
 const showStatsDialog = ref(false)
 const hasQuiz = ref(false)
 const discussionsContainer = ref(null)
-const timer = ref(0)
 const { brand } = sessionStore()
 const sidebarStore = useSidebar()
 const plyrSources = ref([])
 const showInlineMenu = ref(false)
 const currentTab = ref(null)
-let timerInterval = null
 const quizBlocked = ref(false)
 const quizBlockedReason = ref('')
 
@@ -576,7 +574,6 @@ const checkQuizAccess = (courseName, lessonName) => {
 }
 
 onMounted(() => {
-	startTimer()
 	sidebarStore.isSidebarCollapsed = true
 	document.addEventListener('fullscreenchange', attachFullscreenEvent)
 	socket.on('update_lesson_progress', (data) => {
@@ -841,8 +838,6 @@ const resetLessonState = (newChapterNumber, newLessonNumber) => {
 		chapter: newChapterNumber,
 		lesson: newLessonNumber,
 	})
-	clearInterval(timerInterval)
-	timer.value = 0
 }
 
 const trackVideoWatchDuration = () => {
@@ -904,10 +899,9 @@ watch(
 	() => lesson.data,
 	async (data) => {
 		setupLesson(data)
-		startTimer()
-		getPlyrSource()
+		await getPlyrSource()
 		updateNotes()
-		if (data.icon == 'icon-youtube') clearInterval(timerInterval)
+		markProgressIfNoVideo()
 
 		checkLessonAccess(data?.name)
 		checkQuizAccess(data?.course, data?.name)
@@ -920,6 +914,15 @@ const getPlyrSource = async () => {
 		plyrSources.value = await enablePlyr()
 	}
 	updateVideoWatchDuration()
+}
+
+const markProgressIfNoVideo = () => {
+	if (!lesson.data?.membership) return
+	const hasDomVideo = document.querySelectorAll('video').length > 0
+	const hasPlyr = plyrSources.value.length > 0
+	if (!hasDomVideo && !hasPlyr) {
+		markProgress()
+	}
 }
 
 const updateVideoWatchDuration = () => {
@@ -988,21 +991,6 @@ const updateVideoTime = (video) => {
 		})
 	}
 }
-
-const startTimer = () => {
-	if (!lesson.data?.membership) return
-	timerInterval = setInterval(() => {
-		timer.value++
-		if (timer.value == 30) {
-			clearInterval(timerInterval)
-			markProgress()
-		}
-	}, 1000)
-}
-
-onBeforeUnmount(() => {
-	clearInterval(timerInterval)
-})
 
 const checkIfDiscussionsAllowed = () => {
 	hasQuiz.value = false
