@@ -7,7 +7,11 @@ from lms.lms.utils import get_lesson_details as _original_get_lesson_details
 from lms.lms.utils import get_batch_details as _original_get_batch_details
 from lms.lms.utils import get_courses as _orginal_get_courses
 from lms.lms.utils import get_progress
-from os_lms.os_lms.api import evaluate_lesson_access, evaluate_quiz_access
+from os_lms.os_lms.api import (
+    evaluate_lesson_access,
+    evaluate_quiz_access,
+    get_batch_tab_unread_counts,
+)
 from os_lms.os_lms.utils import get_courses_total_minutes
 
 
@@ -168,5 +172,7 @@ def get_batch_details(batch: str):
             batch_detail.custom_feature_sections = []
     except (json.JSONDecodeError, TypeError):
         batch_detail.custom_feature_sections = []
+
+    batch_detail.tab_notifications = get_batch_tab_unread_counts(batch)
 
     return batch_detail

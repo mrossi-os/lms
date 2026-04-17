@@ -269,4 +269,44 @@ def send_batch_announcement(batch: str, recipients, subject: str, content: str, 
 
     return {"ok": True, "recipients_count": len(recipients)}
 
-    return {"allowed": True}
+
+BATCH_TAB_SECTIONS = ("classes", "announcements", "discussions")
+
+
+def get_batch_tab_unread_counts(batch: str) -> dict:
+    """Unread Notification Log counts for the given batch, split by tab section."""
+    user = frappe.session.user
+    if not user or user == "Guest":
+        return {section: 0 for section in BATCH_TAB_SECTIONS}
+    return {
+        section: frappe.db.count(
+            "Notification Log",
+            {
+                "for_user": user,
+                "read": 0,
+                "link": ["like", f"%{batch}#{section}%"],
+            },
+        )
+        for section in BATCH_TAB_SECTIONS
+    }
+
+
+@frappe.whitelist()
+def mark_batch_tab_notifications_read(batch: str, section: str) -> dict:
+    """Mark as read all unread Notification Log entries for a batch tab section."""
+    if section not in BATCH_TAB_SECTIONS:
+        frappe.throw(frappe._("Invalid section: {0}").format(section))
+
+    user = frappe.session.user
+    frappe.db.sql(
+        """
+        UPDATE `tabNotification Log`
+        SET `read` = 1
+        WHERE for_user = %(user)s
+          AND `read` = 0
+          AND `link` LIKE %(link)s
+        """,
+        {"user": user, "link": f"%{batch}#{section}%"},
+    )
+    frappe.publish_realtime("publish_lms_notifications", user=user)
+    return {"ok": True}
