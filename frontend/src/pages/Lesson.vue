@@ -531,46 +531,13 @@ const props = defineProps({
 	},
 })
 
-// Risorsa per il controllo accesso lezione
-const accessCheck = createResource({
-	url: 'os_lms.os_lms.api.check_lesson_access',
-})
-const quizAccessCheck = createResource({
-	url: 'os_lms.os_lms.api.check_quiz_access',
-})
-
-const checkLessonAccess = (lessonName) => {
-	if (!lessonName || !user.data || isAdmin.value) return
-	accessCheck.submit(
-		{
-			course: props.courseName,
-			lesson: lessonName,
-		},
-		{
-			onSuccess(result) {
-				lessonBlocked.value = !result.allowed
-				blockedReason.value = result.reason || ''
-			},
-			onError(err) {
-				console.error('check_lesson_access error:', err)
-			},
-		},
-	)
-}
-const checkQuizAccess = (courseName, lessonName) => {
-	if (!courseName || !user.data || isAdmin.value) return
-	quizAccessCheck.submit(
-		{ course: courseName, lesson: lessonName },
-		{
-			onSuccess(result) {
-				quizBlocked.value = !result.allowed
-				quizBlockedReason.value = result.reason || ''
-			},
-			onError(err) {
-				console.error('check_quiz_access error:', err)
-			},
-		},
-	)
+const applyAccessFromLesson = (data) => {
+	const lessonAccess = data?.lesson_access || { allowed: true }
+	const quizAccess = data?.quiz_access || { allowed: true }
+	lessonBlocked.value = !lessonAccess.allowed
+	blockedReason.value = lessonAccess.reason || ''
+	quizBlocked.value = !quizAccess.allowed
+	quizBlockedReason.value = quizAccess.reason || ''
 }
 
 onMounted(() => {
@@ -902,9 +869,7 @@ watch(
 		await getPlyrSource()
 		updateNotes()
 		markProgressIfNoVideo()
-
-		checkLessonAccess(data?.name)
-		checkQuizAccess(data?.course, data?.name)
+		applyAccessFromLesson(data)
 	},
 )
 

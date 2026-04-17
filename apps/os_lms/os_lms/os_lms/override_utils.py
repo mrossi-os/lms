@@ -7,6 +7,7 @@ from lms.lms.utils import get_lesson_details as _original_get_lesson_details
 from lms.lms.utils import get_batch_details as _original_get_batch_details
 from lms.lms.utils import get_courses as _orginal_get_courses
 from lms.lms.utils import get_progress
+from os_lms.os_lms.api import evaluate_lesson_access, evaluate_quiz_access
 from os_lms.os_lms.utils import get_courses_total_minutes
 
 
@@ -29,9 +30,29 @@ def get_course_details(course: str):
 def get_lesson(course: str, chapter: int, lesson: int) -> dict:
     lesson_details = _original_get_lesson(course, chapter, lesson)
     if isinstance(lesson_details, dict) and lesson_details.get("name"):
+        lesson_name = lesson_details["name"]
         lesson_details["tags"] = frappe.db.get_value(
-            "Course Lesson", lesson_details["name"], "tags"
+            "Course Lesson", lesson_name, "tags"
         )
+
+        user = frappe.session.user
+        is_guest = not user or user == "Guest"
+        roles = set(frappe.get_roles(user)) if not is_guest else set()
+        instructors = lesson_details.get("instructors") or []
+        is_admin = bool(
+            roles & {"Moderator", "Course Creator", "LMS Instructor"}
+        ) or user in instructors
+
+        if is_guest or is_admin:
+            lesson_details["lesson_access"] = {"allowed": True}
+            lesson_details["quiz_access"] = {"allowed": True}
+        else:
+            lesson_details["lesson_access"] = evaluate_lesson_access(
+                course, lesson_name
+            )
+            lesson_details["quiz_access"] = evaluate_quiz_access(
+                course, lesson_name
+            )
     return lesson_details
 
 
