@@ -126,7 +126,7 @@ const userDropdownOptions = computed(() => {
 			items: [
 				{
 					icon: User,
-					label: __('My Profile'),
+					label: __('Il mio profilo'),
 					onClick: () => {
 						router.push(`/user/${userResource.data?.username}`)
 					},
@@ -138,7 +138,7 @@ const userDropdownOptions = computed(() => {
 					component: markRaw(Apps),
 					condition: () => {
 						let cookies = new URLSearchParams(
-							document.cookie.split('; ').join('&')
+							document.cookie.split('; ').join('&'),
 						)
 						let system_user = cookies.get('system_user')
 						if (system_user === 'yes') return true
@@ -147,7 +147,7 @@ const userDropdownOptions = computed(() => {
 				},
 				{
 					icon: Settings,
-					label: __('Settings'),
+					label: __('Impostazioni'),
 					onClick: () => {
 						settingsStore.isSettingsOpen = true
 					},
@@ -162,7 +162,7 @@ const userDropdownOptions = computed(() => {
 					},
 				},
 				{
-					label: __('Clear Demo Data'),
+					label: __('Cancella dati demo'),
 					icon: Trash2,
 					onClick: () => {
 						clearDemoDataConfirmation()
@@ -176,16 +176,16 @@ const userDropdownOptions = computed(() => {
 				},
 				{
 					icon: FrappeCloudIcon,
-					label: __('Login to Frappe Cloud'),
+					label: __('Accedi a Frappe Cloud'),
 					onClick: () => {
 						$dialog({
-							title: __('Login to Frappe Cloud?'),
+							title: __('Accedere a Frappe Cloud?'),
 							message: __(
-								'Are you sure you want to login to your Frappe Cloud dashboard?'
+								'Sei sicuro di voler accedere alla tua dashboard Frappe Cloud?',
 							),
 							actions: [
 								{
-									label: __('Confirm'),
+									label: __('Conferma'),
 									variant: 'solid',
 									onClick(close) {
 										loginToFrappeCloud()
@@ -204,7 +204,7 @@ const userDropdownOptions = computed(() => {
 				},
 				{
 					icon: LogOut,
-					label: __('Log out'),
+					label: __('Esci'),
 					onClick: () => {
 						logout.submit().then(() => {
 							isLoggedIn = false
@@ -216,7 +216,7 @@ const userDropdownOptions = computed(() => {
 				},
 				{
 					icon: LogIn,
-					label: __('Log in'),
+					label: __('Accedi'),
 					onClick: () => {
 						window.location.href = '/login'
 					},
@@ -236,9 +236,9 @@ const loginToFrappeCloud = () => {
 
 const clearDemoDataConfirmation = () => {
 	$dialog({
-		title: __('Confirm clearing demo data?'),
+		title: __('Confermi la cancellazione dei dati demo?'),
 		message: __(
-			'Are you sure you want to clear the demo data? This would delete the course "A guide  to Frappe Learning" along with all its associated data. This action cannot be undone.',
+			'Sei sicuro di voler cancellare i dati demo? Questa operazione eliminerà il corso "A guide to Frappe Learning" insieme a tutti i dati associati. Questa azione non può essere annullata.',
 		),
 		actions: [
 			{
@@ -258,10 +258,10 @@ const clearDemoData = () => {
 	call('lms.lms.api.clear_demo_data')
 		.then(() => {
 			window.location.href = '/lms'
-			toast.success(__('Demo data cleared successfully'))
+			toast.success(__('Dati demo cancellati con successo'))
 		})
 		.catch((error) => {
-			toast.error(__(error.message || __('Error clearing demo data')))
+			toast.error(__(error.message || __('Errore durante la cancellazione dei dati demo')))
 			console.error('Error clearing demo data:', error)
 		})
 }
