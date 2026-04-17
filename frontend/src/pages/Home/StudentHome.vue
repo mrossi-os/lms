@@ -87,7 +87,9 @@
 						name: 'Courses',
 					}"
 				>
-					<span class="flex items-center space-x-1 text-ink-gray-5 text-xs">
+					<span
+						class="flex items-center space-x-1 text-ink-gray-5 text-xs card p-1.5"
+					>
 						<span>
 							{{ __('See all') }}
 						</span>
@@ -111,8 +113,12 @@
 					{{ __('New Arrivals') }}
 				</span>
 				<router-link :to="{ name: 'Courses' }">
-					<span class="flex items-center space-x-1 text-ink-gray-5 text-xs">
-						<span>{{ __('See all') }}</span>
+					<span
+						class="flex items-center space-x-1 text-ink-gray-5 text-xs card p-1.5"
+					>
+						<span>
+							{{ __('See all') }}
+						</span>
 						<MoveRight class="size-3 stroke-1.5" />
 					</span>
 				</router-link>
@@ -133,8 +139,12 @@
 					{{ __('Most Popular') }}
 				</span>
 				<router-link :to="{ name: 'Courses' }">
-					<span class="flex items-center space-x-1 text-ink-gray-5 text-xs">
-						<span>{{ __('See all') }}</span>
+					<span
+						class="flex items-center space-x-1 text-ink-gray-5 text-xs card p-1.5"
+					>
+						<span>
+							{{ __('See all') }}
+						</span>
 						<MoveRight class="size-3 stroke-1.5" />
 					</span>
 				</router-link>
@@ -163,7 +173,9 @@
 						name: 'Batches',
 					}"
 				>
-					<span class="flex items-center space-x-1 text-ink-gray-5 text-xs">
+					<span
+						class="flex items-center space-x-1 text-ink-gray-5 text-xs card p-1.5"
+					>
 						<span>
 							{{ __('See all') }}
 						</span>
