@@ -28,9 +28,21 @@
         </a>
       </div>
       {% endif %}
-      <div style="text-align:center;margin:0 0 24px;">
-        <a href="{{ frappe.utils.get_url() }}/lms/batches/{{ batch_name }}" style="display:inline-block;background:#123456;color:#fff;padding:12px 28px;border-radius:4px;font-size:14px;font-weight:600;text-decoration:none;">
+      {% set start_dt = frappe.utils.get_datetime((date|string) + " " + (time|string)) %}
+      {% set end_dt = frappe.utils.add_to_date(start_dt, hours=1) %}
+      {% set cal_start = frappe.utils.format_datetime(start_dt, "yyyyMMdd") + "T" + frappe.utils.format_datetime(start_dt, "HHmmss") %}
+      {% set cal_end = frappe.utils.format_datetime(end_dt, "yyyyMMdd") + "T" + frappe.utils.format_datetime(end_dt, "HHmmss") %}
+      {% set batch_url = frappe.utils.get_url() + "/lms/batches/" + batch_name %}
+      {% set cal_details = (description ~ "\n\n" if description else "") ~ batch_url %}
+      {% set gcal_url = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + title|urlencode + "&dates=" + cal_start + "/" + cal_end + "&details=" + cal_details|urlencode %}
+      <div style="text-align:center;margin:0 0 12px;">
+        <a href="{{ batch_url }}" style="display:inline-block;background:#123456;color:#fff;padding:12px 28px;border-radius:4px;font-size:14px;font-weight:600;text-decoration:none;">
           Vai alla classe
+        </a>
+      </div>
+      <div style="text-align:center;margin:0 0 24px;">
+        <a href="{{ gcal_url }}" target="_blank" style="display:inline-block;background:#256AB0;color:#fff;padding:12px 28px;border-radius:4px;font-size:14px;font-weight:600;text-decoration:none;">
+          Aggiungi al tuo calendario
         </a>
       </div>
       <p style="font-size:14px;line-height:1.7;color:#444;margin:0;">

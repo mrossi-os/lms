@@ -18,8 +18,8 @@
       </p>
       {% set start_dt = frappe.utils.get_datetime((date|string) + " " + (time|string)) %}
       {% set end_dt = frappe.utils.add_to_date(start_dt, hours=1) %}
-      {% set cal_start = start_dt.strftime("%Y%m%dT%H%M%S") %}
-      {% set cal_end = end_dt.strftime("%Y%m%dT%H%M%S") %}
+      {% set cal_start = frappe.utils.format_datetime(start_dt, "yyyyMMdd") + "T" + frappe.utils.format_datetime(start_dt, "HHmmss") %}
+      {% set cal_end = frappe.utils.format_datetime(end_dt, "yyyyMMdd") + "T" + frappe.utils.format_datetime(end_dt, "HHmmss") %}
       {% set batch_url = frappe.utils.get_url() + "/lms/batches/" + batch_name %}
       {% set gcal_url = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + title|urlencode + "&dates=" + cal_start + "/" + cal_end + "&details=" + batch_url|urlencode %}
       <div style="text-align:center;margin:0 0 12px;">
