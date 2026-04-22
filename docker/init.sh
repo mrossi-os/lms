@@ -39,7 +39,7 @@ else
         echo " ----- Empty bench directory detected. Cleaning up."
         rm -rf "${bench_dir}"
     fi
-    bench init --skip-redis-config-generation --frappe-branch version-16 "${bench_dir}"
+    bench init --skip-redis-config-generation --frappe-branch version-16-hotfix "${bench_dir}"
 fi
 
 
