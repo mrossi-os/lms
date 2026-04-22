@@ -55,7 +55,7 @@
 					showAssignmentForm = true
 				},
 			}"
-			class="!w-auto lg:h-[79vh] px-2 sm:px-5 os-list-view"
+			class="!w-auto px-2 sm:px-5 os-list-view"
 		>
 			<ListHeader
 				class="mb-2 grid items-center rounded bg-surface-white border-b p-2 text-xs sm:text-sm"

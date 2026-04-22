@@ -239,8 +239,8 @@ import {
 	toast,
 	createDocumentResource,
 	Badge,
-	Switch,
 } from 'frappe-ui'
+import Switch from '@/oslms/components/Form/Switch.vue'
 import {
 	computed,
 	reactive,
