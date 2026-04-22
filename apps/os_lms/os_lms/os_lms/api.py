@@ -2,24 +2,6 @@ import frappe
 
 
 @frappe.whitelist()
-def set_lesson_as_current(course: str, lesson: str):
-    """Update the current_lesson on the user's enrollment for the given course."""
-    if not course or not lesson:
-        frappe.throw("course and lesson are required", frappe.ValidationError)
-
-    enrollment = frappe.db.get_value(
-        "LMS Enrollment",
-        {"course": course, "member": frappe.session.user},
-        "name",
-    )
-    if not enrollment:
-        frappe.throw("Enrollment not found", frappe.DoesNotExistError)
-
-    frappe.db.set_value("LMS Enrollment", enrollment, "current_lesson", lesson)
-    return {"success": True}
-
-
-@frappe.whitelist()
 def get_lesson_position(lesson_name):
     """
     Restituisce chapter_number e lesson_number (1-based) per costruire
