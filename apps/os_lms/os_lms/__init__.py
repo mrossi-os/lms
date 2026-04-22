@@ -8,3 +8,11 @@ import lms.lms.utils as _lms_utils
 from os_lms.os_lms.override_utils import custom_get_lesson_details
 
 _lms_utils.get_lesson_details = custom_get_lesson_details
+
+
+
+#def get_request_site_address(full_address=False):
+#    return "https://overside.eu.ngrok.io"
+#import frappe.utils as _frappe_utils
+#_frappe_utils.get_request_site_address = get_request_site_address
+
