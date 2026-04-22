@@ -1,5 +1,7 @@
 <template>
 	<div class="w-full px-5 pt-5 pb-10">
+		<WelcomeVideoHero />
+
 		<div class="space-y-2">
 			<div class="flex items-center justify-between">
 				<div class="text-xl font-bold text-ink-gray-9">
@@ -44,6 +46,7 @@ import { useRouter } from 'vue-router'
 import StudentHome from '@/pages/Home/StudentHome.vue'
 import AdminHome from '@/pages/Home/AdminHome.vue'
 import Streak from '@/pages/Home/Streak.vue'
+import WelcomeVideoHero from '@/oslms/components/Home/WelcomeVideoHero.vue'
 
 const user = inject<any>('$user')
 const { brand } = sessionStore()

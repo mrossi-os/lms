@@ -293,6 +293,32 @@ def get_batch_tab_unread_counts(batch: str) -> dict:
 
 
 @frappe.whitelist()
+def get_welcome_video_config() -> dict:
+    """Return welcome video settings for the current user to display on first login."""
+    if frappe.session.user == "Guest":
+        return {"enabled": False}
+
+    settings = frappe.get_single("LMS Settings")
+    if not settings.get("welcome_video_enabled"):
+        return {"enabled": False}
+
+    return {
+        "enabled": True,
+        "title": settings.get("welcome_video_title") or "",
+        "file_url": settings.get("welcome_video_file") or "",
+    }
+
+
+@frappe.whitelist()
+def mark_welcome_video_seen() -> dict:
+    """Mark the welcome video as seen for the current user."""
+    if frappe.session.user == "Guest":
+        return {"ok": False}
+    frappe.db.set_value("User", frappe.session.user, "welcome_video_seen", 1)
+    return {"ok": True}
+
+
+@frappe.whitelist()
 def mark_batch_tab_notifications_read(batch: str, section: str) -> dict:
     """Mark as read all unread Notification Log entries for a batch tab section."""
     if section not in BATCH_TAB_SECTIONS:

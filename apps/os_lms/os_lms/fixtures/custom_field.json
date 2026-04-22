@@ -203,5 +203,18 @@
         "fieldtype": "Attach",
         "insert_after": "welcome_video_title",
         "depends_on": "eval:doc.welcome_video_enabled"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "User-welcome_video_seen",
+        "dt": "User",
+        "label": "Welcome Video Seen",
+        "fieldname": "welcome_video_seen",
+        "fieldtype": "Check",
+        "default": "0",
+        "insert_after": "bio",
+        "hidden": 1,
+        "no_copy": 1,
+        "read_only": 1
     }
 ]

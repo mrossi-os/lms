@@ -11,10 +11,6 @@ required_apps = ["lms"]
 
 base_template = "templates/base.html"
 
-# Inject welcome video assets on public web pages (e.g. /login)
-web_include_js = ["/assets/os_lms/js/welcome_video.js"]
-web_include_css = ["/assets/os_lms/css/welcome_video.css"]
-
 
 # activate debug if needed
 before_request = ["os_lms.debug.active_debug"]
@@ -49,6 +45,7 @@ override_whitelisted_methods = {
     "lms.lms.utils.get_lesson": "os_lms.os_lms.override_utils.get_lesson",
     "lms.lms.utils.get_batch_details": "os_lms.os_lms.override_utils.get_batch_details",
     "lms.lms.api.get_notifications": "os_lms.os_lms.override_api.get_notifications",
+    "lms.lms.api.get_user_info": "os_lms.os_lms.override_api.get_user_info",
 }
 
 # override email
@@ -69,6 +66,7 @@ fixtures = [
                     "Course Lesson",
                     "LMS Course",
                     "LMS Batch",
+                    "User",
                 ],
             ]
         ],

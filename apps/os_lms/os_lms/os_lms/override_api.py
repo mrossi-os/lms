@@ -3,6 +3,7 @@ import frappe
 
 from lms.lms.api import get_sidebar_settings as _original_get_sidebar_settings
 from lms.lms.api import get_lms_settings as _original_get_lms_settings
+from lms.lms.api import get_user_info as _original_get_user_info
 
 
 from lms.command_palette import (
@@ -29,6 +30,16 @@ def get_lms_settings():
     result = _original_get_lms_settings()
     if isinstance(result, dict):
          result["ai_enabled"] = frappe.get_single("LMSA Settings").get("enabled")
+    return result
+
+
+@frappe.whitelist()
+def get_user_info():
+    result = _original_get_user_info()
+    if result and frappe.session.user != "Guest":
+        result["welcome_video_seen"] = bool(
+            frappe.db.get_value("User", frappe.session.user, "welcome_video_seen")
+        )
     return result
 
 
