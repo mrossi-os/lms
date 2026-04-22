@@ -87,7 +87,7 @@
 											:label="__('URL media hero')"
 											:description="
 												__(
-													'Per i video incolla l\'URL embed (es. https://www.youtube.com/embed/ID) o un file caricato. Per le immagini incolla un URL pubblico.',
+													'Link YouTube/Vimeo, file caricato o URL immagine pubblico.',
 												)
 											"
 											@input="makeFormDirty()"

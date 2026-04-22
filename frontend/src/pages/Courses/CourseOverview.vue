@@ -13,7 +13,7 @@
 				/>
 				<iframe
 					v-else
-					:src="course.data.hero?.media_url"
+					:src="heroEmbedUrl"
 					class="absolute inset-0 w-full h-full"
 					frameborder="0"
 					allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -177,6 +177,35 @@ const isDirectVideoFile = (url: string | undefined) => {
 	if (!url) return false
 	return DIRECT_VIDEO_EXTENSIONS.test(url)
 }
+
+const YOUTUBE_WATCH = /^(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?(?:.*&)?v=([\w-]{11})/i
+const YOUTUBE_SHORT = /^(?:https?:\/\/)?youtu\.be\/([\w-]{11})/i
+const YOUTUBE_EMBED = /^(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([\w-]{11})/i
+const VIMEO_URL = /^(?:https?:\/\/)?(?:www\.)?vimeo\.com\/(\d+)(?:\/([a-zA-Z0-9]+))?/i
+const VIMEO_PLAYER = /^(?:https?:\/\/)?player\.vimeo\.com\/video\/(\d+)/i
+
+const toEmbedUrl = (url: string | undefined): string => {
+	if (!url) return ''
+	let m = url.match(YOUTUBE_EMBED)
+	if (m) return url
+	m = url.match(YOUTUBE_WATCH) || url.match(YOUTUBE_SHORT)
+	if (m) return `https://www.youtube.com/embed/${m[1]}`
+	m = url.match(VIMEO_PLAYER)
+	if (m) return url
+	m = url.match(VIMEO_URL)
+	if (m) {
+		const id = m[1]
+		const hash = m[2]
+		return hash
+			? `https://player.vimeo.com/video/${id}?h=${hash}`
+			: `https://player.vimeo.com/video/${id}`
+	}
+	return url
+}
+
+const heroEmbedUrl = computed<string>(() =>
+	toEmbedUrl(props.course.data?.hero?.media_url),
+)
 
 const isExpanded = ref(false)
 const showToggle = ref(false)
