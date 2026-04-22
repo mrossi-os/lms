@@ -1,13 +1,55 @@
 <template>
 	<div class="p-5">
+		<section
+			v-if="hasHero"
+			class="relative -mx-5 -mt-5 mb-8 h-[50vh] max-h-[50vh] bg-black overflow-hidden"
+		>
+			<template v-if="course.data.hero?.media_type === 'Video'">
+				<video
+					v-if="isDirectVideoFile(course.data.hero?.media_url)"
+					:src="course.data.hero?.media_url"
+					controls
+					class="absolute inset-0 w-full h-full object-cover"
+				/>
+				<iframe
+					v-else
+					:src="course.data.hero?.media_url"
+					class="absolute inset-0 w-full h-full"
+					frameborder="0"
+					allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+					allowfullscreen
+				/>
+			</template>
+			<img
+				v-else-if="course.data.hero?.media_type === 'Image'"
+				:src="course.data.hero?.media_url"
+				:alt="course.data.title"
+				class="absolute inset-0 w-full h-full object-cover"
+			/>
+			<div
+				class="absolute inset-x-0 bottom-0 p-6 md:p-8 bg-gradient-to-t from-black/80 via-black/50 to-transparent text-white pointer-events-none"
+			>
+				<h1 class="text-2xl md:text-4xl font-semibold">
+					{{ course.data.title }}
+				</h1>
+				<p
+					v-if="course.data.short_introduction"
+					class="mt-2 max-w-3xl text-sm md:text-base text-white/85 leading-6"
+				>
+					{{ course.data.short_introduction }}
+				</p>
+			</div>
+		</section>
 		<div class="flex justify-between w-full space-x-5">
 			<div class="md:w-2/3">
-				<div class="text-3xl font-semibold text-ink-gray-9">
-					{{ course.data.title }}
-				</div>
-				<div class="my-3 leading-6 text-ink-gray-7">
-					{{ course.data.short_introduction }}
-				</div>
+				<template v-if="!hasHero">
+					<div class="text-3xl font-semibold text-ink-gray-9">
+						{{ course.data.title }}
+					</div>
+					<div class="my-3 leading-6 text-ink-gray-7">
+						{{ course.data.short_introduction }}
+					</div>
+				</template>
 				<div class="flex items-center">
 					<Tooltip
 						v-if="parseInt(course.data.rating) > 0"
@@ -61,7 +103,7 @@
 					class="my-4"
 				/>
 				<div class="md:hidden my-4">
-					<CourseCardOverlay :course="course" />
+					<CourseCardOverlay :course="course" :hideVideo="hasHero" />
 				</div>
 
 				<div class="mt-10">
@@ -102,7 +144,7 @@
 				/>
 			</div>
 			<div class="hidden md:block">
-				<CourseCardOverlay :course="course" />
+				<CourseCardOverlay :course="course" :hideVideo="hasHero" />
 			</div>
 		</div>
 		<RelatedCourses :courseName="course.data.name" />
@@ -117,13 +159,24 @@ import CourseInstructors from '@/components/CourseInstructors.vue'
 import RelatedCourses from '@/components/RelatedCourses.vue'
 import FeaturedSectionView from '@/oslms/components/FeaturedSectionView.vue'
 import CourseTagBadges from '@/oslms/components/CourseTagBadges.vue'
-import { inject, ref, onMounted, nextTick } from 'vue'
+import { inject, ref, computed, onMounted, nextTick } from 'vue'
 
 const props = defineProps<{
 	course: any
 }>()
 
 const user = inject<any>('$user')
+
+const hasHero = computed<boolean>(() => {
+	const hero = props.course.data?.hero
+	return !!(hero?.enabled && hero?.media_url)
+})
+
+const DIRECT_VIDEO_EXTENSIONS = /\.(mp4|webm|ogg|ogv|mov|m4v)(\?.*)?$/i
+const isDirectVideoFile = (url: string | undefined) => {
+	if (!url) return false
+	return DIRECT_VIDEO_EXTENSIONS.test(url)
+}
 
 const isExpanded = ref(false)
 const showToggle = ref(false)

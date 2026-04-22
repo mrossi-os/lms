@@ -27,6 +27,18 @@ def get_course_details(course: str):
     except (json.JSONDecodeError, TypeError):
         course_detail.feature_sections = []
 
+    hero = frappe.db.get_value(
+        "LMS Course",
+        course,
+        ["hero_enabled", "hero_media_type", "hero_media_url"],
+        as_dict=True,
+    ) or {}
+    course_detail.hero = {
+        "enabled": bool(hero.get("hero_enabled")),
+        "media_type": hero.get("hero_media_type") or "Video",
+        "media_url": hero.get("hero_media_url") or "",
+    }
+
     return course_detail
 
 

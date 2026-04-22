@@ -243,7 +243,8 @@ def send_batch_announcement(batch: str, recipients, subject: str, content: str, 
         frappe.throw("Nessun destinatario specificato")
 
     message_html = (message or "").replace("\n", "<br>")
-    context = {"message": message_html}
+    announcement_url = f"{frappe.utils.get_url()}/lms/batches/details/{batch}#announcements"
+    context = {"message": message_html, "announcement_url": announcement_url}
     rendered_content = frappe.render_template(content, context)
     rendered_subject = frappe.render_template(subject, context)
 

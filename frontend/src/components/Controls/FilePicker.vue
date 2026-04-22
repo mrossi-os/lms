@@ -115,9 +115,13 @@ const props = defineProps({
 		type: Object,
 		default: () => ({}),
 	},
+	allowedExtensions: {
+		type: Array,
+		default: () => [],
+	},
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'update:fileUrl'])
 
 const autocomplete = ref(null)
 const text = ref('')
@@ -144,6 +148,7 @@ const selectedOption = computed({
 			}
 		}
 		emit('update:modelValue', val?.value || '')
+		emit('update:fileUrl', val?.file_url || '')
 	},
 })
 
@@ -186,7 +191,12 @@ const fileOptions = createResource({
 		})),
 })
 
-const filteredOptions = computed(() => fileOptions.data || [])
+const filteredOptions = computed(() => {
+	const data = fileOptions.data || []
+	if (!props.allowedExtensions?.length) return data
+	const allowed = props.allowedExtensions.map((e) => e.toLowerCase())
+	return data.filter((opt) => allowed.includes(getExt(opt.label)))
+})
 
 const reload = () => {
 	fileOptions.update({

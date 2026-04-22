@@ -134,6 +134,38 @@
     },
     {
         "doctype": "Custom Field",
+        "name": "LMS Course-hero_enabled",
+        "dt": "LMS Course",
+        "label": "Hero Enabled",
+        "fieldname": "hero_enabled",
+        "fieldtype": "Check",
+        "default": "0",
+        "insert_after": "enforce_quiz_on_completion"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Course-hero_media_type",
+        "dt": "LMS Course",
+        "label": "Hero Media Type",
+        "fieldname": "hero_media_type",
+        "fieldtype": "Select",
+        "options": "Video\nImage",
+        "default": "Video",
+        "insert_after": "hero_enabled",
+        "depends_on": "eval:doc.hero_enabled"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Course-hero_media_url",
+        "dt": "LMS Course",
+        "label": "Hero Media URL",
+        "fieldname": "hero_media_url",
+        "fieldtype": "Data",
+        "insert_after": "hero_media_type",
+        "depends_on": "eval:doc.hero_enabled"
+    },
+    {
+        "doctype": "Custom Field",
         "name": "LMS Settings-welcome_video_section",
         "dt": "LMS Settings",
         "label": "Welcome Video",
