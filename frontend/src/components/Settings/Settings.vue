@@ -639,6 +639,56 @@ const tabsStructure = computed(() => {
 					],
 				},
 				{
+					key: 'Welcome Video',
+					label: __('Welcome Video'),
+					icon: 'PlayCircle',
+					description: __(
+						'Configura il video di benvenuto mostrato agli studenti al primo login',
+					),
+					sections: [
+						{
+							columns: [
+								{
+									fields: [
+										{
+											label: __('Enable Welcome Video'),
+											name: 'welcome_video_enabled',
+											type: 'checkbox',
+											description: __(
+												'Se attivo, mostra il video di benvenuto agli studenti la prima volta che accedono.',
+											),
+										},
+										{
+											label: __('Welcome Video Title'),
+											name: 'welcome_video_title',
+											type: 'text',
+											description: __(
+												"Titolo mostrato sull'hero video nella home dello studente.",
+											),
+										},
+										{
+											label: __('Welcome Video File'),
+											name: 'welcome_video_file',
+											type: 'FilePicker',
+											allowedExtensions: [
+												'mp4',
+												'webm',
+												'ogg',
+												'ogv',
+												'mov',
+												'm4v',
+											],
+											description: __(
+												'Scegli il file video da mostrare fra quelli caricati (es. .mp4, .webm).',
+											),
+										},
+									],
+								},
+							],
+						},
+					],
+				},
+				{
 					key: 'SEO',
 					label: __('SEO'),
 					icon: 'Search',
