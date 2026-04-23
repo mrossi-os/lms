@@ -196,12 +196,22 @@
     },
     {
         "doctype": "Custom Field",
+        "name": "LMS Settings-welcome_video_subtitle",
+        "dt": "LMS Settings",
+        "label": "Welcome Video Subtitle",
+        "fieldname": "welcome_video_subtitle",
+        "fieldtype": "Data",
+        "insert_after": "welcome_video_title",
+        "depends_on": "eval:doc.welcome_video_enabled"
+    },
+    {
+        "doctype": "Custom Field",
         "name": "LMS Settings-welcome_video_file",
         "dt": "LMS Settings",
         "label": "Welcome Video File",
         "fieldname": "welcome_video_file",
         "fieldtype": "Attach",
-        "insert_after": "welcome_video_title",
+        "insert_after": "welcome_video_subtitle",
         "depends_on": "eval:doc.welcome_video_enabled"
     },
     {

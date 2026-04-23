@@ -20,8 +20,11 @@
 				<h2 class="text-xl md:text-3xl font-semibold leading-tight">
 					{{ config.title || __('Benvenuto nella piattaforma') }}
 				</h2>
-				<p class="mt-1 text-sm md:text-base text-white/85 max-w-2xl">
-					{{ __('Un breve video per iniziare. Buona visione!') }}
+				<p
+					v-if="config.subtitle"
+					class="mt-1 text-sm md:text-base text-white/85 max-w-2xl"
+				>
+					{{ config.subtitle }}
 				</p>
 			</div>
 			<button
@@ -45,7 +48,7 @@ import { usersStore } from '@/stores/user'
 const { userResource } = usersStore()
 
 const visible = ref(false)
-const config = ref({ title: '', file_url: '' })
+const config = ref({ title: '', subtitle: '', file_url: '' })
 const videoEl = ref(null)
 const hasRequestedConfig = ref(false)
 
