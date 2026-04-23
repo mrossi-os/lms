@@ -80,7 +80,7 @@
 				</Dropdown>
 			</div>
 		</header>
-		<div class="grid md:grid-cols-[70%,30%] md:h-[94vh]">
+		<div class="grid md:grid-cols-[70%,30%] md:h-[100vh]">
 			<div v-if="lesson.data.no_preview" class="border-r">
 				<div class="shadow rounded-md w-3/4 mt-10 mx-auto text-center p-4">
 					<div class="flex items-center justify-center mt-4 space-x-2">
