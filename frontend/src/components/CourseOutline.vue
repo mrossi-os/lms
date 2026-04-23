@@ -110,8 +110,15 @@
 												}"
 											>
 												<div class="flex items-center text-sm leading-5 group">
+													<Tooltip
+														v-if="lesson.is_complete"
+														:text="__('Lesson completed')"
+														placement="top"
+													>
+														<Check class="h-4 w-4 text-green-700 mr-2" />
+													</Tooltip>
 													<MonitorPlay
-														v-if="lesson.icon === 'icon-youtube'"
+														v-else-if="lesson.icon === 'icon-youtube'"
 														class="h-4 w-4 stroke-1 mr-2"
 													/>
 													<HelpCircle
@@ -130,7 +137,15 @@
 														v-else-if="lesson.icon === 'icon-list'"
 														class="h-4 w-4 text-ink-gray-9 stroke-1 mr-2"
 													/>
-													{{ lesson.title }}
+													<div class="flex grow justify-between">
+														{{ lesson.title }}
+														<CourseTagBadges
+															v-if="lesson.tags"
+															:tags="lesson.tags"
+															size="xs"
+															class=""
+														/>
+													</div>
 													<div class="flex items-center ml-auto space-x-2">
 														<LessonAIStatus v-if="allowEdit" :lesson="lesson" />
 														<Trash2
@@ -140,19 +155,9 @@
 															"
 															class="h-4 w-4 text-ink-red-3 invisible group-hover:visible"
 														/>
-														<Check
-															v-if="lesson.is_complete"
-															class="h-4 w-4 text-green-700"
-														/>
 													</div>
 												</div>
 											</router-link>
-											<CourseTagBadges
-												v-if="lesson.tags"
-												:tags="lesson.tags"
-												size="xs"
-												class=""
-											/>
 										</div>
 									</template>
 								</Draggable>

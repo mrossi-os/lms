@@ -162,6 +162,16 @@ const userDropdownOptions = computed(() => {
 					},
 				},
 				{
+					label: __('Importa'),
+					icon: Upload,
+					onClick: () => {
+						router.push({ name: 'FileUpload' })
+					},
+					condition: () => {
+						return userResource.data?.is_moderator
+					},
+				},
+				{
 					label: __('Cancella dati demo'),
 					icon: Trash2,
 					onClick: () => {
