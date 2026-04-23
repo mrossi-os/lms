@@ -16,7 +16,14 @@
 					:src="heroEmbedUrl"
 					class="absolute inset-0 w-full h-full"
 					frameborder="0"
-					allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+					allow="
+						accelerometer;
+						autoplay;
+						clipboard-write;
+						encrypted-media;
+						gyroscope;
+						picture-in-picture;
+					"
 					allowfullscreen
 				/>
 			</template>
@@ -41,7 +48,7 @@
 			</div>
 		</section>
 		<div class="flex justify-between w-full space-x-5">
-			<div class="md:w-2/3">
+			<div class="w-full md:w-2/3">
 				<template v-if="!hasHero">
 					<div class="text-3xl font-semibold text-ink-gray-9">
 						{{ course.data.title }}
@@ -178,10 +185,13 @@ const isDirectVideoFile = (url: string | undefined) => {
 	return DIRECT_VIDEO_EXTENSIONS.test(url)
 }
 
-const YOUTUBE_WATCH = /^(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?(?:.*&)?v=([\w-]{11})/i
+const YOUTUBE_WATCH =
+	/^(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?(?:.*&)?v=([\w-]{11})/i
 const YOUTUBE_SHORT = /^(?:https?:\/\/)?youtu\.be\/([\w-]{11})/i
-const YOUTUBE_EMBED = /^(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([\w-]{11})/i
-const VIMEO_URL = /^(?:https?:\/\/)?(?:www\.)?vimeo\.com\/(\d+)(?:\/([a-zA-Z0-9]+))?/i
+const YOUTUBE_EMBED =
+	/^(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([\w-]{11})/i
+const VIMEO_URL =
+	/^(?:https?:\/\/)?(?:www\.)?vimeo\.com\/(\d+)(?:\/([a-zA-Z0-9]+))?/i
 const VIMEO_PLAYER = /^(?:https?:\/\/)?player\.vimeo\.com\/video\/(\d+)/i
 
 const toEmbedUrl = (url: string | undefined): string => {
