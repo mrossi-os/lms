@@ -667,9 +667,17 @@ const tabsStructure = computed(() => {
 											),
 										},
 										{
-											label: __('Welcome Video File'),
+											label: __('Welcome Video Subtitle'),
+											name: 'welcome_video_subtitle',
+											type: 'text',
+											description: __(
+												"Sottotitolo opzionale mostrato sotto al titolo dell'hero video.",
+											),
+										},
+										{
+											label: __('Welcome Video'),
 											name: 'welcome_video_file',
-											type: 'FilePicker',
+											type: 'VideoSourceInput',
 											allowedExtensions: [
 												'mp4',
 												'webm',
@@ -679,7 +687,7 @@ const tabsStructure = computed(() => {
 												'm4v',
 											],
 											description: __(
-												'Scegli il file video da mostrare fra quelli caricati (es. .mp4, .webm).',
+												"Incolla un link al video (YouTube, Vimeo, ecc.) oppure scegli un file caricato tramite l'icona. I link esterni vengono mostrati in un iframe, i file locali in un player nativo.",
 											),
 										},
 									],

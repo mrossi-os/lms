@@ -324,7 +324,7 @@ def get_welcome_video_config() -> dict:
         "enabled": True,
         "title": settings.get("welcome_video_title") or "",
         "subtitle": settings.get("welcome_video_subtitle") or "",
-        "file_url": settings.get("welcome_video_file") or "",
+        "video_source": settings.get("welcome_video_file") or "",
     }
 
 

@@ -146,6 +146,24 @@
 								/>
 							</div>
 						</div>
+						<div v-else-if="field.type == 'VideoSourceInput'" class="min-w-0">
+							<div class="space-y-1 mb-2">
+								<div class="text-sm text-ink-gray-9 font-medium">
+									{{ __(field.label) }}
+								</div>
+								<div
+									v-if="field.description"
+									class="text-sm text-ink-gray-5 leading-5"
+								>
+									{{ __(field.description) }}
+								</div>
+							</div>
+							<VideoSourceInput
+								v-model="data[field.name]"
+								:placeholder="field.placeholder"
+								:allowedExtensions="field.allowedExtensions"
+							/>
+						</div>
 						<Switch
 							v-else-if="field.type == 'checkbox'"
 							size="sm"
@@ -184,6 +202,7 @@ import { X } from 'lucide-vue-next'
 import Link from '@/components/Controls/Link.vue'
 import CodeEditor from '@/components/Controls/CodeEditor.vue'
 import FilePicker from '@/components/Controls/FilePicker.vue'
+import VideoSourceInput from '@/oslms/components/Form/VideoSourceInput.vue'
 
 const filePickerNames = reactive({})
 

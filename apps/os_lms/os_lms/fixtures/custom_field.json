@@ -208,11 +208,12 @@
         "doctype": "Custom Field",
         "name": "LMS Settings-welcome_video_file",
         "dt": "LMS Settings",
-        "label": "Welcome Video File",
+        "label": "Welcome Video (URL or file path)",
         "fieldname": "welcome_video_file",
-        "fieldtype": "Attach",
+        "fieldtype": "Data",
         "insert_after": "welcome_video_subtitle",
-        "depends_on": "eval:doc.welcome_video_enabled"
+        "depends_on": "eval:doc.welcome_video_enabled",
+        "description": "Paste a video URL (YouTube, Vimeo, etc.) or pick a file path. URLs are rendered as iframe embeds; paths as native <video>."
     },
     {
         "doctype": "Custom Field",
