@@ -5,7 +5,7 @@
 		>
 			<Breadcrumbs class="h-7" :items="breadcrumbs" />
 			<div
-				class="hidden md:flex fixed top-3 z-11 items-center right-3 space-x-2"
+				class="fixed hidden md:flexs top-3 z-11 items-center right-3 space-x-2"
 			>
 				<Tooltip v-if="canGoZen()" :text="__('Zen Mode')">
 					<Button size="sm" @click="goFullScreen()">
@@ -69,7 +69,7 @@
 					</Button>
 				</router-link>
 			</div>
-			<div class="flex md:hidden items-center space-x-2">
+			<div class="fixed top-15 right-3 flex md:hidden items-center space-x-2">
 				<CertificationLinks :courseName="courseName" />
 				<Dropdown :options="mobileHeaderMenu" side="left">
 					<Button size="sm">
@@ -80,6 +80,23 @@
 				</Dropdown>
 			</div>
 		</header>
+		<Tooltip
+			v-if="canShowAIJumpButton"
+			:text="
+				showingChat ? __('Torna alla lezione') : __('Chiedi all\'AI Tutor')
+			"
+		>
+			<Button
+				size="sm"
+				class="md:hidden fixed top-24 right-3 z-10 shadow-md"
+				@click="toggleAIView"
+			>
+				<template #icon>
+					<BookOpen v-if="showingChat" class="w-4 h-4 stroke-1.5" />
+					<Bot v-else class="w-4 h-4 stroke-1.5" />
+				</template>
+			</Button>
+		</Tooltip>
 		<div class="grid md:grid-cols-[70%,30%] md:h-[100vh]">
 			<div v-if="lesson.data.no_preview" class="border-r">
 				<div class="shadow rounded-md w-3/4 mt-10 mx-auto text-center p-4">
@@ -376,7 +393,11 @@
 				</div>
 			</div>
 			<div class="sticky top-10">
-				<div v-if="lesson.data?.name && !hasQuiz">
+				<div
+					v-if="lesson.data?.name && !hasQuiz"
+					ref="chatBotContainer"
+					:data-ai-tutor="true"
+				>
 					<ChatBot
 						:courseId="lesson.data?.course"
 						:lessonId="lesson.data?.name"
@@ -453,6 +474,8 @@ import {
 	Pencil,
 	ArrowLeft,
 	TrendingUp,
+	Bot,
+	BookOpen,
 } from 'lucide-vue-next'
 import { getEditorTools, enablePlyr, highlightText } from '@/utils'
 import { sessionStore } from '@/stores/session'
@@ -480,6 +503,9 @@ const editor = ref(null)
 const instructorEditor = ref(null)
 const lessonProgress = ref(0)
 const lessonContainer = ref(null)
+const chatBotContainer = ref(null)
+const showingChat = ref(false)
+let aiVisibilityObserver = null
 const zenModeEnabled = ref(false)
 const showStatsDialog = ref(false)
 const hasQuiz = ref(false)
@@ -566,6 +592,42 @@ onBeforeUnmount(() => {
 	document.removeEventListener('fullscreenchange', attachFullscreenEvent)
 	sidebarStore.isSidebarCollapsed = false
 	trackVideoWatchDuration()
+	if (aiVisibilityObserver) {
+		aiVisibilityObserver.disconnect()
+		aiVisibilityObserver = null
+	}
+})
+
+const canShowAIJumpButton = computed(
+	() => !!lesson.data?.name && !hasQuiz.value,
+)
+
+const toggleAIView = () => {
+	const target = showingChat.value
+		? lessonContainer.value
+		: chatBotContainer.value
+	target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+watch(chatBotContainer, (el) => {
+	if (aiVisibilityObserver) {
+		aiVisibilityObserver.disconnect()
+		aiVisibilityObserver = null
+	}
+	if (!el) {
+		showingChat.value = false
+		return
+	}
+	aiVisibilityObserver = new IntersectionObserver(
+		(entries) => {
+			for (const entry of entries) {
+				showingChat.value =
+					entry.isIntersecting && entry.intersectionRatio >= 0.3
+			}
+		},
+		{ threshold: [0, 0.3, 0.6] },
+	)
+	aiVisibilityObserver.observe(el)
 })
 
 const lesson = createResource({
