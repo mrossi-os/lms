@@ -2,7 +2,7 @@
 	<div class="p-5">
 		<section
 			v-if="hasHero"
-			class="relative -mx-5 -mt-5 mb-8 h-[50vh] max-h-[50vh] bg-black overflow-hidden"
+			class="relative -mx-5 -mt-5 mb-8 h-[58vh] max-h-[60vh] md:h-[50vh] md:max-h-[50vh] bg-black overflow-hidden"
 		>
 			<template v-if="course.data.hero?.media_type === 'Video'">
 				<video

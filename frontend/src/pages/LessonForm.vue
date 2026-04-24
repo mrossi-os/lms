@@ -1,6 +1,6 @@
 <template>
-	<div class="">
-		<div class="grid md:grid-cols-[75%,25%] h-screen">
+	<div>
+		<div class="md:grid md:grid-cols-[75%,25%] h-screen">
 			<div class="border-r">
 				<header
 					class="sticky top-0 z-10 flex flex-col md:flex-row md:items-center justify-between border-b overflow-hidden main-page-header px-3 py-2.5 sm:px-5"
@@ -17,14 +17,13 @@
 						<Button
 							variant="solid"
 							@click="saveLesson({ showSuccessMessage: true })"
-							class="mt-3 md:mt-0"
 						>
 							{{ __('Save') }}
 						</Button>
 					</div>
 				</header>
 				<div class="py-5">
-					<div class="grid grid-cols-2 gap-5 w-5/6 mx-auto">
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-5 w-5/6 mx-auto">
 						<FormControl
 							v-model="lesson.title"
 							:label="__('Title')"
@@ -50,7 +49,7 @@
 							"
 							class="card p-4"
 						/>
-						<div class="card p-4 col-span-2">
+						<div class="card p-4 md:col-span-2">
 							<TagPicker v-model="lesson.tags" />
 						</div>
 					</div>
