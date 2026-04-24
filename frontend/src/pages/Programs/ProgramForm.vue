@@ -158,7 +158,7 @@
 					<div @click.stop class="min-h-[300px]">
 						<MultiSelect v-if="currentForm == 'course'" v-model="selectedCourses" doctype="LMS Course"
 							:label="__('Courses')" :autofocus="false" ref="multiSelectRef"
-							:exclude="program.program_courses.map((c: any) => c.course)" />
+							:exclude="(program.program_courses || []).map((c: any) => c.course)" />
 						<Link v-if="currentForm == 'member'" v-model="member" doctype="User"
 							:filters="{ ignore_user_type: 1 }" :label="__('Program Member')"
 							:onCreate="(value: string, close: () => void) => openSettings('Members', close)" />
@@ -181,7 +181,7 @@
 					<div @click.stop class="min-h-[300px]">
 						<MultiSelect v-model="selectedMembers" doctype="User" :filters="{ ignore_user_type: 1 }"
 							:label="__('Members')" :autofocus="false"
-							:exclude="program.program_members.map((m: any) => m.member)" />
+							:exclude="(program.program_members || []).map((m: any) => m.member)" />
 					</div>
 				</template>
 			</Dialog>
@@ -404,6 +404,12 @@ const setProgramData = () => {
 			isNew = false
 			program.value = { ...p }
 			program.value.title = p.title || p.name
+			if (!Array.isArray(program.value.program_courses)) {
+				program.value.program_courses = []
+			}
+			if (!Array.isArray(program.value.program_members)) {
+				program.value.program_members = []
+			}
 		}
 	})
 
