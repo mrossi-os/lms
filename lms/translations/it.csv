@@ -4497,8 +4497,8 @@ restrict_ip
 "Successfully imported {0}","Importato con successo {0}"
 "Successfully updated {0}","Aggiornato con successo {0}"
 "Report Error","Segnala Errore"
-No Recording,Nessuna registrazione,
-Local,Locale,
-Cloud,Cloud,
-Value,Valore,
-Tasks,Attività,
+"No Recording,Nessuna registrazione"
+"Local","Locale"
+"Cloud","Cloud"
+"Value","Valore"
+"Tasks","Attività"
