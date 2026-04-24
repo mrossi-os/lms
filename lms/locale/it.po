@@ -8,13 +8,14 @@ msgstr ""
 "Project-Id-Version: Learning VERSION\n"
 "Report-Msgid-Bugs-To: jannat@frappe.io\n"
 "POT-Creation-Date: 2026-04-10 16:17+0000\n"
-"PO-Revision-Date: 2026-04-17 10:15+0000\n"
+"PO-Revision-Date: 2026-04-24 12:17+0000\n"
 "Last-Translator: jannat@frappe.io\n"
 "Language-Team: jannat@frappe.io\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
+
 
 
 
@@ -5048,7 +5049,7 @@ msgstr "Nessun invio quiz trovato"
 #. Option for the 'Auto Recording' (Select) field in DocType 'LMS Live Class'
 #: lms/lms/doctype/lms_live_class/lms_live_class.json
 msgid "No Recording"
-msgstr "Nessuna Registrazione"
+msgstr "Nessuna registrazione"
 
 #: frontend/src/pages/ProgrammingExercises/ProgrammingExerciseSubmissions.vue:13
 msgid "No Submissions"
@@ -6899,7 +6900,7 @@ msgstr "La registrazione è disabilitata"
 
 #: lms/templates/signup-form.html:53
 msgid "Sign up"
-msgstr ""
+msgstr "Registrati"
 
 #. Label of the signup_settings_tab (Tab Break) field in DocType 'LMS Settings'
 #: lms/lms/doctype/lms_settings/lms_settings.json
@@ -7982,7 +7983,7 @@ msgstr "Email e nome validi sono obbligatori"
 #. Label of the value (Rating) field in DocType 'LMS Batch Feedback'
 #: lms/lms/doctype/lms_batch_feedback/lms_batch_feedback.json
 msgid "Value"
-msgstr ""
+msgstr "Valore"
 
 #. Option for the 'Event' (Select) field in DocType 'LMS Badge'
 #: lms/lms/doctype/lms_badge/lms_badge.json
@@ -8684,11 +8685,11 @@ msgstr "lezioni"
 
 #: frontend/src/pages/Home/Home.vue:133 frontend/src/pages/Home/Home.vue:157
 msgid "live class"
-msgstr "classe live"
+msgstr "lezione live"
 
 #: frontend/src/pages/Home/Home.vue:133 frontend/src/pages/Home/Home.vue:157
 msgid "live classes"
-msgstr "classi live"
+msgstr "lezioni live"
 
 #: frontend/src/pages/Search/Search.vue:38
 msgid "match"
@@ -8912,7 +8913,7 @@ msgid "AI"
 msgstr "AI"
 
 msgid "AI Assistant"
-msgstr "Assistente AI"
+msgstr "Tutor AI"
 
 msgid "AI Tutor"
 msgstr "Tutor AI"
@@ -9152,7 +9153,7 @@ msgid "Are you sure you want to clear the demo data? This would delete the cours
 msgstr "Sei sicuro di voler cancellare i dati demo? Questo eliminerà il corso \"Guida a Frappe Learning\" insieme a tutti i dati associati. Questa azione non può essere annullata."
 
 msgid "Ask a question about this lesson to get help from the AI assistant."
-msgstr "Fai una domanda su questa lezione per ricevere aiuto dall'assistente AI."
+msgstr "Fai una domanda su questa lezione per ricevere aiuto dal tutor AI."
 
 msgid "Ask a question about this lesson..."
 msgstr "Fai una domanda su questa lezione..."
@@ -12785,4 +12786,285 @@ msgstr "Chiave API Vimeo"
 
 msgid "members found"
 msgstr "membri trovati"
+
+msgid "About {0} minute remaining"
+msgstr "Circa {0} minuto rimanente"
+
+msgid "About {0} minutes remaining"
+msgstr "Circa {0} minuti rimanenti"
+
+msgid "About {0} seconds remaining"
+msgstr "Circa {0} secondi rimanenti"
+
+msgid "All possible workflow states and roles of the workflow. Docstatus options: 0 is \"Saved\", 1 is \"Submitted\" and 2 is \"Cancelled\""
+msgstr "Tutti i possibili stati del flusso di lavoro e i ruoli del flusso di lavoro. Opzioni Stato del Documento: 0 corrisponde a \"Salvato\", 1 a \"Inviato\" e 2 \"Annullato\""
+
+msgid "Always add \"Draft\" heading for printing draft documents"
+msgstr "Aggiungi sempre l'intestazione “Bozza” per la stampa di documenti in bozza"
+
+msgid "Are you sure you want to clear the demo data? This would delete the course \"A guide  to Frappe Learning\" along with all its associated data. This action cannot be undone."
+msgstr "Sei sicuro di voler cancellare i dati demo? Questo eliminerà il corso \"Guida a Frappe Learning\" insieme a tutti i dati associati. Questa azione non può essere annullata."
+
+msgid "Cancel Import"
+msgstr "Annulla Importazione"
+
+msgid "Cannot match column {0} with any field"
+msgstr "Impossibile abbinare la colonna {0} a nessun campo"
+
+msgid "Column {0}"
+msgstr "Colonna {0}"
+
+msgid "Confirm Password"
+msgstr "Conferma Password"
+
+msgid "Could not map column {0} to field {1}"
+msgstr "Impossibile mappare la colonna {0} al campo {1}"
+
+msgid "Delete tag \"{0}\"?"
+msgstr "Eliminare il tag \"{0}\"?"
+
+msgid "Delete tag \\{0}\\\"?\""
+msgstr "Eliminare il tag \\{0}\\\"?\""
+
+msgid "Different \"States\" this document can exist in. Like \"Open\" , \"Pending Approval\" etc."
+msgstr "I diversi \"Stati\" in cui può trovarsi questo documento. Ad esempio \"Aperto\", \"In attesa di approvazione\" ect."
+
+msgid "Export Errored Rows"
+msgstr "Esporta Righe con Errori"
+
+msgid "Export Import Log"
+msgstr "Esporta Log di Importazione"
+
+msgid "Failure"
+msgstr "Fallimento"
+
+msgid "Go to {0} List"
+msgstr "Vai alla Lista {0}"
+
+msgid "Hint: Include symbols, numbers and capital letters in the password"
+msgstr "Suggerimento: Includi simboli, numeri e lettere maiuscole nella password"
+
+msgid "If the user has any role checked, then the user becomes a \"System User\". \"System User\" has access to the desktop"
+msgstr "Se l'utente ha un ruolo selezionato, allora l'utente diventa un “Utente di sistema”. L'“Utente di sistema” ha accesso al desktop"
+
+msgid "Import Progress"
+msgstr "Progresso Importazione"
+
+msgid "Import template should be of type .csv, .xlsx or .xls"
+msgstr "Il modello di importazione deve essere di tipo .csv, .xlsx o .xls"
+
+msgid "Import template should contain a Header and atleast one row."
+msgstr "Il modello di importazione deve contenere un'intestazione e almeno una riga."
+
+msgid "Import timed out, please re-try."
+msgstr "L'importazione è scaduta, riprova."
+
+msgid "Importing {0} of {1}, {2}"
+msgstr "Importazione {0} di {1}, {2}"
+
+msgid "Invalid Link"
+msgstr "Link non valido"
+
+msgid "Invalid or corrupted content for import"
+msgstr "Contenuto non valido o corrotto per l'importazione"
+
+msgid "Invalid template file for import"
+msgstr "File modello non valido per l'importazione"
+
+msgid "Job Stopped Successfully"
+msgstr "Processo Fermato con Successo"
+
+msgid "Lesson completed"
+msgstr "Lezione completata"
+
+msgid "Loading import file..."
+msgstr "Caricamento file di importazione..."
+
+msgid "Make \"name\" searchable in global search"
+msgstr "Rendi \"nome\" ricercabile nella ricerca globale"
+
+msgid "Mapping column {0} to field {1}"
+msgstr "Mappatura colonna {0} al campo {1}"
+
+msgid "Missing Value"
+msgstr "Valore Mancante"
+
+msgid "Must be of type \"Attach image\""
+msgstr "Deve essere di tipo \"Allega immagine\""
+
+msgid "New Password"
+msgstr "Nuova Password"
+
+msgid "New password cannot be same as old password"
+msgstr "La nuova password non può essere uguale alla vecchia password"
+
+msgid "No changes to update"
+msgstr "Nessuna modifica da aggiornare"
+
+msgid "No failed logs"
+msgstr "Nessun log di errore"
+
+msgid "Old Password"
+msgstr "Vecchia Password"
+
+msgid "Password is valid. 👍"
+msgstr "Password valida. 👍"
+
+msgid "Password set"
+msgstr "Password impostata"
+
+msgid "Passwords do not match"
+msgstr "Le password non corrispondono"
+
+msgid "Please click on 'Export Errored Rows', fix the errors and import again."
+msgstr "Clicca su 'Esporta Righe con Errori', correggi gli errori e importa di nuovo."
+
+msgid "Please enter the password"
+msgstr "Inserisci la password"
+
+msgid "Please enter your new password."
+msgstr "Inserisci la tua nuova password."
+
+msgid "Please enter your old password."
+msgstr "Inserisci la tua vecchia password."
+
+msgid "Repeats like \"aaa\" are easy to guess"
+msgstr "Ripetizioni come \"aaa\" sono facili da indovinare"
+
+msgid "Repeats like \"abcabcabc\" are only slightly harder to guess than \"abc\""
+msgstr "Ripetizioni come \"abcabcabc\" sono solo leggermente più difficili da indovinare di \"abc\""
+
+msgid "Report Error"
+msgstr "Segnala Errore"
+
+msgid "Request a new link"
+msgstr "Richiedi un nuovo link"
+
+msgid "Reset Password"
+msgstr "Reimposta Password"
+
+msgid "Restrict user from this IP address only. Multiple IP addresses can be added by separating with commas. Also accepts partial IP addresses like (111.111.111)
+restrict_ip"
+msgstr "Limita l'utente solo da questo indirizzo IP. È possibile aggiungere più indirizzi IP separandoli con virgole. Accetta anche indirizzi IP parziali come (111.111.111)
+restrict_ip"
+
+msgid "Route: Example \"/Desk\""
+msgstr "Percorso: Esempio “/Desk”"
+
+msgid "Row Number"
+msgstr "Numero Riga"
+
+msgid "Row {0}"
+msgstr "Riga {0}"
+
+msgid "SQL conditions, Example: status0\"Open\""
+msgstr "Condizioni SQL, Esempio: stato\"Aperto\""
+
+msgid "Search student..."
+msgstr "Cerca studenti..."
+
+msgid "Set Password"
+msgstr "Imposta Password"
+
+msgid "Set default otions for all charts on this dashoard (Ex: \"colors\": [])"
+msgstr "Imposta le opzioni predefinite per tutti i grafici di questa dashboard (es:\"colori\":[])"
+
+msgid "Show Traceback"
+msgstr "Mostra Traceback"
+
+msgid "Skipping Duplicate Column {0}"
+msgstr "Salto colonna duplicata {0}"
+
+msgid "Skipping Untitled Column"
+msgstr "Salto colonna senza titolo"
+
+msgid "Skipping column {0}"
+msgstr "Salto colonna {0}"
+
+msgid "Skipping {0} of {1}, {2}"
+msgstr "Salto {0} di {1}, {2}"
+
+msgid "Start Import"
+msgstr "Avvia Importazione"
+
+msgid "Status Updated"
+msgstr "Stato Aggiornato"
+
+msgid "Successfully imported {0}"
+msgstr "Importato con successo {0}"
+
+msgid "Successfully imported {0} out of {1} records."
+msgstr "Importati con successo {0} su {1} record."
+
+msgid "Successfully updated {0}"
+msgstr "Aggiornato con successo {0}"
+
+msgid "Successfully updated {0} out of {1} records."
+msgstr "Aggiornati con successo {0} su {1} record."
+
+msgid "Tasks"
+msgstr "Attività"
+
+msgid "Template Error"
+msgstr "Errore Modello"
+
+msgid "The browser API Key obtained from the Google Cloud Console under \"API & Services\"> \"Credentials\""
+msgstr "La chiave API del browser ottenuta dalla console Google Cloud in “API e servizi” > “Credenziali”
+Selettore Google Drive"
+
+msgid "The client ID obtained from the Google Cloud console under \"API & Services\" > \"Credentials\""
+msgstr "l'ID del cliente ottenuto dalla console di Google. Cloud in \"API e servizi\" > \"Credenziali\""
+
+msgid "The column {0} has {1} different date formats. Automatically setting {2} as the default format as it is the most common. Please change other values in this column to this format."
+msgstr "La colonna {0} ha {1} formati di data diversi. Impostazione automatica di {2} come formato predefinito in quanto è il più comune. Modifica gli altri valori in questa colonna in questo formato."
+
+msgid "The following values are invalid: {0}. Values must be one of {1}"
+msgstr "I seguenti valori non sono validi: {0}. I valori devono essere uno tra {1}"
+
+msgid "The following values do not exist for {0}: {1}"
+msgstr "I seguenti valori non esistono per {0}: {1}"
+
+msgid "The password of your account has expired."
+msgstr "La password del tuo account è scaduta."
+
+msgid "This will terminate the job immediately and might be dangerous, are you sure?"
+msgstr "Questo terminerà il processo immediatamente e potrebbe essere pericoloso, sei sicuro?"
+
+msgid "To configure Auto Repeat, enable \"Allow Auto Repeat\" from Personalizza modulo."
+msgstr "Per configurare la Ripetizione Automatica, abilita \"Consenti Ripetizione Automatica\" da Personalizza Modulo."
+
+msgid "URIs for receiving authorization code once the user allows access, as well as failure responses. Typically a REST endpoint exposed by the Client App.
+e.g. http://hostname/api/method/frappe.integrations.oauth2_logins.login_via_facebook"
+msgstr "URI per ricevere il codice di autorizzazione una volta che l'utente ha consentito l'accesso, nonché le risposte di errore. In genere un endpoint REST esposto dall'app client.
+Es. http://hostname/api/method/frappe.integrations.oauth2_logins.login_via_facebook"
+
+msgid "Updating {0} of {1}, {2}"
+msgstr "Aggiornamento {0} di {1}, {2}"
+
+msgid "Value must be one of {0}"
+msgstr "Il valore deve essere uno tra {0}"
+
+msgid "Value of \"None\" implies a public client. In such a case Client Secret is not given to the client and token exchange makes use of PKCE."
+msgstr "Il valore “Nessuno” implica un client pubblico. In tal caso, il segreto client non viene fornito al client e lo scambio di token utilizza PKCE."
+
+msgid "Value {0} missing for {1}"
+msgstr "Valore {0} mancante per {1}"
+
+msgid "Value {0} must be in the valid duration format: d h m s"
+msgstr "Il valore {0} deve essere nel formato durata valido: d h m s"
+
+msgid "Value {0} must in {1} format"
+msgstr "Il valore {0} deve essere nel formato {1}"
+
+msgid "Your new password has been set successfully."
+msgstr "La tua nuova password è stata impostata con successo."
+
+msgid "Your old password is incorrect."
+msgstr "La tua vecchia password non è corretta."
+
+msgid "via Data Import"
+msgstr "tramite Importazione Dati"
+
+msgid "{0} format could not be determined from the values in this column. Defaulting to {1}."
+msgstr "Impossibile determinare il formato {0} dai valori in questa colonna. Utilizzo predefinito di {1}."
 
