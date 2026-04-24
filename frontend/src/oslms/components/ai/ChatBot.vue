@@ -1,7 +1,7 @@
 <template>
 	<div
 		v-if="settingsStore.settings?.data?.ai_enabled"
-		class="flex flex-col h-full border-b p-4"
+		class="flex flex-col h-full border-b p-4 card"
 	>
 		<div class="text-lg font-semibold mb-4 text-ink-gray-9">
 			{{ __('AI Tutor') }}
@@ -36,10 +36,7 @@
 					class="text-sm text-ink-gray-9 prose prose-sm max-w-none chatbot-markdown"
 					v-html="renderMarkdown(message.content)"
 				></div>
-				<div
-					v-else
-					class="text-sm text-ink-gray-9 whitespace-pre-wrap"
-				>
+				<div v-else class="text-sm text-ink-gray-9 whitespace-pre-wrap">
 					{{ message.content }}
 				</div>
 				<div

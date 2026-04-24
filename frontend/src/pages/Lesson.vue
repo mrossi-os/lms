@@ -397,6 +397,7 @@
 					v-if="lesson.data?.name && !hasQuiz"
 					ref="chatBotContainer"
 					:data-ai-tutor="true"
+					class="p-3"
 				>
 					<ChatBot
 						:courseId="lesson.data?.course"
