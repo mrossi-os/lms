@@ -41,7 +41,7 @@
 							<template #prefix>
 								<Plus class="size-4 stroke-1.5" />
 							</template>
-							{{ __('Enroll') }}
+							{{ __('Iscrivi') }}
 						</Button>
 						<Button @click="goToImport">
 							<template #prefix>
@@ -151,7 +151,7 @@
 						subtitle: __('Progress of students in courses and assessments'),
 						xAxis: {
 							key: 'task',
-							title: 'Tasks',
+							title: __('Tasks'),
 							type: 'category',
 						},
 						yAxis: {
@@ -162,7 +162,7 @@
 						},
 						series: [
 							{
-								name: 'value',
+								name: __('Value'),
 								type: 'bar',
 							},
 						],
@@ -295,7 +295,10 @@ const studentColumns = computed(() => {
 	]
 })
 
-const removeStudents = async (selections: string[], unselectAll: () => void) => {
+const removeStudents = async (
+	selections: string[],
+	unselectAll: () => void,
+) => {
 	for (const student of selections) {
 		await students.delete.submit(student)
 	}

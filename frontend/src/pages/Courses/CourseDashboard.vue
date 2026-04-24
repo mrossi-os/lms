@@ -36,7 +36,7 @@
 							<template #prefix>
 								<Plus class="size-4 stroke-1.5" />
 							</template>
-							{{ __('Enroll') }}
+							{{ __('Iscrivi') }}
 						</Button>
 					</div>
 				</div>
