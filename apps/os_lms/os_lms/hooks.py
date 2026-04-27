@@ -82,7 +82,13 @@ doc_events = {
     "Course Lesson": {
         "before_save": "os_lms.events.lesson.reset_index_status_on_content_change"
     },
+    "User": {
+        "after_insert": "os_lms.auth.mark_first_login",
+    },
 }
+
+
+on_session_creation = ["os_lms.auth.on_session_creation"]
 
 
 scheduler_events = {

@@ -349,6 +349,19 @@ def mark_welcome_video_seen() -> dict:
 
 
 @frappe.whitelist()
+def replay_welcome_video():
+    """Reset welcome_video_seen and redirect to the LMS home so the video plays again."""
+    if frappe.session.user != "Guest":
+        frappe.db.set_value(
+            "User", frappe.session.user, "welcome_video_seen", 0
+        )
+        # GET requests do not cause an implicit commit
+        frappe.db.commit()
+    frappe.local.response["type"] = "redirect"
+    frappe.local.response["location"] = "/lms/"
+
+
+@frappe.whitelist()
 def mark_batch_tab_notifications_read(batch: str, section: str) -> dict:
     """Mark as read all unread Notification Log entries for a batch tab section."""
     if section not in BATCH_TAB_SECTIONS:

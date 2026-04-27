@@ -257,6 +257,11 @@ const navigateToPage = (log) => {
 	const [path, hash] = log.link.split('#')
 	const link = path.split('/')
 
+	if (path.startsWith('/api/method/')) {
+		window.location.href = log.link
+		return
+	}
+
 	if (link[2] == 'courses') {
 		router.push({
 			name: 'CourseDetail',

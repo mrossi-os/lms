@@ -227,5 +227,18 @@
         "hidden": 1,
         "no_copy": 1,
         "read_only": 1
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "User-first_login",
+        "dt": "User",
+        "label": "First Login",
+        "fieldname": "first_login",
+        "fieldtype": "Check",
+        "default": "0",
+        "insert_after": "welcome_video_seen",
+        "hidden": 1,
+        "no_copy": 1,
+        "read_only": 1
     }
 ]
