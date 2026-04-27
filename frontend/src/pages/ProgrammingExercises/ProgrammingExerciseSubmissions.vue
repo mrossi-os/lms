@@ -124,7 +124,7 @@
 				</template>
 			</ListSelectBanner>
 		</ListView>
-		<EmptyState v-else :type="__('Programming Exercise Submissions')" />
+		<EmptyState v-else title="Nessuna consegna di esercizi di programmazione" />
 		<div
 			v-if="submissions.data && submissions.hasNextPage"
 			class="flex justify-center my-5"

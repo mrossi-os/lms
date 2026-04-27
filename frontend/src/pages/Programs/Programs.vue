@@ -46,7 +46,7 @@
 		</div>
 	</div>
 	<StudentPrograms v-else-if="isStudent" />
-	<EmptyState v-else :type="__('Program')" />
+	<EmptyState v-else title="Nessun programma" />
 	<ProgramForm
 		v-model="showForm"
 		:programName="currentProgram"

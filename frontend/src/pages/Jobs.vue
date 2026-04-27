@@ -114,7 +114,7 @@
 				</div>
 			</div>
 			<div v-else class="h-[32vh] lg:h-[50vh] px-5">
-				<EmptyState type="Job Openings" />
+				<EmptyState title="Nessuna posizione aperta" />
 			</div>
 			<div class="flex items-center justify-end space-x-3 border-t pt-3 px-5">
 				<Button v-if="jobs.hasNextPage" @click="jobs.next()">

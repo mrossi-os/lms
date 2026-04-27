@@ -263,8 +263,18 @@ const students = createListResource({
 	auto: true,
 })
 
+const seriesName = computed(() => __('Value'))
+
 const filteredChartData = computed(() =>
-	(chartData.data || []).filter((item: { value: number }) => item.value > 0),
+	(chartData.data || [])
+		.filter(
+			(item: { value: number; task: string | null }) =>
+				item.value > 0 && item.task,
+		)
+		.map((item: { task: string; value: number }) => ({
+			task: item.task,
+			[seriesName.value]: item.value,
+		})),
 )
 
 watch(searchFilter, () => {
@@ -310,6 +320,7 @@ const showProgressChart = computed(
 	() =>
 		students.data?.length &&
 		(props.batch?.data?.courses?.length ||
-			props.batch?.data?.assessments?.length),
+			props.batch?.data?.assessments?.length) &&
+		filteredChartData.value.length > 0,
 )
 </script>

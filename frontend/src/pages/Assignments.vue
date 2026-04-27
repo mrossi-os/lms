@@ -111,7 +111,7 @@
 			</ListSelectBanner>
 		</ListView>
 		<div v-else class="h-[53vh]">
-			<EmptyState type="Assignments" />
+			<EmptyState title="Nessun compito" />
 		</div>
 		<div class="flex items-center my-5">
 			<Button v-if="assignments.hasNextPage" @click="assignments.next()">
