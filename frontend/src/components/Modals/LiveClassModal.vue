@@ -23,7 +23,7 @@
 					<span>
 						{{
 							__(
-								"Per cambiare data, ora o durata della lezione, eliminala e ricreala.",
+								'Per cambiare data, ora o durata della lezione, eliminala e ricreala.',
 							)
 						}}
 					</span>
@@ -82,9 +82,7 @@
 							/>
 						</div>
 						<FormControl
-							v-if="
-								!isEdit && props.conferencingProvider === 'Zoom'
-							"
+							v-if="!isEdit && props.conferencingProvider === 'Zoom'"
 							v-model="liveClass.auto_recording"
 							type="select"
 							:options="getRecordingOptions()"
@@ -100,9 +98,14 @@
 				/>
 				<div class="border-t pt-4">
 					<div class="flex items-center justify-between mb-2">
-						<label class="text-ink-gray-7 text-sm font-medium">
-							{{ __('Reminders') }}
-						</label>
+						<div>
+							<label class="text-ink-gray-7 text-sm font-medium block">
+								{{ __('Reminders') }}
+							</label>
+							<span class="text-xs text-ink-gray-5">
+								{{ __('Minimum 15 minutes before the class.') }}
+							</span>
+						</div>
 						<Button @click="addReminder" :variant="'subtle'">
 							<template #prefix>
 								<Plus class="w-4 h-4" />
@@ -114,7 +117,11 @@
 						v-if="!liveClass.reminders.length"
 						class="text-ink-gray-5 text-sm leading-5"
 					>
-						{{ __('No reminders configured. Add one to notify students before the class.') }}
+						{{
+							__(
+								'No reminders configured. Add one to notify students before the class.',
+							)
+						}}
 					</div>
 					<div
 						v-for="(row, idx) in liveClass.reminders"
@@ -124,6 +131,7 @@
 						<div class="flex-1">
 							<FormControl
 								v-model="row.offset_value"
+								class="small-form"
 								type="number"
 								:min="1"
 								:label="idx === 0 ? __('Value') : ''"
@@ -157,7 +165,14 @@
 	</Dialog>
 </template>
 <script setup>
-import { Dialog, createResource, Tooltip, FormControl, Button, toast } from 'frappe-ui'
+import {
+	Dialog,
+	createResource,
+	Tooltip,
+	FormControl,
+	Button,
+	toast,
+} from 'frappe-ui'
 import { Plus, Trash2, AlertCircle } from 'lucide-vue-next'
 import { reactive, computed, inject, onMounted } from 'vue'
 import { getTimezones, getUserTimezone } from '@/utils/'
@@ -189,6 +204,11 @@ const reminderUnitOptions = [
 	{ label: __('Hours'), value: 'Hours' },
 	{ label: __('Days'), value: 'Days' },
 ]
+
+const MIN_REMINDER_MINUTES = 15
+const UNIT_TO_MINUTES = { Minutes: 1, Hours: 60, Days: 60 * 24 }
+const offsetToMinutes = (value, unit) =>
+	(parseInt(value, 10) || 0) * (UNIT_TO_MINUTES[unit] || 0)
 
 let liveClass = reactive({
 	title: '',
@@ -374,6 +394,9 @@ const validateEditFields = () => {
 		if (!r.offset_value || r.offset_value < 1) {
 			return __('Reminders must have a positive offset value.')
 		}
+		if (offsetToMinutes(r.offset_value, r.offset_unit) < MIN_REMINDER_MINUTES) {
+			return __('Each reminder must be at least 15 minutes before the class.')
+		}
 	}
 }
 
@@ -411,6 +434,9 @@ const validateFormFields = () => {
 	for (const r of liveClass.reminders) {
 		if (!r.offset_value || r.offset_value < 1) {
 			return __('Reminders must have a positive offset value.')
+		}
+		if (offsetToMinutes(r.offset_value, r.offset_unit) < MIN_REMINDER_MINUTES) {
+			return __('Each reminder must be at least 15 minutes before the class.')
 		}
 	}
 }

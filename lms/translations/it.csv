@@ -4517,3 +4517,5 @@ restrict_ip
 "Days","Giorni"
 "Reminder: {0} on {1}","Promemoria: {0} il {1}"
 "Class Reminder: {0}","Promemoria lezione: {0}"
+"Each reminder must be at least 15 minutes before the class.","Ogni promemoria deve essere impostato almeno 15 minuti prima della lezione."
+"Minimum 15 minutes before the class.","Minimo 15 minuti prima della lezione."

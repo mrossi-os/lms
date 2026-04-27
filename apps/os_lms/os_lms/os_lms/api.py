@@ -385,10 +385,26 @@ def mark_batch_tab_notifications_read(batch: str, section: str) -> dict:
 # ----- Live Class management -----
 
 LIVE_CLASS_EDITABLE_FIELDS = ("title", "description")
+MIN_REMINDER_MINUTES = 15
 
 
 def _ensure_live_class_admin():
     frappe.only_for(["Moderator", "Batch Evaluator"])
+
+
+def _validate_reminders(reminders) -> None:
+    from os_lms.os_lms.doctype.lms_live_class_reminder.lms_live_class_reminder import (
+        offset_to_minutes,
+    )
+
+    for row in reminders or []:
+        offset_minutes = offset_to_minutes(
+            row.get("offset_value"), row.get("offset_unit")
+        )
+        if offset_minutes < MIN_REMINDER_MINUTES:
+            frappe.throw(
+                frappe._("Each reminder must be at least 15 minutes before the class.")
+            )
 
 
 @frappe.whitelist()
@@ -408,6 +424,7 @@ def update_live_class(name: str, payload: dict) -> dict:
             doc.set(field, payload.get(field))
 
     if "reminders" in payload:
+        _validate_reminders(payload.get("reminders"))
         doc.set("reminders", [])
         for row in payload.get("reminders") or []:
             doc.append(
