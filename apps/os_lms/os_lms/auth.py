@@ -5,7 +5,7 @@ from frappe.desk.doctype.notification_log.notification_log import make_notificat
 
 def mark_first_login(doc, method=None):
 	"""Mark newly created users so they receive the welcome notification at first login."""
-	doc.first_login = 1
+	frappe.db.set_value("User", doc.name, "first_login", 1, update_modified=False)
 
 
 def on_session_creation(login_manager):
