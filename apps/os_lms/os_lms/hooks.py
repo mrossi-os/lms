@@ -66,6 +66,7 @@ fixtures = [
                     "Course Lesson",
                     "LMS Course",
                     "LMS Batch",
+                    "LMS Live Class",
                     "User",
                 ],
             ]
@@ -85,6 +86,9 @@ doc_events = {
     "User": {
         "after_insert": "os_lms.auth.mark_first_login",
     },
+    "LMS Live Class": {
+        "before_save": "os_lms.os_lms.live_class_reminders.reset_sent_at",
+    },
 }
 
 
@@ -95,4 +99,9 @@ scheduler_events = {
     "daily": [
         "os_lms.os_lms.ai.scheduler.reindex_lesson_content",
     ],
+    "cron": {
+        "*/15 * * * *": [
+            "os_lms.os_lms.live_class_reminders.send_live_class_reminders",
+        ],
+    },
 }

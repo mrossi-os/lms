@@ -240,5 +240,25 @@
         "hidden": 1,
         "no_copy": 1,
         "read_only": 1
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Live Class-reminders_section",
+        "dt": "LMS Live Class",
+        "label": "Reminders",
+        "fieldname": "reminders_section",
+        "fieldtype": "Section Break",
+        "insert_after": "description",
+        "collapsible": 1
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Live Class-reminders",
+        "dt": "LMS Live Class",
+        "label": "Reminders",
+        "fieldname": "reminders",
+        "fieldtype": "Table",
+        "options": "LMS Live Class Reminder",
+        "insert_after": "reminders_section"
     }
 ]

@@ -380,3 +380,148 @@ def mark_batch_tab_notifications_read(batch: str, section: str) -> dict:
     )
     frappe.publish_realtime("publish_lms_notifications", user=user)
     return {"ok": True}
+
+
+# ----- Live Class management -----
+
+LIVE_CLASS_EDITABLE_FIELDS = ("title", "description")
+
+
+def _ensure_live_class_admin():
+    frappe.only_for(["Moderator", "Batch Evaluator"])
+
+
+@frappe.whitelist()
+def update_live_class(name: str, payload: dict) -> dict:
+    """Update editable fields and the reminders child table on a Live Class."""
+    _ensure_live_class_admin()
+
+    if isinstance(payload, str):
+        import json
+
+        payload = json.loads(payload)
+
+    doc = frappe.get_doc("LMS Live Class", name)
+
+    for field in LIVE_CLASS_EDITABLE_FIELDS:
+        if field in payload:
+            doc.set(field, payload.get(field))
+
+    if "reminders" in payload:
+        doc.set("reminders", [])
+        for row in payload.get("reminders") or []:
+            doc.append(
+                "reminders",
+                {
+                    "offset_value": row.get("offset_value"),
+                    "offset_unit": row.get("offset_unit"),
+                    # preserve sent_at when row was already persisted
+                    "sent_at": row.get("sent_at"),
+                },
+            )
+
+    doc.save()
+    frappe.db.commit()
+    return {"name": doc.name}
+
+
+@frappe.whitelist()
+def delete_live_class(name: str, notify_students: int = 0) -> dict:
+    """Delete a Live Class. Optionally notify enrolled students by email + Notification Log."""
+    _ensure_live_class_admin()
+
+    doc = frappe.get_doc("LMS Live Class", name)
+    title = doc.title
+    date = doc.date
+    time = doc.time
+    batch = doc.batch_name
+    provider = doc.conferencing_provider
+    zoom_account = doc.get("zoom_account")
+    meeting_id = doc.get("meeting_id")
+
+    if int(notify_students or 0):
+        _notify_students_class_cancelled(doc)
+
+    frappe.delete_doc("LMS Live Class", name)
+
+    if provider == "Zoom" and zoom_account and meeting_id:
+        _delete_zoom_meeting(zoom_account, meeting_id)
+
+    frappe.db.commit()
+    return {
+        "ok": True,
+        "title": title,
+        "date": str(date),
+        "time": str(time),
+        "batch": batch,
+    }
+
+
+def _notify_students_class_cancelled(live_class) -> None:
+    from frappe.desk.doctype.notification_log.notification_log import (
+        make_notification_logs,
+    )
+    from frappe.utils import format_date, format_time
+
+    students = frappe.get_all(
+        "LMS Batch Enrollment",
+        {"batch": live_class.batch_name},
+        ["member", "member_name"],
+    )
+    if not students:
+        return
+
+    formatted_date = format_date(live_class.date, "medium")
+    formatted_time = format_time(live_class.time, "hh:mm a")
+
+    subject = frappe._(
+        "La lezione dal vivo {0} del {1} alle {2} è stata annullata"
+    ).format(frappe.bold(live_class.title), formatted_date, formatted_time)
+
+    notification = frappe._dict(
+        {
+            "subject": subject,
+            "type": "Alert",
+            "from_user": frappe.session.user,
+        }
+    )
+    make_notification_logs(notification, [s.member for s in students])
+
+    for student in students:
+        try:
+            frappe.sendmail(
+                recipients=student.member,
+                subject=frappe._("Lezione annullata: {0}").format(live_class.title),
+                template="live_class_cancelled",
+                args={
+                    "student_name": student.member_name,
+                    "title": live_class.title,
+                    "date": live_class.date,
+                    "time": live_class.time,
+                    "batch_name": live_class.batch_name,
+                },
+                header=[frappe._("Lezione annullata"), "red"],
+            )
+        except Exception:
+            frappe.logger("os_lms_live_class", allow_site=True).exception(
+                f"Failed to send cancellation email to {student.member}"
+            )
+
+
+def _delete_zoom_meeting(zoom_account: str, meeting_id: str) -> None:
+    """Best-effort delete of the Zoom meeting; failures are logged but do not block deletion."""
+    try:
+        import requests
+
+        from lms.lms.doctype.lms_batch.lms_batch import authenticate
+
+        headers = {"Authorization": "Bearer " + authenticate(zoom_account)}
+        requests.delete(
+            f"https://api.zoom.us/v2/meetings/{meeting_id}",
+            headers=headers,
+            timeout=10,
+        )
+    except Exception:
+        frappe.logger("os_lms_live_class", allow_site=True).exception(
+            f"Failed to delete Zoom meeting {meeting_id}"
+        )

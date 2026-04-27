@@ -9,6 +9,17 @@ from os_lms.os_lms.override_utils import custom_get_lesson_details
 
 _lms_utils.get_lesson_details = custom_get_lesson_details
 
+# Disable upstream daily live class reminder job — replaced by our cron-based
+# configurable system in os_lms.os_lms.live_class_reminders.
+import lms.lms.doctype.lms_live_class.lms_live_class as _upstream_live_class
+
+
+def _noop_upstream_live_class_reminder():
+	return None
+
+
+_upstream_live_class.send_live_class_reminder = _noop_upstream_live_class_reminder
+
 
 
 #def get_request_site_address(full_address=False):

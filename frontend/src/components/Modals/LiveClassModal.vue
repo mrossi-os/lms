@@ -2,7 +2,7 @@
 	<Dialog
 		v-model="show"
 		:options="{
-			title: __('Create a Live Class'),
+			title: isEdit ? __('Edit Live Class') : __('Create a Live Class'),
 			size: 'xl',
 			actions: [
 				{
@@ -15,6 +15,19 @@
 	>
 		<template #body-content>
 			<div class="flex flex-col gap-4">
+				<div
+					v-if="isEdit"
+					class="flex items-start gap-2 bg-surface-amber-1 px-3 py-2 rounded-lg text-ink-amber-3 text-sm"
+				>
+					<AlertCircle class="size-4 shrink-0 stroke-1.5 mt-0.5" />
+					<span>
+						{{
+							__(
+								"Per cambiare data, ora o durata della lezione, eliminala e ricreala.",
+							)
+						}}
+					</span>
+				</div>
 				<div class="grid grid-cols-2 gap-4">
 					<div class="space-y-4">
 						<FormControl
@@ -28,12 +41,14 @@
 							type="date"
 							:label="__('Date')"
 							:required="true"
+							:disabled="isEdit"
 						/>
 						<FormControl
 							type="number"
 							v-model="liveClass.duration"
 							:label="__('Duration (in minutes)')"
 							:required="true"
+							:disabled="isEdit"
 						/>
 					</div>
 					<div class="space-y-4">
@@ -49,6 +64,7 @@
 								type="time"
 								:label="__('Time')"
 								:required="true"
+								:disabled="isEdit"
 							/>
 						</Tooltip>
 
@@ -62,10 +78,13 @@
 								:modelValue="liveClass.timezone"
 								:options="getTimezoneOptions()"
 								:required="true"
+								:disabled="isEdit"
 							/>
 						</div>
 						<FormControl
-							v-if="props.conferencingProvider === 'Zoom'"
+							v-if="
+								!isEdit && props.conferencingProvider === 'Zoom'
+							"
 							v-model="liveClass.auto_recording"
 							type="select"
 							:options="getRecordingOptions()"
@@ -79,13 +98,68 @@
 					type="textarea"
 					:label="__('Description')"
 				/>
+				<div class="border-t pt-4">
+					<div class="flex items-center justify-between mb-2">
+						<label class="text-ink-gray-7 text-sm font-medium">
+							{{ __('Reminders') }}
+						</label>
+						<Button @click="addReminder" :variant="'subtle'">
+							<template #prefix>
+								<Plus class="w-4 h-4" />
+							</template>
+							{{ __('Add Reminder') }}
+						</Button>
+					</div>
+					<div
+						v-if="!liveClass.reminders.length"
+						class="text-ink-gray-5 text-sm leading-5"
+					>
+						{{ __('No reminders configured. Add one to notify students before the class.') }}
+					</div>
+					<div
+						v-for="(row, idx) in liveClass.reminders"
+						:key="idx"
+						class="flex items-end gap-2 mb-2"
+					>
+						<div class="flex-1">
+							<FormControl
+								v-model="row.offset_value"
+								type="number"
+								:min="1"
+								:label="idx === 0 ? __('Value') : ''"
+							/>
+						</div>
+						<div class="flex-1">
+							<FormControl
+								v-model="row.offset_unit"
+								type="select"
+								:options="reminderUnitOptions"
+								:label="idx === 0 ? __('Unit') : ''"
+							/>
+						</div>
+						<div class="flex-[1.5] text-xs text-ink-gray-5 leading-5 pb-2">
+							<span v-if="row.sent_at">
+								{{ __('Sent') }} {{ dayjs(row.sent_at).format('DD MMM HH:mm') }}
+							</span>
+							<span v-else class="text-ink-gray-4">
+								{{ __('Not sent yet') }}
+							</span>
+						</div>
+						<Button @click="removeReminder(idx)" :variant="'ghost'">
+							<template #icon>
+								<Trash2 class="w-4 h-4 text-ink-red-3" />
+							</template>
+						</Button>
+					</div>
+				</div>
 			</div>
 		</template>
 	</Dialog>
 </template>
 <script setup>
-import { Dialog, createResource, Tooltip, FormControl, toast } from 'frappe-ui'
-import { reactive, inject, onMounted } from 'vue'
+import { Dialog, createResource, Tooltip, FormControl, Button, toast } from 'frappe-ui'
+import { Plus, Trash2, AlertCircle } from 'lucide-vue-next'
+import { reactive, computed, inject, onMounted } from 'vue'
 import { getTimezones, getUserTimezone } from '@/utils/'
 import Autocomplete from '@/components/Controls/Autocomplete.vue'
 
@@ -102,7 +176,19 @@ const props = defineProps({
 	zoomAccount: String,
 	googleMeetAccount: String,
 	conferencingProvider: String,
+	liveClass: {
+		type: Object,
+		default: null,
+	},
 })
+
+const isEdit = computed(() => !!props.liveClass)
+
+const reminderUnitOptions = [
+	{ label: __('Minutes'), value: 'Minutes' },
+	{ label: __('Hours'), value: 'Hours' },
+	{ label: __('Days'), value: 'Days' },
+]
 
 let liveClass = reactive({
 	title: '',
@@ -114,10 +200,26 @@ let liveClass = reactive({
 	auto_recording: 'No Recording',
 	batch: props.batch,
 	host: user.data.name,
+	reminders: [],
 })
 
 onMounted(() => {
-	liveClass.timezone = getUserTimezone()
+	if (props.liveClass) {
+		liveClass.title = props.liveClass.title || ''
+		liveClass.description = props.liveClass.description || ''
+		liveClass.date = props.liveClass.date || ''
+		liveClass.time = props.liveClass.time || ''
+		liveClass.duration = props.liveClass.duration || ''
+		liveClass.timezone = props.liveClass.timezone || getUserTimezone()
+		liveClass.auto_recording = props.liveClass.auto_recording || 'No Recording'
+		liveClass.reminders = (props.liveClass.reminders || []).map((r) => ({
+			offset_value: r.offset_value,
+			offset_unit: r.offset_unit,
+			sent_at: r.sent_at,
+		}))
+	} else {
+		liveClass.timezone = getUserTimezone()
+	}
 })
 
 const getTimezoneOptions = () => {
@@ -131,19 +233,22 @@ const getTimezoneOptions = () => {
 
 const getRecordingOptions = () => {
 	return [
-		{
-			label: __('No Recording'),
-			value: 'No Recording',
-		},
-		{
-			label: __('Local'),
-			value: 'Local',
-		},
-		{
-			label: __('Cloud'),
-			value: 'Cloud',
-		},
+		{ label: __('No Recording'), value: 'No Recording' },
+		{ label: __('Local'), value: 'Local' },
+		{ label: __('Cloud'), value: 'Cloud' },
 	]
+}
+
+const addReminder = () => {
+	liveClass.reminders.push({
+		offset_value: 1,
+		offset_unit: 'Hours',
+		sent_at: null,
+	})
+}
+
+const removeReminder = (idx) => {
+	liveClass.reminders.splice(idx, 1)
 }
 
 const createLiveClass = createResource({
@@ -169,25 +274,107 @@ const createGoogleMeetLiveClass = createResource({
 	},
 })
 
+const updateLiveClassResource = createResource({
+	url: 'os_lms.os_lms.api.update_live_class',
+})
+
 const submitLiveClass = (close) => {
+	if (isEdit.value) {
+		return submitUpdate(close)
+	}
+	return submitCreate(close)
+}
+
+const submitCreate = (close) => {
 	const resource =
 		props.conferencingProvider === 'Google Meet'
 			? createGoogleMeetLiveClass
 			: createLiveClass
 	return resource.submit(liveClass, {
 		validate() {
-			validateFormFields()
+			return validateFormFields()
 		},
-		onSuccess() {
-			liveClasses.value.reload()
-			refreshForm()
-			close()
+		onSuccess(data) {
+			persistRemindersAfterCreate(data, close)
 		},
 		onError(err) {
 			toast.error(err.messages?.[0] || err)
 			console.error(err)
 		},
 	})
+}
+
+const persistRemindersAfterCreate = (created, close) => {
+	if (!liveClass.reminders.length) {
+		liveClasses.value.reload()
+		refreshForm()
+		close()
+		return
+	}
+	updateLiveClassResource.submit(
+		{
+			name: created?.name || created,
+			payload: {
+				reminders: liveClass.reminders.map((r) => ({
+					offset_value: r.offset_value,
+					offset_unit: r.offset_unit,
+				})),
+			},
+		},
+		{
+			onSuccess() {
+				liveClasses.value.reload()
+				refreshForm()
+				close()
+			},
+			onError(err) {
+				toast.error(err.messages?.[0] || err)
+			},
+		},
+	)
+}
+
+const submitUpdate = (close) => {
+	const validation = validateEditFields()
+	if (validation) {
+		toast.error(validation)
+		return
+	}
+	updateLiveClassResource.submit(
+		{
+			name: props.liveClass.name,
+			payload: {
+				title: liveClass.title,
+				description: liveClass.description,
+				reminders: liveClass.reminders.map((r) => ({
+					offset_value: r.offset_value,
+					offset_unit: r.offset_unit,
+					sent_at: r.sent_at || null,
+				})),
+			},
+		},
+		{
+			onSuccess() {
+				toast.success(__('Live class updated'))
+				liveClasses.value.reload()
+				close()
+			},
+			onError(err) {
+				toast.error(err.messages?.[0] || err)
+			},
+		},
+	)
+}
+
+const validateEditFields = () => {
+	if (!liveClass.title) {
+		return __('Please enter a title.')
+	}
+	for (const r of liveClass.reminders) {
+		if (!r.offset_value || r.offset_value < 1) {
+			return __('Reminders must have a positive offset value.')
+		}
+	}
 }
 
 const validateFormFields = () => {
@@ -221,6 +408,11 @@ const validateFormFields = () => {
 	if (!liveClass.duration) {
 		return __('Please select a duration.')
 	}
+	for (const r of liveClass.reminders) {
+		if (!r.offset_value || r.offset_value < 1) {
+			return __('Reminders must have a positive offset value.')
+		}
+	}
 }
 
 const valideTime = () => {
@@ -245,5 +437,6 @@ const refreshForm = () => {
 	liveClass.duration = ''
 	liveClass.timezone = getUserTimezone()
 	liveClass.auto_recording = 'No Recording'
+	liveClass.reminders = []
 }
 </script>
