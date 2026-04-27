@@ -66,7 +66,7 @@
 				<div
 					v-if="isMentionOrComment(log)"
 					v-html="log.email_content"
-					class="bg-surface-gray-2 rounded-md px-3 py-2 line-clamp-3 overflow-hidden"
+					class="bg-surface-gray-2 text-ink-gray-9 rounded-md px-3 py-2 line-clamp-3 overflow-hidden"
 				></div>
 				<div
 					v-else-if="showDetails(log)"
