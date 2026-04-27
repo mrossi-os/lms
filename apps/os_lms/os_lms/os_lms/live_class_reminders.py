@@ -72,7 +72,12 @@ def _process_class_reminders(live_class, now: datetime, logger) -> None:
 
 
 def _send_reminder_mail(live_class, student) -> None:
-	subject = _("Reminder: {0} on {1}").format(live_class.title, live_class.date)
+	from frappe.utils import format_date
+
+	formatted_date = format_date(live_class.date, "medium")
+	subject = f"Promemoria lezione: {live_class.title} del {formatted_date}"
+	header_text = f"Promemoria lezione: {live_class.title}"
+
 	frappe.sendmail(
 		recipients=student.member,
 		subject=subject,
@@ -84,7 +89,7 @@ def _send_reminder_mail(live_class, student) -> None:
 			"time": live_class.time,
 			"batch_name": live_class.batch_name,
 		},
-		header=[_("Class Reminder: {0}").format(live_class.title), "orange"],
+		header=[header_text, "orange"],
 	)
 
 
