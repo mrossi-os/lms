@@ -182,10 +182,11 @@ def get_notifications(filters: dict = None):
 
 
 @frappe.whitelist()
-def get_announcements(batch: str):
+def get_announcements(batch: str, start: int = 0, page_length: int = 10):
     """
     Override: per studenti, ritorna solo gli annunci in cui sono destinatari
     (recipients o cc). Moderatori/Batch Evaluator vedono tutto.
+    Restituisce {data, total} per supportare la paginazione lato client.
     """
     from frappe import _
 
@@ -231,10 +232,13 @@ def get_announcements(batch: str):
                 filtered.append(comm)
         communications = filtered
 
-    for communication in communications:
+    total = len(communications)
+    paginated = communications[start : start + page_length]
+
+    for communication in paginated:
         communication.image = frappe.get_cached_value(
             "User", communication.sender, "user_image"
         )
 
-    return communications
+    return {"data": paginated, "total": total}
 

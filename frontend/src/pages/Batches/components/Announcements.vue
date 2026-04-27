@@ -15,8 +15,8 @@
 				{{ __('Make an Announcement') }}
 			</Button>
 		</div>
-		<div v-if="communications.data?.length">
-			<div v-for="comm in communications.data">
+		<div v-if="announcements.length">
+			<div v-for="comm in announcements">
 				<div class="mb-8">
 					<div class="flex items-center justify-between mb-2">
 						<div class="flex items-center">
@@ -35,6 +35,31 @@
 					></div>
 				</div>
 			</div>
+			<div
+				v-if="totalPages > 1"
+				class="flex items-center justify-between border-t pt-3 mt-2"
+			>
+				<div class="text-sm text-ink-gray-5">
+					{{ __('Page {0} of {1}').format(currentPage, totalPages) }}
+				</div>
+				<div class="flex items-center space-x-2">
+					<Button :disabled="currentPage <= 1" @click="currentPage--">
+						<template #prefix>
+							<ChevronLeft class="w-4 h-4" />
+						</template>
+						{{ __('Previous') }}
+					</Button>
+					<Button
+						:disabled="currentPage >= totalPages"
+						@click="currentPage++"
+					>
+						<template #suffix>
+							<ChevronRight class="w-4 h-4" />
+						</template>
+						{{ __('Next') }}
+					</Button>
+				</div>
+			</div>
 		</div>
 		<div v-else class="text-ink-gray-7 leading-5">
 			{{ __('No announcements have been made yet for this batch') }}
@@ -49,14 +74,16 @@
 </template>
 <script setup>
 import { createResource, Avatar, Button } from 'frappe-ui'
-import { Plus } from 'lucide-vue-next'
-import { computed, inject, ref } from 'vue'
+import { Plus, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { computed, inject, ref, watch } from 'vue'
 import { timeAgo } from '@/utils'
 import AnnouncementModal from '@/pages/Batches/components/AnnouncementModal.vue'
 
 const user = inject('$user')
 const readOnlyMode = window.read_only_mode
 const showAnnouncementModal = ref(false)
+const currentPage = ref(1)
+const pageSize = 10
 
 const props = defineProps({
 	batch: {
@@ -73,14 +100,35 @@ const canMakeAnnouncement = computed(() => {
 
 const communications = createResource({
 	url: 'lms.lms.api.get_announcements',
-	makeParams(value) {
+	makeParams() {
 		return {
 			batch: props.batch.data?.name,
+			start: (currentPage.value - 1) * pageSize,
+			page_length: pageSize,
 		}
 	},
 	auto: true,
-	cache: ['announcement', props.batch],
 })
+
+watch(currentPage, () => {
+	communications.reload()
+})
+
+watch(
+	() => showAnnouncementModal.value,
+	(isOpen, wasOpen) => {
+		if (wasOpen && !isOpen) {
+			currentPage.value = 1
+			communications.reload()
+		}
+	}
+)
+
+const announcements = computed(() => communications.data?.data || [])
+const totalAnnouncements = computed(() => communications.data?.total || 0)
+const totalPages = computed(() =>
+	Math.max(1, Math.ceil(totalAnnouncements.value / pageSize))
+)
 </script>
 <style>
 .prose-sm p {
