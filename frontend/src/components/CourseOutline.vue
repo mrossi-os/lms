@@ -201,7 +201,14 @@
 </template>
 <script setup>
 import { Button, createResource, Tooltip, toast } from 'frappe-ui'
-import { getCurrentInstance, inject, ref, watch } from 'vue'
+import {
+	getCurrentInstance,
+	inject,
+	onBeforeUnmount,
+	onMounted,
+	ref,
+	watch,
+} from 'vue'
 import Draggable from 'vuedraggable'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import {
@@ -225,6 +232,7 @@ import CourseTagBadges from '@/oslms/components/CourseTagBadges.vue'
 const route = useRoute()
 const router = useRouter()
 const user = inject('$user')
+const socket = inject('$socket')
 const showChapterModal = ref(false)
 const currentChapter = ref(null)
 const app = getCurrentInstance()
@@ -251,10 +259,6 @@ const props = defineProps({
 		type: Boolean,
 		default: false,
 	},
-	lessonProgress: {
-		type: Number,
-		default: 0,
-	},
 })
 
 const outline = createResource({
@@ -276,12 +280,19 @@ watch(
 	},
 )
 
-watch(
-	() => props.lessonProgress,
-	() => {
+const onLessonProgressUpdate = (data) => {
+	if (data?.course === props.courseName) {
 		outline.reload()
-	},
-)
+	}
+}
+
+onMounted(() => {
+	socket?.on('update_lesson_progress', onLessonProgressUpdate)
+})
+
+onBeforeUnmount(() => {
+	socket?.off('update_lesson_progress', onLessonProgressUpdate)
+})
 
 const deleteLesson = createResource({
 	url: 'lms.lms.api.delete_lesson',
