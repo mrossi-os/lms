@@ -125,6 +125,7 @@ const props = defineProps({
 		default: (value) => `${value} is an Invalid value`,
 	},
 	required: Boolean,
+	exclude: { type: Array, default: () => [] },
 })
 
 const values = defineModel({ default: () => [] })
@@ -133,13 +134,19 @@ const trigger = ref(null)
 const query = ref('')
 const text = ref('')
 const selectedValue = ref(null)
+const cachedOptions = ref([])
 
 watch(selectedValue, (val) => {
 	if (!val?.value) return
+	if (!cachedOptions.value.some((o) => o.value === val.value)) {
+		cachedOptions.value.push({ ...val })
+	}
 	query.value = ''
 	addValue(val.value)
 	selectedValue.value = null
 })
+
+defineExpose({ cachedOptions })
 
 watchDebounced(
 	query,
@@ -177,7 +184,11 @@ const filterOptions = createResource({
 
 const options = computed(() => {
 	const allOptions = filterOptions.data || []
-	return allOptions.filter((option) => !values.value?.includes(option.value))
+	const excluded = new Set(props.exclude || [])
+	return allOptions.filter(
+		(option) =>
+			!values.value?.includes(option.value) && !excluded.has(option.value),
+	)
 })
 
 function reload(val) {

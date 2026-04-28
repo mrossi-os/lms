@@ -175,10 +175,10 @@ import {
 	Button,
 	createListResource,
 	createResource,
-	dayjs,
 	TabButtons,
 	usePageMeta,
 } from 'frappe-ui'
+import dayjs from '@/utils/dayjs'
 import { sessionStore } from '../stores/session'
 import { computed, inject, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'

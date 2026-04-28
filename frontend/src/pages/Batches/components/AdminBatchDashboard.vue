@@ -191,7 +191,6 @@ import {
 	AxisChart,
 	createResource,
 	createListResource,
-	dayjs,
 	FormControl,
 	ListView,
 	ListHeader,
@@ -204,6 +203,7 @@ import {
 	Button,
 	toast,
 } from 'frappe-ui'
+import dayjs from '@/utils/dayjs'
 import { computed, ref, watch } from 'vue'
 import { formatAmount } from '@/utils'
 import { Plus, Import, Trash2 } from 'lucide-vue-next'

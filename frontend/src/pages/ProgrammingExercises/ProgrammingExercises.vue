@@ -146,7 +146,6 @@ import {
 	call,
 	createResource,
 	createListResource,
-	dayjs,
 	FeatherIcon,
 	FormControl,
 	ListView,
@@ -159,6 +158,7 @@ import {
 	toast,
 	usePageMeta,
 } from 'frappe-ui'
+import dayjs from '@/utils/dayjs'
 import { ClipboardList, Plus } from 'lucide-vue-next'
 import { sessionStore } from '@/stores/session'
 import { useRouter } from 'vue-router'
