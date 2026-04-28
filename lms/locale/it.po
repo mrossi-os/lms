@@ -8894,6 +8894,12 @@ msgstr "1 settimana fa"
 msgid "1 year ago"
 msgstr "1 anno fa"
 
+msgid "1 row selected"
+msgstr "1 riga selezionata"
+
+msgid "{0} rows selected"
+msgstr "{0} righe selezionate"
+
 msgid "1000+"
 msgstr "1000+"
 

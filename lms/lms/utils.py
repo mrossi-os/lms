@@ -2163,6 +2163,9 @@ def get_program_details(program_name: str) -> dict:
 	previous_progress = 0
 	for i, course in enumerate(program_courses):
 		details = get_course_details(course.course)
+		if not details:
+			continue
+
 		if i == 0:
 			details.eligible = True
 		elif previous_progress == 100:
