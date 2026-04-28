@@ -42,7 +42,10 @@ def _create_welcome_notification(user: str):
 		"color: var(--ink-blue-3, #2563eb); text-decoration: underline; font-weight: 500;"
 	)
 	subject = _(
-		'Benvenuto sulla piattaforma! Puoi <a href="{0}" style="{1}">rivedere il video di benvenuto</a> in qualsiasi momento.'
+		"Benvenuto/a nella piattaforma SaleScience!<br><br>"
+		"Per iniziare al meglio, ti invitiamo a guardare il video di presentazione della piattaforma, "
+		"in cui troverai una breve introduzione alle principali funzionalità e alle modalità di utilizzo.<br><br>"
+		'Guarda il video di presentazione qui quando vuoi: <a href="{0}" style="{1}">apri il video</a>.'
 	).format(replay_link, anchor_style)
 
 	notification = frappe._dict(
