@@ -758,7 +758,11 @@ const addCourses = (close: () => void) => {
 	}
 
 	close()
-	toast.success(__(`${added} course(s) added to program successfully`))
+	toast.success(
+		added === 1
+			? __('1 course added to program successfully')
+			: __('{0} courses added to program successfully').format(added),
+	)
 }
 
 const addMembers = (close: () => void) => {
@@ -778,7 +782,11 @@ const addMembers = (close: () => void) => {
 	})
 	if (added > 0 && props.programName !== 'new') dirty.value = true
 	close()
-	toast.success(__(`${added} member(s) added successfully`))
+	toast.success(
+		added === 1
+			? __('1 member added successfully')
+			: __('{0} members added successfully').format(added),
+	)
 }
 
 const addMembersFromBatch = (close: () => void) => {
@@ -802,7 +810,11 @@ const addMembersFromBatch = (close: () => void) => {
 	})
 	if (added > 0 && props.programName !== 'new') dirty.value = true
 	close()
-	toast.success(__(`${added} member(s) added successfully`))
+	toast.success(
+		added === 1
+			? __('1 member added successfully')
+			: __('{0} members added successfully').format(added),
+	)
 }
 
 const updateCounts = async (

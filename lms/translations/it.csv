@@ -4519,4 +4519,8 @@ restrict_ip
 "Each reminder must be at least 15 minutes before the class.","Ogni promemoria deve essere impostato almeno 15 minuti prima della lezione."
 "Minimum 15 minutes before the class.","Minimo 15 minuti prima della lezione."
 "{0} rows selected","{0} righe selezionate"
+"1 course added to program successfully","1 corso aggiunto al programma con successo"
+"{0} courses added to program successfully","{0} corsi aggiunti al programma con successo"
+"1 member added successfully","1 membro aggiunto con successo"
+"{0} members added successfully","{0} membri aggiunti con successo"
 "1 row selected","1 riga selezionata"
