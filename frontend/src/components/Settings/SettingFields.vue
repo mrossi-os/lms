@@ -57,7 +57,9 @@
 									<div class="">
 										<Button @click="openFileSelector" :loading="uploading">
 											{{
-												uploading ? `Uploading ${progress}%` : 'Upload an image'
+												uploading
+													? __('Uploading {0}%').format(progress)
+													: __('Upload an image')
 											}}
 										</Button>
 									</div>

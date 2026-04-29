@@ -238,9 +238,7 @@ msgstr ""
 msgid "Add a chapter"
 msgstr "Aggiungi un capitolo"
 
-#: frontend/src/components/Modals/BatchCourseModal.vue:5
-msgid "Add a course to the batch"
-msgstr "Aggiungi un corso al gruppo"
+
 
 #: frontend/src/pages/Courses/CourseForm.vue:71
 msgid "Add a keyword and press enter"
@@ -585,7 +583,7 @@ msgstr "La valutazione {0} è già stata aggiunta a questo batch."
 #: lms/lms/doctype/lms_settings/lms_settings.json
 #: lms/templates/assessments.html:3
 msgid "Assessments"
-msgstr "Valutazioni"
+msgstr "Esercitazioni"
 
 #: lms/lms/doctype/lms_badge/lms_badge.js:48
 msgid "Assign"
@@ -5063,9 +5061,6 @@ msgstr ""
 msgid "No announcements have been made yet for this batch"
 msgstr "Nessun annuncio è stato fatto per questo gruppo"
 
-#: frontend/src/pages/Batches/components/Assessments.vue:73
-msgid "No assessments added to this batch"
-msgstr "Nessuna valutazione aggiunta a questo lotto"
 
 #: lms/lms/doctype/lms_live_class/lms_live_class.py:77
 msgid "No calendar is configured for the conferencing provider. Please set up a calendar to create events."
