@@ -8,13 +8,14 @@ msgstr ""
 "Project-Id-Version: Learning VERSION\n"
 "Report-Msgid-Bugs-To: jannat@frappe.io\n"
 "POT-Creation-Date: 2026-04-10 16:17+0000\n"
-"PO-Revision-Date: 2026-04-24 12:17+0000\n"
+"PO-Revision-Date: 2026-04-29 15:26+0000\n"
 "Last-Translator: jannat@frappe.io\n"
 "Language-Team: jannat@frappe.io\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
+
 
 
 
@@ -262,7 +263,7 @@ msgstr "Aggiungi un quiz alla tua lezione"
 
 #: frontend/src/components/Modals/AssessmentModal.vue:5
 msgid "Add an assessment"
-msgstr "Aggiungi una valutazione"
+msgstr "Aggiungi una esercitazione"
 
 #: frontend/src/components/AssessmentPlugin.vue:8
 msgid "Add an assignment to your lesson"
@@ -555,7 +556,7 @@ msgstr "Fai una domanda per ricevere aiuto dalla community."
 #: frontend/src/pages/Batches/components/Assessments.vue:209
 #: lms/lms/doctype/lms_batch/lms_batch.json lms/templates/assessments.html:11
 msgid "Assessment"
-msgstr "Valutazione"
+msgstr "Esercitazione"
 
 #. Label of the assessment_name (Dynamic Link) field in DocType 'LMS
 #. Assessment'
@@ -669,7 +670,7 @@ msgstr ""
 #: frontend/src/pages/Assignments.vue:279
 #: frontend/src/pages/Assignments.vue:286 lms/www/_lms.py:276
 msgid "Assignments"
-msgstr "Elaborati"
+msgstr "Compiti"
 
 #: frontend/src/pages/Assignments.vue:274
 msgid "Assignments deleted successfully"
@@ -3966,7 +3967,7 @@ msgstr ""
 #: lms/lms/doctype/lms_coupon_item/lms_coupon_item.json
 #: lms/lms/doctype/lms_payment/lms_payment.json
 msgid "LMS Batch"
-msgstr "Lotto LMS"
+msgstr "Classe LMS"
 
 #. Name of a DocType
 #: lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.json
@@ -4452,7 +4453,7 @@ msgstr "Prendi appunti per una rapida revisione. Premi / per il menu."
 
 #: frontend/src/pages/Batches/BatchForm.vue:16
 msgid "Make the batch visible to all users."
-msgstr "Rendi il lotto visibile a tutti gli utenti."
+msgstr "Rendi la classe visibile a tutti gli utenti."
 
 #: frontend/src/pages/Courses/CourseForm.vue:115
 msgid "Make the course visible to all users."
@@ -5047,7 +5048,7 @@ msgstr "Nessun invio quiz trovato"
 #. Option for the 'Auto Recording' (Select) field in DocType 'LMS Live Class'
 #: lms/lms/doctype/lms_live_class/lms_live_class.json
 msgid "No Recording"
-msgstr "Nessuna registrazione"
+msgstr "Nessuna Registrazione"
 
 #: frontend/src/pages/ProgrammingExercises/ProgrammingExerciseSubmissions.vue:13
 msgid "No Submissions"
@@ -5081,7 +5082,7 @@ msgstr "Nessun coupon selezionato per l'eliminazione"
 #: frontend/src/pages/Batches/components/BatchCourses.vue:61
 #: frontend/src/pages/Batches/components/BatchDashboard.vue:61
 msgid "No courses added to this batch"
-msgstr "Nessun corso aggiunto a questo lotto"
+msgstr "Nessun corso aggiunto a questa classe"
 
 #: frontend/src/pages/Programs/ProgramForm.vue:103
 msgid "No courses added yet."
@@ -6065,7 +6066,7 @@ msgstr "Programma aggiornato con successo"
 
 #: frontend/src/pages/Batches/components/Assessments.vue:246
 msgid "Programming Exercise"
-msgstr "Esercizio di Programmazione"
+msgstr "Esercizi di programmazione"
 
 #: frontend/src/pages/Courses/StudentCourseProgress.vue:133
 msgid "Programming Exercise Progress"
@@ -7489,7 +7490,7 @@ msgstr ""
 
 #: frontend/src/pages/Programs/ProgramEnrollment.vue:18
 msgid "This program consists of {0} courses"
-msgstr "Questo programma è composto da {0} corsi"
+msgstr "Questo programma è composto da {0} corsi,"
 
 #: frontend/src/components/Quiz.vue:26
 msgid "This quiz consists of {0} questions."
@@ -13068,4 +13069,141 @@ msgstr "tramite Importazione Dati"
 
 msgid "{0} format could not be determined from the values in this column. Defaulting to {1}."
 msgstr "Impossibile determinare il formato {0} dai valori in questa colonna. Utilizzo predefinito di {1}."
+
+msgid "1 course added to program successfully"
+msgstr "1 corso aggiunto al programma con successo"
+
+msgid "1 member added successfully"
+msgstr "1 membro aggiunto con successo"
+
+msgid "Add Reminder"
+msgstr "Aggiungi promemoria"
+
+msgid "Add a course to the batch"
+msgstr "Aggiungi un corso alla classe"
+
+msgid "All possible workflow states and roles of the workflow. Docstatus options: 0 is \"Saved\", 1 is \"Submitted\" and 2 is \"Cancelled\""
+msgstr "Tutti i possibili stati del flusso di lavoro e i ruoli del flusso di lavoro. Opzioni Stato del Documento: 0 corrisponde a \"Salvato\", 1 a \"Inviato\" e 2 \"Annullato\""
+
+msgid "Always add \"Draft\" heading for printing draft documents"
+msgstr "Aggiungi sempre l'intestazione “Bozza” per la stampa di documenti in bozza"
+
+msgid "Are you sure you want to clear the demo data? This would delete the course \"A guide  to Frappe Learning\" along with all its associated data. This action cannot be undone."
+msgstr "Sei sicuro di voler cancellare i dati demo? Questo eliminerà il corso \"Guida a Frappe Learning\" insieme a tutti i dati associati. Questa azione non può essere annullata."
+
+msgid "Class Reminder: {0}"
+msgstr "Promemoria lezione: {0}"
+
+msgid "Days"
+msgstr "Giorni"
+
+msgid "Delete live class"
+msgstr "Elimina lezione dal vivo"
+
+msgid "Delete tag \"{0}\"?"
+msgstr "Eliminare il tag \"{0}\"?"
+
+msgid "Delete tag \\{0}\\\"?\""
+msgstr "Eliminare il tag \\{0}\\\"?\""
+
+msgid "Different \"States\" this document can exist in. Like \"Open\" , \"Pending Approval\" etc."
+msgstr "I diversi \"Stati\" in cui può trovarsi questo documento. Ad esempio \"Aperto\", \"In attesa di approvazione\" ect."
+
+msgid "Each reminder must be at least 15 minutes before the class."
+msgstr "Ogni promemoria deve essere impostato almeno 15 minuti prima della lezione."
+
+msgid "Edit Live Class"
+msgstr "Modifica lezione dal vivo"
+
+msgid "Hours"
+msgstr "Ore"
+
+msgid "If the user has any role checked, then the user becomes a \"System User\". \"System User\" has access to the desktop"
+msgstr "Se l'utente ha un ruolo selezionato, allora l'utente diventa un “Utente di sistema”. L'“Utente di sistema” ha accesso al desktop"
+
+msgid "Live class updated"
+msgstr "Lezione aggiornata"
+
+msgid "Make \"name\" searchable in global search"
+msgstr "Rendi \"nome\" ricercabile nella ricerca globale"
+
+msgid "Minimum 15 minutes before the class."
+msgstr "Minimo 15 minuti prima della lezione."
+
+msgid "Minutes"
+msgstr "Minuti"
+
+msgid "Must be of type \"Attach image\""
+msgstr "Deve essere di tipo \"Allega immagine\""
+
+msgid "No assessments added to this batch"
+msgstr "Nessuna esercitazione aggiunta a questa classe"
+
+msgid "No reminders configured. Add one to notify students before the class."
+msgstr "Nessun promemoria configurato. Aggiungine uno per avvisare gli studenti prima della lezione."
+
+msgid "Not sent yet"
+msgstr "Non ancora inviato"
+
+msgid "Reminder: {0} on {1}"
+msgstr "Promemoria: {0} il {1}"
+
+msgid "Reminders"
+msgstr "Promemoria"
+
+msgid "Reminders must have a positive offset value."
+msgstr "I promemoria devono avere un valore positivo."
+
+msgid "Repeats like \"aaa\" are easy to guess"
+msgstr "Ripetizioni come \"aaa\" sono facili da indovinare"
+
+msgid "Repeats like \"abcabcabc\" are only slightly harder to guess than \"abc\""
+msgstr "Ripetizioni come \"abcabcabc\" sono solo leggermente più difficili da indovinare di \"abc\""
+
+msgid "Restrict user from this IP address only. Multiple IP addresses can be added by separating with commas. Also accepts partial IP addresses like (111.111.111)
+restrict_ip"
+msgstr "Limita l'utente solo da questo indirizzo IP. È possibile aggiungere più indirizzi IP separandoli con virgole. Accetta anche indirizzi IP parziali come (111.111.111)
+restrict_ip"
+
+msgid "Route: Example \"/Desk\""
+msgstr "Percorso: Esempio “/Desk”"
+
+msgid "SQL conditions, Example: status0\"Open\""
+msgstr "Condizioni SQL, Esempio: stato\"Aperto\""
+
+msgid "Sent"
+msgstr "Inviato"
+
+msgid "Set default otions for all charts on this dashoard (Ex: \"colors\": [])"
+msgstr "Imposta le opzioni predefinite per tutti i grafici di questa dashboard (es:\"colori\":[])"
+
+msgid "The browser API Key obtained from the Google Cloud Console under \"API & Services\"> \"Credentials\""
+msgstr "La chiave API del browser ottenuta dalla console Google Cloud in “API e servizi” > “Credenziali”
+Selettore Google Drive"
+
+msgid "The client ID obtained from the Google Cloud console under \"API & Services\" > \"Credentials\""
+msgstr "l'ID del cliente ottenuto dalla console di Google. Cloud in \"API e servizi\" > \"Credenziali\""
+
+msgid "To configure Auto Repeat, enable \"Allow Auto Repeat\" from Personalizza modulo."
+msgstr "Per configurare la Ripetizione Automatica, abilita \"Consenti Ripetizione Automatica\" da Personalizza Modulo."
+
+msgid "URIs for receiving authorization code once the user allows access, as well as failure responses. Typically a REST endpoint exposed by the Client App.
+e.g. http://hostname/api/method/frappe.integrations.oauth2_logins.login_via_facebook"
+msgstr "URI per ricevere il codice di autorizzazione una volta che l'utente ha consentito l'accesso, nonché le risposte di errore. In genere un endpoint REST esposto dall'app client.
+Es. http://hostname/api/method/frappe.integrations.oauth2_logins.login_via_facebook"
+
+msgid "Unit"
+msgstr "Unità"
+
+msgid "Value of \"None\" implies a public client. In such a case Client Secret is not given to the client and token exchange makes use of PKCE."
+msgstr "Il valore “Nessuno” implica un client pubblico. In tal caso, il segreto client non viene fornito al client e lo scambio di token utilizza PKCE."
+
+msgid "Welcome Video Subtitle"
+msgstr "Sottotitolo video di benvenuto"
+
+msgid "{0} courses added to program successfully"
+msgstr "{0} corsi aggiunti al programma con successo"
+
+msgid "{0} members added successfully"
+msgstr "{0} membri aggiunti con successo"
 
