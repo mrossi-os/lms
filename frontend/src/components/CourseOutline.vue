@@ -267,7 +267,7 @@ const outline = createResource({
 	makeParams() {
 		return {
 			course: props.courseName,
-			progress: props.getProgress,
+			progress: !!user.data?.name,
 		}
 	},
 	auto: true,
