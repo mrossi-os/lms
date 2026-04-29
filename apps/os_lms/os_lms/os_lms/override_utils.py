@@ -188,3 +188,21 @@ def get_batch_details(batch: str):
     batch_detail.tab_notifications = get_batch_tab_unread_counts(batch)
 
     return batch_detail
+
+
+def _has_role(member: str, role: str):
+    return frappe.db.get_value(
+        "Has Role",
+        {"parent": member or frappe.session.user, "role": role},
+        "name",
+    )
+
+
+@frappe.whitelist()
+def get_roles(name: str) -> dict:
+    from lms.lms.utils import get_roles as _original_get_roles
+
+    base = _original_get_roles(name)
+    base["manager"] = _has_role(name, "Gestore")
+    base["instructor"] = _has_role(name, "Docente")
+    return base

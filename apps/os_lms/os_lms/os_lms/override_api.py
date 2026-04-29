@@ -1,9 +1,34 @@
 import frappe
+from frappe.utils import cint
 
 
 from lms.lms.api import get_sidebar_settings as _original_get_sidebar_settings
 from lms.lms.api import get_lms_settings as _original_get_lms_settings
 from lms.lms.api import get_user_info as _original_get_user_info
+from lms.lms.api import save_role as _original_save_role
+
+
+EXTRA_LMS_ROLES = ["Gestore", "Docente"]
+
+
+@frappe.whitelist()
+def save_role(user: str, role: str, value: int):
+    if role not in EXTRA_LMS_ROLES:
+        return _original_save_role(user, role, value)
+
+    frappe.only_for("Moderator")
+    if cint(value):
+        if not frappe.db.exists("Has Role", {"parent": user, "role": role}):
+            doc = frappe.new_doc("Has Role")
+            doc.parent = user
+            doc.parenttype = "User"
+            doc.parentfield = "roles"
+            doc.role = role
+            doc.save(ignore_permissions=True)
+    else:
+        frappe.db.delete("Has Role", {"parent": user, "role": role})
+    frappe.clear_cache(user=user)
+    return True
 
 
 from lms.command_palette import (

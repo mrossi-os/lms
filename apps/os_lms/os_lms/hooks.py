@@ -46,6 +46,8 @@ override_whitelisted_methods = {
     "lms.lms.utils.get_batch_details": "os_lms.os_lms.override_utils.get_batch_details",
     "lms.lms.api.get_notifications": "os_lms.os_lms.override_api.get_notifications",
     "lms.lms.api.get_user_info": "os_lms.os_lms.override_api.get_user_info",
+    "lms.lms.utils.get_roles": "os_lms.os_lms.override_utils.get_roles",
+    "lms.lms.api.save_role": "os_lms.os_lms.override_api.save_role",
 }
 
 # override email
