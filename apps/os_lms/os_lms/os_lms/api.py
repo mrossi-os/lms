@@ -276,16 +276,15 @@ def send_batch_announcement(
     rendered_content = frappe.render_template(content, context)
     rendered_subject = frappe.render_template(subject, context)
 
-    if send_email_flag:
-        from frappe.core.doctype.communication.email import make
-        make(
-            recipients=", ".join(recipients),
-            subject=rendered_subject,
-            content=rendered_content,
-            doctype="LMS Batch",
-            name=batch,
-            send_email=1,
-        )
+    from frappe.core.doctype.communication.email import make
+    make(
+        recipients=", ".join(recipients),
+        subject=rendered_subject,
+        content=rendered_content,
+        doctype="LMS Batch",
+        name=batch,
+        send_email=1 if send_email_flag else 0,
+    )
 
     from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
     batch_title = frappe.db.get_value("LMS Batch", batch, "title") or batch

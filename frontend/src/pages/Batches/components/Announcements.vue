@@ -25,9 +25,13 @@
 								{{ comm.sender_full_name }}
 							</div>
 						</div>
+
 						<div class="text-sm text-white">
 							{{ timeAgo(comm.communication_date) }}
 						</div>
+					</div>
+					<div class="ml-3 font-bold text-white prose">
+						{{ comm.subject }}
 					</div>
 					<div
 						class="prose prose-sm bg-surface-menu-bar !min-w-full px-4 py-2 rounded-md"
@@ -49,10 +53,7 @@
 						</template>
 						{{ __('Previous') }}
 					</Button>
-					<Button
-						:disabled="currentPage >= totalPages"
-						@click="currentPage++"
-					>
+					<Button :disabled="currentPage >= totalPages" @click="currentPage++">
 						<template #suffix>
 							<ChevronRight class="w-4 h-4" />
 						</template>
@@ -121,13 +122,13 @@ watch(
 			currentPage.value = 1
 			communications.reload()
 		}
-	}
+	},
 )
 
 const announcements = computed(() => communications.data?.data || [])
 const totalAnnouncements = computed(() => communications.data?.total || 0)
 const totalPages = computed(() =>
-	Math.max(1, Math.ceil(totalAnnouncements.value / pageSize))
+	Math.max(1, Math.ceil(totalAnnouncements.value / pageSize)),
 )
 </script>
 <style>
