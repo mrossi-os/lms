@@ -135,7 +135,7 @@
 						</div>
 						<div class="space-x-2">
 							<Button
-								v-if="programMembers.data?.length > 0"
+								v-if="program.program_members?.length > 0"
 								@click="showProgressDialog = true"
 							>
 								<template #prefix>
@@ -347,7 +347,7 @@
 			<ProgramProgressSummary
 				v-model="showProgressDialog"
 				:programName="programName"
-				:programMembers="programMembers.data"
+				:programMembers="program.program_members"
 			/>
 		</template>
 		<template #actions="{ close }">
@@ -374,7 +374,7 @@
 import {
 	Badge,
 	Button,
-	createListResource,
+	call,
 	createResource,
 	Dialog,
 	FormControl,
@@ -437,8 +437,7 @@ const loadProgramData = () => {
 	if (!props.programName) return
 	setProgramData()
 	if (props.programName !== 'new') {
-		fetchCourses()
-		fetchMembers()
+		fetchProgramData()
 	}
 }
 
@@ -547,47 +546,38 @@ const setProgramData = () => {
 	dirty.value = false
 }
 
-const programCourses = createListResource({
-	doctype: 'LMS Program Course',
-	fields: ['course', 'course_title', 'name', 'idx'],
-	cache: ['programCourses', props.programName],
-	parent: 'LMS Program',
-	orderBy: 'idx',
-	onSuccess(data: ProgramCourse[]) {
-		program.value.program_courses = data
+const programDoc = createResource({
+	url: 'frappe.client.get',
+	makeParams() {
+		return {
+			doctype: 'LMS Program',
+			name: props.programName,
+		}
+	},
+	onSuccess(data: any) {
+		program.value.program_courses = (data.program_courses || [])
+			.slice()
+			.sort((a: any, b: any) => (a.idx || 0) - (b.idx || 0))
+			.map((c: any) => ({
+				course: c.course,
+				course_title: c.course_title,
+				name: c.name,
+				idx: c.idx,
+			}))
+		program.value.program_members = (data.program_members || []).map(
+			(m: any) => ({
+				member: m.member,
+				full_name: m.full_name,
+				progress: m.progress,
+				name: m.name,
+			}),
+		)
 	},
 })
 
-const programMembers = createListResource({
-	doctype: 'LMS Program Member',
-	fields: ['member', 'full_name', 'progress', 'name'],
-	cache: ['programMembers', props.programName],
-	parent: 'LMS Program',
-	orderBy: 'creation desc',
-	onSuccess(data: ProgramMember[]) {
-		program.value.program_members = data
-	},
-})
-
-const fetchCourses = () => {
-	programCourses.update({
-		filters: {
-			parent: props.programName,
-			parenttype: 'LMS Program',
-			parentfield: 'program_courses',
-		},
-	})
-	programCourses.reload()
-}
-
-const fetchMembers = () => {
-	programMembers.update({
-		filters: {
-			parent: props.programName,
-			parenttype: 'LMS Program',
-		},
-	})
-	programMembers.reload()
+const fetchProgramData = () => {
+	if (!props.programName || props.programName === 'new') return
+	programDoc.fetch()
 }
 
 const validateTitle = () => {
@@ -823,8 +813,8 @@ const updateCounts = async (
 ) => {
 	if (!props.programName) return
 
-	let memberCount = programMembers.data?.length || 0
-	let courseCount = programCourses.data?.length || 0
+	let memberCount = program.value.program_members?.length || 0
+	let courseCount = program.value.program_courses?.length || 0
 
 	if (type === 'member') {
 		memberCount += action === 'add' ? 1 : -1
@@ -849,35 +839,32 @@ const updateCounts = async (
 	)
 }
 
-const updateOrder = async (e: DragEvent) => {
+const updateOrder = async (e: any) => {
 	let sourceIdx = e.from.dataset.idx
 	let targetIdx = e.to.dataset.idx
 
-	if (props.programName === 'new') {
-		let courses = program.value.program_courses
-		courses.splice(targetIdx, 0, courses.splice(sourceIdx, 1)[0])
-		courses.forEach((course, index) => {
-			course.idx = index + 1
-		})
-		dirty.value = true
-	} else {
-		let courses = programCourses.data
-		courses.splice(targetIdx, 0, courses.splice(sourceIdx, 1)[0])
+	let courses = program.value.program_courses
+	courses.splice(targetIdx, 0, courses.splice(sourceIdx, 1)[0])
+	courses.forEach((course: any, index: number) => {
+		course.idx = index + 1
+	})
 
-		for (const [index, course] of courses.entries()) {
-			programCourses.setValue.submit(
-				{
-					name: course.name,
-					idx: index + 1,
-				},
-				{
-					onError(err: any) {
-						toast.warning(__(err.messages?.[0] || err))
-					},
-				},
-			)
-			await wait(100)
+	if (props.programName === 'new') {
+		dirty.value = true
+		return
+	}
+
+	for (const course of courses) {
+		try {
+			await call('frappe.client.set_value', {
+				doctype: 'LMS Program Course',
+				name: course.name,
+				fieldname: { idx: course.idx },
+			})
+		} catch (err: any) {
+			toast.warning(__(err.messages?.[0] || err))
 		}
+		await wait(100)
 	}
 }
 
