@@ -190,18 +190,21 @@ input[type='time']::-webkit-calendar-picker-indicator {
 	padding-bottom: var(--form-padding-small-y) !important;
 }
 
+.ce-block--selected * {
+	color: var(--surface-gray-1);
+}
 ::selection,
 #editor ::selection,
 #instructor-content ::selection {
-	background: var(--surface-gray-1);
-	color: #ffffff;
+	background: white;
+	color: var(--surface-gray-1);
 }
 
 ::-moz-selection,
 #editor ::-moz-selection,
 #instructor-content ::-moz-selection {
-	background: var(--surface-gray-1);
-	color: #ffffff;
+	background: white;
+	color: var(--surface-gray-1);
 }
 
 input:disabled {
