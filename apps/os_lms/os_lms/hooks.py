@@ -12,6 +12,13 @@ required_apps = ["lms"]
 base_template = "templates/base.html"
 
 
+# Inject Brand Customize CSS in the desk <head>. For website pages (login,
+# Vue SPA wrapper) the link is appended at the end of <head> directly in
+# templates/base.html, so it remains the last stylesheet and overrides
+# defaults from frontend/src/styles/theme/elite/variables.css.
+app_include_css = ["/api/method/os_lms.os_lms.branding.brand_css"]
+
+
 # activate debug if needed
 before_request = ["os_lms.debug.active_debug"]
 
@@ -90,6 +97,9 @@ doc_events = {
     },
     "LMS Live Class": {
         "before_save": "os_lms.os_lms.live_class_reminders.reset_sent_at",
+    },
+    "Brand Customize": {
+        "on_update": "os_lms.os_lms.branding.clear_brand_cache",
     },
 }
 
