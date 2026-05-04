@@ -826,7 +826,7 @@ msgstr "Badge {0} non trovato"
 #: lms/lms/doctype/lms_certificate_request/lms_certificate_request.json
 #: lms/lms/doctype/lms_live_class/lms_live_class.json
 msgid "Batch"
-msgstr "Gruppo"
+msgstr "Classe"
 
 #. Label of the batch_confirmation_template (Link) field in DocType 'LMS
 #. Settings'
