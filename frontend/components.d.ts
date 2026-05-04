@@ -63,6 +63,8 @@ declare module 'vue' {
     FeedbackModal: typeof import('./src/components/Modals/FeedbackModal.vue')['default']
     FilePicker: typeof import('./src/components/Controls/FilePicker.vue')['default']
     FrappeCloudIcon: typeof import('./src/components/Icons/FrappeCloudIcon.vue')['default']
+    GoogleCalendarModal: typeof import('./src/components/Settings/GoogleCalendarModal.vue')['default']
+    GoogleCalendarSettings: typeof import('./src/components/Settings/GoogleCalendarSettings.vue')['default']
     GoogleMeetAccountModal: typeof import('./src/components/Settings/GoogleMeetAccountModal.vue')['default']
     GoogleMeetSettings: typeof import('./src/components/Settings/GoogleMeetSettings.vue')['default']
     IconPicker: typeof import('./src/components/Controls/IconPicker.vue')['default']

@@ -63,7 +63,7 @@
 </template>
 <script setup>
 import { Dialog, createDocumentResource } from 'frappe-ui'
-import { computed, markRaw, ref, watch } from 'vue'
+import { computed, inject, markRaw, ref, watch } from 'vue'
 import { useSettings } from '@/stores/settings'
 import SettingDetails from '@/components/Settings/SettingDetails.vue'
 import SidebarLink from '@/components/Sidebar/SidebarLink.vue'
@@ -77,8 +77,18 @@ import Coupons from '@/components/Settings/Coupons/Coupons.vue'
 import Transactions from '@/components/Settings/Transactions/Transactions.vue'
 import ZoomSettings from '@/components/Settings/ZoomSettings.vue'
 import GoogleMeetSettings from '@/components/Settings/GoogleMeetSettings.vue'
+import GoogleCalendarSettings from '@/components/Settings/GoogleCalendarSettings.vue'
 import Badges from '@/components/Settings/Badges.vue'
 import AISettings from '@/oslms/components/ai/Settings/AISettings.vue'
+
+const GOOGLE_CALENDAR_ROLES = ['System Manager', 'Gestore']
+
+const user = inject('$user')
+
+const canManageGoogleCalendars = () => {
+	const roles = user?.data?.roles || []
+	return GOOGLE_CALENDAR_ROLES.some((role) => roles.includes(role))
+}
 
 const show = defineModel()
 const doctype = ref('LMS Settings')
@@ -469,6 +479,16 @@ const tabsStructure = computed(() => {
 					),
 					icon: 'Presentation',
 					template: markRaw(GoogleMeetSettings),
+				},
+				{
+					key: 'Google Calendar',
+					label: __('Google Calendar'),
+					description: __(
+						'Manage Google Calendars used for live classes and evaluations',
+					),
+					icon: 'Calendar',
+					template: markRaw(GoogleCalendarSettings),
+					condition: canManageGoogleCalendars,
 				},
 			],
 		},
