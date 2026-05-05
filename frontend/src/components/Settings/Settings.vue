@@ -82,12 +82,19 @@ import Badges from '@/components/Settings/Badges.vue'
 import AISettings from '@/oslms/components/ai/Settings/AISettings.vue'
 
 const GOOGLE_CALENDAR_ROLES = ['System Manager', 'Gestore']
+const ADMIN_ONLY_ROLES = ['System Manager', 'Administrator']
 
 const user = inject('$user')
 
 const canManageGoogleCalendars = () => {
 	const roles = user?.data?.roles || []
 	return GOOGLE_CALENDAR_ROLES.some((role) => roles.includes(role))
+}
+
+const isAdministrator = () => {
+	if (user?.data?.name === 'Administrator') return true
+	const roles = user?.data?.roles || []
+	return ADMIN_ONLY_ROLES.some((role) => roles.includes(role))
 }
 
 const show = defineModel()
@@ -114,6 +121,7 @@ const tabsStructure = computed(() => {
 					key: 'General',
 					label: __('General'),
 					icon: 'Wrench',
+					condition: isAdministrator,
 					sections: [
 						{
 							label: __('System Configurations'),
@@ -298,6 +306,7 @@ const tabsStructure = computed(() => {
 					),
 					icon: 'Award',
 					template: markRaw(Badges),
+					condition: isAdministrator,
 				},
 				{
 					key: 'Categories',
@@ -314,6 +323,7 @@ const tabsStructure = computed(() => {
 					),
 					icon: 'MailPlus',
 					template: markRaw(EmailTemplates),
+					condition: isAdministrator,
 				},
 			],
 		},
@@ -624,6 +634,7 @@ const tabsStructure = computed(() => {
 					description: __(
 						'Manage the settings related to user signup and registration',
 					),
+					condition: isAdministrator,
 					sections: [
 						{
 							columns: [
@@ -723,6 +734,7 @@ const tabsStructure = computed(() => {
 					description: __(
 						'Manage the SEO settings to improve your website ranking on search engines',
 					),
+					condition: isAdministrator,
 					sections: [
 						{
 							columns: [
@@ -773,6 +785,7 @@ const tabsStructure = computed(() => {
 						'Configure AI assistant settings for your learning system',
 					),
 					template: markRaw(AISettings),
+					condition: isAdministrator,
 					sections: [
 						{
 							label: __('Configuration'),
