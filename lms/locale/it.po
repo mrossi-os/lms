@@ -336,7 +336,7 @@ msgstr "Tutti"
 
 #: frontend/src/pages/Batches/Batches.vue:51
 msgid "All Batches"
-msgstr "Tutti i Gruppi"
+msgstr "Tutte le Classi"
 
 #: frontend/src/pages/Courses/Courses.vue:36 lms/lms/widgets/BreadCrumb.html:3
 msgid "All Courses"
