@@ -4,7 +4,9 @@
 			class="sticky top-0 z-10 flex items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5"
 		>
 			<Breadcrumbs class="h-7" :items="breadcrumbs" />
-			<div class="hidden md:flex fixed top-3 z-11 items-center space-x-2">
+			<div
+				class="fixed hidden md:flexs top-3 z-11 items-center right-3 space-x-2"
+			>
 				<Tooltip v-if="canGoZen()" :text="__('Zen Mode')">
 					<Button size="sm" @click="goFullScreen()">
 						<template #icon>
@@ -67,7 +69,7 @@
 					</Button>
 				</router-link>
 			</div>
-			<div class="flex md:hidden items-center space-x-2">
+			<div class="fixed top-15 right-3 flex md:hidden items-center space-x-2">
 				<CertificationLinks :courseName="courseName" />
 				<Dropdown :options="mobileHeaderMenu" side="left">
 					<Button size="sm">
@@ -78,7 +80,24 @@
 				</Dropdown>
 			</div>
 		</header>
-		<div class="grid md:grid-cols-[70%,30%] md:h-[94vh]">
+		<Tooltip
+			v-if="canShowAIJumpButton"
+			:text="
+				showingChat ? __('Torna alla lezione') : __('Chiedi all\'AI Tutor')
+			"
+		>
+			<Button
+				size="sm"
+				class="md:hidden fixed top-24 right-3 z-10 shadow-md"
+				@click="toggleAIView"
+			>
+				<template #icon>
+					<BookOpen v-if="showingChat" class="w-4 h-4 stroke-1.5" />
+					<Bot v-else class="w-4 h-4 stroke-1.5" />
+				</template>
+			</Button>
+		</Tooltip>
+		<div class="grid md:grid-cols-[70%,30%] md:h-[100vh]">
 			<div v-if="lesson.data.no_preview" class="border-r">
 				<div class="shadow rounded-md w-3/4 mt-10 mx-auto text-center p-4">
 					<div class="flex items-center justify-center mt-4 space-x-2">
@@ -374,7 +393,12 @@
 				</div>
 			</div>
 			<div class="sticky top-10">
-				<div v-if="lesson.data?.name && !hasQuiz">
+				<div
+					v-if="lesson.data?.name && !hasQuiz"
+					ref="chatBotContainer"
+					:data-ai-tutor="true"
+					class="p-3"
+				>
 					<ChatBot
 						:courseId="lesson.data?.course"
 						:lessonId="lesson.data?.name"
@@ -401,7 +425,6 @@
 						:courseName="courseName"
 						:key="chapterNumber"
 						:getProgress="lesson.data.membership ? true : false"
-						:lessonProgress="lessonProgress"
 					/>
 				</div>
 			</div>
@@ -451,6 +474,8 @@ import {
 	Pencil,
 	ArrowLeft,
 	TrendingUp,
+	Bot,
+	BookOpen,
 } from 'lucide-vue-next'
 import { getEditorTools, enablePlyr, highlightText } from '@/utils'
 import { sessionStore } from '@/stores/session'
@@ -478,17 +503,18 @@ const editor = ref(null)
 const instructorEditor = ref(null)
 const lessonProgress = ref(0)
 const lessonContainer = ref(null)
+const chatBotContainer = ref(null)
+const showingChat = ref(false)
+let aiVisibilityObserver = null
 const zenModeEnabled = ref(false)
 const showStatsDialog = ref(false)
 const hasQuiz = ref(false)
 const discussionsContainer = ref(null)
-const timer = ref(0)
 const { brand } = sessionStore()
 const sidebarStore = useSidebar()
 const plyrSources = ref([])
 const showInlineMenu = ref(false)
 const currentTab = ref(null)
-let timerInterval = null
 const quizBlocked = ref(false)
 const quizBlockedReason = ref('')
 
@@ -531,50 +557,16 @@ const props = defineProps({
 	},
 })
 
-// Risorsa per il controllo accesso lezione
-const accessCheck = createResource({
-	url: 'os_lms.os_lms.api.check_lesson_access',
-})
-const quizAccessCheck = createResource({
-	url: 'os_lms.os_lms.api.check_quiz_access',
-})
-
-const checkLessonAccess = (lessonName) => {
-	if (!lessonName || !user.data || isAdmin.value) return
-	accessCheck.submit(
-		{
-			course: props.courseName,
-			lesson: lessonName,
-		},
-		{
-			onSuccess(result) {
-				lessonBlocked.value = !result.allowed
-				blockedReason.value = result.reason || ''
-			},
-			onError(err) {
-				console.error('check_lesson_access error:', err)
-			},
-		},
-	)
-}
-const checkQuizAccess = (courseName, lessonName) => {
-	if (!courseName || !user.data || isAdmin.value) return
-	quizAccessCheck.submit(
-		{ course: courseName, lesson: lessonName },
-		{
-			onSuccess(result) {
-				quizBlocked.value = !result.allowed
-				quizBlockedReason.value = result.reason || ''
-			},
-			onError(err) {
-				console.error('check_quiz_access error:', err)
-			},
-		},
-	)
+const applyAccessFromLesson = (data) => {
+	const lessonAccess = data?.lesson_access || { allowed: true }
+	const quizAccess = data?.quiz_access || { allowed: true }
+	lessonBlocked.value = !lessonAccess.allowed
+	blockedReason.value = lessonAccess.reason || ''
+	quizBlocked.value = !quizAccess.allowed
+	quizBlockedReason.value = quizAccess.reason || ''
 }
 
 onMounted(() => {
-	startTimer()
 	sidebarStore.isSidebarCollapsed = true
 	document.addEventListener('fullscreenchange', attachFullscreenEvent)
 	socket.on('update_lesson_progress', (data) => {
@@ -600,6 +592,42 @@ onBeforeUnmount(() => {
 	document.removeEventListener('fullscreenchange', attachFullscreenEvent)
 	sidebarStore.isSidebarCollapsed = false
 	trackVideoWatchDuration()
+	if (aiVisibilityObserver) {
+		aiVisibilityObserver.disconnect()
+		aiVisibilityObserver = null
+	}
+})
+
+const canShowAIJumpButton = computed(
+	() => !!lesson.data?.name && !hasQuiz.value,
+)
+
+const toggleAIView = () => {
+	const target = showingChat.value
+		? lessonContainer.value
+		: chatBotContainer.value
+	target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+watch(chatBotContainer, (el) => {
+	if (aiVisibilityObserver) {
+		aiVisibilityObserver.disconnect()
+		aiVisibilityObserver = null
+	}
+	if (!el) {
+		showingChat.value = false
+		return
+	}
+	aiVisibilityObserver = new IntersectionObserver(
+		(entries) => {
+			for (const entry of entries) {
+				showingChat.value =
+					entry.isIntersecting && entry.intersectionRatio >= 0.3
+			}
+		},
+		{ threshold: [0, 0.3, 0.6] },
+	)
+	aiVisibilityObserver.observe(el)
 })
 
 const lesson = createResource({
@@ -727,7 +755,7 @@ const mobileHeaderMenu = computed(() => {
 	}
 	if (isAdmin.value) {
 		options.push({
-			label: __('Video Stats'),
+			label: __('Statistiche'),
 			icon: TrendingUp,
 			onClick: () => showVideoStats(),
 		})
@@ -839,8 +867,6 @@ const resetLessonState = (newChapterNumber, newLessonNumber) => {
 		chapter: newChapterNumber,
 		lesson: newLessonNumber,
 	})
-	clearInterval(timerInterval)
-	timer.value = 0
 }
 
 const trackVideoWatchDuration = () => {
@@ -902,13 +928,10 @@ watch(
 	() => lesson.data,
 	async (data) => {
 		setupLesson(data)
-		startTimer()
-		getPlyrSource()
+		await getPlyrSource()
 		updateNotes()
-		if (data.icon == 'icon-youtube') clearInterval(timerInterval)
-
-		checkLessonAccess(data?.name)
-		checkQuizAccess(data?.course, data?.name)
+		markProgressIfNoVideo()
+		applyAccessFromLesson(data)
 	},
 )
 
@@ -918,6 +941,15 @@ const getPlyrSource = async () => {
 		plyrSources.value = await enablePlyr()
 	}
 	updateVideoWatchDuration()
+}
+
+const markProgressIfNoVideo = () => {
+	if (!lesson.data?.membership) return
+	const hasDomVideo = document.querySelectorAll('video').length > 0
+	const hasPlyr = plyrSources.value.length > 0
+	if (!hasDomVideo && !hasPlyr) {
+		markProgress()
+	}
 }
 
 const updateVideoWatchDuration = () => {
@@ -986,21 +1018,6 @@ const updateVideoTime = (video) => {
 		})
 	}
 }
-
-const startTimer = () => {
-	if (!lesson.data?.membership) return
-	timerInterval = setInterval(() => {
-		timer.value++
-		if (timer.value == 30) {
-			clearInterval(timerInterval)
-			markProgress()
-		}
-	}, 1000)
-}
-
-onBeforeUnmount(() => {
-	clearInterval(timerInterval)
-})
 
 const checkIfDiscussionsAllowed = () => {
 	hasQuiz.value = false

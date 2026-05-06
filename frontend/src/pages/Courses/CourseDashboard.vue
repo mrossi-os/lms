@@ -36,7 +36,7 @@
 							<template #prefix>
 								<Plus class="size-4 stroke-1.5" />
 							</template>
-							{{ __('Enroll') }}
+							{{ __('Iscrivi') }}
 						</Button>
 					</div>
 				</div>
@@ -282,7 +282,6 @@ import {
 	Button,
 	createListResource,
 	createResource,
-	dayjs,
 	ECharts,
 	FormControl,
 	ListView,
@@ -296,6 +295,8 @@ import {
 	Tooltip,
 	toast,
 } from 'frappe-ui'
+import dayjs from '@/utils/dayjs'
+
 import { computed, ref, watch } from 'vue'
 import { Plus, Star, Trash2 } from 'lucide-vue-next'
 import { formatAmount } from '@/utils'

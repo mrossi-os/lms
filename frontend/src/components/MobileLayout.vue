@@ -111,9 +111,16 @@ const filterLinksToShow = (data) => {
 	})
 }
 
+const isLinkEnabled = (label) => {
+	const data = sidebarSettings.data
+	if (!data) return true
+	const key = label.toLowerCase().split(' ').join('_')
+	return !(key in data) || parseInt(data[key])
+}
+
 const addOtherLinks = () => {
 	if (user) {
-		addLink('Notifications', 'Bell', 'Notifications')
+		if (isLinkEnabled('Notifications')) addLink('Notifications', 'Bell', 'Notifications')
 		addLink('Profile', 'UserRound')
 		addLink('Log out', 'LogOut')
 	} else {
@@ -140,26 +147,14 @@ const updateSidebarLinks = () => {
 				filterLinksToShow(data)
 				await addPrograms()
 				if (isModerator.value || isInstructor.value) {
-					addQuizzes()
-					addAssignments()
-					addProgrammingExercises()
+					if (isLinkEnabled('Quizzes')) addLink('Quizzes', 'CircleHelp', 'Quizzes')
+					if (isLinkEnabled('Assignments')) addLink('Assignments', 'Pencil', 'Assignments')
+					if (isLinkEnabled('Programming Exercises')) addLink('Programming Exercises', 'Code', 'ProgrammingExercises')
 				}
 				addOtherLinks()
 			},
 		},
 	)
-}
-
-const addQuizzes = () => {
-	addLink('Quizzes', 'CircleHelp', 'Quizzes')
-}
-
-const addAssignments = () => {
-	addLink('Assignments', 'Pencil', 'Assignments')
-}
-
-const addProgrammingExercises = () => {
-	addLink('Programming Exercises', 'Code', 'ProgrammingExercises')
 }
 
 const addPrograms = async () => {

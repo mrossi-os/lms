@@ -110,8 +110,15 @@
 												}"
 											>
 												<div class="flex items-center text-sm leading-5 group">
+													<Tooltip
+														v-if="lesson.is_complete"
+														:text="__('Lesson completed')"
+														placement="top"
+													>
+														<Check class="h-4 w-4 text-green-700 mr-2" />
+													</Tooltip>
 													<MonitorPlay
-														v-if="lesson.icon === 'icon-youtube'"
+														v-else-if="lesson.icon === 'icon-youtube'"
 														class="h-4 w-4 stroke-1 mr-2"
 													/>
 													<HelpCircle
@@ -130,7 +137,15 @@
 														v-else-if="lesson.icon === 'icon-list'"
 														class="h-4 w-4 text-ink-gray-9 stroke-1 mr-2"
 													/>
-													{{ lesson.title }}
+													<div class="flex grow justify-between">
+														{{ lesson.title }}
+														<CourseTagBadges
+															v-if="lesson.tags"
+															:tags="lesson.tags"
+															size="xs"
+															class=""
+														/>
+													</div>
 													<div class="flex items-center ml-auto space-x-2">
 														<LessonAIStatus v-if="allowEdit" :lesson="lesson" />
 														<Trash2
@@ -140,19 +155,9 @@
 															"
 															class="h-4 w-4 text-ink-red-3 invisible group-hover:visible"
 														/>
-														<Check
-															v-if="lesson.is_complete"
-															class="h-4 w-4 text-green-700"
-														/>
 													</div>
 												</div>
 											</router-link>
-											<CourseTagBadges
-												v-if="lesson.tags"
-												:tags="lesson.tags"
-												size="xs"
-												class=""
-											/>
 										</div>
 									</template>
 								</Draggable>
@@ -196,7 +201,14 @@
 </template>
 <script setup>
 import { Button, createResource, Tooltip, toast } from 'frappe-ui'
-import { getCurrentInstance, inject, ref, watch } from 'vue'
+import {
+	getCurrentInstance,
+	inject,
+	onBeforeUnmount,
+	onMounted,
+	ref,
+	watch,
+} from 'vue'
 import Draggable from 'vuedraggable'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import {
@@ -220,6 +232,7 @@ import CourseTagBadges from '@/oslms/components/CourseTagBadges.vue'
 const route = useRoute()
 const router = useRouter()
 const user = inject('$user')
+const socket = inject('$socket')
 const showChapterModal = ref(false)
 const currentChapter = ref(null)
 const app = getCurrentInstance()
@@ -246,10 +259,6 @@ const props = defineProps({
 		type: Boolean,
 		default: false,
 	},
-	lessonProgress: {
-		type: Number,
-		default: 0,
-	},
 })
 
 const outline = createResource({
@@ -258,7 +267,7 @@ const outline = createResource({
 	makeParams() {
 		return {
 			course: props.courseName,
-			progress: props.getProgress,
+			progress: !!user.data?.name,
 		}
 	},
 	auto: true,
@@ -271,12 +280,19 @@ watch(
 	},
 )
 
-watch(
-	() => props.lessonProgress,
-	() => {
+const onLessonProgressUpdate = (data) => {
+	if (data?.course === props.courseName) {
 		outline.reload()
-	},
-)
+	}
+}
+
+onMounted(() => {
+	socket?.on('update_lesson_progress', onLessonProgressUpdate)
+})
+
+onBeforeUnmount(() => {
+	socket?.off('update_lesson_progress', onLessonProgressUpdate)
+})
 
 const deleteLesson = createResource({
 	url: 'lms.lms.api.delete_lesson',

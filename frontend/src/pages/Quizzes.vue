@@ -87,7 +87,7 @@
 			</ListSelectBanner>
 		</ListView>
 		<div v-else class="h-[49vh] lg:h-[53vh] px-5">
-			<EmptyState type="Quizzes" />
+			<EmptyState title="Nessun quiz" />
 		</div>
 		<div class="flex items-center justify-end space-x-3 pt-3 border-t px-5">
 			<Button v-if="quizzes.hasNextPage" @click="quizzes.next()">

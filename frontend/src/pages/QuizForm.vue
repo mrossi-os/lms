@@ -3,7 +3,7 @@
 		class="sticky top-0 z-10 flex items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5"
 	>
 		<Breadcrumbs :items="breadcrumbs" />
-		<div v-if="!readOnlyMode" class="flex items-center space-x-2">
+		<div v-if="!readOnlyMode" class="hidden md:flex items-center space-x-2">
 			<Badge v-if="quizDetails.isDirty" theme="orange">
 				{{ __('Not Saved') }}
 			</Badge>
@@ -42,6 +42,21 @@
 			<Button variant="solid" @click="submitQuiz()">
 				{{ __('Save') }}
 			</Button>
+		</div>
+		<div v-if="!readOnlyMode" class="flex md:hidden items-center space-x-2">
+			<Badge v-if="quizDetails.isDirty" theme="orange">
+				{{ __('Not Saved') }}
+			</Badge>
+			<Button variant="solid" size="sm" @click="submitQuiz()">
+				{{ __('Save') }}
+			</Button>
+			<Dropdown :options="mobileHeaderMenu" side="left">
+				<Button size="sm">
+					<template #icon>
+						<MoreVertical class="w-4 h-4 stroke-1.5" />
+					</template>
+				</Button>
+			</Dropdown>
 		</div>
 	</header>
 	<div v-if="quizDetails.doc" class="py-5">
@@ -210,6 +225,7 @@
 import {
 	Breadcrumbs,
 	createResource,
+	Dropdown,
 	FormControl,
 	ListView,
 	ListHeader,
@@ -223,8 +239,8 @@ import {
 	toast,
 	createDocumentResource,
 	Badge,
-	Switch,
 } from 'frappe-ui'
+import Switch from '@/oslms/components/Form/Switch.vue'
 import {
 	computed,
 	reactive,
@@ -234,7 +250,7 @@ import {
 	onBeforeUnmount,
 } from 'vue'
 import { sessionStore } from '../stores/session'
-import { ClipboardList, ListChecks, Plus, Trash2 } from 'lucide-vue-next'
+import { ClipboardList, ListChecks, MoreVertical, Plus, Trash2 } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { sanitizeHTML } from '@/utils'
 import { useScreenSize } from '@/utils/composables'
@@ -251,6 +267,29 @@ const user = inject('$user')
 const router = useRouter()
 const readOnlyMode = window.read_only_mode
 const { isMobile } = useScreenSize()
+
+const mobileHeaderMenu = computed(() => {
+	const options = []
+	if (quizDetails.doc?.name) {
+		options.push({
+			label: __('Test Quiz'),
+			icon: ListChecks,
+			onClick: () => router.push({
+				name: 'QuizPage',
+				params: { quizID: quizDetails.doc.name },
+			}),
+		})
+		options.push({
+			label: __('Check Submissions'),
+			icon: ClipboardList,
+			onClick: () => router.push({
+				name: 'QuizSubmissionList',
+				params: { quizID: quizDetails.doc.name },
+			}),
+		})
+	}
+	return options
+})
 
 const props = defineProps({
 	quizID: {

@@ -15,13 +15,24 @@
 	>
 		<template #body-content>
 			<div class="flex flex-col gap-4">
-				<FormControl
-					:label="__('Email Template')"
-					type="select"
-					:placeholder="__('Select option')"
-					:options="emailTemplates.data || []"
-					v-model="announcement.template"
-				/>
+				<div class="flex items-end gap-8">
+					<div class="shrink-0 pb-2">
+						<FormControl
+							type="checkbox"
+							:label="__('Invia email insieme alla notifica')"
+							v-model="sendEmail"
+						/>
+					</div>
+					<FormControl
+						v-if="sendEmail && !defaultTemplateFound"
+						class="flex-1 max-w-52"
+						:label="__('Email Template')"
+						type="select"
+						:placeholder="__('Select option')"
+						:options="emailTemplates.data || []"
+						v-model="announcement.template"
+					/>
+				</div>
 				<FormControl
 					:label="__('Subject')"
 					type="text"
@@ -44,37 +55,46 @@
 					v-model="recipientMode"
 				/>
 				<div v-if="recipientMode === 'specific'" class="flex flex-col gap-2">
-					<div class="text-sm text-ink-gray-5">
-						{{ __('Select students') }}
-						<span class="text-ink-red-3">*</span>
+					<div class="flex justify-between">
+						<div class="text-sm text-ink-gray-5">
+							{{ __('Select students') }}
+							<span class="text-ink-red-3">*</span>
+						</div>
+						<div class="text-xs text-ink-gray-5">
+							{{ selectedStudents.length }} {{ __('selected') }}
+							<span v-if="studentSearch">
+								· {{ filteredStudents.length }} {{ __('shown') }}
+							</span>
+						</div>
 					</div>
+					<FormControl
+						type="text"
+						:placeholder="__('Search student...')"
+						v-model="studentSearch"
+					/>
 					<div
 						class="border rounded-md p-2 max-h-[180px] overflow-auto bg-surface-white"
 					>
 						<div v-if="!props.students.length" class="text-ink-gray-5 text-sm">
 							{{ __('No students in this batch') }}
 						</div>
-						<label
-							v-for="email in props.students"
-							:key="email"
-							class="flex items-center gap-2 py-1 cursor-pointer text-sm"
+						<div
+							v-else-if="!filteredStudents.length"
+							class="text-ink-gray-5 text-sm"
 						>
-							<input
+							{{ __('No students match your search') }}
+						</div>
+						<div v-for="email in filteredStudents" :key="email">
+							<FormControl
 								type="checkbox"
-								:value="email"
-								v-model="selectedStudents"
-								class="cursor-pointer"
+								:label="studentLabels[email] || email"
+								:modelValue="selectedStudents.includes(email)"
+								@update:modelValue="(v) => toggleStudent(email, v)"
 							/>
-							<span class="text-white">
-								{{ studentLabels[email] || email }}
-							</span>
-						</label>
-					</div>
-					<div class="text-xs text-ink-gray-5">
-						{{ selectedStudents.length }} {{ __('selected') }}
+						</div>
 					</div>
 				</div>
-				<div v-if="isHtmlMode" class="mb-4 flex flex-col gap-3">
+				<div v-if="sendEmail && isHtmlMode" class="mb-4 flex flex-col gap-3">
 					<div v-if="hasMessagePlaceholder">
 						<div class="mb-1.5 text-sm text-ink-gray-5">
 							{{ __('Message') }}
@@ -83,7 +103,11 @@
 						<textarea
 							v-model="announcement.message"
 							class="w-full min-h-[120px] max-h-[240px] border rounded-md p-2 text-sm bg-surface-gray-3 border-outline-gray-2"
-							:placeholder="__('Write your message here. It will be inserted into the template.')"
+							:placeholder="
+								__(
+									'Write your message here. It will be inserted into the template.',
+								)
+							"
 						></textarea>
 					</div>
 					<div>
@@ -92,7 +116,9 @@
 								{{ __('Preview') }}
 							</div>
 							<Button size="sm" @click="showAdvanced = !showAdvanced">
-								{{ showAdvanced ? __('Hide HTML') : __('Edit HTML (advanced)') }}
+								{{
+									showAdvanced ? __('Hide HTML') : __('Edit HTML (advanced)')
+								}}
 							</Button>
 						</div>
 						<div
@@ -160,22 +186,27 @@ const isHtmlMode = ref(false)
 const showAdvanced = ref(false)
 const recipientMode = ref('all')
 const selectedStudents = ref([])
+const sendEmail = ref(false)
+const studentSearch = ref('')
+const defaultTemplateFound = ref(false)
+
+const DEFAULT_TEMPLATE_NAME = 'Announcement Email Template'
 
 const hasMessagePlaceholder = computed(() =>
 	/\{\{\s*message\s*\}\}/.test(announcement.announcement || ''),
 )
 
 const escapeHtml = (str) =>
-	String(str)
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
+	String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 const previewHtml = computed(() => {
 	const msg = escapeHtml(announcement.message || '').replace(/\n/g, '<br>')
 	return (announcement.announcement || '')
 		.replace(/\{\{\s*message\s*\}\}/g, msg)
-		.replace(/\{\{\s*frappe\.utils\.get_url\(\)\s*\}\}/g, window.location.origin)
+		.replace(
+			/\{\{\s*frappe\.utils\.get_url\(\)\s*\}\}/g,
+			window.location.origin,
+		)
 })
 
 const studentsInfo = createResource({
@@ -199,6 +230,25 @@ const studentLabels = computed(() => {
 	return map
 })
 
+const filteredStudents = computed(() => {
+	const q = studentSearch.value.trim().toLowerCase()
+	if (!q) return props.students
+	return props.students.filter((email) => {
+		const label = studentLabels.value[email] || email
+		return label.toLowerCase().includes(q)
+	})
+})
+
+const toggleStudent = (email, checked) => {
+	if (checked) {
+		if (!selectedStudents.value.includes(email)) {
+			selectedStudents.value = [...selectedStudents.value, email]
+		}
+	} else {
+		selectedStudents.value = selectedStudents.value.filter((e) => e !== email)
+	}
+}
+
 watch(
 	() => announcement.template,
 	(newVal) => {
@@ -206,6 +256,24 @@ watch(
 		applyTemplate(newVal)
 	},
 )
+
+watch(sendEmail, async (enabled) => {
+	if (!enabled) {
+		announcement.template = ''
+		announcement.message = ''
+		isHtmlMode.value = false
+		showAdvanced.value = false
+		defaultTemplateFound.value = false
+		return
+	}
+	try {
+		await applyTemplate(DEFAULT_TEMPLATE_NAME)
+		defaultTemplateFound.value = true
+	} catch (err) {
+		defaultTemplateFound.value = false
+		announcement.template = ''
+	}
+})
 
 const emailTemplates = createResource({
 	url: 'frappe.client.get_list',
@@ -225,28 +293,21 @@ const templateResource = createResource({
 
 const applyTemplate = async (option) => {
 	const templateName = typeof option === 'object' ? option?.value : option
-	console.log('[AnnouncementModal] applyTemplate called with:', {
-		option,
-		templateName,
-	})
 	if (!templateName) return
 	const result = await templateResource.submit({
 		doctype: 'Email Template',
 		name: templateName,
 	})
-	console.log('[AnnouncementModal] template result:', result)
-	if (result) {
-		announcement.subject = result.subject || ''
-		isHtmlMode.value = !!result.use_html
-		showAdvanced.value = false
-		announcement.message = ''
-		announcement.announcement = result.use_html
-			? result.response_html || ''
-			: result.response || ''
-		console.log('[AnnouncementModal] announcement after apply:', {
-			...announcement,
-		})
+	if (!result) {
+		throw new Error(`Template not found: ${templateName}`)
 	}
+	announcement.subject = result.subject || ''
+	isHtmlMode.value = !!result.use_html
+	showAdvanced.value = false
+	announcement.message = ''
+	announcement.announcement = result.use_html
+		? result.response_html || ''
+		: result.response || ''
 }
 
 const announcementResource = createResource({
@@ -262,6 +323,7 @@ const announcementResource = createResource({
 			subject: announcement.subject,
 			content: announcement.announcement,
 			message: announcement.message,
+			send_email: sendEmail.value ? 1 : 0,
 		}
 	},
 })

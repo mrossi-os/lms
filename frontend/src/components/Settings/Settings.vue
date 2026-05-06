@@ -63,7 +63,7 @@
 </template>
 <script setup>
 import { Dialog, createDocumentResource } from 'frappe-ui'
-import { computed, markRaw, ref, watch } from 'vue'
+import { computed, inject, markRaw, ref, watch } from 'vue'
 import { useSettings } from '@/stores/settings'
 import SettingDetails from '@/components/Settings/SettingDetails.vue'
 import SidebarLink from '@/components/Sidebar/SidebarLink.vue'
@@ -77,8 +77,25 @@ import Coupons from '@/components/Settings/Coupons/Coupons.vue'
 import Transactions from '@/components/Settings/Transactions/Transactions.vue'
 import ZoomSettings from '@/components/Settings/ZoomSettings.vue'
 import GoogleMeetSettings from '@/components/Settings/GoogleMeetSettings.vue'
+import GoogleCalendarSettings from '@/components/Settings/GoogleCalendarSettings.vue'
 import Badges from '@/components/Settings/Badges.vue'
 import AISettings from '@/oslms/components/ai/Settings/AISettings.vue'
+
+const GOOGLE_CALENDAR_ROLES = ['System Manager', 'Gestore']
+const ADMIN_ONLY_ROLES = ['System Manager', 'Administrator']
+
+const user = inject('$user')
+
+const canManageGoogleCalendars = () => {
+	const roles = user?.data?.roles || []
+	return GOOGLE_CALENDAR_ROLES.some((role) => roles.includes(role))
+}
+
+const isAdministrator = () => {
+	if (user?.data?.name === 'Administrator') return true
+	const roles = user?.data?.roles || []
+	return ADMIN_ONLY_ROLES.some((role) => roles.includes(role))
+}
 
 const show = defineModel()
 const doctype = ref('LMS Settings')
@@ -104,6 +121,7 @@ const tabsStructure = computed(() => {
 					key: 'General',
 					label: __('General'),
 					icon: 'Wrench',
+					condition: isAdministrator,
 					sections: [
 						{
 							label: __('System Configurations'),
@@ -288,6 +306,7 @@ const tabsStructure = computed(() => {
 					),
 					icon: 'Award',
 					template: markRaw(Badges),
+					condition: isAdministrator,
 				},
 				{
 					key: 'Categories',
@@ -304,6 +323,7 @@ const tabsStructure = computed(() => {
 					),
 					icon: 'MailPlus',
 					template: markRaw(EmailTemplates),
+					condition: isAdministrator,
 				},
 			],
 		},
@@ -470,6 +490,16 @@ const tabsStructure = computed(() => {
 					icon: 'Presentation',
 					template: markRaw(GoogleMeetSettings),
 				},
+				{
+					key: 'Google Calendar',
+					label: __('Google Calendar'),
+					description: __(
+						'Manage Google Calendars used for live classes and evaluations',
+					),
+					icon: 'Calendar',
+					template: markRaw(GoogleCalendarSettings),
+					condition: canManageGoogleCalendars,
+				},
 			],
 		},
 		{
@@ -604,6 +634,7 @@ const tabsStructure = computed(() => {
 					description: __(
 						'Manage the settings related to user signup and registration',
 					),
+					condition: isAdministrator,
 					sections: [
 						{
 							columns: [
@@ -639,12 +670,71 @@ const tabsStructure = computed(() => {
 					],
 				},
 				{
+					key: 'Welcome Video',
+					label: __('Welcome Video'),
+					icon: 'PlayCircle',
+					description: __(
+						'Configura il video di benvenuto mostrato agli studenti al primo login',
+					),
+					sections: [
+						{
+							columns: [
+								{
+									fields: [
+										{
+											label: __('Enable Welcome Video'),
+											name: 'welcome_video_enabled',
+											type: 'checkbox',
+											description: __(
+												'Se attivo, mostra il video di benvenuto agli studenti la prima volta che accedono.',
+											),
+										},
+										{
+											label: __('Welcome Video Title'),
+											name: 'welcome_video_title',
+											type: 'text',
+											description: __(
+												"Titolo mostrato sull'hero video nella home dello studente.",
+											),
+										},
+										{
+											label: __('Welcome Video Subtitle'),
+											name: 'welcome_video_subtitle',
+											type: 'text',
+											description: __(
+												"Sottotitolo opzionale mostrato sotto al titolo dell'hero video.",
+											),
+										},
+										{
+											label: __('Welcome Video'),
+											name: 'welcome_video_file',
+											type: 'VideoSourceInput',
+											allowedExtensions: [
+												'mp4',
+												'webm',
+												'ogg',
+												'ogv',
+												'mov',
+												'm4v',
+											],
+											description: __(
+												"Incolla un link al video (YouTube, Vimeo, ecc.) oppure scegli un file caricato tramite l'icona. I link esterni vengono mostrati in un iframe, i file locali in un player nativo.",
+											),
+										},
+									],
+								},
+							],
+						},
+					],
+				},
+				{
 					key: 'SEO',
 					label: __('SEO'),
 					icon: 'Search',
 					description: __(
 						'Manage the SEO settings to improve your website ranking on search engines',
 					),
+					condition: isAdministrator,
 					sections: [
 						{
 							columns: [
@@ -695,6 +785,7 @@ const tabsStructure = computed(() => {
 						'Configure AI assistant settings for your learning system',
 					),
 					template: markRaw(AISettings),
+					condition: isAdministrator,
 					sections: [
 						{
 							label: __('Configuration'),

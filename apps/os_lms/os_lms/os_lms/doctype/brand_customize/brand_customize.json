@@ -1,0 +1,237 @@
+{
+	"actions": [],
+	"creation": "2026-05-04 12:00:00.000000",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"section_brand",
+		"company_primary",
+		"column_break_brand",
+		"company_secondary",
+		"section_surfaces",
+		"surface_white",
+		"surface_menu_bar",
+		"surface_selected",
+		"surface_modal",
+		"column_break_surfaces",
+		"surface_gray_1",
+		"surface_gray_2",
+		"surface_gray_3",
+		"surface_gray_7",
+		"section_ink",
+		"ink_gray_5",
+		"ink_gray_6",
+		"ink_gray_7",
+		"column_break_ink",
+		"ink_gray_8",
+		"ink_gray_9",
+		"ink_gray_10",
+		"section_borders",
+		"outline_gray_1",
+		"column_break_borders",
+		"outline_gray_modals",
+		"section_layout",
+		"color_sidebar_menu",
+		"surface_card",
+		"column_break_layout",
+		"color_menu_bar"
+	],
+	"fields": [
+		{
+			"fieldname": "section_brand",
+			"fieldtype": "Section Break",
+			"label": "Brand"
+		},
+		{
+			"fieldname": "company_primary",
+			"fieldtype": "Color",
+			"label": "Company Primary",
+			"description": "CSS: --color-company-primary"
+		},
+		{
+			"fieldname": "column_break_brand",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "company_secondary",
+			"fieldtype": "Color",
+			"label": "Company Secondary",
+			"description": "CSS: --color-company-secondary"
+		},
+		{
+			"fieldname": "section_surfaces",
+			"fieldtype": "Section Break",
+			"label": "Surfaces"
+		},
+		{
+			"fieldname": "surface_white",
+			"fieldtype": "Color",
+			"label": "Surface White",
+			"description": "CSS: --surface-white"
+		},
+		{
+			"fieldname": "surface_menu_bar",
+			"fieldtype": "Color",
+			"label": "Surface Menu Bar",
+			"description": "CSS: --surface-menu-bar"
+		},
+		{
+			"fieldname": "surface_selected",
+			"fieldtype": "Color",
+			"label": "Surface Selected",
+			"description": "CSS: --surface-selected"
+		},
+		{
+			"fieldname": "surface_modal",
+			"fieldtype": "Color",
+			"label": "Surface Modal",
+			"description": "CSS: --surface-modal"
+		},
+		{
+			"fieldname": "column_break_surfaces",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "surface_gray_1",
+			"fieldtype": "Color",
+			"label": "Surface Gray 1",
+			"description": "CSS: --surface-gray-1"
+		},
+		{
+			"fieldname": "surface_gray_2",
+			"fieldtype": "Color",
+			"label": "Surface Gray 2",
+			"description": "CSS: --surface-gray-2"
+		},
+		{
+			"fieldname": "surface_gray_3",
+			"fieldtype": "Color",
+			"label": "Surface Gray 3 (hover)",
+			"description": "CSS: --surface-gray-3"
+		},
+		{
+			"fieldname": "surface_gray_7",
+			"fieldtype": "Color",
+			"label": "Surface Gray 7 (CTA)",
+			"description": "CSS: --surface-gray-7"
+		},
+		{
+			"fieldname": "section_ink",
+			"fieldtype": "Section Break",
+			"label": "Ink (Text)"
+		},
+		{
+			"fieldname": "ink_gray_5",
+			"fieldtype": "Color",
+			"label": "Ink Gray 5 (placeholder)",
+			"description": "CSS: --ink-gray-5"
+		},
+		{
+			"fieldname": "ink_gray_6",
+			"fieldtype": "Color",
+			"label": "Ink Gray 6 (secondary)",
+			"description": "CSS: --ink-gray-6"
+		},
+		{
+			"fieldname": "ink_gray_7",
+			"fieldtype": "Color",
+			"label": "Ink Gray 7 (body)",
+			"description": "CSS: --ink-gray-7"
+		},
+		{
+			"fieldname": "column_break_ink",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "ink_gray_8",
+			"fieldtype": "Color",
+			"label": "Ink Gray 8 (sidebar)",
+			"description": "CSS: --ink-gray-8"
+		},
+		{
+			"fieldname": "ink_gray_9",
+			"fieldtype": "Color",
+			"label": "Ink Gray 9 (titles)",
+			"description": "CSS: --ink-gray-9"
+		},
+		{
+			"fieldname": "ink_gray_10",
+			"fieldtype": "Color",
+			"label": "Ink Gray 10",
+			"description": "CSS: --ink-gray-10"
+		},
+		{
+			"fieldname": "section_borders",
+			"fieldtype": "Section Break",
+			"label": "Borders"
+		},
+		{
+			"fieldname": "outline_gray_1",
+			"fieldtype": "Color",
+			"label": "Outline Gray 1",
+			"description": "CSS: --outline-gray-1"
+		},
+		{
+			"fieldname": "column_break_borders",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "outline_gray_modals",
+			"fieldtype": "Color",
+			"label": "Outline Gray Modals",
+			"description": "CSS: --outline-gray-modals"
+		},
+		{
+			"fieldname": "section_layout",
+			"fieldtype": "Section Break",
+			"label": "Layout"
+		},
+		{
+			"fieldname": "color_sidebar_menu",
+			"fieldtype": "Color",
+			"label": "Sidebar Menu",
+			"description": "CSS: --color-sidebar-menu"
+		},
+		{
+			"fieldname": "surface_card",
+			"fieldtype": "Color",
+			"label": "Surface Card",
+			"description": "CSS: --surface-card"
+		},
+		{
+			"fieldname": "column_break_layout",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "color_menu_bar",
+			"fieldtype": "Color",
+			"label": "Menu Bar",
+			"description": "CSS: --color-menu-bar"
+		}
+	],
+	"grid_page_length": 50,
+	"index_web_pages_for_search": 1,
+	"issingle": 1,
+	"links": [],
+	"modified": "2026-05-04 12:00:00.000000",
+	"modified_by": "Administrator",
+	"module": "OS LMS",
+	"name": "Brand Customize",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"print": 1,
+			"read": 1,
+			"role": "System Manager",
+			"share": 1,
+			"write": 1
+		}
+	],
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": [],
+	"track_changes": 1
+}

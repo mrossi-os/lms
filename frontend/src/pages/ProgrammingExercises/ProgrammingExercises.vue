@@ -119,7 +119,7 @@
 			</ListView>
 		</div>
 		<div v-else class="h-[45vh] lg:h-[53vh] px-5">
-			<EmptyState type="Programming Exercises" />
+			<EmptyState title="Nessun esercizio di programmazione" />
 		</div>
 		<div class="flex items-center justify-end space-x-3 px-5 pt-3 border-t">
 			<Button v-if="exercises.hasNextPage" @click="exercises.next()">
@@ -146,7 +146,6 @@ import {
 	call,
 	createResource,
 	createListResource,
-	dayjs,
 	FeatherIcon,
 	FormControl,
 	ListView,
@@ -159,6 +158,7 @@ import {
 	toast,
 	usePageMeta,
 } from 'frappe-ui'
+import dayjs from '@/utils/dayjs'
 import { ClipboardList, Plus } from 'lucide-vue-next'
 import { sessionStore } from '@/stores/session'
 import { useRouter } from 'vue-router'

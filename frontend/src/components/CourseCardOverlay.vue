@@ -1,8 +1,8 @@
 <template>
-	<div class="flex flex-col gap-4">
-		<div class="border-2 rounded-md min-w-80 max-w-sm card">
+	<div class="flex flex-col gap-4" :class="{ 'md:mt-16': hideVideo }">
+		<div class="border-2 rounded-md w-full md:min-w-80 max-w-sm card">
 			<iframe
-				v-if="course.data.video_link"
+				v-if="course.data.video_link && !hideVideo"
 				:src="video_link"
 				class="rounded-t-md min-h-56 w-full"
 			/>
@@ -121,6 +121,10 @@ const props = defineProps({
 	course: {
 		type: Object,
 		default: null,
+	},
+	hideVideo: {
+		type: Boolean,
+		default: false,
 	},
 })
 

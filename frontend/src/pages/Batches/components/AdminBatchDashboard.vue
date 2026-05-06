@@ -41,7 +41,7 @@
 							<template #prefix>
 								<Plus class="size-4 stroke-1.5" />
 							</template>
-							{{ __('Enroll') }}
+							{{ __('Iscrivi') }}
 						</Button>
 						<Button @click="goToImport">
 							<template #prefix>
@@ -151,7 +151,7 @@
 						subtitle: __('Progress of students in courses and assessments'),
 						xAxis: {
 							key: 'task',
-							title: 'Tasks',
+							title: __('Tasks'),
 							type: 'category',
 						},
 						yAxis: {
@@ -162,7 +162,7 @@
 						},
 						series: [
 							{
-								name: 'value',
+								name: __('Value'),
 								type: 'bar',
 							},
 						],
@@ -191,7 +191,6 @@ import {
 	AxisChart,
 	createResource,
 	createListResource,
-	dayjs,
 	FormControl,
 	ListView,
 	ListHeader,
@@ -204,6 +203,7 @@ import {
 	Button,
 	toast,
 } from 'frappe-ui'
+import dayjs from '@/utils/dayjs'
 import { computed, ref, watch } from 'vue'
 import { formatAmount } from '@/utils'
 import { Plus, Import, Trash2 } from 'lucide-vue-next'
@@ -263,8 +263,18 @@ const students = createListResource({
 	auto: true,
 })
 
+const seriesName = computed(() => __('Value'))
+
 const filteredChartData = computed(() =>
-	(chartData.data || []).filter((item: { value: number }) => item.value > 0),
+	(chartData.data || [])
+		.filter(
+			(item: { value: number; task: string | null }) =>
+				item.value > 0 && item.task,
+		)
+		.map((item: { task: string; value: number }) => ({
+			task: item.task,
+			[seriesName.value]: item.value,
+		})),
 )
 
 watch(searchFilter, () => {
@@ -295,7 +305,10 @@ const studentColumns = computed(() => {
 	]
 })
 
-const removeStudents = async (selections: string[], unselectAll: () => void) => {
+const removeStudents = async (
+	selections: string[],
+	unselectAll: () => void,
+) => {
 	for (const student of selections) {
 		await students.delete.submit(student)
 	}
@@ -307,6 +320,7 @@ const showProgressChart = computed(
 	() =>
 		students.data?.length &&
 		(props.batch?.data?.courses?.length ||
-			props.batch?.data?.assessments?.length),
+			props.batch?.data?.assessments?.length) &&
+		filteredChartData.value.length > 0,
 )
 </script>

@@ -43,6 +43,20 @@
 				v-model="moderator"
 				@update:modelValue="saveRole('moderator')"
 			/>
+			<Switch
+				size="sm"
+				:label="__('Manager')"
+				:description="__('Manage users, batches, and operational settings')"
+				v-model="manager"
+				@update:modelValue="saveRole('manager')"
+			/>
+			<Switch
+				size="sm"
+				:label="__('Teacher')"
+				:description="__('Teach courses and manage assigned batches')"
+				v-model="instructor"
+				@update:modelValue="saveRole('instructor')"
+			/>
 		</div>
 	</div>
 </template>
@@ -57,7 +71,15 @@ const moderator = ref(false)
 const course_creator = ref(false)
 const batch_evaluator = ref(false)
 const lms_student = ref(false)
+const manager = ref(false)
+const instructor = ref(false)
 const readOnlyMode = window.read_only_mode
+
+const ROLE_NAME_MAP = {
+	lms_student: 'LMS Student',
+	manager: 'Gestore',
+	instructor: 'Docente',
+}
 
 const props = defineProps({
 	profile: {
@@ -79,6 +101,8 @@ const roles = createResource({
 			'course_creator',
 			'batch_evaluator',
 			'lms_student',
+			'manager',
+			'instructor',
 		]
 		for (let role of roles) {
 			if (data[role]) eval(role).value = true
@@ -98,9 +122,7 @@ watch(
 
 const saveRole = async (role) => {
 	const roleName =
-		role == 'lms_student'
-			? 'LMS Student'
-			: convertToTitleCase(role.split('_').join(' '))
+		ROLE_NAME_MAP[role] || convertToTitleCase(role.split('_').join(' '))
 	const value = eval(role).value
 
 	await call('lms.lms.api.save_role', {

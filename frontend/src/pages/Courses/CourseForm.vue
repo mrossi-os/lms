@@ -51,13 +51,57 @@
 							/>
 						</div>
 						<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-							<Uploader
-								v-model="courseResource.doc.image"
-								:label="__('Course Image')"
-								:required="false"
-								class="card p-4"
-								@update:modelValue="makeFormDirty()"
-							/>
+							<div>
+								<Uploader
+									v-model="courseResource.doc.image"
+									:label="__('Course Image')"
+									:required="false"
+									class="card p-4"
+									@update:modelValue="makeFormDirty()"
+								/>
+								<div class="card p-4 space-y-4">
+									<Switch
+										size="sm"
+										v-model="courseResource.doc.hero_enabled"
+										:label="__('Hero nella pagina corso')"
+										:description="
+											__(
+												'Mostra una sezione in alto con titolo, introduzione e media dedicato.',
+											)
+										"
+										@change="makeFormDirty()"
+									/>
+									<template v-if="courseResource.doc.hero_enabled">
+										<FormControl
+											v-model="courseResource.doc.hero_media_type"
+											type="select"
+											:label="__('Tipo media hero')"
+											:options="[
+												{ label: __('Video'), value: 'Video' },
+												{ label: __('Image'), value: 'Image' },
+											]"
+											@change="makeFormDirty()"
+										/>
+										<FormControl
+											v-model="courseResource.doc.hero_media_url"
+											:label="__('URL media hero')"
+											:description="
+												__(
+													'Link YouTube/Vimeo, file caricato o URL immagine pubblico.',
+												)
+											"
+											@input="makeFormDirty()"
+										/>
+										<FilePicker
+											v-model="heroMediaFile"
+											:label="__('Oppure scegli un file caricato')"
+											:placeholder="__('Cerca un file immagine o video...')"
+											:allowedExtensions="HERO_MEDIA_EXTENSIONS"
+											@update:fileUrl="onHeroMediaFileUrl"
+										/>
+									</template>
+								</div>
+							</div>
 
 							<ColorSwatches
 								v-model="courseResource.doc.card_gradient"
@@ -387,6 +431,30 @@ import Uploader from '@/components/Controls/Uploader.vue'
 import FeatureSectionEditor from '@/oslms/components/FeatureSectionEditor.vue'
 import NewMemberModal from '@/components/Modals/NewMemberModal.vue'
 import Switch from '@/oslms/components/Form/Switch.vue'
+import FilePicker from '@/components/Controls/FilePicker.vue'
+
+const HERO_MEDIA_EXTENSIONS = [
+	'mp4',
+	'webm',
+	'ogg',
+	'ogv',
+	'mov',
+	'm4v',
+	'png',
+	'jpg',
+	'jpeg',
+	'gif',
+	'webp',
+	'svg',
+]
+
+const heroMediaFile = ref('')
+
+const onHeroMediaFileUrl = (url) => {
+	if (!url) return
+	courseResource.doc.hero_media_url = url
+	makeFormDirty()
+}
 
 const user = inject('$user')
 const router = useRouter()

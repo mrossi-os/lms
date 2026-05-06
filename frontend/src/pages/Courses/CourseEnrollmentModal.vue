@@ -44,7 +44,7 @@
 		<template #actions="{ close }">
 			<div class="text-right">
 				<Button variant="solid" @click="enrollStudent(close)">
-					{{ __('Enroll') }}
+					{{ __('Iscrivi') }}
 				</Button>
 			</div>
 		</template>

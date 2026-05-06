@@ -80,7 +80,7 @@
 				<CourseCard :course="course" />
 			</router-link>
 		</div>
-		<EmptyState v-else-if="!courses.list.loading" :type="__('Courses')" />
+		<EmptyState v-else-if="!courses.list.loading" title="Nessun corso" />
 		<div
 			v-if="!courses.list.loading && courses.hasNextPage"
 			class="flex justify-center mt-5"
@@ -285,7 +285,7 @@ const updateTabFilter = () => {
 }
 
 const updateStudentFilter = () => {
-	if (!user.data || (user.data?.is_student && currentTab.value != 'enrolled')) {
+	if (!user.data || (user.data?.is_student && currentTab.value != 'enrolled' && currentTab.value != 'upcoming')) {
 		filters.value['published'] = 1
 	}
 }

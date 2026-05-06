@@ -149,7 +149,7 @@ watch(
 			statistics.filters.lesson = props.lessonName
 			statistics.reload()
 		}
-	}
+	},
 )
 
 watch(searchText, () => {
@@ -225,7 +225,7 @@ const embedURL = computed(() => {
 
 const tabs = computed(() => {
 	return Object.keys(statisticsData.value).map((source, index) => ({
-		label: __(`Video ${index + 1}`),
+		label: __('Video {0}').format(index + 1),
 		value: source,
 	}))
 })

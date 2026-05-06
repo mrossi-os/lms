@@ -7,6 +7,11 @@ from lms.lms.utils import get_lesson_details as _original_get_lesson_details
 from lms.lms.utils import get_batch_details as _original_get_batch_details
 from lms.lms.utils import get_courses as _orginal_get_courses
 from lms.lms.utils import get_progress
+from os_lms.os_lms.api import (
+    evaluate_lesson_access,
+    evaluate_quiz_access,
+    get_batch_tab_unread_counts,
+)
 from os_lms.os_lms.utils import get_courses_total_minutes
 
 
@@ -22,6 +27,18 @@ def get_course_details(course: str):
     except (json.JSONDecodeError, TypeError):
         course_detail.feature_sections = []
 
+    hero = frappe.db.get_value(
+        "LMS Course",
+        course,
+        ["hero_enabled", "hero_media_type", "hero_media_url"],
+        as_dict=True,
+    ) or {}
+    course_detail.hero = {
+        "enabled": bool(hero.get("hero_enabled")),
+        "media_type": hero.get("hero_media_type") or "Video",
+        "media_url": hero.get("hero_media_url") or "",
+    }
+
     return course_detail
 
 
@@ -29,9 +46,29 @@ def get_course_details(course: str):
 def get_lesson(course: str, chapter: int, lesson: int) -> dict:
     lesson_details = _original_get_lesson(course, chapter, lesson)
     if isinstance(lesson_details, dict) and lesson_details.get("name"):
+        lesson_name = lesson_details["name"]
         lesson_details["tags"] = frappe.db.get_value(
-            "Course Lesson", lesson_details["name"], "tags"
+            "Course Lesson", lesson_name, "tags"
         )
+
+        user = frappe.session.user
+        is_guest = not user or user == "Guest"
+        roles = set(frappe.get_roles(user)) if not is_guest else set()
+        instructors = lesson_details.get("instructors") or []
+        is_admin = bool(
+            roles & {"Moderator", "Course Creator", "LMS Instructor"}
+        ) or user in instructors
+
+        if is_guest or is_admin:
+            lesson_details["lesson_access"] = {"allowed": True}
+            lesson_details["quiz_access"] = {"allowed": True}
+        else:
+            lesson_details["lesson_access"] = evaluate_lesson_access(
+                course, lesson_name
+            )
+            lesson_details["quiz_access"] = evaluate_quiz_access(
+                course, lesson_name
+            )
     return lesson_details
 
 
@@ -148,4 +185,24 @@ def get_batch_details(batch: str):
     except (json.JSONDecodeError, TypeError):
         batch_detail.custom_feature_sections = []
 
+    batch_detail.tab_notifications = get_batch_tab_unread_counts(batch)
+
     return batch_detail
+
+
+def _has_role(member: str, role: str):
+    return frappe.db.get_value(
+        "Has Role",
+        {"parent": member or frappe.session.user, "role": role},
+        "name",
+    )
+
+
+@frappe.whitelist()
+def get_roles(name: str) -> dict:
+    from lms.lms.utils import get_roles as _original_get_roles
+
+    base = _original_get_roles(name)
+    base["manager"] = _has_role(name, "Gestore")
+    base["instructor"] = _has_role(name, "Docente")
+    return base

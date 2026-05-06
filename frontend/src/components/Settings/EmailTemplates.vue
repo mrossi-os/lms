@@ -130,7 +130,7 @@ const removeTemplate = (selections, unselectAll) => {
 		})
 		.catch((err) => {
 			toast.error(
-				cleanError(err.messages[0]) || __('Error deleting email templates')
+				cleanError(err.messages[0]) || __('Error deleting email templates'),
 			)
 		})
 }
@@ -146,12 +146,12 @@ const openTemplateForm = (templateID) => {
 const columns = computed(() => {
 	return [
 		{
-			label: 'Name',
+			label: __('Name'),
 			key: 'name',
 			width: '20rem',
 		},
 		{
-			label: 'Subject',
+			label: __('Subject'),
 			key: 'subject',
 			width: '25rem',
 		},

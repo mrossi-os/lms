@@ -12,6 +12,13 @@ required_apps = ["lms"]
 base_template = "templates/base.html"
 
 
+# Inject Brand Customize CSS in the desk <head>. For website pages (login,
+# Vue SPA wrapper) the link is appended at the end of <head> directly in
+# templates/base.html, so it remains the last stylesheet and overrides
+# defaults from frontend/src/styles/theme/elite/variables.css.
+app_include_css = ["/api/method/os_lms.os_lms.branding.brand_css"]
+
+
 # activate debug if needed
 before_request = ["os_lms.debug.active_debug"]
 
@@ -28,6 +35,7 @@ after_migrate = [
 override_doctype_class = {
     "Email Account": "os_lms.overrides.email_account.CustomEmailAccount",
     "Data Import": "os_lms.overrides.data_import.CustomDataImport",
+    "LMS Live Class": "os_lms.overrides.lms_live_class.CustomLMSLiveClass",
 }
 # override sqlite search to add custom doctypes
 sqlite_search = ["os_lms.overrides.sqlite.CustomLearningSearch"]
@@ -43,6 +51,10 @@ override_whitelisted_methods = {
     "lms.lms.utils.get_lesson_creation_details": "os_lms.os_lms.override_utils.get_lesson_creation_details",
     "lms.lms.utils.get_lesson": "os_lms.os_lms.override_utils.get_lesson",
     "lms.lms.utils.get_batch_details": "os_lms.os_lms.override_utils.get_batch_details",
+    "lms.lms.api.get_notifications": "os_lms.os_lms.override_api.get_notifications",
+    "lms.lms.api.get_user_info": "os_lms.os_lms.override_api.get_user_info",
+    "lms.lms.utils.get_roles": "os_lms.os_lms.override_utils.get_roles",
+    "lms.lms.api.save_role": "os_lms.os_lms.override_api.save_role",
 }
 
 # override email
@@ -63,6 +75,8 @@ fixtures = [
                     "Course Lesson",
                     "LMS Course",
                     "LMS Batch",
+                    "LMS Live Class",
+                    "User",
                 ],
             ]
         ],
@@ -78,11 +92,28 @@ doc_events = {
     "Course Lesson": {
         "before_save": "os_lms.events.lesson.reset_index_status_on_content_change"
     },
+    "User": {
+        "after_insert": "os_lms.auth.mark_first_login",
+    },
+    "LMS Live Class": {
+        "before_save": "os_lms.os_lms.live_class_reminders.reset_sent_at",
+    },
+    "Brand Customize": {
+        "on_update": "os_lms.os_lms.branding.clear_brand_cache",
+    },
 }
+
+
+on_session_creation = ["os_lms.auth.on_session_creation"]
 
 
 scheduler_events = {
     "daily": [
         "os_lms.os_lms.ai.scheduler.reindex_lesson_content",
     ],
+    "cron": {
+        "*/15 * * * *": [
+            "os_lms.os_lms.live_class_reminders.send_live_class_reminders",
+        ],
+    },
 }

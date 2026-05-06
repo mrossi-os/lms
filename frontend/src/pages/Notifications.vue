@@ -66,11 +66,11 @@
 				<div
 					v-if="isMentionOrComment(log)"
 					v-html="log.email_content"
-					class="bg-surface-gray-2 rounded-md px-3 py-2 line-clamp-3 overflow-hidden"
+					class="bg-surface-gray-2 text-ink-gray-9 rounded-md px-3 py-2 line-clamp-3 overflow-hidden"
 				></div>
 				<div
 					v-else-if="showDetails(log)"
-					class="flex flex-col sm:flex-row sm:items-stretch border border-outline-gray-2 sm:space-x-2 rounded-md"
+					class="flex flex-col sm:flex-row sm:items-stretch border border-outline-gray-2 sm:space-x-2 rounded-md card"
 				>
 					<iframe
 						v-if="
@@ -95,7 +95,9 @@
 							{{
 								log.document_type === 'LMS Course'
 									? __('New Course')
-									: __('New Batch')
+									: log.document_type === 'LMS Live Class'
+										? __('Live Class')
+										: __('New Batch')
 							}}
 						</div>
 						<div class="font-semibold mb-1 text-ink-gray-9">
@@ -173,10 +175,10 @@ import {
 	Button,
 	createListResource,
 	createResource,
-	dayjs,
 	TabButtons,
 	usePageMeta,
 } from 'frappe-ui'
+import dayjs from '@/utils/dayjs'
 import { sessionStore } from '../stores/session'
 import { computed, inject, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -251,17 +253,27 @@ const handleMarkAsRead = (logName) => {
 const navigateToPage = (log) => {
 	if (!log.link) return
 	handleMarkAsRead(log.name)
-	let link = log.link.split('/')
+
+	const [path, hash] = log.link.split('#')
+	const link = path.split('/')
+
+	if (path.startsWith('/api/method/')) {
+		window.location.href = log.link
+		return
+	}
+
 	if (link[2] == 'courses') {
 		router.push({
 			name: 'CourseDetail',
 			params: { courseName: link[3] },
+			hash: hash ? `#${hash}` : undefined,
 		})
 	} else if (link.includes('batches')) {
 		if (link.includes('details')) {
 			router.push({
 				name: 'BatchDetail',
-				params: { batchName: link.pop() },
+				params: { batchName: link[link.indexOf('details') + 1] },
+				hash: hash ? `#${hash}` : undefined,
 			})
 		} else {
 			router.push({
@@ -295,7 +307,7 @@ const isMentionOrComment = (log) => {
 
 const showDetails = (log) => {
 	return (
-		['LMS Course', 'LMS Batch'].includes(log.document_type) &&
+		['LMS Course', 'LMS Batch', 'LMS Live Class'].includes(log.document_type) &&
 		log.document_details
 	)
 }

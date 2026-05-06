@@ -131,5 +131,134 @@
         "fieldtype": "Check",
         "default": "0",
         "insert_after": "enforce_lesson_order"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Course-hero_enabled",
+        "dt": "LMS Course",
+        "label": "Hero Enabled",
+        "fieldname": "hero_enabled",
+        "fieldtype": "Check",
+        "default": "0",
+        "insert_after": "enforce_quiz_on_completion"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Course-hero_media_type",
+        "dt": "LMS Course",
+        "label": "Hero Media Type",
+        "fieldname": "hero_media_type",
+        "fieldtype": "Select",
+        "options": "Video\nImage",
+        "default": "Video",
+        "insert_after": "hero_enabled",
+        "depends_on": "eval:doc.hero_enabled"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Course-hero_media_url",
+        "dt": "LMS Course",
+        "label": "Hero Media URL",
+        "fieldname": "hero_media_url",
+        "fieldtype": "Data",
+        "insert_after": "hero_media_type",
+        "depends_on": "eval:doc.hero_enabled"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Settings-welcome_video_section",
+        "dt": "LMS Settings",
+        "label": "Welcome Video",
+        "fieldname": "welcome_video_section",
+        "fieldtype": "Section Break",
+        "insert_after": "trueskills_api_endpoint",
+        "collapsible": 1
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Settings-welcome_video_enabled",
+        "dt": "LMS Settings",
+        "label": "Enable Welcome Video",
+        "fieldname": "welcome_video_enabled",
+        "fieldtype": "Check",
+        "default": "0",
+        "insert_after": "welcome_video_section"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Settings-welcome_video_title",
+        "dt": "LMS Settings",
+        "label": "Welcome Video Title",
+        "fieldname": "welcome_video_title",
+        "fieldtype": "Data",
+        "insert_after": "welcome_video_enabled",
+        "depends_on": "eval:doc.welcome_video_enabled"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Settings-welcome_video_subtitle",
+        "dt": "LMS Settings",
+        "label": "Welcome Video Subtitle",
+        "fieldname": "welcome_video_subtitle",
+        "fieldtype": "Data",
+        "insert_after": "welcome_video_title",
+        "depends_on": "eval:doc.welcome_video_enabled"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Settings-welcome_video_file",
+        "dt": "LMS Settings",
+        "label": "Welcome Video (URL or file path)",
+        "fieldname": "welcome_video_file",
+        "fieldtype": "Data",
+        "insert_after": "welcome_video_subtitle",
+        "depends_on": "eval:doc.welcome_video_enabled",
+        "description": "Paste a video URL (YouTube, Vimeo, etc.) or pick a file path. URLs are rendered as iframe embeds; paths as native <video>."
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "User-welcome_video_seen",
+        "dt": "User",
+        "label": "Welcome Video Seen",
+        "fieldname": "welcome_video_seen",
+        "fieldtype": "Check",
+        "default": "0",
+        "insert_after": "bio",
+        "hidden": 1,
+        "no_copy": 1,
+        "read_only": 1
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "User-first_login",
+        "dt": "User",
+        "label": "First Login",
+        "fieldname": "first_login",
+        "fieldtype": "Check",
+        "default": "0",
+        "insert_after": "welcome_video_seen",
+        "hidden": 1,
+        "no_copy": 1,
+        "read_only": 1
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Live Class-reminders_section",
+        "dt": "LMS Live Class",
+        "label": "Reminders",
+        "fieldname": "reminders_section",
+        "fieldtype": "Section Break",
+        "insert_after": "description",
+        "collapsible": 1
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Live Class-reminders",
+        "dt": "LMS Live Class",
+        "label": "Reminders",
+        "fieldname": "reminders",
+        "fieldtype": "Table",
+        "options": "LMS Live Class Reminder",
+        "insert_after": "reminders_section"
     }
 ]

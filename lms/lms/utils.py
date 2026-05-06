@@ -837,6 +837,7 @@ def update_course_filters(filters: dict) -> tuple:
 	if filters.get("enrolled"):
 		enrolled_courses = frappe.get_all("LMS Enrollment", {"member": frappe.session.user}, pluck="course")
 		filters.update({"name": ["in", enrolled_courses]})
+		filters.pop("published", None)
 		del filters["enrolled"]
 
 	if filters.get("created"):
@@ -926,8 +927,11 @@ def get_course_details(course: str):
 
 	is_course_published = frappe.db.get_value("LMS Course", course, "published")
 	membership = get_membership(course)
-	if not is_course_published and not can_modify_course(course) and not membership:
-		return {}
+
+	if not membership and not is_course_published and not can_modify_course(course):
+		membership = enroll_via_batch_if_eligible(course, frappe.session.user)
+		if not membership:
+			return {}
 
 	fields = get_course_fields()
 	course_details = frappe.db.get_value(
@@ -1274,6 +1278,12 @@ def get_batch_courses(batch: str) -> list:
 	if not guest_access_allowed():
 		return []
 
+	is_batch_member = frappe.db.exists(
+		"LMS Batch Enrollment", {"batch": batch, "member": frappe.session.user}
+	)
+	if is_batch_member:
+		ensure_batch_course_enrollments(batch, frappe.session.user)
+
 	courses = []
 	course_list = frappe.get_all("Batch Course", {"parent": batch}, ["name", "course"])
 
@@ -1284,6 +1294,46 @@ def get_batch_courses(batch: str) -> list:
 			courses.append(details)
 
 	return courses
+
+
+def ensure_batch_course_enrollments(batch: str, member: str):
+	"""Ensure the member is enrolled in all courses of the batch."""
+	batch_courses = frappe.get_all("Batch Course", {"parent": batch}, pluck="course")
+	for course in batch_courses:
+		if not frappe.db.exists("LMS Enrollment", {"course": course, "member": member}):
+			enrollment = frappe.new_doc("LMS Enrollment")
+			enrollment.course = course
+			enrollment.member = member
+			enrollment.enrollment_from_batch = batch
+			enrollment.save(ignore_permissions=True)
+
+
+def enroll_via_batch_if_eligible(course: str, member: str):
+	"""If the member belongs to a batch that includes this course, create the enrollment and return it."""
+	if member == "Guest":
+		return None
+
+	batch = frappe.db.sql(
+		"""
+		SELECT bc.parent
+		FROM `tabBatch Course` bc
+		INNER JOIN `tabLMS Batch Enrollment` be ON be.batch = bc.parent
+		WHERE bc.course = %s AND be.member = %s
+		LIMIT 1
+		""",
+		(course, member),
+		as_dict=True,
+	)
+
+	if not batch:
+		return None
+
+	enrollment = frappe.new_doc("LMS Enrollment")
+	enrollment.course = course
+	enrollment.member = member
+	enrollment.enrollment_from_batch = batch[0].parent
+	enrollment.save(ignore_permissions=True)
+	return get_membership(course, member)
 
 
 @frappe.whitelist()
@@ -2113,6 +2163,9 @@ def get_program_details(program_name: str) -> dict:
 	previous_progress = 0
 	for i, course in enumerate(program_courses):
 		details = get_course_details(course.course)
+		if not details:
+			continue
+
 		if i == 0:
 			details.eligible = True
 		elif previous_progress == 100:

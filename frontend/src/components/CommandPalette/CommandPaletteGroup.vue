@@ -1,7 +1,7 @@
 <template>
 	<div v-for="result in list" class="px-2.5 space-y-2">
 		<div class="text-ink-gray-5 px-2">
-			{{ result.title }}
+			{{ __(result.title) }}
 		</div>
 		<div class="">
 			<div
@@ -16,7 +16,7 @@
 						:is="item.icon"
 						class="size-4 stroke-1.5 text-ink-gray-6"
 					/>
-					<div v-html="item.title"></div>
+					<div v-html="item.title" class="text-white"></div>
 				</div>
 				<div v-if="item.modified" class="text-ink-gray-5">
 					{{ dayjs.unix(item.modified).fromNow(true) }}

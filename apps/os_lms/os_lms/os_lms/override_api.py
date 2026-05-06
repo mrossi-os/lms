@@ -1,8 +1,34 @@
 import frappe
+from frappe.utils import cint
 
 
 from lms.lms.api import get_sidebar_settings as _original_get_sidebar_settings
 from lms.lms.api import get_lms_settings as _original_get_lms_settings
+from lms.lms.api import get_user_info as _original_get_user_info
+from lms.lms.api import save_role as _original_save_role
+
+
+EXTRA_LMS_ROLES = ["Gestore", "Docente"]
+
+
+@frappe.whitelist()
+def save_role(user: str, role: str, value: int):
+    if role not in EXTRA_LMS_ROLES:
+        return _original_save_role(user, role, value)
+
+    frappe.only_for("Moderator")
+    if cint(value):
+        if not frappe.db.exists("Has Role", {"parent": user, "role": role}):
+            doc = frappe.new_doc("Has Role")
+            doc.parent = user
+            doc.parenttype = "User"
+            doc.parentfield = "roles"
+            doc.role = role
+            doc.save(ignore_permissions=True)
+    else:
+        frappe.db.delete("Has Role", {"parent": user, "role": role})
+    frappe.clear_cache(user=user)
+    return True
 
 
 from lms.command_palette import (
@@ -29,6 +55,16 @@ def get_lms_settings():
     result = _original_get_lms_settings()
     if isinstance(result, dict):
          result["ai_enabled"] = frappe.get_single("LMSA Settings").get("enabled")
+    return result
+
+
+@frappe.whitelist()
+def get_user_info():
+    result = _original_get_user_info()
+    if result and frappe.session.user != "Guest":
+        result["welcome_video_seen"] = bool(
+            frappe.db.get_value("User", frappe.session.user, "welcome_video_seen")
+        )
     return result
 
 
@@ -120,11 +156,62 @@ def can_access_lesson(lesson, roles):
 # endregion
 
 
+@frappe.whitelist(allow_guest=True)
+def get_new_courses():
+	from lms.lms.utils import get_course_details
+
+	courses = frappe.get_all(
+		"LMS Course",
+		{"published": 1},
+		order_by="published_on desc, enrollments desc",
+		limit=6,
+		pluck="name",
+	)
+	return [get_course_details(c) for c in courses if get_course_details(c)]
+
+
+@frappe.whitelist(allow_guest=True)
+def get_most_followed_courses():
+	from lms.lms.utils import get_course_details
+
+	courses = frappe.get_all(
+		"LMS Course",
+		{"published": 1, "enrollments": [">", 0]},
+		order_by="enrollments desc",
+		limit=6,
+		pluck="name",
+	)
+	return [get_course_details(c) for c in courses if get_course_details(c)]
+
+
 @frappe.whitelist()
-def get_announcements(batch: str):
+def get_notifications(filters: dict = None):
+    from lms.lms.api import get_notifications as _original_get_notifications
+
+    notifications = _original_get_notifications(filters)
+
+    for notification in notifications:
+        if notification.get("document_type") == "LMS Live Class":
+            details = frappe.db.get_value(
+                "LMS Live Class",
+                notification["document_name"],
+                ["title", "date as start_date", "time as start_time", "duration", "description as short_introduction", "batch_name"],
+                as_dict=True,
+            )
+            if details:
+                details["instructors"] = []
+                details["video_link"] = None
+                notification["document_details"] = details
+
+    return notifications
+
+
+@frappe.whitelist()
+def get_announcements(batch: str, start: int = 0, page_length: int = 10):
     """
     Override: per studenti, ritorna solo gli annunci in cui sono destinatari
     (recipients o cc). Moderatori/Batch Evaluator vedono tutto.
+    Restituisce {data, total} per supportare la paginazione lato client.
     """
     from frappe import _
 
@@ -170,10 +257,13 @@ def get_announcements(batch: str):
                 filtered.append(comm)
         communications = filtered
 
-    for communication in communications:
+    total = len(communications)
+    paginated = communications[start : start + page_length]
+
+    for communication in paginated:
         communication.image = frappe.get_cached_value(
             "User", communication.sender, "user_image"
         )
 
-    return communications
+    return {"data": paginated, "total": total}
 

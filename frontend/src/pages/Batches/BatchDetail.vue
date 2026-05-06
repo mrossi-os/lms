@@ -39,6 +39,21 @@
 			<BatchOverview v-if="!isAdmin && !isStudent" :batch="batch" />
 			<div v-else>
 				<Tabs :tabs="tabs" v-model="tabIndex">
+					<template #tab-item="{ tab }">
+						<button
+							class="flex items-center gap-1.5 text-base text-ink-gray-5 duration-300 ease-in-out hover:text-ink-gray-9 data-[state=active]:text-ink-gray-9 py-2.5 cursor-pointer"
+						>
+							<component v-if="tab.icon" :is="tab.icon" class="size-4" />
+							{{ tab.label }}
+							<Badge
+								v-if="tabBadgeCount(tab.key)"
+								theme="red"
+								size="sm"
+							>
+								{{ tabBadgeCount(tab.key) }}
+							</Badge>
+						</button>
+					</template>
 					<template #tab-panel="{ tab }">
 						<div
 							v-if="tab.key == 'Discussions'"
@@ -84,7 +99,7 @@ import {
 	Trash2,
 	TrendingUp,
 } from 'lucide-vue-next'
-import { computed, inject, markRaw, ref, watch } from 'vue'
+import { computed, inject, markRaw, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import {
 	Badge,
@@ -109,10 +124,17 @@ const router = useRouter()
 const route = useRoute()
 const { brand } = sessionStore()
 const user = inject('$user')
+const socket = inject('$socket')
 const childRef = ref(null)
 const tabIndex = ref(0)
 const tabs = ref([])
 const openCertificateDialog = ref(false)
+
+const TAB_KEY_TO_SECTION = {
+	Classes: 'classes',
+	Announcements: 'announcements',
+	Discussions: 'discussions',
+}
 
 const props = defineProps({
 	batchName: {
@@ -132,11 +154,52 @@ const updateTabIndex = () => {
 	}
 }
 
+const markTabNotificationsRead = createResource({
+	url: 'os_lms.os_lms.api.mark_batch_tab_notifications_read',
+})
+
+const tabBadgeCount = (key) => {
+	const section = TAB_KEY_TO_SECTION[key]
+	if (!section) return 0
+	return batch.data?.tab_notifications?.[section] || 0
+}
+
+const handleActiveTab = () => {
+	const tab = tabs.value[tabIndex.value]
+	if (!tab) return
+	const section = TAB_KEY_TO_SECTION[tab.key]
+	if (!section) return
+	if (!tabBadgeCount(tab.key)) return
+	markTabNotificationsRead.submit(
+		{ batch: props.batchName, section },
+		{
+			onSuccess() {
+				if (batch.data?.tab_notifications) {
+					batch.data.tab_notifications[section] = 0
+				}
+			},
+		},
+	)
+}
+
 watch(tabIndex, () => {
 	const tab = tabs.value[tabIndex.value]
 	if (tab.key.toLowerCase() != route.hash.replace('#', '')) {
 		router.push({ ...route, hash: `#${tab.key.toLowerCase()}` })
 	}
+	handleActiveTab()
+})
+
+const onNotificationsPublished = () => {
+	batch.reload()
+}
+
+onMounted(() => {
+	socket.on('publish_lms_notifications', onNotificationsPublished)
+})
+
+onUnmounted(() => {
+	socket.off('publish_lms_notifications', onNotificationsPublished)
 })
 
 const batch = createResource({
@@ -156,6 +219,7 @@ const batch = createResource({
 watch(batch, () => {
 	updateTabs()
 	updateTabIndex()
+	handleActiveTab()
 })
 
 const updateTabs = () => {

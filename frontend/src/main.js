@@ -1,5 +1,13 @@
 import './index.css'
 import { createApp, watch } from 'vue'
+
+// Append Brand Customize CSS as the last <link> in <head> so user-defined
+// values override the static theme. Done at runtime because Vite (dev mode)
+// injects imported CSS dynamically after static <link> tags.
+const brandLink = document.createElement('link')
+brandLink.rel = 'stylesheet'
+brandLink.href = '/api/method/os_lms.os_lms.branding.brand_css'
+document.head.appendChild(brandLink)
 import router from './router'
 import App from './App.vue'
 import { createPinia } from 'pinia'

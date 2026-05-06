@@ -8,7 +8,7 @@
 			<span class="leading-5">
 				{{
 					__(
-						'Please select a conferencing provider and add an account to the batch to create live classes.'
+						'Please select a conferencing provider and add an account to the batch to create live classes.',
 					)
 				}}
 			</span>
@@ -18,7 +18,7 @@
 			<div class="text-lg font-semibold text-ink-gray-9">
 				{{ __('Live Class') }}
 			</div>
-			<Button v-if="canCreateClass()" @click="openLiveClassModal">
+			<Button v-if="canCreateClass()" @click="openCreateModal">
 				<template #prefix>
 					<Plus class="h-4 w-4" />
 				</template>
@@ -33,7 +33,7 @@
 		>
 			<div
 				v-for="cls in liveClasses.data"
-				class="flex flex-col border rounded-md h-full text-ink-gray-7 hover:border-outline-gray-3 p-3"
+				class="relative flex flex-col border rounded-md h-full text-ink-gray-7 hover:border-outline-gray-3 p-3 card"
 				:class="{
 					'cursor-pointer': isAdmin() && cls.attendees > 0,
 				}"
@@ -43,7 +43,35 @@
 					}
 				"
 			>
-				<div class="font-semibold text-ink-gray-9 mb-1">
+				<div
+					v-if="isAdmin()"
+					class="absolute top-2 right-2"
+					@click.stop
+				>
+					<Dropdown
+						:options="[
+							{
+								label: __('Edit'),
+								icon: 'edit-2',
+								onClick: () => openEditModal(cls),
+							},
+							{
+								label: __('Delete'),
+								icon: 'trash-2',
+								onClick: () => openDeleteModal(cls),
+							},
+						]"
+					>
+						<template #default>
+							<Button :variant="'ghost'">
+								<template #icon>
+									<MoreVertical class="w-4 h-4" />
+								</template>
+							</Button>
+						</template>
+					</Dropdown>
+				</div>
+				<div class="font-semibold text-ink-gray-9 mb-1 pr-8">
 					{{ cls.title }}
 				</div>
 				<div class="short-introduction">
@@ -71,6 +99,7 @@
 							v-if="user.data?.is_moderator || user.data?.is_evaluator"
 							:href="cls.start_url || cls.join_url"
 							target="_blank"
+							@click.stop
 							class="cursor-pointer inline-flex items-center justify-center gap-2 transition-colors focus:outline-none text-ink-gray-8 bg-surface-gray-2 hover:bg-surface-gray-3 active:bg-surface-gray-4 focus-visible:ring focus-visible:ring-outline-gray-3 h-7 text-base px-2 rounded"
 							:class="cls.join_url ? 'w-full' : 'w-1/2'"
 						>
@@ -80,6 +109,7 @@
 						<a
 							:href="cls.join_url"
 							target="_blank"
+							@click.stop
 							class="w-full cursor-pointer inline-flex items-center justify-center gap-2 transition-colors focus:outline-none text-ink-gray-8 bg-surface-gray-2 hover:bg-surface-gray-3 active:bg-surface-gray-4 focus-visible:ring focus-visible:ring-outline-gray-3 h-7 text-base px-2 rounded"
 						>
 							<Video class="h-4 w-4 stroke-1.5" />
@@ -113,6 +143,7 @@
 		:zoomAccount="batch.data?.zoom_account"
 		:googleMeetAccount="batch.data?.google_meet_account"
 		:conferencingProvider="batch.data?.conferencing_provider"
+		:liveClass="editingClass"
 		v-model:reloadLiveClasses="liveClasses"
 	/>
 
@@ -121,9 +152,63 @@
 		v-model="showAttendance"
 		:live_class="attendanceFor"
 	/>
+
+	<Dialog
+		v-if="deletingClass"
+		v-model="showDeleteDialog"
+		:options="{
+			title: __('Delete live class'),
+			actions: [
+				{
+					label: __('Cancel'),
+					onClick: ({ close }) => close(),
+				},
+				{
+					label: __('Delete'),
+					variant: 'solid',
+					theme: 'red',
+					onClick: ({ close }) => confirmDelete(close),
+				},
+			],
+		}"
+	>
+		<template #body-content>
+			<div class="space-y-3 text-ink-gray-7 text-sm leading-5">
+				<p>
+					{{
+						__(
+							'Sei sicuro di voler eliminare la lezione {0}? Questa azione non si può annullare.',
+						).format(deletingClass.title)
+					}}
+				</p>
+				<label class="flex items-start gap-2 cursor-pointer">
+					<input
+						type="checkbox"
+						v-model="notifyStudentsOnDelete"
+						class="mt-0.5"
+					/>
+					<span>
+						{{
+							__(
+								'Notifica gli studenti del batch via email + notifica in piattaforma.',
+							)
+						}}
+					</span>
+				</label>
+			</div>
+		</template>
+	</Dialog>
 </template>
 <script setup>
-import { createListResource, Button, Tooltip } from 'frappe-ui'
+import {
+	createListResource,
+	createResource,
+	Button,
+	Tooltip,
+	Dialog,
+	Dropdown,
+	toast,
+} from 'frappe-ui'
 import {
 	Plus,
 	Clock,
@@ -132,9 +217,9 @@ import {
 	Monitor,
 	Info,
 	AlertCircle,
+	MoreVertical,
 } from 'lucide-vue-next'
 import { inject, ref } from 'vue'
-import { formatTime } from '@/utils/'
 import LiveClassModal from '@/components/Modals/LiveClassModal.vue'
 import LiveClassAttendance from '@/components/Modals/LiveClassAttendance.vue'
 
@@ -144,6 +229,10 @@ const dayjs = inject('$dayjs')
 const readOnlyMode = window.read_only_mode
 const showAttendance = ref(false)
 const attendanceFor = ref(null)
+const editingClass = ref(null)
+const deletingClass = ref(null)
+const showDeleteDialog = ref(false)
+const notifyStudentsOnDelete = ref(true)
 
 const props = defineProps({
 	batch: {
@@ -158,11 +247,13 @@ const liveClasses = createListResource({
 		batch_name: props.batch.data?.name,
 	},
 	fields: [
+		'name',
 		'title',
 		'description',
 		'time',
 		'date',
 		'duration',
+		'timezone',
 		'attendees',
 		'start_url',
 		'join_url',
@@ -174,8 +265,55 @@ const liveClasses = createListResource({
 	auto: true,
 })
 
-const openLiveClassModal = () => {
+const fetchLiveClassDetails = createResource({
+	url: 'frappe.client.get',
+	makeParams(values) {
+		return {
+			doctype: 'LMS Live Class',
+			name: values.name,
+		}
+	},
+})
+
+const deleteLiveClass = createResource({
+	url: 'os_lms.os_lms.api.delete_live_class',
+})
+
+const openCreateModal = () => {
+	editingClass.value = null
 	showLiveClassModal.value = true
+}
+
+const openEditModal = async (cls) => {
+	const full = await fetchLiveClassDetails.submit({ name: cls.name })
+	editingClass.value = full
+	showLiveClassModal.value = true
+}
+
+const openDeleteModal = (cls) => {
+	deletingClass.value = cls
+	notifyStudentsOnDelete.value = true
+	showDeleteDialog.value = true
+}
+
+const confirmDelete = (close) => {
+	deleteLiveClass.submit(
+		{
+			name: deletingClass.value.name,
+			notify_students: notifyStudentsOnDelete.value ? 1 : 0,
+		},
+		{
+			onSuccess() {
+				toast.success(__('Lezione eliminata'))
+				liveClasses.reload()
+				deletingClass.value = null
+				close()
+			},
+			onError(err) {
+				toast.error(err.messages?.[0] || err)
+			},
+		},
+	)
 }
 
 const hasProviderAccount = () => {

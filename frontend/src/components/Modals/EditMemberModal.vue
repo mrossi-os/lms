@@ -85,6 +85,16 @@
 							:label="__('Moderator')"
 							v-model="roles.moderator"
 						/>
+						<Switch
+							size="sm"
+							:label="__('Manager')"
+							v-model="roles.manager"
+						/>
+						<Switch
+							size="sm"
+							:label="__('Teacher')"
+							v-model="roles.instructor"
+						/>
 					</div>
 				</div>
 			</div>
@@ -123,6 +133,8 @@ const ROLE_MAP: Record<string, string> = {
 	course_creator: 'Course Creator',
 	batch_evaluator: 'Batch Evaluator',
 	lms_student: 'LMS Student',
+	manager: 'Gestore',
+	instructor: 'Docente',
 }
 
 const memberData = reactive({
@@ -137,6 +149,8 @@ const roles = reactive({
 	course_creator: false,
 	batch_evaluator: false,
 	lms_student: false,
+	manager: false,
+	instructor: false,
 })
 
 const originalRoles = reactive({
@@ -144,6 +158,8 @@ const originalRoles = reactive({
 	course_creator: false,
 	batch_evaluator: false,
 	lms_student: false,
+	manager: false,
+	instructor: false,
 })
 
 const loadMember = async (email: string) => {
@@ -165,11 +181,15 @@ const loadMember = async (email: string) => {
 		roles.course_creator = !!userRoles.course_creator
 		roles.batch_evaluator = !!userRoles.batch_evaluator
 		roles.lms_student = !!userRoles.lms_student
+		roles.manager = !!userRoles.manager
+		roles.instructor = !!userRoles.instructor
 
 		originalRoles.moderator = roles.moderator
 		originalRoles.course_creator = roles.course_creator
 		originalRoles.batch_evaluator = roles.batch_evaluator
 		originalRoles.lms_student = roles.lms_student
+		originalRoles.manager = roles.manager
+		originalRoles.instructor = roles.instructor
 	} catch (err: any) {
 		toast.error(cleanError(err.messages?.[0]) || __('Unable to load member'))
 	} finally {

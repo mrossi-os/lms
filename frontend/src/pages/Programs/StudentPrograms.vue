@@ -15,7 +15,7 @@
 					<div
 						v-for="program in data"
 						@click="openDetails(program.name, category)"
-						class="border rounded-md p-3 hover:border-outline-gray-3 cursor-pointer"
+						class="border rounded-md p-3 hover:border-outline-gray-3 cursor-pointer card"
 					>
 						<div class="text-lg font-semibold text-ink-gray-9 mb-2">
 							{{ program.name }}
@@ -46,13 +46,27 @@
 						</div>
 					</div>
 				</div>
-				<EmptyState v-else :type="convertToTitleCase(category) + __(' Programs')" />
+				<div class="flex flex-col items-center justify-center mt-60" v-else>
+					<GraduationCap class="size-10 mx-auto stroke-1 text-ink-gray-5" />
+					<div class="text-lg font-semibold text-ink-gray-7 mb-2.5">
+						{{ __('No Programs Enrolled') }}
+					</div>
+					<div class="text-p-base w-full md:w-2/5 text-center text-ink-gray-7">
+						{{
+							__(
+								'There are no programs enrolled currently. Keep an eye out, fresh learning experiences are on the way!',
+							)
+						}}
+					</div>
+				</div>
+
 				<!-- <div v-else class="col-span-3 text-center text-ink-gray-5">
                     {{ __('No programs found in this category.') }}
                 </div> -->
 			</div>
 		</div>
 	</div>
+
 	<ProgramEnrollment
 		v-model="showEnrollmentConfirmation"
 		:programName="enrollmentProgram"
@@ -61,7 +75,7 @@
 <script setup lang="ts">
 import { createResource, TabButtons } from 'frappe-ui'
 import { computed, ref } from 'vue'
-import { BookOpen, User } from 'lucide-vue-next'
+import { BookOpen, User, GraduationCap } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { convertToTitleCase } from '@/utils'
 import ProgressBar from '@/components/ProgressBar.vue'

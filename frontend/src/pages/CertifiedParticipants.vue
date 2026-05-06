@@ -108,7 +108,7 @@
 			</div>
 		</div>
 		<div v-else class="h-[40vh] lg:h-[53vh] px-5">
-			<EmptyState type="Certified Members" />
+			<EmptyState title="Nessun membro certificato" />
 		</div>
 		<div class="flex items-center justify-end space-x-3 border-t pt-3 px-5">
 			<Button v-if="participants.hasNextPage" @click="participants.next()">

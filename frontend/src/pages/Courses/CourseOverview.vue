@@ -1,13 +1,62 @@
 <template>
 	<div class="p-5">
-		<div class="flex justify-between w-full space-x-5">
-			<div class="md:w-2/3">
-				<div class="text-3xl font-semibold text-ink-gray-9">
+		<section
+			v-if="hasHero"
+			class="relative -mx-5 -mt-5 mb-8 h-[58vh] max-h-[60vh] md:h-[50vh] md:max-h-[50vh] bg-black overflow-hidden"
+		>
+			<template v-if="course.data.hero?.media_type === 'Video'">
+				<video
+					v-if="isDirectVideoFile(course.data.hero?.media_url)"
+					:src="course.data.hero?.media_url"
+					controls
+					class="absolute inset-0 w-full h-full object-cover"
+				/>
+				<iframe
+					v-else
+					:src="heroEmbedUrl"
+					class="absolute inset-0 w-full h-full"
+					frameborder="0"
+					allow="
+						accelerometer;
+						autoplay;
+						clipboard-write;
+						encrypted-media;
+						gyroscope;
+						picture-in-picture;
+					"
+					allowfullscreen
+				/>
+			</template>
+			<img
+				v-else-if="course.data.hero?.media_type === 'Image'"
+				:src="course.data.hero?.media_url"
+				:alt="course.data.title"
+				class="absolute inset-0 w-full h-full object-cover"
+			/>
+			<div
+				class="absolute inset-x-0 bottom-0 p-6 md:p-8 bg-gradient-to-t from-black/80 via-black/50 to-transparent text-white pointer-events-none"
+			>
+				<h1 class="text-2xl md:text-4xl font-semibold">
 					{{ course.data.title }}
-				</div>
-				<div class="my-3 leading-6 text-ink-gray-7">
+				</h1>
+				<p
+					v-if="course.data.short_introduction"
+					class="mt-2 max-w-3xl text-sm md:text-base text-white/85 leading-6"
+				>
 					{{ course.data.short_introduction }}
-				</div>
+				</p>
+			</div>
+		</section>
+		<div class="flex justify-between w-full space-x-5">
+			<div class="w-full md:w-2/3">
+				<template v-if="!hasHero">
+					<div class="text-3xl font-semibold text-ink-gray-9">
+						{{ course.data.title }}
+					</div>
+					<div class="my-3 leading-6 text-ink-gray-7">
+						{{ course.data.short_introduction }}
+					</div>
+				</template>
 				<div class="flex items-center">
 					<Tooltip
 						v-if="parseInt(course.data.rating) > 0"
@@ -61,7 +110,7 @@
 					class="my-4"
 				/>
 				<div class="md:hidden my-4">
-					<CourseCardOverlay :course="course" />
+					<CourseCardOverlay :course="course" :hideVideo="hasHero" />
 				</div>
 
 				<div class="mt-10">
@@ -102,7 +151,7 @@
 				/>
 			</div>
 			<div class="hidden md:block">
-				<CourseCardOverlay :course="course" />
+				<CourseCardOverlay :course="course" :hideVideo="hasHero" />
 			</div>
 		</div>
 		<RelatedCourses :courseName="course.data.name" />
@@ -117,13 +166,56 @@ import CourseInstructors from '@/components/CourseInstructors.vue'
 import RelatedCourses from '@/components/RelatedCourses.vue'
 import FeaturedSectionView from '@/oslms/components/FeaturedSectionView.vue'
 import CourseTagBadges from '@/oslms/components/CourseTagBadges.vue'
-import { inject, ref, onMounted, nextTick } from 'vue'
+import { inject, ref, computed, onMounted, nextTick } from 'vue'
 
 const props = defineProps<{
 	course: any
 }>()
 
 const user = inject<any>('$user')
+
+const hasHero = computed<boolean>(() => {
+	const hero = props.course.data?.hero
+	return !!(hero?.enabled && hero?.media_url)
+})
+
+const DIRECT_VIDEO_EXTENSIONS = /\.(mp4|webm|ogg|ogv|mov|m4v)(\?.*)?$/i
+const isDirectVideoFile = (url: string | undefined) => {
+	if (!url) return false
+	return DIRECT_VIDEO_EXTENSIONS.test(url)
+}
+
+const YOUTUBE_WATCH =
+	/^(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?(?:.*&)?v=([\w-]{11})/i
+const YOUTUBE_SHORT = /^(?:https?:\/\/)?youtu\.be\/([\w-]{11})/i
+const YOUTUBE_EMBED =
+	/^(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([\w-]{11})/i
+const VIMEO_URL =
+	/^(?:https?:\/\/)?(?:www\.)?vimeo\.com\/(\d+)(?:\/([a-zA-Z0-9]+))?/i
+const VIMEO_PLAYER = /^(?:https?:\/\/)?player\.vimeo\.com\/video\/(\d+)/i
+
+const toEmbedUrl = (url: string | undefined): string => {
+	if (!url) return ''
+	let m = url.match(YOUTUBE_EMBED)
+	if (m) return url
+	m = url.match(YOUTUBE_WATCH) || url.match(YOUTUBE_SHORT)
+	if (m) return `https://www.youtube.com/embed/${m[1]}`
+	m = url.match(VIMEO_PLAYER)
+	if (m) return url
+	m = url.match(VIMEO_URL)
+	if (m) {
+		const id = m[1]
+		const hash = m[2]
+		return hash
+			? `https://player.vimeo.com/video/${id}?h=${hash}`
+			: `https://player.vimeo.com/video/${id}`
+	}
+	return url
+}
+
+const heroEmbedUrl = computed<string>(() =>
+	toEmbedUrl(props.course.data?.hero?.media_url),
+)
 
 const isExpanded = ref(false)
 const showToggle = ref(false)

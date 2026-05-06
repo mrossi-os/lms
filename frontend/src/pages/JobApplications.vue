@@ -111,7 +111,7 @@
 					</div>
 				</div>
 			</div>
-			<EmptyState v-else-if="!applications.loading" :type="__('Job Applications')" />
+			<EmptyState v-else-if="!applications.loading" title="Nessuna candidatura" />
 		</div>
 
 		<Dialog
