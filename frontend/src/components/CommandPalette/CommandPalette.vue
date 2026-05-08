@@ -2,7 +2,7 @@
 	<Dialog v-model="show" :options="{ size: '2xl' }">
 		<template #body>
 			<div class="text-base">
-				<div class="flex items-center space-x-2 pl-4.5 border-b">
+				<div class="flex items-center gap-x-2 ps-4.5 border-b">
 					<Search class="size-4 text-ink-gray-4" />
 					<input
 						ref="inputRef"
@@ -32,9 +32,9 @@
 				</div>
 
 				<div
-					class="flex items-center space-x-5 w-full border-t py-2 text-sm text-ink-gray-7 px-4.5"
+					class="flex items-center gap-x-5 w-full border-t py-2 text-sm text-ink-gray-7 px-4.5"
 				>
-					<div class="flex items-center space-x-2">
+					<div class="flex items-center gap-x-2">
 						<MoveUp
 							class="size-5 stroke-1.5 bg-surface-gray-2 p-1 rounded-sm"
 						/>
@@ -45,7 +45,7 @@
 							{{ __('to navigate') }}
 						</span>
 					</div>
-					<div class="flex items-center space-x-2">
+					<div class="flex items-center gap-x-2">
 						<CornerDownLeft
 							class="size-5 stroke-1.5 bg-surface-gray-2 p-1 rounded-sm"
 						/>
@@ -53,7 +53,7 @@
 							{{ __('to select') }}
 						</span>
 					</div>
-					<div class="flex items-center space-x-2">
+					<div class="flex items-center gap-x-2">
 						<span class="bg-surface-gray-2 p-1 rounded-sm"> esc </span>
 						<span>
 							{{ __('to close') }}

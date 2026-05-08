@@ -37,7 +37,7 @@
 			</div>
 		</template>
 		<template #actions="{ close }">
-			<div class="pb-5 float-right">
+			<div class="pb-5 float-end">
 				<Button variant="solid" @click="saveSettings(close)">
 					{{ __('Save') }}
 				</Button>

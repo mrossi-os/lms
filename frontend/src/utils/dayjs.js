@@ -19,4 +19,11 @@ dayjs.extend(isSameOrAfter)
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
+if (
+	document.documentElement.dir === 'rtl' &&
+	['ar', 'he', 'fa', 'ur'].includes(window.lang)
+) {
+	dayjs.locale(window.lang)
+}
+
 export default dayjs

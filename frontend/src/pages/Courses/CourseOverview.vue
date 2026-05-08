@@ -64,7 +64,7 @@
 						class="flex items-center"
 					>
 						<Star class="size-4 text-transparent fill-yellow-500" />
-						<span class="ml-1 text-ink-gray-7">
+						<span class="ms-1 text-ink-gray-7">
 							{{ course.data.rating }}
 						</span>
 					</Tooltip>
@@ -77,7 +77,7 @@
 						class="flex items-center"
 					>
 						<Users class="h-4 w-4 text-ink-gray-7" />
-						<span class="ml-1">
+						<span class="ms-1">
 							{{ course.data.enrollment_count_formatted }}
 						</span>
 					</Tooltip>
@@ -91,7 +91,7 @@
 						class="flex items-center"
 					>
 						<span
-							class="h-6 mr-1"
+							class="h-6 me-1"
 							:class="{
 								'avatar-group overlap': course.data.instructors?.length > 1,
 							}"

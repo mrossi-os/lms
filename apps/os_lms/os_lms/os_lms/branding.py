@@ -33,6 +33,8 @@ FIELD_TO_CSS_VAR = {
 	"color_sidebar_menu": "--color-sidebar-menu",
 	"surface_card": "--surface-card",
 	"color_menu_bar": "--color-menu-bar",
+	"gradient_overlay_from": "--gradient-overlay-from",
+	"gradient_overlay_to": "--gradient-overlay-to",
 }
 
 CACHE_KEY = "brand_customize_css"

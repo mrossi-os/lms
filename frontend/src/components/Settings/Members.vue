@@ -9,7 +9,7 @@
 					{{ __(description) }}
 				</div>
 			</div>
-			<div class="flex item-center space-x-2">
+			<div class="flex item-center gap-x-2">
 				<Button @click="showNewMember = true">
 					<template #prefix>
 						<Plus class="size-4 stroke-1.5" />

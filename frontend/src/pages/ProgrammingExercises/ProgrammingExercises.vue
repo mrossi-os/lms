@@ -3,7 +3,7 @@
 		class="sticky flex items-center justify-between top-0 z-10 border-b main-page-header px-3 py-2.5 sm:px-5"
 	>
 		<Breadcrumbs :items="breadcrumbs" />
-		<div class="space-x-2">
+		<div class="flex gap-2">
 			<router-link
 				v-if="exercises.data?.length"
 				class="hidden md:block"
@@ -119,13 +119,13 @@
 			</ListView>
 		</div>
 		<div v-else class="h-[45vh] lg:h-[53vh] px-5">
-			<EmptyState title="Nessun esercizio di programmazione" />
+			<EmptyStateLayout name="Programming Exercises" />
 		</div>
-		<div class="flex items-center justify-end space-x-3 px-5 pt-3 border-t">
+		<div class="flex items-center justify-end gap-x-3 px-5 pt-3 border-t">
 			<Button v-if="exercises.hasNextPage" @click="exercises.next()">
 				{{ __('Load More') }}
 			</Button>
-			<div v-if="exercises.hasNextPage" class="h-8 border-l"></div>
+			<div v-if="exercises.hasNextPage" class="h-8 border-s"></div>
 			<div class="text-ink-gray-5">
 				{{ exercises.data?.length }} {{ __('of') }} {{ totalExercises.data }}
 			</div>
@@ -140,6 +140,7 @@
 </template>
 <script setup lang="ts">
 import { computed, getCurrentInstance, inject, onMounted, ref } from 'vue'
+import type dayjsType from 'dayjs'
 import {
 	Breadcrumbs,
 	Button,
@@ -169,6 +170,7 @@ const { brand } = sessionStore()
 const showForm = ref<boolean>(false)
 const exerciseID = ref<string>('new')
 const user = inject<any>('$user')
+const dayjs = inject<typeof dayjsType>('$dayjs')!
 const titleFilter = ref<string>('')
 const languageFilter = ref<string>('')
 const router = useRouter()

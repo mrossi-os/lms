@@ -34,7 +34,11 @@
 		"color_sidebar_menu",
 		"surface_card",
 		"column_break_layout",
-		"color_menu_bar"
+		"color_menu_bar",
+		"section_gradient_overlay",
+		"gradient_overlay_from",
+		"column_break_gradient_overlay",
+		"gradient_overlay_to"
 	],
 	"fields": [
 		{
@@ -207,6 +211,27 @@
 			"fieldtype": "Color",
 			"label": "Menu Bar",
 			"description": "CSS: --color-menu-bar"
+		},
+		{
+			"fieldname": "section_gradient_overlay",
+			"fieldtype": "Section Break",
+			"label": "Gradient Overlay"
+		},
+		{
+			"fieldname": "gradient_overlay_from",
+			"fieldtype": "Color",
+			"label": "Gradient Overlay From",
+			"description": "CSS: --gradient-overlay-from"
+		},
+		{
+			"fieldname": "column_break_gradient_overlay",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "gradient_overlay_to",
+			"fieldtype": "Color",
+			"label": "Gradient Overlay To",
+			"description": "CSS: --gradient-overlay-to"
 		}
 	],
 	"grid_page_length": 50,

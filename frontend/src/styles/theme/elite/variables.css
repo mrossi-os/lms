@@ -59,6 +59,10 @@
 	--surface-card: var(--color-company-primary);
 	--color-menu-bar: #0f2a45;
 
+	/* ── Gradient Overlay ── */
+	--gradient-overlay-from: #0a2e5a;
+	--gradient-overlay-to: #1d5a9b;
+
 	/** FORM **/
 	--form-padding-y: 1.2rem;
 	--form-padding-small-y: 0.5rem;

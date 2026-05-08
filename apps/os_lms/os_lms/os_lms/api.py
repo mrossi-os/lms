@@ -1,4 +1,10 @@
+import json
+import re
+
 import frappe
+import requests
+
+VIMEO_URL_RE = re.compile(r"vimeo\.com/(\d+)(?:/([a-zA-Z0-9]+))?")
 
 
 @frappe.whitelist()
@@ -412,8 +418,6 @@ def update_live_class(name: str, payload: dict) -> dict:
     _ensure_live_class_admin()
 
     if isinstance(payload, str):
-        import json
-
         payload = json.loads(payload)
 
     doc = frappe.get_doc("LMS Live Class", name)
@@ -527,8 +531,6 @@ def _notify_students_class_cancelled(live_class) -> None:
 def _delete_zoom_meeting(zoom_account: str, meeting_id: str) -> None:
     """Best-effort delete of the Zoom meeting; failures are logged but do not block deletion."""
     try:
-        import requests
-
         from lms.lms.doctype.lms_batch.lms_batch import authenticate
 
         headers = {"Authorization": "Bearer " + authenticate(zoom_account)}
@@ -541,3 +543,110 @@ def _delete_zoom_meeting(zoom_account: str, meeting_id: str) -> None:
         frappe.logger("os_lms_live_class", allow_site=True).exception(
             f"Failed to delete Zoom meeting {meeting_id}"
         )
+
+
+@frappe.whitelist()
+def get_lesson_audio_stream(lesson_name: str) -> dict:
+    """
+    Returns a playable audio stream URL for the given lesson.
+
+    Production mode: parses lesson content for the embedded Vimeo video,
+    calls Vimeo API to get the HLS link with caching.
+
+    Test mode: returns the test_audio_url configured in Vimeo Settings,
+    bypassing Vimeo entirely.
+    """
+    settings = frappe.get_single("Vimeo Settings")
+
+    if not settings.enabled:
+        frappe.throw(
+            "Integrazione Vimeo non abilitata in Vimeo Settings",
+            frappe.ValidationError,
+        )
+
+    if settings.test_mode:
+        if not settings.test_audio_url:
+            frappe.throw("Test Audio URL non configurato in Vimeo Settings")
+        return {
+            "audio_url": settings.test_audio_url,
+            "title": f"[TEST] {lesson_name}",
+            "artist": "Test Audio",
+            "duration": 0,
+            "expires_at": None,
+            "test_mode": True,
+        }
+
+    lesson = frappe.get_doc("Course Lesson", lesson_name)
+    if not lesson.content:
+        frappe.throw("Lezione senza contenuto")
+
+    try:
+        content = json.loads(lesson.content)
+    except json.JSONDecodeError:
+        frappe.throw("Contenuto lezione malformato")
+
+    vimeo_id, vimeo_hash = None, None
+    for block in content.get("blocks", []):
+        if (
+            block.get("type") == "embed"
+            and block.get("data", {}).get("service") == "vimeo"
+        ):
+            match = VIMEO_URL_RE.search(block["data"].get("source", ""))
+            if match:
+                vimeo_id = match.group(1)
+                vimeo_hash = match.group(2) or ""
+                break
+
+    if not vimeo_id:
+        frappe.throw("Nessun video Vimeo trovato nella lezione")
+
+    cache_key = f"vimeo:stream:{vimeo_id}"
+    cached = frappe.cache().get_value(cache_key)
+    if cached:
+        return cached
+
+    from os_lms.os_lms.doctype.vimeo_settings.vimeo_settings import get_vimeo_token
+
+    token = get_vimeo_token()
+
+    try:
+        response = requests.get(
+            f"https://api.vimeo.com/videos/{vimeo_id}",
+            params={"fields": "play.hls.link,name,duration"},
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=settings.api_timeout_seconds or 5,
+        )
+    except requests.exceptions.Timeout:
+        frappe.throw("Vimeo API timeout, riprova piu' tardi")
+    except requests.exceptions.RequestException as e:
+        frappe.throw(f"Errore comunicazione Vimeo: {str(e)}")
+
+    if response.status_code == 401:
+        get_vimeo_token(force_refresh=True)
+        frappe.throw("Token Vimeo non valido. Verificare Vimeo Settings.")
+    if response.status_code == 403:
+        frappe.throw("Video Vimeo non accessibile")
+    if response.status_code == 404:
+        frappe.throw("Video Vimeo non trovato")
+    if response.status_code == 429:
+        frappe.throw("Rate limit Vimeo, riprova tra qualche minuto")
+    response.raise_for_status()
+
+    data = response.json()
+    hls_link = data.get("play", {}).get("hls", {}).get("link")
+    if not hls_link:
+        frappe.throw("Vimeo non ha restituito stream HLS per il video")
+
+    result = {
+        "audio_url": hls_link,
+        "title": data.get("name") or lesson.title,
+        "artist": lesson.course or "",
+        "duration": data.get("duration") or 0,
+        "expires_at": None,
+        "test_mode": False,
+    }
+
+    ttl = settings.cache_ttl_seconds or 18000
+    frappe.cache().set_value(cache_key, result, expires_in_sec=ttl)
+
+    return result

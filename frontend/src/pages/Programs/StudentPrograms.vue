@@ -21,15 +21,15 @@
 							{{ program.name }}
 						</div>
 
-						<div class="flex items-center space-x-5 text-sm text-ink-gray-7">
-							<div class="flex items-center space-x-1">
+						<div class="flex items-center gap-x-5 text-sm text-ink-gray-7">
+							<div class="flex items-center gap-x-1">
 								<BookOpen class="size-3 stroke-1.5" />
 								<span>
 									{{ program.course_count }}
 									{{ program.course_count == 1 ? __('course') : __('courses') }}
 								</span>
 							</div>
-							<div class="flex items-center space-x-1">
+							<div class="flex items-center gap-x-1">
 								<User class="size-4 stroke-1.5" />
 								<span>
 									{{ program.member_count || 0 }}
@@ -46,20 +46,10 @@
 						</div>
 					</div>
 				</div>
-				<div class="flex flex-col items-center justify-center mt-60" v-else>
-					<GraduationCap class="size-10 mx-auto stroke-1 text-ink-gray-5" />
-					<div class="text-lg font-semibold text-ink-gray-7 mb-2.5">
-						{{ __('No Programs Enrolled') }}
-					</div>
-					<div class="text-p-base w-full md:w-2/5 text-center text-ink-gray-7">
-						{{
-							__(
-								'There are no programs enrolled currently. Keep an eye out, fresh learning experiences are on the way!',
-							)
-						}}
-					</div>
-				</div>
-
+				<EmptyStateLayout
+					v-else
+					:name="convertToTitleCase(category) + ' Programs'"
+				/>
 				<!-- <div v-else class="col-span-3 text-center text-ink-gray-5">
                     {{ __('No programs found in this category.') }}
                 </div> -->
@@ -80,7 +70,7 @@ import { useRouter } from 'vue-router'
 import { convertToTitleCase } from '@/utils'
 import ProgressBar from '@/components/ProgressBar.vue'
 import ProgramEnrollment from '@/pages/Programs/ProgramEnrollment.vue'
-import EmptyState from '@/components/EmptyState.vue'
+import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
 
 const currentTab = ref('enrolled')
 const router = useRouter()

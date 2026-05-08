@@ -231,12 +231,24 @@ def get_job_details(job: str):
 	)
 
 
+def sanitize_job_filters(filters, or_filters):
+	ALLOWED_FILTERS = ("status", "type", "work_mode", "country")
+	ALLOWED_OR_FILTERS = ("job_title", "company_name", "location")
+
+	filters = {f: v for f, v in (filters or {}).items() if f in ALLOWED_FILTERS}
+	or_filters = {f: v for f, v in (or_filters or {}).items() if f in ALLOWED_OR_FILTERS}
+
+	if filters.get("status") == "Closed" and "Moderator" not in frappe.get_roles():
+		filters["owner"] = frappe.session.user
+
+	return filters, or_filters
+
+
 @frappe.whitelist(allow_guest=True)
 def get_job_opportunities(
 	filters: dict = None, or_filters: dict = None, start: int = 0, page_length: int = 40
 ):
-	if not filters:
-		filters = {}
+	filters, or_filters = sanitize_job_filters(filters, or_filters)
 
 	jobs = frappe.get_all(
 		"Job Opportunity",
@@ -263,6 +275,12 @@ def get_job_opportunities(
 		job.description = frappe.utils.strip_html_tags(job.description)
 		job.applicants = frappe.db.count("LMS Job Application", {"job": job.name})
 	return jobs
+
+
+@frappe.whitelist(allow_guest=True)
+def get_job_opportunities_count(filters: dict = None, or_filters: dict = None):
+	filters, or_filters = sanitize_job_filters(filters, or_filters)
+	return frappe.db.count("Job Opportunity", filters, or_filters)
 
 
 @frappe.whitelist(allow_guest=True)
