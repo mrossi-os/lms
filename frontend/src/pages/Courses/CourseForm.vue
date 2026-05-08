@@ -294,6 +294,7 @@
 								v-model="courseResource.doc.enable_certification"
 								:label="__('Completion Certificate')"
 								:description="__('Issue a certificate on course completion.')"
+								:disabled="!!courseResource.doc.trueskill_enabled"
 								@change="makeFormDirty()"
 							/>
 							<Switch
@@ -304,6 +305,44 @@
 								:description="__('Charge a fee for the certificate.')"
 								@change="makeFormDirty()"
 							/>
+						</div>
+						<div class="card p-4 space-y-4">
+							<Switch
+								size="sm"
+								v-model="courseResource.doc.trueskill_enabled"
+								:label="__('Emetti certificato TrueSkill')"
+								:description="
+									__(
+										'Usa TrueSkill come emettitore del certificato per questo corso. Sostituisce il certificato interno LMS.',
+									)
+								"
+								@change="makeFormDirty()"
+							/>
+							<template v-if="courseResource.doc.trueskill_enabled">
+								<div
+									class="text-sm text-ink-gray-7 bg-surface-gray-2 rounded-md p-3"
+								>
+									{{
+										__(
+											'Quando attivo, il certificato interno LMS non verrà emesso per questo corso: l\'emissione passa a TrueSkill.',
+										)
+									}}
+								</div>
+								<FormControl
+									v-model="courseResource.doc.trueskill_template"
+									type="select"
+									:label="__('Template certificato TrueSkill')"
+									:options="trueskillTemplateOptions"
+									@change="makeFormDirty()"
+								/>
+								<button
+									type="button"
+									class="text-sm text-ink-gray-7 underline hover:text-ink-gray-9 self-start"
+									@click="openTrueskillTemplateCreator"
+								>
+									{{ __('+ Crea nuovo template') }}
+								</button>
+							</template>
 						</div>
 						<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
 							<div
@@ -454,6 +493,26 @@ const onHeroMediaFileUrl = (url) => {
 	if (!url) return
 	courseResource.doc.hero_media_url = url
 	makeFormDirty()
+}
+
+// TODO: popolare via GET /templates dell'API TrueSkills una volta disponibile.
+const trueskillTemplateOptions = ref([
+	{ label: __('Seleziona un template...'), value: '' },
+])
+
+const openTrueskillTemplateCreator = () => {
+	$dialog({
+		title: __('Crea template TrueSkill'),
+		message: __(
+			"Funzionalità in arrivo — verrà collegata l'API TrueSkills per la creazione di nuovi template.",
+		),
+		actions: [
+			{
+				label: __('OK'),
+				variant: 'solid',
+			},
+		],
+	})
 }
 
 const user = inject('$user')
