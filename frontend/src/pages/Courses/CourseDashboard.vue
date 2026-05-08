@@ -25,7 +25,7 @@
 					<div class="text-lg text-ink-gray-9 font-semibold">
 						{{ __('Students') }}
 					</div>
-					<div class="flex items-center space-x-2">
+					<div class="flex items-center gap-x-2">
 						<FormControl
 							class="small-form"
 							v-model="searchFilter"
@@ -92,7 +92,7 @@
 											<ProgressBar
 												v-else-if="column.key == 'progress'"
 												:progress="Math.ceil(row[column.key])"
-												class="!mx-0 !md:mr-4"
+												class="!mx-0 !mr-4"
 											/>
 										</template>
 										<div
@@ -169,12 +169,12 @@
 									}"
 								></div>
 								<Tooltip :text="row.name.split('(')[1].replace(')', '')">
-									<div class="ml-2">
+									<div class="ms-2">
 										{{ row.name.split('(')[0] }}
 									</div>
 								</Tooltip>
 								<Tooltip :text="row.value">
-									<div class="ml-auto">
+									<div class="ms-auto">
 										{{
 											Math.round((row.value / course.data?.enrollments) * 100)
 										}}%
@@ -239,7 +239,7 @@
 							class="flex justify-between text-sm py-2 my-1 text-ink-gray-9"
 						>
 							<div class="">
-								<span class="mr-3 text-xs">
+								<span class="me-3 text-xs">
 									{{ progress.chapter_idx }}.{{ progress.idx }}
 								</span>
 								<span>
@@ -282,6 +282,7 @@ import {
 	Button,
 	createListResource,
 	createResource,
+	Dropdown,
 	ECharts,
 	FormControl,
 	ListView,
@@ -295,9 +296,8 @@ import {
 	Tooltip,
 	toast,
 } from 'frappe-ui'
-import dayjs from '@/utils/dayjs'
-
-import { computed, ref, watch } from 'vue'
+import { computed, inject, ref, watch } from 'vue'
+import type dayjsType from 'dayjs'
 import { Plus, Star, Trash2 } from 'lucide-vue-next'
 import { formatAmount } from '@/utils'
 import { useScreenSize } from '@/utils/composables'
@@ -306,11 +306,13 @@ import CourseEnrollmentModal from '@/pages/Courses/CourseEnrollmentModal.vue'
 import NumberChartGraph from '@/components/NumberChartGraph.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
 import StudentCourseProgress from '@/pages/Courses/StudentCourseProgress.vue'
+const dayjs = inject<typeof dayjsType>('$dayjs')!
 
 const props = defineProps<{
 	course: any
 }>()
 
+const dayjs = inject<typeof dayjsType>('$dayjs')!
 const showEnrollmentModal = ref(false)
 const searchFilter = ref<string | null>(null)
 const showProgressModal = ref(false)

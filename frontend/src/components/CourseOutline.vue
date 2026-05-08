@@ -46,20 +46,20 @@
 							>
 								<ChevronRight
 									:class="{
-										'rotate-90 transform duration-200': open,
-										'duration-200': !open,
+										'rotate-90': open,
+										'rtl:rotate-180': !open,
 										hidden: chapter.is_scorm_package,
 										open: index == 1,
 									}"
-									class="h-4 w-4 text-ink-gray-9 stroke-1"
+									class="h-4 w-4 text-ink-gray-9 stroke-1 transform duration-200"
 								/>
 								<div
-									class="text-base text-left text-ink-gray-9 font-medium leading-5 ml-2"
+									class="text-base text-start text-ink-gray-9 font-medium leading-5 ms-2"
 									@click="redirectToChapter(chapter)"
 								>
 									{{ chapter.title }}
 								</div>
-								<div class="flex ml-auto space-x-4">
+								<div class="flex ms-auto gap-x-4">
 									<Tooltip :text="__('Edit Chapter')" placement="bottom">
 										<FilePenLine
 											v-if="allowEdit"
@@ -123,19 +123,19 @@
 													/>
 													<HelpCircle
 														v-else-if="lesson.icon === 'icon-quiz'"
-														class="h-4 w-4 stroke-1 mr-2"
+														class="h-4 w-4 stroke-1 me-2"
 													/>
 													<NotebookPen
 														v-else-if="lesson.icon === 'icon-assignment'"
-														class="h-4 w-4 stroke-1 mr-2"
+														class="h-4 w-4 stroke-1 me-2"
 													/>
 													<SquareCode
 														v-else-if="lesson.icon === 'icon-code'"
-														class="h-4 w-4 stroke-1 mr-2"
+														class="h-4 w-4 stroke-1 me-2"
 													/>
 													<FileText
 														v-else-if="lesson.icon === 'icon-list'"
-														class="h-4 w-4 text-ink-gray-9 stroke-1 mr-2"
+														class="h-4 w-4 text-ink-gray-9 stroke-1 me-2"
 													/>
 													<div class="flex grow justify-between">
 														{{ lesson.title }}
@@ -161,7 +161,7 @@
 										</div>
 									</template>
 								</Draggable>
-								<div v-if="allowEdit" class="flex mt-2 mb-4 pl-8">
+								<div v-if="allowEdit" class="flex mt-2 mb-4 ps-8">
 									<router-link
 										v-if="!chapter.is_scorm_package"
 										:to="{

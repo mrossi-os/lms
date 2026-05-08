@@ -16,7 +16,7 @@
 			:options="{ showTooltip: false, selectable: false }"
 		>
 			<ListHeader
-				class="mb-2 grid items-center space-x-4 rounded bg-surface-gray-2 p-2"
+				class="mb-2 grid items-center gap-x-4 rounded bg-surface-gray-2 p-2"
 			>
 				<ListHeaderItem :item="item" v-for="item in quizColumns">
 				</ListHeaderItem>
@@ -41,7 +41,7 @@
 			</Button>
 		</div>
 	</div>
-	<EmptyState v-else title="Nessuna consegna quiz" />
+	<EmptyStateLayout v-else name="Quiz Submissions" />
 </template>
 <script setup>
 import {
@@ -58,7 +58,7 @@ import {
 import { computed, onMounted, inject } from 'vue'
 import { sessionStore } from '../stores/session'
 import { useRouter } from 'vue-router'
-import EmptyState from '@/components/EmptyState.vue'
+import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
 
 const { brand } = sessionStore()
 const router = useRouter()

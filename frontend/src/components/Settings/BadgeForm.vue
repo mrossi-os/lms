@@ -74,7 +74,7 @@
 			</div>
 		</template>
 		<template #actions="{ close }">
-			<div class="pb-5 float-right">
+			<div class="pb-5 float-end">
 				<Button variant="solid" @click="saveBadge(close)">
 					{{ __('Save') }}
 				</Button>

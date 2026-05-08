@@ -19,7 +19,7 @@
 					<template #suffix>
 						<ChevronDown
 							:class="[
-								'w-4 h-4 stroke-1.5 ml-1 transform transition-transform',
+								'w-4 h-4 stroke-1.5 ms-1 transform transition-transform',
 								open ? 'rotate-180' : '',
 							]"
 						/>
@@ -36,7 +36,7 @@
 				{{ __('All Courses') }}
 			</div>
 			<div
-				class="flex flex-col space-y-3 lg:space-y-0 lg:flex-row lg:items-center lg:space-x-4"
+				class="flex flex-col space-y-3 lg:space-y-0 lg:flex-row lg:items-center lg:gap-x-4"
 			>
 				<TabButtons :buttons="courseTabs" v-model="currentTab" class="w-fit" />
 
@@ -80,7 +80,7 @@
 				<CourseCard :course="course" />
 			</router-link>
 		</div>
-		<EmptyState v-else-if="!courses.list.loading" title="Nessun corso" />
+		<EmptyStateLayout v-else-if="!courses.list.loading" name="Courses" />
 		<div
 			v-if="!courses.list.loading && courses.hasNextPage"
 			class="flex justify-center mt-5"
@@ -120,7 +120,7 @@ import { ChevronDown, Plus } from 'lucide-vue-next'
 import { sessionStore } from '@/stores/session'
 import { canCreateCourse } from '@/utils'
 import CourseCard from '@/components/CourseCard.vue'
-import EmptyState from '@/components/EmptyState.vue'
+import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
 import { useRouter } from 'vue-router'
 import NewCourseModal from '@/pages/Courses/NewCourseModal.vue'
 import CourseImportModal from '@/pages/Courses/CourseImportModal.vue'
