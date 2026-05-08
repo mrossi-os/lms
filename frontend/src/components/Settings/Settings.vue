@@ -39,7 +39,9 @@
 						v-bind="{
 							label: activeTab.label,
 							description: activeTab.description,
-							...(activeTab.key == 'Branding' || activeTab.key == 'AI'
+							...(activeTab.key == 'Branding' ||
+							activeTab.key == 'AI' ||
+							activeTab.key == 'TrueSkills API'
 								? { sections: activeTab.sections }
 								: {}),
 							...(activeTab.key == 'Evaluators' ||
@@ -80,6 +82,7 @@ import GoogleMeetSettings from '@/components/Settings/GoogleMeetSettings.vue'
 import GoogleCalendarSettings from '@/components/Settings/GoogleCalendarSettings.vue'
 import Badges from '@/components/Settings/Badges.vue'
 import AISettings from '@/oslms/components/ai/Settings/AISettings.vue'
+import TrueSkillsSettings from '@/oslms/components/trueskills/TrueSkillsSettings.vue'
 
 const GOOGLE_CALENDAR_ROLES = ['System Manager', 'Gestore']
 const ADMIN_ONLY_ROLES = ['System Manager', 'Administrator']
@@ -324,6 +327,51 @@ const tabsStructure = computed(() => {
 					icon: 'MailPlus',
 					template: markRaw(EmailTemplates),
 					condition: isAdministrator,
+				},
+				{
+					key: 'TrueSkills API',
+					label: __('TrueSkills API'),
+					icon: 'KeyRound',
+					description: __(
+						'Configure the TrueSkills API integration for your learning system',
+					),
+					condition: isAdministrator,
+					template: markRaw(TrueSkillsSettings),
+					sections: [
+						{
+							label: __('TrueSkills API'),
+							columns: [
+								{
+									fields: [
+										{
+											label: __('Enable TrueSkills API'),
+											name: 'trueskills_api_enabled',
+											type: 'checkbox',
+											description: __(
+												'If enabled, the TrueSkills API integration will be active.',
+											),
+										},
+										{
+											label: __('API Key'),
+											name: 'trueskills_api_key',
+											type: 'password',
+											description: __(
+												'The API key used to authenticate requests to the TrueSkills API.',
+											),
+										},
+										{
+											label: __('API Endpoint'),
+											name: 'trueskills_api_endpoint',
+											type: 'text',
+											description: __(
+												'Base URL of the TrueSkills API (e.g. https://api.trueskills.example/v1).',
+											),
+										},
+									],
+								},
+							],
+						},
+					],
 				},
 			],
 		},
