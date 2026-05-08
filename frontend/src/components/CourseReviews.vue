@@ -41,8 +41,8 @@
 								class="size-4 text-transparent rounded-sm"
 								:class="
 									index <= Math.ceil(review.rating)
-										? 'fill-yellow-500'
-										: 'fill-gray-300'
+										? 'fill-ink-amber-2'
+										: 'fill-ink-gray-3'
 								"
 							/>
 						</div>

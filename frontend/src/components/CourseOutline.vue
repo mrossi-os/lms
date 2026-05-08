@@ -79,7 +79,7 @@
 									v-if="
 										chapter.is_scorm_package && isScormChapterComplete(chapter)
 									"
-									class="h-4 w-4 text-green-700"
+									class="h-4 w-4 text-ink-green-3"
 								/>
 							</DisclosureButton>
 							<DisclosurePanel v-if="!chapter.is_scorm_package">
@@ -115,7 +115,7 @@
 														:text="__('Lesson completed')"
 														placement="top"
 													>
-														<Check class="h-4 w-4 text-green-700 mr-2" />
+														<Check class="h-4 w-4 text-ink-green-3 mr-2" />
 													</Tooltip>
 													<MonitorPlay
 														v-else-if="lesson.icon === 'icon-youtube'"

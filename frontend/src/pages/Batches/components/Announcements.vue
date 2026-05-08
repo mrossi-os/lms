@@ -26,11 +26,11 @@
 							</div>
 						</div>
 
-						<div class="text-sm text-white">
+						<div class="text-sm text-ink-gray-9">
 							{{ timeAgo(comm.communication_date) }}
 						</div>
 					</div>
-					<div class="ml-3 font-bold text-white prose">
+					<div class="ml-3 font-bold text-ink-gray-9 prose">
 						{{ comm.subject }}
 					</div>
 					<div

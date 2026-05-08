@@ -16,7 +16,7 @@
 				<tbody>
 					<tr
 						v-for="row in rows"
-						class="bg-white dark:bg-gray-800 dark:border-gray-700 border-gray-200"
+						class="bg-surface-white border-outline-gray-1"
 					>
 						<td class="px-6 py-2">
 							<FormControl
@@ -33,7 +33,7 @@
 							<Link
 								:doctype="row.reference_doctype"
 								v-model="row.reference_name"
-								class="bg-white"
+								class="bg-surface-white"
 							/>
 						</td>
 						<td class="px-6 py-2">

@@ -61,7 +61,7 @@
 					<X
 						v-if="isSessionUser()"
 						@click="deleteRow(slot.name)"
-						class="w-6 h-auto stroke-1.5 text-red-900 rounded-md cursor-pointer p-1 bg-surface-red-2 hidden group-hover:block"
+						class="w-6 h-auto stroke-1.5 text-ink-red-3 rounded-md cursor-pointer p-1 bg-surface-red-2 hidden group-hover:block"
 					/>
 				</div>
 
@@ -139,7 +139,7 @@
 				</h2>
 				<div
 					v-if="evaluator.data?.calendar && evaluator.data?.is_authorized"
-					class="flex items-center bg-surface-green-2 text-green-900 text-sm p-1 rounded-md mb-4 w-fit"
+					class="flex items-center bg-surface-green-2 text-ink-green-3 text-sm p-1 rounded-md mb-4 w-fit"
 				>
 					<Check class="h-4 w-4 stroke-1.5 me-2" />
 					{{ __('Your calendar is set.') }}

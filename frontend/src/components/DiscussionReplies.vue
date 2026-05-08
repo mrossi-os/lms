@@ -49,7 +49,7 @@
 					>
 						<template v-slot="{ open }">
 							<MoreHorizontal
-								class="w-4 h-4 stroke-2 text-white cursor-pointer"
+								class="w-4 h-4 stroke-2 text-ink-gray-9 cursor-pointer"
 							/>
 						</template>
 					</Dropdown>

@@ -16,7 +16,7 @@
 		</template>
 		<template v-else-if="user.open_to === 'Hiring'" #indicator>
 			<Tooltip :text="__('Hiring')" placement="right">
-				<div class="rounded-full bg-purple-500 w-fit">
+				<div class="rounded-full bg-surface-pink-1 w-fit">
 					<BadgeCheckIcon :class="'text-ink-white ' + checkSize" />
 				</div>
 			</Tooltip>

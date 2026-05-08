@@ -10,7 +10,7 @@
 				@mouseleave="hoveredRating = 0"
 			>
 				<Star
-					class="fill-gray-400 text-gray-50 stroke-1 me-1 cursor-pointer"
+					class="fill-ink-gray-4 text-ink-gray-3 stroke-1 me-1 cursor-pointer"
 					:class="iconClasses(index)"
 					@click="markRating(index)"
 				/>
@@ -52,9 +52,9 @@ const iconClasses = (index) => {
 		}[props.size],
 	]
 	if (index <= hoveredRating.value && index > rating.value) {
-		classes.push('fill-yellow-200')
+		classes.push('fill-ink-amber-1')
 	} else if (index <= rating.value) {
-		classes.push('fill-yellow-500')
+		classes.push('fill-ink-amber-2')
 	}
 	return classes.join(' ')
 }

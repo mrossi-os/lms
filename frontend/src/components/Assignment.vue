@@ -68,7 +68,7 @@
 					{{ __('Feel free to make edits to your submission if needed.') }}
 				</div>
 				<div v-if="showUploader()" class="border rounded-lg p-3 card">
-					<div class="font-semibold mb-2 text-white">
+					<div class="font-semibold mb-2 text-ink-gray-9">
 						{{ __('Upload Assignment') }}
 					</div>
 					<div class="text-ink-gray-5 text-sm mt-1 mb-4">

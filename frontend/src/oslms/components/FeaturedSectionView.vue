@@ -63,8 +63,8 @@
 							v-else-if="isFileMissing(item.file)"
 							class="flex flex-col items-center gap-1.5 text-xs text-ink-orange-3"
 						>
-							<AlertTriangle class="w-5 h-5 shrink-0 text-yellow-400" />
-							<span class="text-yellow-400">{{ __('File not found') }}</span>
+							<AlertTriangle class="w-5 h-5 shrink-0 text-ink-amber-2" />
+							<span class="text-ink-amber-2">{{ __('File not found') }}</span>
 						</div>
 					</div>
 				</div>

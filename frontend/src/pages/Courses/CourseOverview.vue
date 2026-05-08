@@ -34,7 +34,7 @@
 				class="absolute inset-0 w-full h-full object-cover"
 			/>
 			<div
-				class="absolute inset-x-0 bottom-0 p-6 md:p-8 bg-gradient-to-t from-black/80 via-black/50 to-transparent text-white pointer-events-none"
+				class="absolute inset-x-0 bottom-0 p-6 md:p-8 bg-gradient-to-t from-black/80 via-black/50 to-transparent text-ink-gray-9 pointer-events-none"
 			>
 				<h1 class="text-2xl md:text-4xl font-semibold">
 					{{ course.data.title }}
@@ -63,7 +63,7 @@
 						:text="__('Average Rating')"
 						class="flex items-center"
 					>
-						<Star class="size-4 text-transparent fill-yellow-500" />
+						<Star class="size-4 text-transparent fill-ink-amber-2" />
 						<span class="ms-1 text-ink-gray-7">
 							{{ course.data.rating }}
 						</span>

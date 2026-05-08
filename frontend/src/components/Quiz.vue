@@ -139,7 +139,7 @@
 					<div v-if="questionDetails.data.type == 'Choices'" v-for="index in 4">
 						<label
 							v-if="questionDetails.data[`option_${index}`]"
-							class="flex items-center bg-surface-gray-3 rounded-md p-3 mt-4 w-full cursor-pointer focus:border-blue-600"
+							class="flex items-center bg-surface-gray-3 rounded-md p-3 mt-4 w-full cursor-pointer focus:border-outline-blue-1"
 						>
 							<input
 								v-if="!showAnswers.length && !questionDetails.data.multiple"
@@ -316,14 +316,14 @@
 				v-if="reviewQuestions.length"
 				class="border rounded-lg p-4 mt-4 caret-dark-gray-200"
 			>
-				<div class="font-semibold text-white">
+				<div class="font-semibold text-ink-gray-9">
 					{{ __('Questions marked for review') }}
 				</div>
 				<div class="flex items-center gap-x-2 mt-2">
 					<div
 						v-for="index in reviewQuestions"
 						@click="switchQuestion(index)"
-						class="w-6 h-6 rounded-full flex items-center justify-center text-sm cursor-pointer bg-surface-gray-3 text-white"
+						class="w-6 h-6 rounded-full flex items-center justify-center text-sm cursor-pointer bg-surface-gray-3 text-ink-gray-9"
 					>
 						{{ index }}
 					</div>
@@ -413,7 +413,7 @@
 	>
 		<template #body-content>
 			<div class="border border-outline-gray-modals rounded-lg text-base">
-				<div class="divide-y divide-outline-gray-modals text-white">
+				<div class="divide-y divide-outline-gray-modals text-ink-gray-9">
 					<div class="grid grid-cols-2 divide-x divide-outline-gray-modals">
 						<div class="p-2">
 							{{ __('Total Questions') }}

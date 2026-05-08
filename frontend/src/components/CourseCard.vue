@@ -17,7 +17,7 @@
 		>
 			<div
 				v-if="!course.image"
-				class="flex items-center justify-center text-white flex-1 font-extrabold my-auto px-5 text-center leading-6 h-full"
+				class="flex items-center justify-center text-ink-gray-9 flex-1 font-extrabold my-auto px-5 text-center leading-6 h-full"
 				:class="
 					course.title.length > 32
 						? 'text-lg'

@@ -69,12 +69,12 @@ export function useLessonIngestion(lesson, { onSuccess } = {}) {
 	})
 
 	const statusIconClass = computed(() => {
-		if (isIngesting.value) return 'text-blue-500 animate-pulse'
+		if (isIngesting.value) return 'text-ink-blue-2 animate-pulse'
 		switch (status.value) {
 			case 'indexed':
-				return 'text-green-500'
+				return 'text-ink-green-3'
 			case 'failed':
-				return 'text-red-500'
+				return 'text-ink-red-3'
 			default:
 				return 'text-ink-gray-4'
 		}

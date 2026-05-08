@@ -25,7 +25,7 @@
 					'p-3 rounded-lg',
 					message.role === 'user'
 						? 'bg-surface-gray-2 ml-8'
-						: 'bg-blue-700 mr-8',
+						: 'bg-surface-blue-3 mr-8',
 				]"
 			>
 				<div class="text-xs font-medium text-ink-gray-5 mb-1">
