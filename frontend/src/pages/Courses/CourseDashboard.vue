@@ -312,7 +312,6 @@ const props = defineProps<{
 	course: any
 }>()
 
-const dayjs = inject<typeof dayjsType>('$dayjs')!
 const showEnrollmentModal = ref(false)
 const searchFilter = ref<string | null>(null)
 const showProgressModal = ref(false)

@@ -73,7 +73,6 @@ import { ref, watch, inject } from 'vue'
 import { Calendar } from 'lucide-vue-next'
 import { formatTime } from '@/utils/'
 
-const dayjs = inject('$dayjs')
 const user = inject('$user')
 const show = defineModel()
 const evaluations = defineModel('reloadEvals')
