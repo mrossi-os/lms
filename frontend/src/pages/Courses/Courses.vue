@@ -45,7 +45,7 @@
 						v-model="title"
 						:placeholder="__('Search')"
 						type="text"
-						class="w-full lg:min-w-0 lg:w-32 xl:w-40 small-form"
+						class="w-full lg:min-w-0 lg:w-32 xl:w-40 small-form bg-surface-gray-2 rounded-md"
 						@input="updateCourses()"
 					/>
 					<div class="w-full lg:min-w-0 lg:w-32 xl:w-40">
@@ -191,7 +191,7 @@ const courses = createListResource({
 const setCategories = (data) => {
 	let allCategories = data.map((course) => course.category)
 	allCategories = allCategories.filter(
-		(category, index) => allCategories.indexOf(category) === index && category
+		(category, index) => allCategories.indexOf(category) === index && category,
 	)
 	if (categories.value.length <= allCategories.length) {
 		updateCategories(data)
@@ -285,7 +285,12 @@ const updateTabFilter = () => {
 }
 
 const updateStudentFilter = () => {
-	if (!user.data || (user.data?.is_student && currentTab.value != 'enrolled' && currentTab.value != 'upcoming')) {
+	if (
+		!user.data ||
+		(user.data?.is_student &&
+			currentTab.value != 'enrolled' &&
+			currentTab.value != 'upcoming')
+	) {
 		filters.value['published'] = 1
 	}
 }
