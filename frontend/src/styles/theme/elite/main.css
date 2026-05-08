@@ -32,7 +32,7 @@ body {
 	left: 0rem;
 	width: 60vw;
 	height: 100%;
-	background: linear-gradient(to right, #0a2e5a, #1d5a9b);
+	background: linear-gradient(to right, var(--gradient-overlay-from), var(--gradient-overlay-to));
 	z-index: 1;
 }
 
