@@ -90,4 +90,8 @@ export interface LMSCourse {
 	hero_enabled?: 0 | 1
 	hero_media_type?:string
 	hero_media_url?: string
+
+	// OSLMS-CUSTOM: TrueSkills certificate emission (custom fields on LMS Course)
+	trueskills_certificate_enabled?: 0 | 1
+	trueskills_template_id?: string
 }
