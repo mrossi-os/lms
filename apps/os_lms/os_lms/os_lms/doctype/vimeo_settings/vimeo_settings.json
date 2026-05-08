@@ -1,0 +1,122 @@
+{
+	"actions": [],
+	"creation": "2026-05-06 12:00:00.000000",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"enabled",
+		"section_credentials",
+		"access_token",
+		"section_cache",
+		"cache_ttl_seconds",
+		"api_timeout_seconds",
+		"section_debug",
+		"test_mode",
+		"test_audio_url",
+		"section_test",
+		"last_test_result",
+		"last_test_at"
+	],
+	"fields": [
+		{
+			"default": "0",
+			"description": "Se disattivato, l'app mobile non potra' richiedere stream audio in background per i video Vimeo.",
+			"fieldname": "enabled",
+			"fieldtype": "Check",
+			"label": "Enable Vimeo Integration"
+		},
+		{
+			"fieldname": "section_credentials",
+			"fieldtype": "Section Break",
+			"label": "Credentials"
+		},
+		{
+			"description": "Genera un Personal Access Token da vimeo.com/developer/apps con scopes 'private' e 'video_files'. Richiede account Vimeo Pro/Business/Premium.",
+			"fieldname": "access_token",
+			"fieldtype": "Password",
+			"label": "Personal Access Token"
+		},
+		{
+			"fieldname": "section_cache",
+			"fieldtype": "Section Break",
+			"label": "Cache & Timeout"
+		},
+		{
+			"default": "18000",
+			"description": "Durata cache Redis dello stream URL HLS. Vimeo emette URL firmati con scadenza ~6 ore, il default 18000 (5 ore) lascia un buffer di sicurezza.",
+			"fieldname": "cache_ttl_seconds",
+			"fieldtype": "Int",
+			"label": "Stream URL Cache TTL (seconds)"
+		},
+		{
+			"default": "5",
+			"description": "Timeout chiamate HTTP all'API Vimeo.",
+			"fieldname": "api_timeout_seconds",
+			"fieldtype": "Int",
+			"label": "Vimeo API Timeout (seconds)"
+		},
+		{
+			"collapsible": 1,
+			"description": "Modalita' di test per validare l'app mobile senza credenziali Vimeo reali. NON usare in produzione.",
+			"fieldname": "section_debug",
+			"fieldtype": "Section Break",
+			"label": "Debug Mode"
+		},
+		{
+			"default": "0",
+			"description": "Quando attivo, l'endpoint `get_lesson_audio_stream` ritorna `test_audio_url` invece di chiamare l'API Vimeo. Permette di testare l'app mobile senza token configurato. Disattivare prima del go-live.",
+			"fieldname": "test_mode",
+			"fieldtype": "Check",
+			"label": "Enable Test Mode"
+		},
+		{
+			"default": "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8",
+			"depends_on": "eval:doc.test_mode == 1",
+			"description": "URL HLS o MP3 pubblico ritornato in test mode. Default: HLS sample di Apple (BipBop). Funziona per validare audio_service e MediaSession sia su iOS che Android.",
+			"fieldname": "test_audio_url",
+			"fieldtype": "Data",
+			"label": "Test Audio URL",
+			"length": 500,
+			"mandatory_depends_on": "eval:doc.test_mode == 1"
+		},
+		{
+			"fieldname": "section_test",
+			"fieldtype": "Section Break",
+			"label": "Test Connection"
+		},
+		{
+			"description": "Esito dell'ultimo test di connessione (popolato dal bottone Test Connection).",
+			"fieldname": "last_test_result",
+			"fieldtype": "Small Text",
+			"label": "Last Test Result",
+			"read_only": 1
+		},
+		{
+			"fieldname": "last_test_at",
+			"fieldtype": "Datetime",
+			"label": "Last Tested At",
+			"read_only": 1
+		}
+	],
+	"grid_page_length": 50,
+	"index_web_pages_for_search": 1,
+	"issingle": 1,
+	"links": [],
+	"modified": "2026-05-06 12:00:00.000000",
+	"modified_by": "Administrator",
+	"module": "OS LMS",
+	"name": "Vimeo Settings",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"read": 1,
+			"role": "System Manager",
+			"write": 1
+		}
+	],
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": [],
+	"track_changes": 1
+}
