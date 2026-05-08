@@ -99,7 +99,10 @@ async function importConfigSite(isDev) {
 	if (isDev) {
 		relativePath = '../common_site_config.json';
 	}
-	const filePath = path.resolve(__dirname, relativePath)
+	let filePath = path.resolve(__dirname, relativePath)
+	if(!existsSync(filePath)) {
+		filePath = path.resolve(__dirname, '../common_site_config.json')
+	}
 	return JSON.parse(readFileSync(filePath, 'utf-8'))
 }
 

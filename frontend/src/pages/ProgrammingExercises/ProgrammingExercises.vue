@@ -140,7 +140,6 @@
 </template>
 <script setup lang="ts">
 import { computed, getCurrentInstance, inject, onMounted, ref } from 'vue'
-import type dayjsType from 'dayjs'
 import {
 	Breadcrumbs,
 	Button,
@@ -170,7 +169,6 @@ const { brand } = sessionStore()
 const showForm = ref<boolean>(false)
 const exerciseID = ref<string>('new')
 const user = inject<any>('$user')
-const dayjs = inject<typeof dayjsType>('$dayjs')!
 const titleFilter = ref<string>('')
 const languageFilter = ref<string>('')
 const router = useRouter()
