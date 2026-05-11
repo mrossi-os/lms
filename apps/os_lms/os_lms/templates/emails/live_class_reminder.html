@@ -8,13 +8,13 @@
         Ciao {{ student_name }},
       </p>
       <p style="font-size:14px;line-height:1.7;color:#444;margin:0 0 12px;">
-        ti ricordiamo che hai una lezione dal vivo in programma: <strong>{{ title }}</strong>.
+        ti ricordiamo che il <strong>{{ frappe.utils.format_date(date, "dd-MM-yyyy") }}</strong> alle ore <strong>{{ frappe.utils.format_time(time, "HH:mm") }}</strong> hai in programma la lezione live <strong>{{ title }}</strong>.
       </p>
       <p style="font-size:14px;line-height:1.7;color:#444;margin:0 0 12px;">
-        La lezione si terrà il <strong>{{ frappe.utils.format_date(date, "dd-MM-yyyy") }}</strong> alle ore <strong>{{ frappe.utils.format_time(time, "HH:mm") }}</strong>.
+        Ti invitiamo a prepararti al meglio ed essere puntuale per l'inizio della sessione.
       </p>
       <p style="font-size:14px;line-height:1.7;color:#444;margin:0 0 24px;">
-        Ti invitiamo a prepararti ed essere puntuale per l'inizio della sessione.
+        Per non dimenticare l'evento, aggiungilo al tuo calendario.
       </p>
       {% set start_dt = frappe.utils.get_datetime((date|string) + " " + (time|string)) %}
       {% set end_dt = frappe.utils.add_to_date(start_dt, hours=1) %}
@@ -23,13 +23,13 @@
       {% set batch_url = frappe.utils.get_url() + "/lms/batches/" + batch_name %}
       {% set gcal_url = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + title|urlencode + "&dates=" + cal_start + "/" + cal_end + "&details=" + batch_url|urlencode %}
       <div style="text-align:center;margin:0 0 12px;">
-        <a href="{{ batch_url }}" style="display:inline-block;background:#123456;color:#fff;padding:12px 28px;border-radius:4px;font-size:14px;font-weight:600;text-decoration:none;">
-          Vai alla classe
+        <a href="{{ gcal_url }}" target="_blank" style="display:inline-block;background:#256AB0;color:#fff;padding:12px 28px;border-radius:4px;font-size:14px;font-weight:600;text-decoration:none;">
+          Aggiungi al calendario
         </a>
       </div>
       <div style="text-align:center;margin:0 0 24px;">
-        <a href="{{ gcal_url }}" target="_blank" style="display:inline-block;background:#256AB0;color:#fff;padding:12px 28px;border-radius:4px;font-size:14px;font-weight:600;text-decoration:none;">
-          Aggiungi al tuo calendario
+        <a href="{{ batch_url }}" style="display:inline-block;background:#123456;color:#fff;padding:12px 28px;border-radius:4px;font-size:14px;font-weight:600;text-decoration:none;">
+          Vai alla Classe
         </a>
       </div>
       <p style="font-size:14px;line-height:1.7;color:#444;margin:0;">

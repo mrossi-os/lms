@@ -19,7 +19,7 @@
 				)
 			}}
 		</div>
-		<div class="grid grid-cols-4 gap-5">
+		<div class="grid grid-cols-2 md:grid-cols-4 gap-5">
 			<div
 				v-for="program in programs.data"
 				@click="openForm(program.name)"
