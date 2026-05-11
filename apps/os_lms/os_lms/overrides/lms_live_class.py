@@ -14,6 +14,15 @@ def _lc_log(msg):
 
 
 class CustomLMSLiveClass(LMSLiveClass):
+	def _is_zoom(self) -> bool:
+		# `create_live_class` (Zoom flow) does not set `conferencing_provider`.
+		# Treat anything that isn't Google Meet but has a zoom_account as Zoom.
+		if self.conferencing_provider == "Zoom":
+			return True
+		if self.conferencing_provider != "Google Meet" and self.zoom_account:
+			return True
+		return False
+
 	def build_event_description(self):
 		description = _("È stata programmata una lezione dal vivo il {0} alle {1}.").format(
 			format_date(self.date, "medium"), format_time(self.time, "hh:mm a")
@@ -25,17 +34,29 @@ class CustomLMSLiveClass(LMSLiveClass):
 		return description
 
 	def create_calendar_event(self):
-		_lc_log(f"[create_calendar_event] {self.name} provider={self.conferencing_provider} meet_account={self.google_meet_account} zoom_account={self.zoom_account}")
+		is_zoom = self._is_zoom()
+		is_meet = self.conferencing_provider == "Google Meet"
+		_lc_log(
+			f"[create_calendar_event] START name={self.name} provider={self.conferencing_provider!r} "
+			f"is_zoom={is_zoom} is_meet={is_meet} meet_account={self.google_meet_account} "
+			f"zoom_account={self.zoom_account} join_url={self.join_url} session_user={frappe.session.user}"
+		)
 
-		if self.conferencing_provider == "Google Meet":
-			calendar = frappe.db.get_value(
-				"LMS Google Meet Settings", self.google_meet_account, "google_calendar"
-			)
-		else:
-			calendar = frappe.db.get_value(
-				"Google Calendar", {"user": frappe.session.user, "enable": 1}, "name"
-			)
-		_lc_log(f"[create_calendar_event] {self.name} resolved calendar={calendar}")
+		if is_zoom:
+			_lc_log(f"[create_calendar_event] {self.name} Zoom branch: skipping Frappe Event creation (no Daily Digest)")
+			self._send_invitation_safe()
+			self._send_notification_safe()
+			_lc_log(f"[create_calendar_event] END name={self.name} (Zoom)")
+			return
+
+		if not is_meet:
+			_lc_log(f"[create_calendar_event] {self.name} unknown provider, aborting")
+			frappe.throw(_("Provider di conferenza non riconosciuto."))
+
+		calendar = frappe.db.get_value(
+			"LMS Google Meet Settings", self.google_meet_account, "google_calendar"
+		)
+		_lc_log(f"[create_calendar_event] {self.name} resolved Meet calendar={calendar}")
 
 		if not calendar:
 			frappe.throw(
@@ -54,10 +75,11 @@ class CustomLMSLiveClass(LMSLiveClass):
 			"sync_with_google_calendar": 1,
 			"google_calendar": calendar,
 			"description": self.build_event_description(),
-			"add_video_conferencing": 1 if self.conferencing_provider == "Google Meet" else 0,
+			"add_video_conferencing": 1,
+			"send_reminder": 0,
 		}
 		event.update(event_data)
-		_lc_log(f"[create_calendar_event] {self.name} saving Event with sync=1 add_vc={event_data['add_video_conferencing']}")
+		_lc_log(f"[create_calendar_event] {self.name} saving Meet Event with sync=1 add_vc=1 send_reminder=0")
 
 		try:
 			event.save()
@@ -80,60 +102,84 @@ class CustomLMSLiveClass(LMSLiveClass):
 			frappe.log_error(title="LMS Live Class add_event_participants failed")
 			raise
 
-		if self.conferencing_provider == "Google Meet":
-			event.reload()
-			meet_link = event.google_meet_link
-			_lc_log(f"[create_calendar_event] {self.name} after reload meet={meet_link}")
-			if meet_link:
-				frappe.db.set_value(
-					self.doctype,
-					self.name,
-					{"start_url": meet_link, "join_url": meet_link},
-				)
-				self.start_url = meet_link
-				self.join_url = meet_link
-				_lc_log(f"[create_calendar_event] {self.name} start_url/join_url persisted")
-			else:
-				_lc_log(f"[create_calendar_event] {self.name} NO meet link returned by Google")
+		event.reload()
+		meet_link = event.google_meet_link
+		_lc_log(f"[create_calendar_event] {self.name} after reload meet={meet_link}")
+		if meet_link:
+			frappe.db.set_value(
+				self.doctype,
+				self.name,
+				{"start_url": meet_link, "join_url": meet_link},
+			)
+			self.start_url = meet_link
+			self.join_url = meet_link
+			_lc_log(f"[create_calendar_event] {self.name} start_url/join_url persisted")
+		else:
+			_lc_log(f"[create_calendar_event] {self.name} NO meet link returned by Google")
 
+		self._send_invitation_safe()
+		self._send_notification_safe()
+		_lc_log(f"[create_calendar_event] END name={self.name} (Meet)")
+
+	def _send_invitation_safe(self):
 		try:
 			self.send_invitation_email()
-			_lc_log(f"[create_calendar_event] {self.name} invitation emails sent")
-		except Exception:
-			_lc_log(f"[create_calendar_event] {self.name} send_invitation_email RAISED (continuing)")
+			_lc_log(f"[_send_invitation_safe] {self.name} OK")
+		except Exception as exc:
+			_lc_log(f"[_send_invitation_safe] {self.name} RAISED type={type(exc).__name__} msg={exc!r}")
 			frappe.log_error(title="LMS Live Class send_invitation_email failed")
 
+	def _send_notification_safe(self):
 		try:
 			self.send_notification()
-			_lc_log(f"[create_calendar_event] {self.name} notifications sent")
-		except Exception:
-			_lc_log(f"[create_calendar_event] {self.name} send_notification RAISED (continuing)")
+			_lc_log(f"[_send_notification_safe] {self.name} OK")
+		except Exception as exc:
+			_lc_log(f"[_send_notification_safe] {self.name} RAISED type={type(exc).__name__} msg={exc!r}")
 			frappe.log_error(title="LMS Live Class send_notification failed")
 
 	def send_invitation_email(self):
 		participants = self.get_participants()
+		_lc_log(
+			f"[send_invitation_email] {self.name} participants_count={len(participants)} "
+			f"participants={participants} join_url={self.join_url} title={self.title!r}"
+		)
+		sent = 0
+		failed = 0
 		for participant in participants:
-			member_name = frappe.db.get_value("User", participant, "first_name") or participant
-			frappe.sendmail(
-				recipients=participant,
-				subject=_("Lezione dal vivo: {0}").format(self.title),
-				template="live_class_invitation",
-				args={
-					"student_name": member_name,
-					"title": self.title,
-					"date": self.date,
-					"time": self.time,
-					"join_url": self.join_url,
-					"description": self.description,
-					"batch_name": self.batch_name,
-				},
-				header=[_("Invito lezione dal vivo"), "green"],
-			)
+			try:
+				member_name = frappe.db.get_value("User", participant, "first_name") or participant
+				_lc_log(f"[send_invitation_email] {self.name} -> {participant} (name={member_name}) attempting sendmail")
+				frappe.sendmail(
+					recipients=participant,
+					subject=_("Lezione dal vivo: {0}").format(self.title),
+					template="live_class_invitation",
+					args={
+						"student_name": member_name,
+						"title": self.title,
+						"date": self.date,
+						"time": self.time,
+						"join_url": self.join_url,
+						"description": self.description,
+						"batch_name": self.batch_name,
+					},
+					header=[_("Invito lezione dal vivo"), "green"],
+				)
+				sent += 1
+				_lc_log(f"[send_invitation_email] {self.name} -> {participant} queued OK")
+			except Exception as exc:
+				failed += 1
+				_lc_log(
+					f"[send_invitation_email] {self.name} -> {participant} FAILED "
+					f"type={type(exc).__name__} msg={exc!r}"
+				)
+				frappe.log_error(title=f"LMS Live Class invitation to {participant} failed")
+		_lc_log(f"[send_invitation_email] {self.name} summary sent={sent} failed={failed}")
 
 	def send_notification(self):
 		students = frappe.get_all(
 			"LMS Batch Enrollment", {"batch": self.batch_name}, pluck="member"
 		)
+		_lc_log(f"[send_notification] {self.name} students_count={len(students)}")
 		if not students:
 			return
 

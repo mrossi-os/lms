@@ -92,20 +92,24 @@
 						</span>
 					</div>
 					<div
-						v-if="canAccessClass(cls) && cls.join_url"
+						v-if="isAdmin() && canModeratorAccessClass(cls)"
 						class="flex items-center gap-x-2 text-ink-gray-9 mt-auto"
+						@click.stop
 					>
-						<a
-							v-if="user.data?.is_moderator || user.data?.is_evaluator"
-							:href="cls.start_url || cls.join_url"
-							target="_blank"
-							@click.stop
-							class="cursor-pointer inline-flex items-center justify-center gap-2 transition-colors focus:outline-none text-ink-gray-8 bg-surface-gray-2 hover:bg-surface-gray-3 active:bg-surface-gray-4 focus-visible:ring focus-visible:ring-outline-gray-3 h-7 text-base px-2 rounded"
-							:class="cls.join_url ? 'w-full' : 'w-1/2'"
+						<button
+							type="button"
+							@click="startClass(cls)"
+							:disabled="startLiveClass.loading"
+							class="w-full cursor-pointer inline-flex items-center justify-center gap-2 transition-colors focus:outline-none text-ink-gray-8 bg-surface-gray-2 hover:bg-surface-gray-3 active:bg-surface-gray-4 focus-visible:ring focus-visible:ring-outline-gray-3 h-7 text-base px-2 rounded disabled:opacity-50 disabled:cursor-not-allowed"
 						>
 							<Monitor class="h-4 w-4 stroke-1.5" />
-							{{ __('Start') }}
-						</a>
+							{{ hasHostStarted(cls) ? __('Open') : __('Start') }}
+						</button>
+					</div>
+					<div
+						v-else-if="canStudentJoin(cls)"
+						class="flex items-center gap-x-2 text-ink-gray-9 mt-auto"
+					>
 						<a
 							:href="cls.join_url"
 							target="_blank"
@@ -116,6 +120,25 @@
 							{{ __('Join') }}
 						</a>
 					</div>
+					<Tooltip
+						v-else-if="showStudentJoinDisabled(cls)"
+						:text="__('Waiting for the host to start the class')"
+						placement="right"
+					>
+						<div
+							class="flex items-center gap-x-2 mt-auto"
+							@click.stop
+						>
+							<button
+								type="button"
+								disabled
+								class="w-full inline-flex items-center justify-center gap-2 text-ink-gray-5 bg-surface-gray-2 h-7 text-base px-2 rounded opacity-60 cursor-not-allowed"
+							>
+								<Video class="h-4 w-4 stroke-1.5" />
+								{{ __('Join') }}
+							</button>
+						</div>
+					</Tooltip>
 					<Tooltip
 						v-else-if="hasClassEnded(cls)"
 						:text="__('This class has ended')"
@@ -133,6 +156,14 @@
 		</div>
 		<div v-else class="text-ink-gray-7 mt-5">
 			{{ __('No live classes scheduled') }}
+		</div>
+		<div
+			v-if="!liveClasses.list?.loading && liveClasses.hasNextPage"
+			class="flex justify-center mt-5"
+		>
+			<Button @click="liveClasses.next()">
+				{{ __('Load More') }}
+			</Button>
 		</div>
 	</div>
 
@@ -209,6 +240,8 @@ import {
 	Dropdown,
 	toast,
 } from 'frappe-ui'
+
+const JOIN_WINDOW_MINUTES_BEFORE = 15
 import {
 	Plus,
 	Clock,
@@ -257,11 +290,13 @@ const liveClasses = createListResource({
 		'attendees',
 		'start_url',
 		'join_url',
+		'started_at',
 		'owner',
 		'conferencing_provider',
 		'batch_name',
 	],
 	orderBy: 'date',
+	pageLength: 20,
 	auto: true,
 })
 
@@ -277,6 +312,10 @@ const fetchLiveClassDetails = createResource({
 
 const deleteLiveClass = createResource({
 	url: 'os_lms.os_lms.api.delete_live_class',
+})
+
+const startLiveClass = createResource({
+	url: 'os_lms.os_lms.api.start_live_class',
 })
 
 const openCreateModal = () => {
@@ -337,13 +376,6 @@ const isAdmin = () => {
 	return user.data?.is_moderator || user.data?.is_evaluator
 }
 
-const canAccessClass = (cls) => {
-	if (cls.date < dayjs().format('YYYY-MM-DD')) return false
-	if (cls.date > dayjs().format('YYYY-MM-DD')) return false
-	if (hasClassEnded(cls)) return false
-	return true
-}
-
 const getClassStart = (cls) => {
 	return new Date(`${cls.date}T${cls.time}`)
 }
@@ -357,6 +389,51 @@ const hasClassEnded = (cls) => {
 	const classEnd = getClassEnd(cls)
 	const now = new Date()
 	return now > classEnd
+}
+
+const isWithinJoinWindow = (cls) => {
+	const now = new Date()
+	const start = getClassStart(cls)
+	const end = getClassEnd(cls)
+	const windowOpen = new Date(
+		start.getTime() - JOIN_WINDOW_MINUTES_BEFORE * 60000,
+	)
+	return now >= windowOpen && now <= end
+}
+
+const hasHostStarted = (cls) => Boolean(cls.started_at)
+
+const canStudentJoin = (cls) =>
+	isWithinJoinWindow(cls) && hasHostStarted(cls) && Boolean(cls.join_url)
+
+const showStudentJoinDisabled = (cls) =>
+	isWithinJoinWindow(cls) &&
+	!hasHostStarted(cls) &&
+	!hasClassEnded(cls) &&
+	Boolean(cls.join_url)
+
+const canModeratorAccessClass = (cls) => {
+	if (hasClassEnded(cls)) return false
+	if (cls.date !== dayjs().format('YYYY-MM-DD')) return false
+	return true
+}
+
+const startClass = (cls) => {
+	const fallbackUrl = cls.start_url || cls.join_url
+	startLiveClass.submit(
+		{ name: cls.name },
+		{
+			onSuccess(data) {
+				const url = data?.start_url || fallbackUrl
+				if (url) window.open(url, '_blank', 'noopener')
+				liveClasses.reload()
+			},
+			onError(err) {
+				toast.error(err.messages?.[0] || err)
+				if (fallbackUrl) window.open(fallbackUrl, '_blank', 'noopener')
+			},
+		},
+	)
 }
 
 const openAttendanceModal = (cls) => {
