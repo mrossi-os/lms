@@ -446,6 +446,35 @@ def update_live_class(name: str, payload: dict) -> dict:
 
 
 @frappe.whitelist()
+def start_live_class(name: str) -> dict:
+    """Mark a Live Class as started by the host so enrolled students can join."""
+    _ensure_live_class_admin()
+
+    doc = frappe.get_doc("LMS Live Class", name)
+
+    if not doc.get("started_at"):
+        now = frappe.utils.now_datetime()
+        frappe.db.set_value("LMS Live Class", name, "started_at", now)
+        frappe.db.commit()
+        started_at = now
+        frappe.publish_realtime(
+            "lms_live_class_started",
+            {"name": name, "started_at": str(now)},
+            doctype="LMS Live Class",
+            docname=name,
+        )
+    else:
+        started_at = doc.started_at
+
+    return {
+        "name": name,
+        "start_url": doc.start_url or doc.join_url,
+        "join_url": doc.join_url,
+        "started_at": str(started_at),
+    }
+
+
+@frappe.whitelist()
 def delete_live_class(name: str, notify_students: int = 0) -> dict:
     """Delete a Live Class. Optionally notify enrolled students by email + Notification Log."""
     _ensure_live_class_admin()

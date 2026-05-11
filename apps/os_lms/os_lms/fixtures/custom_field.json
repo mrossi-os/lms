@@ -260,5 +260,17 @@
         "fieldtype": "Table",
         "options": "LMS Live Class Reminder",
         "insert_after": "reminders_section"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Live Class-started_at",
+        "dt": "LMS Live Class",
+        "label": "Started At",
+        "fieldname": "started_at",
+        "fieldtype": "Datetime",
+        "insert_after": "join_url",
+        "read_only": 1,
+        "no_copy": 1,
+        "description": "Timestamp set when the host opens the meeting from the platform. Students can join only after this is set."
     }
 ]
