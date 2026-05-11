@@ -143,6 +143,7 @@ const zoomAccounts = createListResource({
 		'account_id',
 		'client_id',
 		'client_secret',
+		'google_calendar',
 	],
 	cache: ['zoomAccounts'],
 })
