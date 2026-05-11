@@ -273,8 +273,6 @@ import {
 	Dropdown,
 	toast,
 } from 'frappe-ui'
-
-const JOIN_WINDOW_MINUTES_BEFORE = 15
 import {
 	Plus,
 	Clock,
