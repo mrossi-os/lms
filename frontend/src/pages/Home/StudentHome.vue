@@ -19,13 +19,13 @@
 							{{ cls.description }}
 						</div>
 						<div class="mt-auto space-y-4 text-ink-gray-7">
-							<div class="flex items-center space-x-2">
+							<div class="flex items-center gap-x-2">
 								<Calendar class="w-4 h-4 stroke-1.5" />
 								<span>
 									{{ dayjs(cls.date).format('DD MMMM YYYY') }}
 								</span>
 							</div>
-							<div class="flex items-center space-x-2">
+							<div class="flex items-center gap-x-2">
 								<Clock class="w-4 h-4 stroke-1.5" />
 								<span>
 									{{ formatTime(cls.time) }} -
@@ -34,7 +34,7 @@
 							</div>
 							<div
 								v-if="canAccessClass(cls)"
-								class="flex items-center space-x-2 text-ink-gray-9 mt-auto"
+								class="flex items-center gap-x-2 text-ink-gray-9 mt-auto"
 							>
 								<a
 									v-if="user.data?.is_moderator || user.data?.is_evaluator"
@@ -60,7 +60,7 @@
 								:text="__('This class has ended')"
 								placement="right"
 							>
-								<div class="flex items-center space-x-2 text-ink-amber-3 w-fit">
+								<div class="flex items-center gap-x-2 text-ink-amber-3 w-fit">
 									<Info class="w-4 h-4 stroke-1.5" />
 									<span>
 										{{ __('Ended') }}
@@ -93,7 +93,7 @@
 						<span>
 							{{ __('See all') }}
 						</span>
-						<MoveRight class="size-3 stroke-1.5" />
+						<MoveRight class="size-3 stroke-1.5 rtl:rotate-180" />
 					</span>
 				</router-link>
 			</div>
@@ -179,7 +179,7 @@
 						<span>
 							{{ __('See all') }}
 						</span>
-						<MoveRight class="size-3 stroke-1.5" />
+						<MoveRight class="size-3 stroke-1.5 rtl:rotate-180" />
 					</span>
 				</router-link>
 			</div>

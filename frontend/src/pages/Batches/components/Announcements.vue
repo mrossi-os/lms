@@ -21,16 +21,16 @@
 					<div class="flex items-center justify-between mb-2">
 						<div class="flex items-center">
 							<Avatar :label="comm.sender_full_name" size="lg" />
-							<div class="ml-2 text-ink-gray-7">
+							<div class="ms-2 text-ink-gray-7">
 								{{ comm.sender_full_name }}
 							</div>
 						</div>
 
-						<div class="text-sm text-white">
+						<div class="text-sm text-ink-gray-9">
 							{{ timeAgo(comm.communication_date) }}
 						</div>
 					</div>
-					<div class="ml-3 font-bold text-white prose">
+					<div class="ml-3 font-bold text-ink-gray-9 prose">
 						{{ comm.subject }}
 					</div>
 					<div

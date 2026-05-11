@@ -28,7 +28,7 @@
 
 		<div
 			v-else-if="!oauthConfigured.data"
-			class="flex items-start gap-3 bg-surface-amber-2 text-amber-900 text-sm p-4 rounded-md"
+			class="flex items-start gap-3 bg-surface-amber-2 text-ink-amber-3 text-sm p-4 rounded-md"
 		>
 			<CircleAlert class="h-5 w-5 stroke-1.5 shrink-0 mt-0.5" />
 			<div class="space-y-2">

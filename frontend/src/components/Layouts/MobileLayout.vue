@@ -7,28 +7,28 @@
 		<div class="relative z-20">
 			<!-- Dropdown menu -->
 			<div
-				class="fixed bottom-16 right-2 w-[80%] rounded-md bg-surface-white text-base p-5 space-y-4 shadow-md"
+				class="fixed bottom-16 end-2 w-[80%] rounded-md bg-surface-white text-base p-5 space-y-4 shadow-md"
 				v-if="showMenu"
 				ref="menu"
 			>
 				<div
 					v-for="link in otherLinks"
 					:key="link.label"
-					class="flex items-center space-x-2 cursor-pointer"
+					class="flex items-center gap-x-2 cursor-pointer"
 					@click="handleClick(link)"
 				>
 					<component
 						:is="icons[link.icon]"
 						class="h-4 w-4 stroke-1.5 text-ink-gray-5"
 					/>
-					<div class="text-white">{{ __(link.label) }}</div>
+					<div class="text-ink-gray-9">{{ __(link.label) }}</div>
 				</div>
 			</div>
 
 			<!-- Fixed menu -->
 			<div
 				v-if="sidebarSettings.data"
-				class="fixed bottom-0 left-0 w-full flex items-center justify-around border-t border-outline-gray-2 bg-surface-white standalone:pb-4 z-10"
+				class="fixed bottom-0 start-0 w-full flex items-center justify-around border-t border-outline-gray-2 bg-surface-white standalone:pb-4 z-10"
 			>
 				<button
 					v-for="tab in sidebarLinks"

@@ -70,10 +70,10 @@
 									{{ __('Instructor Notes') }}
 								</label>
 								<ChevronRight
-									class="stroke-2 h-5 w-5 text-ink-gray-5"
+									class="stroke-2 h-5 w-5 text-ink-gray-5 transform duration-200"
 									:class="{
-										'rotate-90 transform duration-200': openInstructorEditor,
-										'duration-200': !openInstructorEditor,
+										'rotate-90': openInstructorEditor,
+										'rtl:rotate-180': !openInstructorEditor,
 									}"
 								/>
 							</div>
@@ -129,7 +129,7 @@ import { sessionStore } from '../stores/session'
 import EditorJS from '@editorjs/editorjs'
 import LessonHelp from '@/components/LessonHelp.vue'
 import { ChevronRight } from 'lucide-vue-next'
-import { getEditorTools, enablePlyr } from '@/utils'
+import { getEditorTools, enablePlyr, sanitizeEditorJs } from '@/utils'
 import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -235,6 +235,9 @@ const renderEditor = (holder) => {
 		holder: holder,
 		tools: getEditorTools(true),
 		defaultBlock: 'markdown',
+		i18n: {
+			direction: document.documentElement.dir === 'rtl' ? 'rtl' : 'ltr',
+		},
 		onChange: async (api, event) => {
 			enablePlyr()
 		},
@@ -279,7 +282,7 @@ const lessonDetails = createResource({
 const addLessonContent = (data) => {
 	editor.value.isReady.then(() => {
 		if (data.lesson.content) {
-			editor.value.render(JSON.parse(data.lesson.content))
+			editor.value.render(sanitizeEditorJs(JSON.parse(data.lesson.content)))
 		} else if (data.lesson.body) {
 			let blocks = convertToJSON(data.lesson)
 			editor.value.render({
@@ -292,7 +295,9 @@ const addLessonContent = (data) => {
 const addInstructorNotes = (data) => {
 	instructorEditor.value.isReady.then(() => {
 		if (data.lesson.instructor_content) {
-			instructorEditor.value.render(JSON.parse(data.lesson.instructor_content))
+			instructorEditor.value.render(
+				sanitizeEditorJs(JSON.parse(data.lesson.instructor_content))
+			)
 		} else if (data.lesson.instructor_notes) {
 			let blocks = convertToJSON(data.lesson)
 			instructorEditor.value.render({
@@ -625,8 +630,15 @@ usePageMeta(() => {
 	max-width: none;
 }
 
+.ce-toolbar__actions,
 .codex-editor--narrow .ce-toolbar__actions {
-	right: 100%;
+	right: auto;
+	left: auto;
+	inset-inline-end: 100%;
+}
+
+.codex-editor--narrow .codex-editor__redactor {
+	margin-inline: 0;
 }
 
 .ce-toolbar__content {
@@ -662,8 +674,8 @@ usePageMeta(() => {
 	border-radius: 0 0 20px 2px;
 	padding: 2px 26px;
 	padding-top: 0;
-	padding-right: 0;
-	text-align: left;
+	padding-inline-end: 0;
+	text-align: start;
 	cursor: pointer;
 	border: none !important;
 	outline: none !important;
@@ -671,7 +683,7 @@ usePageMeta(() => {
 
 .codeBoxSelectDropIcon {
 	position: absolute !important;
-	left: 10px !important;
+	inset-inline-start: 10px !important;
 	bottom: 0 !important;
 	width: unset !important;
 	height: unset !important;
@@ -732,7 +744,7 @@ iframe {
 }
 
 .tc-table {
-	border-left: 1px solid #e8e8eb;
+	border-inline-start: 1px solid #e8e8eb;
 }
 
 .ce-toolbox__button[data-tool='markdown'] {
@@ -769,14 +781,13 @@ iframe {
 	padding: 8px;
 }
 
+.ce-popover,
 .codex-editor--narrow .ce-toolbox .ce-popover,
 .codex-editor--narrow .ce-toolbar__actions .ce-popover {
-	right: unset;
-	left: initial;
-}
-
-.ce-popover {
 	border-radius: 12px;
+	right: auto;
+	left: auto;
+	inset-inline-start: 0;
 }
 
 .cdx-search-field {
@@ -806,6 +817,11 @@ iframe {
 	height: 15px;
 }
 
+.ce-popover-item__icon {
+	margin-right: unset;
+	margin-inline-end: 10px;
+}
+
 .ce-popover--opened {
 	max-height: unset !important;
 }
@@ -816,7 +832,7 @@ iframe {
 }
 
 .cdx-search-field__icon {
-	margin-right: 5px;
+	margin-inline-end: 5px;
 }
 
 .cdx-block.embed-tool {

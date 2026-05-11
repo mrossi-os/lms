@@ -7,7 +7,7 @@
 		<span
 			v-for="tag in tagObjects"
 			:key="tag.tag_name"
-			class="inline-flex items-center rounded-full font-semibold text-white leading-4"
+			class="inline-flex items-center rounded-full font-semibold text-ink-gray-9 leading-4"
 			:class="
 				size === 'xs'
 					? 'px-1.5 py-0.5 text-[10px]'

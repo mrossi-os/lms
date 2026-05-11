@@ -2,7 +2,7 @@
 	<div class="p-5">
 		<div
 			v-if="isAdmin() && !hasProviderAccount()"
-			class="flex lg:items-center space-x-2 mb-5 bg-surface-amber-1 px-3 py-2 rounded-lg text-ink-amber-3"
+			class="flex lg:items-center gap-x-2 mb-5 bg-surface-amber-1 px-3 py-2 rounded-lg text-ink-amber-3"
 		>
 			<AlertCircle class="size-7 md:size-4 stroke-1.5" />
 			<span class="leading-5">
@@ -14,18 +14,44 @@
 			</span>
 		</div>
 
-		<div class="flex items-center justify-between">
+		<div class="flex items-center justify-between gap-3 flex-wrap">
 			<div class="text-lg font-semibold text-ink-gray-9">
 				{{ __('Live Class') }}
 			</div>
-			<Button v-if="canCreateClass()" @click="openCreateModal">
-				<template #prefix>
-					<Plus class="h-4 w-4" />
-				</template>
-				<span>
-					{{ __('Add') }}
-				</span>
-			</Button>
+			<div class="flex items-center gap-2">
+				<FormControl
+					v-model="sortField"
+					type="select"
+					size="sm"
+					:options="sortFieldOptions"
+				/>
+				<Tooltip
+					:text="
+						sortOrder === 'asc' ? __('Crescente') : __('Decrescente')
+					"
+				>
+					<Button
+						:variant="'subtle'"
+						@click="toggleSortOrder"
+						:aria-label="
+							sortOrder === 'asc' ? __('Crescente') : __('Decrescente')
+						"
+					>
+						<template #icon>
+							<ArrowUp v-if="sortOrder === 'asc'" class="w-4 h-4" />
+							<ArrowDown v-else class="w-4 h-4" />
+						</template>
+					</Button>
+				</Tooltip>
+				<Button v-if="canCreateClass()" @click="openCreateModal">
+					<template #prefix>
+						<Plus class="h-4 w-4" />
+					</template>
+					<span>
+						{{ __('Add') }}
+					</span>
+				</Button>
+			</div>
 		</div>
 		<div
 			v-if="liveClasses.data?.length"
@@ -43,11 +69,7 @@
 					}
 				"
 			>
-				<div
-					v-if="isAdmin()"
-					class="absolute top-2 right-2"
-					@click.stop
-				>
+				<div v-if="isAdmin()" class="absolute top-2 right-2" @click.stop>
 					<Dropdown
 						:options="[
 							{
@@ -78,13 +100,13 @@
 					{{ cls.description }}
 				</div>
 				<div class="mt-auto space-y-3">
-					<div class="flex items-center space-x-2">
+					<div class="flex items-center gap-x-2">
 						<Calendar class="w-4 h-4 stroke-1.5" />
 						<span>
 							{{ dayjs(cls.date).format('DD MMMM YYYY') }}
 						</span>
 					</div>
-					<div class="flex items-center space-x-2">
+					<div class="flex items-center gap-x-2">
 						<Clock class="w-4 h-4 stroke-1.5" />
 						<span>
 							{{ dayjs(getClassStart(cls)).format('hh:mm A') }} -
@@ -92,20 +114,24 @@
 						</span>
 					</div>
 					<div
-						v-if="canAccessClass(cls) && cls.join_url"
-						class="flex items-center space-x-2 text-ink-gray-9 mt-auto"
+						v-if="isAdmin() && canModeratorAccessClass(cls)"
+						class="flex items-center gap-x-2 text-ink-gray-9 mt-auto"
+						@click.stop
 					>
-						<a
-							v-if="user.data?.is_moderator || user.data?.is_evaluator"
-							:href="cls.start_url || cls.join_url"
-							target="_blank"
-							@click.stop
-							class="cursor-pointer inline-flex items-center justify-center gap-2 transition-colors focus:outline-none text-ink-gray-8 bg-surface-gray-2 hover:bg-surface-gray-3 active:bg-surface-gray-4 focus-visible:ring focus-visible:ring-outline-gray-3 h-7 text-base px-2 rounded"
-							:class="cls.join_url ? 'w-full' : 'w-1/2'"
+						<button
+							type="button"
+							@click="startClass(cls)"
+							:disabled="startLiveClass.loading"
+							class="w-full cursor-pointer inline-flex items-center justify-center gap-2 transition-colors focus:outline-none text-ink-gray-8 bg-surface-gray-2 hover:bg-surface-gray-3 active:bg-surface-gray-4 focus-visible:ring focus-visible:ring-outline-gray-3 h-7 text-base px-2 rounded disabled:opacity-50 disabled:cursor-not-allowed"
 						>
 							<Monitor class="h-4 w-4 stroke-1.5" />
-							{{ __('Start') }}
-						</a>
+							{{ hasHostStarted(cls) ? __('Open') : __('Start') }}
+						</button>
+					</div>
+					<div
+						v-else-if="canStudentJoin(cls)"
+						class="flex items-center gap-x-2 text-ink-gray-9 mt-auto"
+					>
 						<a
 							:href="cls.join_url"
 							target="_blank"
@@ -117,11 +143,27 @@
 						</a>
 					</div>
 					<Tooltip
+						v-else-if="showStudentJoinDisabled(cls)"
+						:text="__('Waiting for the host to start the class')"
+						placement="right"
+					>
+						<div class="flex items-center gap-x-2 mt-auto" @click.stop>
+							<button
+								type="button"
+								disabled
+								class="w-full inline-flex items-center justify-center gap-2 text-ink-gray-5 bg-surface-gray-2 h-7 text-base px-2 rounded opacity-60 cursor-not-allowed"
+							>
+								<Video class="h-4 w-4 stroke-1.5" />
+								{{ __('Join') }}
+							</button>
+						</div>
+					</Tooltip>
+					<Tooltip
 						v-else-if="hasClassEnded(cls)"
 						:text="__('This class has ended')"
 						placement="right"
 					>
-						<div class="flex items-center space-x-2 text-ink-amber-3 w-fit">
+						<div class="flex items-center gap-x-2 text-ink-amber-3 w-fit">
 							<Info class="w-4 h-4 stroke-1.5" />
 							<span>
 								{{ __('Ended') }}
@@ -133,6 +175,28 @@
 		</div>
 		<div v-else class="text-ink-gray-7 mt-5">
 			{{ __('No live classes scheduled') }}
+		</div>
+		<div
+			v-if="totalPages > 1"
+			class="flex items-center justify-between border-t pt-3 mt-5"
+		>
+			<div class="text-sm text-ink-gray-5">
+				{{ __('Page {0} of {1}').format(currentPage, totalPages) }}
+			</div>
+			<div class="flex items-center space-x-2">
+				<Button :disabled="currentPage <= 1" @click="currentPage--">
+					<template #prefix>
+						<ChevronLeft class="w-4 h-4" />
+					</template>
+					{{ __('Previous') }}
+				</Button>
+				<Button :disabled="currentPage >= totalPages" @click="currentPage++">
+					<template #suffix>
+						<ChevronRight class="w-4 h-4" />
+					</template>
+					{{ __('Next') }}
+				</Button>
+			</div>
 		</div>
 	</div>
 
@@ -201,9 +265,9 @@
 </template>
 <script setup>
 import {
-	createListResource,
 	createResource,
 	Button,
+	FormControl,
 	Tooltip,
 	Dialog,
 	Dropdown,
@@ -218,10 +282,17 @@ import {
 	Info,
 	AlertCircle,
 	MoreVertical,
+	ChevronLeft,
+	ChevronRight,
+	ArrowUp,
+	ArrowDown,
 } from 'lucide-vue-next'
-import { inject, ref } from 'vue'
+import { computed, inject, ref, watch } from 'vue'
 import LiveClassModal from '@/components/Modals/LiveClassModal.vue'
 import LiveClassAttendance from '@/components/Modals/LiveClassAttendance.vue'
+
+const JOIN_WINDOW_MINUTES_BEFORE = 15
+const PAGE_SIZE = 20
 
 const user = inject('$user')
 const showLiveClassModal = ref(false)
@@ -241,29 +312,101 @@ const props = defineProps({
 	},
 })
 
-const liveClasses = createListResource({
-	doctype: 'LMS Live Class',
-	filters: {
-		batch_name: props.batch.data?.name,
+const currentPage = ref(1)
+const sortField = ref('creation')
+const sortOrder = ref('desc')
+
+const sortFieldOptions = [
+	{ label: __('Data creazione'), value: 'creation' },
+	{ label: __('Data lezione'), value: 'date' },
+]
+
+const computedOrderBy = computed(() => {
+	if (sortField.value === 'date') {
+		return `date ${sortOrder.value}, time ${sortOrder.value}`
+	}
+	return `creation ${sortOrder.value}`
+})
+
+const listFilters = computed(() => ({
+	batch_name: props.batch.data?.name,
+}))
+
+const liveClasses = createResource({
+	url: 'frappe.client.get_list',
+	makeParams() {
+		return {
+			doctype: 'LMS Live Class',
+			fields: [
+				'name',
+				'title',
+				'description',
+				'time',
+				'date',
+				'duration',
+				'timezone',
+				'attendees',
+				'start_url',
+				'join_url',
+				'started_at',
+				'owner',
+				'conferencing_provider',
+				'batch_name',
+			],
+			filters: listFilters.value,
+			order_by: computedOrderBy.value,
+			limit_start: (currentPage.value - 1) * PAGE_SIZE,
+			limit_page_length: PAGE_SIZE,
+		}
 	},
-	fields: [
-		'name',
-		'title',
-		'description',
-		'time',
-		'date',
-		'duration',
-		'timezone',
-		'attendees',
-		'start_url',
-		'join_url',
-		'owner',
-		'conferencing_provider',
-		'batch_name',
-	],
-	orderBy: 'date',
 	auto: true,
 })
+
+const liveClassesCount = createResource({
+	url: 'frappe.client.get_count',
+	makeParams() {
+		return {
+			doctype: 'LMS Live Class',
+			filters: listFilters.value,
+		}
+	},
+	auto: true,
+})
+
+const totalPages = computed(() =>
+	Math.max(1, Math.ceil((liveClassesCount.data || 0) / PAGE_SIZE)),
+)
+
+const refreshList = () => {
+	liveClasses.reload()
+}
+
+const resetToFirstPage = () => {
+	if (currentPage.value !== 1) {
+		currentPage.value = 1
+	} else {
+		refreshList()
+	}
+	liveClassesCount.reload()
+}
+
+watch(currentPage, refreshList)
+watch([sortField, sortOrder], () => {
+	if (currentPage.value !== 1) {
+		currentPage.value = 1
+	} else {
+		refreshList()
+	}
+})
+watch(showLiveClassModal, (isOpen, wasOpen) => {
+	if (wasOpen && !isOpen) {
+		resetToFirstPage()
+	}
+})
+
+const toggleSortOrder = () => {
+	sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+}
 
 const fetchLiveClassDetails = createResource({
 	url: 'frappe.client.get',
@@ -277,6 +420,10 @@ const fetchLiveClassDetails = createResource({
 
 const deleteLiveClass = createResource({
 	url: 'os_lms.os_lms.api.delete_live_class',
+})
+
+const startLiveClass = createResource({
+	url: 'os_lms.os_lms.api.start_live_class',
 })
 
 const openCreateModal = () => {
@@ -305,7 +452,7 @@ const confirmDelete = (close) => {
 		{
 			onSuccess() {
 				toast.success(__('Lezione eliminata'))
-				liveClasses.reload()
+				resetToFirstPage()
 				deletingClass.value = null
 				close()
 			},
@@ -337,13 +484,6 @@ const isAdmin = () => {
 	return user.data?.is_moderator || user.data?.is_evaluator
 }
 
-const canAccessClass = (cls) => {
-	if (cls.date < dayjs().format('YYYY-MM-DD')) return false
-	if (cls.date > dayjs().format('YYYY-MM-DD')) return false
-	if (hasClassEnded(cls)) return false
-	return true
-}
-
 const getClassStart = (cls) => {
 	return new Date(`${cls.date}T${cls.time}`)
 }
@@ -357,6 +497,51 @@ const hasClassEnded = (cls) => {
 	const classEnd = getClassEnd(cls)
 	const now = new Date()
 	return now > classEnd
+}
+
+const isWithinJoinWindow = (cls) => {
+	const now = new Date()
+	const start = getClassStart(cls)
+	const end = getClassEnd(cls)
+	const windowOpen = new Date(
+		start.getTime() - JOIN_WINDOW_MINUTES_BEFORE * 60000,
+	)
+	return now >= windowOpen && now <= end
+}
+
+const hasHostStarted = (cls) => Boolean(cls.started_at)
+
+const canStudentJoin = (cls) =>
+	isWithinJoinWindow(cls) && hasHostStarted(cls) && Boolean(cls.join_url)
+
+const showStudentJoinDisabled = (cls) =>
+	isWithinJoinWindow(cls) &&
+	!hasHostStarted(cls) &&
+	!hasClassEnded(cls) &&
+	Boolean(cls.join_url)
+
+const canModeratorAccessClass = (cls) => {
+	if (hasClassEnded(cls)) return false
+	if (cls.date !== dayjs().format('YYYY-MM-DD')) return false
+	return true
+}
+
+const startClass = (cls) => {
+	const fallbackUrl = cls.start_url || cls.join_url
+	startLiveClass.submit(
+		{ name: cls.name },
+		{
+			onSuccess(data) {
+				const url = data?.start_url || fallbackUrl
+				if (url) window.open(url, '_blank', 'noopener')
+				liveClasses.reload()
+			},
+			onError(err) {
+				toast.error(err.messages?.[0] || err)
+				if (fallbackUrl) window.open(fallbackUrl, '_blank', 'noopener')
+			},
+		},
+	)
 }
 
 const openAttendanceModal = (cls) => {

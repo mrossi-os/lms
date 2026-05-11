@@ -1,7 +1,7 @@
 <template>
 	<div>
 		<div class="relative overflow-x-auto border rounded-md">
-			<table class="w-full text-sm text-left text-ink-gray-5">
+			<table class="w-full text-sm text-start text-ink-gray-5">
 				<thead class="text-xs text-ink-gray-7 uppercase bg-surface-gray-2">
 					<tr>
 						<td scope="col" class="px-6 py-2">
@@ -16,7 +16,7 @@
 				<tbody>
 					<tr
 						v-for="row in rows"
-						class="bg-white dark:bg-gray-800 dark:border-gray-700 border-gray-200"
+						class="bg-surface-white border-outline-gray-1"
 					>
 						<td class="px-6 py-2">
 							<FormControl
@@ -33,7 +33,7 @@
 							<Link
 								:doctype="row.reference_doctype"
 								v-model="row.reference_name"
-								class="bg-white"
+								class="bg-surface-white"
 							/>
 						</td>
 						<td class="px-6 py-2">

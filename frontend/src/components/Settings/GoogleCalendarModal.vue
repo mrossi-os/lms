@@ -133,12 +133,14 @@ watch(
 			calendar.calendar_name = ''
 			calendar.user = user?.data?.email || ''
 			calendar.enable = true
+			calendar.authorization_code = ''
 		} else if (id) {
 			const found = googleCalendars.value?.data.find((c) => c.name === id)
 			if (found) {
 				calendar.calendar_name = found.calendar_name
 				calendar.user = found.user
 				calendar.enable = found.enable ?? true
+				calendar.authorization_code = found.authorization_code || ''
 			}
 		}
 	},
@@ -197,5 +199,45 @@ const updateCalendar = (close: () => void) => {
 			},
 		},
 	)
+}
+
+const authorize = () => {
+	if (!props.calendarID || props.calendarID === 'new') return
+	const reauthorize = calendar.authorization_code ? 1 : 0
+	call(
+		'frappe.integrations.doctype.google_calendar.google_calendar.authorize_access',
+		{
+			g_calendar: props.calendarID,
+			reauthorize,
+		},
+	)
+		.then((message: any) => {
+			googleCalendars.value?.setValue.submit(
+				{
+					name: props.calendarID,
+					calendar_name: calendar.calendar_name,
+					user: calendar.user,
+					enable: calendar.enable,
+				},
+				{
+					onSuccess() {
+						googleCalendars.value?.reload()
+					},
+					onError(err: any) {
+						console.error(err)
+					},
+				},
+			)
+			if (message?.url) {
+				window.open(message.url)
+			}
+		})
+		.catch((err: any) => {
+			console.error(err)
+			toast.error(
+				cleanError(err.messages?.[0]) ||
+					__('Error authorizing Google Calendar'),
+			)
+		})
 }
 </script>

@@ -39,7 +39,7 @@
 				</template>
 				<template #item-label="{ option }">
 					<div class="flex flex-col">
-						<span class="truncate text-sm text-white">{{ option.label }}</span>
+						<span class="truncate text-sm text-ink-gray-9">{{ option.label }}</span>
 						<span
 							v-if="option.description"
 							class="text-[11px] text-ink-gray-4 truncate"

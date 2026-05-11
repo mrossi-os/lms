@@ -10,13 +10,13 @@
 				:class="{ 'bg-surface-gray-2': item.isActive }"
 				@click="emit('navigateTo', item.route)"
 			>
-				<div class="flex items-center space-x-3">
+				<div class="flex items-center gap-x-3">
 					<component
 						v-if="item.icon"
 						:is="item.icon"
 						class="size-4 stroke-1.5 text-ink-gray-6"
 					/>
-					<div v-html="item.title" class="text-white"></div>
+					<div v-html="item.title" class="text-ink-gray-9"></div>
 				</div>
 				<div v-if="item.modified" class="text-ink-gray-5">
 					{{ dayjs.unix(item.modified).fromNow(true) }}

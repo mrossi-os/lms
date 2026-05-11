@@ -8,7 +8,7 @@
 	>
 		<template #body-content>
 			<div class="text-base">
-				<div class="flex items-center justify-between space-x-4 mb-4">
+				<div class="flex items-center justify-between gap-x-4 mb-4">
 					<NumberChart
 						class="border rounded-md w-full"
 						:config="{
@@ -56,7 +56,7 @@
 							showTooltip: false,
 						}"
 					/>
-					<div v-else class="text-center text-gray-500">
+					<div v-else class="text-center text-ink-gray-5">
 						{{ __('No members found.') }}
 					</div>
 				</div>

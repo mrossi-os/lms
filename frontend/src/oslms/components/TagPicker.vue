@@ -9,7 +9,7 @@
 			<span
 				v-for="tag in selectedTagObjects"
 				:key="tag.tag_name"
-				class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-md font-medium text-white"
+				class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-md font-medium text-ink-gray-9"
 				:style="{ backgroundColor: tag.color }"
 			>
 				{{ tag.tag_name }}

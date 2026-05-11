@@ -35,7 +35,7 @@
 			</div>
 			<div
 				v-if="!minimized"
-				class="pointer-events-none absolute inset-x-0 top-0 p-5 md:p-7 bg-gradient-to-b from-black/75 via-black/40 to-transparent text-white"
+				class="pointer-events-none absolute inset-x-0 top-0 p-5 md:p-7 bg-gradient-to-b from-black/75 via-black/40 to-transparent text-ink-gray-9"
 			>
 				<h2 class="text-xl md:text-3xl font-semibold leading-tight">
 					{{ config.title || __('Benvenuto nella piattaforma') }}
@@ -49,7 +49,7 @@
 			</div>
 			<div
 				v-else
-				class="pointer-events-none absolute inset-0 flex items-center px-4 md:px-6 bg-gradient-to-r from-black/70 via-black/30 to-transparent text-white"
+				class="pointer-events-none absolute inset-0 flex items-center px-4 md:px-6 bg-gradient-to-r from-black/70 via-black/30 to-transparent text-ink-gray-9"
 			>
 				<div class="min-w-0">
 					<div class="font-medium truncate">
@@ -65,7 +65,7 @@
 			</div>
 			<button
 				type="button"
-				class="absolute top-3 right-3 inline-flex items-center justify-center size-8 rounded-full bg-black/60 hover:bg-black/80 text-white backdrop-blur-sm transition-colors"
+				class="absolute top-3 right-3 inline-flex items-center justify-center size-8 rounded-full bg-black/60 hover:bg-black/80 text-ink-gray-9 backdrop-blur-sm transition-colors"
 				:aria-label="minimized ? __('Espandi') : __('Riduci')"
 				@click="minimized ? (minimized = false) : minimize()"
 			>

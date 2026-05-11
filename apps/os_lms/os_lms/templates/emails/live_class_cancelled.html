@@ -7,18 +7,21 @@
       <p style="font-size:14px;line-height:1.7;color:#444;margin:0 0 12px;">
         Ciao {{ student_name }},
       </p>
-      <p style="font-size:14px;line-height:1.7;color:#444;margin:0 0 12px;">
-        ti informiamo che la lezione dal vivo <strong>{{ title }}</strong> è stata <strong style="color:#c0392b;">annullata</strong>.
+      <p style="font-size:14px;line-height:1.7;color:#444;margin:0 0 24px;">
+        ti informiamo che la lezione live <strong>{{ title }}</strong> programmata per il <strong>{{ frappe.utils.format_date(date, "dd-MM-yyyy") }}</strong> alle ore <strong>{{ frappe.utils.format_time(time, "HH:mm") }}</strong> è stata <strong style="color:#c0392b;">Annullata</strong>.
       </p>
       <p style="font-size:14px;line-height:1.7;color:#444;margin:0 0 24px;">
-        Era programmata per il <strong>{{ frappe.utils.format_date(date, "dd-MM-yyyy") }}</strong> alle ore <strong>{{ frappe.utils.format_time(time, "HH:mm") }}</strong>.
+        Per vedere le prossime lezioni live in programma vai alla tua Classe:
       </p>
       {% set batch_url = frappe.utils.get_url() + "/lms/batches/details/" + batch_name + "#classes" %}
       <div style="text-align:center;margin:0 0 24px;">
         <a href="{{ batch_url }}" style="display:inline-block;background:#123456;color:#fff;padding:12px 28px;border-radius:4px;font-size:14px;font-weight:600;text-decoration:none;">
-          Vai al batch
+          Vai alla Classe
         </a>
       </div>
+      <p style="font-size:14px;line-height:1.7;color:#444;margin:0 0 12px;">
+        Ci scusiamo per l'accaduto.
+      </p>
       <p style="font-size:14px;line-height:1.7;color:#444;margin:0;">
         Un saluto,<br>
         <strong style="color:#123456;">Il Team Salescience</strong>
