@@ -43,11 +43,7 @@
 					}
 				"
 			>
-				<div
-					v-if="isAdmin()"
-					class="absolute top-2 right-2"
-					@click.stop
-				>
+				<div v-if="isAdmin()" class="absolute top-2 right-2" @click.stop>
 					<Dropdown
 						:options="[
 							{
@@ -125,10 +121,7 @@
 						:text="__('Waiting for the host to start the class')"
 						placement="right"
 					>
-						<div
-							class="flex items-center gap-x-2 mt-auto"
-							@click.stop
-						>
+						<div class="flex items-center gap-x-2 mt-auto" @click.stop>
 							<button
 								type="button"
 								disabled
@@ -157,13 +150,20 @@
 		<div v-else class="text-ink-gray-7 mt-5">
 			{{ __('No live classes scheduled') }}
 		</div>
-		<div
-			v-if="!liveClasses.list?.loading && liveClasses.hasNextPage"
-			class="flex justify-center mt-5"
-		>
+		<div v-if="liveClasses.hasNextPage" class="flex justify-center mt-5">
 			<Button @click="liveClasses.next()">
 				{{ __('Load More') }}
 			</Button>
+		</div>
+		<div
+			v-if="liveClasses.data?.length"
+			class="text-xs text-ink-gray-5 text-center mt-2"
+		>
+			{{ liveClasses.data.length }}
+			{{ __('lezione/i caricate') }}
+			<span v-if="liveClasses.hasNextPage">
+				· {{ __('altre disponibili') }}
+			</span>
 		</div>
 	</div>
 
