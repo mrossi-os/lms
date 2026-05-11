@@ -152,6 +152,19 @@ class LMSBatch(Document):
 			if not self.zoom_account:
 				frappe.throw(_("Please select a Zoom account for this batch."))
 
+			zoom_settings = frappe.get_doc("LMS Zoom Settings", self.zoom_account)
+			if not zoom_settings.enabled:
+				frappe.throw(
+					_(
+						"The selected Zoom account is disabled. Please enable it or select another account."
+					)
+				)
+
+			if not zoom_settings.google_calendar:
+				frappe.throw(
+					_("The selected Zoom account does not have a Google Calendar configured.")
+				)
+
 	def on_payment_authorized(self, payment_status):
 		if payment_status in ["Authorized", "Completed"]:
 			update_payment_record("LMS Batch", self.name)
@@ -243,6 +256,17 @@ def create_live_class(
 	roles = frappe.get_roles()
 	if not any(role in roles for role in ["Moderator", "Batch Evaluator"]):
 		frappe.throw(_("You do not have permission to create a live class."))
+
+	zoom_settings = frappe.get_doc("LMS Zoom Settings", zoom_account)
+	if not zoom_settings.enabled:
+		frappe.throw(_("Please enable the Zoom account to use this feature."))
+
+	if not zoom_settings.google_calendar:
+		frappe.throw(
+			_(
+				"The Zoom account does not have a Google Calendar configured. Please set up a Google Calendar first."
+			)
+		)
 
 	payload = {
 		"topic": title,

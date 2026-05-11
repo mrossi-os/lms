@@ -42,21 +42,19 @@ class CustomLMSLiveClass(LMSLiveClass):
 			f"zoom_account={self.zoom_account} join_url={self.join_url} session_user={frappe.session.user}"
 		)
 
-		if is_zoom:
-			_lc_log(f"[create_calendar_event] {self.name} Zoom branch: skipping Frappe Event creation (no Daily Digest)")
-			self._send_invitation_safe()
-			self._send_notification_safe()
-			_lc_log(f"[create_calendar_event] END name={self.name} (Zoom)")
-			return
-
-		if not is_meet:
+		if not is_zoom and not is_meet:
 			_lc_log(f"[create_calendar_event] {self.name} unknown provider, aborting")
 			frappe.throw(_("Provider di conferenza non riconosciuto."))
 
-		calendar = frappe.db.get_value(
-			"LMS Google Meet Settings", self.google_meet_account, "google_calendar"
-		)
-		_lc_log(f"[create_calendar_event] {self.name} resolved Meet calendar={calendar}")
+		if is_meet:
+			calendar = frappe.db.get_value(
+				"LMS Google Meet Settings", self.google_meet_account, "google_calendar"
+			)
+		else:
+			calendar = frappe.db.get_value(
+				"LMS Zoom Settings", self.zoom_account, "google_calendar"
+			)
+		_lc_log(f"[create_calendar_event] {self.name} resolved calendar={calendar}")
 
 		if not calendar:
 			frappe.throw(
@@ -75,11 +73,15 @@ class CustomLMSLiveClass(LMSLiveClass):
 			"sync_with_google_calendar": 1,
 			"google_calendar": calendar,
 			"description": self.build_event_description(),
-			"add_video_conferencing": 1,
 			"send_reminder": 0,
 		}
+		if is_meet:
+			event_data["add_video_conferencing"] = 1
 		event.update(event_data)
-		_lc_log(f"[create_calendar_event] {self.name} saving Meet Event with sync=1 add_vc=1 send_reminder=0")
+		_lc_log(
+			f"[create_calendar_event] {self.name} saving Event sync=1 "
+			f"add_vc={event_data.get('add_video_conferencing', 0)} send_reminder=0"
+		)
 
 		try:
 			event.save()
@@ -102,24 +104,25 @@ class CustomLMSLiveClass(LMSLiveClass):
 			frappe.log_error(title="LMS Live Class add_event_participants failed")
 			raise
 
-		event.reload()
-		meet_link = event.google_meet_link
-		_lc_log(f"[create_calendar_event] {self.name} after reload meet={meet_link}")
-		if meet_link:
-			frappe.db.set_value(
-				self.doctype,
-				self.name,
-				{"start_url": meet_link, "join_url": meet_link},
-			)
-			self.start_url = meet_link
-			self.join_url = meet_link
-			_lc_log(f"[create_calendar_event] {self.name} start_url/join_url persisted")
-		else:
-			_lc_log(f"[create_calendar_event] {self.name} NO meet link returned by Google")
+		if is_meet:
+			event.reload()
+			meet_link = event.google_meet_link
+			_lc_log(f"[create_calendar_event] {self.name} after reload meet={meet_link}")
+			if meet_link:
+				frappe.db.set_value(
+					self.doctype,
+					self.name,
+					{"start_url": meet_link, "join_url": meet_link},
+				)
+				self.start_url = meet_link
+				self.join_url = meet_link
+				_lc_log(f"[create_calendar_event] {self.name} start_url/join_url persisted")
+			else:
+				_lc_log(f"[create_calendar_event] {self.name} NO meet link returned by Google")
 
 		self._send_invitation_safe()
 		self._send_notification_safe()
-		_lc_log(f"[create_calendar_event] END name={self.name} (Meet)")
+		_lc_log(f"[create_calendar_event] END name={self.name} ({'Meet' if is_meet else 'Zoom'})")
 
 	def _send_invitation_safe(self):
 		try:
