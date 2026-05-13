@@ -128,7 +128,6 @@ const props = defineProps<{
 watch(
 	() => props.accountID,
 	(val) => {
-		console.log(props.accountID)
 		if (val === 'new') {
 			account.name = ''
 			account.enabled = false
@@ -149,7 +148,8 @@ watch(
 				account.google_calendar = acc.google_calendar || ''
 			}
 		}
-	}
+	},
+	{ immediate: true }
 )
 
 const saveAccount = (close: () => void) => {
@@ -203,7 +203,7 @@ const setValue = (close: () => void) => {
 		{
 			...account,
 			name: account.name,
-			account_name: props.accountID,
+			account_name: account.name,
 		},
 		{
 			onSuccess() {
