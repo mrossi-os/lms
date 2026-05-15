@@ -59,6 +59,12 @@
 					type="text"
 					:required="true"
 				/>
+				<Link
+					v-model="account.google_calendar"
+					:label="__('Google Calendar')"
+					doctype="Google Calendar"
+					:required="true"
+				/>
 			</div>
 		</template>
 	</Dialog>
@@ -80,6 +86,7 @@ interface ZoomAccount {
 	account_id: string
 	client_id: string
 	client_secret: string
+	google_calendar: string
 }
 
 interface ZoomAccounts {
@@ -111,6 +118,7 @@ const account = reactive({
 	account_id: '',
 	client_id: '',
 	client_secret: '',
+	google_calendar: '',
 })
 
 const props = defineProps<{
@@ -120,7 +128,6 @@ const props = defineProps<{
 watch(
 	() => props.accountID,
 	(val) => {
-		console.log(props.accountID)
 		if (val === 'new') {
 			account.name = ''
 			account.enabled = false
@@ -128,6 +135,7 @@ watch(
 			account.account_id = ''
 			account.client_id = ''
 			account.client_secret = ''
+			account.google_calendar = ''
 		} else if (val && val !== 'new') {
 			const acc = zoomAccounts.value?.data.find((acc) => acc.name === val)
 			if (acc) {
@@ -137,9 +145,11 @@ watch(
 				account.account_id = acc.account_id
 				account.client_id = acc.client_id
 				account.client_secret = acc.client_secret
+				account.google_calendar = acc.google_calendar || ''
 			}
 		}
-	}
+	},
+	{ immediate: true }
 )
 
 const saveAccount = (close: () => void) => {
@@ -193,7 +203,7 @@ const setValue = (close: () => void) => {
 		{
 			...account,
 			name: account.name,
-			account_name: props.accountID,
+			account_name: account.name,
 		},
 		{
 			onSuccess() {

@@ -152,6 +152,19 @@ class LMSBatch(Document):
 			if not self.zoom_account:
 				frappe.throw(_("Please select a Zoom account for this batch."))
 
+			zoom_settings = frappe.get_doc("LMS Zoom Settings", self.zoom_account)
+			if not zoom_settings.enabled:
+				frappe.throw(
+					_(
+						"The selected Zoom account is disabled. Please enable it or select another account."
+					)
+				)
+
+			if not zoom_settings.google_calendar:
+				frappe.throw(
+					_("The selected Zoom account does not have a Google Calendar configured.")
+				)
+
 	def on_payment_authorized(self, payment_status):
 		if payment_status in ["Authorized", "Completed"]:
 			update_payment_record("LMS Batch", self.name)
@@ -228,6 +241,18 @@ def send_system_notification_for_published_batch(batch):
 	frappe.db.set_value("LMS Batch", batch.name, "notification_sent", 1)
 
 
+def _ensure_calendar_authorized(calendar_name: str):
+	"""Throw if the Google Calendar has no refresh token (OAuth flow not completed)."""
+	calendar_doc = frappe.get_doc("Google Calendar", calendar_name)
+	refresh_token = calendar_doc.get_password("refresh_token", raise_exception=False)
+	if not refresh_token:
+		frappe.throw(
+			_(
+				"The Google Calendar '{0}' is not authorized. Open it and click 'Authorize Google Calendar Access' to complete the OAuth flow."
+			).format(calendar_name)
+		)
+
+
 @frappe.whitelist()
 def create_live_class(
 	batch_name: str,
@@ -243,6 +268,19 @@ def create_live_class(
 	roles = frappe.get_roles()
 	if not any(role in roles for role in ["Moderator", "Batch Evaluator"]):
 		frappe.throw(_("You do not have permission to create a live class."))
+
+	zoom_settings = frappe.get_doc("LMS Zoom Settings", zoom_account)
+	if not zoom_settings.enabled:
+		frappe.throw(_("Please enable the Zoom account to use this feature."))
+
+	if not zoom_settings.google_calendar:
+		frappe.throw(
+			_(
+				"The Zoom account does not have a Google Calendar configured. Please set up a Google Calendar first."
+			)
+		)
+
+	_ensure_calendar_authorized(zoom_settings.google_calendar)
 
 	payload = {
 		"topic": title,
@@ -311,6 +349,8 @@ def create_google_meet_live_class(
 				"The Google Meet account does not have a Google Calendar configured. Please set up a Google Calendar first."
 			)
 		)
+
+	_ensure_calendar_authorized(google_meet_settings.google_calendar)
 
 	class_details = frappe.get_doc(
 		{
