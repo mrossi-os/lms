@@ -67,7 +67,6 @@
 	</Dialog>
 </template>
 <script setup>
-import dayjs from '@/utils/dayjs'
 import { call, createResource, Dialog, FormControl, toast } from 'frappe-ui'
 import { ref, watch, inject } from 'vue'
 import { Calendar } from 'lucide-vue-next'

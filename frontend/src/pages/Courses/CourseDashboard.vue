@@ -306,7 +306,6 @@ import CourseEnrollmentModal from '@/pages/Courses/CourseEnrollmentModal.vue'
 import NumberChartGraph from '@/components/NumberChartGraph.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
 import StudentCourseProgress from '@/pages/Courses/StudentCourseProgress.vue'
-const dayjs = inject<typeof dayjsType>('$dayjs')!
 
 const props = defineProps<{
 	course: any

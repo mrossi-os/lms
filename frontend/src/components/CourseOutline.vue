@@ -295,6 +295,12 @@ watch(
 				break
 			}
 		}
+	},
+)
+
+const onLessonProgressUpdate = (data) => {
+	if (data?.course === props.courseName) {
+		outline.reload()
 	}
 }
 
