@@ -185,7 +185,6 @@ import { formatTime } from '@/utils/'
 import LayoutHeader from '@/components/Layouts/LayoutHeader.vue'
 
 const { brand } = sessionStore()
-const dayjs = inject('$dayjs')
 const user = inject('$user')
 const socket = inject('$socket')
 const activeTab = ref('Unread')
