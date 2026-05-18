@@ -105,7 +105,7 @@
 						</div>
 						<div
 							v-if="log.document_details.start_date"
-							class="flex items-center gap-x-2 text-sm mt-5"
+							class="flex items-center gap-x-2 text-sm mt-5 text-white"
 						>
 							<Calendar class="size-3 stroke-1.5" />
 							<span>
@@ -185,7 +185,6 @@ import { formatTime } from '@/utils/'
 import LayoutHeader from '@/components/Layouts/LayoutHeader.vue'
 
 const { brand } = sessionStore()
-const dayjs = inject('$dayjs')
 const user = inject('$user')
 const socket = inject('$socket')
 const activeTab = ref('Unread')

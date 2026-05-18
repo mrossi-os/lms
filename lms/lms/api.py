@@ -1959,15 +1959,18 @@ def get_created_courses():
 	Course = frappe.qb.DocType("LMS Course")
 
 	base_query = (
-		frappe.qb.from_(CourseInstructor)
-		.join(Course)
-		.on(CourseInstructor.parent == Course.name)
+		frappe.qb.from_(Course)
 		.select(Course.name)
 		.orderby(Course.published_on, order=frappe.qb.desc)
 		.limit(3)
 	)
 
-	query = base_query.where(CourseInstructor.instructor == frappe.session.user)
+	instructor_courses = (
+		frappe.qb.from_(CourseInstructor)
+		.select(CourseInstructor.parent)
+		.where(CourseInstructor.instructor == frappe.session.user)
+	)
+	query = base_query.where(Course.name.isin(instructor_courses))
 	results = query.run(as_dict=True)
 
 	if not len(results) and ("Moderator" in roles):
@@ -1988,12 +1991,16 @@ def get_created_batches():
 	CourseInstructor = frappe.qb.DocType("Course Instructor")
 	Batch = frappe.qb.DocType("LMS Batch")
 
-	query = (
+	instructor_batches = (
 		frappe.qb.from_(CourseInstructor)
-		.join(Batch)
-		.on(CourseInstructor.parent == Batch.name)
-		.select(Batch.name)
+		.select(CourseInstructor.parent)
 		.where(CourseInstructor.instructor == frappe.session.user)
+	)
+
+	query = (
+		frappe.qb.from_(Batch)
+		.select(Batch.name)
+		.where(Batch.name.isin(instructor_batches))
 		.where(Batch.start_date >= getdate())
 		.orderby(Batch.start_date, order=frappe.qb.asc)
 		.limit(4)
