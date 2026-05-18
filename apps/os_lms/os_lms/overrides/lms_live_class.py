@@ -96,14 +96,6 @@ class CustomLMSLiveClass(LMSLiveClass):
 
 		frappe.db.set_value(self.doctype, self.name, "event", event.name)
 
-		try:
-			self.add_event_participants(event, calendar)
-			_lc_log(f"[create_calendar_event] {self.name} participants added")
-		except Exception:
-			_lc_log(f"[create_calendar_event] {self.name} add_event_participants RAISED")
-			frappe.log_error(title="LMS Live Class add_event_participants failed")
-			raise
-
 		if is_meet:
 			event.reload()
 			meet_link = event.google_meet_link
