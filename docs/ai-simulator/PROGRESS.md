@@ -23,15 +23,31 @@ Documento operativo che traccia lo sviluppo reale della feature definita in [`PL
 | # | Decisione | Stato | Risolta il | Esito |
 | --- | --- | --- | --- | --- |
 | 1 | Regola SDK encapsulation (SDK consentito solo dentro adapter, extras opzionali, test CI) | ✅ | 2026-05-18 | Confermata dall'utente |
-| 2 | Gemini via OpenAI-compat o REST nativo | ⬜ | — | — |
+| 2 | Gemini via OpenAI-compat o REST nativo | ✅ | 2026-05-18 | **OpenAI-compat** come default (l'utente non ha specificato il transport ma chiede la versione più performante: `gemini-2.5-pro` come modello default, disponibile su entrambi gli endpoint — si parte da OpenAI-compat per coerenza, si passa a REST nativo solo se servono feature avanzate Google) |
 | 3 | STT default fase 2 (`OpenAIWhisper` vs `Deepgram`) | ⬜ | — | — |
 | 4 | TTS default fase 2 (`OpenAITTS` vs `ElevenLabs`) | ⬜ | — | — |
-| 5 | Formato audio output (`mp3` vs `opus` vs `pcm16`) | ⬜ | — | — |
+| 5 | Formato audio output (`mp3` vs `opus` vs `pcm16`) | ✅ | 2026-05-18 | **mp3** (rivedibile se in pilot emergono problemi di latenza/qualità) |
 | 6 | VAD client-side (`@ricky0123/vad-web` vs solo push-to-talk) | ⬜ | — | — |
-| 7 | Frappe File vs S3 per audio | ⬜ | — | — |
-| 8 | Modello debrief default (`gpt-4.1` proposto) | ⬜ | — | — |
+| 7 | Frappe File vs S3 per audio | ✅ | 2026-05-18 | **Frappe File** (max ~50 utenti concorrenti previsti — vedi nota capacità sotto) |
+| 8 | Modello debrief default (`gpt-4.1` proposto) | ✅ | 2026-05-18 | **`gpt-4.1`** via OpenAI |
 | 9 | Streaming (WS chat in MVP, TTS streaming in fase 2) | ⬜ | — | — |
-| 10 | Pannello docente: SPA Vue vs Desk views | ⬜ | — | — |
+| 10 | Pannello docente: SPA Vue vs Desk views | ✅ | 2026-05-18 | **SPA Vue obbligatoria** — Frappe Desk è riservato ai soli sysadmin, instructor non vi accedono |
+
+### Vincoli derivati dalle decisioni
+
+- **Default modelli `LMSA Settings`** (al momento dell'implementazione Sprint 1):
+  - `simulation_chat_model` (OpenAI) → `gpt-4.1` o `gpt-4o` — modello da confermare al primo test reale
+  - `simulation_debrief_model` (OpenAI) → **`gpt-4.1`**
+  - Default modello Gemini → **`gemini-2.5-pro`** (versione più performante)
+  - Default modello DeepSeek → `deepseek-chat`
+  - Default modello Anthropic → `claude-sonnet-4-5` (chat) / `claude-opus-4-7` (se selezionato per debrief)
+  - Tutti i valori sono configurabili da `LMSA Settings` senza redeploy.
+- **Capacità target**: max ~50 utenti concorrenti. Decisione #7 (Frappe File) è coerente con questo target; rivedere a S3 solo se il numero cresce sostanzialmente o se i log mostrano contention su `tabFile` / I/O sul bench volume.
+- **Audience del Desk**: solo sysadmin. Conseguenze concrete:
+  - **Nessuna form Desk pensata per l'instructor**. CRUD scenario/rubrica/debrief avvengono **solo** dalla SPA Vue.
+  - I doctype mantengono comunque list/form Desk funzionanti (necessari ai sysadmin per troubleshooting/audit), ma non sono nel flusso utente regolare.
+  - Permessi: `LMS Instructor` mantiene CRUD via API REST, ma la UX di riferimento è esclusivamente Vue.
+  - Health-check provider e "Test STT/TTS" restano action sul `LMSA Settings` Desk (uso sysadmin).
 
 ---
 
@@ -224,3 +240,8 @@ Obiettivo: il docente crea/modifica scenari e vede i report. Pilot su un corso r
 - 2026-05-18 — pianificazione — esteso piano per fase 2 con layer STT (§3.4) e TTS (§3.5)
 - 2026-05-18 — decisione — confermata regola SDK encapsulation (§3.3.1, decisione #1)
 - 2026-05-18 — pianificazione — creato `PROGRESS.md` (questo file)
+- 2026-05-18 — decisione — confermata #10: pannello docente in **SPA Vue** (Desk solo sysadmin)
+- 2026-05-18 — decisione — confermata #7: audio su **Frappe File** (target ~50 utenti concorrenti)
+- 2026-05-18 — decisione — confermata #5: formato audio output **mp3**
+- 2026-05-18 — decisione — confermata #8: modello debrief default **`gpt-4.1`**
+- 2026-05-18 — decisione — confermata #2: Gemini via **OpenAI-compat**, modello default **`gemini-2.5-pro`** (versione più performante)
