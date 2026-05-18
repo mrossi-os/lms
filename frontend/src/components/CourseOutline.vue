@@ -259,6 +259,10 @@ const props = defineProps({
 		type: Boolean,
 		default: false,
 	},
+	completedLesson: {
+		type: String,
+		default: null,
+	},
 })
 
 const outline = createResource({
@@ -280,9 +284,17 @@ watch(
 	},
 )
 
-const onLessonProgressUpdate = (data) => {
-	if (data?.course === props.courseName) {
-		outline.reload()
+watch(
+	() => props.completedLesson,
+	(lessonName) => {
+		if (!lessonName || !outline.data) return
+		for (const chapter of outline.data) {
+			const found = chapter.lessons?.find((l) => l.name === lessonName)
+			if (found) {
+				found.is_complete = true
+				break
+			}
+		}
 	}
 }
 
@@ -361,7 +373,8 @@ const trashLesson = (lessonName, chapterName) => {
 }
 
 const openChapterDetail = (index) => {
-	return index == route.params.chapterNumber || index == 1
+	const activeChapter = route.params.chapterNumber
+	return activeChapter ? index == activeChapter : index == 1
 }
 
 const openChapterModal = (chapter = null) => {

@@ -92,7 +92,7 @@
 											<ProgressBar
 												v-else-if="column.key == 'progress'"
 												:progress="Math.ceil(row[column.key])"
-												class="!mx-0 !mr-4"
+												class="!mx-0 !me-4"
 											/>
 										</template>
 										<div
@@ -312,6 +312,7 @@ const props = defineProps<{
 	course: any
 }>()
 
+const dayjs = inject<typeof dayjsType>('$dayjs')!
 const showEnrollmentModal = ref(false)
 const searchFilter = ref<string | null>(null)
 const showProgressModal = ref(false)

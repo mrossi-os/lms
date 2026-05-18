@@ -522,6 +522,8 @@ const showInlineMenu = ref(false)
 const currentTab = ref(null)
 const quizBlocked = ref(false)
 const quizBlockedReason = ref('')
+const completedLesson = ref(null)
+let timerInterval = null
 
 // Blocco lezioni sequenziali
 const lessonBlocked = ref(false)
@@ -732,6 +734,7 @@ const progress = createResource({
 	},
 	onSuccess(data) {
 		lessonProgress.value = data
+		completedLesson.value = lesson.data?.name
 	},
 })
 
@@ -1029,11 +1032,17 @@ const updateVideoTime = (video) => {
 
 const checkIfDiscussionsAllowed = () => {
 	hasQuiz.value = false
-	JSON.parse(lesson.data?.content)?.blocks?.forEach((block) => {
-		if (block.type === 'quiz') {
-			hasQuiz.value = true
+	if (lesson.data?.content) {
+		try {
+			JSON.parse(lesson.data.content)?.blocks?.forEach((block) => {
+				if (block.type === 'quiz') {
+					hasQuiz.value = true
+				}
+			})
+		} catch {
+			// legacy markdown lessons
 		}
-	})
+	}
 
 	if (
 		!hasQuiz.value &&
