@@ -69,7 +69,37 @@ def get_lesson(course: str, chapter: int, lesson: int) -> dict:
             lesson_details["quiz_access"] = evaluate_quiz_access(
                 course, lesson_name
             )
+
+        # Published simulation scenarios visible from this lesson. Returns the
+        # lesson-specific ones first (course_lesson == lesson_name) and falls
+        # back to course-level scenarios if none are bound to the lesson.
+        # The frontend (Lesson.vue / SimulationLauncher) uses this list to
+        # decide whether to render the "Avvia simulazione" button.
+        lesson_details["simulations"] = _list_simulations_for_lesson(course, lesson_name)
     return lesson_details
+
+
+def _list_simulations_for_lesson(course: str, lesson_name: str) -> list[dict]:
+    """List Published scenarios available from a given lesson.
+
+    Lesson-bound scenarios come first; course-level (no lesson) scenarios
+    fill the remaining slots so the launcher has something to offer even on
+    lessons without a dedicated scenario.
+    """
+    fields = ["name", "scenario_name", "difficulty", "modality", "course_lesson", "time_limit_minutes"]
+    bound = frappe.get_all(
+        "LMSA Simulation Scenario",
+        filters={"lms_course": course, "course_lesson": lesson_name, "status": "Published"},
+        fields=fields,
+        order_by="modified desc",
+    )
+    course_level = frappe.get_all(
+        "LMSA Simulation Scenario",
+        filters={"lms_course": course, "course_lesson": ["in", [None, ""]], "status": "Published"},
+        fields=fields,
+        order_by="modified desc",
+    )
+    return bound + course_level
 
 
 @frappe.whitelist()

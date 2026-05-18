@@ -50,6 +50,9 @@ permission_query_conditions = {
     "LMSA Simulation Turn": (
         "os_lms.os_lms.doctype.lmsa_simulation_turn.lmsa_simulation_turn.get_permission_query_conditions"
     ),
+    "LMSA Simulation Debrief": (
+        "os_lms.os_lms.doctype.lmsa_simulation_debrief.lmsa_simulation_debrief.get_permission_query_conditions"
+    ),
 }
 has_permission = {
     "LMSA Simulation Scenario": (
@@ -60,6 +63,9 @@ has_permission = {
     ),
     "LMSA Simulation Turn": (
         "os_lms.os_lms.doctype.lmsa_simulation_turn.lmsa_simulation_turn.has_permission"
+    ),
+    "LMSA Simulation Debrief": (
+        "os_lms.os_lms.doctype.lmsa_simulation_debrief.lmsa_simulation_debrief.has_permission"
     ),
 }
 # override sqlite search to add custom doctypes

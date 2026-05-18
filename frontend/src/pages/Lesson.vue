@@ -394,6 +394,29 @@
 			</div>
 			<div class="sticky top-10">
 				<div
+					v-if="canLaunchSimulation"
+					class="m-3 p-4 rounded-md border bg-surface-blue-1 border-outline-blue-2"
+				>
+					<div class="text-sm font-medium text-ink-gray-9 mb-1">
+						{{ __('Metti in pratica') }}
+					</div>
+					<div class="text-xs text-ink-gray-5 mb-3">
+						{{ __('Avvia una simulazione di vendita per questa lezione.') }}
+					</div>
+					<Button
+						variant="solid"
+						size="sm"
+						@click="simulationLauncherOpen = true"
+					>
+						{{ __('Avvia simulazione') }}
+					</Button>
+				</div>
+				<SimulationLauncher
+					v-if="canLaunchSimulation"
+					v-model="simulationLauncherOpen"
+					:scenarios="availableSimulations"
+				/>
+				<div
 					v-if="lesson.data?.name && !hasQuiz"
 					ref="chatBotContainer"
 					:data-ai-tutor="true"
@@ -498,6 +521,8 @@ import Notes from '@/components/Notes/Notes.vue'
 import { getLmsRoute } from '@/utils/basePath'
 import ChatBot from '@/oslms/components/ai/ChatBot.vue'
 import CourseTagBadges from '@/oslms/components/CourseTagBadges.vue'
+import SimulationLauncher from '@/oslms/components/simulations/SimulationLauncher.vue'
+import { useSettings } from '@/stores/settings'
 
 const user = inject('$user')
 const socket = inject('$socket')
@@ -515,6 +540,15 @@ const zenModeEnabled = ref(false)
 const showStatsDialog = ref(false)
 const hasQuiz = ref(false)
 const discussionsContainer = ref(null)
+const simulationLauncherOpen = ref(false)
+const { settings: lmsSettingsResource } = useSettings()
+const availableSimulations = computed(() => lesson.data?.simulations || [])
+const canLaunchSimulation = computed(
+	() =>
+		!!user &&
+		!!lmsSettingsResource?.data?.simulations_enabled &&
+		availableSimulations.value.length > 0,
+)
 const { brand } = sessionStore()
 const sidebarStore = useSidebar()
 const plyrSources = ref([])

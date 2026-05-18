@@ -168,6 +168,74 @@ def get_session(session_id: str) -> dict:
 
 
 @frappe.whitelist()
+def get_debrief(session_id: str) -> dict:
+    """Return the debrief for `session_id`, or an early-stage placeholder.
+
+    Status values: `not_started` (session not terminal), `pending` (job running),
+    `ready`, `needs_review`, `failed`.
+    """
+    session = load_session(session_id)
+    if session.status == "In Progress":
+        return {"status": "not_started", "session": session.name}
+
+    name = frappe.db.get_value("LMSA Simulation Debrief", {"session": session.name}, "name")
+    if not name:
+        # Job has been enqueued but the Debrief row hasn't been created yet.
+        return {"status": "pending", "session": session.name}
+
+    debrief = frappe.get_doc("LMSA Simulation Debrief", name)
+    return _serialize_debrief(debrief)
+
+
+def _serialize_debrief(debrief) -> dict:
+    return {
+        "status": debrief.status.lower().replace(" ", "_"),
+        "session": debrief.session,
+        "name": debrief.name,
+        "overall_score": debrief.overall_score,
+        "passed": bool(debrief.passed),
+        "behavioral_analysis": debrief.behavioral_analysis,
+        "criterion_scores": [
+            {
+                "criterion_name": c.criterion_name,
+                "score": c.score,
+                "max_score": c.max_score,
+                "evidence_quote": c.evidence_quote,
+                "note": c.note,
+            }
+            for c in (debrief.criterion_scores or [])
+        ],
+        "strengths": [
+            {"title": s.title, "detail": s.detail, "quote": s.quote}
+            for s in (debrief.strengths or [])
+        ],
+        "improvements": [
+            {
+                "title": i.title,
+                "detail": i.detail,
+                "quote": i.quote,
+                "suggestion": i.suggestion,
+            }
+            for i in (debrief.improvements or [])
+        ],
+        "recommended_content": [
+            {
+                "lesson": r.lesson,
+                "title": r.title,
+                "why": r.why,
+                "relevance_score": r.relevance_score,
+            }
+            for r in (debrief.recommended_content or [])
+        ],
+        "instructor_review": debrief.instructor_review or "",
+        "instructor_reviewed_by": debrief.instructor_reviewed_by,
+        "instructor_reviewed_at": (
+            str(debrief.instructor_reviewed_at) if debrief.instructor_reviewed_at else None
+        ),
+    }
+
+
+@frappe.whitelist()
 def list_scenarios(course: str | None = None) -> list[dict]:
     """List Published scenarios accessible to the current user.
 

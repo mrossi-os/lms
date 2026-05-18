@@ -1,0 +1,271 @@
+{
+ "actions": [],
+ "autoname": "format:DBR-{####}",
+ "creation": "2026-05-18 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "session",
+  "scenario",
+  "course",
+  "student",
+  "column_break_header",
+  "status",
+  "overall_score",
+  "passed",
+  "section_scores",
+  "criterion_scores",
+  "section_qualitative",
+  "strengths",
+  "improvements",
+  "section_behavior",
+  "behavioral_analysis",
+  "section_recommendations",
+  "recommended_content",
+  "section_audit",
+  "debrief_provider_used",
+  "debrief_model_used",
+  "prompt_version",
+  "instructor_review",
+  "instructor_reviewed_by",
+  "instructor_reviewed_at",
+  "section_raw",
+  "raw_llm_response"
+ ],
+ "fields": [
+  {
+   "fieldname": "session",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Session",
+   "options": "LMSA Simulation Session",
+   "read_only": 1,
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fetch_from": "session.scenario",
+   "fieldname": "scenario",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Scenario",
+   "options": "LMSA Simulation Scenario",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "session.course",
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Course",
+   "options": "LMS Course",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "session.student",
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Student",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_header",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Pending",
+   "description": "Pending while the background job runs; Ready on success; Needs Review when the LLM output failed validation twice.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Pending\nReady\nNeeds Review\nFailed",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "overall_score",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Overall Score (0-100)",
+   "precision": "1",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "passed",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Passed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_scores",
+   "fieldtype": "Section Break",
+   "label": "Criterion Scores"
+  },
+  {
+   "fieldname": "criterion_scores",
+   "fieldtype": "Table",
+   "label": "Scores",
+   "options": "LMSA Criterion Score",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_qualitative",
+   "fieldtype": "Section Break",
+   "label": "Strengths & Improvements"
+  },
+  {
+   "fieldname": "strengths",
+   "fieldtype": "Table",
+   "label": "Strengths",
+   "options": "LMSA Debrief Strength",
+   "read_only": 1
+  },
+  {
+   "fieldname": "improvements",
+   "fieldtype": "Table",
+   "label": "Improvements",
+   "options": "LMSA Debrief Improvement",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_behavior",
+   "fieldtype": "Section Break",
+   "label": "Behavioral Analysis"
+  },
+  {
+   "fieldname": "behavioral_analysis",
+   "fieldtype": "Long Text",
+   "label": "Behavioral Analysis",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_recommendations",
+   "fieldtype": "Section Break",
+   "label": "Recommended Content"
+  },
+  {
+   "fieldname": "recommended_content",
+   "fieldtype": "Table",
+   "label": "Recommended Lessons",
+   "options": "LMSA Debrief Recommendation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_audit",
+   "fieldtype": "Section Break",
+   "label": "Audit",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "debrief_provider_used",
+   "fieldtype": "Data",
+   "label": "Provider",
+   "read_only": 1
+  },
+  {
+   "fieldname": "debrief_model_used",
+   "fieldtype": "Data",
+   "label": "Model",
+   "read_only": 1
+  },
+  {
+   "fieldname": "prompt_version",
+   "fieldtype": "Data",
+   "label": "Prompt Version",
+   "read_only": 1
+  },
+  {
+   "fieldname": "instructor_review",
+   "fieldtype": "Long Text",
+   "label": "Instructor Review"
+  },
+  {
+   "fieldname": "instructor_reviewed_by",
+   "fieldtype": "Link",
+   "label": "Reviewed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "instructor_reviewed_at",
+   "fieldtype": "Datetime",
+   "label": "Reviewed At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_raw",
+   "fieldtype": "Section Break",
+   "label": "Raw LLM Response",
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.status === 'Needs Review' || doc.status === 'Failed'"
+  },
+  {
+   "description": "Full raw text returned by the LLM. Kept for audit and post-mortem when the job is marked Needs Review or Failed.",
+   "fieldname": "raw_llm_response",
+   "fieldtype": "Long Text",
+   "label": "Raw LLM Response",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-05-18 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "OS LMS",
+ "name": "LMSA Simulation Debrief",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Moderator",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Course Creator",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "LMS Student"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

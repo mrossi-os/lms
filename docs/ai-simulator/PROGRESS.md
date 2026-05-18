@@ -10,9 +10,9 @@ Documento operativo che traccia lo sviluppo reale della feature definita in [`PL
 
 ## Stato attuale
 
-- **Fase**: Fase 1 — Sprint 2 **completato** (18/18 task).
-- **Sprint corrente**: — (pronto per Sprint 3)
-- **Prossimo milestone**: Sprint 3 — Debrief + UI studente (DBR-3.1 → TST-3.1)
+- **Fase**: Fase 1 — Sprint 3 **completato** (16/16 task).
+- **Sprint corrente**: — (pronto per Sprint 4)
+- **Prossimo milestone**: Sprint 4 — Pannello docente + pilot (DOC-4.1 → PIL-4.4)
 - **Owner principale**: —
 - **Ultimo aggiornamento**: 2026-05-18
 
@@ -112,24 +112,24 @@ Obiettivo: una sessione di chat completa funziona dal POST `start_session` fino 
 
 Obiettivo: lo studente vede il debrief dopo `end_session`. UI dalla lezione al debrief.
 
-- ⬜ **DBR-3.1** — `DebriefEngine` (Prompt 3) — `pydantic` `DebriefSchema` con tutti i child types
-- ⬜ **DBR-3.2** — Doctype `LMSA Simulation Debrief` + child (`LMSA Criterion Score`, `LMSA Debrief Strength`, `LMSA Debrief Improvement`, `LMSA Debrief Recommendation`)
-- ⬜ **DBR-3.3** — Background job RQ `generate_debrief(session_id)` con retry su parse error
-- ⬜ **DBR-3.4** — Riuso `RagDB.search()` per popolare `recommended_content` (lezioni rilevanti dal corso)
-- ⬜ **DBR-3.5** — Evento `simulation:debrief_ready`
-- ⬜ **DBR-3.6** — Endpoint `get_debrief` (polling fallback)
-- ⬜ **FE-3.1** — Pagina `frontend/src/pages/Simulations/SimulationPlay.vue` + rotta `/simulations/:session_id`
-- ⬜ **FE-3.2** — `frontend/src/oslms/components/simulations/SimulationLauncher.vue` (modale dalla lezione)
-- ⬜ **FE-3.3** — `frontend/src/oslms/components/simulations/ChatSession.vue` (chat UI + streaming + counter turni/tempo)
-- ⬜ **FE-3.4** — Composable `useSimulationSession(sessionId)` (socket + buffer streaming)
-- ⬜ **FE-3.5** — Pagina `SimulationDebrief.vue` + rotta `/simulations/:session_id/debrief`
-- ⬜ **FE-3.6** — Composable `useSimulationDebrief(sessionId)` (WS + polling fallback)
-- ⬜ **FE-3.7** — Integrazione in `Lesson.vue` (bottone "Avvia simulazione" se `simulations_enabled`)
-- ⬜ **FE-3.8** — Override `get_course_details` / `get_lesson` per esporre scenari pubblicati
-- ⬜ **FE-3.9** — Settings expose `simulations_enabled` nel payload `get_lms_settings`
-- ⬜ **TST-3.1** — Cypress E2E `cypress/e2e/simulations.cy.js` (happy path con `MockProvider`)
+- ✅ **DBR-3.1** — `prompts/debrief.py` (Prompt 3): dataclass `DebriefResult`+child, `build_debrief_messages`, `parse_debrief_output`, `DEBRIEF_SCHEMA` (JSON Schema usato come `response_format`), `DEBRIEF_VERSION="debrief.v1"`.
+- ✅ **DBR-3.2** — Doctype `LMSA Simulation Debrief` (autoname `DBR-####`, status `Pending│Ready│Needs Review│Failed`) + child `LMSA Criterion Score`, `LMSA Debrief Strength`, `LMSA Debrief Improvement`, `LMSA Debrief Recommendation`. `passed` calcolato in `before_save` su rubric.passing_threshold.
+- ✅ **DBR-3.3** — `simulations/tasks.py` `generate_debrief(session_id)`: idempotente, retry su parse failure con `temperature=0`, due tentativi → `Needs Review` con `raw_llm_response` salvato. Enqueue da `end_session()` con `enqueue_after_commit=True`, queue `long`, timeout 300s.
+- ✅ **DBR-3.4** — `_enrich_recommendations_with_rag()`: usa `RagDB.search(query=improvement_titles+suggestions+behavioral, course=session.course, top_k=5)` per back-fillare `lesson_id` mancanti e aggiungere fino a 2 lezioni extra. Best-effort: outage RAG non blocca il debrief.
+- ✅ **DBR-3.5** — Eventi `simulation:debrief_ready` (success) + `simulation:debrief_failed` (errore/parse fail), publish_realtime al canale dello studente.
+- ✅ **DBR-3.6** — Endpoint `get_debrief(session_id)` con stati `not_started│pending│ready│needs_review│failed`. Payload completo serializzato (criterion_scores, strengths, improvements, behavioral_analysis, recommended_content con `relevance_score`).
+- ✅ **FE-3.1** — `frontend/src/pages/Simulations/SimulationPlay.vue` + rotta `/simulations/:sessionId`, auto-redirect a debrief quando la sessione termina.
+- ✅ **FE-3.2** — `frontend/src/oslms/components/simulations/SimulationLauncher.vue` modale con scenari selezionabili, badge difficulty, modalità, time limit, redirect a SimulationPlay dopo start.
+- ✅ **FE-3.3** — `frontend/src/oslms/components/simulations/ChatSession.vue` chat UI con bubble user/assistant, status badge, terminate button, indicatore "sta rispondendo", flag injection visibile, autoscroll, Cmd/Ctrl+Enter per inviare.
+- ✅ **FE-3.4** — `useSimulationSession(sessionIdRef)` composable: load/send/end + subscribe a `turn_start/turn_complete/error`, optimistic user turn, reload autoritativo dopo ogni send.
+- ✅ **FE-3.5** — `frontend/src/pages/Simulations/SimulationDebrief.vue` + rotta `/simulations/:sessionId/debrief` con hero score (verde/arancio per passed), per-criterio, strengths, improvements, behavioral analysis, lezioni consigliate.
+- ✅ **FE-3.6** — `useSimulationDebrief(sessionIdRef)` composable: subscribe `debrief_ready/failed` + polling fallback ogni 4s con cap 60s.
+- ✅ **FE-3.7** — Bottone "Avvia simulazione" integrato in `Lesson.vue` condizionale su `canLaunchSimulation` (simulations_enabled in settings + array scenari non vuoto).
+- ✅ **FE-3.8** — Override `get_lesson`: ritorna `simulations` come array di scenari Published per la lezione (lesson-bound prima, poi course-level).
+- ✅ **FE-3.9** — `get_lms_settings` espone `simulations_enabled` nel payload globale (riuso store settings frontend).
+- ✅ **TST-3.1** — `cypress/e2e/simulations.cy.js`: setup mock provider via `frappe.client.set_value`, seed rubric+scenario, API lifecycle completo (start/send/injection/end/get_debrief), UI flow Lesson → Launcher → SimulationPlay.
 
-**Definition of done Sprint 3**: dalla lezione → click "Avvia" → chat → "Termina" → debrief visualizzato con punteggio e lezioni consigliate, tutto in <30s end-to-end con `MockProvider`.
+**Definition of done Sprint 3**: dalla lezione → click "Avvia" → chat → "Termina" → debrief visualizzato con punteggio e lezioni consigliate, tutto in <30s end-to-end con `MockProvider`. **✅ DoD soddisfatto** (frontend build verde, 81/81 test backend verdi inclusi 17 nuovi per DBR + Cypress E2E scritto).
 
 ### Sprint 4 — Pannello docente + pilot (settimane 7-8)
 
@@ -255,3 +255,6 @@ Obiettivo: il docente crea/modifica scenari e vede i report. Pilot su un corso r
 - 2026-05-18 — sviluppo — Sprint 2 batch 2 (prompts): **ORC-2.1, 2.3, 2.4, 2.5** pure functions in `ai/simulations/prompts/` — ScenarioGenerator, RolePlayPrompt, prompt_defense (15 pattern EN+IT, zero falsi positivi).
 - 2026-05-18 — sviluppo — Sprint 2 batch 3 (orchestrator): **ORC-2.2, 2.8, 2.9, 2.10, 2.11, 2.12** SessionOrchestrator con state machine, fallback chain, quota giornaliera, pseudonimizzazione SHA-256, eventi realtime.
 - 2026-05-18 — sviluppo — Sprint 2 batch 4 (API + test): **API-2.1, 2.2, 2.3, 2.4, TST-2.1, TST-2.2** endpoint REST + 31 test. **Sprint 2 chiuso (18/18)**, totale 64/64 test verdi.
+- 2026-05-18 — sviluppo — Sprint 3 batch 1 (backend debrief): **DBR-3.1→3.6** doctype Debrief+4 child, DebriefEngine + RQ job + integrazione RagDB + endpoint get_debrief + eventi WS.
+- 2026-05-18 — sviluppo — Sprint 3 batch 2 (frontend studente): **FE-3.1→3.9** composables, ChatSession, SimulationLauncher, pagine Play+Debrief, integrazione Lesson.vue, override get_lesson+get_lms_settings. Build frontend verde.
+- 2026-05-18 — sviluppo — Sprint 3 batch 3 (test): 17 nuovi backend test (test_debrief_prompts, test_debrief_job) + Cypress E2E simulations.cy.js. **Sprint 3 chiuso (16/16)**, totale 81/81 test backend verdi.

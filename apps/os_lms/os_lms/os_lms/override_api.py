@@ -54,7 +54,9 @@ def get_sidebar_settings():
 def get_lms_settings():
     result = _original_get_lms_settings()
     if isinstance(result, dict):
-         result["ai_enabled"] = frappe.get_single("LMSA Settings").get("enabled")
+         lmsa = frappe.get_single("LMSA Settings")
+         result["ai_enabled"] = lmsa.get("enabled")
+         result["simulations_enabled"] = bool(lmsa.get("simulations_enabled"))
     return result
 
 

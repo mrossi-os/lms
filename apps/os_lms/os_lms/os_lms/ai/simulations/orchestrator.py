@@ -256,7 +256,20 @@ class SessionOrchestrator:
         self.logger.info(
             "simulation end: session=%s status=%s turns=%s", session.name, status, session.turn_count
         )
-        # TODO(sprint-3): enqueue generate_debrief job here. Out of scope for sprint 2.
+
+        # Enqueue the debrief job. Best-effort: if the queue is unavailable
+        # we still return success — the polling endpoint will report Pending.
+        try:
+            frappe.enqueue(
+                "os_lms.os_lms.ai.simulations.tasks.generate_debrief",
+                queue="long",
+                timeout=300,
+                session_id=session.name,
+                enqueue_after_commit=True,
+            )
+        except Exception as e:
+            self.logger.warning("failed to enqueue debrief: %s", e)
+
         return frappe._dict(session=session.name, status=status)
 
     # ---------- internals ----------

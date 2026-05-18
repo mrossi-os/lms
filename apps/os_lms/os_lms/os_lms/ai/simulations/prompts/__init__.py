@@ -6,6 +6,17 @@ return strings or dicts. This keeps prompt logic independent and testable.
 Versioned constants (e.g. ROLE_PLAY_VERSION) are persisted on Session/Turn
 as `prompt_version` for audit and A/B comparisons.
 """
+from .debrief import (
+    DEBRIEF_SCHEMA,
+    DEBRIEF_VERSION,
+    CriterionScoreDC,
+    DebriefResult,
+    ImprovementDC,
+    RecommendationDC,
+    StrengthDC,
+    build_debrief_messages,
+    parse_debrief_output,
+)
 from .defense import (
     INJECTION_PATTERNS,
     detect_injection,
@@ -21,14 +32,23 @@ from .scenario_generator import (
 )
 
 __all__ = [
+    "CriterionScoreDC",
+    "DEBRIEF_SCHEMA",
+    "DEBRIEF_VERSION",
+    "DebriefResult",
     "INJECTION_PATTERNS",
+    "ImprovementDC",
     "PersonaVariant",
     "ROLE_PLAY_VERSION",
+    "RecommendationDC",
     "SCENARIO_GEN_VERSION",
     "ScenarioVariant",
+    "StrengthDC",
+    "build_debrief_messages",
     "build_role_play_system_prompt",
     "build_scenario_generator_messages",
     "detect_injection",
     "in_character_refusal",
+    "parse_debrief_output",
     "parse_scenario_generator_output",
 ]

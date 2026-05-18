@@ -251,6 +251,18 @@ const routes = [
 		component: () => import('@/pages/DataImport.vue'),
 		props: true,
 	},
+	{
+		path: '/simulations/:sessionId',
+		name: 'SimulationPlay',
+		component: () => import('@/pages/Simulations/SimulationPlay.vue'),
+		props: true,
+	},
+	{
+		path: '/simulations/:sessionId/debrief',
+		name: 'SimulationDebrief',
+		component: () => import('@/pages/Simulations/SimulationDebrief.vue'),
+		props: true,
+	},
 ]
 
 let router = createRouter({
