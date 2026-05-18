@@ -36,7 +36,7 @@
 			<div
 				class="absolute inset-x-0 bottom-0 p-6 md:p-8 bg-gradient-to-t from-black/80 via-black/50 to-transparent text-ink-gray-9 pointer-events-none"
 			>
-				<h1 class="text-2xl md:text-4xl font-semibold">
+				<h1 class="text-2xl md:text-4xl font-semibold text-ink-gray-9">
 					{{ course.data.title }}
 				</h1>
 				<p
