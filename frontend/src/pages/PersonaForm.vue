@@ -54,7 +54,7 @@
 				@click="skipPersonaForm()"
 			>
 				{{ __('Skip') }}
-			</button>
+			</div>
 		</div>
 	</div>
 </template>
