@@ -1,0 +1,243 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:SCN-{####}",
+ "creation": "2026-05-18 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "scenario_name",
+  "lms_course",
+  "course_lesson",
+  "column_break_1",
+  "difficulty",
+  "modality",
+  "status",
+  "created_by_instructor",
+  "section_persona",
+  "customer_persona",
+  "situation_template",
+  "section_objectives",
+  "evaluation_rubric",
+  "learning_objectives",
+  "seed_variations",
+  "section_limits",
+  "max_turns",
+  "time_limit_minutes",
+  "column_break_limits",
+  "section_provider",
+  "provider_override",
+  "model_override"
+ ],
+ "fields": [
+  {
+   "fieldname": "scenario_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Scenario Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "lms_course",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Course",
+   "options": "LMS Course",
+   "reqd": 1
+  },
+  {
+   "description": "Optional. A scenario can be bound to a single lesson; otherwise it lives at course level.",
+   "fieldname": "course_lesson",
+   "fieldtype": "Link",
+   "label": "Lesson",
+   "options": "Course Lesson"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "medium",
+   "fieldname": "difficulty",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Difficulty",
+   "options": "easy\nmedium\nhard",
+   "reqd": 1
+  },
+  {
+   "default": "chat",
+   "fieldname": "modality",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Modality",
+   "options": "chat\nvoice\nboth",
+   "reqd": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nPublished\nArchived",
+   "reqd": 1
+  },
+  {
+   "description": "Set automatically on insert to the creating user.",
+   "fieldname": "created_by_instructor",
+   "fieldtype": "Link",
+   "label": "Created By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_persona",
+   "fieldtype": "Section Break",
+   "label": "Persona & Situation"
+  },
+  {
+   "description": "Base customer persona: age, role, context, emotional baseline. Variables are randomized via Seed Variations.",
+   "fieldname": "customer_persona",
+   "fieldtype": "Long Text",
+   "label": "Customer Persona",
+   "reqd": 1
+  },
+  {
+   "description": "Setup of the scene. Placeholders matching Seed Variation variable_name fields are substituted at session start.",
+   "fieldname": "situation_template",
+   "fieldtype": "Long Text",
+   "label": "Situation Template",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_objectives",
+   "fieldtype": "Section Break",
+   "label": "Learning Objectives & Rubric"
+  },
+  {
+   "fieldname": "evaluation_rubric",
+   "fieldtype": "Link",
+   "label": "Evaluation Rubric",
+   "options": "LMSA Evaluation Rubric",
+   "reqd": 1
+  },
+  {
+   "fieldname": "learning_objectives",
+   "fieldtype": "Table",
+   "label": "Learning Objectives",
+   "options": "LMSA Simulation Learning Objective"
+  },
+  {
+   "fieldname": "seed_variations",
+   "fieldtype": "Table",
+   "label": "Seed Variations",
+   "options": "LMSA Simulation Seed Variation"
+  },
+  {
+   "fieldname": "section_limits",
+   "fieldtype": "Section Break",
+   "label": "Limits"
+  },
+  {
+   "default": "20",
+   "fieldname": "max_turns",
+   "fieldtype": "Int",
+   "label": "Max Turns"
+  },
+  {
+   "fieldname": "column_break_limits",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "15",
+   "fieldname": "time_limit_minutes",
+   "fieldtype": "Int",
+   "label": "Time Limit (minutes)"
+  },
+  {
+   "fieldname": "section_provider",
+   "fieldtype": "Section Break",
+   "label": "Provider Override"
+  },
+  {
+   "default": "auto",
+   "description": "Override the global chat provider for this scenario (e.g. force claude-opus on a hard case).",
+   "fieldname": "provider_override",
+   "fieldtype": "Select",
+   "label": "LLM Provider",
+   "options": "auto\nopenai\ngemini\ndeepseek\nanthropic\nmock"
+  },
+  {
+   "description": "Optional model override (empty = use the provider's default).",
+   "fieldname": "model_override",
+   "fieldtype": "Data",
+   "label": "Model"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-05-18 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "OS LMS",
+ "name": "LMSA Simulation Scenario",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Moderator",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Course Creator",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "LMS Student",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "scenario_name",
+ "track_changes": 1
+}

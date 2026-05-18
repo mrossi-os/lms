@@ -37,6 +37,19 @@ override_doctype_class = {
     "Data Import": "os_lms.overrides.data_import.CustomDataImport",
     "LMS Live Class": "os_lms.overrides.lms_live_class.CustomLMSLiveClass",
 }
+
+# Document-level permission gating for the simulation feature. The list_view
+# query filter lives in get_permission_query_conditions on each doctype.
+permission_query_conditions = {
+    "LMSA Simulation Scenario": (
+        "os_lms.os_lms.doctype.lmsa_simulation_scenario.lmsa_simulation_scenario.get_permission_query_conditions"
+    ),
+}
+has_permission = {
+    "LMSA Simulation Scenario": (
+        "os_lms.os_lms.doctype.lmsa_simulation_scenario.lmsa_simulation_scenario.has_permission"
+    ),
+}
 # override sqlite search to add custom doctypes
 sqlite_search = ["os_lms.overrides.sqlite.CustomLearningSearch"]
 

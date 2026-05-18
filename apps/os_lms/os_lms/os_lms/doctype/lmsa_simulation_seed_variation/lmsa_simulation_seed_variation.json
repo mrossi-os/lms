@@ -1,0 +1,43 @@
+{
+ "actions": [],
+ "creation": "2026-05-18 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "variable_name",
+  "possible_values"
+ ],
+ "fields": [
+  {
+   "description": "Placeholder name to substitute in the scenario template (e.g. company_name, industry).",
+   "fieldname": "variable_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Variable Name",
+   "reqd": 1
+  },
+  {
+   "description": "One value per line. A random value is picked at session-start time.",
+   "fieldname": "possible_values",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Possible Values",
+   "reqd": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-18 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "OS LMS",
+ "name": "LMSA Simulation Seed Variation",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -134,6 +134,17 @@
     },
     {
         "doctype": "Custom Field",
+        "name": "LMS Course-simulations_enabled",
+        "dt": "LMS Course",
+        "label": "AI Simulations Enabled",
+        "fieldname": "simulations_enabled",
+        "fieldtype": "Check",
+        "default": "0",
+        "description": "When enabled, published Simulation Scenarios linked to this course are exposed to enrolled students.",
+        "insert_after": "enforce_quiz_on_completion"
+    },
+    {
+        "doctype": "Custom Field",
         "name": "LMS Course-hero_enabled",
         "dt": "LMS Course",
         "label": "Hero Enabled",

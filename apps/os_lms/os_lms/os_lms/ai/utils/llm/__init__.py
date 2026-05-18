@@ -57,6 +57,8 @@ __all__ = [
     "Role",
     "Usage",
     "build_provider_config",
+    "chat_with_fallback",
+    "fallback_order",
     "get_provider",
     "list_providers",
     "register",
@@ -206,3 +208,59 @@ def fallback_order(settings) -> list[str]:
     """Parse CSV settings.simulation_provider_fallback_order into a clean list."""
     raw = settings.simulation_provider_fallback_order or ""
     return [item.strip() for item in raw.split(",") if item.strip()]
+
+
+def chat_with_fallback(
+    purpose: Purpose,
+    messages: list[ChatMessage],
+    *,
+    override: str | None = None,
+    **chat_kwargs,
+) -> ChatResponse:
+    """Try the configured provider; on rate-limit / server-error, fall back
+    through `simulation_provider_fallback_order` IF the corresponding setting
+    is "auto". Explicit provider pinning (e.g. simulation_chat_provider="openai"
+    or a Scenario override) disables fallback — the call site is asking for a
+    specific provider on purpose and should see the error.
+
+    Streaming responses do not use fallback in this MVP: by the time we know
+    the upstream is failing, the stream may have already yielded partial data.
+    Callers that want streaming + fallback should orchestrate that themselves.
+
+    Raises the last LLMError if every candidate failed. Raises non-fallback
+    errors (LLMInvalidAuth, LLMContextWindow, ...) immediately on the first
+    occurrence — no point trying other providers for a mis-config.
+    """
+    if chat_kwargs.get("stream"):
+        raise LLMUnsupported(
+            "chat_with_fallback does not support streaming; use resolve_provider().chat(...) directly."
+        )
+
+    settings = _load_settings()
+    setting_value = (
+        settings.simulation_chat_provider
+        if purpose == "chat"
+        else settings.simulation_debrief_provider
+    )
+    primary_name = override or _pick_provider_name(settings, purpose)
+    fallback_enabled = (override is None) and (setting_value == "auto")
+
+    candidates: list[str] = [primary_name]
+    if fallback_enabled:
+        for name in fallback_order(settings):
+            if name and name not in candidates:
+                candidates.append(name)
+
+    last_error: LLMError | None = None
+    for name in candidates:
+        try:
+            config = build_provider_config(name, settings, purpose=purpose)
+            provider = get_provider(config)
+            return provider.chat(messages=messages, **chat_kwargs)
+        except (LLMRateLimit, LLMServerError) as exc:
+            last_error = exc
+            continue
+
+    if last_error is not None:
+        raise last_error
+    raise LLMError("No LLM provider available")

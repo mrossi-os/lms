@@ -10,9 +10,9 @@ Documento operativo che traccia lo sviluppo reale della feature definita in [`PL
 
 ## Stato attuale
 
-- **Fase**: Fase 1 — Sprint 1 in corso.
-- **Sprint corrente**: Sprint 1 — LLM layer + foundation
-- **Prossimo milestone**: completamento foundation LLM (LLM-1.1 → LLM-1.5) e SET-1.1/1.2
+- **Fase**: Fase 1 — Sprint 1 **completato** (23/23 task).
+- **Sprint corrente**: — (pronto per Sprint 2)
+- **Prossimo milestone**: Sprint 2 — Sessioni testuali end-to-end (ORC-2.1 → TST-2.2)
 - **Owner principale**: —
 - **Ultimo aggiornamento**: 2026-05-18
 
@@ -62,26 +62,26 @@ Obiettivo: layer LLM provider-agnostico operativo + doctype Scenario/Rubric + De
 - ✅ **LLM-1.3** — Registry + factory `get_provider(config)` + `list_providers()` + `@register("name")` decorator (con type-check su `LLMProvider`)
 - ✅ **LLM-1.4** — Errori normalizzati: `LLMError` base + `LLMRateLimit`, `LLMInvalidAuth`, `LLMContextWindow`, `LLMServerError`, `LLMTimeout`, `LLMUnsupported`, `ProviderSdkNotInstalled` (con `provider`/`cause` attribute)
 - ✅ **LLM-1.5** — `MockProvider` deterministico (fingerprint SHA-256 dei messaggi, streaming word-by-word, structured output JSON Schema). `RecordingProvider` rinviato a quando servirà al debug post-pilot
-- ⬜ **LLM-1.6** — `OpenAICompatibleProvider` base class (httpx, streaming SSE, JSON Schema, tool use)
-- ⬜ **LLM-1.7** — `OpenAIProvider` adapter (decisione SDK vs httpx interna all'adapter)
-- ⬜ **LLM-1.8** — `DeepSeekProvider` adapter (eredita da OpenAICompatibleProvider, solo override base_url)
-- ⬜ **LLM-1.9** — `GeminiProvider` adapter (decisione: OpenAI-compat vs REST nativo — vedi decisione #2)
-- ⬜ **LLM-1.10** — `AnthropicProvider` adapter
+- ✅ **LLM-1.6** — `OpenAICompatibleProvider` base class su `requests` (httpx non disponibile in bench env): payload builder, streaming SSE, error mapping 401/403/429/400-context/5xx
+- ✅ **LLM-1.7** — `OpenAIProvider` adapter (3 righe: eredita + DEFAULT_BASE_URL)
+- ✅ **LLM-1.8** — `DeepSeekProvider` adapter (3 righe)
+- ✅ **LLM-1.9** — `GeminiProvider` adapter via OpenAI-compat endpoint Google (3 righe)
+- ✅ **LLM-1.10** — `AnthropicProvider` adapter: header `x-api-key` + `anthropic-version`, system top-level, structured output via tool_use forcing, streaming SSE event-based, stop_reason mapping
 - ✅ **LLM-1.11** — `resolve_provider(purpose, override)` + `build_provider_config(name, settings)` + `_load_settings()` (lettura Password con `get_decrypted_password`)
-- ⬜ **LLM-1.12** — Fallback chain in orchestrator (catch `LLMRateLimit`/`LLMServerError`, prova prossimo in `simulation_provider_fallback_order`). Helper `fallback_order()` già pronto in `llm/__init__.py`
-- ⬜ **LLM-1.13** — `pyproject.toml`: blocco `[project.optional-dependencies]` con extras per-provider (`provider-openai`, `provider-anthropic`, `provider-gemini`, `all-providers`)
-- ⬜ **LLM-1.14** — Test architetturale `test_provider_encapsulation.py` (CI fail su `import openai` fuori da `providers/`)
-- ⬜ **LLM-1.15** — Unit test per ogni adapter con `httpx.MockTransport` o `monkeypatch` SDK
-- ✅ **SET-1.1** — Estensione doctype `LMSA Settings`: 11 nuovi campi (sezioni "API Keys" + "AI Simulations" con sotto-sezione Role-play/Debrief). `openai_key` lasciato `Data` per retro-compat RAG tutor; nuove chiavi (`gemini_key`, `deepseek_key`, `anthropic_key`) come `Password`. Migrazione applicata via `frappe.reload_doc`
-- ✅ **SET-1.2** — Estensione dataclass `OsLmsSettings` con 11 nuovi campi defaulted (no breaking change sui call site esistenti)
-- ⬜ **SET-1.3** — Migrazione `GptChatbot` come wrapper sopra `OpenAIProvider` (retro-compat tutor RAG, nessun call site cambia)
-- ⬜ **SET-1.4** — Action in Desk `LMSA Settings`: "Test connessione" che invoca `provider.health_check()` per ogni provider configurato
-- ⬜ **DT-1.1** — Doctype `LMSA Simulation Scenario` + child `LMSA Simulation Learning Objective` + child `LMSA Simulation Seed Variation`
-- ⬜ **DT-1.2** — Doctype `LMSA Evaluation Rubric` + child `LMSA Rubric Criterion` (validazione somma pesi = 1.0)
-- ⬜ **DT-1.3** — Permessi base + `permission_query_conditions` (instructor → propri corsi, manager full, student → Published)
-- ⬜ **DT-1.4** — Fixture `custom_field.json` aggiornata (campo `simulations_enabled` su LMS Course)
+- ✅ **LLM-1.12** — `chat_with_fallback(purpose, messages, override)` helper: catch `LLMRateLimit`/`LLMServerError` e prova provider successivi solo se setting è `auto`. Errori non-fallback (Auth) saltano subito.
+- ✅ **LLM-1.13** — `pyproject.toml`: blocco `[project.optional-dependencies]` con extras `provider-openai`, `provider-anthropic`, `provider-gemini`, `provider-deepgram`, `provider-elevenlabs`, `provider-google-cloud`, `provider-azure`, `all-providers`
+- ✅ **LLM-1.14** — `test_provider_encapsulation.py` (frappe.tests.UnitTestCase) — AST scan dei file Python di `os_lms`, fallisce su `import openai|anthropic|deepgram|elevenlabs|google.genai|google.cloud.{speech,texttospeech}|azure.cognitiveservices.speech` fuori da `utils/{llm,stt,tts}/providers/`. Negative test verificato (deliberato `import openai` rilevato).
+- ✅ **LLM-1.15** — 33 unit test in `utils/llm/tests/`: MockProvider (6) + OpenAI-compat parametrizzato su 3 base_url (14) + Anthropic (8) + fallback (4) + encapsulation (1). Helpers `FakeResponse`/`RequestRecorder` in `_http_fakes.py`. Tutti verdi.
+- ✅ **SET-1.1** — Estensione doctype `LMSA Settings`: 11 nuovi campi. `openai_key` lasciato `Data` per retro-compat; nuove chiavi (`gemini_key`, `deepseek_key`, `anthropic_key`) come `Password`. Migrazione applicata via `frappe.reload_doc`.
+- ✅ **SET-1.2** — Estensione dataclass `OsLmsSettings` con 11 nuovi campi defaulted (zero breaking change).
+- ✅ **SET-1.3** — `GptChatbot.ask()` reimplementato sopra `OpenAIProvider` via il layer unificato. `IngestionService` non cambia.
+- ✅ **SET-1.4** — Endpoint `os_lms.os_lms.ai.utils.llm.api.test_providers` (gate System Manager/LMS Manager) + bottone Desk **"Test Provider Connection"** in `lmsa_settings.js`: tabella esito per provider con indicator color (`ok` green, `not_configured` gray, `invalid_auth` orange, `error` red).
+- ✅ **DT-1.1** — Doctype `LMSA Simulation Scenario` (autoname `SCN-####`) + child `LMSA Simulation Learning Objective` + child `LMSA Simulation Seed Variation`. Validazione: lesson deve appartenere al corso; pesi obiettivi sommano a 1.0 se valorizzati. `created_by_instructor` auto-impostato su `before_insert`. **(2026-05-18 update)** rimosso il campo `course_chapter`: uno scenario è associato a un corso e al massimo a una singola lezione.
+- ✅ **DT-1.2** — Doctype `LMSA Evaluation Rubric` (autoname by `rubric_name`, unique) + child `LMSA Rubric Criterion`. Validazione: somma pesi criteri = 1.0 ± 0.001.
+- ✅ **DT-1.3** — `permission_query_conditions` + `has_permission` su `LMSA Simulation Scenario` (hook in `os_lms/hooks.py`). System Manager/Moderator/LMS Manager: full. Course Creator: solo scenari dei propri corsi (via `Course Instructor.parent`). LMS Student: read su `Published` filtrati per enrollment.
+- ✅ **DT-1.4** — Custom field `simulations_enabled` (Check) su `LMS Course` aggiunto a `fixtures/custom_field.json` (insert_after `enforce_quiz_on_completion`) e applicato al site live.
 
-**Definition of done Sprint 1**: `MockProvider` funziona end-to-end via `resolve_provider`; gli adapter reali rispondono al `health_check()`; doctype Scenario/Rubric creabili dal Desk dal docente.
+**Definition of done Sprint 1**: `MockProvider` funziona end-to-end via `resolve_provider`; gli adapter reali rispondono al `health_check()`; doctype Scenario/Rubric creabili dal Desk dal docente. **✅ DoD soddisfatto** (smoke test SCN-0020 inserito via Administrator con rubrica valida e child tables popolate; "Test Provider Connection" risponde con tabella health-check; 33/33 test verdi).
 
 ### Sprint 2 — Sessioni testuali end-to-end (settimane 3-4)
 
@@ -246,3 +246,8 @@ Obiettivo: il docente crea/modifica scenari e vede i report. Pilot su un corso r
 - 2026-05-18 — decisione — confermata #8: modello debrief default **`gpt-4.1`**
 - 2026-05-18 — decisione — confermata #2: Gemini via **OpenAI-compat**, modello default **`gemini-2.5-pro`** (versione più performante)
 - 2026-05-18 — sviluppo — Sprint 1 batch 1: **LLM-1.1, 1.2, 1.3, 1.4, 1.5, 1.11, SET-1.1, 1.2** completati. `MockProvider` end-to-end verificato; `resolve_provider("chat")` legge `LMSA Settings`; retro-compat tutor RAG OK
+- 2026-05-18 — sviluppo — Sprint 1 batch 2: **LLM-1.6→1.10, 1.12, 1.13, 1.14, 1.15** completati. 4 adapter HTTP (OpenAI / DeepSeek / Gemini OpenAI-compat / Anthropic native) + fallback chain + extras `[project.optional-dependencies]` + test architetturale encapsulation + 33 unit test.
+- 2026-05-18 — sviluppo — Sprint 1 batch 3: **SET-1.3, SET-1.4** completati. `GptChatbot` migrato a wrapper su `OpenAIProvider` (retro-compat tutor RAG). Endpoint `test_providers` + bottone Desk "Test Provider Connection" su `LMSA Settings`.
+- 2026-05-18 — sviluppo — Sprint 1 batch 4: **DT-1.1, 1.2, 1.3, 1.4** completati. 5 doctype (`LMSA Simulation Scenario` + `LMSA Evaluation Rubric` + 3 child) con validazione pesi + permission_query_conditions + custom field `simulations_enabled` su `LMS Course`. **Sprint 1 chiuso (23/23)**.
+- 2026-05-18 — sviluppo — Installate skill `python-design-patterns` e `python-testing-patterns` (`.claude/skills/`), applicate ai 4 adapter + 33 test scritti.
+- 2026-05-18 — refactor — rimosso campo `course_chapter` da `LMSA Simulation Scenario` (uno scenario è associato a un corso, opzionalmente a una singola lezione). Colonna DB droppata, doctype ricaricato, validazione cross-course lesson confermata.

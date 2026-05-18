@@ -17,6 +17,36 @@ dependencies = [
     "python-pptx>=0.6.23",
 ]
 
+# Optional provider SDKs. The encapsulation rule (PLAN-os_lms.md §3.3.1) restricts
+# each SDK import to its own adapter module. Install only what you need:
+#   pip install -e ".[provider-openai]"   # adds OpenAI SDK
+#   pip install -e ".[all-providers]"     # everything below
+#
+# Adapters are httpx/requests-based by default and DO NOT require any of these
+# extras to work. Install an extra only when an adapter is upgraded to use the
+# official SDK for advanced features (file API, streaming optimizations, ...).
+[project.optional-dependencies]
+provider-openai = ["openai>=1.50"]
+provider-anthropic = ["anthropic>=0.40"]
+provider-gemini = ["google-genai>=0.3"]
+provider-deepgram = ["deepgram-sdk>=3.0"]
+provider-elevenlabs = ["elevenlabs>=1.0"]
+provider-google-cloud = [
+    "google-cloud-speech>=2.0",
+    "google-cloud-texttospeech>=2.0",
+]
+provider-azure = ["azure-cognitiveservices-speech>=1.40"]
+all-providers = [
+    "openai>=1.50",
+    "anthropic>=0.40",
+    "google-genai>=0.3",
+    "deepgram-sdk>=3.0",
+    "elevenlabs>=1.0",
+    "google-cloud-speech>=2.0",
+    "google-cloud-texttospeech>=2.0",
+    "azure-cognitiveservices-speech>=1.40",
+]
+
 [build-system]
 requires = ["flit_core >=3.4,<4"]
 build-backend = "flit_core.buildapi"

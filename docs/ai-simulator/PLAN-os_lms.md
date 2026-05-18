@@ -724,8 +724,7 @@ Inoltre, sul doctype `LMSA Simulation Scenario` il campo `provider_override` ha 
 | --- | --- | --- |
 | `scenario_name` | Data | required, unique per course |
 | `lms_course` | Link → LMS Course | required, indexed |
-| `course_chapter` | Link → Course Chapter | opzionale |
-| `course_lesson` | Link → Course Lesson | opzionale (legame lezione → scenario) |
+| `course_lesson` | Link → Course Lesson | opzionale: uno scenario può essere legato al massimo a una singola lezione, altrimenti vive a livello corso |
 | `difficulty` | Select (`easy│medium│hard`) | default `medium` |
 | `modality` | Select (`chat│voice│both`) | default `chat` |
 | `customer_persona` | Long Text | base persona (markdown ammesso) |
