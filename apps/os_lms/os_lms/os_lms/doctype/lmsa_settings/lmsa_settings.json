@@ -4,6 +4,7 @@
 	"doctype": "DocType",
 	"engine": "InnoDB",
 	"field_order": [
+		"section_rag",
 		"enabled",
 		"column_break_1",
 		"embedding_model",
@@ -11,9 +12,34 @@
 		"chunk_overlap",
 		"top_k",
 		"llm_model",
-		"system_prompt"
+		"system_prompt",
+		"section_keys",
+		"openai_key",
+		"openai_base_url",
+		"column_break_keys",
+		"gemini_key",
+		"deepseek_key",
+		"anthropic_key",
+		"column_break_keys_2",
+		"vimeo_api_key",
+		"section_simulations",
+		"simulations_enabled",
+		"column_break_sim_1",
+		"simulation_provider_default",
+		"simulation_provider_fallback_order",
+		"section_sim_chat",
+		"simulation_chat_provider",
+		"simulation_chat_model",
+		"column_break_sim_chat",
+		"simulation_debrief_provider",
+		"simulation_debrief_model"
 	],
 	"fields": [
+		{
+			"fieldname": "section_rag",
+			"fieldtype": "Section Break",
+			"label": "RAG Tutor"
+		},
 		{
 			"default": "0",
 			"fieldname": "enabled",
@@ -60,21 +86,122 @@
 			"label": "System Prompt"
 		},
 		{
+			"fieldname": "section_keys",
+			"fieldtype": "Section Break",
+			"label": "API Keys"
+		},
+		{
 			"fieldname": "openai_key",
 			"fieldtype": "Data",
-			"label": "Open AI Key"
+			"label": "OpenAI API Key"
+		},
+		{
+			"description": "Optional override for OpenAI-compatible endpoints (Ollama, vLLM, LM Studio, ...). Leave empty to use api.openai.com.",
+			"fieldname": "openai_base_url",
+			"fieldtype": "Data",
+			"label": "OpenAI Base URL"
+		},
+		{
+			"fieldname": "column_break_keys",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "gemini_key",
+			"fieldtype": "Password",
+			"label": "Google Gemini API Key"
+		},
+		{
+			"fieldname": "deepseek_key",
+			"fieldtype": "Password",
+			"label": "DeepSeek API Key"
+		},
+		{
+			"fieldname": "anthropic_key",
+			"fieldtype": "Password",
+			"label": "Anthropic API Key"
+		},
+		{
+			"fieldname": "column_break_keys_2",
+			"fieldtype": "Column Break"
 		},
 		{
 			"fieldname": "vimeo_api_key",
 			"fieldtype": "Data",
-			"label": "Vimeo api key"
+			"label": "Vimeo API Key"
+		},
+		{
+			"fieldname": "section_simulations",
+			"fieldtype": "Section Break",
+			"label": "AI Simulations"
+		},
+		{
+			"default": "0",
+			"description": "Master switch for the AI Simulations feature.",
+			"fieldname": "simulations_enabled",
+			"fieldtype": "Check",
+			"label": "Simulations Enabled"
+		},
+		{
+			"fieldname": "column_break_sim_1",
+			"fieldtype": "Column Break"
+		},
+		{
+			"default": "openai",
+			"description": "Provider used when chat/debrief are set to 'auto'.",
+			"fieldname": "simulation_provider_default",
+			"fieldtype": "Select",
+			"label": "Default Provider",
+			"options": "openai\ngemini\ndeepseek\nanthropic"
+		},
+		{
+			"default": "openai,gemini,deepseek",
+			"description": "Comma-separated provider names to try on rate-limit/server-error fallback. Order matters.",
+			"fieldname": "simulation_provider_fallback_order",
+			"fieldtype": "Small Text",
+			"label": "Fallback Order"
+		},
+		{
+			"fieldname": "section_sim_chat",
+			"fieldtype": "Section Break",
+			"label": "Role-play (chat)"
+		},
+		{
+			"default": "auto",
+			"fieldname": "simulation_chat_provider",
+			"fieldtype": "Select",
+			"label": "Chat Provider",
+			"options": "auto\nopenai\ngemini\ndeepseek\nanthropic\nmock"
+		},
+		{
+			"description": "Optional model override for role-play. Leave empty to use the provider's default.",
+			"fieldname": "simulation_chat_model",
+			"fieldtype": "Data",
+			"label": "Chat Model"
+		},
+		{
+			"fieldname": "column_break_sim_chat",
+			"fieldtype": "Column Break"
+		},
+		{
+			"default": "auto",
+			"fieldname": "simulation_debrief_provider",
+			"fieldtype": "Select",
+			"label": "Debrief Provider",
+			"options": "auto\nopenai\ngemini\ndeepseek\nanthropic\nmock"
+		},
+		{
+			"default": "gpt-4.1",
+			"description": "Model used by the debrief job. Defaults to gpt-4.1.",
+			"fieldname": "simulation_debrief_model",
+			"fieldtype": "Data",
+			"label": "Debrief Model"
 		}
 	],
 	"grid_page_length": 50,
 	"index_web_pages_for_search": 1,
 	"issingle": 1,
 	"links": [],
-	"modified": "2026-02-04 12:30:00.000000",
+	"modified": "2026-05-18 12:00:00.000000",
 	"modified_by": "Administrator",
 	"module": "OS LMS",
 	"name": "LMSA Settings",

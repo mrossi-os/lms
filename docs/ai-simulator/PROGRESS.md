@@ -10,9 +10,9 @@ Documento operativo che traccia lo sviluppo reale della feature definita in [`PL
 
 ## Stato attuale
 
-- **Fase**: Pre-Sprint 1 — pianificazione conclusa, attesa conferma decisioni aperte.
-- **Sprint corrente**: —
-- **Prossimo milestone**: avvio Sprint 1 (LLM layer + foundation).
+- **Fase**: Fase 1 — Sprint 1 in corso.
+- **Sprint corrente**: Sprint 1 — LLM layer + foundation
+- **Prossimo milestone**: completamento foundation LLM (LLM-1.1 → LLM-1.5) e SET-1.1/1.2
 - **Owner principale**: —
 - **Ultimo aggiornamento**: 2026-05-18
 
@@ -57,23 +57,23 @@ Documento operativo che traccia lo sviluppo reale della feature definita in [`PL
 
 Obiettivo: layer LLM provider-agnostico operativo + doctype Scenario/Rubric + Desk forms.
 
-- ⬜ **LLM-1.1** — Skeleton modulo `os_lms/os_lms/ai/utils/llm/` (file vuoti: `provider.py`, `registry.py`, `config.py`, `errors.py`, `providers/__init__.py`)
-- ⬜ **LLM-1.2** — `LLMProvider` ABC + dataclass (`ChatMessage`, `ChatResponse`, `ChatChunk`, `Usage`, `JsonSchema`, `ProviderConfig`)
-- ⬜ **LLM-1.3** — Registry + factory `get_provider(config)` con decorator `@register("name")`
-- ⬜ **LLM-1.4** — Errori normalizzati (`LLMRateLimit`, `LLMInvalidAuth`, `LLMContextWindow`, `LLMServerError`, `LLMTimeout`, `LLMUnsupported`, `ProviderSdkNotInstalled`)
-- ⬜ **LLM-1.5** — `MockProvider` (deterministico, fingerprint messaggi) + `RecordingProvider` wrapper
+- ✅ **LLM-1.1** — Skeleton modulo `os_lms/os_lms/ai/utils/llm/` con `provider.py`, `registry.py`, `config.py`, `errors.py`, `__init__.py`, `providers/__init__.py`
+- ✅ **LLM-1.2** — `LLMProvider` ABC + dataclass (`ChatMessage`, `ChatResponse`, `ChatChunk`, `Usage`, `JsonSchema`, `ProviderConfig`)
+- ✅ **LLM-1.3** — Registry + factory `get_provider(config)` + `list_providers()` + `@register("name")` decorator (con type-check su `LLMProvider`)
+- ✅ **LLM-1.4** — Errori normalizzati: `LLMError` base + `LLMRateLimit`, `LLMInvalidAuth`, `LLMContextWindow`, `LLMServerError`, `LLMTimeout`, `LLMUnsupported`, `ProviderSdkNotInstalled` (con `provider`/`cause` attribute)
+- ✅ **LLM-1.5** — `MockProvider` deterministico (fingerprint SHA-256 dei messaggi, streaming word-by-word, structured output JSON Schema). `RecordingProvider` rinviato a quando servirà al debug post-pilot
 - ⬜ **LLM-1.6** — `OpenAICompatibleProvider` base class (httpx, streaming SSE, JSON Schema, tool use)
 - ⬜ **LLM-1.7** — `OpenAIProvider` adapter (decisione SDK vs httpx interna all'adapter)
 - ⬜ **LLM-1.8** — `DeepSeekProvider` adapter (eredita da OpenAICompatibleProvider, solo override base_url)
 - ⬜ **LLM-1.9** — `GeminiProvider` adapter (decisione: OpenAI-compat vs REST nativo — vedi decisione #2)
 - ⬜ **LLM-1.10** — `AnthropicProvider` adapter
-- ⬜ **LLM-1.11** — `resolve_provider(purpose, override)` + `build_provider_config(name, settings)`
-- ⬜ **LLM-1.12** — Fallback chain in orchestrator (catch `LLMRateLimit`/`LLMServerError`, prova prossimo in `simulation_provider_fallback_order`)
+- ✅ **LLM-1.11** — `resolve_provider(purpose, override)` + `build_provider_config(name, settings)` + `_load_settings()` (lettura Password con `get_decrypted_password`)
+- ⬜ **LLM-1.12** — Fallback chain in orchestrator (catch `LLMRateLimit`/`LLMServerError`, prova prossimo in `simulation_provider_fallback_order`). Helper `fallback_order()` già pronto in `llm/__init__.py`
 - ⬜ **LLM-1.13** — `pyproject.toml`: blocco `[project.optional-dependencies]` con extras per-provider (`provider-openai`, `provider-anthropic`, `provider-gemini`, `all-providers`)
 - ⬜ **LLM-1.14** — Test architetturale `test_provider_encapsulation.py` (CI fail su `import openai` fuori da `providers/`)
 - ⬜ **LLM-1.15** — Unit test per ogni adapter con `httpx.MockTransport` o `monkeypatch` SDK
-- ⬜ **SET-1.1** — Estensione doctype `LMSA Settings` (campi LLM: provider, fallback order, model chat/debrief, chiavi gemini/deepseek/anthropic, openai_base_url)
-- ⬜ **SET-1.2** — Estensione dataclass `OsLmsSettings` + `_load_settings` per nuovi campi
+- ✅ **SET-1.1** — Estensione doctype `LMSA Settings`: 11 nuovi campi (sezioni "API Keys" + "AI Simulations" con sotto-sezione Role-play/Debrief). `openai_key` lasciato `Data` per retro-compat RAG tutor; nuove chiavi (`gemini_key`, `deepseek_key`, `anthropic_key`) come `Password`. Migrazione applicata via `frappe.reload_doc`
+- ✅ **SET-1.2** — Estensione dataclass `OsLmsSettings` con 11 nuovi campi defaulted (no breaking change sui call site esistenti)
 - ⬜ **SET-1.3** — Migrazione `GptChatbot` come wrapper sopra `OpenAIProvider` (retro-compat tutor RAG, nessun call site cambia)
 - ⬜ **SET-1.4** — Action in Desk `LMSA Settings`: "Test connessione" che invoca `provider.health_check()` per ogni provider configurato
 - ⬜ **DT-1.1** — Doctype `LMSA Simulation Scenario` + child `LMSA Simulation Learning Objective` + child `LMSA Simulation Seed Variation`
@@ -245,3 +245,4 @@ Obiettivo: il docente crea/modifica scenari e vede i report. Pilot su un corso r
 - 2026-05-18 — decisione — confermata #5: formato audio output **mp3**
 - 2026-05-18 — decisione — confermata #8: modello debrief default **`gpt-4.1`**
 - 2026-05-18 — decisione — confermata #2: Gemini via **OpenAI-compat**, modello default **`gemini-2.5-pro`** (versione più performante)
+- 2026-05-18 — sviluppo — Sprint 1 batch 1: **LLM-1.1, 1.2, 1.3, 1.4, 1.5, 1.11, SET-1.1, 1.2** completati. `MockProvider` end-to-end verificato; `resolve_provider("chat")` legge `LMSA Settings`; retro-compat tutor RAG OK
