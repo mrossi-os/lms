@@ -105,7 +105,7 @@
 						</div>
 						<div
 							v-if="log.document_details.start_date"
-							class="flex items-center gap-x-2 text-sm mt-5"
+							class="flex items-center gap-x-2 text-sm mt-5 text-white"
 						>
 							<Calendar class="size-3 stroke-1.5" />
 							<span>
