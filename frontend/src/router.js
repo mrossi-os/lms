@@ -252,6 +252,11 @@ const routes = [
 		props: true,
 	},
 	{
+		path: '/simulations/admin',
+		name: 'InstructorReports',
+		component: () => import('@/pages/Simulations/InstructorReports.vue'),
+	},
+	{
 		path: '/simulations/:sessionId',
 		name: 'SimulationPlay',
 		component: () => import('@/pages/Simulations/SimulationPlay.vue'),

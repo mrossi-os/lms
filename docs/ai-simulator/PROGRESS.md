@@ -10,9 +10,9 @@ Documento operativo che traccia lo sviluppo reale della feature definita in [`PL
 
 ## Stato attuale
 
-- **Fase**: Fase 1 — Sprint 3 **completato** (16/16 task).
-- **Sprint corrente**: — (pronto per Sprint 4)
-- **Prossimo milestone**: Sprint 4 — Pannello docente + pilot (DOC-4.1 → PIL-4.4)
+- **Fase**: Fase 1 — Sprint 4 **completato parte tecnica** (6/6 DOC-*). Restano `PIL-4.*` come attività operative del team.
+- **Sprint corrente**: — (Fase 1 MVP testuale chiusa lato codice)
+- **Prossimo milestone**: pilot con corso reale + Sprint 5 (STT layer Fase 2 voce) quando il pilot dà segnale verde
 - **Owner principale**: —
 - **Ultimo aggiornamento**: 2026-05-18
 
@@ -135,18 +135,18 @@ Obiettivo: lo studente vede il debrief dopo `end_session`. UI dalla lezione al d
 
 Obiettivo: il docente crea/modifica scenari e vede i report. Pilot su un corso reale.
 
-- ⬜ **DOC-4.1** — `frontend/src/oslms/components/simulations/ScenarioEditor.vue` (form + preview con `test student`)
-- ⬜ **DOC-4.2** — `frontend/src/oslms/components/simulations/RubricEditor.vue` (drag&drop pesi forzati a 1.0)
-- ⬜ **DOC-4.3** — Endpoint `instructor_review_debrief`
-- ⬜ **DOC-4.4** — Endpoint `instructor_report` (filtri corso/studente/periodo, aggregati)
-- ⬜ **DOC-4.5** — Pagina `frontend/src/pages/Simulations/InstructorReports.vue` + rotta `/simulations/admin`
-- ⬜ **DOC-4.6** — Drill-down trascrizione (riuso `ChatSession.vue` con `readOnly=true`)
-- ⬜ **PIL-4.1** — Selezione corso pilot + 3-5 scenari curati
-- ⬜ **PIL-4.2** — Sessione formativa docenti pilot (1h)
-- ⬜ **PIL-4.3** — Onboarding 20-30 studenti pilot
-- ⬜ **PIL-4.4** — Retrospettiva post-pilot (settimana 2 dopo lancio)
+- ✅ **DOC-4.1** — `ScenarioEditor.vue` form completo (identity, persona/situation, rubric autocomplete, learning_objectives + seed_variations editabili, limiti, provider/model override) + bottone "Prova come studente" che avvia una sessione e routa al SimulationPlay. **Backend**: endpoint `save_scenario`/`get_scenario`/`delete_scenario`/`list_my_scenarios` con gate instructor-of-course.
+- ✅ **DOC-4.2** — `RubricEditor.vue` form con criteri editabili, descrizione/observable_behaviors per criterio, validazione client-side della somma pesi=1.00 (live indicator) + server enforce nel doctype validate(). **Backend**: endpoint `save_rubric`/`get_rubric`/`delete_rubric`/`list_my_rubrics` con permessi owner/shared/moderator.
+- ✅ **DOC-4.3** — Endpoint `instructor_review_debrief(session_id, review)`: gate ruolo+corso, scrive `instructor_review/by/at` sul `LMSA Simulation Debrief`.
+- ✅ **DOC-4.4** — Endpoint `instructor_report(course, student, period_days, scenario)`: KPI (total_sessions, completed_sessions, avg_score, pass_rate, students_count), `score_distribution` a 5 bucket, `top_improvement_titles` (5 più frequenti), lista sessioni arricchite con debrief.
+- ✅ **DOC-4.5** — `frontend/src/pages/Simulations/InstructorReports.vue` con `Tabs` (Report/Scenari/Rubriche), filtri (corso/periodo/studente), KPI cards, bar chart distribuzione punteggi, top improvements, tabella sessioni con drill-down. Rotta `/simulations/admin`.
+- ✅ **DOC-4.6** — `TranscriptDrawer.vue`: modale full-screen con `ChatSession` in `readOnly=true` + sintesi debrief + form nota docente (chiama `instructor_review_debrief`). Apertura dal drill-down della tabella sessioni.
+- 📋 **PIL-4.1** — *Attività operativa*: selezione corso pilot + curazione 3-5 scenari (richiede docente esperto del dominio vendita). Non blocca lo sviluppo.
+- 📋 **PIL-4.2** — *Attività operativa*: sessione formativa docenti pilot (1h). Materiale d'appoggio: PLAN-os_lms.md §7 + screenshot del pannello.
+- 📋 **PIL-4.3** — *Attività operativa*: onboarding 20-30 studenti pilot (annunci + abilitazione `simulations_enabled` sul corso pilot).
+- 📋 **PIL-4.4** — *Attività operativa*: retrospettiva post-pilot a +2 settimane dal lancio (dati: `instructor_report`, costi LLM, feedback qualitativo).
 
-**Definition of done Sprint 4**: il docente del corso pilot crea scenari/rubriche dal SPA, vede le sessioni dei suoi studenti e legge i debrief con citazioni testuali.
+**Definition of done Sprint 4**: il docente del corso pilot crea scenari/rubriche dal SPA, vede le sessioni dei suoi studenti e legge i debrief con citazioni testuali. **✅ DoD codice soddisfatto** (92/92 test backend verdi inclusi 11 nuovi Sprint 4, frontend build verde, drill-down review docente operativo). PIL-4.* tracciati come operativi del team.
 
 ---
 
@@ -258,3 +258,6 @@ Obiettivo: il docente crea/modifica scenari e vede i report. Pilot su un corso r
 - 2026-05-18 — sviluppo — Sprint 3 batch 1 (backend debrief): **DBR-3.1→3.6** doctype Debrief+4 child, DebriefEngine + RQ job + integrazione RagDB + endpoint get_debrief + eventi WS.
 - 2026-05-18 — sviluppo — Sprint 3 batch 2 (frontend studente): **FE-3.1→3.9** composables, ChatSession, SimulationLauncher, pagine Play+Debrief, integrazione Lesson.vue, override get_lesson+get_lms_settings. Build frontend verde.
 - 2026-05-18 — sviluppo — Sprint 3 batch 3 (test): 17 nuovi backend test (test_debrief_prompts, test_debrief_job) + Cypress E2E simulations.cy.js. **Sprint 3 chiuso (16/16)**, totale 81/81 test backend verdi.
+- 2026-05-18 — sviluppo — Sprint 4 batch 1 (backend): endpoint `instructor_review_debrief`, `instructor_report`, CRUD `save_scenario`/`save_rubric`/`get_*`/`delete_*`/`list_my_*`, `get_transcript`. Permission helper `_ensure_instructor_of_course`.
+- 2026-05-18 — sviluppo — Sprint 4 batch 2 (frontend): `ScenarioEditor.vue`, `RubricEditor.vue`, `InstructorReports.vue` (tabs Report/Scenari/Rubriche), `TranscriptDrawer.vue` (drill-down) + rotta `/simulations/admin`. Build verde.
+- 2026-05-18 — sviluppo — Sprint 4 batch 3 (test): 11 nuovi backend test (test_instructor_api). **Sprint 4 dev chiuso (6/6 DOC-*)**, totale 92/92 test backend verdi. PIL-4.* operativi del team.

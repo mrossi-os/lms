@@ -25,6 +25,25 @@ def _service() -> SessionOrchestrator:
     return SessionOrchestrator()
 
 
+def _instructor_courses(user: str | None = None) -> list[str]:
+    """Return the list of course names where `user` is registered as instructor."""
+    user = user or frappe.session.user
+    return frappe.get_all(
+        "Course Instructor", filters={"instructor": user}, pluck="parent"
+    )
+
+
+def _ensure_instructor_of_course(course: str) -> None:
+    """Raise PermissionError if the current user is neither moderator nor an
+    instructor of the given course."""
+    if has_moderator_role():
+        return
+    if not has_course_instructor_role() or not is_instructor(course):
+        frappe.throw(
+            _("You are not an instructor of this course"), frappe.PermissionError
+        )
+
+
 def load_session(session_id: str):
     """Resolve a Session and gate access. Mirrors `load_lesson` in ai/api.py.
 
@@ -290,3 +309,491 @@ def list_scenarios(course: str | None = None) -> list[dict]:
         fields=["name", "scenario_name", "lms_course", "course_lesson", "difficulty", "modality"],
         order_by="modified desc",
     )
+
+
+# ============================================================================
+# Instructor endpoints (DOC-4.*)
+#
+# These power the SPA Vue panel for instructors / moderators. They never go
+# through the Desk: the panel is the only supported UI for instructors per
+# decision #10 in PROGRESS.md.
+# ============================================================================
+
+
+@frappe.whitelist()
+def instructor_review_debrief(session_id: str, review: str) -> dict:
+    """Persist the instructor's review note on the debrief of `session_id`."""
+    if not review or not review.strip():
+        frappe.throw(_("Review cannot be empty"))
+
+    session = load_session(session_id)
+    _ensure_instructor_of_course(session.course)
+
+    name = frappe.db.get_value("LMSA Simulation Debrief", {"session": session.name}, "name")
+    if not name:
+        frappe.throw(_("No debrief available for this session yet"))
+
+    debrief = frappe.get_doc("LMSA Simulation Debrief", name)
+    debrief.instructor_review = review.strip()
+    debrief.instructor_reviewed_by = frappe.session.user
+    debrief.instructor_reviewed_at = frappe.utils.now_datetime()
+    debrief.save(ignore_permissions=True)
+    frappe.db.commit()
+    return {"name": debrief.name, "reviewed_at": str(debrief.instructor_reviewed_at)}
+
+
+@frappe.whitelist()
+def instructor_report(
+    course: str | None = None,
+    student: str | None = None,
+    period_days: int = 30,
+    scenario: str | None = None,
+) -> dict:
+    """Aggregated report + sessions list for the courses the user instructs.
+
+    Returns:
+      - `kpi`: total_sessions, completed_sessions, avg_score, pass_rate, students_count
+      - `score_distribution`: bucketed counts (0-20, 20-40, ...)
+      - `top_improvement_titles`: most frequent improvement titles
+      - `sessions`: list of session rows with score + status + scenario + student
+    """
+    allowed_courses = _allowed_report_courses()
+    if not allowed_courses:
+        return _empty_report()
+
+    if course is not None:
+        if course not in allowed_courses:
+            frappe.throw(_("You cannot view reports for this course"), frappe.PermissionError)
+        course_filter = [course]
+    else:
+        course_filter = list(allowed_courses)
+
+    since = frappe.utils.add_days(frappe.utils.now_datetime(), -max(1, int(period_days)))
+
+    session_filters = [
+        ["course", "in", course_filter],
+        ["started_at", ">=", since],
+    ]
+    if student:
+        session_filters.append(["student", "=", student])
+    if scenario:
+        session_filters.append(["scenario", "=", scenario])
+
+    sessions = frappe.get_all(
+        "LMSA Simulation Session",
+        filters=session_filters,
+        fields=[
+            "name",
+            "student",
+            "scenario",
+            "course",
+            "status",
+            "started_at",
+            "ended_at",
+            "turn_count",
+        ],
+        order_by="started_at desc",
+        limit_page_length=500,
+    )
+    session_names = [s["name"] for s in sessions]
+
+    debriefs_by_session: dict[str, dict] = {}
+    if session_names:
+        for d in frappe.get_all(
+            "LMSA Simulation Debrief",
+            filters={"session": ["in", session_names]},
+            fields=["name", "session", "status", "overall_score", "passed"],
+        ):
+            debriefs_by_session[d["session"]] = d
+
+    enriched = []
+    scores: list[float] = []
+    passed_count = 0
+    completed_count = 0
+    students_seen: set[str] = set()
+    for s in sessions:
+        d = debriefs_by_session.get(s["name"]) or {}
+        s = dict(s)
+        s["debrief"] = d.get("name")
+        s["overall_score"] = d.get("overall_score")
+        s["passed"] = bool(d.get("passed"))
+        s["debrief_status"] = d.get("status")
+        enriched.append(s)
+        students_seen.add(s["student"])
+        if s["status"] == "Completed":
+            completed_count += 1
+        if d.get("overall_score") is not None:
+            scores.append(float(d["overall_score"]))
+            if d.get("passed"):
+                passed_count += 1
+
+    avg_score = round(sum(scores) / len(scores), 1) if scores else None
+    pass_rate = round((passed_count / len(scores)) * 100, 1) if scores else None
+
+    return {
+        "kpi": {
+            "total_sessions": len(sessions),
+            "completed_sessions": completed_count,
+            "avg_score": avg_score,
+            "pass_rate": pass_rate,
+            "students_count": len(students_seen),
+            "period_days": period_days,
+        },
+        "score_distribution": _score_buckets(scores),
+        "top_improvement_titles": _top_improvements(session_names),
+        "sessions": enriched,
+    }
+
+
+def _allowed_report_courses() -> set[str]:
+    if has_moderator_role():
+        return set(frappe.get_all("LMS Course", pluck="name"))
+    return set(_instructor_courses())
+
+
+def _empty_report() -> dict:
+    return {
+        "kpi": {
+            "total_sessions": 0,
+            "completed_sessions": 0,
+            "avg_score": None,
+            "pass_rate": None,
+            "students_count": 0,
+            "period_days": 0,
+        },
+        "score_distribution": [],
+        "top_improvement_titles": [],
+        "sessions": [],
+    }
+
+
+def _score_buckets(scores: list[float]) -> list[dict]:
+    buckets = [
+        ("0-20", 0, 20),
+        ("20-40", 20, 40),
+        ("40-60", 40, 60),
+        ("60-80", 60, 80),
+        ("80-100", 80, 101),  # inclusive upper bound for 100
+    ]
+    out = []
+    for label, lo, hi in buckets:
+        n = sum(1 for s in scores if lo <= s < hi)
+        out.append({"label": label, "count": n})
+    return out
+
+
+def _top_improvements(session_names: list[str], limit: int = 5) -> list[dict]:
+    if not session_names:
+        return []
+    debrief_names = frappe.get_all(
+        "LMSA Simulation Debrief",
+        filters={"session": ["in", session_names], "status": "Ready"},
+        pluck="name",
+    )
+    if not debrief_names:
+        return []
+    rows = frappe.db.sql(
+        """
+        SELECT title, COUNT(*) AS occurrences
+        FROM `tabLMSA Debrief Improvement`
+        WHERE parent IN %(parents)s AND parenttype = 'LMSA Simulation Debrief'
+        GROUP BY title
+        ORDER BY occurrences DESC
+        LIMIT %(limit)s
+        """,
+        {"parents": tuple(debrief_names), "limit": limit},
+        as_dict=True,
+    )
+    return rows or []
+
+
+# ---------- Scenario / Rubric CRUD for the SPA panel ----------
+
+
+@frappe.whitelist()
+def list_my_scenarios(course: str | None = None) -> list[dict]:
+    """All scenarios for courses the user instructs (any status)."""
+    allowed = _allowed_report_courses()
+    if not allowed:
+        return []
+    filters = {"lms_course": ["in", list(allowed)]}
+    if course:
+        if course not in allowed:
+            return []
+        filters["lms_course"] = course
+    return frappe.get_all(
+        "LMSA Simulation Scenario",
+        filters=filters,
+        fields=[
+            "name",
+            "scenario_name",
+            "lms_course",
+            "course_lesson",
+            "difficulty",
+            "modality",
+            "status",
+            "modified",
+        ],
+        order_by="modified desc",
+    )
+
+
+@frappe.whitelist()
+def list_my_rubrics() -> list[dict]:
+    """Rubrics: instructors see their own + shared ones; moderators see all."""
+    if has_moderator_role():
+        return frappe.get_all(
+            "LMSA Evaluation Rubric",
+            fields=["name", "rubric_name", "scoring_scale", "passing_threshold", "is_shared"],
+            order_by="modified desc",
+        )
+
+    user = frappe.session.user
+    return frappe.get_all(
+        "LMSA Evaluation Rubric",
+        filters=[["owner", "=", user]],
+        fields=["name", "rubric_name", "scoring_scale", "passing_threshold", "is_shared"],
+        order_by="modified desc",
+    ) + frappe.get_all(
+        "LMSA Evaluation Rubric",
+        filters=[["is_shared", "=", 1], ["owner", "!=", user]],
+        fields=["name", "rubric_name", "scoring_scale", "passing_threshold", "is_shared"],
+        order_by="modified desc",
+    )
+
+
+@frappe.whitelist()
+def get_scenario(name: str) -> dict:
+    """Return a scenario with all its child rows. Used by the editor on load."""
+    if not frappe.db.exists("LMSA Simulation Scenario", name):
+        frappe.throw(_("Scenario not found"), frappe.DoesNotExistError)
+    doc = frappe.get_doc("LMSA Simulation Scenario", name)
+    _ensure_instructor_of_course(doc.lms_course)
+    return {
+        "name": doc.name,
+        "scenario_name": doc.scenario_name,
+        "lms_course": doc.lms_course,
+        "course_lesson": doc.course_lesson,
+        "difficulty": doc.difficulty,
+        "modality": doc.modality,
+        "status": doc.status,
+        "customer_persona": doc.customer_persona,
+        "situation_template": doc.situation_template,
+        "evaluation_rubric": doc.evaluation_rubric,
+        "max_turns": doc.max_turns,
+        "time_limit_minutes": doc.time_limit_minutes,
+        "provider_override": doc.provider_override,
+        "model_override": doc.model_override,
+        "learning_objectives": [
+            {"objective_text": r.objective_text, "weight": r.weight}
+            for r in (doc.learning_objectives or [])
+        ],
+        "seed_variations": [
+            {"variable_name": r.variable_name, "possible_values": r.possible_values}
+            for r in (doc.seed_variations or [])
+        ],
+    }
+
+
+@frappe.whitelist()
+def save_scenario(payload: dict) -> dict:
+    """Create or update a scenario. The payload mirrors `get_scenario`'s shape.
+
+    Returns `{name, updated}`. The `name` field is empty when creating.
+    """
+    if not isinstance(payload, dict):
+        frappe.throw(_("payload must be an object"))
+
+    course = payload.get("lms_course")
+    if not course:
+        frappe.throw(_("lms_course is required"))
+    _ensure_instructor_of_course(course)
+
+    name = payload.get("name")
+    if name and frappe.db.exists("LMSA Simulation Scenario", name):
+        doc = frappe.get_doc("LMSA Simulation Scenario", name)
+        # Forbid moving a scenario to a course you don't instruct
+        if doc.lms_course != course:
+            _ensure_instructor_of_course(doc.lms_course)
+    else:
+        doc = frappe.new_doc("LMSA Simulation Scenario")
+
+    for field in (
+        "scenario_name",
+        "lms_course",
+        "course_lesson",
+        "difficulty",
+        "modality",
+        "status",
+        "customer_persona",
+        "situation_template",
+        "evaluation_rubric",
+        "max_turns",
+        "time_limit_minutes",
+        "provider_override",
+        "model_override",
+    ):
+        if field in payload:
+            doc.set(field, payload[field])
+
+    doc.set("learning_objectives", [])
+    for row in payload.get("learning_objectives") or []:
+        if not row.get("objective_text"):
+            continue
+        doc.append("learning_objectives", {
+            "objective_text": row["objective_text"],
+            "weight": row.get("weight") or 0,
+        })
+
+    doc.set("seed_variations", [])
+    for row in payload.get("seed_variations") or []:
+        if not row.get("variable_name"):
+            continue
+        doc.append("seed_variations", {
+            "variable_name": row["variable_name"],
+            "possible_values": row.get("possible_values") or "",
+        })
+
+    if doc.is_new():
+        doc.insert(ignore_permissions=True)
+    else:
+        doc.save(ignore_permissions=True)
+    frappe.db.commit()
+    return {"name": doc.name, "updated": True}
+
+
+@frappe.whitelist()
+def delete_scenario(name: str) -> dict:
+    if not frappe.db.exists("LMSA Simulation Scenario", name):
+        frappe.throw(_("Scenario not found"), frappe.DoesNotExistError)
+    course = frappe.db.get_value("LMSA Simulation Scenario", name, "lms_course")
+    _ensure_instructor_of_course(course)
+    if frappe.db.exists("LMSA Simulation Session", {"scenario": name}):
+        frappe.throw(
+            _("Cannot delete a scenario that has sessions. Archive it instead."),
+            frappe.ValidationError,
+        )
+    frappe.delete_doc("LMSA Simulation Scenario", name, force=True, ignore_permissions=True)
+    frappe.db.commit()
+    return {"deleted": name}
+
+
+@frappe.whitelist()
+def get_rubric(name: str) -> dict:
+    if not frappe.db.exists("LMSA Evaluation Rubric", name):
+        frappe.throw(_("Rubric not found"), frappe.DoesNotExistError)
+    doc = frappe.get_doc("LMSA Evaluation Rubric", name)
+    # Rubrics: owner OR moderator OR shared
+    user = frappe.session.user
+    if not has_moderator_role() and doc.owner != user and not doc.is_shared:
+        frappe.throw(_("You cannot view this rubric"), frappe.PermissionError)
+    return {
+        "name": doc.name,
+        "rubric_name": doc.rubric_name,
+        "description": doc.description,
+        "scoring_scale": doc.scoring_scale,
+        "passing_threshold": doc.passing_threshold,
+        "is_shared": bool(doc.is_shared),
+        "criteria": [
+            {
+                "criterion_name": c.criterion_name,
+                "description": c.description,
+                "weight": c.weight,
+                "observable_behaviors": c.observable_behaviors,
+            }
+            for c in (doc.criteria or [])
+        ],
+    }
+
+
+@frappe.whitelist()
+def save_rubric(payload: dict) -> dict:
+    """Create or update a rubric. Server enforces weight-sum=1.0 via doctype validate()."""
+    if not isinstance(payload, dict):
+        frappe.throw(_("payload must be an object"))
+    if not has_course_instructor_role() and not has_moderator_role():
+        frappe.throw(_("Only instructors can manage rubrics"), frappe.PermissionError)
+
+    name = payload.get("name")
+    if name and frappe.db.exists("LMSA Evaluation Rubric", name):
+        doc = frappe.get_doc("LMSA Evaluation Rubric", name)
+        if doc.owner != frappe.session.user and not has_moderator_role():
+            frappe.throw(_("You cannot modify this rubric"), frappe.PermissionError)
+    else:
+        doc = frappe.new_doc("LMSA Evaluation Rubric")
+
+    for field in ("rubric_name", "description", "scoring_scale", "passing_threshold", "is_shared"):
+        if field in payload:
+            doc.set(field, payload[field])
+
+    doc.set("criteria", [])
+    for row in payload.get("criteria") or []:
+        if not row.get("criterion_name"):
+            continue
+        doc.append("criteria", {
+            "criterion_name": row["criterion_name"],
+            "description": row.get("description") or "",
+            "weight": row.get("weight") or 0,
+            "observable_behaviors": row.get("observable_behaviors") or "",
+        })
+
+    if doc.is_new():
+        doc.insert(ignore_permissions=True)
+    else:
+        doc.save(ignore_permissions=True)
+    frappe.db.commit()
+    return {"name": doc.name, "updated": True}
+
+
+@frappe.whitelist()
+def delete_rubric(name: str) -> dict:
+    if not frappe.db.exists("LMSA Evaluation Rubric", name):
+        frappe.throw(_("Rubric not found"), frappe.DoesNotExistError)
+    if frappe.db.exists("LMSA Simulation Scenario", {"evaluation_rubric": name}):
+        frappe.throw(
+            _("Cannot delete a rubric used by one or more scenarios."),
+            frappe.ValidationError,
+        )
+    owner = frappe.db.get_value("LMSA Evaluation Rubric", name, "owner")
+    if owner != frappe.session.user and not has_moderator_role():
+        frappe.throw(_("Only the owner can delete this rubric"), frappe.PermissionError)
+    frappe.delete_doc("LMSA Evaluation Rubric", name, force=True, ignore_permissions=True)
+    frappe.db.commit()
+    return {"deleted": name}
+
+
+@frappe.whitelist()
+def get_transcript(session_id: str) -> dict:
+    """Read-only transcript + debrief lookup for the instructor drill-down."""
+    session = load_session(session_id)
+    if session.student != frappe.session.user:
+        # Drill-down is only for moderators and the course's instructors.
+        if not has_moderator_role():
+            _ensure_instructor_of_course(session.course)
+    turns = frappe.get_all(
+        "LMSA Simulation Turn",
+        filters={"session": session.name},
+        fields=["name", "turn_index", "role", "text_content", "injection_attempt_detected"],
+        order_by="turn_index asc",
+    )
+    debrief_name = frappe.db.get_value(
+        "LMSA Simulation Debrief", {"session": session.name}, "name"
+    )
+    return {
+        "session": {
+            "name": session.name,
+            "scenario": session.scenario,
+            "course": session.course,
+            "student": session.student,
+            "status": session.status,
+            "generated_persona": session.generated_persona,
+            "generated_situation": session.generated_situation,
+            "turn_count": session.turn_count,
+            "started_at": str(session.started_at) if session.started_at else None,
+            "ended_at": str(session.ended_at) if session.ended_at else None,
+        },
+        "turns": turns,
+        "debrief": _serialize_debrief(frappe.get_doc("LMSA Simulation Debrief", debrief_name))
+        if debrief_name
+        else None,
+    }
