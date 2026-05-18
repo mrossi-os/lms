@@ -1,0 +1,34 @@
+"""Prompt builders for the simulation feature.
+
+Pure functions: no DB, no HTTP, no frappe imports. They take Python data and
+return strings or dicts. This keeps prompt logic independent and testable.
+
+Versioned constants (e.g. ROLE_PLAY_VERSION) are persisted on Session/Turn
+as `prompt_version` for audit and A/B comparisons.
+"""
+from .defense import (
+    INJECTION_PATTERNS,
+    detect_injection,
+    in_character_refusal,
+)
+from .role_play import ROLE_PLAY_VERSION, build_role_play_system_prompt
+from .scenario_generator import (
+    SCENARIO_GEN_VERSION,
+    PersonaVariant,
+    ScenarioVariant,
+    build_scenario_generator_messages,
+    parse_scenario_generator_output,
+)
+
+__all__ = [
+    "INJECTION_PATTERNS",
+    "PersonaVariant",
+    "ROLE_PLAY_VERSION",
+    "SCENARIO_GEN_VERSION",
+    "ScenarioVariant",
+    "build_role_play_system_prompt",
+    "build_scenario_generator_messages",
+    "detect_injection",
+    "in_character_refusal",
+    "parse_scenario_generator_output",
+]

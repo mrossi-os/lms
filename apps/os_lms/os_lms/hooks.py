@@ -44,10 +44,22 @@ permission_query_conditions = {
     "LMSA Simulation Scenario": (
         "os_lms.os_lms.doctype.lmsa_simulation_scenario.lmsa_simulation_scenario.get_permission_query_conditions"
     ),
+    "LMSA Simulation Session": (
+        "os_lms.os_lms.doctype.lmsa_simulation_session.lmsa_simulation_session.get_permission_query_conditions"
+    ),
+    "LMSA Simulation Turn": (
+        "os_lms.os_lms.doctype.lmsa_simulation_turn.lmsa_simulation_turn.get_permission_query_conditions"
+    ),
 }
 has_permission = {
     "LMSA Simulation Scenario": (
         "os_lms.os_lms.doctype.lmsa_simulation_scenario.lmsa_simulation_scenario.has_permission"
+    ),
+    "LMSA Simulation Session": (
+        "os_lms.os_lms.doctype.lmsa_simulation_session.lmsa_simulation_session.has_permission"
+    ),
+    "LMSA Simulation Turn": (
+        "os_lms.os_lms.doctype.lmsa_simulation_turn.lmsa_simulation_turn.has_permission"
     ),
 }
 # override sqlite search to add custom doctypes
@@ -113,6 +125,9 @@ doc_events = {
     },
     "Brand Customize": {
         "on_update": "os_lms.os_lms.branding.clear_brand_cache",
+    },
+    "LMSA Simulation Session": {
+        "before_insert": "os_lms.os_lms.ai.simulations.orchestrator.validate_quota",
     },
 }
 

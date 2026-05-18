@@ -1,0 +1,172 @@
+{
+ "actions": [],
+ "autoname": "format:TRN-{####}",
+ "creation": "2026-05-18 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "session",
+  "turn_index",
+  "role",
+  "column_break_1",
+  "model_used",
+  "provider_used",
+  "latency_ms",
+  "section_content",
+  "text_content",
+  "section_metrics",
+  "tokens_input",
+  "tokens_output",
+  "column_break_metrics",
+  "injection_attempt_detected"
+ ],
+ "fields": [
+  {
+   "fieldname": "session",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Session",
+   "options": "LMSA Simulation Session",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "turn_index",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Turn Index",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "role",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Role",
+   "options": "user\nassistant\nsystem",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "model_used",
+   "fieldtype": "Data",
+   "label": "Model",
+   "read_only": 1
+  },
+  {
+   "fieldname": "provider_used",
+   "fieldtype": "Data",
+   "label": "Provider",
+   "read_only": 1
+  },
+  {
+   "description": "LLM latency in milliseconds (assistant turns only).",
+   "fieldname": "latency_ms",
+   "fieldtype": "Int",
+   "label": "Latency (ms)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_content",
+   "fieldtype": "Section Break",
+   "label": "Content"
+  },
+  {
+   "fieldname": "text_content",
+   "fieldtype": "Long Text",
+   "label": "Text",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_metrics",
+   "fieldtype": "Section Break",
+   "label": "Metrics",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "tokens_input",
+   "fieldtype": "Int",
+   "label": "Tokens In",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tokens_output",
+   "fieldtype": "Int",
+   "label": "Tokens Out",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_metrics",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Set by prompt_defense if the user turn matched a known jailbreak pattern.",
+   "fieldname": "injection_attempt_detected",
+   "fieldtype": "Check",
+   "label": "Injection Attempt Detected",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-05-18 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "OS LMS",
+ "name": "LMSA Simulation Turn",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Moderator",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Course Creator",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "LMS Student"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "turn_index",
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 0
+}

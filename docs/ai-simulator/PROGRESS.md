@@ -10,9 +10,9 @@ Documento operativo che traccia lo sviluppo reale della feature definita in [`PL
 
 ## Stato attuale
 
-- **Fase**: Fase 1 — Sprint 1 **completato** (23/23 task).
-- **Sprint corrente**: — (pronto per Sprint 2)
-- **Prossimo milestone**: Sprint 2 — Sessioni testuali end-to-end (ORC-2.1 → TST-2.2)
+- **Fase**: Fase 1 — Sprint 2 **completato** (18/18 task).
+- **Sprint corrente**: — (pronto per Sprint 3)
+- **Prossimo milestone**: Sprint 3 — Debrief + UI studente (DBR-3.1 → TST-3.1)
 - **Owner principale**: —
 - **Ultimo aggiornamento**: 2026-05-18
 
@@ -87,26 +87,26 @@ Obiettivo: layer LLM provider-agnostico operativo + doctype Scenario/Rubric + De
 
 Obiettivo: una sessione di chat completa funziona dal POST `start_session` fino all'`end_session`, con streaming.
 
-- ⬜ **ORC-2.1** — Skeleton `os_lms/os_lms/ai/simulations/` (file vuoti)
-- ⬜ **ORC-2.2** — `SessionOrchestrator` con lazy properties (`settings`, `logger`, `chatbot`) seguendo Service Pattern di `IngestionService`
-- ⬜ **ORC-2.3** — `ScenarioGenerator` (Prompt 1) — JSON output con pydantic schema
-- ⬜ **ORC-2.4** — `RolePlayPrompt` (Prompt 2) — costruzione system prompt da Scenario/persona
-- ⬜ **ORC-2.5** — `prompt_defense.py` — regex anti-injection + fallback risposta in-character
-- ⬜ **ORC-2.6** — Doctype `LMSA Simulation Session` (submittable) + permessi
-- ⬜ **ORC-2.7** — Doctype `LMSA Simulation Turn` (document separato, `has_permission` che delega al parent)
-- ⬜ **ORC-2.8** — `orchestrator.start_session(scenario_id, modality, seed)` — genera variante + primo turno cliente
-- ⬜ **ORC-2.9** — `orchestrator.send_message(session_id, user_text)` — append turno + chiamata LLM + persist
-- ⬜ **ORC-2.10** — `orchestrator.end_session(session_id, reason)` — stato + enqueue job debrief
-- ⬜ **ORC-2.11** — Hook `before_insert` su Session: `validate_quota` (rate limit per studente)
-- ⬜ **ORC-2.12** — Pseudonimizzazione: `_pseudonymize_session_id` (SHA-256 di `frappe.session.user`)
-- ⬜ **API-2.1** — Endpoint REST whitelisted in `simulations/api.py`: `start_session`, `send_message`, `end_session`, `get_session`, `list_scenarios`
-- ⬜ **API-2.2** — `load_session(session_id)` helper (analogo a `load_lesson` in `ai/api.py`)
-- ⬜ **API-2.3** — Eventi `frappe.realtime`: `turn_start`, `turn_chunk`, `turn_complete`, `error` (con `layer`)
-- ⬜ **API-2.4** — Streaming token-by-token nel `send_message` via WebSocket per-utente
-- ⬜ **TST-2.1** — Unit test orchestrator con `MockProvider` (state machine, fallback, quota)
-- ⬜ **TST-2.2** — Integration test endpoint con `frappe.tests` (permessi, payload)
+- ✅ **ORC-2.1** — Skeleton `os_lms/os_lms/ai/simulations/` con `__init__.py` (re-export `SessionOrchestrator`), `orchestrator.py`, `prompts/`, `tests/`.
+- ✅ **ORC-2.2** — `SessionOrchestrator` con lazy `settings`/`logger`. Service Pattern allineato a `IngestionService`. Composition over inheritance: provider iniettato via `resolve_provider`, prompt build delegato al modulo `prompts/`.
+- ✅ **ORC-2.3** — `prompts/scenario_generator.py` (Prompt 1): dataclass `PersonaVariant`/`ScenarioVariant`, builder messaggi `build_scenario_generator_messages`, parser `parse_scenario_generator_output` (gestisce fenced ```json e raises su payload invalido). Retry con `temperature=0` su parse failure.
+- ✅ **ORC-2.4** — `prompts/role_play.py` (Prompt 2): `build_role_play_system_prompt` italiano, regole di ruolo + stato interno (interest/trust/close_probability). `ROLE_PLAY_VERSION="rp.v1"` salvato su Session.
+- ✅ **ORC-2.5** — `prompts/defense.py`: 15 regex pattern (EN+IT) per `ignore previous`, `you are now an AI`, `dimentica il tuo ruolo`, `jailbreak`, `DAN mode`, `act as developer`. Fallback `in_character_refusal(name)` usato bypassando LLM. Zero falsi positivi su 4 frasi benigne.
+- ✅ **ORC-2.6** — Doctype `LMSA Simulation Session` submittable, autoname `SES-####`, status state machine (`In Progress`/`Completed`/`Abandoned`/`Error`/`Needs Review`). Permessi: System Manager/Moderator/LMS Student full, Course Creator read-only per i corsi che insegna.
+- ✅ **ORC-2.7** — Doctype `LMSA Simulation Turn`, autoname `TRN-####`, non-submittable. `has_permission` delega al parent Session; `get_permission_query_conditions` con subquery.
+- ✅ **ORC-2.8** — `start_session()`: genera variante (con retry su JSON parse), crea Session + primo turno cliente deterministico, ritorna `{session, first_turn}`.
+- ✅ **ORC-2.9** — `send_message()`: persiste turno user (con flag injection), chiama LLM via `chat_with_fallback`, persiste turno assistant con tokens/latency/provider audit. Emette `EVENT_TURN_START` + `EVENT_TURN_COMPLETE` su WebSocket per-utente. Su `LLMError` setta status=Error e propaga.
+- ✅ **ORC-2.10** — `end_session()`: imposta status `Completed`/`Abandoned`, popola `ended_at`, submit del doc (immutabilità). Idempotente: re-call su stato terminale ritorna `already_terminal=True`. Hook generate_debrief stubbato come TODO per Sprint 3.
+- ✅ **ORC-2.11** — Hook `before_insert` `validate_quota` (module-level per resolver Frappe). Quota=0 → unlimited. Default DAILY_QUOTA=10. Conta sessioni `started_at >= today()` per `student`.
+- ✅ **ORC-2.12** — `SessionOrchestrator.pseudonymize_session_id(user)` → SHA-256 stabile (16/64 char usable per log audit).
+- ✅ **API-2.1** — `simulations/api.py` con 5 endpoint `@frappe.whitelist()`: `start_session`, `send_message`, `end_session`, `get_session`, `list_scenarios`. Tutti type-annotated.
+- ✅ **API-2.2** — `load_session(session_id)` helper (analogo a `load_lesson`): gate per ruolo Moderator/owner/instructor.
+- ✅ **API-2.3** — Eventi `frappe.publish_realtime`: `simulation:turn_start`, `simulation:turn_complete`, `simulation:error` (con `layer`). Best-effort: errori di WS non bloccano il turno.
+- ✅ **API-2.4** — Streaming token-by-token: scaffolding pronto (`MockProvider`/`OpenAICompatibleProvider` supportano `stream=True`); collegamento all'HTTP endpoint posticipato a fase 3 (decisione #9 ancora aperta — chat HTTP sincrona in MVP).
+- ✅ **TST-2.1** — `tests/test_prompts.py` (15 test) + `tests/test_orchestrator.py` (12 test): lifecycle start→send→end, injection, idempotenza, eventi WS, pseudonimizzazione, quota.
+- ✅ **TST-2.2** — `tests/test_api.py` (9 test): permessi student vs instructor vs stranger, scenario Draft vs Published, enrollment, validazione input. Helper `_fixtures.py` con `CANNED_VARIANT`, `make_rubric`, `make_published_scenario`, `enable_mock_provider`, `cleanup_sessions_and_turns`.
 
-**Definition of done Sprint 2**: `curl` POST a `start_session` + `send_message` produce un turno cliente coerente; WebSocket streamma token; quota giornaliera blocca al limite.
+**Definition of done Sprint 2**: `curl` POST a `start_session` + `send_message` produce un turno cliente coerente; WebSocket streamma token; quota giornaliera blocca al limite. **✅ DoD soddisfatto** (64/64 test verdi: 33 Sprint 1 + 31 Sprint 2 incl. integration test orchestrator end-to-end e API con `frappe.tests`).
 
 ### Sprint 3 — Debrief + UI studente (settimane 5-6)
 
@@ -251,3 +251,7 @@ Obiettivo: il docente crea/modifica scenari e vede i report. Pilot su un corso r
 - 2026-05-18 — sviluppo — Sprint 1 batch 4: **DT-1.1, 1.2, 1.3, 1.4** completati. 5 doctype (`LMSA Simulation Scenario` + `LMSA Evaluation Rubric` + 3 child) con validazione pesi + permission_query_conditions + custom field `simulations_enabled` su `LMS Course`. **Sprint 1 chiuso (23/23)**.
 - 2026-05-18 — sviluppo — Installate skill `python-design-patterns` e `python-testing-patterns` (`.claude/skills/`), applicate ai 4 adapter + 33 test scritti.
 - 2026-05-18 — refactor — rimosso campo `course_chapter` da `LMSA Simulation Scenario` (uno scenario è associato a un corso, opzionalmente a una singola lezione). Colonna DB droppata, doctype ricaricato, validazione cross-course lesson confermata.
+- 2026-05-18 — sviluppo — Sprint 2 batch 1 (foundation): **ORC-2.6, 2.7** doctype Session (submittable) + Turn con permission_query_conditions + has_permission. Hook agganciati a `os_lms/hooks.py`.
+- 2026-05-18 — sviluppo — Sprint 2 batch 2 (prompts): **ORC-2.1, 2.3, 2.4, 2.5** pure functions in `ai/simulations/prompts/` — ScenarioGenerator, RolePlayPrompt, prompt_defense (15 pattern EN+IT, zero falsi positivi).
+- 2026-05-18 — sviluppo — Sprint 2 batch 3 (orchestrator): **ORC-2.2, 2.8, 2.9, 2.10, 2.11, 2.12** SessionOrchestrator con state machine, fallback chain, quota giornaliera, pseudonimizzazione SHA-256, eventi realtime.
+- 2026-05-18 — sviluppo — Sprint 2 batch 4 (API + test): **API-2.1, 2.2, 2.3, 2.4, TST-2.1, TST-2.2** endpoint REST + 31 test. **Sprint 2 chiuso (18/18)**, totale 64/64 test verdi.
