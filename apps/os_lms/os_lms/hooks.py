@@ -55,6 +55,8 @@ override_whitelisted_methods = {
     "lms.lms.api.get_user_info": "os_lms.os_lms.override_api.get_user_info",
     "lms.lms.utils.get_roles": "os_lms.os_lms.override_utils.get_roles",
     "lms.lms.api.save_role": "os_lms.os_lms.override_api.save_role",
+    # Redirect the Google Calendar OAuth callback to the LMS SPA instead of the desk.
+    "frappe.integrations.doctype.google_calendar.google_calendar.google_callback": "os_lms.os_lms.google_calendar.google_callback",
 }
 
 # override email
