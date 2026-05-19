@@ -1,20 +1,20 @@
 <template>
-	<div class="max-w-6xl mx-auto p-6">
-		<header class="mb-6 flex items-center justify-between">
-			<div>
-				<h1 class="text-2xl font-semibold text-ink-gray-9">
-					{{ __('Pannello simulazioni') }}
-				</h1>
-				<p class="text-sm text-ink-gray-5">
-					{{ __('Scenari, rubriche e analytics delle simulazioni dei tuoi corsi.') }}
-				</p>
+	<LayoutHeader>
+		<template #left-header>
+			<Breadcrumbs :items="breadcrumbs" />
+		</template>
+		<template #right-header>
+			<div class="flex gap-2">
+				<Button @click="newSchema">+ {{ __('Schema di valutazione') }}</Button>
+				<Button variant="solid" @click="newScenario">+ {{ __('Scenario') }}</Button>
 			</div>
-		</header>
-
+		</template>
+	</LayoutHeader>
+	<div class="p-5 pb-10">
 		<Tabs v-model="activeTab" :tabs="tabs">
-			<!-- REPORT -->
-			<template #report>
-				<div class="space-y-6">
+			<template #tab-panel="{ tab }">
+				<!-- REPORT -->
+				<div v-if="tab.name === 'report'" class="space-y-6">
 					<!-- Filters -->
 					<div class="grid grid-cols-4 gap-3 items-end">
 						<FormControl
@@ -142,11 +142,9 @@
 						</table>
 					</div>
 				</div>
-			</template>
 
-			<!-- SCENARIOS -->
-			<template #scenarios>
-				<div class="space-y-3">
+				<!-- SCENARIOS -->
+				<div v-else-if="tab.name === 'scenarios'" class="space-y-3">
 					<div class="flex items-center justify-between">
 						<FormControl
 							v-model="scenarioCourseFilter"
@@ -196,13 +194,11 @@
 						</table>
 					</div>
 				</div>
-			</template>
 
-			<!-- RUBRICS -->
-			<template #rubrics>
-				<div class="space-y-3">
+				<!-- EVALUATION SCHEMAS -->
+				<div v-else-if="tab.name === 'schemas'" class="space-y-3">
 					<div class="flex justify-end">
-						<Button variant="solid" @click="newRubric">+ {{ __('Nuova rubrica') }}</Button>
+						<Button variant="solid" @click="newSchema">+ {{ __('Nuovo schema di valutazione') }}</Button>
 					</div>
 					<div class="border rounded-md overflow-hidden">
 						<table class="w-full text-sm">
@@ -217,11 +213,11 @@
 							</thead>
 							<tbody>
 								<tr
-									v-for="r in rubrics"
+									v-for="r in schemas"
 									:key="r.name"
 									class="border-t hover:bg-surface-gray-1"
 								>
-									<td class="px-3 py-2">{{ r.rubric_name }}</td>
+									<td class="px-3 py-2">{{ r.schema_name }}</td>
 									<td class="px-3 py-2">{{ r.scoring_scale }}</td>
 									<td class="px-3 py-2">{{ r.passing_threshold }}%</td>
 									<td class="px-3 py-2">
@@ -232,14 +228,14 @@
 										/>
 									</td>
 									<td class="px-3 py-2 text-right">
-										<Button size="sm" variant="ghost" @click="editRubric(r.name)">
+										<Button size="sm" variant="ghost" @click="editSchema(r.name)">
 											{{ __('Modifica') }}
 										</Button>
 									</td>
 								</tr>
-								<tr v-if="!rubrics.length">
+								<tr v-if="!schemas.length">
 									<td colspan="5" class="px-3 py-6 text-center text-ink-gray-5">
-										{{ __('Nessuna rubrica.') }}
+										{{ __('Nessuno schema di valutazione.') }}
 									</td>
 								</tr>
 							</tbody>
@@ -251,22 +247,11 @@
 
 		<!-- Editors -->
 		<Dialog
-			v-model="scenarioEditorOpen"
-			:options="{ title: __('Scenario'), size: '4xl' }"
+			v-model="schemaEditorOpen"
+			:options="{ title: __('Schema di valutazione'), size: '3xl' }"
 		>
 			<template #body-content>
-				<ScenarioEditor
-					:scenarioName="editingScenario"
-					@saved="onScenarioSaved"
-				/>
-			</template>
-		</Dialog>
-		<Dialog
-			v-model="rubricEditorOpen"
-			:options="{ title: __('Rubrica'), size: '3xl' }"
-		>
-			<template #body-content>
-				<RubricEditor :rubricName="editingRubric" @saved="onRubricSaved" />
+				<EvaluationSchemaEditor :schemaName="editingSchema" @saved="onSchemaSaved" />
 			</template>
 		</Dialog>
 
@@ -279,18 +264,48 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import { Badge, Button, Dialog, FormControl, Tabs, createResource } from 'frappe-ui'
-import ScenarioEditor from '@/oslms/components/simulations/ScenarioEditor.vue'
-import RubricEditor from '@/oslms/components/simulations/RubricEditor.vue'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import {
+	Badge,
+	Breadcrumbs,
+	Button,
+	Dialog,
+	FormControl,
+	Tabs,
+	createResource,
+} from 'frappe-ui'
+import LayoutHeader from '@/components/Layouts/LayoutHeader.vue'
+import EvaluationSchemaEditor from '@/oslms/components/simulations/EvaluationSchemaEditor.vue'
 import TranscriptDrawer from '@/oslms/components/simulations/TranscriptDrawer.vue'
 
+const route = useRoute()
+const router = useRouter()
 const activeTab = ref('report')
 const tabs = [
 	{ name: 'report', label: __('Report') },
 	{ name: 'scenarios', label: __('Scenari') },
-	{ name: 'rubrics', label: __('Rubriche') },
+	{ name: 'schemas', label: __('Schemi di valutazione') },
 ]
+
+const breadcrumbs = computed(() => [
+	{
+		label: __('Pannello simulazioni'),
+		route: { name: 'InstructorReports' },
+	},
+])
+
+onMounted(() => {
+	const requestedTab = route.query.tab
+	if (requestedTab && tabs.some((t) => t.name === requestedTab)) {
+		activeTab.value = requestedTab
+	}
+	const requestedCourse = route.query.course
+	if (requestedCourse) {
+		filters.value.course = requestedCourse
+		scenarioCourseFilter.value = requestedCourse
+	}
+})
 
 // ---- shared course list ----
 const coursesRes = createResource({
@@ -358,43 +373,38 @@ const scenariosRes = createResource({
 })
 const scenarios = computed(() => scenariosRes.data || [])
 
-const scenarioEditorOpen = ref(false)
-const editingScenario = ref('')
-
 function newScenario() {
-	editingScenario.value = ''
-	scenarioEditorOpen.value = true
+	const query = { from: 'admin' }
+	if (scenarioCourseFilter.value) query.course = scenarioCourseFilter.value
+	router.push({ name: 'ScenarioCreate', query })
 }
 function editScenario(name) {
-	editingScenario.value = name
-	scenarioEditorOpen.value = true
-}
-function onScenarioSaved() {
-	scenarioEditorOpen.value = false
-	scenariosRes.submit()
+	const query = { from: 'admin' }
+	if (scenarioCourseFilter.value) query.course = scenarioCourseFilter.value
+	router.push({ name: 'ScenarioEdit', params: { name }, query })
 }
 
-// ---- RUBRICS ----
-const rubricsRes = createResource({
-	url: 'os_lms.os_lms.ai.simulations.api.list_my_rubrics',
+// ---- EVALUATION SCHEMAS ----
+const schemasRes = createResource({
+	url: 'os_lms.os_lms.ai.simulations.api.list_my_evaluation_schemas',
 	auto: true,
 })
-const rubrics = computed(() => rubricsRes.data || [])
+const schemas = computed(() => schemasRes.data || [])
 
-const rubricEditorOpen = ref(false)
-const editingRubric = ref('')
+const schemaEditorOpen = ref(false)
+const editingSchema = ref('')
 
-function newRubric() {
-	editingRubric.value = ''
-	rubricEditorOpen.value = true
+function newSchema() {
+	editingSchema.value = ''
+	schemaEditorOpen.value = true
 }
-function editRubric(name) {
-	editingRubric.value = name
-	rubricEditorOpen.value = true
+function editSchema(name) {
+	editingSchema.value = name
+	schemaEditorOpen.value = true
 }
-function onRubricSaved() {
-	rubricEditorOpen.value = false
-	rubricsRes.submit()
+function onSchemaSaved() {
+	schemaEditorOpen.value = false
+	schemasRes.submit()
 }
 
 // ---- DRILL-DOWN ----

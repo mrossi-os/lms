@@ -44,7 +44,7 @@ Documento operativo che traccia lo sviluppo reale della feature definita in [`PL
   - Tutti i valori sono configurabili da `LMSA Settings` senza redeploy.
 - **Capacità target**: max ~50 utenti concorrenti. Decisione #7 (Frappe File) è coerente con questo target; rivedere a S3 solo se il numero cresce sostanzialmente o se i log mostrano contention su `tabFile` / I/O sul bench volume.
 - **Audience del Desk**: solo sysadmin. Conseguenze concrete:
-  - **Nessuna form Desk pensata per l'instructor**. CRUD scenario/rubrica/debrief avvengono **solo** dalla SPA Vue.
+  - **Nessuna form Desk pensata per l'instructor**. CRUD scenario/schema di valutazione/debrief avvengono **solo** dalla SPA Vue.
   - I doctype mantengono comunque list/form Desk funzionanti (necessari ai sysadmin per troubleshooting/audit), ma non sono nel flusso utente regolare.
   - Permessi: `LMS Instructor` mantiene CRUD via API REST, ma la UX di riferimento è esclusivamente Vue.
   - Health-check provider e "Test STT/TTS" restano action sul `LMSA Settings` Desk (uso sysadmin).
@@ -55,7 +55,7 @@ Documento operativo che traccia lo sviluppo reale della feature definita in [`PL
 
 ### Sprint 1 — LLM layer + foundation (settimane 1-2)
 
-Obiettivo: layer LLM provider-agnostico operativo + doctype Scenario/Rubric + Desk forms.
+Obiettivo: layer LLM provider-agnostico operativo + doctype Scenario/Schema + Desk forms.
 
 - ✅ **LLM-1.1** — Skeleton modulo `os_lms/os_lms/ai/utils/llm/` con `provider.py`, `registry.py`, `config.py`, `errors.py`, `__init__.py`, `providers/__init__.py`
 - ✅ **LLM-1.2** — `LLMProvider` ABC + dataclass (`ChatMessage`, `ChatResponse`, `ChatChunk`, `Usage`, `JsonSchema`, `ProviderConfig`)
@@ -77,11 +77,11 @@ Obiettivo: layer LLM provider-agnostico operativo + doctype Scenario/Rubric + De
 - ✅ **SET-1.3** — `GptChatbot.ask()` reimplementato sopra `OpenAIProvider` via il layer unificato. `IngestionService` non cambia.
 - ✅ **SET-1.4** — Endpoint `os_lms.os_lms.ai.utils.llm.api.test_providers` (gate System Manager/LMS Manager) + bottone Desk **"Test Provider Connection"** in `lmsa_settings.js`: tabella esito per provider con indicator color (`ok` green, `not_configured` gray, `invalid_auth` orange, `error` red).
 - ✅ **DT-1.1** — Doctype `LMSA Simulation Scenario` (autoname `SCN-####`) + child `LMSA Simulation Learning Objective` + child `LMSA Simulation Seed Variation`. Validazione: lesson deve appartenere al corso; pesi obiettivi sommano a 1.0 se valorizzati. `created_by_instructor` auto-impostato su `before_insert`. **(2026-05-18 update)** rimosso il campo `course_chapter`: uno scenario è associato a un corso e al massimo a una singola lezione.
-- ✅ **DT-1.2** — Doctype `LMSA Evaluation Rubric` (autoname by `rubric_name`, unique) + child `LMSA Rubric Criterion`. Validazione: somma pesi criteri = 1.0 ± 0.001.
+- ✅ **DT-1.2** — Doctype `LMSA Evaluation Schema` (autoname by `schema_name`, unique) + child `LMSA Schema Criterion`. Validazione: somma pesi criteri = 1.0 ± 0.001.
 - ✅ **DT-1.3** — `permission_query_conditions` + `has_permission` su `LMSA Simulation Scenario` (hook in `os_lms/hooks.py`). System Manager/Moderator/LMS Manager: full. Course Creator: solo scenari dei propri corsi (via `Course Instructor.parent`). LMS Student: read su `Published` filtrati per enrollment.
 - ✅ **DT-1.4** — Custom field `simulations_enabled` (Check) su `LMS Course` aggiunto a `fixtures/custom_field.json` (insert_after `enforce_quiz_on_completion`) e applicato al site live.
 
-**Definition of done Sprint 1**: `MockProvider` funziona end-to-end via `resolve_provider`; gli adapter reali rispondono al `health_check()`; doctype Scenario/Rubric creabili dal Desk dal docente. **✅ DoD soddisfatto** (smoke test SCN-0020 inserito via Administrator con rubrica valida e child tables popolate; "Test Provider Connection" risponde con tabella health-check; 33/33 test verdi).
+**Definition of done Sprint 1**: `MockProvider` funziona end-to-end via `resolve_provider`; gli adapter reali rispondono al `health_check()`; doctype Scenario/Schema creabili dal Desk dal docente. **✅ DoD soddisfatto** (smoke test SCN-0020 inserito via Administrator con schema valido e child tables popolate; "Test Provider Connection" risponde con tabella health-check; 33/33 test verdi).
 
 ### Sprint 2 — Sessioni testuali end-to-end (settimane 3-4)
 
@@ -104,7 +104,7 @@ Obiettivo: una sessione di chat completa funziona dal POST `start_session` fino 
 - ✅ **API-2.3** — Eventi `frappe.publish_realtime`: `simulation:turn_start`, `simulation:turn_complete`, `simulation:error` (con `layer`). Best-effort: errori di WS non bloccano il turno.
 - ✅ **API-2.4** — Streaming token-by-token: scaffolding pronto (`MockProvider`/`OpenAICompatibleProvider` supportano `stream=True`); collegamento all'HTTP endpoint posticipato a fase 3 (decisione #9 ancora aperta — chat HTTP sincrona in MVP).
 - ✅ **TST-2.1** — `tests/test_prompts.py` (15 test) + `tests/test_orchestrator.py` (12 test): lifecycle start→send→end, injection, idempotenza, eventi WS, pseudonimizzazione, quota.
-- ✅ **TST-2.2** — `tests/test_api.py` (9 test): permessi student vs instructor vs stranger, scenario Draft vs Published, enrollment, validazione input. Helper `_fixtures.py` con `CANNED_VARIANT`, `make_rubric`, `make_published_scenario`, `enable_mock_provider`, `cleanup_sessions_and_turns`.
+- ✅ **TST-2.2** — `tests/test_api.py` (9 test): permessi student vs instructor vs stranger, scenario Draft vs Published, enrollment, validazione input. Helper `_fixtures.py` con `CANNED_VARIANT`, `make_evaluation_schema`, `make_published_scenario`, `enable_mock_provider`, `cleanup_sessions_and_turns`.
 
 **Definition of done Sprint 2**: `curl` POST a `start_session` + `send_message` produce un turno cliente coerente; WebSocket streamma token; quota giornaliera blocca al limite. **✅ DoD soddisfatto** (64/64 test verdi: 33 Sprint 1 + 31 Sprint 2 incl. integration test orchestrator end-to-end e API con `frappe.tests`).
 
@@ -113,7 +113,7 @@ Obiettivo: una sessione di chat completa funziona dal POST `start_session` fino 
 Obiettivo: lo studente vede il debrief dopo `end_session`. UI dalla lezione al debrief.
 
 - ✅ **DBR-3.1** — `prompts/debrief.py` (Prompt 3): dataclass `DebriefResult`+child, `build_debrief_messages`, `parse_debrief_output`, `DEBRIEF_SCHEMA` (JSON Schema usato come `response_format`), `DEBRIEF_VERSION="debrief.v1"`.
-- ✅ **DBR-3.2** — Doctype `LMSA Simulation Debrief` (autoname `DBR-####`, status `Pending│Ready│Needs Review│Failed`) + child `LMSA Criterion Score`, `LMSA Debrief Strength`, `LMSA Debrief Improvement`, `LMSA Debrief Recommendation`. `passed` calcolato in `before_save` su rubric.passing_threshold.
+- ✅ **DBR-3.2** — Doctype `LMSA Simulation Debrief` (autoname `DBR-####`, status `Pending│Ready│Needs Review│Failed`) + child `LMSA Criterion Score`, `LMSA Debrief Strength`, `LMSA Debrief Improvement`, `LMSA Debrief Recommendation`. `passed` calcolato in `before_save` su schema.passing_threshold.
 - ✅ **DBR-3.3** — `simulations/tasks.py` `generate_debrief(session_id)`: idempotente, retry su parse failure con `temperature=0`, due tentativi → `Needs Review` con `raw_llm_response` salvato. Enqueue da `end_session()` con `enqueue_after_commit=True`, queue `long`, timeout 300s.
 - ✅ **DBR-3.4** — `_enrich_recommendations_with_rag()`: usa `RagDB.search(query=improvement_titles+suggestions+behavioral, course=session.course, top_k=5)` per back-fillare `lesson_id` mancanti e aggiungere fino a 2 lezioni extra. Best-effort: outage RAG non blocca il debrief.
 - ✅ **DBR-3.5** — Eventi `simulation:debrief_ready` (success) + `simulation:debrief_failed` (errore/parse fail), publish_realtime al canale dello studente.
@@ -127,7 +127,7 @@ Obiettivo: lo studente vede il debrief dopo `end_session`. UI dalla lezione al d
 - ✅ **FE-3.7** — Bottone "Avvia simulazione" integrato in `Lesson.vue` condizionale su `canLaunchSimulation` (simulations_enabled in settings + array scenari non vuoto).
 - ✅ **FE-3.8** — Override `get_lesson`: ritorna `simulations` come array di scenari Published per la lezione (lesson-bound prima, poi course-level).
 - ✅ **FE-3.9** — `get_lms_settings` espone `simulations_enabled` nel payload globale (riuso store settings frontend).
-- ✅ **TST-3.1** — `cypress/e2e/simulations.cy.js`: setup mock provider via `frappe.client.set_value`, seed rubric+scenario, API lifecycle completo (start/send/injection/end/get_debrief), UI flow Lesson → Launcher → SimulationPlay.
+- ✅ **TST-3.1** — `cypress/e2e/simulations.cy.js`: setup mock provider via `frappe.client.set_value`, seed schema+scenario, API lifecycle completo (start/send/injection/end/get_debrief), UI flow Lesson → Launcher → SimulationPlay.
 
 **Definition of done Sprint 3**: dalla lezione → click "Avvia" → chat → "Termina" → debrief visualizzato con punteggio e lezioni consigliate, tutto in <30s end-to-end con `MockProvider`. **✅ DoD soddisfatto** (frontend build verde, 81/81 test backend verdi inclusi 17 nuovi per DBR + Cypress E2E scritto).
 
@@ -135,18 +135,18 @@ Obiettivo: lo studente vede il debrief dopo `end_session`. UI dalla lezione al d
 
 Obiettivo: il docente crea/modifica scenari e vede i report. Pilot su un corso reale.
 
-- ✅ **DOC-4.1** — `ScenarioEditor.vue` form completo (identity, persona/situation, rubric autocomplete, learning_objectives + seed_variations editabili, limiti, provider/model override) + bottone "Prova come studente" che avvia una sessione e routa al SimulationPlay. **Backend**: endpoint `save_scenario`/`get_scenario`/`delete_scenario`/`list_my_scenarios` con gate instructor-of-course.
-- ✅ **DOC-4.2** — `RubricEditor.vue` form con criteri editabili, descrizione/observable_behaviors per criterio, validazione client-side della somma pesi=1.00 (live indicator) + server enforce nel doctype validate(). **Backend**: endpoint `save_rubric`/`get_rubric`/`delete_rubric`/`list_my_rubrics` con permessi owner/shared/moderator.
+- ✅ **DOC-4.1** — `ScenarioEditor.vue` form completo (identity, persona/situation, evaluation schema autocomplete, learning_objectives + seed_variations editabili, limiti, provider/model override) + bottone "Prova come studente" che avvia una sessione e routa al SimulationPlay. **Backend**: endpoint `save_scenario`/`get_scenario`/`delete_scenario`/`list_my_scenarios` con gate instructor-of-course.
+- ✅ **DOC-4.2** — `EvaluationSchemaEditor.vue` form con criteri editabili, descrizione/observable_behaviors per criterio, validazione client-side della somma pesi=1.00 (live indicator) + server enforce nel doctype validate(). **Backend**: endpoint `save_evaluation_schema`/`get_evaluation_schema`/`delete_evaluation_schema`/`list_my_evaluation_schemas` con permessi owner/shared/moderator.
 - ✅ **DOC-4.3** — Endpoint `instructor_review_debrief(session_id, review)`: gate ruolo+corso, scrive `instructor_review/by/at` sul `LMSA Simulation Debrief`.
 - ✅ **DOC-4.4** — Endpoint `instructor_report(course, student, period_days, scenario)`: KPI (total_sessions, completed_sessions, avg_score, pass_rate, students_count), `score_distribution` a 5 bucket, `top_improvement_titles` (5 più frequenti), lista sessioni arricchite con debrief.
-- ✅ **DOC-4.5** — `frontend/src/pages/Simulations/InstructorReports.vue` con `Tabs` (Report/Scenari/Rubriche), filtri (corso/periodo/studente), KPI cards, bar chart distribuzione punteggi, top improvements, tabella sessioni con drill-down. Rotta `/simulations/admin`.
+- ✅ **DOC-4.5** — `frontend/src/pages/Simulations/InstructorReports.vue` con `Tabs` (Report/Scenari/Schemi), filtri (corso/periodo/studente), KPI cards, bar chart distribuzione punteggi, top improvements, tabella sessioni con drill-down. Rotta `/simulations/admin`. Header CTA globali "+ Scenario" / "+ Schema di valutazione" sempre disponibili. Legge query params `?course=<id>&tab=scenarios` per pre-filtrare e pre-popolare l'editor. **Entry point**: tab dedicata **"Simulations"** in `CourseDetail.vue` (visibile a instructor/moderator se `simulations_enabled`), che renderizza inline il nuovo componente `CourseSimulations.vue` con KPI per stato + lista scenari del corso + create/edit (via `ScenarioEditor` in dialog) + link "Apri report completo" verso `InstructorReports`.
 - ✅ **DOC-4.6** — `TranscriptDrawer.vue`: modale full-screen con `ChatSession` in `readOnly=true` + sintesi debrief + form nota docente (chiama `instructor_review_debrief`). Apertura dal drill-down della tabella sessioni.
 - 📋 **PIL-4.1** — *Attività operativa*: selezione corso pilot + curazione 3-5 scenari (richiede docente esperto del dominio vendita). Non blocca lo sviluppo.
 - 📋 **PIL-4.2** — *Attività operativa*: sessione formativa docenti pilot (1h). Materiale d'appoggio: PLAN-os_lms.md §7 + screenshot del pannello.
 - 📋 **PIL-4.3** — *Attività operativa*: onboarding 20-30 studenti pilot (annunci + abilitazione `simulations_enabled` sul corso pilot).
 - 📋 **PIL-4.4** — *Attività operativa*: retrospettiva post-pilot a +2 settimane dal lancio (dati: `instructor_report`, costi LLM, feedback qualitativo).
 
-**Definition of done Sprint 4**: il docente del corso pilot crea scenari/rubriche dal SPA, vede le sessioni dei suoi studenti e legge i debrief con citazioni testuali. **✅ DoD codice soddisfatto** (92/92 test backend verdi inclusi 11 nuovi Sprint 4, frontend build verde, drill-down review docente operativo). PIL-4.* tracciati come operativi del team.
+**Definition of done Sprint 4**: il docente del corso pilot crea scenari/schemi di valutazione dal SPA, vede le sessioni dei suoi studenti e legge i debrief con citazioni testuali. **✅ DoD codice soddisfatto** (92/92 test backend verdi inclusi 11 nuovi Sprint 4, frontend build verde, drill-down review docente operativo). PIL-4.* tracciati come operativi del team.
 
 ---
 
@@ -248,7 +248,7 @@ Obiettivo: il docente crea/modifica scenari e vede i report. Pilot su un corso r
 - 2026-05-18 — sviluppo — Sprint 1 batch 1: **LLM-1.1, 1.2, 1.3, 1.4, 1.5, 1.11, SET-1.1, 1.2** completati. `MockProvider` end-to-end verificato; `resolve_provider("chat")` legge `LMSA Settings`; retro-compat tutor RAG OK
 - 2026-05-18 — sviluppo — Sprint 1 batch 2: **LLM-1.6→1.10, 1.12, 1.13, 1.14, 1.15** completati. 4 adapter HTTP (OpenAI / DeepSeek / Gemini OpenAI-compat / Anthropic native) + fallback chain + extras `[project.optional-dependencies]` + test architetturale encapsulation + 33 unit test.
 - 2026-05-18 — sviluppo — Sprint 1 batch 3: **SET-1.3, SET-1.4** completati. `GptChatbot` migrato a wrapper su `OpenAIProvider` (retro-compat tutor RAG). Endpoint `test_providers` + bottone Desk "Test Provider Connection" su `LMSA Settings`.
-- 2026-05-18 — sviluppo — Sprint 1 batch 4: **DT-1.1, 1.2, 1.3, 1.4** completati. 5 doctype (`LMSA Simulation Scenario` + `LMSA Evaluation Rubric` + 3 child) con validazione pesi + permission_query_conditions + custom field `simulations_enabled` su `LMS Course`. **Sprint 1 chiuso (23/23)**.
+- 2026-05-18 — sviluppo — Sprint 1 batch 4: **DT-1.1, 1.2, 1.3, 1.4** completati. 5 doctype (`LMSA Simulation Scenario` + `LMSA Evaluation Schema` + 3 child) con validazione pesi + permission_query_conditions + custom field `simulations_enabled` su `LMS Course`. **Sprint 1 chiuso (23/23)**.
 - 2026-05-18 — sviluppo — Installate skill `python-design-patterns` e `python-testing-patterns` (`.claude/skills/`), applicate ai 4 adapter + 33 test scritti.
 - 2026-05-18 — refactor — rimosso campo `course_chapter` da `LMSA Simulation Scenario` (uno scenario è associato a un corso, opzionalmente a una singola lezione). Colonna DB droppata, doctype ricaricato, validazione cross-course lesson confermata.
 - 2026-05-18 — sviluppo — Sprint 2 batch 1 (foundation): **ORC-2.6, 2.7** doctype Session (submittable) + Turn con permission_query_conditions + has_permission. Hook agganciati a `os_lms/hooks.py`.
@@ -258,6 +258,8 @@ Obiettivo: il docente crea/modifica scenari e vede i report. Pilot su un corso r
 - 2026-05-18 — sviluppo — Sprint 3 batch 1 (backend debrief): **DBR-3.1→3.6** doctype Debrief+4 child, DebriefEngine + RQ job + integrazione RagDB + endpoint get_debrief + eventi WS.
 - 2026-05-18 — sviluppo — Sprint 3 batch 2 (frontend studente): **FE-3.1→3.9** composables, ChatSession, SimulationLauncher, pagine Play+Debrief, integrazione Lesson.vue, override get_lesson+get_lms_settings. Build frontend verde.
 - 2026-05-18 — sviluppo — Sprint 3 batch 3 (test): 17 nuovi backend test (test_debrief_prompts, test_debrief_job) + Cypress E2E simulations.cy.js. **Sprint 3 chiuso (16/16)**, totale 81/81 test backend verdi.
-- 2026-05-18 — sviluppo — Sprint 4 batch 1 (backend): endpoint `instructor_review_debrief`, `instructor_report`, CRUD `save_scenario`/`save_rubric`/`get_*`/`delete_*`/`list_my_*`, `get_transcript`. Permission helper `_ensure_instructor_of_course`.
-- 2026-05-18 — sviluppo — Sprint 4 batch 2 (frontend): `ScenarioEditor.vue`, `RubricEditor.vue`, `InstructorReports.vue` (tabs Report/Scenari/Rubriche), `TranscriptDrawer.vue` (drill-down) + rotta `/simulations/admin`. Build verde.
+- 2026-05-18 — sviluppo — Sprint 4 batch 1 (backend): endpoint `instructor_review_debrief`, `instructor_report`, CRUD `save_scenario`/`save_evaluation_schema`/`get_*`/`delete_*`/`list_my_*`, `get_transcript`. Permission helper `_ensure_instructor_of_course`.
+- 2026-05-18 — sviluppo — Sprint 4 batch 2 (frontend): `ScenarioEditor.vue`, `EvaluationSchemaEditor.vue`, `InstructorReports.vue` (tabs Report/Scenari/Schemi), `TranscriptDrawer.vue` (drill-down) + rotta `/simulations/admin`. Build verde.
 - 2026-05-18 — sviluppo — Sprint 4 batch 3 (test): 11 nuovi backend test (test_instructor_api). **Sprint 4 dev chiuso (6/6 DOC-*)**, totale 92/92 test backend verdi. PIL-4.* operativi del team.
+- 2026-05-19 — refactor — rinominato il dominio "rubrica" → "schema di valutazione": doctype `LMSA Evaluation Rubric` → `LMSA Evaluation Schema`, `LMSA Rubric Criterion` → `LMSA Schema Criterion`, field `rubric_name` → `schema_name`, field su Scenario `evaluation_rubric` → `evaluation_schema`, endpoint `*_rubric*` → `*_evaluation_schema*`, componente `RubricEditor.vue` → `EvaluationSchemaEditor.vue`, label UI italiane "Rubrica" → "Schema di valutazione". DB migrato (drop tabelle obsolete + drop colonna `evaluation_rubric`), 92/92 test verdi, build frontend verde.
+- 2026-05-19 — UX — sostituita l'entry "AI Simulations" del dropdown azioni con una **tab dedicata "Simulations"** in `CourseDetail.vue` (visibile a instructor/moderator quando `simulations_enabled`). Nuovo componente `CourseSimulations.vue` con KPI status, tabella scenari del corso, create/edit via dialog `ScenarioEditor`, delete (bloccato per Published), link al pannello globale `InstructorReports`.

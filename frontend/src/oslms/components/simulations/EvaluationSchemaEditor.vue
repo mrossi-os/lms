@@ -2,7 +2,7 @@
 	<form @submit.prevent="onSave" class="space-y-6">
 		<div class="flex items-center justify-between">
 			<h2 class="text-lg font-semibold text-ink-gray-9">
-				{{ rubricName ? __('Modifica rubrica') : __('Nuova rubrica') }}
+				{{ schemaName ? __('Modifica schema di valutazione') : __('Nuovo schema di valutazione') }}
 			</h2>
 			<Button variant="solid" :loading="saving" type="submit">
 				{{ __('Salva') }}
@@ -10,7 +10,7 @@
 		</div>
 
 		<div class="grid grid-cols-2 gap-4">
-			<FormControl v-model="model.rubric_name" type="text" :label="__('Nome rubrica')" required />
+			<FormControl v-model="model.schema_name" type="text" :label="__('Nome schema')" required />
 			<FormControl
 				v-model="model.scoring_scale"
 				type="select"
@@ -36,7 +36,7 @@
 		<FormControl
 			v-model="model.description"
 			type="textarea"
-			rows="3"
+			:rows="3"
 			:label="__('Descrizione')"
 		/>
 
@@ -105,15 +105,15 @@ import { computed, reactive, ref, watch } from 'vue'
 import { Button, FormControl, createResource, toast } from 'frappe-ui'
 
 const props = defineProps({
-	rubricName: { type: String, default: '' },
+	schemaName: { type: String, default: '' },
 })
 const emit = defineEmits(['saved'])
 
 const saving = ref(false)
 
 const model = reactive({
-	name: props.rubricName || '',
-	rubric_name: '',
+	name: props.schemaName || '',
+	schema_name: '',
 	description: '',
 	scoring_scale: '0-10',
 	passing_threshold: 70,
@@ -127,9 +127,9 @@ const weightSum = computed(() =>
 const weightSumOk = computed(() => Math.abs(weightSum.value - 1.0) <= 0.001)
 
 const loadRes = createResource({
-	url: 'os_lms.os_lms.ai.simulations.api.get_rubric',
+	url: 'os_lms.os_lms.ai.simulations.api.get_evaluation_schema',
 	makeParams() {
-		return { name: props.rubricName }
+		return { name: props.schemaName }
 	},
 	onSuccess(data) {
 		if (!data) return
@@ -138,7 +138,7 @@ const loadRes = createResource({
 	},
 })
 watch(
-	() => props.rubricName,
+	() => props.schemaName,
 	(n) => {
 		if (n) loadRes.submit()
 	},
@@ -146,7 +146,7 @@ watch(
 )
 
 const saveRes = createResource({
-	url: 'os_lms.os_lms.ai.simulations.api.save_rubric',
+	url: 'os_lms.os_lms.ai.simulations.api.save_evaluation_schema',
 	method: 'POST',
 })
 
@@ -174,7 +174,7 @@ async function onSave() {
 	saving.value = true
 	try {
 		const result = await saveRes.submit({ payload: { ...model } })
-		toast.success(__('Rubrica salvata'))
+		toast.success(__('Schema salvato'))
 		emit('saved', result)
 	} catch (e) {
 		toast.error(e.messages?.[0] || __('Salvataggio fallito'))

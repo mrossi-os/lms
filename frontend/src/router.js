@@ -257,6 +257,17 @@ const routes = [
 		component: () => import('@/pages/Simulations/InstructorReports.vue'),
 	},
 	{
+		path: '/simulations/scenarios/new',
+		name: 'ScenarioCreate',
+		component: () => import('@/pages/Simulations/ScenarioEdit.vue'),
+	},
+	{
+		path: '/simulations/scenarios/:name/edit',
+		name: 'ScenarioEdit',
+		component: () => import('@/pages/Simulations/ScenarioEdit.vue'),
+		props: true,
+	},
+	{
 		path: '/simulations/:sessionId',
 		name: 'SimulationPlay',
 		component: () => import('@/pages/Simulations/SimulationPlay.vue'),

@@ -46,8 +46,10 @@ import {
 } from 'frappe-ui'
 import { computed, inject, markRaw, onMounted, provide, ref, watch } from 'vue'
 import { sessionStore } from '@/stores/session'
+import { useSettings } from '@/stores/settings'
 import { useRouter, useRoute } from 'vue-router'
 import {
+	Bot,
 	Download,
 	Ellipsis,
 	List,
@@ -58,8 +60,13 @@ import {
 import CourseOverview from '@/pages/Courses/CourseOverview.vue'
 import CourseDashboard from '@/pages/Courses/CourseDashboard.vue'
 import CourseForm from '@/pages/Courses/CourseForm.vue'
+import CourseSimulations from '@/pages/Courses/CourseSimulations.vue'
 
 const { brand } = sessionStore()
+const { settings: lmsSettingsResource } = useSettings()
+const simulationsEnabledGlobal = computed(
+	() => !!lmsSettingsResource?.data?.simulations_enabled,
+)
 
 const tagResource = createResource({
 	url: 'frappe.client.get_list',
@@ -125,23 +132,33 @@ const course = createResource({
 	auto: true,
 })
 
-const tabs = ref([
-	{
-		label: __('Overview'),
-		component: markRaw(CourseOverview),
-		icon: List,
-	},
-	{
-		label: __('Dashboard'),
-		component: markRaw(CourseDashboard),
-		icon: TrendingUp,
-	},
-	{
-		label: __('Settings'),
-		component: markRaw(CourseForm),
-		icon: Settings2,
-	},
-])
+const tabs = computed(() => {
+	const t = [
+		{
+			label: __('Overview'),
+			component: markRaw(CourseOverview),
+			icon: List,
+		},
+		{
+			label: __('Dashboard'),
+			component: markRaw(CourseDashboard),
+			icon: TrendingUp,
+		},
+		{
+			label: __('Settings'),
+			component: markRaw(CourseForm),
+			icon: Settings2,
+		},
+	]
+	if (simulationsEnabledGlobal.value) {
+		t.push({
+			label: __('Simulations'),
+			component: markRaw(CourseSimulations),
+			icon: Bot,
+		})
+	}
+	return t
+})
 
 watch(
 	() => props.courseName,
