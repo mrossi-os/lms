@@ -43,12 +43,13 @@
 					<div class="flex items-center">
 						<div class="text-ink-gray-9" v-html="log.subject"></div>
 					</div>
-					<div class="flex items-center gap-x-2">
-						<div class="text-sm text-ink-gray-5">
-							{{ dayjs(log.creation).fromNow() }}
-						</div>
-					</div>
+
 					<div class="flex items-center gap-x-2 shrink-0">
+						<div class="flex items-center gap-x-2">
+							<div class="text-sm text-ink-gray-5">
+								{{ dayjs(log.creation).fromNow() }}
+							</div>
+						</div>
 						<Button
 							variant="ghost"
 							v-if="!log.read"
@@ -60,11 +61,64 @@
 						</Button>
 					</div>
 				</div>
+
 				<div
 					v-if="isMentionOrComment(log)"
 					v-html="log.email_content"
 					class="bg-surface-gray-2 text-ink-gray-9 rounded-md px-3 py-2 line-clamp-3 overflow-hidden"
 				></div>
+				<div
+					v-else-if="showDetails(log) && log.document_type === 'LMS Live Class'"
+					class="flex flex-col border rounded-md text-ink-gray-7 p-3 card sm:w-96"
+				>
+					<div
+						class="bg-surface-violet-1 w-fit py-1 px-1.5 rounded-full text-ink-violet-1 text-sm mb-2"
+					>
+						{{ __('Live Class') }}
+					</div>
+					<div class="font-semibold mb-1 text-ink-gray-9">
+						{{ __(log.document_details.title) }}
+					</div>
+					<div
+						v-if="log.document_details.short_introduction"
+						class="short-introduction"
+					>
+						{{ __(log.document_details.short_introduction) }}
+					</div>
+					<div class="mt-auto space-y-3">
+						<div
+							v-if="log.document_details.start_date"
+							class="flex items-center gap-x-2"
+						>
+							<Calendar class="w-4 h-4 stroke-1.5" />
+							<span>
+								{{
+									dayjs(log.document_details.start_date).format('DD MMMM YYYY')
+								}}
+							</span>
+						</div>
+						<div
+							v-if="
+								log.document_details.start_date &&
+								log.document_details.start_time
+							"
+							class="flex items-center gap-x-2"
+						>
+							<Clock class="w-4 h-4 stroke-1.5" />
+							<span>
+								{{
+									dayjs(getLiveClassStart(log.document_details)).format(
+										'hh:mm A',
+									)
+								}}
+								-
+								{{
+									dayjs(getLiveClassEnd(log.document_details)).format('hh:mm A')
+								}}
+							</span>
+						</div>
+					</div>
+				</div>
 				<div
 					v-else-if="showDetails(log)"
 					class="flex flex-col sm:flex-row sm:items-stretch border border-outline-gray-2 sm:space-x-2 rounded-md card"
@@ -92,9 +146,7 @@
 							{{
 								log.document_type === 'LMS Course'
 									? __('New Course')
-									: log.document_type === 'LMS Live Class'
-										? __('Live Class')
-										: __('New Batch')
+									: __('New Batch')
 							}}
 						</div>
 						<div class="font-semibold mb-1 text-ink-gray-9">
@@ -317,6 +369,16 @@ const showDetails = (log) => {
 	)
 }
 
+const getLiveClassStart = (details) => {
+	return new Date(`${details.start_date}T${details.start_time}`)
+}
+
+const getLiveClassEnd = (details) => {
+	const start = getLiveClassStart(details)
+	const duration = details.duration || 0
+	return new Date(start.getTime() + duration * 60000)
+}
+
 onUnmounted(() => {
 	socket.off('publish_lms_notifications')
 })
@@ -340,3 +402,16 @@ usePageMeta(() => {
 	}
 })
 </script>
+<style>
+.short-introduction {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	-webkit-box-orient: vertical;
+	text-overflow: ellipsis;
+	width: 100%;
+	overflow: hidden;
+	margin: 0.25rem 0 1.5rem;
+	line-height: 1.5;
+}
+</style>

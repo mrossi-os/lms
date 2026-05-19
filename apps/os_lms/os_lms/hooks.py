@@ -90,6 +90,8 @@ override_whitelisted_methods = {
 
     
     "lms.command_palette.search_sqlite": "os_lms.os_lms.override_api.search_sqlite",
+    # Redirect the Google Calendar OAuth callback to the LMS SPA instead of the desk.
+    "frappe.integrations.doctype.google_calendar.google_calendar.google_callback": "os_lms.os_lms.google_calendar.google_callback",
 }
 
 # override email

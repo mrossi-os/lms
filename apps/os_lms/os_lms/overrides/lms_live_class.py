@@ -89,10 +89,19 @@ class CustomLMSLiveClass(LMSLiveClass):
 				f"[create_calendar_event] {self.name} Event saved name={event.name} "
 				f"event_id={event.google_calendar_event_id} meet={event.google_meet_link}"
 			)
-		except Exception:
-			_lc_log(f"[create_calendar_event] {self.name} Event save RAISED")
+		except Exception as exc:
+			_lc_log(
+				f"[create_calendar_event] {self.name} Event save RAISED "
+				f"type={type(exc).__name__} msg={exc!r}"
+			)
 			frappe.log_error(title="LMS Live Class Event save failed")
-			raise
+			frappe.throw(
+				_(
+					"Impossibile creare l'evento sul Google Calendar \"{0}\". "
+					"L'autorizzazione potrebbe essere mancante, scaduta o revocata: "
+					"apri il documento Google Calendar e ricompleta il flusso OAuth, poi riprova."
+				).format(calendar)
+			)
 
 		frappe.db.set_value(self.doctype, self.name, "event", event.name)
 

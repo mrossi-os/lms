@@ -146,6 +146,20 @@ watch(
 	},
 )
 
+// Keep the authorization badge in sync when the parent list reloads after a
+// successful OAuth callback (postMessage handled in GoogleCalendarSettings).
+watch(
+	() =>
+		googleCalendars.value?.data?.find(
+			(c) => c.name === props.calendarID,
+		)?.authorization_code,
+	(newCode) => {
+		if (props.calendarID && props.calendarID !== 'new') {
+			calendar.authorization_code = newCode || ''
+		}
+	},
+)
+
 const saveCalendar = (close: () => void) => {
 	if (props.calendarID === 'new') {
 		createCalendar(close)
