@@ -1382,25 +1382,6 @@ def update_document_details(notification: dict) -> dict:
 		instructors = get_instructors("LMS Batch", notification.document_name)
 		details["instructors"] = instructors
 		notification["document_details"] = details
-
-	elif notification.document_type == "LMS Live Class":
-		details = frappe.db.get_value(
-			"LMS Live Class",
-			notification.document_name,
-			[
-				"title",
-				"description as short_introduction",
-				"date",
-				"time",
-				"duration",
-				"timezone",
-				"join_url",
-			],
-			as_dict=1,
-		)
-		if details:
-			details["instructors"] = []
-			notification["document_details"] = details
 	return notification
 
 

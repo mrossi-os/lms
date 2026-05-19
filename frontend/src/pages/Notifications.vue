@@ -43,12 +43,13 @@
 					<div class="flex items-center">
 						<div class="text-ink-gray-9" v-html="log.subject"></div>
 					</div>
-					<div class="flex items-center gap-x-2">
-						<div class="text-sm text-ink-gray-5">
-							{{ dayjs(log.creation).fromNow() }}
-						</div>
-					</div>
+
 					<div class="flex items-center gap-x-2 shrink-0">
+						<div class="flex items-center gap-x-2">
+							<div class="text-sm text-ink-gray-5">
+								{{ dayjs(log.creation).fromNow() }}
+							</div>
+						</div>
 						<Button
 							variant="ghost"
 							v-if="!log.read"
@@ -60,15 +61,14 @@
 						</Button>
 					</div>
 				</div>
+
 				<div
 					v-if="isMentionOrComment(log)"
 					v-html="log.email_content"
 					class="bg-surface-gray-2 text-ink-gray-9 rounded-md px-3 py-2 line-clamp-3 overflow-hidden"
 				></div>
 				<div
-					v-else-if="
-						showDetails(log) && log.document_type === 'LMS Live Class'
-					"
+					v-else-if="showDetails(log) && log.document_type === 'LMS Live Class'"
 					class="flex flex-col border rounded-md text-ink-gray-7 p-3 card sm:w-96"
 				>
 					<div
@@ -87,23 +87,34 @@
 					</div>
 					<div class="mt-auto space-y-3">
 						<div
-							v-if="log.document_details.date"
+							v-if="log.document_details.start_date"
 							class="flex items-center gap-x-2"
 						>
 							<Calendar class="w-4 h-4 stroke-1.5" />
 							<span>
-								{{ dayjs(log.document_details.date).format('DD MMMM YYYY') }}
+								{{
+									dayjs(log.document_details.start_date).format('DD MMMM YYYY')
+								}}
 							</span>
 						</div>
 						<div
-							v-if="log.document_details.date && log.document_details.time"
+							v-if="
+								log.document_details.start_date &&
+								log.document_details.start_time
+							"
 							class="flex items-center gap-x-2"
 						>
 							<Clock class="w-4 h-4 stroke-1.5" />
 							<span>
-								{{ dayjs(getLiveClassStart(log.document_details)).format('hh:mm A') }}
+								{{
+									dayjs(getLiveClassStart(log.document_details)).format(
+										'hh:mm A',
+									)
+								}}
 								-
-								{{ dayjs(getLiveClassEnd(log.document_details)).format('hh:mm A') }}
+								{{
+									dayjs(getLiveClassEnd(log.document_details)).format('hh:mm A')
+								}}
 							</span>
 						</div>
 					</div>
@@ -359,7 +370,7 @@ const showDetails = (log) => {
 }
 
 const getLiveClassStart = (details) => {
-	return new Date(`${details.date}T${details.time}`)
+	return new Date(`${details.start_date}T${details.start_time}`)
 }
 
 const getLiveClassEnd = (details) => {
