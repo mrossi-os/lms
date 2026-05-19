@@ -113,16 +113,17 @@ def _get_or_create_debrief(session) -> "frappe.model.document.Document":
 def _ask_llm(session, logger: logging.Logger) -> tuple[DebriefResult | None, str, str, str]:
     """Return (result, raw_text, provider, model). result=None on parse failure."""
     scenario = frappe.get_doc("LMSA Simulation Scenario", session.scenario)
-    rubric = frappe.get_doc("LMSA Evaluation Rubric", scenario.evaluation_rubric)
+    schema = frappe.get_doc("LMSA Evaluation Schema", scenario.evaluation_schema)
 
-    rubric_criteria = [
+
+    schema_criteria = [
         {
             "name": row.criterion_name,
             "weight": float(row.weight or 0.0),
             "description": row.description or "",
             "observable_behaviors": row.observable_behaviors or "",
         }
-        for row in rubric.criteria
+        for row in schema.criteria
     ]
     objectives = [
         (row.objective_text or "").strip()
@@ -141,7 +142,7 @@ def _ask_llm(session, logger: logging.Logger) -> tuple[DebriefResult | None, str
         scenario_name=scenario.scenario_name,
         difficulty=scenario.difficulty,
         learning_objectives=objectives,
-        rubric_criteria=rubric_criteria,
+        schema_criteria=schema_criteria,
         transcript=transcript_dicts,
     )
     chat_messages = [ChatMessage(role=m["role"], content=m["content"]) for m in messages]

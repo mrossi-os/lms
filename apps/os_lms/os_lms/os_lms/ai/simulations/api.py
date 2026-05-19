@@ -14,11 +14,13 @@ from frappe import _
 
 from lms.lms.utils import has_course_instructor_role, has_moderator_role, is_instructor
 
+
 from .orchestrator import (
     QuotaExceededError,
     SessionOrchestrator,
     SessionTerminatedError,
 )
+from .tasks import generate_debrief as _run_generate_debrief
 
 
 def _service() -> SessionOrchestrator:
@@ -204,6 +206,28 @@ def get_debrief(session_id: str) -> dict:
 
     debrief = frappe.get_doc("LMSA Simulation Debrief", name)
     return _serialize_debrief(debrief)
+
+
+@frappe.whitelist()
+def generate_debrief(session_id: str) -> dict:
+    """Run Prompt 3 for `session_id` synchronously and return the debrief payload.
+
+    Designed for manual triggers from the SPA panel ("rigenera debrief") and
+    for bench execute. The async path uses `tasks.generate_debrief` directly
+    via `frappe.enqueue`.
+    """
+    if not session_id:
+        frappe.throw(_("session_id is required"))
+
+    session = load_session(session_id)
+    # Only the owner, course instructors and moderators can trigger a regen.
+    if session.student != frappe.session.user and not has_moderator_role():
+        _ensure_instructor_of_course(session.course)
+
+    name = _run_generate_debrief(session.name)
+    debrief = frappe.get_doc("LMSA Simulation Debrief", name)
+    return _serialize_debrief(debrief)
+
 
 
 def _serialize_debrief(debrief) -> dict:
@@ -507,7 +531,7 @@ def _top_improvements(session_names: list[str], limit: int = 5) -> list[dict]:
     return rows or []
 
 
-# ---------- Scenario / Rubric CRUD for the SPA panel ----------
+# ---------- Scenario / Evaluation Schema CRUD for the SPA panel ----------
 
 
 @frappe.whitelist()
@@ -539,25 +563,25 @@ def list_my_scenarios(course: str | None = None) -> list[dict]:
 
 
 @frappe.whitelist()
-def list_my_rubrics() -> list[dict]:
-    """Rubrics: instructors see their own + shared ones; moderators see all."""
+def list_my_evaluation_schemas() -> list[dict]:
+    """Evaluation Schemas: instructors see their own + shared ones; moderators see all."""
     if has_moderator_role():
         return frappe.get_all(
-            "LMSA Evaluation Rubric",
-            fields=["name", "rubric_name", "scoring_scale", "passing_threshold", "is_shared"],
+            "LMSA Evaluation Schema",
+            fields=["name", "schema_name", "scoring_scale", "passing_threshold", "is_shared"],
             order_by="modified desc",
         )
 
     user = frappe.session.user
     return frappe.get_all(
-        "LMSA Evaluation Rubric",
+        "LMSA Evaluation Schema",
         filters=[["owner", "=", user]],
-        fields=["name", "rubric_name", "scoring_scale", "passing_threshold", "is_shared"],
+        fields=["name", "schema_name", "scoring_scale", "passing_threshold", "is_shared"],
         order_by="modified desc",
     ) + frappe.get_all(
-        "LMSA Evaluation Rubric",
+        "LMSA Evaluation Schema",
         filters=[["is_shared", "=", 1], ["owner", "!=", user]],
-        fields=["name", "rubric_name", "scoring_scale", "passing_threshold", "is_shared"],
+        fields=["name", "schema_name", "scoring_scale", "passing_threshold", "is_shared"],
         order_by="modified desc",
     )
 
@@ -579,7 +603,7 @@ def get_scenario(name: str) -> dict:
         "status": doc.status,
         "customer_persona": doc.customer_persona,
         "situation_template": doc.situation_template,
-        "evaluation_rubric": doc.evaluation_rubric,
+        "evaluation_schema": doc.evaluation_schema,
         "max_turns": doc.max_turns,
         "time_limit_minutes": doc.time_limit_minutes,
         "provider_override": doc.provider_override,
@@ -627,7 +651,7 @@ def save_scenario(payload: dict) -> dict:
         "status",
         "customer_persona",
         "situation_template",
-        "evaluation_rubric",
+        "evaluation_schema",
         "max_turns",
         "time_limit_minutes",
         "provider_override",
@@ -679,17 +703,17 @@ def delete_scenario(name: str) -> dict:
 
 
 @frappe.whitelist()
-def get_rubric(name: str) -> dict:
-    if not frappe.db.exists("LMSA Evaluation Rubric", name):
-        frappe.throw(_("Rubric not found"), frappe.DoesNotExistError)
-    doc = frappe.get_doc("LMSA Evaluation Rubric", name)
-    # Rubrics: owner OR moderator OR shared
+def get_evaluation_schema(name: str) -> dict:
+    if not frappe.db.exists("LMSA Evaluation Schema", name):
+        frappe.throw(_("Evaluation schema not found"), frappe.DoesNotExistError)
+    doc = frappe.get_doc("LMSA Evaluation Schema", name)
+    # Schemas: owner OR moderator OR shared
     user = frappe.session.user
     if not has_moderator_role() and doc.owner != user and not doc.is_shared:
-        frappe.throw(_("You cannot view this rubric"), frappe.PermissionError)
+        frappe.throw(_("You cannot view this evaluation schema"), frappe.PermissionError)
     return {
         "name": doc.name,
-        "rubric_name": doc.rubric_name,
+        "schema_name": doc.schema_name,
         "description": doc.description,
         "scoring_scale": doc.scoring_scale,
         "passing_threshold": doc.passing_threshold,
@@ -707,22 +731,34 @@ def get_rubric(name: str) -> dict:
 
 
 @frappe.whitelist()
-def save_rubric(payload: dict) -> dict:
-    """Create or update a rubric. Server enforces weight-sum=1.0 via doctype validate()."""
+def save_evaluation_schema(payload: dict) -> dict:
+    """Create or update an evaluation schema. Server enforces weight-sum=1.0 via doctype validate()."""
     if not isinstance(payload, dict):
         frappe.throw(_("payload must be an object"))
     if not has_course_instructor_role() and not has_moderator_role():
-        frappe.throw(_("Only instructors can manage rubrics"), frappe.PermissionError)
+        frappe.throw(_("Only instructors can manage evaluation schemas"), frappe.PermissionError)
 
     name = payload.get("name")
-    if name and frappe.db.exists("LMSA Evaluation Rubric", name):
-        doc = frappe.get_doc("LMSA Evaluation Rubric", name)
-        if doc.owner != frappe.session.user and not has_moderator_role():
-            frappe.throw(_("You cannot modify this rubric"), frappe.PermissionError)
-    else:
-        doc = frappe.new_doc("LMSA Evaluation Rubric")
+    is_update = bool(name)
 
-    for field in ("rubric_name", "description", "scoring_scale", "passing_threshold", "is_shared"):
+    if is_update:
+        if not frappe.db.exists("LMSA Evaluation Schema", name):
+            # Fail loudly instead of silently falling back to "create" — that's
+            # how we used to end up with duplicate schemas on every save.
+            frappe.throw(
+                _("Evaluation schema {0} not found").format(name),
+                frappe.DoesNotExistError,
+            )
+        doc = frappe.get_doc("LMSA Evaluation Schema", name)
+        if doc.owner != frappe.session.user and not has_moderator_role():
+            frappe.throw(_("You cannot modify this evaluation schema"), frappe.PermissionError)
+    else:
+        doc = frappe.new_doc("LMSA Evaluation Schema")
+
+    # `schema_name` drives autoname for new docs; for existing docs we apply it
+    # via `frappe.rename_doc` after the save so links stay consistent.
+    new_schema_name = payload.get("schema_name")
+    for field in ("schema_name", "description", "scoring_scale", "passing_threshold", "is_shared"):
         if field in payload:
             doc.set(field, payload[field])
 
@@ -741,23 +777,38 @@ def save_rubric(payload: dict) -> dict:
         doc.insert(ignore_permissions=True)
     else:
         doc.save(ignore_permissions=True)
+        # Keep `name` aligned with `schema_name` since autoname is field-based.
+        # Without this, an instructor renaming a schema would leave the docname
+        # frozen at the old value while the displayed name drifts.
+        if new_schema_name and new_schema_name != doc.name:
+            new_name = frappe.rename_doc(
+                "LMSA Evaluation Schema",
+                doc.name,
+                new_schema_name,
+                merge=False,
+                ignore_permissions=True,
+            )
+            doc = frappe.get_doc(
+                "LMSA Evaluation Schema",
+                new_name if isinstance(new_name, str) else doc.name,
+            )
     frappe.db.commit()
     return {"name": doc.name, "updated": True}
 
 
 @frappe.whitelist()
-def delete_rubric(name: str) -> dict:
-    if not frappe.db.exists("LMSA Evaluation Rubric", name):
-        frappe.throw(_("Rubric not found"), frappe.DoesNotExistError)
-    if frappe.db.exists("LMSA Simulation Scenario", {"evaluation_rubric": name}):
+def delete_evaluation_schema(name: str) -> dict:
+    if not frappe.db.exists("LMSA Evaluation Schema", name):
+        frappe.throw(_("Evaluation schema not found"), frappe.DoesNotExistError)
+    if frappe.db.exists("LMSA Simulation Scenario", {"evaluation_schema": name}):
         frappe.throw(
-            _("Cannot delete a rubric used by one or more scenarios."),
+            _("Cannot delete a evaluation schema used by one or more scenarios."),
             frappe.ValidationError,
         )
-    owner = frappe.db.get_value("LMSA Evaluation Rubric", name, "owner")
+    owner = frappe.db.get_value("LMSA Evaluation Schema", name, "owner")
     if owner != frappe.session.user and not has_moderator_role():
-        frappe.throw(_("Only the owner can delete this rubric"), frappe.PermissionError)
-    frappe.delete_doc("LMSA Evaluation Rubric", name, force=True, ignore_permissions=True)
+        frappe.throw(_("Only the owner can delete this evaluation schema"), frappe.PermissionError)
+    frappe.delete_doc("LMSA Evaluation Schema", name, force=True, ignore_permissions=True)
     frappe.db.commit()
     return {"deleted": name}
 

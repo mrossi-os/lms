@@ -76,16 +76,20 @@ override_whitelisted_methods = {
     "lms.lms.api.get_sidebar_settings": "os_lms.os_lms.override_api.get_sidebar_settings",
     "lms.lms.api.get_lms_settings":"os_lms.os_lms.override_api.get_lms_settings",
     "lms.lms.api.get_announcements": "os_lms.os_lms.override_api.get_announcements",
-    "lms.command_palette.search_sqlite": "os_lms.os_lms.override_api.search_sqlite",
+    "lms.lms.api.get_notifications": "os_lms.os_lms.override_api.get_notifications",
+    "lms.lms.api.get_user_info": "os_lms.os_lms.override_api.get_user_info",
+    "lms.lms.api.save_role": "os_lms.os_lms.override_api.save_role",
+
     "lms.lms.utils.get_course_details": "os_lms.os_lms.override_utils.get_course_details",
+    "lms.lms.utils.get_course_outline": "os_lms.os_lms.override_utils.get_course_outline",
     "lms.lms.utils.get_courses": "os_lms.os_lms.override_utils.get_courses",
     "lms.lms.utils.get_lesson_creation_details": "os_lms.os_lms.override_utils.get_lesson_creation_details",
     "lms.lms.utils.get_lesson": "os_lms.os_lms.override_utils.get_lesson",
     "lms.lms.utils.get_batch_details": "os_lms.os_lms.override_utils.get_batch_details",
-    "lms.lms.api.get_notifications": "os_lms.os_lms.override_api.get_notifications",
-    "lms.lms.api.get_user_info": "os_lms.os_lms.override_api.get_user_info",
     "lms.lms.utils.get_roles": "os_lms.os_lms.override_utils.get_roles",
-    "lms.lms.api.save_role": "os_lms.os_lms.override_api.save_role",
+
+    
+    "lms.command_palette.search_sqlite": "os_lms.os_lms.override_api.search_sqlite",
 }
 
 # override email

@@ -34,7 +34,7 @@ SYSTEM_PROMPT = (
     "Sei un instructional designer esperto di formazione vendite.\n"
     "Generi una variante concreta di uno scenario di vendita partendo dal "
     "template fornito.\n\n"
-    "Mantieni invariati: obiettivi formativi, difficoltà, rubrica.\n"
+    "Mantieni invariati: obiettivi formativi, difficoltà, schema di valutazione.\n"
     "Varia: nome del cliente, settore, contesto, obiezione principale, mood "
     "iniziale, motivazione nascosta.\n\n"
     "Rispondi ESCLUSIVAMENTE con un oggetto JSON valido conforme allo "

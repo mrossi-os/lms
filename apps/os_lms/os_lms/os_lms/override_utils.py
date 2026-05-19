@@ -3,6 +3,7 @@ import frappe
 from frappe.rate_limiter import rate_limit
 from lms.lms.utils import get_course_details as _original_get_course_details
 from lms.lms.utils import get_lesson as _original_get_lesson
+from lms.lms.utils import get_course_outline as _original_get_course_outline
 from lms.lms.utils import get_lesson_details as _original_get_lesson_details
 from lms.lms.utils import get_batch_details as _original_get_batch_details
 from lms.lms.utils import get_courses as _orginal_get_courses
@@ -12,6 +13,7 @@ from os_lms.os_lms.api import (
     evaluate_quiz_access,
     get_batch_tab_unread_counts,
 )
+from lms.lms.utils import get_lesson_icon
 from os_lms.os_lms.utils import get_courses_total_minutes
 
 
@@ -40,6 +42,30 @@ def get_course_details(course: str):
     }
 
     return course_detail
+
+
+
+@frappe.whitelist(allow_guest=True)
+def get_course_outline(course: str, progress: bool = False) -> list:
+    detail =  _original_get_course_outline(course, progress)
+    if detail.count == 0:
+        return detail
+    
+    lessons = frappe.get_all(
+			"Course Lesson",
+			filters={
+				"course": course,
+			},
+            fields=["name", "index_status", "indexed_at"],
+		)
+    lesson_index = {lesson.name: lesson for lesson in lessons}
+    for item in detail:
+        for lesson in item.get("lessons", []):
+            lesson_info = lesson_index.get(lesson["name"])
+            if lesson_info:
+                lesson["index_status"] = lesson_info.index_status
+                lesson["indexed_at"] = lesson_info.indexed_at
+    return detail
 
 
 @frappe.whitelist(allow_guest=True)
@@ -175,9 +201,6 @@ def custom_get_lesson_details(chapter: dict, progress: bool = False):
             as_dict=True,
         )
         lesson_details.number = f"{chapter.idx}-{row.idx}"
-
-        from lms.lms.utils import get_lesson_icon
-
         lesson_details.icon = get_lesson_icon(lesson_details.body, lesson_details.content)
 
         if progress:

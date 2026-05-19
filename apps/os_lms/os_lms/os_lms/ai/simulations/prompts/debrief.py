@@ -1,6 +1,6 @@
 """Prompt 3 — debrief generator.
 
-Given the rubric + the full transcript, asks the LLM to grade the session as
+Given the evaluation schema + the full transcript, asks the LLM to grade the session as
 strict JSON. The background job persists the result on LMSA Simulation Debrief.
 
 Pure functions only — no frappe / no HTTP imports.
@@ -59,11 +59,11 @@ class DebriefResult:
 
 SYSTEM_PROMPT = (
     "Sei un coach esperto di vendita e formatore. Valuta la simulazione "
-    "secondo la rubrica fornita.\n\n"
+    "secondo lo schema di valutazione fornito.\n\n"
     "Linee guida:\n"
     "- Sii specifico, costruttivo, basato sulle evidenze testuali della "
     "trascrizione. Cita frasi precise quando possibile.\n"
-    "- Per ogni criterio della rubrica fornisci un punteggio numerico e una "
+    "- Per ogni criterio dello schema fornisci un punteggio numerico e una "
     "breve evidenza.\n"
     "- Le aree di miglioramento devono includere un suggerimento concreto.\n"
     "- L'analisi comportamentale identifica pattern ricorrenti (interruzioni, "
@@ -98,13 +98,13 @@ DEBRIEF_SCHEMA: dict = {
             "items": {
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["criterion", "score"],
+                "required": ["criterion", "score", "max_score", "evidence_quote", "note"],
                 "properties": {
                     "criterion": {"type": "string"},
                     "score": {"type": "number"},
-                    "max_score": {"type": "number"},
-                    "evidence_quote": {"type": "string"},
-                    "note": {"type": "string"},
+                    "max_score": {"type": ["number", "null"]},
+                    "evidence_quote": {"type": ["string", "null"]},
+                    "note": {"type": ["string", "null"]},
                 },
             },
         },
@@ -113,11 +113,11 @@ DEBRIEF_SCHEMA: dict = {
             "items": {
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["title"],
+                "required": ["title", "detail", "quote"],
                 "properties": {
                     "title": {"type": "string"},
-                    "detail": {"type": "string"},
-                    "quote": {"type": "string"},
+                    "detail": {"type": ["string", "null"]},
+                    "quote": {"type": ["string", "null"]},
                 },
             },
         },
@@ -126,12 +126,12 @@ DEBRIEF_SCHEMA: dict = {
             "items": {
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["title"],
+                "required": ["title", "detail", "quote", "suggestion"],
                 "properties": {
                     "title": {"type": "string"},
-                    "detail": {"type": "string"},
-                    "quote": {"type": "string"},
-                    "suggestion": {"type": "string"},
+                    "detail": {"type": ["string", "null"]},
+                    "quote": {"type": ["string", "null"]},
+                    "suggestion": {"type": ["string", "null"]},
                 },
             },
         },
@@ -141,14 +141,14 @@ DEBRIEF_SCHEMA: dict = {
             "items": {
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["title"],
+                "required": ["title", "why", "lesson"],
                 "properties": {
                     "title": {"type": "string"},
-                    "why": {"type": "string"},
+                    "why": {"type": ["string", "null"]},
                     # The lesson id is optional and back-filled by the orchestrator
                     # via RAG search (DBR-3.4). The LLM may also propose its own
                     # title to be matched against the course.
-                    "lesson": {"type": "string"},
+                    "lesson": {"type": ["string", "null"]},
                 },
             },
         },
@@ -164,22 +164,22 @@ def build_debrief_messages(
     scenario_name: str,
     difficulty: str,
     learning_objectives: list[str],
-    rubric_criteria: list[dict],
+    schema_criteria: list[dict],
     transcript: list[dict],
 ) -> tuple[str, list[dict]]:
     """Return (system, messages) for the debrief call.
 
-    rubric_criteria: list of dicts with keys: name, weight, description,
+    schema_criteria: list of dicts with keys: name, weight, description,
         observable_behaviors. Weights are passed verbatim to the prompt so the
         LLM can weigh evidence consistently with the scenario design.
     transcript: list of dicts {role, text} ordered by turn_index.
     """
-    rubric_block = "\n".join(
+    schema_block = "\n".join(
         f"- {c['name']} (peso {c['weight']:.2f}): "
         f"{c.get('description', '').strip() or '—'} "
         f"[osservabile: {c.get('observable_behaviors', '').strip() or '—'}]"
-        for c in rubric_criteria
-    ) or "— (rubrica vuota)"
+        for c in schema_criteria
+    ) or "— (schema di valutazione vuoto)"
 
     objectives_block = "\n".join(f"- {o}" for o in learning_objectives) or "—"
 
@@ -191,7 +191,7 @@ def build_debrief_messages(
         f"Scenario: {scenario_name}\n"
         f"Difficoltà: {difficulty}\n\n"
         f"Obiettivi formativi:\n{objectives_block}\n\n"
-        f"Rubrica:\n{rubric_block}\n\n"
+        f"Schema di valutazione:\n{schema_block}\n\n"
         f"Trascrizione completa:\n{transcript_block}\n\n"
         "Produci ora la valutazione completa come JSON conforme allo schema."
     )

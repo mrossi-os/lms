@@ -21,7 +21,7 @@ const adminCall = (method, args = {}) =>
 describe("AI Simulations", () => {
 	let scenarioName;
 	let courseName;
-	let rubricName;
+	let schemaName;
 
 	before(() => {
 		// Authenticate as Administrator so we can configure fixtures + run as student.
@@ -38,7 +38,7 @@ describe("AI Simulations", () => {
 			},
 		});
 
-		// 2. Create a rubric + a published scenario on the first LMS Course we find.
+		// 2. Create an evaluation schema + a published scenario on the first LMS Course we find.
 		adminCall("frappe.client.get_list", {
 			doctype: "LMS Course",
 			limit_page_length: 1,
@@ -49,11 +49,11 @@ describe("AI Simulations", () => {
 
 		cy.then(() => {
 			const ts = Date.now();
-			rubricName = `Cypress Rubric ${ts}`;
+			schemaName = `Cypress Schema ${ts}`;
 			adminCall("frappe.client.insert", {
 				doc: {
-					doctype: "LMSA Evaluation Rubric",
-					rubric_name: rubricName,
+					doctype: "LMSA Evaluation Schema",
+					schema_name: schemaName,
 					scoring_scale: "0-10",
 					passing_threshold: 70,
 					criteria: [
@@ -72,7 +72,7 @@ describe("AI Simulations", () => {
 					modality: "chat",
 					customer_persona: "Cliente B2B di prova",
 					situation_template: "Il cliente chiede uno sconto.",
-					evaluation_rubric: rubricName,
+					evaluation_schema: schemaName,
 					status: "Published",
 				},
 			}).then((response) => {

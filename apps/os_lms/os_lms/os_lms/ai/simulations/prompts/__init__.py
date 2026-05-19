@@ -25,6 +25,7 @@ from .defense import (
 from .role_play import ROLE_PLAY_VERSION, build_role_play_system_prompt
 from .scenario_generator import (
     SCENARIO_GEN_VERSION,
+    SCENARIO_SCHEMA,
     PersonaVariant,
     ScenarioVariant,
     build_scenario_generator_messages,
@@ -42,6 +43,7 @@ __all__ = [
     "ROLE_PLAY_VERSION",
     "RecommendationDC",
     "SCENARIO_GEN_VERSION",
+    "SCENARIO_SCHEMA",
     "ScenarioVariant",
     "StrengthDC",
     "build_debrief_messages",

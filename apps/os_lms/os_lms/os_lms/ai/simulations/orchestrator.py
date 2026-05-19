@@ -24,6 +24,7 @@ from frappe import _
 from os_lms.os_lms.ai.utils.llm import (
     ChatMessage,
     ChatResponse,
+    JsonSchema,
     LLMError,
     LLMProvider,
     chat_with_fallback,
@@ -34,6 +35,7 @@ from os_lms.os_lms.ai.utils.oslms_settings import OsLmsSettings
 from .prompts import (
     ROLE_PLAY_VERSION,
     SCENARIO_GEN_VERSION,
+    SCENARIO_SCHEMA,
     PersonaVariant,
     ScenarioVariant,
     build_role_play_system_prompt,
@@ -301,16 +303,25 @@ class SessionOrchestrator:
             seed=seed,
         )
 
+        # Structured output: ancoriamo l'LLM allo schema della variante, così
+        # otteniamo sempre lo stesso JSON shape (situation + persona{...})
+        # invece di lasciare libertà inventiva al modello.
+        response_format = JsonSchema(
+            name="scenario_variant", schema=SCENARIO_SCHEMA
+        )
+
         response = provider.chat(
             messages=[ChatMessage(role=m["role"], content=m["content"]) for m in messages],
             system=system,
             temperature=0.7,
             max_tokens=600,
+            response_format=response_format,
         )
         try:
             return parse_scenario_generator_output(response.text)
         except ValueError:
-            # Retry once at temperature 0 with a corrective hint.
+            # Retry once at temperature 0 with a corrective hint. response_format
+            # is reaffirmed so anche il retry resta vincolato allo schema.
             retry = provider.chat(
                 messages=[
                     ChatMessage(role=m["role"], content=m["content"]) for m in messages
@@ -329,6 +340,7 @@ class SessionOrchestrator:
                 system=system,
                 temperature=0,
                 max_tokens=600,
+                response_format=response_format,
             )
             return parse_scenario_generator_output(retry.text)
 

@@ -12,6 +12,7 @@ we decide to switch.
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Iterator
 from typing import Any
 
@@ -75,6 +76,16 @@ class OpenAICompatibleProvider(LLMProvider):
         )
         headers = self._build_headers()
         url = f"{self._base_url}/chat/completions"
+
+        _log_io(
+            "request",
+            self.name,
+            {
+                "url": url,
+                "headers": _mask_headers(headers),
+                "payload": payload,
+            },
+        )
 
         if stream:
             return self._stream(url, payload, headers, timeout)
@@ -167,7 +178,19 @@ class OpenAICompatibleProvider(LLMProvider):
             data = r.json()
         except ValueError as e:
             raise LLMError("Provider returned non-JSON response", provider=self.name, cause=e) from e
-        return self._parse_blocking(data)
+        response = self._parse_blocking(data)
+        _log_io(
+            "response",
+            self.name,
+            {
+                "status": r.status_code,
+                "model": response.model,
+                "finish_reason": response.finish_reason,
+                "usage": _usage_to_dict(response.usage),
+                "text": response.text,
+            },
+        )
+        return response
 
     def _parse_blocking(self, data: dict[str, Any]) -> ChatResponse:
         choices = data.get("choices") or []
@@ -204,12 +227,31 @@ class OpenAICompatibleProvider(LLMProvider):
 
         with r:
             self._check_status(r)
+            accumulated: list[str] = []
+            chunk_idx = 0
             for line in r.iter_lines(decode_unicode=True):
                 chunk = self._parse_stream_line(line)
                 if chunk is _STREAM_DONE:
                     break
                 if chunk is not None:
+                    chunk_idx += 1
+                    if chunk.delta:
+                        accumulated.append(chunk.delta)
+                    _log_io(
+                        f"stream-chunk[{chunk_idx}]",
+                        self.name,
+                        {
+                            "delta": chunk.delta,
+                            "finish_reason": chunk.finish_reason,
+                            "usage": _usage_to_dict(chunk.usage),
+                        },
+                    )
                     yield chunk
+            _log_io(
+                "stream-final",
+                self.name,
+                {"chunks": chunk_idx, "text": "".join(accumulated)},
+            )
 
     def _parse_stream_line(self, line: str) -> ChatChunk | object | None:
         """Parse one SSE line. Returns:
@@ -298,3 +340,60 @@ def _extract_error_message(body: str) -> str | None:
 def _is_context_window_error(msg: str) -> bool:
     lo = msg.lower()
     return ("context" in lo and "length" in lo) or "too many tokens" in lo
+
+
+# ----------------------- I/O logging -----------------------------------------
+#
+# Console-prints every chat I/O event to help debug prompts / responses during
+# dev. Can be disabled with the env var OSLMS_LOG_LLM_IO=0 in case the output
+# becomes too noisy (e.g. when running batch back-tests).
+
+_LOG_ENABLED = os.environ.get("OSLMS_LOG_LLM_IO", "1") != "0"
+_LOG_MAX_CHARS = 8000
+
+
+def _log_io(direction: str, provider: str, payload: dict) -> None:
+    """Print + log an LLM I/O event.
+
+    `payload` is JSON-serialized and truncated to ~8KB per dump to avoid
+    drowning the bench console on long debrief responses. Caller is
+    responsible for masking sensitive fields (headers) before passing them in.
+    """
+    if not _LOG_ENABLED:
+        return
+    label = f"[LLM:{provider}:{direction}]"
+    try:
+        body = json.dumps(payload, ensure_ascii=False, indent=2)
+    except (TypeError, ValueError):
+        body = repr(payload)
+    if len(body) > _LOG_MAX_CHARS:
+        body = body[:_LOG_MAX_CHARS] + f"\n... (+{len(body) - _LOG_MAX_CHARS} chars truncated)"
+    print(f"\n{label}\n{body}\n", flush=True)
+    # Best-effort persistence to logs/os_lmsa_llm.log for post-mortem.
+    try:
+        import frappe
+
+        frappe.logger("os_lmsa_llm", allow_site=True).info(f"{label} {body}")
+    except Exception:
+        pass
+
+
+def _mask_headers(headers: dict[str, str]) -> dict[str, str]:
+    """Return a copy of headers with bearer tokens / API keys masked."""
+    safe: dict[str, str] = {}
+    for k, v in (headers or {}).items():
+        if k.lower() in ("authorization", "x-api-key"):
+            text = str(v or "")
+            safe[k] = (text[:8] + "…" + text[-4:]) if len(text) > 16 else "****"
+        else:
+            safe[k] = v
+    return safe
+
+
+def _usage_to_dict(usage: Usage | None) -> dict | None:
+    if usage is None:
+        return None
+    return {
+        "prompt_tokens": usage.prompt_tokens,
+        "completion_tokens": usage.completion_tokens,
+    }
