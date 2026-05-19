@@ -8,16 +8,16 @@ from frappe.tests import UnitTestCase
 
 from os_lms.os_lms.ai.simulations import SessionOrchestrator
 from os_lms.os_lms.ai.simulations.api import (
-    delete_rubric,
+    delete_evaluation_schema,
     delete_scenario,
-    get_rubric,
+    get_evaluation_schema,
     get_scenario,
     get_transcript,
     instructor_report,
     instructor_review_debrief,
-    list_my_rubrics,
+    list_my_evaluation_schemas,
     list_my_scenarios,
-    save_rubric,
+    save_evaluation_schema,
     save_scenario,
 )
 from os_lms.os_lms.ai.simulations.tasks import generate_debrief
@@ -42,7 +42,7 @@ VALID_DEBRIEF_JSON = (
 
 
 class _MockBase(UnitTestCase):
-    """Sets up mock provider + scenario/rubric + a Course Instructor link."""
+    """Sets up mock provider + scenario/schema + a Course Instructor link."""
 
     @classmethod
     def setUpClass(cls):
@@ -76,9 +76,9 @@ class _MockBase(UnitTestCase):
             cls._instructor_row = row.name
             frappe.db.commit()
 
-        cls.rubric = F.make_rubric(name="Instructor Test Rubric")
+        cls.schema = F.make_evaluation_schema(name="Instructor Test Schema")
         cls.scenario = F.make_published_scenario(
-            name="Instructor Test Scenario", rubric=cls.rubric.name, course=cls.course
+            name="Instructor Test Scenario", evaluation_schema=cls.schema.name, course=cls.course
         )
 
     @classmethod
@@ -93,11 +93,11 @@ class _MockBase(UnitTestCase):
         ):
             frappe.delete_doc("LMSA Simulation Scenario", n, force=True, ignore_permissions=True)
         for n in frappe.get_all(
-            "LMSA Evaluation Rubric",
-            filters={"rubric_name": ["like", "Instructor Test%"]},
+            "LMSA Evaluation Schema",
+            filters={"schema_name": ["like", "Instructor Test%"]},
             pluck="name",
         ):
-            frappe.delete_doc("LMSA Evaluation Rubric", n, force=True, ignore_permissions=True)
+            frappe.delete_doc("LMSA Evaluation Schema", n, force=True, ignore_permissions=True)
         if cls._instructor_row:
             frappe.delete_doc(
                 "Course Instructor", cls._instructor_row, force=True, ignore_permissions=True
@@ -243,7 +243,7 @@ class TestScenarioCRUD(_MockBase):
             "status": "Draft",
             "customer_persona": "P",
             "situation_template": "S",
-            "evaluation_rubric": self.rubric.name,
+            "evaluation_schema": self.schema.name,
             "learning_objectives": [{"objective_text": "O1", "weight": 1.0}],
         })
         self.assertTrue(r1["name"])
@@ -268,7 +268,7 @@ class TestScenarioCRUD(_MockBase):
             "status": "Draft",
             "customer_persona": "x",
             "situation_template": "y",
-            "evaluation_rubric": self.rubric.name,
+            "evaluation_schema": self.schema.name,
         })
         rows = list_my_scenarios(course=self.course)
         names = [r["scenario_name"] for r in rows]
@@ -283,24 +283,24 @@ class TestScenarioCRUD(_MockBase):
             "status": "Draft",
             "customer_persona": "x",
             "situation_template": "y",
-            "evaluation_rubric": self.rubric.name,
+            "evaluation_schema": self.schema.name,
         })
         delete_scenario(r["name"])
         self.assertFalse(frappe.db.exists("LMSA Simulation Scenario", r["name"]))
 
 
-class TestRubricCRUD(_MockBase):
+class TestEvaluationSchemaCRUD(_MockBase):
     def setUp(self):
         super().setUp()
         for n in frappe.get_all(
-            "LMSA Evaluation Rubric", filters={"rubric_name": ["like", "RUB CRUD%"]}, pluck="name"
+            "LMSA Evaluation Schema", filters={"schema_name": ["like", "SCH CRUD%"]}, pluck="name"
         ):
-            frappe.delete_doc("LMSA Evaluation Rubric", n, force=True, ignore_permissions=True)
+            frappe.delete_doc("LMSA Evaluation Schema", n, force=True, ignore_permissions=True)
         frappe.db.commit()
 
     def test_save_then_get(self):
-        r = save_rubric({
-            "rubric_name": "RUB CRUD 1",
+        r = save_evaluation_schema({
+            "schema_name": "SCH CRUD 1",
             "scoring_scale": "0-10",
             "passing_threshold": 60,
             "is_shared": 0,
@@ -309,8 +309,8 @@ class TestRubricCRUD(_MockBase):
                 {"criterion_name": "B", "weight": 0.6},
             ],
         })
-        loaded = get_rubric(r["name"])
-        self.assertEqual(loaded["rubric_name"], "RUB CRUD 1")
+        loaded = get_evaluation_schema(r["name"])
+        self.assertEqual(loaded["schema_name"], "SCH CRUD 1")
         self.assertEqual(len(loaded["criteria"]), 2)
         self.assertAlmostEqual(
             sum(c["weight"] for c in loaded["criteria"]), 1.0, places=2
@@ -318,8 +318,8 @@ class TestRubricCRUD(_MockBase):
 
     def test_save_with_invalid_weights_raises(self):
         with self.assertRaises(frappe.exceptions.ValidationError):
-            save_rubric({
-                "rubric_name": "RUB CRUD Bad",
+            save_evaluation_schema({
+                "schema_name": "SCH CRUD Bad",
                 "scoring_scale": "0-10",
                 "passing_threshold": 60,
                 "criteria": [
@@ -328,15 +328,15 @@ class TestRubricCRUD(_MockBase):
                 ],
             })
 
-    def test_list_my_rubrics_includes_owned(self):
-        save_rubric({
-            "rubric_name": "RUB CRUD Listed",
+    def test_list_my_evaluation_schemas_includes_owned(self):
+        save_evaluation_schema({
+            "schema_name": "SCH CRUD Listed",
             "scoring_scale": "0-10",
             "passing_threshold": 70,
             "criteria": [{"criterion_name": "x", "weight": 1.0}],
         })
-        rows = list_my_rubrics()
-        self.assertTrue(any(r["rubric_name"] == "RUB CRUD Listed" for r in rows))
+        rows = list_my_evaluation_schemas()
+        self.assertTrue(any(r["schema_name"] == "SCH CRUD Listed" for r in rows))
 
 
 class TestTranscript(_MockBase):

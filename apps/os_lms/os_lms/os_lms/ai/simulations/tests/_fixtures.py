@@ -18,27 +18,27 @@ CANNED_VARIANT = ScenarioVariant(
 )
 
 
-def make_rubric(name: str = "Test Rubric"):
-    if frappe.db.exists("LMSA Evaluation Rubric", name):
-        frappe.delete_doc("LMSA Evaluation Rubric", name, force=True, ignore_permissions=True)
-    rubric = frappe.new_doc("LMSA Evaluation Rubric")
-    rubric.rubric_name = name
-    rubric.scoring_scale = "0-10"
-    rubric.passing_threshold = 70
-    rubric.append("criteria", {"criterion_name": "Listening", "weight": 0.5})
-    rubric.append("criteria", {"criterion_name": "Closing", "weight": 0.5})
-    rubric.insert()
-    return rubric
+def make_evaluation_schema(name: str = "Test Schema"):
+    if frappe.db.exists("LMSA Evaluation Schema", name):
+        frappe.delete_doc("LMSA Evaluation Schema", name, force=True, ignore_permissions=True)
+    schema = frappe.new_doc("LMSA Evaluation Schema")
+    schema.schema_name = name
+    schema.scoring_scale = "0-10"
+    schema.passing_threshold = 70
+    schema.append("criteria", {"criterion_name": "Listening", "weight": 0.5})
+    schema.append("criteria", {"criterion_name": "Closing", "weight": 0.5})
+    schema.insert()
+    return schema
 
 
 def make_published_scenario(
     *,
     name: str = "Test Scenario",
     course: str | None = None,
-    rubric: str | None = None,
+    evaluation_schema: str | None = None,
 ):
     course = course or frappe.get_all("LMS Course", limit=1, pluck="name")[0]
-    rubric = rubric or make_rubric().name
+    evaluation_schema = evaluation_schema or make_evaluation_schema().name
     if frappe.db.exists("LMSA Simulation Scenario", {"scenario_name": name}):
         for row in frappe.get_all("LMSA Simulation Scenario", filters={"scenario_name": name}, pluck="name"):
             frappe.delete_doc("LMSA Simulation Scenario", row, force=True, ignore_permissions=True)
@@ -49,7 +49,7 @@ def make_published_scenario(
     sc.modality = "chat"
     sc.customer_persona = "Cliente B2B."
     sc.situation_template = "Il cliente esita."
-    sc.evaluation_rubric = rubric
+    sc.evaluation_schema = evaluation_schema
     sc.status = "Published"
     sc.insert()
     return sc

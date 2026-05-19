@@ -47,9 +47,9 @@ class _DebriefMockBase(UnitTestCase):
         for n in frappe.get_all("LMSA Simulation Debrief", pluck="name"):
             frappe.delete_doc("LMSA Simulation Debrief", n, force=True, ignore_permissions=True)
         F.enable_mock_provider()
-        cls.rubric = F.make_rubric(name="Debrief Test Rubric")
+        cls.schema = F.make_evaluation_schema(name="Debrief Test Schema")
         cls.scenario = F.make_published_scenario(
-            name="Debrief Test Scenario", rubric=cls.rubric.name
+            name="Debrief Test Scenario", evaluation_schema=cls.schema.name
         )
 
     @classmethod
@@ -62,9 +62,9 @@ class _DebriefMockBase(UnitTestCase):
         ):
             frappe.delete_doc("LMSA Simulation Scenario", n, force=True, ignore_permissions=True)
         for n in frappe.get_all(
-            "LMSA Evaluation Rubric", filters={"rubric_name": ["like", "Debrief Test%"]}, pluck="name"
+            "LMSA Evaluation Schema", filters={"schema_name": ["like", "Debrief Test%"]}, pluck="name"
         ):
-            frappe.delete_doc("LMSA Evaluation Rubric", n, force=True, ignore_permissions=True)
+            frappe.delete_doc("LMSA Evaluation Schema", n, force=True, ignore_permissions=True)
         F.reset_settings()
         super().tearDownClass()
 
@@ -116,7 +116,7 @@ class TestDebriefJob(_DebriefMockBase):
         debrief = frappe.get_doc("LMSA Simulation Debrief", name)
         self.assertEqual(debrief.status, "Ready")
         self.assertEqual(debrief.overall_score, 82.5)
-        self.assertTrue(debrief.passed)  # threshold 70 in fixture rubric
+        self.assertTrue(debrief.passed)  # threshold 70 in fixture schema
         self.assertEqual(len(debrief.criterion_scores), 2)
         self.assertEqual(len(debrief.strengths), 1)
         self.assertEqual(len(debrief.improvements), 1)

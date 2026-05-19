@@ -16,17 +16,17 @@ STATUS_FAILED = "Failed"
 class LMSASimulationDebrief(Document):
 	def before_save(self):
 		# Re-evaluate `passed` whenever overall_score changes. Threshold comes
-		# from the scenario's rubric; we read it lazily to avoid making this
-		# a hard dependency in the orchestrator's hot path.
+		# from the scenario's evaluation schema; we read it lazily to avoid
+		# making this a hard dependency in the orchestrator's hot path.
 		if self.overall_score is None or not self.scenario:
 			return
-		scenario = frappe.db.get_value(
-			"LMSA Simulation Scenario", self.scenario, "evaluation_rubric"
+		schema = frappe.db.get_value(
+			"LMSA Simulation Scenario", self.scenario, "evaluation_schema"
 		)
-		if not scenario:
+		if not schema:
 			return
 		threshold = frappe.db.get_value(
-			"LMSA Evaluation Rubric", scenario, "passing_threshold"
+			"LMSA Evaluation Schema", schema, "passing_threshold"
 		)
 		if threshold is None:
 			return

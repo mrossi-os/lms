@@ -18,7 +18,7 @@
   "customer_persona",
   "situation_template",
   "section_objectives",
-  "evaluation_rubric",
+  "evaluation_schema",
   "learning_objectives",
   "seed_variations",
   "section_limits",
@@ -117,13 +117,13 @@
   {
    "fieldname": "section_objectives",
    "fieldtype": "Section Break",
-   "label": "Learning Objectives & Rubric"
+   "label": "Learning Objectives & Evaluation Schema"
   },
   {
-   "fieldname": "evaluation_rubric",
+   "fieldname": "evaluation_schema",
    "fieldtype": "Link",
-   "label": "Evaluation Rubric",
-   "options": "LMSA Evaluation Rubric",
+   "label": "Evaluation Schema",
+   "options": "LMSA Evaluation Schema",
    "reqd": 1
   },
   {

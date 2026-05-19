@@ -58,12 +58,12 @@ class TestSimulationsAPI(UnitTestCase):
         super().setUpClass()
         F.cleanup_sessions_and_turns()
         F.enable_mock_provider()
-        cls.rubric = F.make_rubric(name="API Test Rubric")
+        cls.schema = F.make_evaluation_schema(name="API Test Schema")
         cls.scenario = F.make_published_scenario(
-            name="API Test Scenario", rubric=cls.rubric.name
+            name="API Test Scenario", evaluation_schema=cls.schema.name
         )
         cls.draft_scenario = F.make_published_scenario(
-            name="API Draft Scenario", rubric=cls.rubric.name
+            name="API Draft Scenario", evaluation_schema=cls.schema.name
         )
         # Roll it back to Draft to verify students can't see it.
         cls.draft_scenario.status = "Draft"
@@ -90,9 +90,9 @@ class TestSimulationsAPI(UnitTestCase):
         ):
             frappe.delete_doc("LMSA Simulation Scenario", name, force=True, ignore_permissions=True)
         for name in frappe.get_all(
-            "LMSA Evaluation Rubric", filters={"rubric_name": "API Test Rubric"}, pluck="name"
+            "LMSA Evaluation Schema", filters={"schema_name": "API Test Schema"}, pluck="name"
         ):
-            frappe.delete_doc("LMSA Evaluation Rubric", name, force=True, ignore_permissions=True)
+            frappe.delete_doc("LMSA Evaluation Schema", name, force=True, ignore_permissions=True)
         F.reset_settings()
         super().tearDownClass()
 

@@ -36,9 +36,9 @@ class TestOrchestratorLifecycle(UnitTestCase):
         super().setUpClass()
         F.cleanup_sessions_and_turns()
         F.enable_mock_provider()
-        cls.rubric = F.make_rubric(name="ORC Test Rubric")
+        cls.schema = F.make_evaluation_schema(name="ORC Test Schema")
         cls.scenario = F.make_published_scenario(
-            name="ORC Test Scenario", rubric=cls.rubric.name
+            name="ORC Test Scenario", evaluation_schema=cls.schema.name
         )
 
     @classmethod
@@ -46,8 +46,8 @@ class TestOrchestratorLifecycle(UnitTestCase):
         F.cleanup_sessions_and_turns()
         for name in frappe.get_all("LMSA Simulation Scenario", filters={"scenario_name": ["like", "ORC Test%"]}, pluck="name"):
             frappe.delete_doc("LMSA Simulation Scenario", name, force=True, ignore_permissions=True)
-        for name in frappe.get_all("LMSA Evaluation Rubric", filters={"rubric_name": ["like", "ORC Test%"]}, pluck="name"):
-            frappe.delete_doc("LMSA Evaluation Rubric", name, force=True, ignore_permissions=True)
+        for name in frappe.get_all("LMSA Evaluation Schema", filters={"schema_name": ["like", "ORC Test%"]}, pluck="name"):
+            frappe.delete_doc("LMSA Evaluation Schema", name, force=True, ignore_permissions=True)
         F.reset_settings()
         super().tearDownClass()
 
@@ -168,8 +168,8 @@ class TestQuota(UnitTestCase):
         F.cleanup_sessions_and_turns()
         for name in frappe.get_all("LMSA Simulation Scenario", filters={"scenario_name": ["like", "Quota Test%"]}, pluck="name"):
             frappe.delete_doc("LMSA Simulation Scenario", name, force=True, ignore_permissions=True)
-        for name in frappe.get_all("LMSA Evaluation Rubric", pluck="name"):
-            frappe.delete_doc("LMSA Evaluation Rubric", name, force=True, ignore_permissions=True)
+        for name in frappe.get_all("LMSA Evaluation Schema", pluck="name"):
+            frappe.delete_doc("LMSA Evaluation Schema", name, force=True, ignore_permissions=True)
         F.reset_settings()
         super().tearDownClass()
 

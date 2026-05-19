@@ -33,12 +33,12 @@ VALID_PAYLOAD = {
 
 
 class TestDebriefMessages(UnitTestCase):
-    def test_message_includes_rubric_and_transcript(self):
+    def test_message_includes_schema_and_transcript(self):
         system, msgs = build_debrief_messages(
             scenario_name="S",
             difficulty="medium",
             learning_objectives=["O1", "O2"],
-            rubric_criteria=[
+            schema_criteria=[
                 {
                     "name": "Listening",
                     "weight": 0.5,

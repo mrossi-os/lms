@@ -10,13 +10,13 @@ from frappe.model.document import Document
 WEIGHT_SUM_TOLERANCE = 0.001
 
 
-class LMSAEvaluationRubric(Document):
+class LMSAEvaluationSchema(Document):
 	def validate(self):
 		self._validate_weights_sum_to_one()
 
 	def _validate_weights_sum_to_one(self):
 		if not self.criteria:
-			frappe.throw(_("A rubric must declare at least one criterion."))
+			frappe.throw(_("An evaluation schema must declare at least one criterion."))
 		total = sum((row.weight or 0.0) for row in self.criteria)
 		if abs(total - 1.0) > WEIGHT_SUM_TOLERANCE:
 			frappe.throw(
