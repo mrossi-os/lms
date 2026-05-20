@@ -936,6 +936,11 @@
     style-mod "^4.1.0"
     w3c-keyname "^2.2.4"
 
+"@codexteam/icons@0.3.2":
+  version "0.3.2"
+  resolved "https://registry.yarnpkg.com/@codexteam/icons/-/icons-0.3.2.tgz#b7aed0ba7b344e07953101f5476cded570d4f150"
+  integrity sha512-P1ep2fHoy0tv4wx85eic+uee5plDnZQ1Qa6gDfv7eHPkCXorMtVqJhzMb75o1izogh6G7380PqmFDXV3bW3Pig==
+
 "@codexteam/icons@^0.0.2":
   version "0.0.2"
   resolved "https://registry.yarnpkg.com/@codexteam/icons/-/icons-0.0.2.tgz#9183996a38b75a93506890373a015e3a2a369264"
@@ -979,6 +984,11 @@
   version "2.29.0"
   resolved "https://registry.yarnpkg.com/@editorjs/editorjs/-/editorjs-2.29.0.tgz#1c9846af19b2afab62a6bb3a815641721c0587f1"
   integrity sha512-w2BVboSHokMBd/cAOZn0UU328o3gSZ8XUvFPA2e9+ciIGKILiRSPB70kkNdmhHkuNS3q2px+vdaIFaywBl7wGA==
+
+"@editorjs/editorjs@2.30.6":
+  version "2.30.6"
+  resolved "https://registry.yarnpkg.com/@editorjs/editorjs/-/editorjs-2.30.6.tgz#a77292da7433bc912e4beaf359b13812cab89c4d"
+  integrity sha512-6eQMc4Di3Hz9p4o+NGRgKaCeAF7eAk106m+bsDLc4eo94VGYO1M163OiGFdmanE+w503qTmXOzycWff5blEOAQ==
 
 "@editorjs/embed@2.7.0":
   version "2.7.0"
@@ -2602,6 +2612,14 @@ echarts@^5.6.0:
     tslib "2.3.0"
     zrender "5.6.1"
 
+editorjs-color-picker@^1.0.8:
+  version "1.0.8"
+  resolved "https://registry.yarnpkg.com/editorjs-color-picker/-/editorjs-color-picker-1.0.8.tgz#27a9e44ca38910b8831880f38417bee96c126fc7"
+  integrity sha512-7i2frBJI2laleaWGWS1kkyqnhzDFN1T7sh/PF0LlvBQ7zkgQRiElJBz179nGtRSyQVbX+phwgEH7PjgbtW6UTw==
+  dependencies:
+    "@codexteam/icons" "0.3.2"
+    "@editorjs/editorjs" "2.30.6"
+
 ejs@^3.1.6:
   version "3.1.10"
   resolved "https://registry.yarnpkg.com/ejs/-/ejs-3.1.10.tgz#69ab8358b14e896f80cc39e62087b88500c3ac3b"
@@ -2906,10 +2924,10 @@ fraction.js@^4.1.2:
   resolved "https://registry.yarnpkg.com/fraction.js/-/fraction.js-4.3.7.tgz#06ca0085157e42fda7f9e726e79fefc4068840f7"
   integrity sha512-ZsDfxO51wGAXREY55a7la9LScWpwv9RxIrYABrlvOFBlH/ShPnrtsXeuUIfXKKOVicNxQ+o8JTbJvjS4M89yew==
 
-frappe-ui@^0.1.264:
-  version "0.1.265"
-  resolved "https://registry.yarnpkg.com/frappe-ui/-/frappe-ui-0.1.265.tgz#3aee2dd5593fb36f9f2d7eeb3c92246abaa2a974"
-  integrity sha512-N/4LXMcFAzoTfMWqap9e2rxxMKShVWnX63+Q+48CBbt2sfjeqR/4P7HRjXi7DUCEMfRt4xkv/1eIuBdNAuIT1A==
+frappe-ui@0.1.276:
+  version "0.1.276"
+  resolved "https://registry.yarnpkg.com/frappe-ui/-/frappe-ui-0.1.276.tgz#07b5626902b9d8eb1e1a0ef4a04822999d151750"
+  integrity sha512-YeHPFEZrDpy+GZY3VktY86cOuOg2EoUqAu1OHMzLPCi4Kgq92pqpOR6wuwI3h4DXbCEQb38WjdbAegs4RwphOw==
   dependencies:
     "@floating-ui/dom" "^1.7.4"
     "@floating-ui/vue" "^1.1.6"
@@ -2952,7 +2970,7 @@ frappe-ui@^0.1.264:
     highlight.js "^11.11.1"
     idb-keyval "^6.2.0"
     lowlight "^3.3.0"
-    lucide-static "^0.543.0"
+    lucide-static "^0.545.0"
     marked "^15.0.12"
     ora "5.4.1"
     prettier "^3.3.2"
@@ -3569,10 +3587,10 @@ lru-cache@^5.1.1:
   dependencies:
     yallist "^3.0.2"
 
-lucide-static@^0.543.0:
-  version "0.543.0"
-  resolved "https://registry.yarnpkg.com/lucide-static/-/lucide-static-0.543.0.tgz#054c14493993452084ed9968a3ad912c58fec90a"
-  integrity sha512-k9HUQncNuOThizzuuqvgjpYPHaE3Hae89l/i+Y7BRgOvzWeqQ9Sbllin8m4NO5BP+JaaRHTzn29o4oZJJi/5uQ==
+lucide-static@^0.545.0:
+  version "0.545.0"
+  resolved "https://registry.yarnpkg.com/lucide-static/-/lucide-static-0.545.0.tgz#69dad91d1bbd53b70df6c21f0877c16a1e69cea0"
+  integrity sha512-2i81WNw3y+sN17gG75DKZbd43pGJREyoAQRK5IG8djCWhISoK6Ri1ovbKwOjFR+St2LHTQhu+EJygmUIWMotew==
 
 lucide-vue-next@0.383.0:
   version "0.383.0"
