@@ -264,8 +264,6 @@ const lessonDetails = createResource({
 	auto: true,
 	onSuccess(data) {
 		if (data.lesson) {
-			console.log('--- lessonDetails:', data)
-
 			Object.keys(data.lesson).forEach((key) => {
 				lesson[key] = data.lesson[key]
 			})
@@ -296,7 +294,7 @@ const addInstructorNotes = (data) => {
 	instructorEditor.value.isReady.then(() => {
 		if (data.lesson.instructor_content) {
 			instructorEditor.value.render(
-				sanitizeEditorJs(JSON.parse(data.lesson.instructor_content))
+				sanitizeEditorJs(JSON.parse(data.lesson.instructor_content)),
 			)
 		} else if (data.lesson.instructor_notes) {
 			let blocks = convertToJSON(data.lesson)

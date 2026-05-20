@@ -27,6 +27,7 @@ from lms.lms.utils import (
 
 class LMSBatch(Document):
 	def validate(self):
+		self._validate_mandatory()
 		self.validate_seats_left()
 		self.validate_batch_end_date()
 		self.validate_batch_time()
@@ -43,7 +44,7 @@ class LMSBatch(Document):
 			frappe.enqueue(send_notification_for_published_batch, batch=self)
 
 	def autoname(self):
-		if not self.name:
+		if not self.name and self.title:
 			self.name = generate_slug(self.title, "LMS Batch")
 
 	def validate_batch_end_date(self):
@@ -241,6 +242,18 @@ def send_system_notification_for_published_batch(batch):
 	frappe.db.set_value("LMS Batch", batch.name, "notification_sent", 1)
 
 
+def _ensure_calendar_authorized(calendar_name: str):
+	"""Throw if the Google Calendar has no refresh token (OAuth flow not completed)."""
+	calendar_doc = frappe.get_doc("Google Calendar", calendar_name)
+	refresh_token = calendar_doc.get_password("refresh_token", raise_exception=False)
+	if not refresh_token:
+		frappe.throw(
+			_(
+				"The Google Calendar '{0}' is not authorized. Open it and click 'Authorize Google Calendar Access' to complete the OAuth flow."
+			).format(calendar_name)
+		)
+
+
 @frappe.whitelist()
 def create_live_class(
 	batch_name: str,
@@ -267,6 +280,8 @@ def create_live_class(
 				"The Zoom account does not have a Google Calendar configured. Please set up a Google Calendar first."
 			)
 		)
+
+	_ensure_calendar_authorized(zoom_settings.google_calendar)
 
 	payload = {
 		"topic": title,
@@ -335,6 +350,8 @@ def create_google_meet_live_class(
 				"The Google Meet account does not have a Google Calendar configured. Please set up a Google Calendar first."
 			)
 		)
+
+	_ensure_calendar_authorized(google_meet_settings.google_calendar)
 
 	class_details = frappe.get_doc(
 		{

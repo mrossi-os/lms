@@ -44,7 +44,7 @@
 				<div class="grid grid-cols-1 md:grid-cols-4 gap-5">
 					<div
 						v-for="cls in liveClasses?.data"
-						class="border hover:border-outline-gray-3 rounded-md p-3"
+						class="border hover:border-outline-gray-3 rounded-md p-3 card"
 					>
 						<div class="font-semibold text-ink-gray-9 text-lg leading-5 mb-1">
 							{{ cls.title }}
@@ -176,7 +176,7 @@
 			>
 				{{
 					__(
-						'There are no courses currently. Create your first course to get started!'
+						'There are no courses currently. Create your first course to get started!',
 					)
 				}}
 			</div>

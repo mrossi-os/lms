@@ -20,22 +20,22 @@
 		</Button>
 	</header>
 
-	<div class="py-5">
+	<div class="flex min-h-0 flex-1 flex-col pt-5">
 		<div
-			class="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 justify-between mb-5 mx-5"
+			class="mx-5 mb-5 flex flex-col justify-between gap-y-4 sm:flex-row sm:items-center"
 		>
 			<div class="text-lg font-semibold text-ink-gray-9">
 				{{ __('{0} Assignments').format(assignments.data?.length) }}
 			</div>
-			<div class="grid grid-cols-2 gap-5">
+			<div class="flex flex-col gap-3 sm:flex-row md:gap-5">
 				<FormControl
+					type="text"
 					v-model="titleFilter"
 					class="small-form"
 					:placeholder="__('Search by title')"
 				/>
-				<FormControl
+				<Select
 					v-model="typeFilter"
-					type="select"
 					:options="assignmentTypes"
 					:placeholder="__('Type')"
 				/>
@@ -78,11 +78,7 @@
 					<template #default="{ column, item }">
 						<ListRowItem :item="row[column.key]" :align="column.align">
 							<div v-if="column.key == 'show_answers'">
-								<FormControl
-									type="checkbox"
-									v-model="row[column.key]"
-									:disabled="true"
-								/>
+								<Checkbox v-model="row[column.key]" :disabled="true" />
 							</div>
 							<div
 								v-else-if="column.key == 'modified'"
@@ -113,16 +109,30 @@
 		<div v-else class="h-[53vh]">
 			<EmptyStateLayout name="Assignments" />
 		</div>
-		<div class="flex items-center my-5">
-			<Button v-if="assignments.hasNextPage" @click="assignments.next()">
-				{{ __('Load More') }}
-			</Button>
-			<div v-if="assignments.hasNextPage" class="h-8 border-s"></div>
-			<div class="text-ink-gray-5">
-				{{ assignments.data?.length }} {{ __('of') }}
-				{{ totalAssignments.data }}
-			</div>
-		</div>
+		<ListFooter
+			v-model="pageLength"
+			class="border-t px-3 py-2 sm:px-5"
+			:options="{
+				rowCount: assignments.data?.length,
+				totalCount: totalAssignments.data,
+			}"
+		>
+			<template #right>
+				<div class="flex items-center">
+					<Button
+						v-if="assignments.hasNextPage"
+						:label="__('Load More')"
+						@click="assignments.next()"
+					/>
+					<div v-if="assignments.hasNextPage" class="mx-3 h-[80%] border-l" />
+					<div class="flex items-center gap-1 text-base text-ink-gray-5">
+						<div>{{ assignments.data?.length || 0 }}</div>
+						<div>{{ __('of') }}</div>
+						<div>{{ totalAssignments.data || 0 }}</div>
+					</div>
+				</div>
+			</template>
+		</ListFooter>
 	</div>
 	<AssignmentForm
 		v-model="showAssignmentForm"
@@ -134,20 +144,22 @@
 import {
 	Breadcrumbs,
 	Button,
-	call,
 	createListResource,
 	createResource,
-	FormControl,
+	Select,
 	ListView,
 	ListHeader,
 	ListHeaderItem,
 	ListRows,
 	ListRow,
 	ListRowItem,
+	ListFooter,
 	ListSelectBanner,
 	FeatherIcon,
 	toast,
 	usePageMeta,
+	FormControl,
+	Checkbox,
 } from 'frappe-ui'
 import { computed, inject, onMounted, ref, watch } from 'vue'
 import { Plus } from 'lucide-vue-next'
@@ -155,6 +167,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { sessionStore } from '../stores/session'
 import AssignmentForm from '@/components/Modals/AssignmentForm.vue'
 import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
+import LayoutHeader from '@/components/Layouts/LayoutHeader.vue'
 
 const user = inject('$user')
 const dayjs = inject('$dayjs')
@@ -223,6 +236,14 @@ const assignments = createListResource({
 				modified: dayjs(row.modified).format('DD MMM YYYY'),
 			}
 		})
+	},
+})
+
+const pageLength = computed({
+	get: () => assignments.pageLength,
+	set: (value) => {
+		assignments.update({ pageLength: value })
+		assignments.reload()
 	},
 })
 
