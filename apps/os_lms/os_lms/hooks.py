@@ -96,6 +96,7 @@ doc_events = {
     },
     "User": {
         "after_insert": "os_lms.auth.mark_first_login",
+        "before_delete": "os_lms.events.user.delete_lms_user_links",
     },
     "LMS Live Class": {
         "before_save": "os_lms.os_lms.live_class_reminders.reset_sent_at",
