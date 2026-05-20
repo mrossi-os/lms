@@ -15,9 +15,9 @@ CHILD_TABLE_LINKS = (
 
 
 def delete_lms_user_links(doc, method=None):
-	"""before_delete hook on User: removes every LMS/os_lms record that
-	references the user, so the User deletion is not blocked by
-	LinkExistsError.
+	"""on_trash hook on User: removes every LMS/os_lms record that references
+	the user, so the User deletion is not blocked by LinkExistsError. Runs
+	before Frappe's check_if_doc_is_linked validation.
 	"""
 	user = doc.name
 
