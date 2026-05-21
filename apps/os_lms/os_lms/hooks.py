@@ -22,6 +22,11 @@ app_include_css = ["/api/method/os_lms.os_lms.branding.brand_css"]
 # activate debug if needed
 before_request = ["os_lms.debug.active_debug"]
 
+# Desk client scripts attached to LMS doctypes (e.g. quick links).
+doctype_js = {
+    "LMS Certificate": "public/js/lms_certificate.js",
+}
+
 # forse to set italian language
 after_migrate = [
     "os_lms.setup.ensure_italian_language",
@@ -104,6 +109,9 @@ doc_events = {
     "Brand Customize": {
         "on_update": "os_lms.os_lms.branding.clear_brand_cache",
     },
+    "LMS Certificate": {
+        "after_insert": "os_lms.os_lms.trueskills.emission.enqueue_issue",
+    },
 }
 
 
@@ -111,6 +119,9 @@ on_session_creation = ["os_lms.auth.on_session_creation"]
 
 
 scheduler_events = {
+    "hourly": [
+        "os_lms.os_lms.trueskills.scheduler.reconcile_pending",
+    ],
     "daily": [
         "os_lms.os_lms.ai.scheduler.reindex_lesson_content",
     ],

@@ -16,9 +16,27 @@
 				<div class="font-medium leading-5 mb-2 text-ink-gray-9">
 					{{ certificate.course_title || certificate.batch_title }}
 				</div>
-				<div class="text-sm text-ink-gray-7 font-medium mt-auto">
+				<div class="text-sm text-ink-gray-7 font-medium">
 					<span> {{ __('Issued on') }}: </span>
 					{{ dayjs(certificate.issue_date).format('DD MMM YYYY') }}
+				</div>
+				<div
+					v-if="trueskillsStatus[certificate.name]?.issued"
+					class="flex gap-2 mt-3 pt-3 border-t border-outline-gray-1"
+					@click.stop
+				>
+					<button
+						class="text-xs px-2 py-1 rounded border border-outline-gray-2 hover:bg-surface-gray-2 font-medium text-ink-gray-8"
+						@click.stop="downloadOpenbadge(certificate.name, 'image')"
+					>
+						{{ __('Download Openbadge') }}
+					</button>
+					<button
+						class="text-xs px-2 py-1 rounded border border-outline-gray-2 hover:bg-surface-gray-2 font-medium text-ink-gray-8"
+						@click.stop="downloadOpenbadge(certificate.name, 'jsonp')"
+					>
+						{{ __('JSON-LD') }}
+					</button>
 				</div>
 			</div>
 		</div>
@@ -28,8 +46,8 @@
 	</div>
 </template>
 <script setup>
-import { createListResource } from 'frappe-ui'
-import { inject, onMounted } from 'vue'
+import { createListResource, createResource } from 'frappe-ui'
+import { inject, onMounted, ref } from 'vue'
 
 const dayjs = inject('$dayjs')
 const props = defineProps({
@@ -38,6 +56,8 @@ const props = defineProps({
 		required: true,
 	},
 })
+
+const trueskillsStatus = ref({})
 
 onMounted(() => {
 	if (props.profile.data?.name) {
@@ -52,13 +72,48 @@ const certificates = createListResource({
 	},
 	fields: ['name', 'course_title', 'batch_title', 'issue_date', 'template'],
 	cache: ['certificates', props.profile.data?.name],
+	onSuccess(data) {
+		loadTrueskillsStatus(data)
+	},
 })
+
+const trueskillsStatusResource = createResource({
+	url: 'os_lms.os_lms.trueskills.api.get_issue_status',
+	onSuccess(data) {
+		trueskillsStatus.value = data || {}
+	},
+	onError() {
+		trueskillsStatus.value = {}
+	},
+})
+
+const loadTrueskillsStatus = (data) => {
+	if (!data?.length) {
+		trueskillsStatus.value = {}
+		return
+	}
+	trueskillsStatusResource.submit({
+		lms_certificates: data.map((c) => c.name),
+	})
+}
 
 const openCertificate = (certificate) => {
 	window.open(
 		`/api/method/frappe.utils.print_format.download_pdf?doctype=LMS+Certificate&name=${
 			certificate.name
-		}&format=${encodeURIComponent(certificate.template)}`
+		}&format=${encodeURIComponent(certificate.template)}`,
+	)
+}
+
+const downloadOpenbadge = (certificateName, fileFormat) => {
+	const status = trueskillsStatus.value[certificateName]
+	if (!status?.trueskill_id) return
+	const params = new URLSearchParams({
+		certificate_id: status.trueskill_id,
+		file_format: fileFormat,
+	})
+	window.open(
+		`/api/method/os_lms.os_lms.trueskills.api.download?${params.toString()}`,
 	)
 }
 </script>
