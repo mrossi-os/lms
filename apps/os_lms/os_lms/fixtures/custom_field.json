@@ -265,6 +265,27 @@
     },
     {
         "doctype": "Custom Field",
+        "name": "LMS Settings-live_classes_section",
+        "dt": "LMS Settings",
+        "label": "Live Classes",
+        "fieldname": "live_classes_section",
+        "fieldtype": "Section Break",
+        "insert_after": "welcome_video_file",
+        "collapsible": 1
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Settings-enable_live_classes",
+        "dt": "LMS Settings",
+        "label": "Enable Live Classes",
+        "fieldname": "enable_live_classes",
+        "fieldtype": "Check",
+        "default": "1",
+        "insert_after": "live_classes_section",
+        "description": "If enabled, the Live Classes tab and related features are visible to all users."
+    },
+    {
+        "doctype": "Custom Field",
         "name": "User-welcome_video_seen",
         "dt": "User",
         "label": "Welcome Video Seen",

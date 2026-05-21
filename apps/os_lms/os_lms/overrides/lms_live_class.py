@@ -8,6 +8,8 @@ from frappe.utils import cint, format_date, format_time, get_datetime
 from lms.lms.doctype.lms_live_class.lms_live_class import LMSLiveClass
 from lms.lms.utils import get_lms_route
 
+from os_lms.os_lms.email_utils import send_templated_email
+
 
 def _lc_log(msg):
 	frappe.logger("lms_live_class_debug", allow_site=True).info(msg)
@@ -169,10 +171,10 @@ class CustomLMSLiveClass(LMSLiveClass):
 					f"[send_invitation_email] {self.name} -> {participant} "
 					f"(name={member_name}, is_instructor={is_instructor}) attempting sendmail"
 				)
-				frappe.sendmail(
+				send_templated_email(
+					template_key="live_class_invitation",
 					recipients=participant,
 					subject=_("Lezione dal vivo: {0}").format(self.title),
-					template="live_class_invitation",
 					args={
 						"student_name": member_name,
 						"title": self.title,

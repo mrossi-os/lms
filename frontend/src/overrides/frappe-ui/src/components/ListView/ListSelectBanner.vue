@@ -69,8 +69,24 @@ const list = inject('list')
 const defaultSelectionText = (count) =>
 	count === 1 ? __('1 row selected') : __('{0} rows selected').format(count)
 
+// ListView.vue in frappe-ui always fills options.selectionText with a
+// hardcoded English default if the caller doesn't pass one — see
+// node_modules/frappe-ui/src/components/ListView/ListView.vue. That
+// default bypasses __() and breaks i18n. Detect it by signature and
+// fall back to our translated default; preserve genuinely custom
+// callbacks passed by pages.
+const isFrappeUIDefault = (fn) => {
+	try {
+		return fn?.(1) === '1 row selected'
+	} catch {
+		return false
+	}
+}
+
 let selectedText = computed(() => {
-	const fn = list.value.options.selectionText || defaultSelectionText
-	return fn(list.value.selections.size)
+	const customFn = list.value.options.selectionText
+	const count = list.value.selections.size
+	const fn = (!customFn || isFrappeUIDefault(customFn)) ? defaultSelectionText : customFn
+	return fn(count)
 })
 </script>

@@ -1,0 +1,87 @@
+{
+	"actions": [],
+	"creation": "2026-05-21 12:00:00.000000",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"section_intro",
+		"intro_html",
+		"section_live_class",
+		"live_class_invitation_template",
+		"live_class_reminder_template",
+		"live_class_cancelled_template",
+		"section_auth",
+		"login_with_email_link_template"
+	],
+	"fields": [
+		{
+			"fieldname": "section_intro",
+			"fieldtype": "Section Break",
+			"label": "Info"
+		},
+		{
+			"fieldname": "intro_html",
+			"fieldtype": "HTML",
+			"options": "<div class=\"text-muted\" style=\"font-size: var(--text-sm); line-height: 1.5;\"><p>Per ogni email puoi collegare un <b>Email Template</b> creato da desk (<code>/app/email-template</code>). Se il campo &egrave; vuoto viene usato il template di default fornito dall'app.</p><p>Nei template puoi usare le variabili Jinja indicate sotto ciascun campo (es. <code>{{ student_name }}</code>, <code>{{ title }}</code>).</p></div>"
+		},
+		{
+			"fieldname": "section_live_class",
+			"fieldtype": "Section Break",
+			"label": "Live Class"
+		},
+		{
+			"description": "Email di invito inviata ai partecipanti alla creazione/aggiornamento della lezione. Variabili: student_name, title, date, time, join_url, description, batch_name.",
+			"fieldname": "live_class_invitation_template",
+			"fieldtype": "Link",
+			"label": "Live Class Invitation",
+			"options": "Email Template"
+		},
+		{
+			"description": "Email di promemoria inviata prima dell'inizio della lezione. Variabili: student_name, title, date, time, batch_name.",
+			"fieldname": "live_class_reminder_template",
+			"fieldtype": "Link",
+			"label": "Live Class Reminder",
+			"options": "Email Template"
+		},
+		{
+			"description": "Email inviata quando una lezione viene annullata. Variabili: student_name, title, date, time, batch_name.",
+			"fieldname": "live_class_cancelled_template",
+			"fieldtype": "Link",
+			"label": "Live Class Cancelled",
+			"options": "Email Template"
+		},
+		{
+			"fieldname": "section_auth",
+			"fieldtype": "Section Break",
+			"label": "Authentication"
+		},
+		{
+			"description": "Email con magic link per il login senza password. Variabili: link, minutes, app_name.",
+			"fieldname": "login_with_email_link_template",
+			"fieldtype": "Link",
+			"label": "Login with Email Link",
+			"options": "Email Template"
+		}
+	],
+	"grid_page_length": 50,
+	"index_web_pages_for_search": 1,
+	"issingle": 1,
+	"links": [],
+	"modified": "2026-05-21 12:00:00.000000",
+	"modified_by": "Administrator",
+	"module": "OS LMS",
+	"name": "OS LMS Email Settings",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"read": 1,
+			"role": "System Manager",
+			"write": 1
+		}
+	],
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": [],
+	"track_changes": 1
+}
