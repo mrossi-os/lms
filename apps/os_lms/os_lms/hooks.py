@@ -121,8 +121,13 @@ standard_email_override = {
     "login_via_key": "os_lms/templates/emails/login_via_key.html"
 }
 
-# Desk client scripts: add Export/Import-with-permissions buttons to Role.
-doctype_js = {"Role": "public/js/role.js"}
+# Desk client scripts attached to LMS doctypes.
+# - Role: Export/Import-with-permissions buttons.
+# - LMS Certificate: TrueSkills Issue Log quick link.
+doctype_js = {
+    "Role": "public/js/role.js",
+    "LMS Certificate": "public/js/lms_certificate.js",
+}
 doctype_list_js = {"Role": "public/js/role_list.js"}
 
 fixtures = [
@@ -175,6 +180,9 @@ doc_events = {
     "LMSA Simulation Session": {
         "before_insert": "os_lms.os_lms.ai.simulations.orchestrator.validate_quota",
     },
+    "LMS Certificate": {
+        "after_insert": "os_lms.os_lms.trueskills.emission.enqueue_issue",
+    },
 }
 
 
@@ -182,6 +190,9 @@ on_session_creation = ["os_lms.auth.on_session_creation"]
 
 
 scheduler_events = {
+    "hourly": [
+        "os_lms.os_lms.trueskills.scheduler.reconcile_pending",
+    ],
     "daily": [
         "os_lms.os_lms.ai.ingestion.scheduler.reindex_lesson_content",
     ],
