@@ -1396,6 +1396,7 @@ def get_lms_settings():
 		"disable_pwa",
 		"allow_job_posting",
 		"demo_data_present",
+		"enable_live_classes",
 	]
 
 	settings = frappe._dict()
