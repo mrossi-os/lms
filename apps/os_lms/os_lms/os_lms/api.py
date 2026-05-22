@@ -577,7 +577,7 @@ def _delete_zoom_meeting(zoom_account: str, meeting_id: str) -> None:
 
 
 @frappe.whitelist()
-def get_lesson_audio_stream(lesson_name: str) -> dict:
+def get_lesson_audio_stream(lesson_name: str, force_refresh: bool = False) -> dict:
     """
     Returns a playable audio stream URL for the given lesson.
 
@@ -586,6 +586,10 @@ def get_lesson_audio_stream(lesson_name: str) -> dict:
 
     Test mode: returns the test_audio_url configured in Vimeo Settings,
     bypassing Vimeo entirely.
+
+    When `force_refresh=True`, the Redis cache is skipped and the Vimeo
+    API is re-queried; used by the mobile app when the previously
+    resolved HLS URL expires mid-playback (~6h signed-URL lifetime).
     """
     settings = frappe.get_single("Vimeo Settings")
 
@@ -632,12 +636,18 @@ def get_lesson_audio_stream(lesson_name: str) -> dict:
     if not vimeo_id:
         frappe.throw("Nessun video Vimeo trovato nella lezione")
 
-    # v2: schema added `artwork_url`. Bumping the key invalidates the legacy
-    # cached payloads that lacked the field.
-    cache_key = f"vimeo:stream:v2:{vimeo_id}"
-    cached = frappe.cache().get_value(cache_key)
-    if cached:
-        return cached
+    # v3: title/artist now derive from the lesson + course (display names),
+    # not from Vimeo data / course slug. Keyed by lesson name since two
+    # lessons referencing the same Vimeo video should still get their own
+    # title/artist combination.
+    cache_key = f"vimeo:stream:v3:{lesson_name}"
+    if not force_refresh:
+        cached = frappe.cache().get_value(cache_key)
+        if cached:
+            return cached
+    else:
+        # Drop the stale entry so the new URL replaces it.
+        frappe.cache().delete_value(cache_key)
 
     from os_lms.os_lms.doctype.vimeo_settings.vimeo_settings import get_vimeo_token
 
@@ -671,10 +681,19 @@ def get_lesson_audio_stream(lesson_name: str) -> dict:
     if not hls_link:
         frappe.throw("Vimeo non ha restituito stream HLS per il video")
 
+    # MediaSession metadata: lesson title as the main label, course
+    # display title as the "artist" line. Fall back to Vimeo's video name
+    # or the course slug only if the readable values are missing.
+    course_title = (
+        frappe.db.get_value("LMS Course", lesson.course, "title")
+        if lesson.course
+        else None
+    )
+
     result = {
         "audio_url": hls_link,
-        "title": data.get("name") or lesson.title,
-        "artist": lesson.course or "",
+        "title": lesson.title or data.get("name") or "",
+        "artist": course_title or lesson.course or "",
         "artwork_url": _pick_vimeo_artwork(data),
         "duration": data.get("duration") or 0,
         "expires_at": None,
@@ -703,3 +722,142 @@ def _pick_vimeo_artwork(video_data: dict) -> str | None:
     pool = capped if capped else sizes
     largest = max(pool, key=lambda s: s.get("width", 0))
     return largest.get("link")
+
+
+def _find_adjacent_video_lessons(lesson) -> tuple[dict | None, dict | None]:
+    """Find the immediately prev/next lesson in the same course that has a
+    Vimeo embed block. Returns (prev_info, next_info) where each is either
+    None (no adjacent lesson, or adjacent has no Vimeo) or a dict:
+        { "name", "course", "chapter_idx", "lesson_idx", "title" }
+
+    Crosses chapter boundaries: the lesson before the first lesson of a
+    chapter is the last lesson of the previous chapter.
+    """
+    chapter_idx = frappe.db.get_value(
+        "Chapter Reference",
+        {"parent": lesson.course, "chapter": lesson.chapter},
+        "idx",
+    )
+    lesson_idx = frappe.db.get_value(
+        "Lesson Reference",
+        {"parent": lesson.chapter, "lesson": lesson.name},
+        "idx",
+    )
+    if not chapter_idx or not lesson_idx:
+        return None, None
+
+    prev_pos = _find_lesson_at_offset(
+        lesson.course, lesson.chapter, chapter_idx, lesson_idx, -1
+    )
+    next_pos = _find_lesson_at_offset(
+        lesson.course, lesson.chapter, chapter_idx, lesson_idx, +1
+    )
+
+    return (
+        _adjacent_lesson_info(prev_pos) if prev_pos else None,
+        _adjacent_lesson_info(next_pos) if next_pos else None,
+    )
+
+
+def _find_lesson_at_offset(
+    course: str, chapter: str, chapter_idx: int, lesson_idx: int, offset: int
+) -> dict | None:
+    """Return the lesson position dict at `lesson_idx + offset` within the
+    given chapter, crossing chapter boundaries when needed. Returns None
+    when the boundary of the course is reached.
+    """
+    target_idx = lesson_idx + offset
+
+    # Stays in the current chapter
+    if target_idx >= 1:
+        ref = frappe.db.get_value(
+            "Lesson Reference",
+            {"parent": chapter, "idx": target_idx},
+            ["lesson", "idx"],
+            as_dict=True,
+        )
+        if ref:
+            return {
+                "lesson_name": ref.lesson,
+                "chapter_idx": chapter_idx,
+                "lesson_idx": ref.idx,
+            }
+
+    # Crosses chapter boundary
+    next_chapter_idx = chapter_idx + (1 if offset > 0 else -1)
+    if next_chapter_idx < 1:
+        return None
+
+    next_chapter = frappe.db.get_value(
+        "Chapter Reference",
+        {"parent": course, "idx": next_chapter_idx},
+        ["chapter", "idx"],
+        as_dict=True,
+    )
+    if not next_chapter:
+        return None
+
+    if offset > 0:
+        # First lesson of next chapter
+        ref = frappe.db.get_value(
+            "Lesson Reference",
+            {"parent": next_chapter.chapter, "idx": 1},
+            ["lesson", "idx"],
+            as_dict=True,
+        )
+    else:
+        # Last lesson of previous chapter
+        rows = frappe.db.sql(
+            """
+            SELECT lesson, idx FROM `tabLesson Reference`
+            WHERE parent = %s ORDER BY idx DESC LIMIT 1
+            """,
+            next_chapter.chapter,
+            as_dict=True,
+        )
+        ref = rows[0] if rows else None
+
+    if not ref:
+        return None
+
+    return {
+        "lesson_name": ref.lesson,
+        "chapter_idx": next_chapter.idx,
+        "lesson_idx": ref.idx,
+    }
+
+
+def _adjacent_lesson_info(pos: dict) -> dict | None:
+    """Return navigation info for an adjacent lesson, but only if its
+    content has a Vimeo embed block — otherwise the skip button on the
+    MediaSession would be a dead-end.
+    """
+    lesson_doc = frappe.db.get_value(
+        "Course Lesson",
+        pos["lesson_name"],
+        ["name", "course", "title", "content"],
+        as_dict=True,
+    )
+    if not lesson_doc or not lesson_doc.content:
+        return None
+
+    try:
+        content = json.loads(lesson_doc.content)
+    except json.JSONDecodeError:
+        return None
+
+    has_vimeo = any(
+        block.get("type") == "embed"
+        and (block.get("data") or {}).get("service") == "vimeo"
+        for block in content.get("blocks", [])
+    )
+    if not has_vimeo:
+        return None
+
+    return {
+        "name": lesson_doc.name,
+        "course": lesson_doc.course,
+        "chapter_idx": pos["chapter_idx"],
+        "lesson_idx": pos["lesson_idx"],
+        "title": lesson_doc.title,
+    }
