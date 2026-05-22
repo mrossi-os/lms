@@ -279,7 +279,14 @@ input:disabled {
 	background: var(--surface-gray-1);
 	color: var(--ink-gray-9);
 }
+.card.prose {
+	color: var(--ink-gray-7); /* testo "body" */
+}
 
+.ProseMirror p,
+.ProseMirror .ce-paragraph {
+	color: var(--ink-gray-7);
+}
 /* List header */
 .os-list-view > div:first-of-type {
 	margin-bottom: 0px;

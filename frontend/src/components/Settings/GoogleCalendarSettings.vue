@@ -155,7 +155,7 @@ import {
 	ListView,
 	toast,
 } from 'frappe-ui'
-import { computed, inject, onMounted, ref } from 'vue'
+import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
 import { Check, CircleAlert, Plus, Trash2 } from 'lucide-vue-next'
 import { cleanError } from '@/utils'
 import { User } from '@/components/Settings/types'
@@ -194,9 +194,21 @@ const googleCalendars = createListResource({
 	cache: ['googleCalendars'],
 })
 
+const handleOAuthMessage = (event: MessageEvent) => {
+	if (event.origin !== window.location.origin) return
+	if (event.data?.type !== 'google-calendar-authorized') return
+	googleCalendars.reload()
+	toast.success(__('Google Calendar authorized successfully'))
+}
+
 onMounted(() => {
 	// If OAuth is already cached as configured, kick off the list fetch.
 	if (oauthConfigured.data) fetchGoogleCalendars()
+	window.addEventListener('message', handleOAuthMessage)
+})
+
+onBeforeUnmount(() => {
+	window.removeEventListener('message', handleOAuthMessage)
 })
 
 const fetchGoogleCalendars = () => {

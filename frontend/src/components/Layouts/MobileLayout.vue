@@ -1,6 +1,9 @@
 <template>
-	<div class="flex h-full flex-col relative">
-		<div class="h-full pb-10" id="scrollContainer">
+	<div class="relative flex h-screen flex-col">
+		<div
+			class="flex flex-1 flex-col overflow-hidden pb-10"
+			id="scrollContainer"
+		>
 			<slot />
 		</div>
 

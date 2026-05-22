@@ -246,8 +246,17 @@ def sanitize_job_filters(filters, or_filters):
 
 @frappe.whitelist(allow_guest=True)
 def get_job_opportunities(
-	filters: dict = None, or_filters: dict = None, start: int = 0, page_length: int = 40
+	filters: dict = None,
+	or_filters: dict = None,
+	start: int = 0,
+	page_length: int = 40,
+	limit_start: int = None,
+	limit_page_length: int = None,
 ):
+	if limit_page_length is not None:
+		page_length = cint(limit_page_length)
+	if limit_start is not None:
+		start = cint(limit_start)
 	filters, or_filters = sanitize_job_filters(filters, or_filters)
 
 	jobs = frappe.get_all(
@@ -366,7 +375,17 @@ def get_evaluator_details(evaluator: str):
 
 
 @frappe.whitelist()
-def get_certified_participants(filters: dict = None, start: int = 0, page_length: int = 40):
+def get_certified_participants(
+	filters: dict = None,
+	start: int = 0,
+	page_length: int = 40,
+	limit_start: int = None,
+	limit_page_length: int = None,
+):
+	if limit_page_length is not None:
+		page_length = cint(limit_page_length)
+	if limit_start is not None:
+		start = cint(limit_start)
 	query = get_certification_query(filters)
 	query = query.orderby("issue_date", order=frappe.qb.desc).offset(start).limit(page_length)
 	participants = query.run(as_dict=True)
@@ -1377,6 +1396,7 @@ def get_lms_settings():
 		"disable_pwa",
 		"allow_job_posting",
 		"demo_data_present",
+		"enable_live_classes",
 	]
 
 	settings = frappe._dict()
@@ -1940,15 +1960,18 @@ def get_created_courses():
 	Course = frappe.qb.DocType("LMS Course")
 
 	base_query = (
-		frappe.qb.from_(CourseInstructor)
-		.join(Course)
-		.on(CourseInstructor.parent == Course.name)
+		frappe.qb.from_(Course)
 		.select(Course.name)
 		.orderby(Course.published_on, order=frappe.qb.desc)
 		.limit(3)
 	)
 
-	query = base_query.where(CourseInstructor.instructor == frappe.session.user)
+	instructor_courses = (
+		frappe.qb.from_(CourseInstructor)
+		.select(CourseInstructor.parent)
+		.where(CourseInstructor.instructor == frappe.session.user)
+	)
+	query = base_query.where(Course.name.isin(instructor_courses))
 	results = query.run(as_dict=True)
 
 	if not len(results) and ("Moderator" in roles):
@@ -1969,12 +1992,16 @@ def get_created_batches():
 	CourseInstructor = frappe.qb.DocType("Course Instructor")
 	Batch = frappe.qb.DocType("LMS Batch")
 
-	query = (
+	instructor_batches = (
 		frappe.qb.from_(CourseInstructor)
-		.join(Batch)
-		.on(CourseInstructor.parent == Batch.name)
-		.select(Batch.name)
+		.select(CourseInstructor.parent)
 		.where(CourseInstructor.instructor == frappe.session.user)
+	)
+
+	query = (
+		frappe.qb.from_(Batch)
+		.select(Batch.name)
+		.where(Batch.name.isin(instructor_batches))
 		.where(Batch.start_date >= getdate())
 		.orderby(Batch.start_date, order=frappe.qb.asc)
 		.limit(4)

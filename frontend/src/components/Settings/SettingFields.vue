@@ -49,7 +49,7 @@
 								v-if="!data[field.name]"
 								:fileTypes="field.fileTypes || ['image/*']"
 								:validateFile="validateFile"
-								@success="(file) => (data[field.name] = file)"
+								@success="(file) => (data[field.name] = file.file_url)"
 							>
 								<template
 									v-slot="{ file, progress, uploading, openFileSelector }"
@@ -88,16 +88,7 @@
 									</div>
 									<div class="flex flex-col flex-wrap">
 										<span class="break-all text-ink-gray-9">
-											{{
-												data[field.name]?.file_name ||
-												data[field.name].split('/').pop()
-											}}
-										</span>
-										<span
-											v-if="data[field.name]?.file_size"
-											class="text-sm text-ink-gray-5 mt-1"
-										>
-											{{ getFileSize(data[field.name]?.file_size) }}
+											{{ data[field.name].split('/').pop() }}
 										</span>
 									</div>
 									<X
@@ -175,7 +166,7 @@
 						/>
 						<!-- <div v-else>
 							{{ data[field.name] }}
-							
+
 						</div> -->
 						<FormControl
 							v-else

@@ -8,6 +8,10 @@ import isSameOrAfter from 'dayjs/esm/plugin/isSameOrAfter'
 import utc from 'dayjs/esm/plugin/utc'
 import timezone from 'dayjs/esm/plugin/timezone'
 import 'dayjs/esm/locale/it'
+import 'dayjs/esm/locale/ar'
+import 'dayjs/esm/locale/he'
+import 'dayjs/esm/locale/fa'
+import 'dayjs/esm/locale/ur'
 
 dayjs.locale('it')
 dayjs.extend(updateLocale)

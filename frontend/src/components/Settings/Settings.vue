@@ -773,6 +773,48 @@ const tabsStructure = computed(() => {
 			],
 		},
 		{
+			key: 'Configurazioni',
+			label: __('Configurazioni'),
+			hideLabel: false,
+			condition: isAdministrator,
+			items: [
+				{
+					key: 'Corsi',
+					label: __('Corsi'),
+					icon: 'BookOpen',
+					description: __('Impostazioni relative ai corsi'),
+					condition: isAdministrator,
+					sections: [],
+				},
+				{
+					key: 'Classi',
+					label: __('Classi'),
+					icon: 'Laptop',
+					description: __('Impostazioni relative alle classi'),
+					condition: isAdministrator,
+					sections: [
+						{
+							label: __('Classi Live'),
+							columns: [
+								{
+									fields: [
+										{
+											label: __('Abilita Classi Live'),
+											name: 'enable_live_classes',
+											type: 'checkbox',
+											description: __(
+												'Se attivo, la tab Classi Live e le funzionalità correlate sono visibili a tutti gli utenti.',
+											),
+										},
+									],
+								},
+							],
+						},
+					],
+				},
+			],
+		},
+		{
 			key: 'AI',
 			label: __('AI'),
 			hideLabel: false,
@@ -880,14 +922,17 @@ const tabsStructure = computed(() => {
 })
 
 const tabs = computed(() => {
-	return tabsStructure.value.map((tab) => {
-		return {
-			...tab,
-			items: tab.items.filter((item) => {
-				return !item.condition || item.condition()
-			}),
-		}
-	})
+	return tabsStructure.value
+		.filter((tab) => !tab.condition || tab.condition())
+		.map((tab) => {
+			return {
+				...tab,
+				items: tab.items.filter((item) => {
+					return !item.condition || item.condition()
+				}),
+			}
+		})
+		.filter((tab) => tab.items.length > 0)
 })
 
 watch(show, async () => {

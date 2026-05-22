@@ -8,6 +8,8 @@ from frappe.utils import cint, format_date, format_time, get_datetime
 from lms.lms.doctype.lms_live_class.lms_live_class import LMSLiveClass
 from lms.lms.utils import get_lms_route
 
+from os_lms.os_lms.email_utils import send_templated_email
+
 
 def _lc_log(msg):
 	frappe.logger("lms_live_class_debug", allow_site=True).info(msg)
@@ -89,20 +91,21 @@ class CustomLMSLiveClass(LMSLiveClass):
 				f"[create_calendar_event] {self.name} Event saved name={event.name} "
 				f"event_id={event.google_calendar_event_id} meet={event.google_meet_link}"
 			)
-		except Exception:
-			_lc_log(f"[create_calendar_event] {self.name} Event save RAISED")
+		except Exception as exc:
+			_lc_log(
+				f"[create_calendar_event] {self.name} Event save RAISED "
+				f"type={type(exc).__name__} msg={exc!r}"
+			)
 			frappe.log_error(title="LMS Live Class Event save failed")
-			raise
+			frappe.throw(
+				_(
+					"Impossibile creare l'evento sul Google Calendar \"{0}\". "
+					"L'autorizzazione potrebbe essere mancante, scaduta o revocata: "
+					"apri il documento Google Calendar e ricompleta il flusso OAuth, poi riprova."
+				).format(calendar)
+			)
 
 		frappe.db.set_value(self.doctype, self.name, "event", event.name)
-
-		try:
-			self.add_event_participants(event, calendar)
-			_lc_log(f"[create_calendar_event] {self.name} participants added")
-		except Exception:
-			_lc_log(f"[create_calendar_event] {self.name} add_event_participants RAISED")
-			frappe.log_error(title="LMS Live Class add_event_participants failed")
-			raise
 
 		if is_meet:
 			event.reload()
@@ -142,26 +145,42 @@ class CustomLMSLiveClass(LMSLiveClass):
 
 	def send_invitation_email(self):
 		participants = self.get_participants()
+		instructors = set(
+			frappe.get_all(
+				"Course Instructor",
+				{"parenttype": "LMS Batch", "parent": self.batch_name},
+				pluck="instructor",
+			)
+		)
+		# For Zoom, instructors must use start_url to enter as host; students use join_url.
+		# For Google Meet, start_url and join_url are the same.
+		host_url = self.start_url or self.join_url
 		_lc_log(
 			f"[send_invitation_email] {self.name} participants_count={len(participants)} "
-			f"participants={participants} join_url={self.join_url} title={self.title!r}"
+			f"participants={participants} instructors={instructors} "
+			f"join_url={self.join_url} start_url={self.start_url} title={self.title!r}"
 		)
 		sent = 0
 		failed = 0
 		for participant in participants:
 			try:
 				member_name = frappe.db.get_value("User", participant, "first_name") or participant
-				_lc_log(f"[send_invitation_email] {self.name} -> {participant} (name={member_name}) attempting sendmail")
-				frappe.sendmail(
+				is_instructor = participant in instructors
+				participant_url = host_url if is_instructor else self.join_url
+				_lc_log(
+					f"[send_invitation_email] {self.name} -> {participant} "
+					f"(name={member_name}, is_instructor={is_instructor}) attempting sendmail"
+				)
+				send_templated_email(
+					template_key="live_class_invitation",
 					recipients=participant,
 					subject=_("Lezione dal vivo: {0}").format(self.title),
-					template="live_class_invitation",
 					args={
 						"student_name": member_name,
 						"title": self.title,
 						"date": self.date,
 						"time": self.time,
-						"join_url": self.join_url,
+						"join_url": participant_url,
 						"description": self.description,
 						"batch_name": self.batch_name,
 					},

@@ -92,6 +92,7 @@ import { useRouter } from 'vue-router'
 import { Pencil } from 'lucide-vue-next'
 import { sessionStore } from '../stores/session'
 import Link from '@/components/Controls/Link.vue'
+import LayoutHeader from '@/components/Layouts/LayoutHeader.vue'
 
 const user = inject('$user')
 const dayjs = inject('$dayjs')

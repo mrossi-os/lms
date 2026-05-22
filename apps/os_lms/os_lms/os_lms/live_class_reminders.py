@@ -9,6 +9,7 @@ from frappe.utils import get_datetime, now_datetime
 from os_lms.os_lms.doctype.lms_live_class_reminder.lms_live_class_reminder import (
 	offset_to_minutes,
 )
+from os_lms.os_lms.email_utils import send_templated_email
 
 
 def send_live_class_reminders():
@@ -78,10 +79,10 @@ def _send_reminder_mail(live_class, student) -> None:
 	subject = f"Promemoria lezione: {live_class.title} del {formatted_date}"
 	header_text = f"Promemoria lezione: {live_class.title}"
 
-	frappe.sendmail(
+	send_templated_email(
+		template_key="live_class_reminder",
 		recipients=student.member,
 		subject=subject,
-		template="live_class_reminder",
 		args={
 			"student_name": student.member_name,
 			"title": live_class.title,

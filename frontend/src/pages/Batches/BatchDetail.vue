@@ -111,6 +111,7 @@ import {
 	usePageMeta,
 } from 'frappe-ui'
 import { sessionStore } from '@/stores/session'
+import { useSettings } from '@/stores/settings'
 import AdminBatchDashboard from '@/pages/Batches/components/AdminBatchDashboard.vue'
 import StudentBatchDashboard from '@/pages/Batches/components/BatchDashboard.vue'
 import BatchOverview from '@/pages/Batches/BatchOverview.vue'
@@ -123,6 +124,7 @@ import Discussions from '@/components/Discussions.vue'
 const router = useRouter()
 const route = useRoute()
 const { brand } = sessionStore()
+const settingsStore = useSettings()
 const user = inject('$user')
 const socket = inject('$socket')
 const childRef = ref(null)
@@ -240,7 +242,9 @@ const updateTabs = () => {
 			ClipboardPen,
 		)
 	}
-	addToTabs('Classes', __('Classes'), markRaw(LiveClass), Laptop)
+	if (settingsStore.settings.data?.enable_live_classes !== 0) {
+		addToTabs('Classes', __('Classes'), markRaw(LiveClass), Laptop)
+	}
 	addToTabs('Announcements', __('Announcements'), markRaw(Announcements), Mail)
 	addToTabs(
 		'Discussions',

@@ -19,6 +19,8 @@ from frappe.utils.oauth import get_oauth2_authorize_url, get_oauth_keys, redirec
 from frappe.utils.password import get_decrypted_password
 from frappe.website.utils import get_home_page
 
+from os_lms.os_lms.email_utils import send_templated_email
+
 no_cache = True
 
 
@@ -148,10 +150,10 @@ def send_login_link(email: str):
 
 	subject = _("Login To {0}").format(app_name)
 
-	frappe.sendmail(
-		subject=subject,
+	send_templated_email(
+		template_key="login_with_email_link",
 		recipients=email,
-		template="login_with_email_link",
+		subject=subject,
 		args={"link": link, "minutes": expiry, "app_name": app_name},
 		now=True,
 	)

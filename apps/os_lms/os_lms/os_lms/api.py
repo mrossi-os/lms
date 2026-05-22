@@ -4,6 +4,8 @@ import re
 import frappe
 import requests
 
+from os_lms.os_lms.email_utils import send_templated_email
+
 VIMEO_URL_RE = re.compile(r"vimeo\.com/(\d+)(?:/([a-zA-Z0-9]+))?")
 
 
@@ -538,10 +540,10 @@ def _notify_students_class_cancelled(live_class) -> None:
 
     for student in students:
         try:
-            frappe.sendmail(
+            send_templated_email(
+                template_key="live_class_cancelled",
                 recipients=student.member,
                 subject=frappe._("Lezione annullata: {0}").format(live_class.title),
-                template="live_class_cancelled",
                 args={
                     "student_name": student.member_name,
                     "title": live_class.title,
