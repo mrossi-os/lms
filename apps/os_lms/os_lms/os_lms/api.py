@@ -602,6 +602,7 @@ def get_lesson_audio_stream(lesson_name: str) -> dict:
             "audio_url": settings.test_audio_url,
             "title": f"[TEST] {lesson_name}",
             "artist": "Test Audio",
+            "artwork_url": None,
             "duration": 0,
             "expires_at": None,
             "test_mode": True,
@@ -631,7 +632,9 @@ def get_lesson_audio_stream(lesson_name: str) -> dict:
     if not vimeo_id:
         frappe.throw("Nessun video Vimeo trovato nella lezione")
 
-    cache_key = f"vimeo:stream:{vimeo_id}"
+    # v2: schema added `artwork_url`. Bumping the key invalidates the legacy
+    # cached payloads that lacked the field.
+    cache_key = f"vimeo:stream:v2:{vimeo_id}"
     cached = frappe.cache().get_value(cache_key)
     if cached:
         return cached
@@ -643,7 +646,7 @@ def get_lesson_audio_stream(lesson_name: str) -> dict:
     try:
         response = requests.get(
             f"https://api.vimeo.com/videos/{vimeo_id}",
-            params={"fields": "play.hls.link,name,duration"},
+            params={"fields": "play.hls.link,name,duration,pictures.sizes"},
             headers={"Authorization": f"Bearer {token}"},
             timeout=settings.api_timeout_seconds or 5,
         )
@@ -672,6 +675,7 @@ def get_lesson_audio_stream(lesson_name: str) -> dict:
         "audio_url": hls_link,
         "title": data.get("name") or lesson.title,
         "artist": lesson.course or "",
+        "artwork_url": _pick_vimeo_artwork(data),
         "duration": data.get("duration") or 0,
         "expires_at": None,
         "test_mode": False,
@@ -681,3 +685,21 @@ def get_lesson_audio_stream(lesson_name: str) -> dict:
     frappe.cache().set_value(cache_key, result, expires_in_sec=ttl)
 
     return result
+
+
+def _pick_vimeo_artwork(video_data: dict) -> str | None:
+    """Pick the highest-resolution Vimeo thumbnail capped at 1920px wide.
+
+    Vimeo `pictures.sizes` is an array of {width, height, link} entries
+    sorted ascending. We prefer images <= 1920px to keep bandwidth in check
+    on lockscreen rendering; if all are larger, fall back to the largest
+    available (rare for Vimeo, which usually exposes 100/200/295/640/960/
+    1280/1920 variants).
+    """
+    sizes = (video_data.get("pictures") or {}).get("sizes") or []
+    if not sizes:
+        return None
+    capped = [s for s in sizes if s.get("width", 0) <= 1920]
+    pool = capped if capped else sizes
+    largest = max(pool, key=lambda s: s.get("width", 0))
+    return largest.get("link")
