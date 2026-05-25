@@ -278,9 +278,8 @@ def send_batch_announcement(
 
     send_email_flag = str(send_email).lower() not in ("0", "false", "no", "")
 
-    message_html = (message or "").replace("\n", "<br>")
     announcement_url = f"{frappe.utils.get_url()}/lms/batches/details/{batch}#announcements"
-    context = {"message": message_html, "announcement_url": announcement_url}
+    context = {"message": message or "", "announcement_url": announcement_url}
     rendered_content = frappe.render_template(content, context)
     rendered_subject = frappe.render_template(subject, context)
 

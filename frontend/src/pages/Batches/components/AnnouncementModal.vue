@@ -100,15 +100,17 @@
 							{{ __('Message') }}
 							<span class="text-ink-red-3">*</span>
 						</div>
-						<textarea
-							v-model="announcement.message"
-							class="w-full min-h-[120px] max-h-[240px] border rounded-md p-2 text-sm bg-surface-gray-3 border-outline-gray-2"
+						<TextEditor
+							:fixedMenu="true"
+							:content="announcement.message"
+							@change="(val) => (announcement.message = val)"
+							editorClass="prose-sm py-2 px-2 min-h-[120px] max-h-[240px] overflow-auto border-outline-gray-2 hover:border-outline-gray-3 rounded-b-md bg-surface-gray-3"
 							:placeholder="
 								__(
 									'Write your message here. It will be inserted into the template.',
 								)
 							"
-						></textarea>
+						/>
 					</div>
 					<div>
 						<div class="mb-1.5 flex items-center justify-between">
@@ -196,11 +198,16 @@ const hasMessagePlaceholder = computed(() =>
 	/\{\{\s*message\s*\}\}/.test(announcement.announcement || ''),
 )
 
-const escapeHtml = (str) =>
-	String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+const isEmptyHtml = (html) => {
+	const stripped = String(html || '')
+		.replace(/<(?!img|a)[^>]*>/g, '')
+		.replace(/&nbsp;/g, '')
+		.trim()
+	return stripped.length === 0
+}
 
 const previewHtml = computed(() => {
-	const msg = escapeHtml(announcement.message || '').replace(/\n/g, '<br>')
+	const msg = isEmptyHtml(announcement.message) ? '' : announcement.message
 	return (announcement.announcement || '')
 		.replace(/\{\{\s*message\s*\}\}/g, msg)
 		.replace(
@@ -348,7 +355,10 @@ const makeAnnouncement = (close) => {
 				if (!announcement.announcement) {
 					return __('Announcement is required')
 				}
-				if (hasMessagePlaceholder.value && !announcement.message) {
+				if (
+					hasMessagePlaceholder.value &&
+					isEmptyHtml(announcement.message)
+				) {
 					return __('Message is required')
 				}
 			},
