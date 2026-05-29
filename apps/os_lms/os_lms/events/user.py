@@ -17,10 +17,12 @@ CHILD_TABLE_LINKS = (
 def delete_lms_user_links(doc, method=None):
 	"""on_trash hook on User: removes every LMS/os_lms record that references
 	the user, so the User deletion is not blocked by LinkExistsError. Runs
-	before Frappe's check_if_doc_is_linked validation.
+	before Frappe's check_if_doc_is_linked / check_if_doc_is_dynamically_linked
+	validation.
 	"""
 	user = doc.name
 
+	# 1. Direct Link fields (User → LMS-scoped doctypes).
 	for doctype, fieldname in _collect_user_link_fields():
 		record_names = frappe.get_all(
 			doctype,
@@ -37,9 +39,51 @@ def delete_lms_user_links(doc, method=None):
 				ignore_on_trash=True,
 			)
 
-	# Child table rows: detach without touching the parent doc.
+	# 2. Known LMS child tables with direct Link to User: detach the row,
+	# leave the parent doc intact.
 	for child_doctype, fieldname in CHILD_TABLE_LINKS:
 		frappe.db.delete(child_doctype, {fieldname: user})
+
+	# 3. Dynamic Link references (e.g., Event Participants, ToDo, Comment).
+	# These are global by design — Frappe's own delete validation scans every
+	# dynamic link to User, so the cascade has to match the same scope.
+	_clear_dynamic_links_to_user(user)
+
+
+def _clear_dynamic_links_to_user(user: str) -> None:
+	"""Remove every row that dynamically links to the given user.
+
+	Uses Frappe's `get_dynamic_link_map()` — the same data structure
+	`check_if_doc_is_dynamically_linked` consults — so we cover every
+	dynamic-link field pointing at User across all installed apps.
+
+	For child tables the row is deleted in place (parent doc is untouched).
+	For regular doctypes the whole document is deleted. Singles are skipped:
+	dropping a Single isn't meaningful, and clearing one field on a Settings
+	doc would be a surprising side effect of deleting a user.
+	"""
+	from frappe.model.dynamic_links import get_dynamic_link_map
+
+	for df in get_dynamic_link_map().get("User", []):
+		meta = frappe.get_meta(df.parent)
+		if meta.issingle:
+			continue
+
+		filters = {df.options: "User", df.fieldname: user}
+
+		if meta.istable:
+			frappe.db.delete(df.parent, filters)
+			continue
+
+		for name in frappe.get_all(df.parent, filters=filters, pluck="name"):
+			frappe.delete_doc(
+				df.parent,
+				name,
+				ignore_permissions=True,
+				delete_permanently=True,
+				force=True,
+				ignore_on_trash=True,
+			)
 
 
 def _collect_user_link_fields() -> list[tuple[str, str]]:
