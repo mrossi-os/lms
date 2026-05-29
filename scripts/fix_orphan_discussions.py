@@ -92,11 +92,16 @@ def reassign(doctype: str, orphans: list[dict], email: str, apply: bool) -> None
 def main(argv: list[str] | None = None) -> int:
 	parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 	parser.add_argument("--site", required=True, help="Frappe site name (e.g. lms.localhost)")
+	parser.add_argument(
+		"--sites-path",
+		default="sites",
+		help="Path to the bench 'sites' directory (default: sites, i.e. run from bench root)",
+	)
 	parser.add_argument("--placeholder", default=PLACEHOLDER_EMAIL, help="Placeholder user email")
 	parser.add_argument("--apply", action="store_true", help="Persist changes (default: dry-run)")
 	args = parser.parse_args(argv)
 
-	frappe.init(site=args.site)
+	frappe.init(site=args.site, sites_path=args.sites_path)
 	frappe.connect()
 
 	try:
