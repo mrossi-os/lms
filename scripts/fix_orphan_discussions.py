@@ -27,6 +27,7 @@ By default the script runs in dry-run mode and only prints a summary.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 
 import frappe
@@ -101,7 +102,12 @@ def main(argv: list[str] | None = None) -> int:
 	parser.add_argument("--apply", action="store_true", help="Persist changes (default: dry-run)")
 	args = parser.parse_args(argv)
 
-	frappe.init(site=args.site, sites_path=args.sites_path)
+	# Frappe's logger writes to "../logs" relative to CWD and resolves
+	# sites_path="." against CWD, so it expects to run from inside the bench's
+	# "sites" directory (the same way `bench` does). Chdir there to match.
+	os.chdir(os.path.abspath(args.sites_path))
+
+	frappe.init(site=args.site, sites_path=".")
 	frappe.connect()
 
 	try:
