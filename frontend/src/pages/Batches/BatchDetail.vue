@@ -269,7 +269,7 @@ const addToTabs = (key, label, component, icon) => {
 }
 
 const isAdmin = computed(() => {
-	return user.data?.is_moderator || user.data?.is_evaluator
+	return user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente
 })
 
 const isStudent = computed(() => {

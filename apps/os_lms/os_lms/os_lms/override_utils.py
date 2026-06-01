@@ -8,6 +8,7 @@ from lms.lms.utils import get_batch_details as _original_get_batch_details
 from lms.lms.utils import get_courses as _orginal_get_courses
 from lms.lms.utils import get_progress
 from os_lms.os_lms.api import (
+    _find_adjacent_video_lessons,
     evaluate_lesson_access,
     evaluate_quiz_access,
     get_batch_tab_unread_counts,
@@ -69,6 +70,25 @@ def get_lesson(course: str, chapter: int, lesson: int) -> dict:
             lesson_details["quiz_access"] = evaluate_quiz_access(
                 course, lesson_name
             )
+
+        # Adjacent lessons that have a Vimeo embed — used by the mobile app
+        # to decide whether to show skip-prev / skip-next on the MediaSession
+        # lock-screen controls. Either is None when the adjacent lesson does
+        # not exist or has no Vimeo video.
+        lesson_doc = frappe.db.get_value(
+            "Course Lesson",
+            lesson_name,
+            ["name", "course", "chapter"],
+            as_dict=True,
+        )
+        if lesson_doc:
+            prev_info, next_info = _find_adjacent_video_lessons(lesson_doc)
+            lesson_details["prev_video_lesson"] = prev_info
+            lesson_details["next_video_lesson"] = next_info
+        else:
+            lesson_details["prev_video_lesson"] = None
+            lesson_details["next_video_lesson"] = None
+
     return lesson_details
 
 

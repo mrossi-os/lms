@@ -4594,3 +4594,4 @@ restrict_ip
 "Zoom Settings","Impostazioni Zoom"
 "Enrolled Programs","Programmi Iscritti"
 "Published Programs","Programmi Pubblicati"
+"Zoom authentication failed for account {0}: {1}","Autenticazione Zoom fallita per l'account {0}: {1}"

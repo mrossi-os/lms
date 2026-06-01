@@ -22,7 +22,7 @@
 					<div class="flex items-center text-ink-gray-5">
 						<UserAvatar :user="reply.user" class="me-2" />
 						<span>
-							{{ reply.user.full_name }}
+							{{ reply.user?.full_name || reply.owner }}
 						</span>
 						<span class="text-sm ms-2">
 							{{ timeAgo(reply.creation) }}

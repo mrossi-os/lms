@@ -391,7 +391,20 @@ def authenticate(zoom_account):
 		).decode()
 	}
 	response = requests.request("POST", authenticate_url, headers=headers)
-	return response.json()["access_token"]
+
+	try:
+		data = response.json()
+	except ValueError:
+		data = {}
+
+	access_token = data.get("access_token")
+	if not access_token:
+		error = data.get("reason") or data.get("error") or response.text
+		frappe.throw(
+			_("Zoom authentication failed for account {0}: {1}").format(zoom_account, error)
+		)
+
+	return access_token
 
 
 @frappe.whitelist()
