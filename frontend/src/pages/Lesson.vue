@@ -1059,7 +1059,7 @@ const checkIfDiscussionsAllowed = () => {
 
 const isAdmin = computed(() => {
 	let isInstructor = lesson.data?.instructors?.includes(user.data?.name)
-	return user.data?.is_moderator || isInstructor
+	return user.data?.is_moderator || user.data?.is_docente || isInstructor
 })
 
 const allowEdit = () => {

@@ -2508,7 +2508,9 @@ def can_modify_course(course: str) -> bool:
 		"Course Instructor",
 		{"instructor": frappe.session.user, "parent": course, "parenttype": "LMS Course"},
 	)
-	if not (has_moderator_role() or is_instructor):
+	# A "Docente" is a global instructor and can manage any course, even when not
+	# listed among that course's instructors.
+	if not (has_moderator_role() or is_instructor or "Docente" in frappe.get_roles()):
 		return False
 	return True
 
@@ -2522,7 +2524,9 @@ def can_modify_batch(batch: str) -> bool:
 			"parenttype": "LMS Batch",
 		},
 	)
-	if not (has_moderator_role() or is_instructor):
+	# A "Docente" is a global instructor and can manage any batch, even when not
+	# listed among that batch's instructors.
+	if not (has_moderator_role() or is_instructor or "Docente" in frappe.get_roles()):
 		return False
 	return True
 

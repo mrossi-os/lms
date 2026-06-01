@@ -215,6 +215,6 @@ const fetchCertificate = () => {
 }
 
 const isAdmin = computed(() => {
-	return user.data?.is_moderator || is_instructor()
+	return user.data?.is_moderator || user.data?.is_docente || is_instructor()
 })
 </script>
