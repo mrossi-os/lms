@@ -64,6 +64,10 @@ standard_email_override = {
     "login_via_key": "os_lms/templates/emails/login_via_key.html"
 }
 
+# Desk client scripts: add Export/Import-with-permissions buttons to Role.
+doctype_js = {"Role": "public/js/role.js"}
+doctype_list_js = {"Role": "public/js/role_list.js"}
+
 fixtures = [
     {
         "dt": "Custom Field",
