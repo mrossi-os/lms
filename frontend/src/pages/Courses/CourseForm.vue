@@ -665,8 +665,11 @@ const trashCourse = () => {
 }
 
 const checkPermission = () => {
+	// A "Docente" is a global instructor and can manage any course, mirroring
+	// can_modify_course() on the backend and the isAdmin gate in CourseDetail.
+	if (user.data?.is_moderator || user.data?.is_docente) return
+
 	let user_is_instructor = false
-	if (user.data?.is_moderator) return
 	instructors.value?.forEach((instructor) => {
 		if (!user_is_instructor && instructor == user.data?.name) {
 			user_is_instructor = true
