@@ -16,7 +16,7 @@
 			</Button>
 		</div>
 		<div v-if="announcements.length">
-			<div v-for="comm in announcements">
+			<div v-for="(comm, idx) in announcements" :key="idx">
 				<div class="mb-8">
 					<div class="flex items-center justify-between mb-2">
 						<div class="flex items-center">
@@ -33,10 +33,7 @@
 					<div class="ml-3 font-bold text-ink-gray-9 prose">
 						{{ comm.subject }}
 					</div>
-					<div
-						class="prose prose-sm bg-surface-menu-bar !min-w-full px-4 py-2 rounded-md"
-						v-html="comm.content"
-					></div>
+					<AnnouncementContent :content="comm.content" />
 				</div>
 			</div>
 			<div
@@ -79,6 +76,7 @@ import { Plus, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { computed, inject, ref, watch } from 'vue'
 import { timeAgo } from '@/utils'
 import AnnouncementModal from '@/pages/Batches/components/AnnouncementModal.vue'
+import AnnouncementContent from '@/pages/Batches/components/AnnouncementContent.vue'
 
 const user = inject('$user')
 const readOnlyMode = window.read_only_mode

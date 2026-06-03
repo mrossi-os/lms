@@ -124,9 +124,10 @@
 							</Button>
 						</div>
 						<div
-							class="border rounded-md p-4 bg-surface-white min-h-[200px] max-h-[400px] overflow-auto"
-							v-html="previewHtml"
-						></div>
+							class="border rounded-md min-h-[200px] max-h-[400px] overflow-auto"
+						>
+							<AnnouncementContent :content="previewHtml" />
+						</div>
 						<textarea
 							v-if="showAdvanced"
 							v-model="announcement.announcement"
@@ -162,8 +163,37 @@ import {
 	toast,
 } from 'frappe-ui'
 import { computed, reactive, ref, watch } from 'vue'
+import AnnouncementContent from '@/pages/Batches/components/AnnouncementContent.vue'
 
 const show = defineModel()
+
+/*
+ * The frappe-ui TextEditor color extension renders named colors as
+ * `color: var(--prose-color-<name>)`, and those CSS variables only exist inside
+ * the editor (`.ProseMirror`). Anywhere else — the preview, the published
+ * announcement, and the actual email the student receives — the variable is
+ * undefined and the color is lost. Resolve them to real hex values (the
+ * light-mode shades, which read well on the email's light background) before
+ * the content is previewed or sent, so the chosen color is preserved everywhere.
+ */
+const NAMED_COLOR_HEX = {
+	red: '#CC2929',
+	blue: '#007BE0',
+	green: '#278F5E',
+	yellow: '#D1930D',
+	orange: '#D45A08',
+	purple: '#8642C2',
+	pink: '#CF3A96',
+	gray: '#7C7C7C',
+	teal: '#0B9E92',
+	cyan: '#32A4C7',
+}
+
+const inlineNamedColors = (html) =>
+	String(html || '').replace(
+		/var\(\s*--prose-color-(\w+)\s*\)/g,
+		(match, name) => NAMED_COLOR_HEX[name] || match,
+	)
 
 const props = defineProps({
 	batch: {
@@ -208,12 +238,13 @@ const isEmptyHtml = (html) => {
 
 const previewHtml = computed(() => {
 	const msg = isEmptyHtml(announcement.message) ? '' : announcement.message
-	return (announcement.announcement || '')
+	const html = (announcement.announcement || '')
 		.replace(/\{\{\s*message\s*\}\}/g, msg)
 		.replace(
 			/\{\{\s*frappe\.utils\.get_url\(\)\s*\}\}/g,
 			window.location.origin,
 		)
+	return inlineNamedColors(html)
 })
 
 const studentsInfo = createResource({
@@ -328,8 +359,8 @@ const announcementResource = createResource({
 			batch: props.batch,
 			recipients: recipients,
 			subject: announcement.subject,
-			content: announcement.announcement,
-			message: announcement.message,
+			content: inlineNamedColors(announcement.announcement),
+			message: inlineNamedColors(announcement.message),
 			send_email: sendEmail.value ? 1 : 0,
 		}
 	},
