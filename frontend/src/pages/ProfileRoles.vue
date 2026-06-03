@@ -62,7 +62,7 @@
 </template>
 <script setup>
 import { call, createResource, toast } from 'frappe-ui'
-import Switch from '@/oslms/components/Form/Switch.vue'
+import Switch from '@/components/Controls/Switch.vue'
 import { ref, watch } from 'vue'
 import { convertToTitleCase } from '@/utils'
 import { CircleAlert } from 'lucide-vue-next'

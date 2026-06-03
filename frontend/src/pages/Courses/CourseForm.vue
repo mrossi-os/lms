@@ -388,14 +388,14 @@
 				/>
 			</div>
 		</div>
+		<aside class="border-s overflow-y-auto px-3">
+			<CoursePublishSettings />
+		</aside>
 	</div>
-	<NewMemberModal
-		v-model="showMemberModal"
-		:defaultRoles="memberModalRoles"
-		@created="onMemberCreated"
-	/>
 </template>
-<script setup>
+
+<script setup lang="ts">
+import { createResource, createDocumentResource, toast } from 'frappe-ui'
 import {
 	TextEditor,
 	createResource,
@@ -406,13 +406,14 @@ import {
 } from 'frappe-ui'
 import {
 	computed,
-	inject,
-	onMounted,
-	onBeforeUnmount,
-	ref,
-	reactive,
-	watch,
 	getCurrentInstance,
+	inject,
+	onBeforeUnmount,
+	onMounted,
+	provide,
+	reactive,
+	ref,
+	watch,
 } from 'vue'
 import {
 	getMetaInfo,
@@ -458,33 +459,34 @@ const onHeroMediaFileUrl = (url) => {
 
 const user = inject('$user')
 const router = useRouter()
-const instructors = ref([])
-const related_courses = ref([])
-const app = getCurrentInstance()
-const { $dialog } = app.appContext.config.globalProperties
-const isDirty = ref(false)
-const showMemberModal = ref(false)
+const app = getCurrentInstance()!
+const { $dialog } = app.appContext.config.globalProperties as {
+	$dialog: DialogFn
+}
 
-const selfEnrollment = computed({
-	get: () => !courseResource.doc?.disable_self_learning,
-	set: (val) => {
-		courseResource.doc.disable_self_learning = !val
-		makeFormDirty()
-	},
-})
-const evaluatorLinkRef = ref(null)
-const memberModalRoles = ref(['course_creator'])
+const isDirty = ref<boolean>(false)
+const instructors = ref<string[]>([])
+const related_courses = ref<string[]>([])
+const meta = reactive<CourseFormMeta>({ description: '', keywords: '' })
 
-const props = defineProps({
-	course: {
-		type: Object,
-	},
-})
+const courseResource = createDocumentResource({
+	doctype: 'LMS Course',
+	name: props.course.data?.name,
+	auto: true,
+}) as Resource<LMSCourse | null>
 
-const meta = reactive({
-	description: '',
-	keywords: '',
-})
+const markDirty = (): void => {
+	isDirty.value = true
+}
+
+const courseFormContext: CourseFormContext = {
+	resource: courseResource,
+	instructors,
+	relatedCourses: related_courses,
+	meta,
+	markDirty,
+}
+provide<CourseFormContext>('courseForm', courseFormContext)
 
 onMounted(() => {
 	if (!user.data?.is_moderator && !user.data?.is_instructor) {
@@ -493,41 +495,39 @@ onMounted(() => {
 	window.addEventListener('keydown', keyboardShortcut)
 })
 
-const courseResource = createDocumentResource({
-	doctype: 'LMS Course',
-	name: props.course.data?.name,
-	auto: true,
-})
-
-const parsedTags = computed(() => {
-	const tags = courseResource.doc?.tags
-	return tags ? tags.split(', ').filter(Boolean) : []
+onBeforeUnmount(() => {
+	window.removeEventListener('keydown', keyboardShortcut)
 })
 
 watch(
 	() => courseResource.doc,
 	() => {
+		// A failed/empty fetch still fires this watch; the body assumes a
+		// loaded doc.
+		if (!courseResource.doc) return
 		getMetaInfo('courses', courseResource.doc?.name, meta)
 		updateCourseData()
 		checkPermission()
 	},
 )
 
-const updateCourseData = () => {
-	Object.keys(courseResource.doc).forEach((key) => {
-		if (key == 'instructors') {
+const updateCourseData = (): void => {
+	const doc = courseResource.doc
+	if (!doc) return
+	Object.keys(doc).forEach((key) => {
+		if (key === 'instructors') {
 			instructors.value = []
-			courseResource.doc.instructors.forEach((instructor) => {
-				instructors.value.push(instructor.instructor)
+			doc.instructors?.forEach((i: CourseInstructor) => {
+				if (i.instructor) instructors.value.push(i.instructor)
 			})
-		} else if (key == 'related_courses') {
+		} else if (key === 'related_courses') {
 			related_courses.value = []
-			courseResource.doc.related_courses.forEach((course) => {
-				related_courses.value.push(course.course)
+			doc.related_courses?.forEach((c: RelatedCoursesRow) => {
+				if (c.course) related_courses.value.push(c.course)
 			})
 		}
 	})
-	let checkboxes = [
+	const checkboxes: (keyof LMSCourse)[] = [
 		'published',
 		'upcoming',
 		'disable_self_learning',
@@ -538,15 +538,12 @@ const updateCourseData = () => {
 		'enforce_lesson_order',
 		'enforce_quiz_on_completion',
 	]
-	for (let idx in checkboxes) {
-		let key = checkboxes[idx]
-		courseResource.doc[key] = courseResource.doc[key] ? true : false
+	for (const key of checkboxes) {
+		;(doc as Record<string, unknown>)[key] = doc[key] ? true : false
 	}
 }
 
-const submitCourse = () => {
-	updateCourse()
-}
+const submitCourse = (): void => updateCourse()
 
 const onMemberCreated = (user) => {
 	if (memberModalRoles.value.includes('batch_evaluator')) {
@@ -616,35 +613,29 @@ const updateCourse = () => {
 	saveResource.submit()
 }
 
-const keyboardShortcut = (e) => {
+const keyboardShortcut = (e: KeyboardEvent): void => {
 	if (
 		e.key === 's' &&
 		(e.ctrlKey || e.metaKey) &&
-		!e.target.classList.contains('ProseMirror')
+		!(e.target as HTMLElement | null)?.classList.contains('ProseMirror')
 	) {
 		submitCourse()
 		e.preventDefault()
 	}
 }
 
-onBeforeUnmount(() => {
-	window.removeEventListener('keydown', keyboardShortcut)
-})
-
 const deleteCourse = createResource({
 	url: 'lms.lms.api.delete_course',
-	makeParams(values) {
-		return {
-			course: courseResource.doc?.name,
-		}
+	makeParams() {
+		return { course: courseResource.doc?.name }
 	},
 	onSuccess() {
 		toast.success(__('Course deleted successfully'))
 		router.push({ name: 'Courses' })
 	},
-})
+}) as Resource<unknown>
 
-const trashCourse = () => {
+const trashCourse = (): void => {
 	$dialog({
 		title: __('Delete Course'),
 		message: __(
@@ -681,22 +672,5 @@ const checkPermission = () => {
 	}
 }
 
-const createCategory = (name, done) => {
-	createLMSCategory(name).then((categoryName) => {
-		if (!categoryName) return
-		courseResource.doc.category = categoryName
-		done()
-		makeFormDirty()
-	})
-}
-
-const makeFormDirty = () => {
-	isDirty.value = true
-}
-
-defineExpose({
-	submitCourse,
-	trashCourse,
-	isDirty,
-})
+defineExpose({ isDirty, submitCourse, trashCourse, courseMenu })
 </script>

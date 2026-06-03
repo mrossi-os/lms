@@ -1,6 +1,7 @@
 <template>
 	<div v-if="lesson.data" class="">
 		<header
+			v-if="!embedded"
 			class="sticky top-0 z-10 flex items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5"
 		>
 			<Breadcrumbs class="h-7" :items="breadcrumbs" />
@@ -485,6 +486,13 @@ import {
 } from '@/utils'
 import { sessionStore } from '@/stores/session'
 import { useSidebar } from '@/stores/sidebar'
+import { useSettings } from '@/stores/settings'
+import {
+	resolveDwellSeconds,
+	isVideoComplete,
+	shouldStartDwellTimer,
+	shouldAttachVideoFallback,
+} from '@/utils/lessonProgress'
 import EditorJS from '@editorjs/editorjs'
 import LessonContent from '@/components/LessonContent.vue'
 import CourseInstructors from '@/components/CourseInstructors.vue'
@@ -493,6 +501,7 @@ import Discussions from '@/components/Discussions.vue'
 import CertificationLinks from '@/components/CertificationLinks.vue'
 import VideoStatistics from '@/components/Modals/VideoStatistics.vue'
 import CourseOutline from '@/components/CourseOutline.vue'
+import StudentLessonSidebar from '@/components/StudentLessonSidebar.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import Notes from '@/components/Notes/Notes.vue'
 import { getLmsRoute } from '@/utils/basePath'
@@ -523,6 +532,7 @@ const currentTab = ref(null)
 const quizBlocked = ref(false)
 const quizBlockedReason = ref('')
 const completedLesson = ref(null)
+const settingsStore = useSettings()
 let timerInterval = null
 
 // Blocco lezioni sequenziali
@@ -562,6 +572,10 @@ const props = defineProps({
 		type: String,
 		required: true,
 	},
+	embedded: {
+		type: Boolean,
+		default: false,
+	},
 })
 
 const applyAccessFromLesson = (data) => {
@@ -579,6 +593,7 @@ onMounted(() => {
 	socket.on('update_lesson_progress', (data) => {
 		if (data.course === props.courseName) {
 			lessonProgress.value = data.progress
+			emit('progress-updated', data.progress)
 		}
 	})
 })
@@ -597,7 +612,7 @@ const attachFullscreenEvent = () => {
 
 onBeforeUnmount(() => {
 	document.removeEventListener('fullscreenchange', attachFullscreenEvent)
-	sidebarStore.isSidebarCollapsed = false
+	if (!props.embedded) sidebarStore.isSidebarCollapsed = false
 	trackVideoWatchDuration()
 	if (aiVisibilityObserver) {
 		aiVisibilityObserver.disconnect()
@@ -711,6 +726,11 @@ const renderEditor = (holder, content) => {
 	})
 }
 
+// Video-ended fires markProgress + trackVideoWatchDuration in parallel,
+// and trackVideoWatchDuration's getPlyrSourceDetails calls markProgress
+// again. Without an in-flight guard the two save_progress requests race
+// and the second one fails with TimestampMismatchError on LMS Enrollment.
+let progressSubmitting = false
 const markProgress = () => {
 	if (user.data && lesson.data && !lesson.data.progress) {
 		progress.submit(
@@ -734,7 +754,13 @@ const progress = createResource({
 	},
 	onSuccess(data) {
 		lessonProgress.value = data
-		completedLesson.value = lesson.data?.name
+		const name = lesson.data?.name
+		completedLesson.value = name
+		// Tell the parent (CourseEditor preview) so it can flip the
+		// sidebar's green tick and update the percentage without waiting
+		// for a refresh of the course resource.
+		if (name) emit('lesson-completed', name)
+		emit('progress-updated', data)
 	},
 })
 
@@ -842,12 +868,20 @@ const switchLesson = (direction) => {
 			? lesson.data.prev.split('.')
 			: lesson.data.next.split('.')
 
+	const [chapterNumber, lessonNumber] = lessonIndex
+	// In the embedded editor preview, navigate the parent's selection so the
+	// pane swaps in place instead of routing away to /lesson/...
+	if (props.embedded) {
+		emit('select-lesson', { chapterNumber, lessonNumber })
+		return
+	}
+
 	router.push({
 		name: 'Lesson',
 		params: {
 			courseName: props.courseName,
-			chapterNumber: lessonIndex[0],
-			lessonNumber: lessonIndex[1],
+			chapterNumber,
+			lessonNumber,
 		},
 	})
 }
@@ -881,7 +915,7 @@ const resetLessonState = (newChapterNumber, newLessonNumber) => {
 }
 
 const trackVideoWatchDuration = () => {
-	if (!lesson.data.membership) return
+	if (!lesson.data?.membership) return
 	let videoDetails = getVideoDetails()
 	videoDetails = videoDetails.concat(getPlyrSourceDetails())
 	call('lms.lms.api.track_video_watch_duration', {
@@ -905,7 +939,7 @@ const getVideoDetails = () => {
 	const videos = document.querySelectorAll('video')
 	if (videos.length > 0) {
 		videos.forEach((video) => {
-			if (video.currentTime == video.duration) markProgress()
+			if (isVideoComplete(video.currentTime, video.duration)) markProgress()
 			details.push({
 				source: video.src,
 				watch_time: video.currentTime,
@@ -918,7 +952,7 @@ const getVideoDetails = () => {
 const getPlyrSourceDetails = () => {
 	let details = []
 	plyrSources.value.forEach((source) => {
-		if (source.currentTime == source.duration) markProgress()
+		if (isVideoComplete(source.currentTime, source.duration)) markProgress()
 		let src = cleanYouTubeUrl(source.source)
 		details.push({
 			source: src,
@@ -950,6 +984,34 @@ const getPlyrSource = async () => {
 	await nextTick()
 	if (plyrSources.value.length == 0) {
 		plyrSources.value = await enablePlyr()
+		const enforceVideo = Number(
+			settingsStore.settings?.data?.enforce_video_completion ?? 0
+		)
+		if (
+			shouldAttachVideoFallback({
+				hasVideo: plyrSources.value.length > 0,
+				enforceVideo,
+			})
+		) {
+			plyrSources.value.forEach((player) => {
+				let readyFired = false
+				const gen = fallbackGeneration
+				player.on('ready', () => {
+					readyFired = true
+				})
+				player.on('error', (event) => {
+					if (gen !== fallbackGeneration) return
+					fallbackToDwellTimer(
+						'plyr-error: ' + (event?.detail?.message || 'unknown')
+					)
+				})
+				setTimeout(() => {
+					if (!readyFired && gen === fallbackGeneration) {
+						fallbackToDwellTimer('plyr-no-ready-15s')
+					}
+				}, 15000)
+			})
+		}
 	}
 	updateVideoWatchDuration()
 }
@@ -1061,11 +1123,6 @@ const isAdmin = computed(() => {
 	let isInstructor = lesson.data?.instructors?.includes(user.data?.name)
 	return user.data?.is_moderator || user.data?.is_docente || isInstructor
 })
-
-const allowEdit = () => {
-	if (window.read_only_mode) return false
-	return isAdmin.value
-}
 
 const allowInstructorContent = () => {
 	if (window.read_only_mode) return false

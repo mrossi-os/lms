@@ -22,27 +22,6 @@
 								:required="true"
 								class="w-full custom-selection"
 							/>
-							<FormControl
-								v-model="batchDetail.doc.start_date"
-								:label="__('Batch Start Date')"
-								type="date"
-								class="mb-4"
-								:required="true"
-							/>
-							<FormControl
-								v-model="batchDetail.doc.end_date"
-								:label="__('Batch End Date')"
-								type="date"
-								class="mb-4"
-								:required="true"
-							/>
-							<FormControl
-								v-model="batchDetail.doc.seat_count"
-								:label="__('Seat Count')"
-								type="number"
-								class="mb-4"
-								:placeholder="__('Number of seats available')"
-							/>
 						</div>
 						<div class="space-y-5">
 							<Switch
@@ -77,23 +56,35 @@
 								:required="true"
 							/>
 
-							<Link
-								v-model="batchDetail.doc.category"
-								doctype="LMS Category"
-								:label="__('Category')"
-								:inlineCreate="true"
-								:onCreate="createCategory"
-							/>
-						</div>
+						<FormControl
+							v-model="batchDetail.doc.seat_count"
+							:label="__('Seat Count')"
+							type="number"
+							:placeholder="__('Number of seats available')"
+						/>
 					</div>
 				</div>
 
 				<div class="px-5 pb-5 space-y-5 border-b mb-5">
 					<div class="text-lg text-ink-gray-9 font-semibold mb-4">
-						{{ __('Certification') }}
+						{{ __('Enrollment & Certification') }}
 					</div>
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
-						<div class="flex flex-col space-y-5">
+						<Switch
+							size="sm"
+							v-model="batchDetail.doc.allow_self_enrollment"
+							:label="__('Allow Self Enrollment')"
+							:description="
+								__('Allow users to enroll in this batch on their own.')
+							"
+						/>
+						<Switch
+							size="sm"
+							v-model="batchDetail.doc.certification"
+							:label="__('Certification')"
+							:description="__('Issue certificates to batch participants.')"
+						/>
+						<div class="space-y-4">
 							<Switch
 								size="sm"
 								class="card p-4"
@@ -106,7 +97,6 @@
 								v-model="batchDetail.doc.evaluation_end_date"
 								:label="__('Evaluation End Date')"
 								type="date"
-								class="mb-4"
 							/>
 						</div>
 						<div>
@@ -202,13 +192,14 @@
 						{{ __('Conferencing') }}
 					</div>
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-						<FormControl
+						<Select
 							v-model="batchDetail.doc.conferencing_provider"
 							type="select"
 							class="card p-4"
 							:options="conferencingOptions"
 							:placeholder="__('Select option')"
 							:label="__('Conferencing Provider')"
+							class="w-full"
 						/>
 						<Link
 							v-if="batchDetail.doc.conferencing_provider === 'Zoom'"
@@ -328,14 +319,16 @@ import {
 	nextTick,
 } from 'vue'
 import {
+	Combobox,
 	FormControl,
-	Switch,
 	TextEditor,
 	createDocumentResource,
+	createResource,
 	toast,
 	call,
 	createListResource,
 } from 'frappe-ui'
+import Switch from '@/components/Controls/Switch.vue'
 import {
 	createLMSCategory,
 	getMetaInfo,
@@ -347,6 +340,7 @@ import { useTelemetry } from 'frappe-ui/frappe'
 import Uploader from '@/components/Controls/Uploader.vue'
 import MultiSelect from '@/components/Controls/MultiSelect.vue'
 import Link from '@/components/Controls/Link.vue'
+import Select from '@/components/Controls/Select.vue'
 import BatchCourses from '@/pages/Batches/components/BatchCourses.vue'
 import Assessments from '@/pages/Batches/components/Assessments.vue'
 import NewMemberModal from '@/components/Modals/NewMemberModal.vue'
@@ -551,6 +545,16 @@ const conferencingOptions = computed(() => {
 		},
 	]
 })
+
+const timezoneResource = createResource({
+	url: 'frappe.geo.country_info.get_country_timezone_info',
+	auto: true,
+	transform: (data) => data.all_timezones,
+})
+
+const timezoneOptions = computed(() =>
+	(timezoneResource.data || []).map((tz) => ({ label: tz, value: tz }))
+)
 
 const mediumOptions = computed(() => {
 	return [

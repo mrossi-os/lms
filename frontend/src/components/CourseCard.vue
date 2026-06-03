@@ -88,6 +88,7 @@
 import { BookOpen, Clock, Award } from 'lucide-vue-next'
 import { sessionStore } from '@/stores/session'
 import { Tooltip } from 'frappe-ui'
+import { formatAmount, formatRating } from '@/utils'
 import { theme } from '@/utils/theme'
 import { computed } from 'vue'
 import ProgressBar from '@/components/ProgressBar.vue'

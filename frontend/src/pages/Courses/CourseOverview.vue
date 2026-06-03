@@ -96,12 +96,20 @@
 								'avatar-group overlap': course.data.instructors?.length > 1,
 							}"
 						>
-							<UserAvatar
-								v-for="instructor in course.data.instructors"
-								:user="instructor"
-							/>
-						</span>
-						<CourseInstructors :instructors="course.data.instructors" />
+							<span
+								class="h-6 me-1"
+								:class="{
+									'avatar-group overlap': course.data.instructors.length > 1,
+								}"
+							>
+								<UserAvatar
+									v-for="instructor in course.data.instructors"
+									:key="instructor.name"
+									:user="instructor"
+								/>
+							</span>
+							<CourseInstructors :instructors="course.data.instructors" />
+						</div>
 					</div>
 				</div>
 				<CourseTagBadges
@@ -154,22 +162,23 @@
 				<CourseCardOverlay :course="course" :hideVideo="hasHero" />
 			</div>
 		</div>
-		<RelatedCourses :courseName="course.data.name" />
+
+		<RelatedCourses :courseName="course.data.name" class="mt-12" />
 	</div>
 </template>
+
 <script setup lang="ts">
 import { Star, Users, ChevronDown } from 'lucide-vue-next'
 import { Tooltip, Button } from 'frappe-ui'
 import CourseCardOverlay from '@/components/CourseCardOverlay.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
-import CourseInstructors from '@/components/CourseInstructors.vue'
 import RelatedCourses from '@/components/RelatedCourses.vue'
 import FeaturedSectionView from '@/oslms/components/FeaturedSectionView.vue'
 import CourseTagBadges from '@/oslms/components/CourseTagBadges.vue'
 import { inject, ref, computed, onMounted, nextTick } from 'vue'
 
 const props = defineProps<{
-	course: any
+	course: Resource<CourseDetails | null>
 }>()
 
 const user = inject<any>('$user')

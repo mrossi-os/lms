@@ -113,6 +113,12 @@ export function formatAmount(amount) {
 	return amount
 }
 
+export function formatRating(value) {
+	const n = Number(value)
+	if (!isFinite(n)) return ''
+	return (Math.round(n * 10) / 10).toString()
+}
+
 export function convertToTitleCase(str) {
 	if (!str) {
 		return ''
@@ -526,12 +532,7 @@ const getSidebarItems = (forMobile = false) => {
 					label: 'Courses',
 					icon: 'BookOpen',
 					to: 'Courses',
-					activeFor: [
-						'Courses',
-						'CourseDetail',
-						'Lesson',
-						'LessonForm',
-					],
+					activeFor: ['Courses', 'CourseDetail', 'Lesson'],
 				},
 				{
 					label: 'Programs',

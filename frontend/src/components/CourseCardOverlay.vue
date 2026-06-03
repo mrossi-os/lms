@@ -114,8 +114,9 @@ import CourseOutline from '@/components/CourseOutline.vue'
 import { getVideoEmbedURL } from '@/utils'
 
 const router = useRouter()
-const user = inject('$user')
-const readOnlyMode = window.read_only_mode
+const user = inject<SessionUser>('$user')!
+const readOnlyMode = (window as Window & { read_only_mode?: boolean })
+	.read_only_mode
 const { capture } = useTelemetry()
 
 const props = defineProps({
@@ -142,40 +143,41 @@ function enrollStudent() {
 		setTimeout(() => {
 			window.location.href = `/login?redirect-to=${window.location.pathname}`
 		}, 500)
-	} else {
-		call('frappe.client.insert', {
-			doc: {
-				doctype: 'LMS Enrollment',
-				course: props.course.data.name,
-				member: user.data.name,
-			},
-		})
-			.then(() => {
-				capture('enrolled_in_course', {
-					course: props.course.data.name,
-				})
-				toast.success(__('You have been enrolled in this course'))
-				setTimeout(() => {
-					router.push({
-						name: 'Lesson',
-						params: {
-							courseName: props.course.data.name,
-							chapterNumber: 1,
-							lessonNumber: 1,
-						},
-					})
-				}, 1000)
-			})
-			.catch((err) => {
-				toast.warning(__(err.messages?.[0] || err))
-				console.error(err)
-			})
+		return
 	}
+	const courseName = props.course.data?.name
+	if (!courseName) return
+	call('frappe.client.insert', {
+		doc: {
+			doctype: 'LMS Enrollment',
+			course: courseName,
+			member: user.data.name,
+		},
+	})
+		.then(() => {
+			capture('enrolled_in_course', { course: courseName })
+			toast.success(__('You have been enrolled in this course'))
+			setTimeout(() => {
+				router.push({
+					name: 'Lesson',
+					params: {
+						courseName,
+						chapterNumber: 1,
+						lessonNumber: 1,
+					},
+				})
+			}, 1000)
+		})
+		.catch((err: { messages?: string[] } | string) => {
+			const msg = typeof err === 'string' ? err : err.messages?.[0] ?? 'Error'
+			toast.warning(__(msg))
+			console.error(err)
+		})
 }
 
-const is_instructor = () => {
+const is_instructor = (): boolean => {
 	let user_is_instructor = false
-	props.course.data.instructors.forEach((instructor) => {
+	props.course.data?.instructors.forEach((instructor: CourseInstructorInfo) => {
 		if (!user_is_instructor && instructor.name == user.data?.name) {
 			user_is_instructor = true
 		}
@@ -183,30 +185,50 @@ const is_instructor = () => {
 	return user_is_instructor
 }
 
-const canGetCertificate = computed(() => {
-	if (
+const priceLabel = computed<string>(() => {
+	if (props.course.data?.paid_course) return props.course.data?.price || ''
+	return __('Free')
+})
+
+const enrolledLabel = computed<string>(() => {
+	const n = props.course.data?.enrollments ?? 0
+	if (!n) return ''
+	if (n < 50) return String(n)
+	const tier = n < 1000 ? 50 : 100
+	return `${Math.floor(n / tier) * tier}+`
+})
+
+const hasCourseStats = computed<boolean>(() =>
+	Boolean(
+		enrolledLabel.value ||
+			props.course.data?.video_link ||
+			props.course.data?.lessons ||
+			(props.course.data?.quiz_count ?? 0) > 0 ||
+			props.course.data?.enable_certification
+	)
+)
+
+const canGetCertificate = computed<boolean>(() => {
+	return Boolean(
 		props.course.data?.enable_certification &&
-		props.course.data?.membership?.progress == 100
-	) {
-		return true
-	}
-	return false
+			(props.course.data?.membership?.progress ?? 0) >= 100
+	)
 })
 
 const certificate = createResource({
 	url: 'lms.lms.doctype.lms_certificate.lms_certificate.create_certificate',
-	makeParams(values) {
+	makeParams(values: { course?: string }) {
 		return {
 			course: values.course,
 		}
 	},
-	onSuccess(data) {
+	onSuccess(data: { name: string; template: string }) {
 		window.open(
 			`/api/method/frappe.utils.print_format.download_pdf?doctype=LMS+Certificate&name=${data.name}&format=${encodeURIComponent(data.template)}`,
 			'_blank',
 		)
 	},
-})
+}) as Resource<{ name: string; template: string } | null>
 
 const fetchCertificate = () => {
 	certificate.submit({
