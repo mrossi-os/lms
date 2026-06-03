@@ -29,13 +29,12 @@
       </div>
       {% endif %}
       {% set batch_url = frappe.utils.get_url() + "/lms/batches/" + batch_name %}
-      {% set ics_url = frappe.utils.get_url() + "/api/method/os_lms.os_lms.live_class_ics.download?name=" + (live_class_name or "")|urlencode %}
       <div style="text-align:center;margin:0 0 12px;">
         <a href="{{ batch_url }}" style="display:inline-block;background:#123456;color:#fff;padding:12px 28px;border-radius:4px;font-size:14px;font-weight:600;text-decoration:none;">
           Vai alla classe
         </a>
       </div>
-      {% if live_class_name %}
+      {% if ics_url %}
       <div style="text-align:center;margin:0 0 24px;">
         <a href="{{ ics_url }}" style="display:inline-block;background:#256AB0;color:#fff;padding:12px 28px;border-radius:4px;font-size:14px;font-weight:600;text-decoration:none;">
           Aggiungi al tuo calendario

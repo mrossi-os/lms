@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import frappe
 from frappe import _
 from frappe.utils import cint, get_datetime
+from frappe.utils.verified_command import get_signed_params, verify_request
 
 
 def _escape(text: str | None) -> str:
@@ -104,6 +105,19 @@ def build_ics(doc) -> str:
 	return "\r\n".join(_fold_line(line) for line in lines) + "\r\n"
 
 
+def get_ics_url(name: str) -> str:
+	"""Return a signed, guest-accessible URL to download the live class `.ics`.
+
+	The signature lets the `download` endpoint authorize the request without a
+	logged-in session, so the "Add to calendar" button works straight from the
+	email (any calendar app), even for recipients who are not logged into the LMS.
+	Pass the result into email `args` as `ics_url` so any template — including the
+	per-client desk-managed Email Templates — can render `{{ ics_url }}`.
+	"""
+	signed = get_signed_params({"name": name})
+	return frappe.utils.get_url() + "/api/method/os_lms.os_lms.live_class_ics.download?" + signed
+
+
 def _user_can_access(doc) -> bool:
 	user = frappe.session.user
 	if user in ("Administrator",):
@@ -126,26 +140,37 @@ def _user_can_access(doc) -> bool:
 	return False
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def download(name: str) -> None:
-	"""Serve the live class as an `.ics` attachment for the calling user."""
+	"""Serve the live class as an `.ics` attachment.
+
+	Authorized in either of two ways:
+	  1. A logged-in user with access to the batch (covers in-app use and any
+	     older, unsigned links).
+	  2. A valid signed link (see `get_ics_url`) — this lets the "Add to calendar"
+	     button work from the email without requiring the recipient to log in.
+	"""
 	if not name:
 		frappe.throw(_("Live class non specificata."), frappe.PermissionError)
 
 	doc = frappe.get_doc("LMS Live Class", name)
-	if not _user_can_access(doc):
-		frappe.throw(
-			_("Non sei autorizzato a scaricare questo evento."),
-			frappe.PermissionError,
-		)
+
+	if frappe.session.user != "Guest" and _user_can_access(doc):
+		pass
+	elif not verify_request():
+		# `verify_request` has already rendered an "Invalid Link" web page.
+		return
 
 	ics = build_ics(doc)
 	frappe.local.response.update(
 		{
-			"type": "raw",
+			# Frappe maps the "download" response type to `as_raw`, which streams
+			# `filecontent` with the given `content_type` and Content-Disposition.
+			"type": "download",
 			"filename": f"live-class-{doc.name}.ics",
 			"filecontent": ics.encode("utf-8"),
-			"content_type": "text/calendar; charset=utf-8",
+			# Werkzeug appends "; charset=utf-8" to text/* mimetypes itself.
+			"content_type": "text/calendar",
 			"display_content_as": "attachment",
 		}
 	)

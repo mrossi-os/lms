@@ -9,7 +9,7 @@ from lms.lms.doctype.lms_live_class.lms_live_class import LMSLiveClass
 from lms.lms.utils import get_lms_route
 
 from os_lms.os_lms.email_utils import send_templated_email
-from os_lms.os_lms.live_class_ics import build_ics
+from os_lms.os_lms.live_class_ics import build_ics, get_ics_url
 
 
 def _lc_log(msg):
@@ -174,6 +174,10 @@ class CustomLMSLiveClass(LMSLiveClass):
 			if ics_content
 			else None
 		)
+		# Signed, guest-accessible link for the "Add to calendar" button. Exposed in
+		# `args` so any template (file-based or per-client desk Email Template) can
+		# render `{{ ics_url }}`.
+		ics_url = get_ics_url(self.name)
 		sent = 0
 		failed = 0
 		for participant in participants:
@@ -198,6 +202,7 @@ class CustomLMSLiveClass(LMSLiveClass):
 						"description": self.description,
 						"batch_name": self.batch_name,
 						"live_class_name": self.name,
+						"ics_url": ics_url,
 					},
 					header=[_("Invito lezione dal vivo"), "green"],
 					attachments=ics_attachment,
