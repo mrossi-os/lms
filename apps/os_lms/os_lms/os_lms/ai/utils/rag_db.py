@@ -43,9 +43,9 @@ class RagDB:
         embeddings = self._embedder.embed_text(chunks)
         self._db.save(course, lesson, embeddings)
 
-    def search(self, course: str, lesson: str, query: str):
+    def search(self, course: str, lessons: list[str], query: str):
         query_embeddes = self._embedder.embed_text([query])[0]
-        return self._db.search(course, lesson, query_embeddes, self._settings.top_k)
+        return self._db.search(course, lessons, query_embeddes, self._settings.top_k)
 
     def _chunk_text(self, text):
         """Split text into chunks by characters."""
