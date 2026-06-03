@@ -111,6 +111,7 @@ import { useRouter } from 'vue-router'
 import CertificationLinks from '@/components/CertificationLinks.vue'
 import { useTelemetry } from 'frappe-ui/frappe'
 import CourseOutline from '@/components/CourseOutline.vue'
+import { getVideoEmbedURL } from '@/utils'
 
 const router = useRouter()
 const user = inject('$user')
@@ -130,7 +131,7 @@ const props = defineProps({
 
 const video_link = computed(() => {
 	if (props.course.data.video_link) {
-		return 'https://www.youtube.com/embed/' + props.course.data.video_link
+		return getVideoEmbedURL(props.course.data.video_link)
 	}
 	return null
 })

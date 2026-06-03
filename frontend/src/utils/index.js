@@ -971,6 +971,41 @@ const extractYouTubeId = (url) => {
 	}
 }
 
+const YOUTUBE_WATCH =
+	/^(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?(?:.*&)?v=([\w-]{11})/i
+const YOUTUBE_SHORT = /^(?:https?:\/\/)?youtu\.be\/([\w-]{11})/i
+const YOUTUBE_EMBED =
+	/^(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([\w-]{11})/i
+const VIMEO_URL =
+	/^(?:https?:\/\/)?(?:www\.)?vimeo\.com\/(\d+)(?:\/([a-zA-Z0-9]+))?/i
+const VIMEO_PLAYER = /^(?:https?:\/\/)?player\.vimeo\.com\/video\/(\d+)/i
+
+// Build an embeddable iframe URL from a course "Preview Video" value.
+// Handles full YouTube and Vimeo URLs as well as legacy bare YouTube ids
+// that the old backend normalization used to store.
+export const getVideoEmbedURL = (value) => {
+	if (!value) return ''
+	const url = value.trim()
+
+	if (YOUTUBE_EMBED.test(url)) return url
+	let m = url.match(YOUTUBE_WATCH) || url.match(YOUTUBE_SHORT)
+	if (m) return `https://www.youtube.com/embed/${m[1]}`
+
+	if (VIMEO_PLAYER.test(url)) return url
+	m = url.match(VIMEO_URL)
+	if (m) {
+		return m[2]
+			? `https://player.vimeo.com/video/${m[1]}?h=${m[2]}`
+			: `https://player.vimeo.com/video/${m[1]}`
+	}
+
+	// Legacy: a bare YouTube video id stored by the old normalization.
+	if (/^[\w-]{11}$/.test(url)) return `https://www.youtube.com/embed/${url}`
+
+	// Fallback: assume the value is already an embeddable URL.
+	return url
+}
+
 export const createLMSCategory = (name) => {
 	return call('frappe.client.insert', {
 		doc: {
