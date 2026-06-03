@@ -33,7 +33,14 @@
 					<div class="ml-3 font-bold text-ink-gray-9 prose">
 						{{ comm.subject }}
 					</div>
-					<AnnouncementContent :content="comm.content" />
+					<!-- Rich email/template HTML mirrors the email in an isolated
+					     iframe; a plain notification keeps the app's themed card. -->
+					<div
+						v-if="isPlainNotification(comm.content)"
+						class="announcement-card prose prose-sm bg-surface-menu-bar !min-w-full px-4 py-3 rounded-md mt-1"
+						v-html="comm.content"
+					></div>
+					<AnnouncementContent v-else :content="comm.content" />
 				</div>
 			</div>
 			<div
@@ -97,6 +104,21 @@ const canMakeAnnouncement = computed(() => {
 	return user.data?.is_moderator || user.data?.is_evaluator
 })
 
+/*
+ * Plain notification announcements (written in the editor, no email template)
+ * have no document/layout/background markup, so they render on the app's themed
+ * card. Richer email-template HTML is detected here and rendered in the isolated
+ * iframe instead, mirroring the email the recipient receives.
+ */
+const isPlainNotification = (html) => {
+	const s = String(html || '').trim()
+	if (!s) return true
+	if (/<(?:!doctype|html|head|body|style|table|center|tbody|td|tr)[\s>]/i.test(s))
+		return false
+	if (/(?:background(?:-color)?|max-width|width)\s*:/i.test(s)) return false
+	return true
+}
+
 const communications = createResource({
 	url: 'lms.lms.api.get_announcements',
 	makeParams() {
@@ -132,5 +154,23 @@ const totalPages = computed(() =>
 <style>
 .prose-sm p {
 	margin: 0 0 0.5rem;
+}
+
+/*
+ * Plain notification card sits on the dark theme, so map the editor's named
+ * colors to the dark-mode shades (lighter) for readable contrast on the dark
+ * background. Covers content stored as `color: var(--prose-color-<name>)`.
+ */
+.announcement-card {
+	--prose-color-red: #e43838;
+	--prose-color-blue: #3294e3;
+	--prose-color-green: #1ba964;
+	--prose-color-yellow: #c69c12;
+	--prose-color-orange: #c45a0e;
+	--prose-color-purple: #984bd8;
+	--prose-color-pink: #cb4394;
+	--prose-color-gray: #717171;
+	--prose-color-teal: #219c8f;
+	--prose-color-cyan: #2b8dab;
 }
 </style>

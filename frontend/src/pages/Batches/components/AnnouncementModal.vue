@@ -358,8 +358,13 @@ const announcementResource = createResource({
 		return {
 			batch: props.batch,
 			recipients: recipients,
-			subject: announcement.subject,
-			content: inlineNamedColors(announcement.announcement),
+			// When emailing, bake named colors to hex so they survive in the
+			// recipient's email client (which lacks the editor's CSS variables).
+			// Notification-only content keeps the variables so the themed in-app
+			// card can resolve them to dark-mode shades for readable contrast.
+			content: sendEmail.value
+				? inlineNamedColors(announcement.announcement)
+				: announcement.announcement,
 			message: inlineNamedColors(announcement.message),
 			send_email: sendEmail.value ? 1 : 0,
 		}
