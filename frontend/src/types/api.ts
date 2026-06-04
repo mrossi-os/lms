@@ -75,6 +75,11 @@ export interface OutlineLesson {
 	number: string
 	icon?: string
 	is_complete?: boolean
+	// OSLMS-CUSTOM: AI ingestion status injected by os_lms get_course_outline override
+	index_status?: string
+	indexed_at?: string
+	// OSLMS-CUSTOM: comma-separated lesson tags injected by the same override
+	tags?: string
 }
 
 export interface OutlineChapter {

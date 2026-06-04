@@ -57,7 +57,7 @@ def get_course_outline(course: str, progress: bool = False) -> list:
 			filters={
 				"course": course,
 			},
-            fields=["name", "index_status", "indexed_at"],
+            fields=["name", "index_status", "indexed_at", "tags"],
 		)
     lesson_index = {lesson.name: lesson for lesson in lessons}
     for item in detail:
@@ -66,6 +66,7 @@ def get_course_outline(course: str, progress: bool = False) -> list:
             if lesson_info:
                 lesson["index_status"] = lesson_info.index_status
                 lesson["indexed_at"] = lesson_info.indexed_at
+                lesson["tags"] = lesson_info.tags
     return detail
 
 

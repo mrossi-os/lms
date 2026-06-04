@@ -1,14 +1,15 @@
 <template>
 	<Disclosure v-slot="{ open }" :key="chapter.name" :defaultOpen="defaultOpen">
 		<DisclosureButton class="flex items-center w-full p-2 group">
-			<span
+			<!-- OSLMS-CUSTOM: use the lucide component so the chevron actually renders -->
+			<ChevronRight
 				:class="{
 					'rotate-90': open,
 					'rtl:rotate-180': !open,
 					hidden: chapter.is_scorm_package,
 					open: index == 1,
 				}"
-				class="lucide-chevron-right size-4 text-ink-gray-9 stroke-1 transform duration-200"
+				class="size-4 text-ink-gray-9 stroke-1 transform duration-200"
 			/>
 			<div
 				class="ms-2 min-w-0 flex-1 text-start"
@@ -93,7 +94,16 @@
 									class="h-4 w-4 text-ink-gray-9 stroke-1 me-2"
 								/>
 								{{ lesson.title }}
+								<!-- OSLMS-CUSTOM: per-lesson tag badges -->
+								<CourseTagBadges
+									v-if="lesson.tags"
+									:tags="lesson.tags"
+									size="xs"
+									class="ms-2"
+								/>
 								<div v-if="allowEdit" class="ms-auto flex items-center gap-2">
+									<!-- OSLMS-CUSTOM: AI ingestion status for this lesson -->
+									<LessonAIStatus :lesson="lesson" />
 									<Tooltip :text="__('Edit lesson')" placement="bottom">
 										<FilePenLine
 											@click.prevent="emit('edit-lesson', { chapter, lesson })"
@@ -132,9 +142,14 @@
 import { Button, Tooltip, toast } from 'frappe-ui'
 import { computed, inject } from 'vue'
 import Draggable from 'vuedraggable'
+// OSLMS-CUSTOM: compact AI ingestion status shown in the editor outline
+import LessonAIStatus from '@/oslms/components/ai/Course/LessonAIStatus.vue'
+// OSLMS-CUSTOM: per-lesson tag badges in the outline
+import CourseTagBadges from '@/oslms/components/CourseTagBadges.vue'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import {
 	Check,
+	ChevronRight,
 	FilePenLine,
 	FileText,
 	HelpCircle,
