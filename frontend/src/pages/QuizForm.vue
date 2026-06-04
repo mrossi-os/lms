@@ -240,7 +240,7 @@ import {
 	createDocumentResource,
 	Badge,
 } from 'frappe-ui'
-import Switch from '@/oslms/components/Form/Switch.vue'
+
 import {
 	computed,
 	reactive,
@@ -250,11 +250,18 @@ import {
 	onBeforeUnmount,
 } from 'vue'
 import { sessionStore } from '../stores/session'
-import { ClipboardList, ListChecks, MoreVertical, Plus, Trash2 } from 'lucide-vue-next'
+import {
+	ClipboardList,
+	ListChecks,
+	MoreVertical,
+	Plus,
+	Trash2,
+} from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { sanitizeHTML } from '@/utils'
 import { useScreenSize } from '@/utils/composables'
 import Question from '@/components/Modals/Question.vue'
+import Switch from '@/components/Controls/Switch.vue'
 
 const { brand } = sessionStore()
 const showQuestionModal = ref(false)
@@ -274,18 +281,20 @@ const mobileHeaderMenu = computed(() => {
 		options.push({
 			label: __('Test Quiz'),
 			icon: ListChecks,
-			onClick: () => router.push({
-				name: 'QuizPage',
-				params: { quizID: quizDetails.doc.name },
-			}),
+			onClick: () =>
+				router.push({
+					name: 'QuizPage',
+					params: { quizID: quizDetails.doc.name },
+				}),
 		})
 		options.push({
 			label: __('Check Submissions'),
 			icon: ClipboardList,
-			onClick: () => router.push({
-				name: 'QuizSubmissionList',
-				params: { quizID: quizDetails.doc.name },
-			}),
+			onClick: () =>
+				router.push({
+					name: 'QuizSubmissionList',
+					params: { quizID: quizDetails.doc.name },
+				}),
 		})
 	}
 	return options

@@ -74,7 +74,7 @@
 
 <script setup lang="ts">
 import { call, Dialog, FormControl, toast } from 'frappe-ui'
-import Switch from '@/oslms/components/Form/Switch.vue'
+import Switch from '@/components/Controls/Switch.vue'
 import { reactive, ref, watch } from 'vue'
 import { cleanError } from '@/utils'
 

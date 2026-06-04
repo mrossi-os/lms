@@ -27,10 +27,7 @@
 						:disabled="true"
 						class="flex-1"
 					/>
-					<Button
-						variant="subtle"
-						@click="goToProfile"
-					>
+					<Button variant="subtle" @click="goToProfile">
 						<template #prefix>
 							<UserRound class="size-4 stroke-1.5" />
 						</template>
@@ -85,11 +82,7 @@
 							:label="__('Moderator')"
 							v-model="roles.moderator"
 						/>
-						<Switch
-							size="sm"
-							:label="__('Manager')"
-							v-model="roles.manager"
-						/>
+						<Switch size="sm" :label="__('Manager')" v-model="roles.manager" />
 						<Switch
 							size="sm"
 							:label="__('Teacher')"
@@ -103,8 +96,15 @@
 </template>
 
 <script setup lang="ts">
-import { Button, call, Dialog, FormControl, LoadingIndicator, toast } from 'frappe-ui'
-import Switch from '@/oslms/components/Form/Switch.vue'
+import {
+	Button,
+	call,
+	Dialog,
+	FormControl,
+	LoadingIndicator,
+	toast,
+} from 'frappe-ui'
+import Switch from '@/components/Controls/Switch.vue'
 import { UserRound } from 'lucide-vue-next'
 import { reactive, ref, watch } from 'vue'
 import { cleanError } from '@/utils'
