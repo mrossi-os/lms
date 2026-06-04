@@ -30,6 +30,7 @@ export interface SessionUser {
 	data?: UserInfo & {
 		is_moderator?: boolean
 		is_instructor?: boolean
+		is_docente?: boolean
 		is_student?: boolean
 		is_system_manager?: boolean
 	}

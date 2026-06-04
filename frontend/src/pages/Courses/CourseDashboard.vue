@@ -20,7 +20,7 @@
 			<NumberChartGraph :title="__('Lessons')" :value="course.data?.lessons" />
 		</div>
 		<div class="grid grid-cols-[2fr_1fr] gap-5 items-start">
-			<div class="border rounded-lg py-3 px-4">
+			<div class="border rounded-lg py-3 px-4 card">
 				<div class="flex items-center justify-between mb-3">
 					<div class="text-lg text-ink-gray-9 font-semibold">
 						{{ __('Students') }}
@@ -28,6 +28,7 @@
 					<div class="flex items-center gap-x-2">
 						<FormControl
 							v-model="searchFilter"
+							class="small-form"
 							:placeholder="__('Search by name')"
 							type="text"
 						/>
@@ -124,7 +125,7 @@
 			<div class="space-y-5">
 				<div
 					v-if="chartDetails.data?.average_progress > 0"
-					class="border rounded-lg p-4"
+					class="border rounded-lg p-4 card"
 				>
 					<div class="text-ink-gray-5 mb-4">
 						{{ __('Progress Summary') }}
@@ -135,20 +136,14 @@
 						<div class="flex flex-col space-y-4 flex-1 text-sm">
 							<div
 								class="flex items-center text-ink-gray-7"
-								v-for="row in chartDetails.data?.progress_distribution"
+								v-for="(row, idx) in chartDetails.data?.progress_distribution"
 							>
 								<div
 									class="size-2 rounded"
 									:style="{
 										backgroundColor:
 											colors[theme][
-												row.name.startsWith('Just')
-													? 'red'
-													: row.name.startsWith('In')
-													? 'amber'
-													: row.name.startsWith('Adv')
-													? 'blue'
-													: 'green'
+												['red', 'amber', 'blue', 'green'][idx]
 											][400],
 									}"
 								></div>
@@ -157,7 +152,7 @@
 										{{ row.name.split('(')[0] }}
 									</div>
 								</Tooltip>
-								<Tooltip :text="String(row.value)">
+								<Tooltip :text="row.value">
 									<div class="ms-auto">
 										{{
 											Math.round((row.value / course.data?.enrollments) * 100)
@@ -200,7 +195,7 @@
 				</div>
 				<div
 					v-if="lessonProgress.data?.length"
-					class="border rounded-lg pt-4 px-4"
+					class="border rounded-lg pt-4 px-4 card"
 				>
 					<div class="flex items-center justify-between mb-4">
 						<div class="text-ink-gray-5">
@@ -235,7 +230,7 @@
 									{{
 										Math.ceil(
 											(progress.completion_count / course.data?.enrollments) *
-												100
+												100,
 										)
 									}}%
 								</div>
@@ -300,7 +295,7 @@ const searchFilter = ref<string | null>(null)
 const showProgressModal = ref<boolean>(false)
 const currentStudent = ref<Record<string, unknown> | null>(null)
 const theme = ref<'darkMode' | 'lightMode'>(
-	localStorage.getItem('theme') == 'dark' ? 'darkMode' : 'lightMode'
+	localStorage.getItem('theme') == 'dark' ? 'darkMode' : 'lightMode',
 )
 type Filters = {
 	course: string | undefined
@@ -315,6 +310,20 @@ const chartDetails = createResource({
 		}
 	},
 	auto: true,
+	onSuccess(data: any) {
+		// Italian labels for the progress-distribution legend. The backend returns
+		// English ("Just Started (0-30%)", ...); the "(range%)" suffix is kept so
+		// the tooltip (row.name.split('(')[1]) still shows the percentage range.
+		const labels: Record<string, string> = {
+			'Just Started (0-30%)': 'Appena iniziato (0-30%)',
+			'In Progress (30-60%)': 'In corso (30-60%)',
+			'Advanced (60-99%)': 'Avanzato (60-99%)',
+			'Completed (100%)': 'Completato (100%)',
+		}
+		data?.progress_distribution?.forEach((item: { name: string }) => {
+			item.name = labels[item.name] || item.name
+		})
+	},
 })
 
 const progressList = createListResource({
