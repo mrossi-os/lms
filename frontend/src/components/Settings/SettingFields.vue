@@ -199,7 +199,7 @@
 <script setup>
 import { FormControl, FileUploader, Button } from 'frappe-ui'
 import Switch from '@/components/Controls/Switch.vue'
-import { onMounted, watch } from 'vue'
+import { onMounted, watch, reactive } from 'vue'
 import { getFileSize, validateFile } from '@/utils'
 import { X } from 'lucide-vue-next'
 import Link from '@/components/Controls/Link.vue'
