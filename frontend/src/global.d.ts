@@ -13,3 +13,9 @@ declare module 'vue' {
     __: (text: string) => string
   }
 }
+
+declare module '@vue/runtime-core' {
+  interface ComponentCustomProperties {
+    __: (text: string) => string
+  }
+}

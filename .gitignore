@@ -24,3 +24,7 @@ frappe-semgrep-rules
 docker/.env
 common_site_config.json
 frontend/yarn-error.log
+.idea
+
+
+/graphify-out/cache

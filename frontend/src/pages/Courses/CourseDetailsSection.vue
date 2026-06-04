@@ -1,5 +1,5 @@
 <template>
-	<section class="space-y-5">
+	<section v-if="doc" class="space-y-5">
 		<div class="text-base font-semibold text-ink-gray-9">
 			{{ __('Course details') }}
 		</div>
@@ -24,41 +24,10 @@
 			/>
 			<CourseInstructorsField />
 			<div class="space-y-1.5">
-				<FormLabel :label="__('Tags')" />
-				<MultiSelect
-					v-model="tagsArray"
-					:options="tagOptions"
-					:placeholder="__('Add tag')"
-					variant="outline"
-					class="w-full justify-between"
-					@update:query="tagQuery = $event"
-				>
-					<template #trigger="{ open, toggleOpen, selectedOptions }">
-						<button
-							type="button"
-							:class="[
-								'relative inline-flex w-full min-h-7 items-center gap-2 rounded border border-outline-gray-2 bg-surface-white px-2 text-left text-base text-ink-gray-8 outline-none transition-colors hover:border-outline-gray-3 hover:shadow-sm focus:border-outline-gray-4 focus:shadow-sm focus-visible:ring-2 ring-outline-gray-3',
-								open && 'border-outline-gray-4 shadow-sm ring-2',
-							]"
-							@click="toggleOpen"
-						>
-							<Tag class="size-4 shrink-0 stroke-1.5 text-ink-gray-5" />
-							<span
-								class="min-w-0 flex-1 truncate"
-								:class="!selectedOptions.length && 'text-ink-gray-4'"
-							>
-								<template v-if="tagsArray.length">{{
-									tagsSelectedLabels
-								}}</template>
-								<template v-else>{{ __('Add tag') }}</template>
-							</span>
-							<ChevronDown
-								class="size-4 shrink-0 text-ink-gray-4 transition-transform duration-200"
-								:class="open && 'rotate-180'"
+				<TagPicker
+					v-model="doc.tags"
+					@dirty="markDirty()"
 							/>
-						</button>
-					</template>
-				</MultiSelect>
 			</div>
 			<FormControl
 				v-model="doc.short_introduction"
@@ -77,8 +46,8 @@
 </template>
 
 <script setup lang="ts">
-import { FormControl, FormLabel, MultiSelect } from 'frappe-ui'
-import { ChevronDown, Tag } from 'lucide-vue-next'
+import TagPicker from '@/oslms/components/TagPicker.vue'
+import { FormControl } from 'frappe-ui'
 import { computed, inject, ref } from 'vue'
 import { createLMSCategory } from '@/utils'
 import Link from '@/components/Controls/Link.vue'
@@ -124,7 +93,7 @@ const tagOptions = computed<TagOption[]>(() => {
 
 const tagsSelectedLabels = computed<string>(() => tagsArray.value.join(', '))
 
-function createCategory(name: string, done?: () => void) {
+function createCategory(name: string | null, done?: () => void) {
 	if (!name) return
 	createLMSCategory(name).then((categoryName: string | undefined) => {
 		if (!categoryName || !resource.doc) return

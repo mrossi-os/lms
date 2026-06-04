@@ -20,7 +20,7 @@
 					<X class="w-3 h-3" />
 				</button>
 			</span>
-			<span v-if="!selectedTags.length" class="text-xs text-ink-gray-4 italic">
+			<span v-if="!selectedTagObjects.length" class="text-xs text-ink-gray-4 italic">
 				{{ __('No tags selected') }}
 			</span>
 		</div>

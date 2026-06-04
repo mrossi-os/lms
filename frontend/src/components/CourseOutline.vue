@@ -1,10 +1,10 @@
 <template>
-	<div class="card rounded-lg">
+	<div class="p-3 h-full">
 		<div
-			class="flex items-center justify-between space-x-2 mb-2 p-2"
 			v-if="!hideHeader && title && (outline.data?.length || allowEdit)"
+			class="flex items-center justify-between gap-x-2 mb-4 px-2"
 			:class="{
-				'sticky top-0 z-10 main-page-header border-b px-3 py-2.5 sm:px-5 rounded-t-lg':
+				'sticky top-0 z-10 bg-surface-white border-b px-3 py-2.5 sm:px-5':
 					allowEdit,
 			}"
 		>
@@ -49,160 +49,28 @@
 			>
 				<template #item="{ element: chapter, index }">
 					<div class="chapter-item">
-						<Disclosure
-							v-slot="{ open }"
-							:key="chapter.name"
-							:defaultOpen="openChapterDetail(chapter.idx)"
-						>
-							<DisclosureButton
-								ref=""
-								class="flex items-center w-full p-2 group"
-							>
-								<ChevronRight
-									:class="{
-										'rotate-90': open,
-										'rtl:rotate-180': !open,
-										hidden: chapter.is_scorm_package,
-										open: index == 1,
-									}"
-									class="h-4 w-4 text-ink-gray-9 stroke-1 transform duration-200"
-								/>
-								<div
-									class="text-base text-start text-ink-gray-9 font-medium leading-5 ms-2"
-									@click="redirectToChapter(chapter)"
-								>
-									{{ chapter.title }}
-								</div>
-								<div class="flex ms-auto gap-x-4">
-									<Tooltip :text="__('Edit Chapter')" placement="bottom">
-										<FilePenLine
-											v-if="allowEdit"
-											@click.prevent="openChapterModal(chapter)"
-											class="h-4 w-4 text-ink-gray-9 invisible group-hover:visible"
-										/>
-									</Tooltip>
-									<Tooltip :text="__('Delete Chapter')" placement="bottom">
-										<Trash2
-											v-if="allowEdit"
-											@click.prevent="trashChapter(chapter.name)"
-											class="h-4 w-4 text-ink-red-3 invisible group-hover:visible"
-										/>
-									</Tooltip>
-								</div>
-								<Check
-									v-if="
-										chapter.is_scorm_package && isScormChapterComplete(chapter)
-									"
-									class="h-4 w-4 text-ink-green-3"
-								/>
-							</DisclosureButton>
-							<DisclosurePanel v-if="!chapter.is_scorm_package">
-								<Draggable
-									v-if="!chapter.is_scorm_package"
-									:list="chapter.lessons"
-									:disabled="!allowEdit"
-									item-key="name"
-									group="items"
-									@end="updateOutline"
-									:data-chapter="chapter.name"
-								>
-									<template #item="{ element: lesson }">
-										<div
-											class="outline-lesson pl-8 py-2 pr-4 text-ink-gray-9 flex flex-col gap-0.5"
-											:class="
-												isActiveLesson(lesson.number) ? 'bg-surface-gray-3' : ''
-											"
-										>
-											<router-link
-												:to="{
-													name: allowEdit ? 'LessonForm' : 'Lesson',
-													params: {
-														courseName: courseName,
-														chapterNumber: lesson.number.split('-')[0],
-														lessonNumber: lesson.number.split('-')[1],
-													},
-												}"
-											>
-												<div class="flex items-center text-sm leading-5 group">
-													<Tooltip
-														v-if="lesson.is_complete"
-														:text="__('Lesson completed')"
-														placement="top"
-													>
-														<Check class="h-4 w-4 text-ink-green-3 mr-2" />
-													</Tooltip>
-													<MonitorPlay
-														v-else-if="lesson.icon === 'icon-youtube'"
-														class="h-4 w-4 stroke-1 mr-2"
-													/>
-													<HelpCircle
-														v-else-if="lesson.icon === 'icon-quiz'"
-														class="h-4 w-4 stroke-1 me-2"
-													/>
-													<NotebookPen
-														v-else-if="lesson.icon === 'icon-assignment'"
-														class="h-4 w-4 stroke-1 me-2"
-													/>
-													<SquareCode
-														v-else-if="lesson.icon === 'icon-code'"
-														class="h-4 w-4 stroke-1 me-2"
-													/>
-													<FileText
-														v-else-if="lesson.icon === 'icon-list'"
-														class="h-4 w-4 text-ink-gray-9 stroke-1 me-2"
-													/>
-													<div class="flex grow justify-between">
-														{{ lesson.title }}
-														<CourseTagBadges
-															v-if="lesson.tags"
-															:tags="lesson.tags"
-															size="xs"
-															class=""
-														/>
-													</div>
-													<div class="flex items-center ml-auto space-x-2">
-														<LessonAIStatus v-if="allowEdit" :lesson="lesson" />
-														<Trash2
-															v-if="allowEdit"
-															@click.prevent="
-																trashLesson(lesson.name, chapter.name)
-															"
-															class="h-4 w-4 text-ink-red-3 invisible group-hover:visible"
-														/>
-													</div>
-												</div>
-											</router-link>
-										</div>
-									</template>
-								</Draggable>
-								<div v-if="allowEdit" class="flex mt-2 mb-4 ps-8">
-									<router-link
-										v-if="!chapter.is_scorm_package"
-										:to="{
-											name: 'LessonForm',
-											params: {
-												courseName: courseName,
-												chapterNumber: chapter.idx,
-												lessonNumber: chapter.lessons.length + 1,
-											},
-										}"
-									>
-										<Button>
-											{{ __('Add Lesson') }}
-										</Button>
-									</router-link>
-								</div>
-							</DisclosurePanel>
-						</Disclosure>
+						<ChapterRow
+							:chapter="chapter"
+							:index="index"
+							:courseName="courseName"
+							:allowEdit="allowEdit"
+							:inlineSelect="inlineSelect"
+							:editorLinks="editorLinks"
+							:selectedLessonNumber="selectedLessonNumber"
+							@select-lesson="(payload) => emit('select-lesson', payload)"
+							@edit-chapter="openChapterModal"
+							@delete-chapter="trashChapter"
+							@delete-lesson="
+								({ lesson, chapter: chapterName }) =>
+									trashLesson(lesson, chapterName)
+							"
+							@move-lesson="updateOutline"
+							@add-lesson="openLessonModalForAdd"
+							@edit-lesson="openLessonModalForEdit"
+						/>
 					</div>
 				</template>
 			</Draggable>
-			<div
-				v-if="!outline.loading && !outline.data?.length"
-				class="text-ink-gray-5 text-sm text-center py-6"
-			>
-				{{ __('No content available yet.') }}
-			</div>
 		</div>
 	</div>
 	<ChapterModal
@@ -223,35 +91,22 @@
 		@updated="onLessonUpdated"
 	/>
 </template>
-<script setup>
-import { Button, createResource, Tooltip, toast } from 'frappe-ui'
-import {
-	getCurrentInstance,
-	inject,
-	onBeforeUnmount,
-	onMounted,
-	ref,
-	watch,
-} from 'vue'
+
+<script setup lang="ts">
+import { Button, createResource, toast } from 'frappe-ui'
+import { inject, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import Draggable from 'vuedraggable'
-import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
-import {
-	Check,
-	ChevronRight,
-	FileText,
-	FilePenLine,
-	HelpCircle,
-	MonitorPlay,
-	NotebookPen,
-	Plus,
-	SquareCode,
-	Trash2,
-	Notebook,
-} from 'lucide-vue-next'
-import { useRoute, useRouter } from 'vue-router'
+import { BookOpen, Plus } from 'lucide-vue-next'
 import ChapterModal from '@/components/Modals/ChapterModal.vue'
-import LessonAIStatus from '@/oslms/components/ai/Course/LessonAIStatus.vue'
-import CourseTagBadges from '@/oslms/components/CourseTagBadges.vue'
+import LessonModal from '@/components/Modals/LessonModal.vue'
+import ChapterRow from '@/components/ChapterRow.vue'
+import type {
+	OutlineChapter,
+	OutlineLesson,
+	Resource,
+	SessionUser,
+} from '@/types/api'
 
 interface DraggableEvent {
 	item: { __draggable_context: { element: OutlineChapter | OutlineLesson } }
@@ -275,12 +130,12 @@ type DialogFn = (opts: {
 import { getCurrentInstance } from 'vue'
 const user = inject<SessionUser>('$user')!
 const router = useRouter()
-const user = inject('$user')
-const socket = inject('$socket')
-const showChapterModal = ref(false)
-const currentChapter = ref(null)
-const app = getCurrentInstance()
-const { $dialog } = app.appContext.config.globalProperties
+const showChapterModal = ref<boolean>(false)
+const currentChapter = ref<OutlineChapter | null>(null)
+const { $dialog } = getCurrentInstance()!.appContext.config
+	.globalProperties as {
+	$dialog: DialogFn
+}
 
 const emit = defineEmits<{
 	'select-lesson': [{ chapterNumber: string; lessonNumber: string }]
@@ -389,19 +244,14 @@ const outline = createResource({
 	url: 'lms.lms.utils.get_course_outline',
 	cache: ['course_outline', props.courseName],
 	makeParams() {
-		return {
-			course: props.courseName,
-			progress: !!user.data?.name,
-		}
+		return { course: props.courseName, progress: props.getProgress }
 	},
 	auto: true,
 }) as Resource<OutlineChapter[] | null>
 
 watch(
 	() => props.courseName,
-	() => {
-		outline.reload()
-	},
+	() => outline.reload()
 )
 
 watch(
@@ -415,22 +265,8 @@ watch(
 				break
 			}
 		}
-	},
-)
-
-const onLessonProgressUpdate = (data) => {
-	if (data?.course === props.courseName) {
-		outline.reload()
 	}
-}
-
-onMounted(() => {
-	socket?.on('update_lesson_progress', onLessonProgressUpdate)
-})
-
-onBeforeUnmount(() => {
-	socket?.off('update_lesson_progress', onLessonProgressUpdate)
-})
+)
 
 const deleteLesson = createResource({
 	url: 'lms.lms.api.delete_lesson',
@@ -483,7 +319,7 @@ function trashLesson(lessonName: string, chapterName: string) {
 	$dialog({
 		title: __('Delete this lesson?'),
 		message: __(
-			'Deleting this lesson will permanently remove it from the course. This action cannot be undone. Are you sure you want to continue?',
+			'Deleting this lesson will permanently remove it from the course. This action cannot be undone. Are you sure you want to continue?'
 		),
 		actions: [
 			{
@@ -503,7 +339,7 @@ function trashChapter(chapterName: string) {
 	$dialog({
 		title: __('Delete this chapter?'),
 		message: __(
-			'Deleting this chapter will also delete all its lessons and permanently remove it from the course. This action cannot be undone. Are you sure you want to continue?',
+			'Deleting this chapter will also delete all its lessons and permanently remove it from the course. This action cannot be undone. Are you sure you want to continue?'
 		),
 		actions: [
 			{

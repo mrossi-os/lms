@@ -137,13 +137,6 @@ import {
 } from 'vue'
 import { useRouter } from 'vue-router'
 import Link from '@/components/Controls/Link.vue'
-import {
-	cleanError,
-	sanitizeHTML,
-	createLMSCategory,
-	escapeHTML,
-} from '@/utils'
-import MultiSelect from '@/components/Controls/MultiSelect.vue'
 import MultiLink from '@/components/Controls/MultiLink.vue'
 import Uploader from '@/components/Controls/Uploader.vue'
 import NewMemberModal from '@/components/Modals/NewMemberModal.vue'
@@ -302,14 +295,10 @@ const onInstructorCreated = (newUser: any) => {
 }
 
 const validateFields = () => {
-	course.value.description = sanitizeHTML(course.value.description)
 	Object.keys(course.value).forEach((key) => {
-		if (
-			key != 'description' &&
-			typeof course.value[key as keyof Course] === 'string'
-		) {
-			course.value[key as keyof Course] = escapeHTML(
-				course.value[key as keyof Course] as string,
+		if (typeof course.value[key as keyof Course] === 'string') {
+			course.value[key as keyof Course] = sanitizeHTML(
+				course.value[key as keyof Course] as string
 			)
 		}
 	})
@@ -317,33 +306,6 @@ const validateFields = () => {
 
 const saveCourse = (close: () => void = () => {}) => {
 	validateFields()
-
-	if (!course.value.title) {
-		toast.warning(__('{0} is required').format(__('Title')))
-		return
-	}
-	if (!course.value.instructors.length) {
-		toast.warning(__('{0} is required').format(__('Instructors')))
-		return
-	}
-	if (!course.value.short_introduction) {
-		toast.warning(__('{0} is required').format(__('Short Introduction')))
-		return
-	}
-	if (!course.value.description) {
-		toast.warning(__('{0} is required').format(__('Course Description')))
-		return
-	}
-
-	const tempDiv = document.createElement('div')
-	tempDiv.innerHTML = course.value.description
-	const hasMedia = tempDiv.querySelector('video, iframe') !== null
-	const hasText = tempDiv.innerText.trim() !== ''
-
-	if (hasMedia && !hasText) {
-		course.value.description += '<p>&#8203;</p>'
-	}
-
 	props.courses.insert.submit(
 		{
 			...course.value,
@@ -372,7 +334,7 @@ const saveCourse = (close: () => void = () => {}) => {
 				toast.error(cleanError(err.messages?.[0]))
 				console.error(err)
 			},
-		},
+		}
 	)
 }
 

@@ -1,117 +1,170 @@
 <template>
-	<div class="flex flex-col gap-4" :class="{ 'md:mt-16': hideVideo }">
-		<div class="border-2 rounded-md w-full md:min-w-80 max-w-sm card">
-			<iframe
-				v-if="course.data.video_link && !hideVideo"
-				:src="video_link"
-				class="rounded-t-md min-h-56 w-full"
-			/>
-			<div class="p-5 flex flex-col gap-4">
-				<div v-if="course.data.paid_course" class="text-2xl font-semibold mb-3">
-					{{ course.data.price }}
-				</div>
-				<div v-if="!readOnlyMode">
-					<div v-if="course.data.membership" class="space-y-2">
-						<router-link
-							:to="{
-								name: 'Lesson',
-								params: {
-									courseName: course.name,
-									chapterNumber: course.data.current_lesson
-										? course.data.current_lesson.split('-')[0]
-										: 1,
-									lessonNumber: course.data.current_lesson
-										? course.data.current_lesson.split('-')[1]
-										: 1,
-								},
-							}"
-						>
-							<Button variant="solid" size="md" class="w-full">
-								<template #prefix>
-									<BookText class="size-4 stroke-1.5" />
-								</template>
-								<span>
-									{{ __('Continue Learning') }}
-								</span>
-							</Button>
-						</router-link>
-						<CertificationLinks :courseName="course.data.name" class="w-full" />
-					</div>
+	<div class="border-2 rounded-md min-w-80 max-w-sm">
+		<iframe
+			v-if="course.data?.video_link"
+			:src="video_link"
+			class="rounded-t-md min-h-56 w-full"
+		/>
+		<div class="p-5">
+			<div class="text-2xl font-semibold text-ink-gray-9 mb-4">
+				{{ priceLabel }}
+			</div>
+			<div v-if="!readOnlyMode">
+				<div v-if="course.data?.membership" class="space-y-2 mb-8">
 					<router-link
-						v-else-if="course.data.paid_course && !isAdmin"
 						:to="{
-							name: 'Billing',
+							name: 'Lesson',
 							params: {
-								type: 'course',
-								name: course.data.name,
+								courseName: course.data?.name,
+								chapterNumber: course?.data?.current_lesson
+									? course?.data?.current_lesson.split('-')[0]
+									: 1,
+								lessonNumber: course?.data?.current_lesson
+									? course?.data?.current_lesson.split('-')[1]
+									: 1,
 							},
 						}"
 					>
-						<Button variant="solid" size="md" class="w-full mb-8">
+						<Button variant="solid" size="md" class="w-full">
 							<template #prefix>
-								<CreditCard class="size-4 stroke-1.5" />
+								<BookText class="size-4 stroke-1.5" />
 							</template>
 							<span>
-								{{ __('Buy this course') }}
+								{{ __('Continue Learning') }}
 							</span>
 						</Button>
 					</router-link>
-					<Badge
-						v-else-if="course.data.disable_self_learning && !isAdmin"
-						theme="blue"
-						size="lg"
-						class="mb-4"
-					>
-						{{ __('Contact the Administrator to enroll for this course') }}
-					</Badge>
-					<Button
-						v-else-if="!isAdmin"
-						@click="enrollStudent()"
-						variant="solid"
-						class="w-full mb-8"
-						size="md"
-					>
+					<CertificationLinks :courseName="course.data.name" class="w-full" />
+				</div>
+				<router-link
+					v-else-if="course.data?.paid_course && !isAdmin"
+					:to="{
+						name: 'Billing',
+						params: {
+							type: 'course',
+							name: course.data.name,
+						},
+					}"
+				>
+					<Button variant="solid" size="md" class="w-full mb-8">
 						<template #prefix>
-							<BookText class="size-4 stroke-1.5" />
+							<CreditCard class="size-4 stroke-1.5" />
 						</template>
 						<span>
-							{{ __('Start Learning') }}
+							{{ __('Buy this course') }}
 						</span>
 					</Button>
-					<Button
-						v-if="canGetCertificate"
-						@click="fetchCertificate()"
-						variant="subtle"
-						class="w-full mt-2"
-						size="md"
-					>
-						<template #prefix>
-							<GraduationCap class="size-4 stroke-1.5" />
-						</template>
-						{{ __('Get Certificate') }}
-					</Button>
-				</div>
-				<div :class="readOnlyMode ? 'mt-4' : 'mt-0'">
-					<CourseOutline
-						:title="__('Course Outline')"
-						:courseName="course.data.name"
-						:showOutline="false"
-						:getProgress="course.data.membership ? true : false"
-					/>
-				</div>
+				</router-link>
+				<Badge
+					v-else-if="course.data?.disable_self_learning && !isAdmin"
+					theme="blue"
+					size="lg"
+					class="mb-4"
+				>
+					{{ __('Contact the Administrator to enroll for this course') }}
+				</Badge>
+				<Button
+					v-else-if="!isAdmin"
+					@click="enrollStudent()"
+					variant="solid"
+					class="w-full mb-8"
+					size="md"
+				>
+					<template #prefix>
+						<BookText class="size-4 stroke-1.5" />
+					</template>
+					<span>
+						{{ __('Enroll Now') }}
+					</span>
+				</Button>
+				<Button
+					v-if="canGetCertificate"
+					@click="fetchCertificate()"
+					variant="subtle"
+					class="w-full mt-2"
+					size="md"
+				>
+					<template #prefix>
+						<GraduationCap class="size-4 stroke-1.5" />
+					</template>
+					{{ __('Get Certificate') }}
+				</Button>
 			</div>
+			<section v-if="hasCourseStats" class="space-y-3">
+				<div class="text-base text-ink-gray-9 mb-1">
+					{{ __('This course includes:') }}
+				</div>
+				<div
+					v-if="enrolledLabel"
+					class="flex items-center gap-3 text-ink-gray-8"
+				>
+					<Users class="size-4 stroke-1.5 shrink-0 text-ink-gray-7" />
+					<span>{{ enrolledLabel }} {{ __('enrolled') }}</span>
+				</div>
+				<div
+					v-if="course.data?.video_link"
+					class="flex items-center gap-3 text-ink-gray-8"
+				>
+					<MonitorPlay class="size-4 stroke-1.5 shrink-0 text-ink-gray-7" />
+					<span>{{ __('On demand course video') }}</span>
+				</div>
+				<div
+					v-if="course.data?.lessons"
+					class="flex items-center gap-3 text-ink-gray-8"
+				>
+					<BookOpen class="size-4 stroke-1.5 shrink-0 text-ink-gray-7" />
+					<span>
+						{{ course.data?.lessons }}
+						{{ course.data?.lessons === 1 ? __('Lesson') : __('Lessons') }}
+					</span>
+				</div>
+				<div
+					v-if="(course.data?.quiz_count || 0) > 0"
+					class="flex items-center gap-3 text-ink-gray-8"
+				>
+					<HelpCircle class="size-4 stroke-1.5 shrink-0 text-ink-gray-7" />
+					<span>
+						{{ course.data?.quiz_count }}
+						{{
+							course.data?.quiz_count === 1
+								? __('Quiz topic')
+								: __('Quiz topics')
+						}}
+					</span>
+				</div>
+				<div
+					v-if="course.data?.enable_certification"
+					class="flex items-center gap-3 text-ink-gray-8"
+				>
+					<Award class="size-4 stroke-1.5 shrink-0 text-ink-gray-7" />
+					<span>{{ __('Certificate of completion') }}</span>
+				</div>
+			</section>
 		</div>
 	</div>
 </template>
-<script setup>
-import { BookText, CreditCard, GraduationCap } from 'lucide-vue-next'
+<script setup lang="ts">
+import {
+	Award,
+	BookOpen,
+	BookText,
+	CreditCard,
+	GraduationCap,
+	HelpCircle,
+	MonitorPlay,
+	Users,
+} from 'lucide-vue-next'
 import { computed, inject } from 'vue'
 import { Badge, Button, call, createResource, toast } from 'frappe-ui'
 import { useRouter } from 'vue-router'
 import CertificationLinks from '@/components/CertificationLinks.vue'
 import { useTelemetry } from 'frappe-ui/frappe'
-import CourseOutline from '@/components/CourseOutline.vue'
-import { getVideoEmbedURL } from '@/utils'
+import type {
+	CourseDetails,
+	CourseInstructorInfo,
+	Resource,
+	SessionUser,
+} from '@/types/api'
 
 const router = useRouter()
 const user = inject<SessionUser>('$user')!
@@ -119,22 +172,16 @@ const readOnlyMode = (window as Window & { read_only_mode?: boolean })
 	.read_only_mode
 const { capture } = useTelemetry()
 
-const props = defineProps({
-	course: {
-		type: Object,
-		default: null,
-	},
-	hideVideo: {
-		type: Boolean,
-		default: false,
-	},
-})
+const props = withDefaults(
+	defineProps<{
+		course: Resource<CourseDetails | null>
+	}>(),
+	{}
+)
 
-const video_link = computed(() => {
-	if (props.course.data.video_link) {
-		return getVideoEmbedURL(props.course.data.video_link)
-	}
-	return null
+const video_link = computed<string | undefined>(() => {
+	const link = props.course.data?.video_link
+	return link ? 'https://www.youtube.com/embed/' + link : undefined
 })
 
 function enrollStudent() {
@@ -224,8 +271,10 @@ const certificate = createResource({
 	},
 	onSuccess(data: { name: string; template: string }) {
 		window.open(
-			`/api/method/frappe.utils.print_format.download_pdf?doctype=LMS+Certificate&name=${data.name}&format=${encodeURIComponent(data.template)}`,
-			'_blank',
+			`/api/method/frappe.utils.print_format.download_pdf?doctype=LMS+Certificate&name=${
+				data.name
+			}&format=${encodeURIComponent(data.template)}`,
+			'_blank'
 		)
 	},
 }) as Resource<{ name: string; template: string } | null>
@@ -237,7 +286,7 @@ const fetchCertificate = () => {
 	})
 }
 
-const isAdmin = computed(() => {
-	return user.data?.is_moderator || user.data?.is_docente || is_instructor()
+const isAdmin = computed<boolean>(() => {
+	return Boolean(user.data?.is_moderator) || is_instructor()
 })
 </script>

@@ -1,13 +1,9 @@
 <template>
 	<div v-if="lesson.data" class="">
-		<header
-			v-if="!embedded"
-			class="sticky top-0 z-10 flex items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5"
-		>
+		<header v-if="!embedded"
+			class="sticky top-0 z-10 flex items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5">
 			<Breadcrumbs class="h-7" :items="breadcrumbs" />
-			<div
-				class="fixed hidden md:flexs top-3 z-11 items-center right-3 space-x-2"
-			>
+			<div class="fixed hidden md:flexs top-3 z-11 items-center right-3 space-x-2">
 				<Tooltip v-if="canGoZen()" :text="__('Zen Mode')">
 					<Button size="sm" @click="goFullScreen()">
 						<template #icon>
@@ -30,41 +26,30 @@
 					</span>
 				</Button>
 
-				<router-link
-					v-if="allowEdit()"
-					:to="{
-						name: 'LessonForm',
-						params: {
-							courseName: courseName,
-							chapterNumber: props.chapterNumber,
-							lessonNumber: props.lessonNumber,
-						},
-					}"
-				>
+				<router-link v-if="allowEdit()" :to="{
+					name: 'LessonForm',
+					params: {
+						courseName: courseName,
+						chapterNumber: props.chapterNumber,
+						lessonNumber: props.lessonNumber,
+					},
+				}">
 					<Button size="sm">
 						<span class="text-xs sm:text-sm">{{ __('Edit') }}</span>
 					</Button>
 				</router-link>
 
-				<Button
-					size="sm"
-					v-if="lesson.data.next"
-					@click="switchLesson('next')"
-					:disabled="lessonBlocked"
-				>
+				<Button size="sm" v-if="lesson.data.next" @click="switchLesson('next')" :disabled="lessonBlocked">
 					<template #suffix>
 						<ChevronRight class="w-3.5 h-3.5 stroke-1" />
 					</template>
 					<span class="text-xs sm:text-sm">{{ __('Next') }}</span>
 				</Button>
 
-				<router-link
-					v-else
-					:to="{
-						name: 'CourseDetail',
-						params: { courseName: courseName },
-					}"
-				>
+				<router-link v-else :to="{
+					name: 'CourseDetail',
+					params: { courseName: courseName },
+				}">
 					<Button size="sm">
 						<span class="text-xs sm:text-sm">{{ __('Back to Course') }}</span>
 					</Button>
@@ -81,306 +66,212 @@
 				</Dropdown>
 			</div>
 		</header>
-		<Tooltip
-			v-if="canShowAIJumpButton"
-			:text="
-				showingChat ? __('Torna alla lezione') : __('Chiedi all\'AI Tutor')
-			"
-		>
-			<Button
-				size="sm"
-				class="md:hidden fixed top-24 right-3 z-10 shadow-md"
-				@click="toggleAIView"
-			>
+		<Tooltip v-if="canShowAIJumpButton" :text="showingChat ? __('Torna alla lezione') : __('Chiedi all\'AI Tutor')
+			">
+			<Button size="sm" class="md:hidden fixed top-24 right-3 z-10 shadow-md" @click="toggleAIView">
 				<template #icon>
 					<BookOpen v-if="showingChat" class="w-4 h-4 stroke-1.5" />
 					<Bot v-else class="w-4 h-4 stroke-1.5" />
 				</template>
 			</Button>
 		</Tooltip>
-		<div class="grid md:grid-cols-[70%,30%] md:h-[100vh]">
-			<div v-if="lesson.data.no_preview" class="border-r">
-				<div class="shadow rounded-md w-3/4 mt-10 mx-auto text-center p-4">
-					<div class="flex items-center justify-center mt-4 gap-x-2">
-						<LockKeyholeIcon class="size-4 stroke-2 text-ink-gray-5" />
-						<div class="text-lg font-semibold text-ink-gray-7">
-							{{ __('This lesson is locked') }}
-						</div>
+
+		<div v-if="lesson.data.no_preview" class="border-r">
+			<div class="shadow rounded-md w-3/4 mt-10 mx-auto text-center p-4">
+				<div class="flex items-center justify-center mt-4 gap-x-2">
+					<LockKeyholeIcon class="size-4 stroke-2 text-ink-gray-5" />
+					<div class="text-lg font-semibold text-ink-gray-7">
+						{{ __('This lesson is locked') }}
 					</div>
-					<div class="mt-1 mb-4 text-ink-gray-7">
-						{{
-							__(
-								'This lesson is not available for preview. Please enroll in the course to access it.',
-							)
-						}}
-					</div>
-					<Button
-						v-if="user.data && !lesson.data.disable_self_learning"
-						@click="enrollStudent()"
-						variant="solid"
-					>
-						{{ __('Start Learning') }}
-					</Button>
-					<Badge
-						theme="blue"
-						size="lg"
-						v-else-if="lesson.data.disable_self_learning"
-						class="mt-2"
-					>
-						{{ __('Contact the Administrator to enroll for this course.') }}
-					</Badge>
-					<Button v-else @click="redirectToLogin()">
-						<template #prefix>
-							<LogIn class="w-4 h-4 stroke-1" />
-						</template>
-						{{ __('Login') }}
-					</Button>
 				</div>
+				<div class="mt-1 mb-4 text-ink-gray-7">
+					{{
+						__(
+							'This lesson is not available for preview. Please enroll in the course to access it.',
+						)
+					}}
+				</div>
+				<Button v-if="user.data && !lesson.data.disable_self_learning" @click="enrollStudent()" variant="solid">
+					{{ __('Start Learning') }}
+				</Button>
+				<Badge theme="blue" size="lg" v-else-if="lesson.data.disable_self_learning" class="mt-2">
+					{{ __('Contact the Administrator to enroll for this course.') }}
+				</Badge>
+				<Button v-else @click="redirectToLogin()">
+					<template #prefix>
+						<LogIn class="w-4 h-4 stroke-1" />
+					</template>
+					{{ __('Login') }}
+				</Button>
 			</div>
-			<div
-				v-else
-				ref="lessonContainer"
-				class="bg-surface-white overflow-y-auto"
-				:class="{
-					'overflow-y-auto': zenModeEnabled,
-				}"
-			>
-				<div
-					class="border-e pt-5 pb-10 h-full"
-					:class="{
-						'w-full md:w-3/5 mx-auto border-none !pt-10': zenModeEnabled,
-					}"
-				>
-					<div class="px-5">
-						<!-- Titolo e instructors sempre visibili -->
-						<div
-							class="flex flex-col space-y-3 md:space-y-0 md:flex-row md:items-center justify-between"
-						>
-							<div class="flex flex-col">
-								<div class="text-3xl font-semibold text-ink-gray-9">
-									{{ lesson.data.title }}
-								</div>
-								<CourseTagBadges
-									v-if="lesson.data.tags"
-									:tags="lesson.data.tags"
-									size="xs"
-									class="mt-2"
-								/>
-
-								<div
-									v-if="zenModeEnabled"
-									class="relative flex items-center gap-x-2 text-sm mt-1 text-ink-gray-7 group w-fit mt-2"
-								>
-									<span>
-										{{ lesson.data.chapter_title }} -
-										{{ lesson.data.course_title }}
-									</span>
-									<Info class="size-3" />
-									<div
-										class="hidden group-hover:block rounded bg-surface-menu-bar px-2 py-1 text-xs text-ink-gray-9 shadow-xl absolute start-0 top-full mt-2"
-									>
-										{{ Math.ceil(lesson.data.membership.progress) }}%
-										{{ __('completed') }}
-									</div>
-								</div>
+		</div>
+		<div v-else ref="lessonContainer" class="bg-surface-white overflow-y-auto lesson-content-container" :class="{
+			'overflow-y-auto': zenModeEnabled,
+		}">
+			<div class="border-e pt-5 pb-10 h-full" :class="{
+				'w-full md:w-3/5 mx-auto border-none !pt-10': zenModeEnabled,
+			}">
+				<div class="px-5">
+					<!-- Titolo e instructors sempre visibili -->
+					<div class="flex flex-col space-y-3 md:space-y-0 md:flex-row md:items-center justify-between">
+						<div class="flex flex-col">
+							<div class="text-3xl font-semibold text-ink-gray-9">
+								{{ lesson.data.title }}
 							</div>
+							<CourseTagBadges v-if="lesson.data.tags" :tags="lesson.data.tags" size="xs" class="mt-2" />
 
-							<div
-								v-if="zenModeEnabled"
-								class="flex items-center gap-x-2 mt-2 md:mt-0"
-							>
-								<Button @click="showDiscussionsInZenMode()">
-									<template #icon>
-										<MessageCircleQuestion class="w-4 h-4 stroke-1.5" />
-									</template>
-								</Button>
-								<Button v-if="lesson.data.prev" @click="switchLesson('prev')">
-									<template #prefix>
-										<ChevronLeft class="w-4 h-4 stroke-1" />
-									</template>
-									<span>
-										{{ __('Previous') }}
-									</span>
-								</Button>
-
-								<router-link
-									v-if="allowEdit()"
-									:to="{
-										name: 'LessonForm',
-										params: {
-											courseName: courseName,
-											chapterNumber: props.chapterNumber,
-											lessonNumber: props.lessonNumber,
-										},
-									}"
-								>
-									<Button>
-										{{ __('Edit') }}
-									</Button>
-								</router-link>
-
-								<Button
-									v-if="lesson.data.next"
-									@click="switchLesson('next')"
-									:disabled="lessonBlocked"
-								>
-									<template #suffix>
-										<ChevronRight class="w-4 h-4 stroke-1" />
-									</template>
-									<span>
-										{{ __('Next') }}
-									</span>
-								</Button>
-
-								<router-link
-									v-else
-									:to="{
-										name: 'CourseDetail',
-										params: { courseName: courseName },
-									}"
-								>
-									<Button>
-										{{ __('Back to Course') }}
-									</Button>
-								</router-link>
+							<div v-if="zenModeEnabled"
+								class="relative flex items-center gap-x-2 text-sm mt-1 text-ink-gray-7 group w-fit mt-2">
+								<span>
+									{{ lesson.data.chapter_title }} -
+									{{ lesson.data.course_title }}
+								</span>
+								<Info class="size-3" />
+								<div
+									class="hidden group-hover:block rounded bg-surface-menu-bar px-2 py-1 text-xs text-ink-gray-9 shadow-xl absolute start-0 top-full mt-2">
+									{{ Math.ceil(lesson.data.membership.progress) }}%
+									{{ __('completed') }}
+								</div>
 							</div>
 						</div>
 
-						<div
-							v-if="
-								!zenModeEnabled &&
-								(user.data?.is_moderator || user.data?.is_instructor)
-							"
-							class="flex items-center mt-4 md:mt-2"
-						>
-							<span
-								class="h-6 me-1"
-								:class="{
-									'avatar-group overlap': lesson.data.instructors?.length > 1,
-								}"
-							>
-								<UserAvatar
-									v-for="instructor in lesson.data.instructors"
-									:user="instructor"
-								/>
-							</span>
-							<CourseInstructors
-								v-if="lesson.data?.instructors"
-								:instructors="lesson.data.instructors"
-							/>
+						<div v-if="zenModeEnabled" class="flex items-center gap-x-2 mt-2 md:mt-0">
+							<Button @click="showDiscussionsInZenMode()">
+								<template #icon>
+									<MessageCircleQuestion class="w-4 h-4 stroke-1.5" />
+								</template>
+							</Button>
+							<Button v-if="lesson.data.prev" @click="switchLesson('prev')">
+								<template #prefix>
+									<ChevronLeft class="w-4 h-4 stroke-1" />
+								</template>
+								<span>
+									{{ __('Previous') }}
+								</span>
+							</Button>
+
+							<router-link v-if="allowEdit()" :to="{
+								name: 'LessonForm',
+								params: {
+									courseName: courseName,
+									chapterNumber: props.chapterNumber,
+									lessonNumber: props.lessonNumber,
+								},
+							}">
+								<Button>
+									{{ __('Edit') }}
+								</Button>
+							</router-link>
+
+							<Button v-if="lesson.data.next" @click="switchLesson('next')" :disabled="lessonBlocked">
+								<template #suffix>
+									<ChevronRight class="w-4 h-4 stroke-1" />
+								</template>
+								<span>
+									{{ __('Next') }}
+								</span>
+							</Button>
+
+							<router-link v-else :to="{
+								name: 'CourseDetail',
+								params: { courseName: courseName },
+							}">
+								<Button>
+									{{ __('Back to Course') }}
+								</Button>
+							</router-link>
 						</div>
-
-						<!-- STATO BLOCCATO LEZIONE -->
-						<div
-							v-if="lessonBlocked"
-							class="flex flex-col items-center justify-center mt-16 text-center"
-						>
-							<LockKeyholeIcon class="size-12 stroke-1 text-ink-gray-4 mb-4" />
-							<div class="text-lg font-semibold text-ink-gray-7 mb-2">
-								{{ __('Lezione bloccata') }}
-							</div>
-							<div class="text-base text-ink-gray-5 max-w-sm leading-6">
-								{{ blockedReason }}
-							</div>
-						</div>
-
-						<!-- CONTENUTO NORMALE: visibile solo se lezione non bloccata -->
-						<template v-else>
-							<div
-								v-if="
-									lesson.data.instructor_content &&
-									JSON.parse(lesson.data.instructor_content)?.blocks?.length >
-										1 &&
-									allowInstructorContent()
-								"
-								class="bg-surface-gray-2 p-3 rounded-md mt-6"
-							>
-								<div class="text-ink-gray-5 font-medium">
-									{{ __('Instructor Notes') }}
-								</div>
-								<div
-									id="instructor-content"
-									class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal"
-								></div>
-							</div>
-							<div
-								v-else-if="lesson.data.instructor_notes"
-								class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
-							>
-								<LessonContent :content="lesson.data.instructor_notes" />
-							</div>
-
-							<!-- Contenuto EditorJS: può contenere quiz -->
-							<div
-								v-if="lesson.data.content"
-								@mouseup="toggleInlineMenu"
-								class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
-							>
-								<!-- Se il contenuto ha un quiz e il quiz è bloccato, mostra il blocco -->
-								<div
-									v-if="quizBlocked && contentHasQuiz"
-									class="flex flex-col items-center justify-center mt-8 mb-8 text-center"
-								>
-									<LockKeyholeIcon
-										class="size-12 stroke-1 text-ink-gray-4 mb-4"
-									/>
-									<div class="text-lg font-semibold text-ink-gray-7 mb-2">
-										{{ __('Quiz bloccato') }}
-									</div>
-									<div class="text-base text-ink-gray-5 max-w-sm leading-6">
-										{{ quizBlockedReason }}
-									</div>
-								</div>
-								<!-- Altrimenti mostra il contenuto normale -->
-								<div v-else id="editor"></div>
-							</div>
-
-							<!-- Contenuto body (markdown/LessonContent) -->
-							<div
-								v-else
-								class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
-							>
-								<div
-									v-if="quizBlocked && lesson.data?.quiz_id"
-									class="flex flex-col items-center justify-center mt-8 mb-8 text-center"
-								>
-									<LockKeyholeIcon
-										class="size-12 stroke-1 text-ink-gray-4 mb-4"
-									/>
-									<div class="text-lg font-semibold text-ink-gray-7 mb-2">
-										{{ __('Quiz bloccato') }}
-									</div>
-									<div class="text-base text-ink-gray-5 max-w-sm leading-6">
-										{{ quizBlockedReason }}
-									</div>
-								</div>
-								<LessonContent
-									v-else-if="lesson.data?.body"
-									:content="lesson.data.body"
-									:youtube="lesson.data.youtube"
-									:quizId="lesson.data.quiz_id"
-								/>
-							</div>
-						</template>
 					</div>
 
-					<!-- Discussioni: nascoste se bloccato -->
-					<div
-						v-if="
-							!lessonBlocked &&
-							lesson.data &&
-							(allowDiscussions || tabs.length > 1)
-						"
-						class="mt-10 pb-20 pt-5 border-t px-5"
-						ref="discussionsContainer"
-					>
-						<Notes
-							v-if="currentTab === 'Notes'"
-							:lesson="lesson.data?.name"
-							v-model:notes="notes"
-							@updateNotes="updateNotes"
-						/>
-						<!-- <Discussions
+					<div v-if="
+						!zenModeEnabled &&
+						(user.data?.is_moderator || user.data?.is_instructor)
+					" class="flex items-center mt-4 md:mt-2">
+						<span class="h-6 me-1" :class="{
+							'avatar-group overlap': lesson.data.instructors?.length > 1,
+						}">
+							<UserAvatar v-for="instructor in lesson.data.instructors" :user="instructor" />
+						</span>
+						<CourseInstructors v-if="lesson.data?.instructors" :instructors="lesson.data.instructors" />
+					</div>
+
+					<!-- STATO BLOCCATO LEZIONE -->
+					<div v-if="lessonBlocked" class="flex flex-col items-center justify-center mt-16 text-center">
+						<LockKeyholeIcon class="size-12 stroke-1 text-ink-gray-4 mb-4" />
+						<div class="text-lg font-semibold text-ink-gray-7 mb-2">
+							{{ __('Lezione bloccata') }}
+						</div>
+						<div class="text-base text-ink-gray-5 max-w-sm leading-6">
+							{{ blockedReason }}
+						</div>
+					</div>
+
+					<!-- CONTENUTO NORMALE: visibile solo se lezione non bloccata -->
+					<template v-else>
+						<div v-if="
+							lesson.data.instructor_content &&
+							JSON.parse(lesson.data.instructor_content)?.blocks?.length >
+							1 &&
+							allowInstructorContent()
+						" class="bg-surface-gray-2 p-3 rounded-md mt-6">
+							<div class="text-ink-gray-5 font-medium">
+								{{ __('Instructor Notes') }}
+							</div>
+							<div id="instructor-content"
+								class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal">
+							</div>
+						</div>
+						<div v-else-if="lesson.data.instructor_notes"
+							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8">
+							<LessonContent :content="lesson.data.instructor_notes" />
+						</div>
+
+						<!-- Contenuto EditorJS: può contenere quiz -->
+						<div v-if="lesson.data.content" @mouseup="toggleInlineMenu"
+							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8">
+							<!-- Se il contenuto ha un quiz e il quiz è bloccato, mostra il blocco -->
+							<div v-if="quizBlocked && contentHasQuiz"
+								class="flex flex-col items-center justify-center mt-8 mb-8 text-center">
+								<LockKeyholeIcon class="size-12 stroke-1 text-ink-gray-4 mb-4" />
+								<div class="text-lg font-semibold text-ink-gray-7 mb-2">
+									{{ __('Quiz bloccato') }}
+								</div>
+								<div class="text-base text-ink-gray-5 max-w-sm leading-6">
+									{{ quizBlockedReason }}
+								</div>
+							</div>
+							<!-- Altrimenti mostra il contenuto normale -->
+							<div v-else id="editor"></div>
+						</div>
+
+						<!-- Contenuto body (markdown/LessonContent) -->
+						<div v-else
+							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8">
+							<div v-if="quizBlocked && lesson.data?.quiz_id"
+								class="flex flex-col items-center justify-center mt-8 mb-8 text-center">
+								<LockKeyholeIcon class="size-12 stroke-1 text-ink-gray-4 mb-4" />
+								<div class="text-lg font-semibold text-ink-gray-7 mb-2">
+									{{ __('Quiz bloccato') }}
+								</div>
+								<div class="text-base text-ink-gray-5 max-w-sm leading-6">
+									{{ quizBlockedReason }}
+								</div>
+							</div>
+							<LessonContent v-else-if="lesson.data?.body" :content="lesson.data.body"
+								:youtube="lesson.data.youtube" :quizId="lesson.data.quiz_id" />
+						</div>
+					</template>
+				</div>
+
+				<!-- Discussioni: nascoste se bloccato -->
+				<div v-if="
+					!lessonBlocked &&
+					lesson.data &&
+					(allowDiscussions || tabs.length > 1)
+				" class="mt-10 pb-20 pt-5 border-t px-5" ref="discussionsContainer">
+					<Notes v-if="currentTab === 'Notes'" :lesson="lesson.data?.name" v-model:notes="notes"
+						@updateNotes="updateNotes" />
+					<!-- <Discussions
 							v-else-if="allowDiscussions"
 							:title="'Questions'"
 							:doctype="'Course Lesson'"
@@ -390,54 +281,13 @@
 								__('Ask a question to get help from the community.')
 							"
 						/> -->
-					</div>
-				</div>
-			</div>
-			<div class="sticky top-10">
-				<div
-					v-if="lesson.data?.name && !hasQuiz"
-					ref="chatBotContainer"
-					:data-ai-tutor="true"
-					class="p-3"
-				>
-					<ChatBot
-						:courseId="lesson.data?.course"
-						:lessonId="lesson.data?.name"
-					/>
-				</div>
-				<div class="bg-surface-menu-bar p-5 border-b m-3 rounded-md">
-					<div class="text-lg font-semibold text-ink-gray-9">
-						{{ lesson.data.course_title }}
-					</div>
-					<div
-						v-if="user && lesson.data.membership"
-						class="text-sm mt-4 mb-2 text-ink-gray-5"
-					>
-						{{ Math.ceil(lessonProgress) }}% {{ __('completed') }}
-					</div>
-
-					<ProgressBar
-						v-if="user && lesson.data.membership"
-						:progress="lessonProgress"
-					/>
-				</div>
-				<div class="m-3">
-					<CourseOutline
-						:courseName="courseName"
-						:key="chapterNumber"
-						:getProgress="lesson.data.membership ? true : false"
-					/>
 				</div>
 			</div>
 		</div>
 	</div>
 
-	<VideoStatistics
-		v-if="isAdmin"
-		v-model="showStatsDialog"
-		:lessonName="lesson.data?.name"
-		:lessonTitle="lesson.data?.title"
-	/>
+	<VideoStatistics v-if="isAdmin" v-model="showStatsDialog" :lessonName="lesson.data?.name"
+		:lessonTitle="lesson.data?.title" />
 </template>
 <script setup>
 import {
@@ -1429,11 +1279,9 @@ usePageMeta(() => {
 }
 
 .plyr__control--overlaid {
-	background: radial-gradient(
-		circle,
-		rgba(0, 0, 0, 0.4) 0%,
-		rgba(0, 0, 0, 0.5) 50%
-	);
+	background: radial-gradient(circle,
+			rgba(0, 0, 0, 0.4) 0%,
+			rgba(0, 0, 0, 0.5) 50%);
 }
 
 .plyr__control:hover {

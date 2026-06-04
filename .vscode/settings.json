@@ -2,11 +2,8 @@
 	"[markdown]": {
 		"editor.wordWrap": "on"
 	},
-	"[vue]": {
-		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	"[python]": {
+		"editor.formatOnSave": true
 	},
-  "[python]": {
-    "editor.defaultFormatter": "ms-python.black-formatter",
-    "editor.formatOnSave": true
-  }
+	"js/ts.tsdk.path": "frontend/node_modules/typescript/lib"
 }

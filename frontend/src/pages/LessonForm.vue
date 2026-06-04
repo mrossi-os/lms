@@ -1,100 +1,26 @@
 <template>
-	<div>
-		<div class="md:grid md:grid-cols-[75%,25%] h-screen">
-			<div class="border-r">
-				<header
-					class="sticky top-0 z-10 flex flex-col md:flex-row md:items-center justify-between border-b overflow-hidden main-page-header px-3 py-2.5 sm:px-5"
+	<div class="py-5">
+		<OsLessonForm :lesson="lesson" @dirty="markDirty" />
+		<div class="mt-0">
+			<div class="w-5/6 mx-auto pt-4">
+				<div
+					class="flex justify-between cursor-pointer"
+					@click="
+						() => {
+							openInstructorEditor = !openInstructorEditor
+						}
+					"
 				>
-					<Breadcrumbs class="text-ellipsis" :items="breadcrumbs" />
-					<div class="flex gap-2">
-						<Button
-							variant="solid"
-							v-if="lessonDetails.data?.lesson"
-							@click="saveAndAddAnother()"
-						>
-							{{ __('Add new Lesson') }}
-						</Button>
-						<Button
-							variant="solid"
-							@click="saveLesson({ showSuccessMessage: true })"
-						>
-							{{ __('Save') }}
-						</Button>
-					</div>
-				</header>
-				<div class="py-5">
-					<div class="grid grid-cols-1 md:grid-cols-2 gap-5 w-5/6 mx-auto">
-						<FormControl
-							v-model="lesson.title"
-							:label="__('Title')"
-							class="mb-4"
-							:required="true"
-							autocomplete="off"
-						/>
-						<FormControl
-							v-model="lesson.duration"
-							:label="__('Duration (minutes)')"
-							type="number"
-							class="mb-4"
-							autocomplete="off"
-							:description="__('Estimated time to complete this lesson')"
-						/>
-						<Switch
-							v-model="lesson.include_in_preview"
-							:label="__('Include in Preview')"
-							:description="
-								__(
-									'If enabled, the lesson will also be accessible to users who are not enrolled in the course.',
-								)
-							"
-							class="card p-4"
-						/>
-						<div class="card p-4 md:col-span-2">
-							<TagPicker v-model="lesson.tags" />
-						</div>
-					</div>
-					<div class="border-t mt-4">
-						<LessonAIIngestion :lesson="lessonDetails?.data?.lesson" />
-					</div>
-					<div class="border-t">
-						<div class="w-5/6 mx-auto pt-4">
-							<div
-								class="flex justify-between cursor-pointer"
-								@click="
-									() => {
-										openInstructorEditor = !openInstructorEditor
-									}
-								"
-							>
-								<label class="block font-medium text-ink-gray-5 mb-1">
-									{{ __('Instructor Notes') }}
-								</label>
-								<ChevronRight
-									class="stroke-2 h-5 w-5 text-ink-gray-5 transform duration-200"
-									:class="{
-										'rotate-90': openInstructorEditor,
-										'rtl:rotate-180': !openInstructorEditor,
-									}"
-								/>
-							</div>
-							<div
-								v-show="openInstructorEditor"
-								id="instructor-notes"
-								class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal py-3"
-							></div>
-						</div>
-					</div>
-					<div class="border-t mt-4">
-						<div class="w-5/6 mx-auto pt-4">
-							<label class="block font-medium text-ink-gray-5 mb-1">
-								{{ __('Content') }}
-							</label>
-							<div
-								id="content"
-								class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal py-3"
-							></div>
-						</div>
-					</div>
+					<label class="block font-medium text-ink-gray-5 mb-1">
+						{{ __('Instructor Notes') }}
+					</label>
+					<ChevronRight
+						class="stroke-2 h-5 w-5 text-ink-gray-5 transform duration-200"
+						:class="{
+							'rotate-90': openInstructorEditor,
+							'rtl:rotate-180': !openInstructorEditor,
+						}"
+					/>
 				</div>
 				<div
 					v-show="openInstructorEditor"
@@ -117,36 +43,14 @@
 	</div>
 </template>
 <script setup>
-import {
-	Breadcrumbs,
-	Button,
-	createResource,
-	FormControl,
-	Switch,
-	usePageMeta,
-	toast,
-	call,
-} from 'frappe-ui'
-import {
-	computed,
-	reactive,
-	onMounted,
-	inject,
-	ref,
-	onBeforeUnmount,
-	watch,
-} from 'vue'
-import { sessionStore } from '../stores/session'
+import { createResource, toast } from 'frappe-ui'
+import { reactive, onMounted, inject, ref, onBeforeUnmount } from 'vue'
 import EditorJS from '@editorjs/editorjs'
 import { ChevronRight } from 'lucide-vue-next'
 import { getEditorTools, enablePlyr, sanitizeEditorJs } from '@/utils'
 import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
-import { useRouter, useRoute } from 'vue-router'
+import OsLessonForm from '@/pages/OsLessonForm.vue'
 
-import LessonAIIngestion from '@/oslms/components/ai/Course/LessonAIIngestion.vue'
-import TagPicker from '@/oslms/components/TagPicker.vue'
-
-const { brand } = sessionStore()
 const editor = ref(null)
 const instructorEditor = ref(null)
 const user = inject('$user')
@@ -170,49 +74,16 @@ const props = defineProps({
 		required: true,
 	},
 })
-const router = useRouter()
-const route = useRoute()
 
-watch(
-	() => route.params.lessonNumber,
-	async (newVal) => {
-		// Resetta il form
-		clearInterval(autoSaveInterval)
-		lesson.title = ''
-		lesson.include_in_preview = false
-		lesson.body = ''
-		lesson.instructor_notes = ''
-		lesson.content = ''
-		lesson.instructor_content = ''
-		lesson.tags = ''
+const isDirty = ref(false)
+function markDirty() {
+	if (lessonDetails.data?.lesson) isDirty.value = true
+}
 
-		// Distruggi e ricrea gli editor
-		if (editor.value) {
-			await editor.value.isReady
-			editor.value.destroy()
-			editor.value = null
-		}
-		if (instructorEditor.value) {
-			await instructorEditor.value.isReady
-			instructorEditor.value.destroy()
-			instructorEditor.value = null
-		}
-
-		// Ricrea gli editor
-		editor.value = renderEditor('content')
-		instructorEditor.value = renderEditor('instructor-notes')
-
-		// Aggiorna i params e ricarica
-		lessonDetails.update({
-			params: {
-				course: props.courseName,
-				chapter: props.chapterNumber,
-				lesson: newVal,
-			},
-		})
-		lessonDetails.reload()
-	},
-)
+defineExpose({
+	saveLesson: () => saveLesson({ showSuccessMessage: true }),
+	isDirty,
+})
 
 onMounted(() => {
 	if (!user.data?.is_moderator && !user.data?.is_instructor) {
@@ -224,21 +95,6 @@ onMounted(() => {
 	window.addEventListener('keydown', keyboardShortcut)
 	enablePlyr()
 })
-
-const saveAndAddAnother = () => {
-	saveLesson({ showSuccessMessage: false })
-
-	const nextLessonNumber = (lessonDetails.data?.lesson_count || 0) + 1
-
-	router.push({
-		name: 'LessonForm',
-		params: {
-			courseName: props.courseName,
-			chapterNumber: props.chapterNumber,
-			lessonNumber: nextLessonNumber,
-		},
-	})
-}
 
 const renderEditor = (holder) => {
 	return new EditorJS({
@@ -261,8 +117,6 @@ const lesson = reactive({
 	body: '',
 	instructor_notes: '',
 	content: '',
-	duration: 0,
-	tags: '',
 })
 
 const lessonDetails = createResource({
@@ -307,7 +161,7 @@ const addInstructorNotes = (data) => {
 	instructorEditor.value.isReady.then(() => {
 		if (data.lesson.instructor_content) {
 			instructorEditor.value.render(
-				sanitizeEditorJs(JSON.parse(data.lesson.instructor_content)),
+				sanitizeEditorJs(JSON.parse(data.lesson.instructor_content))
 			)
 		} else if (data.lesson.instructor_notes) {
 			let blocks = convertToJSON(data.lesson)
@@ -320,7 +174,6 @@ const addInstructorNotes = (data) => {
 
 const enableAutoSave = () => {
 	autoSaveInterval = setInterval(() => {
-		clearInterval(autoSaveInterval)
 		saveLesson({ showSuccessMessage: false })
 	}, 10000)
 }
@@ -538,13 +391,13 @@ const createNewLesson = () => {
 							isDirty.value = false
 							lessonDetails.reload()
 						},
-					},
+					}
 				)
 			},
 			onError(err) {
 				toast.error(err.messages?.[0] || err)
 			},
-		},
+		}
 	)
 }
 
@@ -566,16 +419,16 @@ const editCurrentLesson = () => {
 			onError(err) {
 				toast.error(err.message)
 			},
-		},
+		}
 	)
 }
 
 const validateLesson = () => {
 	if (!lesson.title) {
-		return __('Title is required')
+		return 'Title is required'
 	}
 	if (!lesson.content) {
-		return __('Content is required')
+		return 'Content is required'
 	}
 }
 </script>

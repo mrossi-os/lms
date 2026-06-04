@@ -83,4 +83,11 @@ export interface LMSCourse {
 	timezone?: string
 	/**	Notification Sent : Check	*/
 	notification_sent?: 0 | 1
+
+	enforce_lesson_order?: 0 | 1
+	enforce_quiz_on_completion?: 0 | 1
+
+	hero_enabled?: 0 | 1
+	hero_media_type?:string
+	hero_media_url?: string
 }

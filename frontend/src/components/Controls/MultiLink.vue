@@ -1,5 +1,5 @@
 <template>
-	<div class="space-y-1.5">
+	<div class="space-y-1.5 multi-link">
 		<FormLabel v-if="label" :label="label" :required="required" />
 		<MultiSelect
 			v-model="value"

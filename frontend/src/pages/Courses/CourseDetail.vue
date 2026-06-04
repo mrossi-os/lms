@@ -160,9 +160,6 @@ import {
 	toast,
 	usePageMeta,
 } from 'frappe-ui'
-import { computed, inject, markRaw, onMounted, provide, ref, watch } from 'vue'
-import { sessionStore } from '@/stores/session'
-import { useRouter, useRoute } from 'vue-router'
 import {
 	BookOpen,
 	ChevronLeft,
@@ -194,31 +191,6 @@ interface TabDef {
 	component: ReturnType<typeof markRaw>
 	icon: Component
 }
-const { brand } = sessionStore()
-
-const tagResource = createResource({
-	url: 'frappe.client.get_list',
-	method: 'POST',
-	params: {
-		doctype: 'LMS OS Tag',
-		fields: ['tag_name', 'color'],
-		limit_page_length: 0,
-	},
-	auto: true,
-})
-
-const tagColorMap = computed(() => {
-	if (!tagResource.data) return new Map()
-	return new Map(tagResource.data.map((t) => [t.tag_name, t.color]))
-})
-
-provide('tagColorMap', tagColorMap)
-
-const router = useRouter()
-const route = useRoute()
-const user = inject('$user')
-const tabIndex = ref(0)
-const childRef = ref(null)
 
 const { brand } = sessionStore() as { brand: Brand }
 const router: Router = useRouter()
@@ -363,11 +335,11 @@ watch(
 	() => props.courseName,
 	() => {
 		course.reload()
-	},
+	}
 )
 
 watch(course, () => {
-	if (!isAdmin.value && !course.data?.published && !course.data?.upcoming && !course.data?.membership) {
+	if (!isAdmin.value && !course.data?.published && !course.data?.upcoming) {
 		router.push({
 			name: 'Courses',
 		})
