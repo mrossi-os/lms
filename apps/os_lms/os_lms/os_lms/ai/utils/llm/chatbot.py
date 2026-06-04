@@ -10,5 +10,7 @@ class Chatbot(ABC):
         pass
 
     @abstractmethod
-    def ask(self, question: str, contexts: list[str]) -> str:
+    def ask(
+        self, question: str, contexts: list[str], lesson_context: dict | None = None
+    ) -> str:
         pass

@@ -8,6 +8,9 @@ from frappe.utils import cint, format_date, format_time, get_datetime
 from lms.lms.doctype.lms_live_class.lms_live_class import LMSLiveClass
 from lms.lms.utils import get_lms_route
 
+from os_lms.os_lms.email_utils import send_templated_email
+from os_lms.os_lms.live_class_ics import build_ics, get_ics_url
+
 
 def _lc_log(msg):
 	frappe.logger("lms_live_class_debug", allow_site=True).info(msg)
@@ -158,6 +161,23 @@ class CustomLMSLiveClass(LMSLiveClass):
 			f"participants={participants} instructors={instructors} "
 			f"join_url={self.join_url} start_url={self.start_url} title={self.title!r}"
 		)
+		try:
+			ics_content = build_ics(self)
+		except Exception as exc:
+			ics_content = None
+			_lc_log(
+				f"[send_invitation_email] {self.name} build_ics FAILED "
+				f"type={type(exc).__name__} msg={exc!r}"
+			)
+		ics_attachment = (
+			[{"fname": f"live-class-{self.name}.ics", "fcontent": ics_content.encode("utf-8")}]
+			if ics_content
+			else None
+		)
+		# Signed, guest-accessible link for the "Add to calendar" button. Exposed in
+		# `args` so any template (file-based or per-client desk Email Template) can
+		# render `{{ ics_url }}`.
+		ics_url = get_ics_url(self.name)
 		sent = 0
 		failed = 0
 		for participant in participants:
@@ -169,10 +189,10 @@ class CustomLMSLiveClass(LMSLiveClass):
 					f"[send_invitation_email] {self.name} -> {participant} "
 					f"(name={member_name}, is_instructor={is_instructor}) attempting sendmail"
 				)
-				frappe.sendmail(
+				send_templated_email(
+					template_key="live_class_invitation",
 					recipients=participant,
 					subject=_("Lezione dal vivo: {0}").format(self.title),
-					template="live_class_invitation",
 					args={
 						"student_name": member_name,
 						"title": self.title,
@@ -181,8 +201,11 @@ class CustomLMSLiveClass(LMSLiveClass):
 						"join_url": participant_url,
 						"description": self.description,
 						"batch_name": self.batch_name,
+						"live_class_name": self.name,
+						"ics_url": ics_url,
 					},
 					header=[_("Invito lezione dal vivo"), "green"],
+					attachments=ics_attachment,
 				)
 				sent += 1
 				_lc_log(f"[send_invitation_email] {self.name} -> {participant} queued OK")

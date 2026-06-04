@@ -30,7 +30,9 @@ class GptChatbot(Chatbot):
         self._api_key = settings.openai_key or ""
         self._model = settings.llm_model or "gpt-4o-mini"
 
-    def ask(self, question: str, contexts: list[str]) -> str:
+    def ask(
+        self, question: str, contexts: list[str], lesson_context: dict | None = None
+    ) -> str:
         if not self._api_key:
             import frappe
 

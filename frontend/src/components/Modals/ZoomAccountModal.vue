@@ -44,7 +44,9 @@
 					v-model="account.member"
 					:label="__('Member')"
 					doctype="Course Evaluator"
-					:onCreate="(value: string, close: () => void) => openSettings('Members', close)"
+					:onCreate="
+						(value: string, close: () => void) => openSettings('Members', close)
+					"
 					:required="true"
 				/>
 				<FormControl

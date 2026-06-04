@@ -67,6 +67,14 @@ def get_user_info():
         result["welcome_video_seen"] = bool(
             frappe.db.get_value("User", frappe.session.user, "welcome_video_seen")
         )
+        # A "Docente" acts as a global instructor: it gets the same capabilities
+        # as the instructor (Course Creator) role, applied to every course/batch
+        # (see can_modify_course / can_modify_batch and the frontend isAdmin gates).
+        is_docente = "Docente" in result.get("roles", [])
+        result["is_docente"] = is_docente
+        if is_docente:
+            result["is_instructor"] = True
+            result["is_student"] = False
     return result
 
 

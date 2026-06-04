@@ -100,15 +100,17 @@
 							{{ __('Message') }}
 							<span class="text-ink-red-3">*</span>
 						</div>
-						<textarea
-							v-model="announcement.message"
-							class="w-full min-h-[120px] max-h-[240px] border rounded-md p-2 text-sm bg-surface-gray-3 border-outline-gray-2"
+						<TextEditor
+							:fixedMenu="true"
+							:content="announcement.message"
+							@change="(val) => (announcement.message = val)"
+							editorClass="prose-sm py-2 px-2 min-h-[120px] max-h-[240px] overflow-auto border-outline-gray-2 hover:border-outline-gray-3 rounded-b-md bg-surface-gray-3"
 							:placeholder="
 								__(
 									'Write your message here. It will be inserted into the template.',
 								)
 							"
-						></textarea>
+						/>
 					</div>
 					<div>
 						<div class="mb-1.5 flex items-center justify-between">
@@ -122,9 +124,10 @@
 							</Button>
 						</div>
 						<div
-							class="border rounded-md p-4 bg-surface-white min-h-[200px] max-h-[400px] overflow-auto"
-							v-html="previewHtml"
-						></div>
+							class="border rounded-md min-h-[200px] max-h-[400px] overflow-auto"
+						>
+							<AnnouncementContent :content="previewHtml" />
+						</div>
 						<textarea
 							v-if="showAdvanced"
 							v-model="announcement.announcement"
@@ -160,8 +163,37 @@ import {
 	toast,
 } from 'frappe-ui'
 import { computed, reactive, ref, watch } from 'vue'
+import AnnouncementContent from '@/pages/Batches/components/AnnouncementContent.vue'
 
 const show = defineModel()
+
+/*
+ * The frappe-ui TextEditor color extension renders named colors as
+ * `color: var(--prose-color-<name>)`, and those CSS variables only exist inside
+ * the editor (`.ProseMirror`). Anywhere else — the preview, the published
+ * announcement, and the actual email the student receives — the variable is
+ * undefined and the color is lost. Resolve them to real hex values (the
+ * light-mode shades, which read well on the email's light background) before
+ * the content is previewed or sent, so the chosen color is preserved everywhere.
+ */
+const NAMED_COLOR_HEX = {
+	red: '#CC2929',
+	blue: '#007BE0',
+	green: '#278F5E',
+	yellow: '#D1930D',
+	orange: '#D45A08',
+	purple: '#8642C2',
+	pink: '#CF3A96',
+	gray: '#7C7C7C',
+	teal: '#0B9E92',
+	cyan: '#32A4C7',
+}
+
+const inlineNamedColors = (html) =>
+	String(html || '').replace(
+		/var\(\s*--prose-color-(\w+)\s*\)/g,
+		(match, name) => NAMED_COLOR_HEX[name] || match,
+	)
 
 const props = defineProps({
 	batch: {
@@ -196,17 +228,23 @@ const hasMessagePlaceholder = computed(() =>
 	/\{\{\s*message\s*\}\}/.test(announcement.announcement || ''),
 )
 
-const escapeHtml = (str) =>
-	String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+const isEmptyHtml = (html) => {
+	const stripped = String(html || '')
+		.replace(/<(?!img|a)[^>]*>/g, '')
+		.replace(/&nbsp;/g, '')
+		.trim()
+	return stripped.length === 0
+}
 
 const previewHtml = computed(() => {
-	const msg = escapeHtml(announcement.message || '').replace(/\n/g, '<br>')
-	return (announcement.announcement || '')
+	const msg = isEmptyHtml(announcement.message) ? '' : announcement.message
+	const html = (announcement.announcement || '')
 		.replace(/\{\{\s*message\s*\}\}/g, msg)
 		.replace(
 			/\{\{\s*frappe\.utils\.get_url\(\)\s*\}\}/g,
 			window.location.origin,
 		)
+	return inlineNamedColors(html)
 })
 
 const studentsInfo = createResource({
@@ -320,9 +358,14 @@ const announcementResource = createResource({
 		return {
 			batch: props.batch,
 			recipients: recipients,
-			subject: announcement.subject,
-			content: announcement.announcement,
-			message: announcement.message,
+			// When emailing, bake named colors to hex so they survive in the
+			// recipient's email client (which lacks the editor's CSS variables).
+			// Notification-only content keeps the variables so the themed in-app
+			// card can resolve them to dark-mode shades for readable contrast.
+			content: sendEmail.value
+				? inlineNamedColors(announcement.announcement)
+				: announcement.announcement,
+			message: inlineNamedColors(announcement.message),
 			send_email: sendEmail.value ? 1 : 0,
 		}
 	},
@@ -348,7 +391,10 @@ const makeAnnouncement = (close) => {
 				if (!announcement.announcement) {
 					return __('Announcement is required')
 				}
-				if (hasMessagePlaceholder.value && !announcement.message) {
+				if (
+					hasMessagePlaceholder.value &&
+					isEmptyHtml(announcement.message)
+				) {
 					return __('Message is required')
 				}
 			},

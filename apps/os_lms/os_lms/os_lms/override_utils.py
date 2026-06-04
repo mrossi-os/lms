@@ -9,6 +9,7 @@ from lms.lms.utils import get_batch_details as _original_get_batch_details
 from lms.lms.utils import get_courses as _orginal_get_courses
 from lms.lms.utils import get_progress
 from os_lms.os_lms.api import (
+    _find_adjacent_video_lessons,
     evaluate_lesson_access,
     evaluate_quiz_access,
     get_batch_tab_unread_counts,

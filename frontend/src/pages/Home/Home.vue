@@ -42,6 +42,7 @@
 import { computed, inject, onMounted, ref } from 'vue'
 import { call, createResource, usePageMeta } from 'frappe-ui'
 import { sessionStore } from '@/stores/session'
+import { useSettings } from '@/stores/settings'
 import { useRouter } from 'vue-router'
 import StudentHome from '@/pages/Home/StudentHome.vue'
 import AdminHome from '@/pages/Home/AdminHome.vue'
@@ -50,6 +51,10 @@ import WelcomeVideoHero from '@/oslms/components/Home/WelcomeVideoHero.vue'
 
 const user = inject<any>('$user')
 const { brand } = sessionStore()
+const settingsStore = useSettings()
+const liveClassesEnabled = computed(
+	() => settingsStore.settings.data?.enable_live_classes !== 0,
+)
 const router = useRouter()
 const evalCount = ref(0)
 const currentTab = ref<'student' | 'instructor'>('student')
@@ -112,12 +117,12 @@ onMounted(() => {
 
 const myLiveClasses = createResource({
 	url: 'lms.lms.api.get_my_live_classes',
-	auto: !isAdmin.value ? true : false,
+	auto: liveClassesEnabled.value && !isAdmin.value ? true : false,
 })
 
 const adminLiveClasses = createResource({
 	url: 'lms.lms.api.get_admin_live_classes',
-	auto: isAdmin.value ? true : false,
+	auto: liveClassesEnabled.value && isAdmin.value ? true : false,
 })
 
 const adminEvals = createResource({

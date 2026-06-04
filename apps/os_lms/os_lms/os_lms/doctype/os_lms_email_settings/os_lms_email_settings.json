@@ -1,0 +1,94 @@
+{
+	"actions": [],
+	"creation": "2026-05-21 12:00:00.000000",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"section_intro",
+		"intro_html",
+		"section_live_class",
+		"live_class_invitation_template",
+		"live_class_reminder_template",
+		"live_class_cancelled_template",
+		"live_class_ics_html",
+		"section_auth",
+		"login_with_email_link_template"
+	],
+	"fields": [
+		{
+			"fieldname": "section_intro",
+			"fieldtype": "Section Break",
+			"label": "Info"
+		},
+		{
+			"fieldname": "intro_html",
+			"fieldtype": "HTML",
+			"options": "<div class=\"text-muted\" style=\"font-size: var(--text-sm); line-height: 1.5;\"><p>Per ogni email puoi collegare un <b>Email Template</b> creato da desk (<code>/app/email-template</code>). Se il campo &egrave; vuoto viene usato il template di default fornito dall'app.</p><p>Nei template puoi usare le variabili Jinja indicate sotto ciascun campo (es. <code>{{ student_name }}</code>, <code>{{ title }}</code>).</p></div>"
+		},
+		{
+			"fieldname": "section_live_class",
+			"fieldtype": "Section Break",
+			"label": "Live Class"
+		},
+		{
+			"description": "Email di invito inviata ai partecipanti alla creazione/aggiornamento della lezione. Variabili: student_name, title, date, time, join_url, description, batch_name, ics_url (link .ics firmato per il bottone \"Aggiungi al calendario\", vedi guida sotto).",
+			"fieldname": "live_class_invitation_template",
+			"fieldtype": "Link",
+			"label": "Live Class Invitation",
+			"options": "Email Template"
+		},
+		{
+			"description": "Email di promemoria inviata prima dell'inizio della lezione. Variabili: student_name, title, date, time, batch_name, ics_url (link .ics firmato per il bottone \"Aggiungi al calendario\", vedi guida sotto).",
+			"fieldname": "live_class_reminder_template",
+			"fieldtype": "Link",
+			"label": "Live Class Reminder",
+			"options": "Email Template"
+		},
+		{
+			"description": "Email inviata quando una lezione viene annullata. Variabili: student_name, title, date, time, batch_name.",
+			"fieldname": "live_class_cancelled_template",
+			"fieldtype": "Link",
+			"label": "Live Class Cancelled",
+			"options": "Email Template"
+		},
+		{
+			"fieldname": "live_class_ics_html",
+			"fieldtype": "HTML",
+			"label": "Guida: bottone Aggiungi al calendario",
+			"options": "<div class=\"text-muted\" style=\"font-size: var(--text-sm); line-height: 1.5;\"><p><b>Bottone &quot;Aggiungi al calendario&quot;</b> &mdash; incolla questo snippet nel template di <b>invito</b> e/o <b>promemoria</b> dove vuoi mostrare il pulsante. La variabile <code>{{ ics_url }}</code> contiene il link <code>.ics</code> gi&agrave; firmato (valido per Google, Apple, Outlook&hellip;) e funziona anche se il destinatario non &egrave; loggato all'LMS. L'<code>.ics</code> resta comunque allegato all'email.</p><pre style=\"background:#f5f5f5;border:1px solid #e5e5e5;border-radius:4px;padding:12px;white-space:pre-wrap;font-size:12px;line-height:1.4;\">{% if ics_url %}\n&lt;div style=&quot;text-align:center;margin:0 0 24px;&quot;&gt;\n  &lt;a href=&quot;{{ ics_url }}&quot;\n     style=&quot;display:inline-block;background:#256AB0;color:#fff;padding:12px 28px;border-radius:4px;font-size:14px;font-weight:600;text-decoration:none;&quot;&gt;\n    Aggiungi al calendario\n  &lt;/a&gt;\n&lt;/div&gt;\n{% endif %}</pre></div>"
+		},
+		{
+			"fieldname": "section_auth",
+			"fieldtype": "Section Break",
+			"label": "Authentication"
+		},
+		{
+			"description": "Email con magic link per il login senza password. Variabili: link, minutes, app_name.",
+			"fieldname": "login_with_email_link_template",
+			"fieldtype": "Link",
+			"label": "Login with Email Link",
+			"options": "Email Template"
+		}
+	],
+	"grid_page_length": 50,
+	"index_web_pages_for_search": 1,
+	"issingle": 1,
+	"links": [],
+	"modified": "2026-05-21 12:00:00.000000",
+	"modified_by": "Administrator",
+	"module": "OS LMS",
+	"name": "OS LMS Email Settings",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"read": 1,
+			"role": "System Manager",
+			"write": 1
+		}
+	],
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": [],
+	"track_changes": 1
+}

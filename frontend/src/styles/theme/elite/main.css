@@ -384,3 +384,18 @@ textarea::-moz-selection {
 	background-color: var(--ink-gray-9) !important;
 	color: var(--color-company-secondary) !important;
 }
+
+.multi-link button{
+	background-color: var(--color-company-primary);
+	border: 1px solid var(--outline-gray-modals);
+	border-radius: 8px;
+    padding-top: var(--form-padding-y);
+    padding-bottom: var(--form-padding-y);
+}
+.multi-link button:active{
+	background-color: var(--color-company-primary) !important;
+}
+
+.lesson-content-container{
+	min-height: calc(100vh - 94px);
+}

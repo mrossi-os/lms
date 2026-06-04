@@ -128,7 +128,7 @@
 							log.document_type == 'LMS Course' &&
 							log.document_details.video_link
 						"
-						:src="`https://www.youtube.com/embed/${log.document_details.video_link}`"
+						:src="getVideoEmbedURL(log.document_details.video_link)"
 						class="rounded-s-md w-72"
 					/>
 					<video
@@ -233,7 +233,7 @@ import { sessionStore } from '../stores/session'
 import { computed, inject, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Bell, Calendar, Clock, X } from 'lucide-vue-next'
-import { formatTime } from '@/utils/'
+import { formatTime, getVideoEmbedURL } from '@/utils/'
 import LayoutHeader from '@/components/Layouts/LayoutHeader.vue'
 
 const { brand } = sessionStore()

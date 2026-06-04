@@ -17,6 +17,48 @@ import dayjs from '@/utils/dayjs'
 import Embed from '@editorjs/embed'
 import SimpleImage from '@editorjs/simple-image'
 import Table from '@editorjs/table'
+import ColorPicker from 'editorjs-color-picker'
+
+class ColorPickerInline extends ColorPicker {
+	checkState() {
+		return false
+	}
+
+	renderActions() {
+		const el = super.renderActions()
+		el.style.display = 'none'
+		this._actionsEl = el
+		el.addEventListener(
+			'mousedown',
+			(e) => {
+				e.preventDefault()
+				const sel = window.getSelection()
+				if (sel && sel.rangeCount > 0) {
+					this.lastRange = sel.getRangeAt(0)
+				}
+			},
+			true,
+		)
+		el.addEventListener('click', (e) => {
+			if (
+				e.target.classList?.contains(
+					'editorjs__color-selector__container-item',
+				)
+			) {
+				el.style.display = 'none'
+			}
+		})
+		return el
+	}
+
+	surround(range) {
+		super.surround(range)
+		if (this._actionsEl) {
+			this._actionsEl.style.display =
+				this._actionsEl.style.display === 'none' ? '' : 'none'
+		}
+	}
+}
 import Plyr from 'plyr'
 import 'plyr/dist/plyr.css'
 import DOMPurify from 'dompurify'
@@ -69,6 +111,12 @@ export function formatAmount(amount) {
 		return (amount / 1000).toFixed(1) + 'k'
 	}
 	return amount
+}
+
+export function formatRating(value) {
+	const n = Number(value)
+	if (!isFinite(n)) return ''
+	return (Math.round(n * 10) / 10).toString()
 }
 
 export function convertToTitleCase(str) {
@@ -155,6 +203,28 @@ export function getEditorTools() {
 		inlineCode: {
 			class: InlineCode,
 			shortcut: 'CMD+SHIFT+M',
+		},
+		ColorPicker: {
+			class: ColorPickerInline,
+			config: {
+				colors: [
+					'#000000',
+					'#5A5A5A',
+					'#9E9E9E',
+					'#EC7878',
+					'#FF9800',
+					'#FFBF00',
+					'#CDDC39',
+					'#4CAF50',
+					'#00BCD4',
+					'#0070FF',
+					'#3F51B5',
+					'#9C27B0',
+					'#795548',
+					'#FFFFFF',
+				],
+				columns: 7,
+			},
 		},
 		embed: {
 			class: Embed,
@@ -462,12 +532,7 @@ const getSidebarItems = (forMobile = false) => {
 					label: 'Courses',
 					icon: 'BookOpen',
 					to: 'Courses',
-					activeFor: [
-						'Courses',
-						'CourseDetail',
-						'Lesson',
-						'LessonForm',
-					],
+					activeFor: ['Courses', 'CourseDetail', 'Lesson'],
 				},
 				{
 					label: 'Programs',
@@ -905,6 +970,41 @@ const extractYouTubeId = (url) => {
 	} catch {
 		return url.split('/').pop()
 	}
+}
+
+const YOUTUBE_WATCH =
+	/^(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?(?:.*&)?v=([\w-]{11})/i
+const YOUTUBE_SHORT = /^(?:https?:\/\/)?youtu\.be\/([\w-]{11})/i
+const YOUTUBE_EMBED =
+	/^(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([\w-]{11})/i
+const VIMEO_URL =
+	/^(?:https?:\/\/)?(?:www\.)?vimeo\.com\/(\d+)(?:\/([a-zA-Z0-9]+))?/i
+const VIMEO_PLAYER = /^(?:https?:\/\/)?player\.vimeo\.com\/video\/(\d+)/i
+
+// Build an embeddable iframe URL from a course "Preview Video" value.
+// Handles full YouTube and Vimeo URLs as well as legacy bare YouTube ids
+// that the old backend normalization used to store.
+export const getVideoEmbedURL = (value) => {
+	if (!value) return ''
+	const url = value.trim()
+
+	if (YOUTUBE_EMBED.test(url)) return url
+	let m = url.match(YOUTUBE_WATCH) || url.match(YOUTUBE_SHORT)
+	if (m) return `https://www.youtube.com/embed/${m[1]}`
+
+	if (VIMEO_PLAYER.test(url)) return url
+	m = url.match(VIMEO_URL)
+	if (m) {
+		return m[2]
+			? `https://player.vimeo.com/video/${m[1]}?h=${m[2]}`
+			: `https://player.vimeo.com/video/${m[1]}`
+	}
+
+	// Legacy: a bare YouTube video id stored by the old normalization.
+	if (/^[\w-]{11}$/.test(url)) return `https://www.youtube.com/embed/${url}`
+
+	// Fallback: assume the value is already an embeddable URL.
+	return url
 }
 
 export const createLMSCategory = (name) => {

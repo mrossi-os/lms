@@ -288,9 +288,11 @@ def create_live_class(
 		"start_time": format_datetime(f"{date} {time}", "yyyy-MM-ddTHH:mm:ssZ"),
 		"duration": duration,
 		"agenda": description,
-		"private_meeting": True,
-		"auto_recording": "none" if auto_recording == "No Recording" else auto_recording.lower(),
 		"timezone": timezone,
+		"settings": {
+			"private_meeting": True,
+			"auto_recording": "none" if auto_recording == "No Recording" else auto_recording.lower(),
+		},
 	}
 	headers = {
 		"Authorization": "Bearer " + authenticate(zoom_account),
@@ -391,7 +393,20 @@ def authenticate(zoom_account):
 		).decode()
 	}
 	response = requests.request("POST", authenticate_url, headers=headers)
-	return response.json()["access_token"]
+
+	try:
+		data = response.json()
+	except ValueError:
+		data = {}
+
+	access_token = data.get("access_token")
+	if not access_token:
+		error = data.get("reason") or data.get("error") or response.text
+		frappe.throw(
+			_("Zoom authentication failed for account {0}: {1}").format(zoom_account, error)
+		)
+
+	return access_token
 
 
 @frappe.whitelist()

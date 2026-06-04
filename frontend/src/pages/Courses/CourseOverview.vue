@@ -1,241 +1,192 @@
 <template>
-	<div class="p-5">
-		<section
-			v-if="hasHero"
-			class="relative -mx-5 -mt-5 mb-8 h-[58vh] max-h-[60vh] md:h-[50vh] md:max-h-[50vh] bg-black overflow-hidden"
+	<SkeletonLoader v-if="!course.data" variant="course-page" />
+	<div v-else class="p-5">
+		<div
+			class="flex flex-col md:flex-row items-start justify-between w-full gap-x-8 gap-y-8"
 		>
-			<template v-if="course.data.hero?.media_type === 'Video'">
-				<video
-					v-if="isDirectVideoFile(course.data.hero?.media_url)"
-					:src="course.data.hero?.media_url"
-					controls
-					class="absolute inset-0 w-full h-full object-cover"
-				/>
-				<iframe
-					v-else
-					:src="heroEmbedUrl"
-					class="absolute inset-0 w-full h-full"
-					frameborder="0"
-					allow="
-						accelerometer;
-						autoplay;
-						clipboard-write;
-						encrypted-media;
-						gyroscope;
-						picture-in-picture;
-					"
-					allowfullscreen
-				/>
-			</template>
-			<img
-				v-else-if="course.data.hero?.media_type === 'Image'"
-				:src="course.data.hero?.media_url"
-				:alt="course.data.title"
-				class="absolute inset-0 w-full h-full object-cover"
-			/>
-			<div
-				class="absolute inset-x-0 bottom-0 p-6 md:p-8 bg-gradient-to-t from-black/80 via-black/50 to-transparent text-ink-gray-9 pointer-events-none"
-			>
-				<h1 class="text-2xl md:text-4xl font-semibold text-ink-gray-9">
-					{{ course.data.title }}
-				</h1>
-				<p
-					v-if="course.data.short_introduction"
-					class="mt-2 max-w-3xl text-sm md:text-base text-white/85 leading-6"
-				>
-					{{ course.data.short_introduction }}
-				</p>
-			</div>
-		</section>
-		<div class="flex justify-between w-full space-x-5">
-			<div class="w-full md:w-2/3">
-				<template v-if="!hasHero">
-					<div class="text-3xl font-semibold text-ink-gray-9">
+			<div class="md:w-2/3 space-y-10 min-w-0">
+				<section class="space-y-4">
+					<h1 class="text-3xl font-semibold text-ink-gray-9">
 						{{ course.data.title }}
-					</div>
-					<div class="my-3 leading-6 text-ink-gray-7">
-						{{ course.data.short_introduction }}
-					</div>
-				</template>
-				<div class="flex items-center">
-					<Tooltip
-						v-if="parseInt(course.data.rating) > 0"
-						:text="__('Average Rating')"
-						class="flex items-center"
-					>
-						<Star class="size-4 text-transparent fill-ink-amber-2" />
-						<span class="ms-1 text-ink-gray-7">
-							{{ course.data.rating }}
-						</span>
-					</Tooltip>
-					<span v-if="parseInt(course.data.rating) > 0" class="mx-3"
-						>&middot;</span
-					>
-					<Tooltip
-						v-if="course.data.enrollment_count"
-						:text="__('Enrolled Students')"
-						class="flex items-center"
-					>
-						<Users class="h-4 w-4 text-ink-gray-7" />
-						<span class="ms-1">
-							{{ course.data.enrollment_count_formatted }}
-						</span>
-					</Tooltip>
-					<span v-if="course.data.enrollment_count" class="mx-3">&middot;</span>
+					</h1>
 					<div
-						v-if="
-							user?.data?.is_moderator ||
-							user?.data?.is_evaluator ||
-							user?.data?.is_instructor
-						"
-						class="flex items-center"
+						class="flex flex-wrap items-center gap-x-3 gap-y-2 text-ink-gray-7"
 					>
-						<span
-							class="h-6 me-1"
-							:class="{
-								'avatar-group overlap': course.data.instructors?.length > 1,
-							}"
+						<template v-if="Number(course.data.rating) > 0">
+							<div class="flex items-center gap-1">
+								<Star class="size-4 text-yellow-500 fill-yellow-500" />
+								<span class="font-medium text-ink-gray-9">{{
+									formatRating(course.data.rating)
+								}}</span>
+								<span v-if="course.data.rating_count">
+									({{ formatAmount(course.data.rating_count) }})
+								</span>
+							</div>
+							<span class="lucide-dot size-5 text-ink-gray-7" />
+						</template>
+						<template v-if="course.data.enrollments">
+							<div class="flex items-center gap-1.5">
+								<UsersRound class="size-4 stroke-1.5" />
+								<span
+									>{{ formatAmount(course.data.enrollments) }}
+									{{ __('Students') }}</span
+								>
+							</div>
+							<span class="lucide-dot size-5 text-ink-gray-7" />
+						</template>
+						<div
+							v-if="course.data.instructors?.length"
+							class="flex items-center"
 						>
-							<UserAvatar
-								v-for="instructor in course.data.instructors"
-								:user="instructor"
-							/>
-						</span>
-						<CourseInstructors :instructors="course.data.instructors" />
-					</div>
-				</div>
-				<CourseTagBadges
-					v-if="course.data.tags"
-					:tags="course.data.tags"
-					class="my-4"
-				/>
-				<div class="md:hidden my-4">
-					<CourseCardOverlay :course="course" :hideVideo="hasHero" />
-				</div>
-
-				<div class="mt-10">
-					<div
-						ref="descriptionRef"
-						v-html="unescapeDescription(course.data.description)"
-						class="card p-3 ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal overflow-hidden transition-all duration-300"
-						:style="
-							!isExpanded && showToggle
-								? `max-height: ${collapsedHeight}px`
-								: ''
-						"
-					></div>
-					<div
-						v-if="showToggle"
-						class="relative flex justify-center"
-						:class="!isExpanded ? '-mt-10 pt-12' : 'mt-2'"
-					>
-						<Button
-							variant="outline"
-							size="sm"
-							@click="isExpanded = !isExpanded"
-						>
-							<template #prefix>
-								<ChevronDown
-									class="h-4 w-4 transition-transform duration-300"
-									:class="isExpanded ? 'rotate-180' : ''"
+							<span
+								class="h-6 me-1"
+								:class="{
+									'avatar-group overlap': course.data.instructors.length > 1,
+								}"
+							>
+								<UserAvatar
+									v-for="instructor in course.data.instructors"
+									:key="instructor.name"
+									:user="instructor"
 								/>
-							</template>
-							{{ isExpanded ? __('Mostra meno') : __('Mostra altro') }}
-						</Button>
+							</span>
+							<CourseInstructors :instructors="course.data.instructors" />
+						</div>
 					</div>
-				</div>
-				<FeaturedSectionView
-					v-if="course.data.feature_sections"
-					:sections="course.data.feature_sections"
-					:is-enrolled="!!course.data.membership"
+					<div v-if="course.data.tags" class="flex flex-wrap gap-2">
+						<Badge
+							v-for="tag in course.data.tags.split(', ')"
+							:key="tag"
+							theme="gray"
+							size="lg"
+						>
+							{{ tag }}
+						</Badge>
+					</div>
+					<p
+						v-if="course.data.short_introduction"
+						class="text-ink-gray-7 leading-6"
+					>
+						{{ course.data.short_introduction }}
+					</p>
+					<div class="md:hidden">
+						<CourseCardOverlay :course="course" />
+					</div>
+				</section>
+
+				<section>
+					<div class="flex items-baseline justify-between gap-4 mb-4">
+						<h2 class="text-2xl font-semibold text-ink-gray-9">
+							{{ __('Course content') }}
+						</h2>
+						<div class="text-base text-ink-gray-5">
+							{{ outlineStats }}
+						</div>
+					</div>
+					<div class="border rounded-md p-2">
+						<SkeletonLoader
+							v-if="outline.loading && !outline.data"
+							variant="list"
+							:count="6"
+						/>
+						<CourseOutline
+							v-else
+							:courseName="course.data.name"
+							:getProgress="course.data.membership ? true : false"
+							:editorLinks="isCourseAdmin"
+						/>
+					</div>
+				</section>
+
+				<section v-if="course.data.description" class="space-y-3">
+					<h2 class="text-2xl font-semibold text-ink-gray-9">
+						{{ __('About this course') }}
+					</h2>
+					<div
+						v-html="course.data.description"
+						class="ProseMirror prose prose-sm max-w-none !whitespace-normal prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2"
+					/>
+				</section>
+
+				<CourseReviews
+					:courseName="course.data.name"
+					:avg_rating="course.data.rating"
+					:membership="course.data.membership || null"
 				/>
 			</div>
-			<div class="hidden md:block">
-				<CourseCardOverlay :course="course" :hideVideo="hasHero" />
-			</div>
+
+			<aside
+				class="hidden md:flex w-80 shrink-0 flex-col space-y-6 self-start sticky top-5"
+			>
+				<CourseCardOverlay :course="course" />
+				<CourseCreatorCard :instructors="course.data.instructors || []" />
+			</aside>
 		</div>
-		<RelatedCourses :courseName="course.data.name" />
+
+		<RelatedCourses :courseName="course.data.name" class="mt-12" />
 	</div>
 </template>
+
 <script setup lang="ts">
-import { Star, Users, ChevronDown } from 'lucide-vue-next'
-import { Tooltip, Button } from 'frappe-ui'
+import { computed, inject } from 'vue'
+import { createResource, Badge } from 'frappe-ui'
+import { Star, UsersRound } from 'lucide-vue-next'
+import { formatAmount, formatRating } from '@/utils/'
+import type { SessionUser } from '@/types/api'
 import CourseCardOverlay from '@/components/CourseCardOverlay.vue'
-import UserAvatar from '@/components/UserAvatar.vue'
+import CourseOutline from '@/components/CourseOutline.vue'
+import SkeletonLoader from '@/components/SkeletonLoader.vue'
+import CourseReviews from '@/components/CourseReviews.vue'
 import CourseInstructors from '@/components/CourseInstructors.vue'
+import CourseCreatorCard from '@/components/CourseCreatorCard.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
 import RelatedCourses from '@/components/RelatedCourses.vue'
-import FeaturedSectionView from '@/oslms/components/FeaturedSectionView.vue'
-import CourseTagBadges from '@/oslms/components/CourseTagBadges.vue'
-import { inject, ref, computed, onMounted, nextTick } from 'vue'
+import type { CourseDetails, OutlineChapter, Resource } from '@/types/api'
 
 const props = defineProps<{
-	course: any
+	course: Resource<CourseDetails | null>
 }>()
 
-const user = inject<any>('$user')
+const user = inject<SessionUser>('$user')
 
-const hasHero = computed<boolean>(() => {
-	const hero = props.course.data?.hero
-	return !!(hero?.enabled && hero?.media_url)
-})
-
-const DIRECT_VIDEO_EXTENSIONS = /\.(mp4|webm|ogg|ogv|mov|m4v)(\?.*)?$/i
-const isDirectVideoFile = (url: string | undefined) => {
-	if (!url) return false
-	return DIRECT_VIDEO_EXTENSIONS.test(url)
-}
-
-const YOUTUBE_WATCH =
-	/^(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?(?:.*&)?v=([\w-]{11})/i
-const YOUTUBE_SHORT = /^(?:https?:\/\/)?youtu\.be\/([\w-]{11})/i
-const YOUTUBE_EMBED =
-	/^(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([\w-]{11})/i
-const VIMEO_URL =
-	/^(?:https?:\/\/)?(?:www\.)?vimeo\.com\/(\d+)(?:\/([a-zA-Z0-9]+))?/i
-const VIMEO_PLAYER = /^(?:https?:\/\/)?player\.vimeo\.com\/video\/(\d+)/i
-
-const toEmbedUrl = (url: string | undefined): string => {
-	if (!url) return ''
-	let m = url.match(YOUTUBE_EMBED)
-	if (m) return url
-	m = url.match(YOUTUBE_WATCH) || url.match(YOUTUBE_SHORT)
-	if (m) return `https://www.youtube.com/embed/${m[1]}`
-	m = url.match(VIMEO_PLAYER)
-	if (m) return url
-	m = url.match(VIMEO_URL)
-	if (m) {
-		const id = m[1]
-		const hash = m[2]
-		return hash
-			? `https://player.vimeo.com/video/${id}?h=${hash}`
-			: `https://player.vimeo.com/video/${id}`
-	}
-	return url
-}
-
-const heroEmbedUrl = computed<string>(() =>
-	toEmbedUrl(props.course.data?.hero?.media_url),
+const isCourseInstructor = computed<boolean>(() =>
+	(props.course.data?.instructors || []).some(
+		(i) => i.name === user?.data?.name
+	)
 )
 
-const isExpanded = ref(false)
-const showToggle = ref(false)
-const descriptionRef = ref<HTMLElement | null>(null)
-const collapsedHeight = 156
-const charLimit = 400
+const isCourseAdmin = computed<boolean>(
+	() => Boolean(user?.data?.is_moderator) || isCourseInstructor.value
+)
 
-onMounted(async () => {
-	await nextTick()
-	const descriptionText =
-		props.course.data.description?.replace(/<[^>]*>/g, '') || ''
-	if (descriptionText.length > charLimit) {
-		showToggle.value = true
+const outline = createResource({
+	url: 'lms.lms.utils.get_course_outline',
+	cache: ['course_outline', props.course.data?.name],
+	makeParams() {
+		return { course: props.course.data?.name, progress: false }
+	},
+	auto: true,
+}) as Resource<OutlineChapter[]>
+
+const outlineStats = computed(() => {
+	const chapters = outline.data || []
+	const lessonCount = chapters.reduce(
+		(acc, c) => acc + (c.lessons?.length || 0),
+		0
+	)
+	const parts: string[] = []
+	if (chapters.length) {
+		parts.push(
+			`${chapters.length} ${
+				chapters.length === 1 ? __('section') : __('sections')
+			}`
+		)
 	}
+	if (lessonCount) {
+		parts.push(
+			`${lessonCount} ${lessonCount === 1 ? __('lesson') : __('lessons')}`
+		)
+	}
+	return parts.join(' · ')
 })
-
-const unescapeDescription = (html: string) => {
-	if (!html) return ''
-	const textarea = document.createElement('textarea')
-	textarea.innerHTML = html
-	return textarea.value
-}
 </script>

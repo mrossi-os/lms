@@ -171,6 +171,7 @@ const tabsStructure = computed(() => {
 								},
 							],
 						},
+						
 						{
 							label: __('Notifications'),
 							columns: [
@@ -294,6 +295,64 @@ const tabsStructure = computed(() => {
 												'Allows users to pick a profile cover image from Unsplash. https://unsplash.com/documentation#getting-started.',
 											),
 											type: 'password',
+										},
+									],
+								},
+							],
+						},
+					],
+				},
+					{
+					label: 'Course Progress',
+					icon: 'Activity',
+					description:
+						'Control how lessons are marked complete: dwell time and enforcement toggles for video, quiz, and assignment.',
+					sections: [
+						{
+							label: 'Dwell Time',
+							columns: [
+								{
+									fields: [
+										{
+											label: 'Lesson dwell time (seconds)',
+											name: 'lesson_dwell_time',
+											type: 'number',
+											description:
+												'Seconds a learner must stay on a lesson before it auto-marks complete.',
+										},
+									],
+								},
+							],
+						},
+						{
+							label: 'Enforcement',
+							columns: [
+								{
+									fields: [
+										{
+											label: 'Enforce video completion',
+											name: 'enforce_video_completion',
+											type: 'checkbox',
+											description:
+												'When enabled, lessons that contain a video can only be marked complete by playing the video to the end. If the video fails to load, the dwell timer is used as a fallback.',
+										},
+										{
+											label: 'Enforce assignment completion',
+											name: 'enforce_assignment_completion',
+											type: 'checkbox',
+											description:
+												'When enabled, lessons with an assignment cannot be marked complete until the assignment is submitted.',
+										},
+									],
+								},
+								{
+									fields: [
+										{
+											label: 'Enforce quiz completion',
+											name: 'enforce_quiz_completion',
+											type: 'checkbox',
+											description:
+												'When enabled, lessons with a quiz cannot be marked complete until the quiz is submitted.',
 										},
 									],
 								},
@@ -661,6 +720,48 @@ const tabsStructure = computed(() => {
 			],
 		},
 		{
+			key: 'Configurazioni',
+			label: __('Configurazioni'),
+			hideLabel: false,
+			condition: isAdministrator,
+			items: [
+				{
+					key: 'Corsi',
+					label: __('Corsi'),
+					icon: 'BookOpen',
+					description: __('Impostazioni relative ai corsi'),
+					condition: isAdministrator,
+					sections: [],
+				},
+				{
+					key: 'Classi',
+					label: __('Classi'),
+					icon: 'Laptop',
+					description: __('Impostazioni relative alle classi'),
+					condition: isAdministrator,
+					sections: [
+						{
+							label: __('Classi Live'),
+							columns: [
+								{
+									fields: [
+										{
+											label: __('Abilita Classi Live'),
+											name: 'enable_live_classes',
+											type: 'checkbox',
+											description: __(
+												'Se attivo, la tab Classi Live e le funzionalità correlate sono visibili a tutti gli utenti.',
+											),
+										},
+									],
+								},
+							],
+						},
+					],
+				},
+			],
+		},
+		{
 			key: 'AI',
 			label: __('AI'),
 			hideLabel: false,
@@ -848,14 +949,17 @@ const tabsStructure = computed(() => {
 })
 
 const tabs = computed(() => {
-	return tabsStructure.value.map((tab) => {
-		return {
-			...tab,
-			items: tab.items.filter((item) => {
-				return !item.condition || item.condition()
-			}),
-		}
-	})
+	return tabsStructure.value
+		.filter((tab) => !tab.condition || tab.condition())
+		.map((tab) => {
+			return {
+				...tab,
+				items: tab.items.filter((item) => {
+					return !item.condition || item.condition()
+				}),
+			}
+		})
+		.filter((tab) => tab.items.length > 0)
 })
 
 watch(show, async () => {

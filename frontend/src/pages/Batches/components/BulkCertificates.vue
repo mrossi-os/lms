@@ -64,7 +64,7 @@
 <script setup>
 import { inject, reactive } from 'vue'
 import { createResource, Dialog, FormControl, toast } from 'frappe-ui'
-import Switch from '@/oslms/components/Form/Switch.vue'
+import Switch from '@/components/Controls/Switch.vue'
 import Link from '@/components/Controls/Link.vue'
 
 const show = defineModel()

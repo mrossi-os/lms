@@ -115,11 +115,101 @@ class IngestionService:
             lesson.save()
             frappe.db.commit()
 
+    def _build_course_context(self, lesson) -> dict:
+        """Build the student's progress map and the lessons the tutor may use.
+
+        Allowed lessons = the current lesson plus every lesson the student has
+        already completed in this course. Lessons not yet completed are
+        intentionally excluded so the tutor cannot reveal their content.
+
+        Returns:
+            dict with:
+                - allowed: set of lesson names the tutor may retrieve from.
+                - title_map: {lesson_name: (number, title)} for the whole course.
+                - meta: course/lesson titles and the formatted progress outline,
+                  passed to the chatbot to enrich the prompt.
+        """
+        course = lesson.course
+        member = frappe.session.user
+
+        completed = set(
+            frappe.get_all(
+                "LMS Course Progress",
+                filters={"course": course, "member": member, "status": "Complete"},
+                pluck="lesson",
+            )
+        )
+        allowed = completed | {lesson.name}
+
+        course_title = frappe.db.get_value("LMS Course", course, "title") or course
+
+        # Batch-load all lesson titles for the course (get_all bypasses permissions).
+        title_lookup = {
+            row.name: row.title
+            for row in frappe.get_all(
+                "Course Lesson", filters={"course": course}, fields=["name", "title"]
+            )
+        }
+
+        chapters = frappe.get_all(
+            "Chapter Reference",
+            filters={"parent": course},
+            fields=["idx", "chapter"],
+            order_by="idx",
+        )
+
+        outline_lines = []
+        title_map = {}
+        current_number = ""
+        for chapter in chapters:
+            lesson_rows = frappe.get_all(
+                "Lesson Reference",
+                filters={"parent": chapter.chapter},
+                fields=["lesson", "idx"],
+                order_by="idx",
+            )
+            for row in lesson_rows:
+                number = f"{chapter.idx}-{row.idx}"
+                title = title_lookup.get(row.lesson, row.lesson)
+                title_map[row.lesson] = (number, title)
+
+                if row.lesson == lesson.name:
+                    marker = "▶"
+                    current_number = number
+                elif row.lesson in completed:
+                    marker = "✓"
+                else:
+                    marker = "○"
+                outline_lines.append(f"{marker} {number} {title}")
+
+        meta = {
+            "course_title": course_title,
+            "lesson_title": lesson.title,
+            "lesson_number": current_number,
+            "outline_text": "\n".join(outline_lines),
+        }
+        return {"allowed": allowed, "title_map": title_map, "meta": meta}
+
+    def _label_chunks(self, chunks: list[dict], title_map: dict) -> list[str]:
+        """Prefix each retrieved chunk with its source lesson, so the model can
+        attribute and connect content across lessons. Kept internal (not shown
+        in the UI)."""
+        labeled = []
+        for chunk in chunks:
+            number, title = title_map.get(chunk.get("lesson"), ("", ""))
+            if title:
+                labeled.append(f'[Lezione {number} — "{title}"]\n{chunk["content"]}')
+            else:
+                labeled.append(chunk["content"])
+        return labeled
+
     def ask(self, lesson, question: str) -> str:
         """Ask a question about a lesson using RAG context and LLM chatbot.
 
-        Searches for relevant chunks in the vector store, sends them as context
-        to the chatbot, and logs the interaction in LMSA Query Log.
+        Retrieves relevant chunks from the current lesson and any lesson the
+        student has already completed, enriches the prompt with the course title,
+        lesson title and the student's progress, sends them to the chatbot, and
+        logs the interaction in LMSA Query Log.
 
         Args:
             lesson: The Course Lesson document.
@@ -139,13 +229,19 @@ class IngestionService:
         status = "Failed"
 
         try:
-            # Search for relevant chunks in the vector store
-            context_chunks = self.rag_db.search(lesson.course, lesson.name, question)
-            if not context_chunks:
+            # Build the course/progress context and the set of allowed lessons
+            ctx = self._build_course_context(lesson)
+
+            # Search relevant chunks across the current + completed lessons
+            raw_chunks = self.rag_db.search(lesson.course, list(ctx["allowed"]), question)
+            if not raw_chunks:
                 frappe.throw("Lesson context not found")
 
+            # Label each chunk with its source lesson for cross-lesson integration
+            context_chunks = self._label_chunks(raw_chunks, ctx["title_map"])
+
             # Generate answer using the LLM chatbot
-            answer = self.chatbot.ask(question, context_chunks)
+            answer = self.chatbot.ask(question, context_chunks, lesson_context=ctx["meta"])
             status = "Answered"
         except Exception as e:
             self.logger.error("Ask failed for lesson %s: %s", lesson.name, e)

@@ -8,95 +8,112 @@
 					</div>
 
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-						<div class="space-y-5">
-							<Switch
-								class="card p-4"
-								size="sm"
-								v-model="batchDetail.doc.published"
-								:label="__('Published')"
-								:description="__('Make the batch visible to all users.')"
-							/>
-							<FormControl
-								v-model="batchDetail.doc.title"
-								:label="__('Title')"
-								:required="true"
-								class="w-full custom-selection"
-							/>
-							<FormControl
-								v-model="batchDetail.doc.start_date"
-								:label="__('Batch Start Date')"
-								type="date"
-								class="mb-4"
-								:required="true"
-							/>
-							<FormControl
-								v-model="batchDetail.doc.end_date"
-								:label="__('Batch End Date')"
-								type="date"
-								class="mb-4"
-								:required="true"
-							/>
-							<FormControl
-								v-model="batchDetail.doc.seat_count"
-								:label="__('Seat Count')"
-								type="number"
-								class="mb-4"
-								:placeholder="__('Number of seats available')"
-							/>
-						</div>
-						<div class="space-y-5">
-							<Switch
-								size="sm"
-								class="card p-4"
-								v-model="batchDetail.doc.allow_self_enrollment"
-								:label="__('Allow Self Enrollment')"
-								:description="
-									__('Allow users to enroll in this batch on their own.')
-								"
-							/>
-							<FormControl
-								v-model="batchDetail.doc.start_time"
-								:label="__('Session Start Time')"
-								type="time"
-								class="mb-4"
-								:required="true"
-							/>
-							<FormControl
-								v-model="batchDetail.doc.end_time"
-								:label="__('Session End Time')"
-								type="time"
-								class="mb-4"
-								:required="true"
-							/>
-							<FormControl
-								v-model="batchDetail.doc.timezone"
-								:label="__('Timezone')"
-								type="text"
-								:placeholder="__('Example: IST (+5:30)')"
-								class="mb-4"
-								:required="true"
-							/>
+						<FormControl
+							v-model="batchDetail.doc.title"
+							:label="__('Title')"
+							:required="true"
+							class="w-full"
+						/>
+						<Link
+							v-model="batchDetail.doc.category"
+							doctype="LMS Category"
+							:label="__('Category')"
+							:inlineCreate="true"
+							:onCreate="createCategory"
+						/>
+						<FormControl
+							v-model="batchDetail.doc.start_date"
+							:label="__('Batch Start Date')"
+							type="date"
+							:required="true"
+						/>
+						<FormControl
+							v-model="batchDetail.doc.end_date"
+							:label="__('Batch End Date')"
+							type="date"
+							:required="true"
+						/>
 
-							<Link
-								v-model="batchDetail.doc.category"
-								doctype="LMS Category"
-								:label="__('Category')"
-								:inlineCreate="true"
-								:onCreate="createCategory"
+						<FormControl
+							v-model="batchDetail.doc.start_time"
+							:label="__('Session Start Time')"
+							type="time"
+							:required="true"
+						/>
+						<FormControl
+							v-model="batchDetail.doc.end_time"
+							:label="__('Session End Time')"
+							type="time"
+							:required="true"
+						/>
+						<div>
+							<label class="block text-sm text-ink-gray-5 mb-1.5">
+								{{ __('Timezone') }}
+								<span class="text-ink-red-3">*</span>
+							</label>
+							<Combobox
+								v-model="batchDetail.doc.timezone"
+								:options="timezoneOptions"
+								:placeholder="__('Select timezone')"
+								class="w-full"
 							/>
 						</div>
+
+						<FormControl
+							v-model="batchDetail.doc.seat_count"
+							:label="__('Seat Count')"
+							type="number"
+							:placeholder="__('Number of seats available')"
+						/>
 					</div>
 				</div>
 
 				<div class="px-5 pb-5 space-y-5 border-b mb-5">
 					<div class="text-lg text-ink-gray-9 font-semibold mb-4">
-						{{ __('Certification') }}
+						{{ __('Enrollment & Certification') }}
 					</div>
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
-						<div class="flex flex-col space-y-5">
+						<Switch
+							size="sm"
+							v-model="batchDetail.doc.allow_self_enrollment"
+							:label="__('Allow Self Enrollment')"
+							:description="
+								__('Allow users to enroll in this batch on their own.')
+							"
+						/>
+						<Switch
+							size="sm"
+							v-model="batchDetail.doc.certification"
+							:label="__('Certification')"
+							:description="__('Issue certificates to batch participants.')"
+						/>
+						<div class="space-y-4">
 							<Switch
 								size="sm"
-								class="card p-4"
+								v-model="batchDetail.doc.paid_batch"
+								:label="__('Paid Batch')"
+								:description="__('Charge a fee for batch enrollment.')"
+							/>
+							<div
+								v-if="batchDetail.doc.paid_batch"
+								class="grid grid-cols-2 gap-3"
+							>
+								<FormControl
+									v-model="batchDetail.doc.amount"
+									:label="__('Amount')"
+									type="number"
+								/>
+								<Link
+									doctype="Currency"
+									v-model="batchDetail.doc.currency"
+									:filters="{ enabled: 1 }"
+									:label="__('Currency')"
+								/>
+							</div>
+						</div>
+						<div class="space-y-4">
+							<Switch
+								size="sm"
 								v-model="batchDetail.doc.evaluation"
 								:label="__('Evaluation')"
 								:description="__('Enable evaluations for batch participants.')"
@@ -106,23 +123,13 @@
 								v-model="batchDetail.doc.evaluation_end_date"
 								:label="__('Evaluation End Date')"
 								type="date"
-								class="mb-4"
-							/>
-						</div>
-						<div>
-							<Switch
-								size="sm"
-								class="card p-4"
-								v-model="batchDetail.doc.certification"
-								:label="__('Certification')"
-								:description="__('Issue certificates to batch participants.')"
 							/>
 						</div>
 					</div>
 				</div>
 
 				<div class="px-5 pb-5 space-y-5 border-b mb-5">
-					<div class="grid md:grid-cols-2 gap-5">
+					<div class="grid grid-cols-2 gap-5">
 						<MultiSelect
 							v-model="instructors"
 							doctype="User"
@@ -154,26 +161,21 @@
 							editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem] max-h-[16rem] overflow-y-scroll mb-4"
 						/>
 					</div>
-					<div>
-						<FeatureSectionEditor
-							v-model="batchDetail.doc"
-							fieldName="custom_feature_sections"
-							@dirty="isDirty = true"
-						/>
-					</div>
 				</div>
 
 				<div class="px-5 pb-5 space-y-5 border-b mb-5">
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-						<div class="space-y-5 card p-4">
-							<FormControl
-								v-model="batchDetail.doc.medium"
-								type="select"
-								:options="mediumOptions"
-								:placeholder="__('Select option')"
-								:label="__('Medium')"
-								class="mb-4"
-							/>
+						<div class="space-y-5">
+							<div>
+								<label class="block text-sm text-ink-gray-5 mb-2">
+									{{ __('Medium') }}
+								</label>
+								<Select
+									v-model="batchDetail.doc.medium"
+									:options="mediumOptions"
+									class="w-full"
+								/>
+							</div>
 							<Link
 								ref="emailTemplateLinkRef"
 								doctype="Email Template"
@@ -190,7 +192,6 @@
 						<Uploader
 							v-model="batchDetail.doc.video_link"
 							:label="__('Preview Video')"
-							class="card p-4 !mb-0"
 							type="video"
 							:required="false"
 						/>
@@ -202,13 +203,11 @@
 						{{ __('Conferencing') }}
 					</div>
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-						<FormControl
+						<Select
 							v-model="batchDetail.doc.conferencing_provider"
-							type="select"
-							class="card p-4"
 							:options="conferencingOptions"
-							:placeholder="__('Select option')"
 							:label="__('Conferencing Provider')"
+							class="w-full"
 						/>
 						<Link
 							v-if="batchDetail.doc.conferencing_provider === 'Zoom'"
@@ -235,35 +234,6 @@
 					</div>
 				</div>
 
-				<div class="px-5 pb-5 space-y-5 border-b mb-5">
-					<div class="text-lg text-ink-gray-9 font-semibold">
-						{{ __('Pricing') }}
-					</div>
-					<Switch
-						size="sm"
-						class="card p-4"
-						v-model="batchDetail.doc.paid_batch"
-						:label="__('Paid Batch')"
-						:description="__('Charge a fee for batch enrollment.')"
-					/>
-					<div
-						v-if="batchDetail.doc.paid_batch"
-						class="grid grid-cols-1 md:grid-cols-2 gap-5"
-					>
-						<FormControl
-							v-model="batchDetail.doc.amount"
-							:label="__('Amount')"
-							type="number"
-						/>
-						<Link
-							doctype="Currency"
-							v-model="batchDetail.doc.currency"
-							:filters="{ enabled: 1 }"
-							:label="__('Currency')"
-						/>
-					</div>
-				</div>
-
 				<div class="px-5 pb-5 space-y-5">
 					<div class="text-lg text-ink-gray-9 font-semibold">
 						{{ __('Meta Tags') }}
@@ -286,13 +256,12 @@
 							v-model="batchDetail.doc.meta_image"
 							:label="__('Meta Image')"
 							type="image"
-							class="card p-4"
 							:required="false"
 						/>
 					</div>
 				</div>
 			</div>
-			<div class="border-l min-w-0 flex flex-col gap-2">
+			<div class="border-s min-w-0">
 				<div class="border-b p-4">
 					<BatchCourses :batch="batch" />
 				</div>
@@ -328,14 +297,16 @@ import {
 	nextTick,
 } from 'vue'
 import {
+	Combobox,
 	FormControl,
-	Switch,
 	TextEditor,
 	createDocumentResource,
+	createResource,
 	toast,
 	call,
 	createListResource,
 } from 'frappe-ui'
+import Switch from '@/components/Controls/Switch.vue'
 import {
 	createLMSCategory,
 	getMetaInfo,
@@ -347,11 +318,11 @@ import { useTelemetry } from 'frappe-ui/frappe'
 import Uploader from '@/components/Controls/Uploader.vue'
 import MultiSelect from '@/components/Controls/MultiSelect.vue'
 import Link from '@/components/Controls/Link.vue'
+import Select from '@/components/Controls/Select.vue'
 import BatchCourses from '@/pages/Batches/components/BatchCourses.vue'
 import Assessments from '@/pages/Batches/components/Assessments.vue'
 import NewMemberModal from '@/components/Modals/NewMemberModal.vue'
 import EmailTemplateModal from '@/components/Modals/EmailTemplateModal.vue'
-import FeatureSectionEditor from '@/oslms/components/FeatureSectionEditor.vue'
 
 const router = useRouter()
 const user = inject('$user')
@@ -441,7 +412,7 @@ watch(
 		updateBatchData()
 		getMetaInfo('batches', batchDetail.doc?.name, meta)
 	},
-	{ deep: true },
+	{ deep: true }
 )
 
 const updateBatchData = () => {
@@ -480,12 +451,13 @@ const submitBatch = () => {
 }
 
 const updateBatch = () => {
-	batchDetail.doc.instructors = instructors.value.map((instructor) => ({
-		instructor: instructor,
-	}))
-
-	batchDetail.save.submit(
-		{},
+	batchDetail.setValue.submit(
+		{
+			...batchDetail.doc,
+			instructors: instructors.value.map((instructor) => ({
+				instructor: instructor,
+			})),
+		},
 		{
 			onSuccess(data) {
 				updateMetaInfo('batches', data.name, meta)
@@ -499,7 +471,7 @@ const updateBatch = () => {
 				toast.error(err.messages?.[0] || err)
 				console.error(err)
 			},
-		},
+		}
 	)
 }
 
@@ -507,7 +479,7 @@ const deleteBatch = () => {
 	$dialog({
 		title: __('Confirm your action to delete'),
 		message: __(
-			'Deleting this batch will also delete all its data including enrolled students, linked courses, assessments, feedback and discussions. Are you sure you want to continue?',
+			'Deleting this batch will also delete all its data including enrolled students, linked courses, assessments, feedback and discussions. Are you sure you want to continue?'
 		),
 		actions: [
 			{
@@ -551,6 +523,16 @@ const conferencingOptions = computed(() => {
 		},
 	]
 })
+
+const timezoneResource = createResource({
+	url: 'frappe.geo.country_info.get_country_timezone_info',
+	auto: true,
+	transform: (data) => data.all_timezones,
+})
+
+const timezoneOptions = computed(() =>
+	(timezoneResource.data || []).map((tz) => ({ label: tz, value: tz }))
+)
 
 const mediumOptions = computed(() => {
 	return [
