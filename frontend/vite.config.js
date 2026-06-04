@@ -55,6 +55,18 @@ export default defineConfig(async ({ mode }) => {
 		},
 		resolve: {
 			alias: [
+				// Direct path to the ORIGINAL frappe-ui Switch component, imported by its
+				// override at src/overrides/frappe-ui/src/components/Switch/Switch.vue.
+				// Importing `from 'frappe-ui'` there would make the osOverrideTheme plugin
+				// re-route the import back onto the override itself -> infinite recursion.
+				// This alias bypasses both the plugin and frappe-ui's package `exports`.
+				{
+					find: 'frappe-ui-switch-original',
+					replacement: path.resolve(
+						__dirname,
+						'node_modules/frappe-ui/src/components/Switch/Switch.vue'
+					),
+				},
 				{
 					find: /^@\/utils$/,
 					replacement: path.resolve(__dirname, 'src/oslms/utils/index.js'),
