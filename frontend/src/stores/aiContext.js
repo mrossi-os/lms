@@ -12,9 +12,24 @@ export const useAiContext = defineStore('ai-context', () => {
 		lesson.value = lessonName
 	}
 
+	function setLesson(lessonName) {
+		console.log(lessonName)
+		lesson.value = lessonName
+	}
+
 	function clearContext() {
 		course.value = null
 		lesson.value = null
+	}
+
+	function syncFromRoute(route) {
+		const params = route?.params ?? {}
+		if (!params.courseName) {
+			clearContext()
+			return
+		}
+		course.value = params.courseName
+		lesson.value = ''
 	}
 
 	return {
@@ -23,5 +38,7 @@ export const useAiContext = defineStore('ai-context', () => {
 		isActive,
 		setContext,
 		clearContext,
+		syncFromRoute,
+		setLesson
 	}
 })

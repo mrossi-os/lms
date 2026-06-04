@@ -85,16 +85,18 @@ class RedisRagStorage(RagStorage):
     def search(
         self, course: str, lessons: list[str], query: EmbeddingItem, max_result: int
     ) -> list[dict]:
-        if not lessons:
+        if not course:
             return []
 
         tag_filter = Tag("course") == course
-        # Restrict retrieval to the allowed lessons (current + already completed).
-        # Build an explicit OR so it works regardless of the redisvl version.
-        lesson_filter = Tag("lesson") == lessons[0]
-        for lesson in lessons[1:]:
-            lesson_filter |= Tag("lesson") == lesson
-        tag_filter &= lesson_filter
+        # When `lessons` is provided, narrow the retrieval to that set
+        # (current + already completed). Empty/None means "no lesson filter":
+        # the query then spans every indexed lesson of the course.
+        if lessons:
+            lesson_filter = Tag("lesson") == lessons[0]
+            for lesson in lessons[1:]:
+                lesson_filter |= Tag("lesson") == lesson
+            tag_filter &= lesson_filter
 
         q = VectorQuery(
             vector=query.vector,

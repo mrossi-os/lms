@@ -61,6 +61,7 @@ __all__ = [
     "fallback_order",
     "get_provider",
     "list_providers",
+    "load_settings",
     "register",
     "resolve_provider",
 ]
@@ -185,6 +186,11 @@ def _load_settings():
         deepseek_key=_password("deepseek_key"),
         anthropic_key=_password("anthropic_key"),
     )
+
+
+# Public alias. Pre-existing call sites monkeypatch the underscore name in tests,
+# so the original symbol is preserved alongside the public one.
+load_settings = _load_settings
 
 
 def _pick_provider_name(settings, purpose: Purpose) -> str:

@@ -335,6 +335,7 @@ import {
 import { sessionStore } from '@/stores/session'
 import { useSidebar } from '@/stores/sidebar'
 import { useSettings } from '@/stores/settings'
+import { useAiContext } from '@/stores/aiContext'
 import {
 	resolveDwellSeconds,
 	isVideoComplete,
@@ -376,6 +377,7 @@ const showInlineMenu = ref(false)
 const currentTab = ref(null)
 const completedLesson = ref(null)
 const settingsStore = useSettings()
+const aiContext = useAiContext()
 let timerInterval = null
 
 const tabs = ref([])
@@ -475,6 +477,7 @@ const setupLesson = (data) => {
 			},
 		})
 	}
+	if (data.name) aiContext.setLesson(data.name)
 	lessonProgress.value = data.membership?.progress
 	if (data.content) editor.value = renderEditor('editor', data.content)
 	if (

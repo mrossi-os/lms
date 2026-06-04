@@ -49,12 +49,14 @@ import EditorJS from '@editorjs/editorjs'
 import { ChevronRight } from 'lucide-vue-next'
 import { getEditorTools, enablePlyr, sanitizeEditorJs } from '@/utils'
 import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
+import { useAiContext } from '@/stores/aiContext'
 import OsLessonForm from '@/oslms/pages/OsLessonForm.vue'
 
 const editor = ref(null)
 const instructorEditor = ref(null)
 const user = inject('$user')
 const openInstructorEditor = ref(false)
+const aiContext = useAiContext()
 const { capture } = useTelemetry()
 const { updateOnboardingStep } = useOnboarding('learning')
 let autoSaveInterval
@@ -135,6 +137,7 @@ const lessonDetails = createResource({
 			lesson.include_in_preview = data?.lesson?.include_in_preview
 				? true
 				: false
+			if (data.lesson.name) aiContext.setLesson(data.lesson.name)
 			addLessonContent(data)
 			addInstructorNotes(data)
 			enableAutoSave()

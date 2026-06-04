@@ -11,17 +11,16 @@ import { FrappeUIProvider } from 'frappe-ui'
 import { Dialogs } from '@/utils/dialogs'
 import { computed, onUnmounted, ref } from 'vue'
 import { useScreenSize } from './utils/composables'
-import { useSettings } from '@/stores/settings'
+import { useAiContext } from '@/stores/aiContext'
 import { useRouter } from 'vue-router'
 import DesktopLayout from './components/Layouts/DesktopLayout.vue'
 import MobileLayout from './components/Layouts/MobileLayout.vue'
 import NoSidebarLayout from './components/Layouts/NoSidebarLayout.vue'
-import InstallPrompt from './components/InstallPrompt.vue'
 
 const { isMobile } = useScreenSize()
 const router = useRouter()
 const noSidebar = ref(false)
-const { settings } = useSettings()
+const aiContext = useAiContext()
 
 router.beforeEach((to, from, next) => {
 	if (to.query.fromLesson || to.path === '/persona') {
@@ -30,6 +29,10 @@ router.beforeEach((to, from, next) => {
 		noSidebar.value = false
 	}
 	next()
+})
+
+router.afterEach((to) => {
+	aiContext.syncFromRoute(to)
 })
 
 const Layout = computed(() => {

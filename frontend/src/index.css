@@ -14,3 +14,13 @@
 	bottom: -0.25rem;
 	z-index: 1;
 }
+
+/*
+ * Radix Vue popper wrappers (used by frappe-ui Dropdown, Select, Tooltip,
+ * Popover) are teleported to <body> without an explicit z-index. Local
+ * fixed elements (FABs, modals at z-50) end up covering them. Lift the
+ * wrapper above the highest local stacking level.
+ */
+[data-radix-popper-content-wrapper] {
+	z-index: 200 !important;
+}

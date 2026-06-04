@@ -7,8 +7,10 @@
 		<div class="flex-1 flex flex-col h-full overflow-auto app-content-main">
 			<slot />
 		</div>
+		<AiFixedButtons />
 	</div>
 </template>
 <script setup>
 import AppSidebar from '@/components/Sidebar/AppSidebar.vue'
+import AiFixedButtons from '@/oslms/components/AiFixedButtons.vue';
 </script>

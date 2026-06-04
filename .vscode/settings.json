@@ -3,7 +3,12 @@
 		"editor.wordWrap": "on"
 	},
 	"[python]": {
-		"editor.formatOnSave": true
-	},
+      "editor.defaultFormatter": "charliermarsh.ruff",
+      "editor.formatOnSave": true,
+      "editor.codeActionsOnSave": {
+        "source.fixAll.ruff": "explicit",
+        "source.organizeImports.ruff": "explicit"
+      }
+    },
 	"js/ts.tsdk.path": "frontend/node_modules/typescript/lib"
 }
