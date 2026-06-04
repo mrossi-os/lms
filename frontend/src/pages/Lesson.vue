@@ -974,6 +974,11 @@ const isAdmin = computed(() => {
 	return user.data?.is_moderator || user.data?.is_docente || isInstructor
 })
 
+const allowEdit = () => {
+	if (window.read_only_mode) return false
+	return isAdmin.value
+}
+
 const allowInstructorContent = () => {
 	if (window.read_only_mode) return false
 	return isAdmin.value
@@ -1007,14 +1012,8 @@ const enrollStudent = () => {
 	)
 }
 
-const toggleInlineMenu = async () => {
+const toggleInlineMenu = () => {
 	showInlineMenu.value = false
-	return
-	await nextTick()
-	let selection = window.getSelection()
-	if (selection.toString()) {
-		showInlineMenu.value = true
-	}
 }
 
 const showVideoStats = () => {
