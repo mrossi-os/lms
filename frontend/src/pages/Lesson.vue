@@ -1,7 +1,9 @@
 <template>
 	<div v-if="lesson.data" class="">
-		<header v-if="!embedded"
-			class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
+		<header
+			v-if="!embedded"
+			class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
+		>
 			<Breadcrumbs class="h-7" :items="breadcrumbs" />
 			<div class="flex items-center gap-x-2">
 				<Tooltip v-if="canGoZen()" :text="__('Zen Mode')">
@@ -35,20 +37,26 @@
 					</span>
 				</Button>
 
-				<router-link v-else :to="{
-					name: 'CourseDetail',
-					params: { courseName: courseName },
-				}">
+				<router-link
+					v-else
+					:to="{
+						name: 'CourseDetail',
+						params: { courseName: courseName },
+					}"
+				>
 					<Button>
 						{{ __('Back to Course') }}
 					</Button>
 				</router-link>
 			</div>
 		</header>
-		<div :class="embedded
-				? 'grid grid-cols-1 h-full'
-				: 'grid md:grid-cols-[70%,30%] h-[94vh]'
-			">
+		<div
+			:class="
+				embedded
+					? 'grid grid-cols-1 h-full'
+					: 'grid md:grid-cols-[70%,30%] h-[94vh]'
+			"
+		>
 			<div v-if="lesson.data.no_preview" class="border-e">
 				<div class="shadow rounded-md w-3/4 mt-10 mx-auto text-center p-4">
 					<div class="flex items-center justify-center mt-4 gap-x-2">
@@ -64,11 +72,19 @@
 							)
 						}}
 					</div>
-					<Button v-if="user.data && !lesson.data.disable_self_learning" @click="enrollStudent()"
-						variant="solid">
+					<Button
+						v-if="user.data && !lesson.data.disable_self_learning"
+						@click="enrollStudent()"
+						variant="solid"
+					>
 						{{ __('Start Learning') }}
 					</Button>
-					<Badge theme="blue" size="lg" v-else-if="lesson.data.disable_self_learning" class="mt-2">
+					<Badge
+						theme="blue"
+						size="lg"
+						v-else-if="lesson.data.disable_self_learning"
+						class="mt-2"
+					>
 						{{ __('Contact the Administrator to enroll for this course.') }}
 					</Badge>
 					<Button v-else @click="redirectToLogin()">
@@ -79,35 +95,51 @@
 					</Button>
 				</div>
 			</div>
-			<div v-else ref="lessonContainer" class="bg-surface-white" :class="{
-				'overflow-y-auto': zenModeEnabled,
-			}">
-				<div class="border-e pt-5 pb-10 h-full" :class="{
-					'w-full md:w-3/5 mx-auto border-none !pt-10': zenModeEnabled,
-				}">
+			<div
+				v-else
+				ref="lessonContainer"
+				class="bg-surface-white"
+				:class="{
+					'overflow-y-auto': zenModeEnabled,
+				}"
+			>
+				<div
+					class="border-e pt-5 pb-10 h-full"
+					:class="{
+						'w-full md:w-3/5 mx-auto border-none !pt-10': zenModeEnabled,
+					}"
+				>
 					<div class="px-5">
-						<div class="flex flex-col space-y-3 md:space-y-0 md:flex-row md:items-center justify-between">
+						<div
+							class="flex flex-col space-y-3 md:space-y-0 md:flex-row md:items-center justify-between"
+						>
 							<div class="flex flex-col">
 								<div class="text-3xl font-semibold text-ink-gray-9">
 									{{ lesson.data.title }}
 								</div>
 
-								<div v-if="zenModeEnabled"
-									class="relative flex items-center gap-x-2 text-sm mt-1 text-ink-gray-7 group w-fit mt-2">
+								<div
+									v-if="zenModeEnabled"
+									class="relative flex items-center gap-x-2 text-sm mt-1 text-ink-gray-7 group w-fit mt-2"
+								>
 									<span>
 										{{ lesson.data.chapter_title }} -
 										{{ lesson.data.course_title }}
 									</span>
 									<Info class="size-3" />
 									<div
-										class="hidden group-hover:block rounded bg-gray-900 px-2 py-1 text-xs text-white shadow-xl absolute start-0 top-full mt-2">
+										class="hidden group-hover:block rounded bg-gray-900 px-2 py-1 text-xs text-white shadow-xl absolute start-0 top-full mt-2"
+									>
 										{{ Math.ceil(lesson.data.membership.progress) }}%
 										{{ __('completed') }}
 									</div>
 								</div>
 							</div>
 
-							<div v-if="zenModeEnabled" class="flex items-center gap-x-2 mt-2 md:mt-0">
+							<div
+								v-if="zenModeEnabled"
+								class="flex items-center gap-x-2 mt-2 md:mt-0"
+							>
 								<Button @click="showDiscussionsInZenMode()">
 									<template #icon>
 										<MessageCircleQuestion class="w-4 h-4 stroke-1.5" />
@@ -131,10 +163,13 @@
 									</span>
 								</Button>
 
-								<router-link v-else :to="{
-									name: 'CourseDetail',
-									params: { courseName: courseName },
-								}">
+								<router-link
+									v-else
+									:to="{
+										name: 'CourseDetail',
+										params: { courseName: courseName },
+									}"
+								>
 									<Button>
 										{{ __('Back to Course') }}
 									</Button>
@@ -143,63 +178,120 @@
 						</div>
 
 						<div v-if="!zenModeEnabled" class="flex items-center mt-4 md:mt-2">
-							<span class="h-6 me-1" :class="{
-								'avatar-group overlap': lesson.data.instructors?.length > 1,
-							}">
-								<UserAvatar v-for="instructor in lesson.data.instructors" :user="instructor" />
+							<span
+								class="h-6 me-1"
+								:class="{
+									'avatar-group overlap': lesson.data.instructors?.length > 1,
+								}"
+							>
+								<UserAvatar
+									v-for="instructor in lesson.data.instructors"
+									:user="instructor"
+								/>
 							</span>
-							<CourseInstructors v-if="lesson.data?.instructors" :instructors="lesson.data.instructors" />
+							<CourseInstructors
+								v-if="lesson.data?.instructors"
+								:instructors="lesson.data.instructors"
+							/>
 						</div>
 
-						<div v-if="
-							lesson.data.instructor_content &&
-							JSON.parse(lesson.data.instructor_content)?.blocks?.length >
-							1 &&
-							allowInstructorContent()
-						" class="bg-surface-gray-2 p-3 rounded-md mt-6">
+						<div
+							v-if="
+								lesson.data.instructor_content &&
+								JSON.parse(lesson.data.instructor_content)?.blocks?.length >
+									1 &&
+								allowInstructorContent()
+							"
+							class="bg-surface-gray-2 p-3 rounded-md mt-6"
+						>
 							<div class="text-ink-gray-5 font-medium">
 								{{ __('Instructor Notes') }}
 							</div>
-							<div id="instructor-content"
-								class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal">
-							</div>
+							<div
+								id="instructor-content"
+								class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal"
+							></div>
 						</div>
-						<div v-else-if="lesson.data.instructor_notes"
-							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8">
+						<div
+							v-else-if="lesson.data.instructor_notes"
+							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
+						>
 							<LessonContent :content="lesson.data.instructor_notes" />
 						</div>
-						<div v-if="lesson.data.content" @mouseup="toggleInlineMenu"
-							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8">
+						<div
+							v-if="lesson.data.content"
+							@mouseup="toggleInlineMenu"
+							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
+						>
 							<div id="editor"></div>
 						</div>
-						<div v-else
-							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8">
-							<LessonContent v-if="lesson.data?.body" :content="lesson.data.body"
-								:youtube="lesson.data.youtube" :quizId="lesson.data.quiz_id" />
+						<div
+							v-else
+							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
+						>
+							<LessonContent
+								v-if="lesson.data?.body"
+								:content="lesson.data.body"
+								:youtube="lesson.data.youtube"
+								:quizId="lesson.data.quiz_id"
+							/>
 						</div>
 					</div>
-					<div v-if="lesson.data && (allowDiscussions || tabs.length > 1)"
-						class="mt-10 pb-20 pt-5 border-t px-5" ref="discussionsContainer">
-						<TabButtons v-if="tabs.length > 1" :buttons="tabs" v-model="currentTab" class="w-fit mb-10" />
-						<Notes v-if="currentTab === 'Notes'" :lesson="lesson.data?.name" v-model:notes="notes"
-							@updateNotes="updateNotes" />
-						<Discussions v-else-if="allowDiscussions" :title="'Questions'" :doctype="'Course Lesson'"
-							:docname="lesson.data.name" :key="lesson.data.name" :emptyStateText="__('Ask a question to get help from the community.')
-								" />
+					<div
+						v-if="lesson.data && (allowDiscussions || tabs.length > 1)"
+						class="mt-10 pb-20 pt-5 border-t px-5"
+						ref="discussionsContainer"
+					>
+						<TabButtons
+							v-if="tabs.length > 1"
+							:buttons="tabs"
+							v-model="currentTab"
+							class="w-fit mb-10"
+						/>
+						<Notes
+							v-if="currentTab === 'Notes'"
+							:lesson="lesson.data?.name"
+							v-model:notes="notes"
+							@updateNotes="updateNotes"
+						/>
+						<Discussions
+							v-else-if="allowDiscussions"
+							:title="'Questions'"
+							:doctype="'Course Lesson'"
+							:docname="lesson.data.name"
+							:key="lesson.data.name"
+							:emptyStateText="
+								__('Ask a question to get help from the community.')
+							"
+						/>
 					</div>
 				</div>
 			</div>
 			<div v-if="!embedded" class="sticky top-10 h-[94vh]">
-				<StudentLessonSidebar :courseName="courseName" :courseTitle="lesson.data.course_title"
-					:progress="lessonProgress" :selectedLessonNumber="`${chapterNumber}-${lessonNumber}`"
-					:completedLesson="completedLesson" :withProgress="lesson.data.membership ? true : false" />
+				<StudentLessonSidebar
+					:courseName="courseName"
+					:courseTitle="lesson.data.course_title"
+					:progress="lessonProgress"
+					:selectedLessonNumber="`${chapterNumber}-${lessonNumber}`"
+					:completedLesson="completedLesson"
+					:withProgress="lesson.data.membership ? true : false"
+				/>
 			</div>
 		</div>
 	</div>
-	<InlineLessonMenu v-if="lesson.data?.name" v-model="showInlineMenu" :lesson="lesson.data?.name"
-		v-model:notes="notes" @updateNotes="updateNotes" />
-	<VideoStatistics v-if="isAdmin" v-model="showStatsDialog" :lessonName="lesson.data?.name"
-		:lessonTitle="lesson.data?.title" />
+	<InlineLessonMenu
+		v-if="lesson.data?.name"
+		v-model="showInlineMenu"
+		:lesson="lesson.data?.name"
+		v-model:notes="notes"
+		@updateNotes="updateNotes"
+	/>
+	<VideoStatistics
+		v-if="isAdmin"
+		v-model="showStatsDialog"
+		:lessonName="lesson.data?.name"
+		:lessonTitle="lesson.data?.title"
+	/>
 </template>
 <script setup>
 import {
@@ -252,9 +344,11 @@ import {
 import EditorJS from '@editorjs/editorjs'
 import LessonContent from '@/components/LessonContent.vue'
 import CourseInstructors from '@/components/CourseInstructors.vue'
+import ProgressBar from '@/components/ProgressBar.vue'
 import Discussions from '@/components/Discussions.vue'
 import CertificationLinks from '@/components/CertificationLinks.vue'
 import VideoStatistics from '@/components/Modals/VideoStatistics.vue'
+import CourseOutline from '@/components/CourseOutline.vue'
 import StudentLessonSidebar from '@/components/StudentLessonSidebar.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import Notes from '@/components/Notes/Notes.vue'
@@ -385,16 +479,12 @@ const setupLesson = (data) => {
 	if (data.content) editor.value = renderEditor('editor', data.content)
 	if (
 		data.instructor_content &&
-		JSON.parse(data.instructor_content)?.blocks?.length > 1 &&
-		allowInstructorContent()
-	) {
-		nextTick(() => {
-			instructorEditor.value = renderEditor(
-				'instructor-content',
-				data.instructor_content
-			)
-		})
-	}
+		JSON.parse(data.instructor_content)?.blocks?.length > 1
+	)
+		instructorEditor.value = renderEditor(
+			'instructor-content',
+			data.instructor_content
+		)
 	editor.value?.isReady.then(() => {
 		checkIfDiscussionsAllowed()
 	})
@@ -630,7 +720,7 @@ watch(
 		if (settingsStore.settings?.promise) {
 			try {
 				await settingsStore.settings.promise
-			} catch { }
+			} catch {}
 		}
 		startTimer()
 		await getPlyrSource()
@@ -839,11 +929,6 @@ const isAdmin = computed(() => {
 	return user.data?.is_moderator || isInstructor
 })
 
-const allowEdit = () => {
-	if (window.read_only_mode) return false
-	return isAdmin.value
-}
-
 const allowInstructorContent = () => {
 	if (window.read_only_mode) return false
 	return isAdmin.value
@@ -877,7 +962,7 @@ const enrollStudent = () => {
 	)
 }
 
-const toggleInlineMenu = () => {
+const toggleInlineMenu = async () => {
 	showInlineMenu.value = false
 	await nextTick()
 	let selection = window.getSelection()
@@ -1147,9 +1232,11 @@ usePageMeta(() => {
 }
 
 .plyr__control--overlaid {
-	background: radial-gradient(circle,
-			rgba(0, 0, 0, 0.4) 0%,
-			rgba(0, 0, 0, 0.5) 50%);
+	background: radial-gradient(
+		circle,
+		rgba(0, 0, 0, 0.4) 0%,
+		rgba(0, 0, 0, 0.5) 50%
+	);
 }
 
 .plyr__control:hover {
