@@ -2,8 +2,38 @@
 	<div>
 		<header
 			class="sticky top-0 z-10 flex items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5">
-			<Breadcrumbs class="h-7" :items="breadcrumbs" />
+			<div class="flex items-center gap-2">
+				<Breadcrumbs class="h-7" :items="breadcrumbs" />
+				<Badge v-if="deepEvalId" theme="blue" :label="__('Valutazione in corso')" />
+			</div>
 			<div class="flex items-center gap-x-2">
+				<Button
+					v-if="scenarioName"
+					variant="ghost"
+					:title="__('Quick check (test rapido)')"
+					:disabled="quickRunning || !!deepEvalId"
+					:loading="quickRunning"
+					@click="onQuickCheck"
+				>
+					{{ __('Quick check') }}
+				</Button>
+				<Button
+					v-if="scenarioName"
+					variant="ghost"
+					:title="__('Deep evaluation (test completo)')"
+					:disabled="!!deepEvalId"
+					@click="onDeepEvaluation"
+				>
+					{{ __('Deep evaluation') }}
+				</Button>
+				<Button
+					v-if="scenarioName"
+					variant="ghost"
+					:title="__('Gestisci golden runs')"
+					@click="goldensModalOpen = true"
+				>
+					{{ __('Golden runs') }}
+				</Button>
 				<Button variant="ghost" :title="__('Esporta scenario in JSON')" @click="onExportScenario">
 					<template #icon>
 						<Download class="size-4 stroke-1.5" />
@@ -240,6 +270,17 @@
 					</div>
 				</template>
 			</Dialog>
+
+			<EvaluationResultsDialog
+				v-model="evalDialogOpen"
+				:evalId="evalDialogId"
+			/>
+
+			<GoldenRunsModal
+				v-if="scenarioName"
+				v-model="goldensModalOpen"
+				:scenario="scenarioName"
+			/>
 		</div>
 	</div>
 </template>
@@ -248,6 +289,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import {
 	Autocomplete,
+	Badge,
 	Breadcrumbs,
 	Button,
 	Dialog,
@@ -260,7 +302,10 @@ import { useRouter } from 'vue-router'
 import { ChevronDown, Download, Trash2, Upload } from 'lucide-vue-next'
 import EvaluationSchemaEditor from '@/oslms/components/simulations/EvaluationSchemaEditor.vue'
 import ChatSession from '@/oslms/components/simulations/ChatSession.vue'
+import EvaluationResultsDialog from '@/oslms/components/simulations/eval/EvaluationResultsDialog.vue'
+import GoldenRunsModal from '@/oslms/components/simulations/eval/GoldenRunsModal.vue'
 import { useSimulationSession } from '@/oslms/composables/useSimulationSession.js'
+import { useEvaluation } from '@/oslms/composables/useEvaluation.js'
 
 const props = defineProps({
 	scenarioName: { type: String, default: '' },
@@ -272,6 +317,61 @@ const router = useRouter()
 const saving = ref(false)
 const testing = ref(false)
 const schemaEditorOpen = ref(false)
+
+// ---- Evaluation state (Quick check + Deep evaluation) ----
+const evaluation = useEvaluation()
+const evalDialogOpen = ref(false)
+const evalDialogId = ref('')
+const quickRunning = ref(false)
+const deepEvalId = ref('')
+const goldensModalOpen = ref(false)
+
+async function onQuickCheck() {
+	if (!props.scenarioName) return
+	quickRunning.value = true
+	try {
+		const evalId = await evaluation.runQuickCheck(props.scenarioName)
+		if (!evalId) return
+		try {
+			await evaluation.pollUntilComplete(evalId, {
+				intervalMs: 2000,
+				timeoutMs: 90_000,
+			})
+			evalDialogId.value = evalId
+			evalDialogOpen.value = true
+		} catch (e) {
+			if (e?.message === 'poll_timeout') {
+				toast.success(
+					__('Sta richiedendo più del previsto, ti notificheremo a fine valutazione.'),
+				)
+			} else {
+				toast.error(e?.message || __('Polling fallito'))
+			}
+		}
+	} finally {
+		quickRunning.value = false
+	}
+}
+
+async function onDeepEvaluation() {
+	if (!props.scenarioName) return
+	const evalId = await evaluation.runDeepEvaluation(props.scenarioName)
+	if (!evalId) return
+	deepEvalId.value = evalId
+	toast.success(__('Valutazione avviata, ti notificheremo a fine job.'))
+}
+
+evaluation.subscribeToCompletion({
+	filter: (payload) => payload?.scenario === props.scenarioName,
+	onComplete: (payload) => {
+		if (payload.eval_id === deepEvalId.value) {
+			deepEvalId.value = ''
+		}
+		evalDialogId.value = payload.eval_id
+		evalDialogOpen.value = true
+	},
+})
+
 // Accordion open/closed state for seed variations, one boolean per row.
 // New variations added via UI start expanded; variations loaded from backend
 // start collapsed.

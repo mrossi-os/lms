@@ -1,0 +1,62 @@
+{
+	"actions": [],
+	"autoname": "format:GR-{scenario}-{####}",
+	"creation": "2026-06-05 12:00:00.000000",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"scenario",
+		"name_label",
+		"active",
+		"expected_outcomes",
+		"turns"
+	],
+	"fields": [
+		{
+			"fieldname": "scenario",
+			"fieldtype": "Link",
+			"options": "LMSA Simulation Scenario",
+			"label": "Scenario",
+			"reqd": 1,
+			"in_list_view": 1
+		},
+		{
+			"fieldname": "name_label",
+			"fieldtype": "Data",
+			"label": "Name Label",
+			"reqd": 1,
+			"in_list_view": 1
+		},
+		{
+			"fieldname": "active",
+			"fieldtype": "Check",
+			"label": "Active",
+			"default": "1",
+			"in_list_view": 1
+		},
+		{
+			"fieldname": "expected_outcomes",
+			"fieldtype": "Long Text",
+			"label": "Expected Outcomes"
+		},
+		{
+			"fieldname": "turns",
+			"fieldtype": "Long Text",
+			"label": "Turns JSON",
+			"description": "Ordered array of {role: 'user'|'assistant', text: str}"
+		}
+	],
+	"modified": "2026-06-05 12:00:00.000000",
+	"modified_by": "Administrator",
+	"module": "OS LMS",
+	"name": "LMSA Scenario Golden Run",
+	"owner": "Administrator",
+	"permissions": [
+		{"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1},
+		{"role": "Docente", "read": 1, "write": 1, "create": 1, "delete": 1},
+		{"role": "Course Creator", "read": 1, "write": 1, "create": 1, "delete": 1}
+	],
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"track_changes": 1
+}

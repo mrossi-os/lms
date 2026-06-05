@@ -88,3 +88,86 @@ def cleanup_sessions_and_turns():
                 pass
         frappe.delete_doc("LMSA Simulation Session", name, force=True, ignore_permissions=True)
     frappe.db.commit()
+
+
+def make_scenario_with_instructor():
+    """Returns (scenario_doc, instructor_user_doc, outsider_user_doc).
+
+    Used by eval permission tests. Builds 2 users, 1 LMS Course with the
+    first user listed in Course Instructor, and 1 LMSA Simulation Scenario
+    published on that course via make_published_scenario.
+    """
+    instructor = frappe.get_doc({
+        "doctype": "User",
+        "email": f"instr-{frappe.generate_hash(length=6)}@example.com",
+        "first_name": "Instr",
+        "send_welcome_email": 0,
+    }).insert(ignore_permissions=True)
+
+    outsider = frappe.get_doc({
+        "doctype": "User",
+        "email": f"out-{frappe.generate_hash(length=6)}@example.com",
+        "first_name": "Out",
+        "send_welcome_email": 0,
+    }).insert(ignore_permissions=True)
+
+    course = frappe.get_doc({
+        "doctype": "LMS Course",
+        "title": f"Eval Test Course {frappe.generate_hash(length=4)}",
+        "short_introduction": "Eval test fixture course.",
+        "description": "Eval test fixture course used by permission tests.",
+        "instructors": [{"instructor": instructor.name}],
+    }).insert(ignore_permissions=True)
+
+    scenario = make_published_scenario(
+        name=f"Eval Test Scenario {frappe.generate_hash(length=4)}",
+        course=course.name,
+    )
+
+    return scenario, instructor, outsider
+
+
+def make_completed_session(scenario=None, student: str | None = None):
+    """Create a LMSA Simulation Session in Completed status with 2 turns.
+
+    If no scenario is provided, builds one via make_published_scenario.
+    If no student is provided, creates a fresh user so the orchestrator's
+    daily simulation quota never bites tests that build many sessions.
+    Returns the session doc.
+    """
+    scenario = scenario or make_published_scenario(
+        name=f"Eval Session Scenario {frappe.generate_hash(length=4)}",
+    )
+
+    if student is None:
+        student_doc = frappe.get_doc({
+            "doctype": "User",
+            "email": f"student-{frappe.generate_hash(length=6)}@example.com",
+            "first_name": "Student",
+            "send_welcome_email": 0,
+        }).insert(ignore_permissions=True)
+        student = student_doc.name
+
+    session = frappe.get_doc({
+        "doctype": "LMSA Simulation Session",
+        "scenario": scenario.name,
+        "course": scenario.lms_course,
+        "student": student,
+        "modality": "chat",
+        "status": "Completed",
+        "started_at": frappe.utils.now_datetime(),
+    }).insert(ignore_permissions=True)
+
+    for i, (role, text) in enumerate([
+        ("user", "Buongiorno"),
+        ("assistant", "Buongiorno a lei."),
+    ]):
+        frappe.get_doc({
+            "doctype": "LMSA Simulation Turn",
+            "session": session.name,
+            "turn_index": i,
+            "role": role,
+            "text_content": text,
+        }).insert(ignore_permissions=True)
+
+    return session

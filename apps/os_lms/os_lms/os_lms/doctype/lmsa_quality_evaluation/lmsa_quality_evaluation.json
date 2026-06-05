@@ -1,0 +1,117 @@
+{
+	"actions": [],
+	"autoname": "format:EV-{scenario}-{#####}",
+	"creation": "2026-06-05 12:00:00.000000",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"scenario",
+		"run_mode",
+		"status",
+		"triggered_by",
+		"triggered_at",
+		"column_break_1",
+		"aggregate_persona_score",
+		"aggregate_coverage_score",
+		"aggregate_debrief_score",
+		"aggregate_difficulty_score",
+		"error_message",
+		"section_traces",
+		"traces"
+	],
+	"fields": [
+		{
+			"fieldname": "scenario",
+			"fieldtype": "Link",
+			"options": "LMSA Simulation Scenario",
+			"label": "Scenario",
+			"reqd": 1,
+			"in_list_view": 1
+		},
+		{
+			"fieldname": "run_mode",
+			"fieldtype": "Select",
+			"options": "quick\ndeep\nproduction",
+			"label": "Run Mode",
+			"reqd": 1,
+			"in_list_view": 1
+		},
+		{
+			"fieldname": "status",
+			"fieldtype": "Select",
+			"options": "queued\nrunning\ncomplete\nfailed",
+			"label": "Status",
+			"default": "queued",
+			"in_list_view": 1
+		},
+		{
+			"fieldname": "triggered_by",
+			"fieldtype": "Link",
+			"options": "User",
+			"label": "Triggered By",
+			"reqd": 1
+		},
+		{
+			"fieldname": "triggered_at",
+			"fieldtype": "Datetime",
+			"label": "Triggered At"
+		},
+		{
+			"fieldname": "column_break_1",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "aggregate_persona_score",
+			"fieldtype": "Float",
+			"label": "Persona Score",
+			"precision": "3"
+		},
+		{
+			"fieldname": "aggregate_coverage_score",
+			"fieldtype": "Float",
+			"label": "Coverage Score",
+			"precision": "3"
+		},
+		{
+			"fieldname": "aggregate_debrief_score",
+			"fieldtype": "Float",
+			"label": "Debrief Score",
+			"precision": "3"
+		},
+		{
+			"fieldname": "aggregate_difficulty_score",
+			"fieldtype": "Float",
+			"label": "Difficulty Score",
+			"precision": "3"
+		},
+		{
+			"fieldname": "error_message",
+			"fieldtype": "Long Text",
+			"label": "Error Message"
+		},
+		{
+			"fieldname": "section_traces",
+			"fieldtype": "Section Break",
+			"label": "Traces"
+		},
+		{
+			"fieldname": "traces",
+			"fieldtype": "Table",
+			"options": "LMSA Evaluation Trace",
+			"label": "Traces"
+		}
+	],
+	"modified": "2026-06-05 12:00:00.000000",
+	"modified_by": "Administrator",
+	"module": "OS LMS",
+	"name": "LMSA Quality Evaluation",
+	"owner": "Administrator",
+	"permissions": [
+		{"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1},
+		{"role": "Docente", "read": 1, "write": 1, "create": 1, "delete": 1},
+		{"role": "Course Creator", "read": 1, "write": 1, "create": 1, "delete": 1}
+	],
+	"sort_field": "triggered_at",
+	"sort_order": "DESC",
+	"track_changes": 1
+}
