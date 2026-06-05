@@ -4,35 +4,25 @@
 			class="sticky top-0 z-10 flex items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5">
 			<div class="flex items-center gap-2">
 				<Breadcrumbs class="h-7" :items="breadcrumbs" />
-				<Badge v-if="deepEvalId" theme="blue" :label="__('Valutazione in corso')" />
+				<Badge v-if="runningEvalId" theme="blue" :label="__('Test in corso')" />
 			</div>
 			<div class="flex items-center gap-x-2">
 				<Button
 					v-if="scenarioName"
 					variant="ghost"
-					:title="__('Quick check (test rapido)')"
-					:disabled="quickRunning || !!deepEvalId"
-					:loading="quickRunning"
-					@click="onQuickCheck"
+					:title="__('Test simulazione (scegli profilo e n. conversazioni)')"
+					:disabled="!!runningEvalId"
+					@click="simTestDialogOpen = true"
 				>
-					{{ __('Quick check') }}
+					{{ __('Test simulazione') }}
 				</Button>
 				<Button
 					v-if="scenarioName"
 					variant="ghost"
-					:title="__('Deep evaluation (test completo)')"
-					:disabled="!!deepEvalId"
-					@click="onDeepEvaluation"
-				>
-					{{ __('Deep evaluation') }}
-				</Button>
-				<Button
-					v-if="scenarioName"
-					variant="ghost"
-					:title="__('Gestisci golden runs')"
+					:title="__('Test di regressione (golden runs)')"
 					@click="goldensModalOpen = true"
 				>
-					{{ __('Golden runs') }}
+					{{ __('Test di regressione') }}
 				</Button>
 				<Button variant="ghost" :title="__('Esporta scenario in JSON')" @click="onExportScenario">
 					<template #icon>
@@ -276,6 +266,13 @@
 				:evalId="evalDialogId"
 			/>
 
+			<SimulationTestDialog
+				v-if="scenarioName"
+				v-model="simTestDialogOpen"
+				:scenario="scenarioName"
+				@started="onSimTestStarted"
+			/>
+
 			<GoldenRunsModal
 				v-if="scenarioName"
 				v-model="goldensModalOpen"
@@ -304,6 +301,7 @@ import EvaluationSchemaEditor from '@/oslms/components/simulations/EvaluationSch
 import ChatSession from '@/oslms/components/simulations/ChatSession.vue'
 import EvaluationResultsDialog from '@/oslms/components/simulations/eval/EvaluationResultsDialog.vue'
 import GoldenRunsModal from '@/oslms/components/simulations/eval/GoldenRunsModal.vue'
+import SimulationTestDialog from '@/oslms/components/simulations/eval/SimulationTestDialog.vue'
 import { useSimulationSession } from '@/oslms/composables/useSimulationSession.js'
 import { useEvaluation } from '@/oslms/composables/useEvaluation.js'
 
@@ -318,54 +316,47 @@ const saving = ref(false)
 const testing = ref(false)
 const schemaEditorOpen = ref(false)
 
-// ---- Evaluation state (Quick check + Deep evaluation) ----
+// ---- Evaluation state (Test simulazione) ----
 const evaluation = useEvaluation()
 const evalDialogOpen = ref(false)
 const evalDialogId = ref('')
-const quickRunning = ref(false)
-const deepEvalId = ref('')
+const simTestDialogOpen = ref(false)
+const runningEvalId = ref('')   // non-empty while a test is in flight
 const goldensModalOpen = ref(false)
 
-async function onQuickCheck() {
-	if (!props.scenarioName) return
-	quickRunning.value = true
-	try {
-		const evalId = await evaluation.runQuickCheck(props.scenarioName)
-		if (!evalId) return
+async function onSimTestStarted({ eval_id, num_variants }) {
+	if (!eval_id) return
+	runningEvalId.value = eval_id
+	// For a single-variant run we poll inline (typically <60s); larger runs
+	// rely on the realtime listener below to auto-open the dialog.
+	if (num_variants === 1) {
 		try {
-			await evaluation.pollUntilComplete(evalId, {
+			await evaluation.pollUntilComplete(eval_id, {
 				intervalMs: 2000,
 				timeoutMs: 90_000,
 			})
-			evalDialogId.value = evalId
+			runningEvalId.value = ''
+			evalDialogId.value = eval_id
 			evalDialogOpen.value = true
 		} catch (e) {
 			if (e?.message === 'poll_timeout') {
 				toast.success(
-					__('Sta richiedendo più del previsto, ti notificheremo a fine valutazione.'),
+					__('Sta richiedendo più del previsto, ti notificheremo a fine test.'),
 				)
 			} else {
 				toast.error(e?.message || __('Polling fallito'))
 			}
 		}
-	} finally {
-		quickRunning.value = false
+	} else {
+		toast.success(__('Test avviato, ti notificheremo a fine job.'))
 	}
-}
-
-async function onDeepEvaluation() {
-	if (!props.scenarioName) return
-	const evalId = await evaluation.runDeepEvaluation(props.scenarioName)
-	if (!evalId) return
-	deepEvalId.value = evalId
-	toast.success(__('Valutazione avviata, ti notificheremo a fine job.'))
 }
 
 evaluation.subscribeToCompletion({
 	filter: (payload) => payload?.scenario === props.scenarioName,
 	onComplete: (payload) => {
-		if (payload.eval_id === deepEvalId.value) {
-			deepEvalId.value = ''
+		if (payload.eval_id === runningEvalId.value) {
+			runningEvalId.value = ''
 		}
 		evalDialogId.value = payload.eval_id
 		evalDialogOpen.value = true

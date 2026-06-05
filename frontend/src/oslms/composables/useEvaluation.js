@@ -23,22 +23,19 @@ export function useEvaluation() {
 			},
 		})
 
-	const quickRes = _runResource(
-		'os_lms.os_lms.ai.simulations.eval.api.run_quick_check',
-	)
-	const deepRes = _runResource(
-		'os_lms.os_lms.ai.simulations.eval.api.run_deep_evaluation',
+	const simulationTestRes = _runResource(
+		'os_lms.os_lms.ai.simulations.eval.api.run_simulation_test',
 	)
 	const prodRes = _runResource(
 		'os_lms.os_lms.ai.simulations.eval.api.run_production_evaluation',
 	)
 
-	async function runQuickCheck(scenario) {
-		const out = await quickRes.submit({ scenario })
-		return out?.eval_id
-	}
-	async function runDeepEvaluation(scenario) {
-		const out = await deepRes.submit({ scenario })
+	async function runSimulationTest(scenario, studentProfile, numVariants = 1) {
+		const out = await simulationTestRes.submit({
+			scenario,
+			student_profile: studentProfile,
+			num_variants: numVariants,
+		})
 		return out?.eval_id
 	}
 	async function runProductionEvaluation(sessionId) {
@@ -94,8 +91,7 @@ export function useEvaluation() {
 	}
 
 	return {
-		runQuickCheck,
-		runDeepEvaluation,
+		runSimulationTest,
 		runProductionEvaluation,
 		pollUntilComplete,
 		subscribeToCompletion,

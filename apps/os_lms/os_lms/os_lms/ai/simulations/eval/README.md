@@ -59,32 +59,33 @@ verification is currently a manual one-liner from the bench console:
 ```bash
 docker exec --user frappe -w /home/frappe/bench-data/frappe-bench dev-elite-frappe-1 \
   bench --site lms.localhost execute \
-  'os_lms.os_lms.ai.simulations.eval.api.run_quick_check' \
-  --kwargs '{"scenario": "SC-XXX"}'
+  'os_lms.os_lms.ai.simulations.eval.api.run_simulation_test' \
+  --kwargs '{"scenario": "SC-XXX", "student_profile": "competent", "num_variants": 1}'
 ```
 
-Replace `SC-XXX` with a real scenario id that has at least one active
-LMSA Scenario Golden Run. The eval_id is returned; the background job runs
-asynchronously. Inspect the result via the desk or
+Replace `SC-XXX` with a real scenario id. The eval_id is returned; the
+background job runs asynchronously. Inspect the result via the desk or
 `bench execute os_lms.os_lms.ai.simulations.eval.api.get_evaluation_result`.
 
 ## Endpoints
 
 | Endpoint | Args | Purpose |
 |---|---|---|
-| `run_quick_check` | `scenario` | Enqueue quick authoring eval (1 golden + 1 LLM-student[competent]) |
-| `run_deep_evaluation` | `scenario` | Enqueue deep authoring eval (1 golden + 4 LLM-student profiles) |
+| `run_simulation_test` | `scenario`, `student_profile`, `num_variants` (1-3) | Enqueue authoring eval — N LLM-student conversations with the chosen profile, judged by the 4 dimensions |
 | `run_production_evaluation` | `session_id` | Enqueue production eval of a real session |
+| `run_golden_regression` | `scenario`, `golden_name?` | Regression eval that replays goldens (manual feature, no UI yet) |
 | `get_evaluation_status` | `eval_id` | Poll-friendly summary (status + aggregates) |
 | `get_evaluation_result` | `eval_id` | Full result including per-trace dimension scores |
 | `list_evaluations_for_scenario` | `scenario` | History of evals for a scenario |
 | `list_evaluations_for_session` | `session_id` | History of evals for a session |
+| `list_student_profiles` | — | Profiles available for the test dialog |
 | `list_goldens` | `scenario` | Goldens registered for a scenario |
 | `save_golden` | `payload` | Create/update an LMSA Scenario Golden Run |
 | `delete_golden` | `golden_name` | Remove a golden |
 
 All endpoints require either ownership of the target scenario or
-instructor status on its `lms_course`.
+instructor status on its `lms_course`. Goldens are decoupled from the
+main authoring flow — they're a manual regression feature.
 
 ## Milestone status
 
