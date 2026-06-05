@@ -52,3 +52,7 @@ This will overwrite the current brand settings with {0} value(s) from the file. 
 Imported {0} setting(s). Review and Save to apply.,Importate {0} impostazione/i. Controlla e salva per applicare.,
 Ignored unknown field(s): {0},Campo/i sconosciuto/i ignorato/i: {0},
 Import Complete,Importazione completata,
+Reset Colors,Resetta i colori,
+Clear value,Rimuovi valore,
+This will clear all {0} colors. Continue?,Questo rimuoverà tutti i {0} colori. Continuare?,
+Colors cleared. Save to apply.,Colori rimossi. Salva per applicare.,

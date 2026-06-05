@@ -32,7 +32,7 @@
 		>
 			<!-- Header sezione -->
 			<div
-				class="flex items-center gap-3 px-4 py-3 bg-surface-gray-7 border-b border-outline-gray-7"
+				class="flex items-center gap-3 px-4 py-3 bg-surface-gray-1 border-b border-outline-gray-7"
 			>
 				<FormControl
 					v-model="section.title"
@@ -50,7 +50,7 @@
 			</div>
 
 			<!-- Badge della sezione -->
-			<div class="p-4 space-y-4 bg-[--surface-gray-2]">
+			<div class="p-4 space-y-4 bg-surface-gray-2">
 				<div
 					v-if="section.items.length"
 					class="grid grid-cols-1 md:grid-cols-3 gap-3"
@@ -58,7 +58,7 @@
 					<div
 						v-for="(item, iIndex) in section.items"
 						:key="item.id"
-						class="relative border border-outline-gray-2 rounded-lg p-3 card space-y-2"
+						class="relative border border-outline-gray-2 rounded-lg bg-surface-gray-1 !p-3 space-y-2"
 					>
 						<button
 							type="button"

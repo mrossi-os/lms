@@ -7,8 +7,76 @@ frappe.ui.form.on("Brand Customize", {
 	refresh(frm) {
 		frm.add_custom_button(__("Export"), () => export_brand_settings(frm), __("Actions"));
 		frm.add_custom_button(__("Import"), () => import_brand_settings(frm), __("Actions"));
+		frm.add_custom_button(__("Reset Colors"), () => reset_colors(frm), __("Actions"));
+		add_clear_icons(frm);
 	},
 });
+
+// Color fieldnames only (theme and layout-only fields are excluded).
+function get_color_fieldnames(frm) {
+	return frm.meta.fields.filter((df) => df.fieldtype === "Color").map((df) => df.fieldname);
+}
+
+// Injects the clear-button styles once (needed for :hover, which inline styles can't do).
+function ensure_clear_styles() {
+	if (document.getElementById("brand-clear-styles")) return;
+	const style = document.createElement("style");
+	style.id = "brand-clear-styles";
+	style.textContent = `
+		.brand-clear-btn {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 20px;
+			height: 20px;
+			padding: 0;
+			margin-left: 6px;
+			border: 1px solid var(--border-color, #d1d8dd);
+			border-radius: var(--border-radius, 6px);
+			background: var(--control-bg, #f4f5f6);
+			color: var(--ink-gray-6, #74808b);
+			font-size: 13px;
+			line-height: 1;
+			cursor: pointer;
+			vertical-align: middle;
+			transition: background .15s, color .15s, border-color .15s;
+		}
+		.brand-clear-btn:hover {
+			background: var(--surface-gray-3, #e8eaed);
+			color: var(--ink-gray-8, #374151);
+			border-color: var(--gray-400, #c0c6cc);
+		}
+		.brand-clear-btn:active { transform: scale(0.92); }
+	`;
+	document.head.appendChild(style);
+}
+
+// Adds a small "✕" button next to each Color field's label to clear that single value.
+function add_clear_icons(frm) {
+	ensure_clear_styles();
+	for (const fieldname of get_color_fieldnames(frm)) {
+		const field = frm.get_field(fieldname);
+		const label = field && field.$wrapper && field.$wrapper.find(".clearfix").first();
+		if (!label || !label.length || label.find(".brand-clear-btn").length) continue;
+
+		const btn = $(
+			`<button type="button" class="brand-clear-btn" title="${__("Clear value")}">✕</button>`
+		);
+		btn.on("click", () => frm.set_value(fieldname, ""));
+		label.append(btn);
+	}
+}
+
+function reset_colors(frm) {
+	const color_fields = get_color_fieldnames(frm);
+	frappe.confirm(
+		__("This will clear all {0} colors. Continue?", [color_fields.length]),
+		() => {
+			for (const fieldname of color_fields) frm.set_value(fieldname, "");
+			frappe.show_alert({ message: __("Colors cleared. Save to apply."), indicator: "orange" });
+		}
+	);
+}
 
 // Fieldnames that actually hold a value (skips Section/Column Break and other
 // layout-only fieldtypes), so the export stays in sync as colors are added.
