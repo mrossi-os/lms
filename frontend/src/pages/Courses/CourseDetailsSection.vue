@@ -17,7 +17,7 @@
 				:label="__('Category')"
 				:placeholder="__('Select category')"
 				:inlineCreate="true"
-				inlineCreatePlaceholder="Category name"
+				:inlineCreatePlaceholder="__('Category name')"
 				:onCreate="createCategory"
 				variant="outline"
 				@update:modelValue="markDirty()"

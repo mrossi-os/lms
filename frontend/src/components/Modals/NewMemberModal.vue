@@ -19,7 +19,7 @@
 				<FormControl
 					v-model="member.email"
 					:label="__('Email')"
-					placeholder="jane@doe.com"
+					:placeholder="__('jane@doe.com')"
 					type="email"
 					:required="true"
 					@keyup.enter="addMember()"
@@ -28,14 +28,14 @@
 					<FormControl
 						v-model="member.first_name"
 						:label="__('First Name')"
-						placeholder="Jane"
+						:placeholder="__('Jane')"
 						type="text"
 						class="w-full"
 					/>
 					<FormControl
 						v-model="member.last_name"
 						:label="__('Last Name')"
-						placeholder="Doe"
+						:placeholder="__('Doe')"
 						type="text"
 						class="w-full"
 					/>
