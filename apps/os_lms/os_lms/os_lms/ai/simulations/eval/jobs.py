@@ -207,3 +207,133 @@ def run_production_evaluation(eval_id: str) -> None:
 		evaluation.save(ignore_permissions=True)
 		frappe.db.commit()
 		_publish(evaluation)
+
+
+# ---- Authoring evaluation (quick + deep) ----
+
+from os_lms.os_lms.ai.simulations.eval.runner import (
+	run_golden_replay, run_synthetic_llm_student,
+)
+from os_lms.os_lms.ai.simulations.eval.student.profiles import (
+	PROFILE_COMPETENT, LLM_STUDENT_PROFILES,
+)
+
+
+def _profiles_for_mode(run_mode: str) -> list[str]:
+	if run_mode == "quick":
+		return [PROFILE_COMPETENT]
+	if run_mode == "deep":
+		return [p["name"] for p in LLM_STUDENT_PROFILES]
+	raise ValueError(f"_profiles_for_mode: unsupported run_mode {run_mode}")
+
+
+def _active_golden(scenario_name: str):
+	goldens = frappe.get_all(
+		"LMSA Scenario Golden Run",
+		filters={"scenario": scenario_name, "active": 1},
+		fields=["name", "name_label", "turns", "expected_outcomes"],
+		order_by="creation asc",
+	)
+	if not goldens:
+		return None
+	return goldens[0]
+
+
+def _build_trace(
+	evaluation,
+	*,
+	trace_kind: str,
+	transcript: list[dict],
+	student_profile: str | None = None,
+	source_session: str | None = None,
+	source_golden: str | None = None,
+):
+	trace = evaluation.append("traces", {
+		"trace_kind": trace_kind,
+		"student_profile": student_profile,
+		"source_session": source_session,
+		"source_golden": source_golden,
+		"trace_status": "complete",
+		"transcript_json": json.dumps(transcript, ensure_ascii=False),
+	})
+	return trace
+
+
+def run_authoring_evaluation(eval_id: str) -> None:
+	"""Job entry point: quick or deep authoring evaluation.
+
+	Quick: 1 golden + 1 LLM-student[competent] = 2 traces.
+	Deep:  1 golden + 4 LLM-student (all profiles) = 5 traces.
+
+	Each LLM-student trace consumes ~ (1 variant + max_turns + 3 judges) calls.
+	"""
+	evaluation = frappe.get_doc("LMSA Quality Evaluation", eval_id)
+	try:
+		evaluation.status = "running"
+		evaluation.save(ignore_permissions=True)
+		frappe.db.commit()
+
+		provider = _get_provider()
+		model = _get_eval_model()
+		scenario = _scenario_ref(evaluation.scenario)
+
+		golden = _active_golden(evaluation.scenario)
+		if golden is None:
+			raise ValueError("Nessun golden run attivo per questo scenario")
+
+		# Trace 0: golden replay (no generation LLM calls)
+		golden_transcript = run_golden_replay(
+			turns_json=golden.turns or "[]", provider=provider,
+		)
+		trace_golden = _build_trace(
+			evaluation,
+			trace_kind="golden_replay",
+			source_golden=golden.name,
+			transcript=golden_transcript,
+		)
+		scores = evaluate_transcript(
+			transcript=golden_transcript,
+			scenario=scenario,
+			trace_kind="golden_replay",
+			provider=provider,
+			debrief_payload=None,  # goldens have no runtime debrief
+			model=model,
+		)
+		_persist_trace_scores(trace_golden, scores)
+
+		# Subsequent traces: LLM-student runs (one per profile per mode)
+		for profile_name in _profiles_for_mode(evaluation.run_mode):
+			transcript = run_synthetic_llm_student(
+				scenario=scenario,
+				profile_name=profile_name,
+				provider=provider,
+				model=model,
+			)
+			trace = _build_trace(
+				evaluation,
+				trace_kind="llm_student",
+				student_profile=profile_name,
+				transcript=transcript,
+			)
+			# Authoring runs don't currently feed a synthetic debrief to the
+			# debrief judge; production runs handle the real debrief separately.
+			scores = evaluate_transcript(
+				transcript=transcript,
+				scenario=scenario,
+				trace_kind="llm_student",
+				provider=provider,
+				debrief_payload=None,
+				model=model,
+			)
+			_persist_trace_scores(trace, scores)
+
+		_compute_aggregates(evaluation)
+		evaluation.status = "complete"
+	except Exception as e:  # noqa: BLE001
+		evaluation.status = "failed"
+		evaluation.error_message = str(e)
+		frappe.log_error(message=str(e), title="run_authoring_evaluation")
+	finally:
+		evaluation.save(ignore_permissions=True)
+		frappe.db.commit()
+		_publish(evaluation)
