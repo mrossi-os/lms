@@ -79,18 +79,18 @@
 						/>
 						<Button variant="ghost" size="sm" @click="removeCriterion(i)">×</Button>
 					</div>
-					<input
+					<textarea
 						v-model="row.description"
-						type="text"
-						class="w-full rounded-md border border-outline-gray-2 px-2 py-1 text-xs"
+						:rows="3"
+						class="w-full rounded-md border border-outline-gray-2 px-2 py-1 text-sm"
 						:placeholder="__('Descrizione (cosa va osservato)')"
-					/>
-					<input
+					></textarea>
+					<textarea
 						v-model="row.observable_behaviors"
-						type="text"
-						class="w-full rounded-md border border-outline-gray-2 px-2 py-1 text-xs"
+						:rows="5"
+						class="w-full rounded-md border border-outline-gray-2 px-2 py-1 text-sm"
 						:placeholder="__('Comportamenti osservabili (per il prompt)')"
-					/>
+					></textarea>
 				</div>
 			</div>
 			<div v-if="!model.criteria.length" class="text-xs text-ink-gray-5 mt-2">

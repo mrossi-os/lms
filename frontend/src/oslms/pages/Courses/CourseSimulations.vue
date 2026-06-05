@@ -64,7 +64,7 @@
 						:key="s.name"
 						class="border-t hover:bg-surface-gray-1"
 					>
-						<td class="px-3 py-2">{{ s.scenario_name }}</td>
+						<td class="px-3 py-2 text-ink-gray-5">{{ s.scenario_name }}</td>
 						<td class="px-3 py-2 text-ink-gray-5">
 							{{ s.course_lesson || '—' }}
 						</td>
@@ -74,7 +74,7 @@
 								:theme="difficultyTheme(s.difficulty)"
 							/>
 						</td>
-						<td class="px-3 py-2 capitalize">{{ s.modality }}</td>
+						<td class="px-3 py-2 capitalize text-ink-gray-5">{{ s.modality }}</td>
 						<td class="px-3 py-2">
 							<Badge :label="s.status" :theme="statusTheme(s.status)" />
 						</td>
@@ -138,7 +138,7 @@
 						:key="s.name"
 						class="border-t hover:bg-surface-gray-1"
 					>
-						<td class="px-3 py-2">{{ s.student }}</td>
+						<td class="px-3 py-2 text-ink-gray-5">{{ s.student }}</td>
 						<td class="px-3 py-2 text-ink-gray-5">{{ s.scenario }}</td>
 						<td class="px-3 py-2 text-ink-gray-5">
 							{{ formatDate(s.started_at) }}
@@ -149,7 +149,7 @@
 								:theme="sessionStatusTheme(s.status)"
 							/>
 						</td>
-						<td class="px-3 py-2 text-right">
+						<td class="px-3 py-2 text-right text-ink-gray-5">
 							<span v-if="s.overall_score !== null && s.overall_score !== undefined">
 								{{ Math.round(s.overall_score) }}
 							</span>

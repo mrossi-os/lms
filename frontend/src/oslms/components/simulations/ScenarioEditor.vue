@@ -1,16 +1,10 @@
 <template>
 	<div>
 		<header
-			class="sticky top-0 z-10 flex items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5"
-		>
+			class="sticky top-0 z-10 flex items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5">
 			<Breadcrumbs class="h-7" :items="breadcrumbs" />
 			<div class="flex items-center gap-x-2">
-				<Button
-					v-if="scenarioName"
-					variant="ghost"
-					@click="onTestRun"
-					:loading="testing"
-				>
+				<Button v-if="scenarioName" variant="ghost" @click="onTestRun" :loading="testing">
 					{{ __('Prova come studente') }}
 				</Button>
 				<Button variant="solid" :loading="saving" @click="onSave">
@@ -25,106 +19,56 @@
 				<div class="lg:col-span-2 space-y-6">
 					<!-- Identity -->
 					<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-						<FormControl
-							v-model="model.scenario_name"
-							type="text"
-							:label="__('Nome scenario')"
-							required
-						/>
-						<FormControl
-							v-model="model.status"
-							type="select"
-							:label="__('Stato')"
-							:options="['Draft', 'Published', 'Archived']"
-							required
-						/>
-						<Autocomplete
-							v-model="model.lms_course"
-							:options="courseOptions"
-							:label="__('Corso')"
-							:placeholder="__('Cerca un corso')"
-							required
-						/>
-						<Autocomplete
-							v-model="model.course_lesson"
-							:options="lessonOptions"
-							:label="__('Lezione (opzionale)')"
-							:placeholder="__('Cerca una lezione')"
-							:disabled="!model.lms_course"
-						/>
-						<FormControl
-							v-model="model.difficulty"
-							type="select"
-							:label="__('Difficoltà')"
-							:options="['easy', 'medium', 'hard']"
-							required
-						/>
-						<FormControl
-							v-model="model.modality"
-							type="select"
-							:label="__('Modalità')"
-							:options="['chat', 'voice', 'both']"
-							required
-						/>
+						<FormControl v-model="model.scenario_name" type="text" :label="__('Nome scenario')" required />
+						<FormControl v-model="model.status" type="select" class="lms-select " :label="__('Stato')"
+							:options="['Draft', 'Published', 'Archived']" required />
+						<Autocomplete class="lms-auto-complete" v-model="model.lms_course" :options="courseOptions"
+							:label="__('Corso')" :placeholder="__('Cerca un corso')" required />
+						<Autocomplete class="lms-auto-complete" v-model="model.course_lesson" :options="lessonOptions"
+							:label="__('Lezione (opzionale)')" :placeholder="__('Cerca una lezione')"
+							:disabled="!model.lms_course" />
+						<FormControl v-model="model.difficulty" type="select" class="lms-select "
+							:label="__('Difficoltà')" :options="['easy', 'medium', 'hard']" required />
+						<FormControl v-model="model.modality" type="select" class="lms-select " :label="__('Modalità')"
+							:options="['chat', 'voice', 'both']" required />
 					</div>
 
 					<!-- Evaluation schema link -->
 					<div class="flex items-end gap-2">
 						<div class="flex-1">
-							<Autocomplete
-								v-model="model.evaluation_schema"
-								:options="schemaOptions"
-								:label="__('Schema di valutazione')"
-								required
-							/>
+							<Autocomplete v-model="model.evaluation_schema" :options="schemaOptions"
+								:label="__('Schema di valutazione')" required class="lms-auto-complete" />
 						</div>
-						<Button @click="schemaEditorOpen = true">
+						<div class="pb-1">
+							<Button @click="schemaEditorOpen = true"">
 							+ {{ __('Nuovo') }}
 						</Button>
-						<Button variant="ghost" @click="openSchemaManagement">
-							{{ __('Gestisci') }}
-						</Button>
+						</div>
+						<div class=" pb-1">
+								<Button variant="ghost" @click="openSchemaManagement">
+									{{ __('Gestisci') }}
+								</Button>
+						</div>
 					</div>
 
 					<!-- Limits -->
 					<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-						<FormControl
-							v-model.number="model.max_turns"
-							type="number"
-							:label="__('Turni max')"
-						/>
-						<FormControl
-							v-model.number="model.time_limit_minutes"
-							type="number"
-							:label="__('Tempo max (min)')"
-						/>
+						<FormControl v-model.number="model.max_turns" type="number" :label="__('Turni max')" />
+						<FormControl v-model.number="model.time_limit_minutes" type="number"
+							:label="__('Tempo max (min)')" />
 					</div>
 
-	
+
 					<!-- Persona & situation -->
 					<div class="">
 						<div class="mb-4">
-							<FormControl
-								v-model="model.customer_persona"
-								type="textarea"
-								:rows="15"
-								:label="__('Persona base')"
-								:description="
-									__('Età, ruolo, contesto, stato emotivo iniziale.')
-								"
-								required
-							/>
+							<FormControl v-model="model.customer_persona" type="textarea" :rows="15"
+								:label="__('Persona base')" :description="__('Età, ruolo, contesto, stato emotivo iniziale.')
+									" required />
 						</div>
-						<FormControl
-							v-model="model.situation_template"
-							type="textarea"
-							:rows="15"
-							:label="__('Template situazione')"
-							:description="
-								__('Variabili randomizzate vengono sostituite al runtime.')
-							"
-							required
-						/>
+						<FormControl v-model="model.situation_template" type="textarea" :rows="15"
+							:label="__('Template situazione')" :description="__('Variabili randomizzate vengono sostituite al runtime.')
+								" required />
 					</div>
 				</div>
 
@@ -141,26 +85,14 @@
 							</Button>
 						</div>
 						<div class="space-y-2">
-							<div
-								v-for="(row, i) in model.learning_objectives"
-								:key="`obj-${i}`"
-								class="flex gap-2 items-start border border-outline-gray-2 rounded-md p-2"
-							>
-								<textarea
-									v-model="row.objective_text"
-									:rows="5"
+							<div v-for="(row, i) in model.learning_objectives" :key="`obj-${i}`"
+								class="flex gap-2 items-start border border-outline-gray-2 rounded-md p-2">
+								<textarea v-model="row.objective_text" :rows="5"
 									class="flex-1 rounded-md border border-outline-gray-2 px-2 py-1 text-sm"
-									:placeholder="__('Descrizione obiettivo')"
-								></textarea>
-								<input
-									v-model.number="row.weight"
-									type="number"
-									step="0.05"
-									min="0"
-									max="1"
+									:placeholder="__('Descrizione obiettivo')"></textarea>
+								<input v-model.number="row.weight" type="number" step="0.05" min="0" max="1"
 									class="w-20 rounded-md border border-outline-gray-2 px-2 py-1 text-sm"
-									:placeholder="__('Peso')"
-								/>
+									:placeholder="__('Peso')" />
 								<Button variant="ghost" size="sm" @click="removeObjective(i)">
 									×
 								</Button>
@@ -179,45 +111,29 @@
 							</Button>
 						</div>
 						<div class="space-y-2">
-							<div
-								v-for="(row, i) in model.seed_variations"
-								:key="`seed-${i}`"
-								class="flex flex-col gap-2 border border-outline-gray-2 rounded-md p-2"
-							>
+							<div v-for="(row, i) in model.seed_variations" :key="`seed-${i}`"
+								class="flex flex-col gap-2 border border-outline-gray-2 rounded-md p-2">
 								<div class="flex gap-2 items-center">
-									<input
-										v-model="row.variable_name"
-										type="text"
+									<input v-model="row.variable_name" type="text"
 										class="flex-1 rounded-md border border-outline-gray-2 px-2 py-1 text-sm"
-										:placeholder="__('Nome variabile')"
-									/>
-									<Button
-										variant="ghost"
-										size="sm"
-										@click="removeVariation(i)"
-									>
+										:placeholder="__('Nome variabile')" />
+									<Button variant="ghost" size="sm" @click="removeVariation(i)">
 										×
 									</Button>
 								</div>
-								<textarea
-									v-model="row.possible_values"
-									:rows="5"
+								<textarea v-model="row.possible_values" :rows="5"
 									class="rounded-md border border-outline-gray-2 px-2 py-1 text-sm"
-									:placeholder="__('Un valore per riga')"
-								></textarea>
+									:placeholder="__('Un valore per riga')"></textarea>
 							</div>
 						</div>
 					</section>
 				</aside>
 			</div>
 
-			<Dialog
-				v-model="schemaEditorOpen"
-				:options="{
-					title: __('Nuovo schema di valutazione'),
-					size: '3xl',
-				}"
-			>
+			<Dialog v-model="schemaEditorOpen" :options="{
+				title: __('Nuovo schema di valutazione'),
+				size: '3xl',
+			}">
 				<template #body-content>
 					<EvaluationSchemaEditor schemaName="" @saved="onSchemaCreated" />
 				</template>
@@ -236,6 +152,7 @@ import {
 	FormControl,
 	createResource,
 	toast,
+	usePageMeta,
 } from 'frappe-ui'
 import { useRouter } from 'vue-router'
 import EvaluationSchemaEditor from '@/oslms/components/simulations/EvaluationSchemaEditor.vue'
@@ -339,6 +256,14 @@ const saveRes = createResource({
 	method: 'POST',
 })
 
+// ---- Page meta ----
+
+usePageMeta(() => ({
+	title: props.scenarioName
+		? model.scenario_name || __('Scenario')
+		: __('Nuovo scenario'),
+}))
+
 // ---- Breadcrumbs ----
 
 const breadcrumbs = computed(() => {
@@ -414,10 +339,7 @@ async function onTestRun() {
 }
 
 function openSchemaManagement() {
-	router.push({
-		name: 'InstructorReports',
-		query: { tab: 'schemas' },
-	})
+	router.push({ name: 'EvaluationSchemas' })
 }
 
 async function onSchemaCreated(result) {

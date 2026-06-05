@@ -57,6 +57,7 @@ def get_lms_settings():
          lmsa = frappe.get_single("LMSA Settings")
          result["ai_enabled"] = lmsa.get("enabled")
          result["simulations_enabled"] = bool(lmsa.get("simulations_enabled"))
+         result["theme"] = lmsa.get("theme") or "light"
     return result
 
 

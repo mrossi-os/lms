@@ -176,6 +176,7 @@ import {
 	X,
 } from 'lucide-vue-next'
 import { sessionStore } from '@/stores/session'
+import { useSettings } from '@/stores/settings'
 import LayoutHeader from '@/components/Layouts/LayoutHeader.vue'
 import CourseOverview from '@/pages/Courses/CourseOverview.vue'
 import CourseDashboard from '@/pages/Courses/CourseDashboard.vue'
@@ -187,7 +188,12 @@ import type {
 	Resource,
 	SessionUser,
 } from '@/types/api'
-import CourseSimulations from '@/pages/Courses/CourseSimulations.vue'
+import CourseSimulations from '@/oslms/pages/Courses/CourseSimulations.vue'
+
+const { settings: lmsSettingsResource } = useSettings()
+const simulationsEnabledGlobal = computed(
+	() => !!lmsSettingsResource?.data?.simulations_enabled,
+)
 
 type Brand = { name?: string; logo?: string; favicon?: string }
 interface TabDef {
@@ -312,28 +318,38 @@ const course = createResource({
 	auto: true,
 }) as Resource<CourseDetails | null>
 
-const tabs = ref<TabDef[]>([
-	{
-		label: __('Overview'),
-		component: markRaw(CourseOverview),
-		icon: markRaw(List),
-	},
-	{
-		label: __('Dashboard'),
-		component: markRaw(CourseDashboard),
-		icon: markRaw(TrendingUp),
-	},
-	{
-		label: __('Course editor'),
-		component: markRaw(CourseEditor),
-		icon: markRaw(BookOpen),
-	},
-	{
-		label: __('Settings'),
-		component: markRaw(CourseForm),
-		icon: markRaw(Settings2),
-	},
-])
+const tabs = computed<TabDef[]>(() => {
+	const t: TabDef[] = [
+		{
+			label: __('Overview'),
+			component: markRaw(CourseOverview),
+			icon: markRaw(List),
+		},
+		{
+			label: __('Dashboard'),
+			component: markRaw(CourseDashboard),
+			icon: markRaw(TrendingUp),
+		},
+		{
+			label: __('Course editor'),
+			component: markRaw(CourseEditor),
+			icon: markRaw(BookOpen),
+		},
+		{
+			label: __('Settings'),
+			component: markRaw(CourseForm),
+			icon: markRaw(Settings2),
+		},
+	]
+	if (simulationsEnabledGlobal.value) {
+		t.push({
+			label: __('Simulations'),
+			component: markRaw(CourseSimulations),
+			icon: markRaw(Bot),
+		})
+	}
+	return t
+})
 
 watch(
 	() => props.courseName,

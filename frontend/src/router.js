@@ -254,29 +254,35 @@ const routes = [
 	{
 		path: '/simulations/admin',
 		name: 'InstructorReports',
-		component: () => import('@/pages/Simulations/InstructorReports.vue'),
+		component: () => import('@/oslms/pages/Simulation/InstructorReports.vue'),
 	},
 	{
 		path: '/simulations/scenarios/new',
 		name: 'ScenarioCreate',
-		component: () => import('@/pages/Simulations/ScenarioEdit.vue'),
+		component: () => import('@/oslms/pages/Simulation/ScenarioEdit.vue'),
 	},
 	{
 		path: '/simulations/scenarios/:name/edit',
 		name: 'ScenarioEdit',
-		component: () => import('@/pages/Simulations/ScenarioEdit.vue'),
+		component: () => import('@/oslms/pages/Simulation/ScenarioEdit.vue'),
 		props: true,
+	},
+	{
+		path: '/simulations/valutations-schema',
+		name: 'EvaluationSchemas',
+		component: () =>
+			import('@/oslms/pages/Simulation/EvaluationSchemas.vue'),
 	},
 	{
 		path: '/simulations/:sessionId',
 		name: 'SimulationPlay',
-		component: () => import('@/pages/Simulations/SimulationPlay.vue'),
+		component: () => import('@/oslms/pages/Simulation/SimulationPlay.vue'),
 		props: true,
 	},
 	{
 		path: '/simulations/:sessionId/debrief',
 		name: 'SimulationDebrief',
-		component: () => import('@/pages/Simulations/SimulationDebrief.vue'),
+		component: () => import('@/oslms/pages/Simulation/SimulationDebrief.vue'),
 		props: true,
 	},
 ]
