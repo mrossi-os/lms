@@ -26,6 +26,14 @@
 				>
 					{{ __('Deep evaluation') }}
 				</Button>
+				<Button
+					v-if="scenarioName"
+					variant="ghost"
+					:title="__('Gestisci golden runs')"
+					@click="goldensModalOpen = true"
+				>
+					{{ __('Golden runs') }}
+				</Button>
 				<Button variant="ghost" :title="__('Esporta scenario in JSON')" @click="onExportScenario">
 					<template #icon>
 						<Download class="size-4 stroke-1.5" />
@@ -267,6 +275,12 @@
 				v-model="evalDialogOpen"
 				:evalId="evalDialogId"
 			/>
+
+			<GoldenRunsModal
+				v-if="scenarioName"
+				v-model="goldensModalOpen"
+				:scenario="scenarioName"
+			/>
 		</div>
 	</div>
 </template>
@@ -289,6 +303,7 @@ import { ChevronDown, Download, Trash2, Upload } from 'lucide-vue-next'
 import EvaluationSchemaEditor from '@/oslms/components/simulations/EvaluationSchemaEditor.vue'
 import ChatSession from '@/oslms/components/simulations/ChatSession.vue'
 import EvaluationResultsDialog from '@/oslms/components/simulations/eval/EvaluationResultsDialog.vue'
+import GoldenRunsModal from '@/oslms/components/simulations/eval/GoldenRunsModal.vue'
 import { useSimulationSession } from '@/oslms/composables/useSimulationSession.js'
 import { useEvaluation } from '@/oslms/composables/useEvaluation.js'
 
@@ -309,6 +324,7 @@ const evalDialogOpen = ref(false)
 const evalDialogId = ref('')
 const quickRunning = ref(false)
 const deepEvalId = ref('')
+const goldensModalOpen = ref(false)
 
 async function onQuickCheck() {
 	if (!props.scenarioName) return
