@@ -88,3 +88,40 @@ def cleanup_sessions_and_turns():
                 pass
         frappe.delete_doc("LMSA Simulation Session", name, force=True, ignore_permissions=True)
     frappe.db.commit()
+
+
+def make_scenario_with_instructor():
+    """Returns (scenario_doc, instructor_user_doc, outsider_user_doc).
+
+    Used by eval permission tests. Builds 2 users, 1 LMS Course with the
+    first user listed in Course Instructor, and 1 LMSA Simulation Scenario
+    published on that course via make_published_scenario.
+    """
+    instructor = frappe.get_doc({
+        "doctype": "User",
+        "email": f"instr-{frappe.generate_hash(length=6)}@example.com",
+        "first_name": "Instr",
+        "send_welcome_email": 0,
+    }).insert(ignore_permissions=True)
+
+    outsider = frappe.get_doc({
+        "doctype": "User",
+        "email": f"out-{frappe.generate_hash(length=6)}@example.com",
+        "first_name": "Out",
+        "send_welcome_email": 0,
+    }).insert(ignore_permissions=True)
+
+    course = frappe.get_doc({
+        "doctype": "LMS Course",
+        "title": f"Eval Test Course {frappe.generate_hash(length=4)}",
+        "short_introduction": "Eval test fixture course.",
+        "description": "Eval test fixture course used by permission tests.",
+        "instructors": [{"instructor": instructor.name}],
+    }).insert(ignore_permissions=True)
+
+    scenario = make_published_scenario(
+        name=f"Eval Test Scenario {frappe.generate_hash(length=4)}",
+        course=course.name,
+    )
+
+    return scenario, instructor, outsider
