@@ -57,7 +57,11 @@
 						<template #default="{ column, item }">
 							<ListRowItem :item="row[column.key]" :align="column.align">
 								<div v-if="column.key == 'show_answers'">
-									<Checkbox v-model="row[column.key]" :disabled="true" />
+									<FeatherIcon
+										v-if="row[column.key]"
+										name="check"
+										class="h-4 w-4 text-ink-green-3"
+									/>
 								</div>
 								<div
 									v-else-if="column.key == 'modified'"
@@ -160,7 +164,6 @@ import {
 	ListSelectBanner,
 	toast,
 	usePageMeta,
-	Checkbox,
 } from 'frappe-ui'
 import { useRouter, useRoute } from 'vue-router'
 import { computed, inject, onMounted, ref, watch } from 'vue'

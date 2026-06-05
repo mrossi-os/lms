@@ -130,6 +130,7 @@ const props = withDefaults(
 		validate?: (value: string) => boolean
 		errorMessage?: (value: string) => string
 		required?: boolean
+		exclude?: string[]
 	}>(),
 	{
 		filters: () => ({}),
@@ -145,6 +146,9 @@ const trigger = ref<{ $el: HTMLElement } | null>(null)
 const query = ref<string>('')
 const text = ref<string>('')
 const selectedValue = ref<SelectOption | null>(null)
+// Cache of options the user has actually selected, so the parent can resolve
+// labels/descriptions for chosen values (used by ProgramForm.addCourses).
+const cachedOptions = ref<SelectOption[]>([])
 
 watch(selectedValue, (val) => {
 	if (!val?.value) return

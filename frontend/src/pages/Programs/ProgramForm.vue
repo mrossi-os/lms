@@ -64,7 +64,7 @@
 						<div class="text-lg font-semibold text-ink-gray-9">
 							{{ __('Courses') }}
 						</div>
-						<Button @click="openForm('course')">
+						<Button @click="openForm()">
 							<template #prefix>
 								<Plus class="h-4 w-4 stroke-1.5" />
 							</template>
@@ -205,16 +205,13 @@
 				v-model="showFormDialog"
 				:options="{
 					size: 'lg',
-					title:
-						currentForm == 'course'
-							? __('Add Course to Program')
-							: __('Enroll Member to Program'),
+					title: __('Add Course to Program'),
 					actions: [
 						{
 							label: __('Add'),
 							variant: 'solid',
 							onClick: ({ close }: { close: () => void }) =>
-								currentForm == 'course' ? addCourses(close) : addMember(close),
+								addCourses(close),
 						},
 					],
 				}"
@@ -222,7 +219,6 @@
 				<template #body-content>
 					<div @click.stop class="min-h-[300px]">
 						<MultiSelect
-							v-if="currentForm == 'course'"
 							v-model="selectedCourses"
 							doctype="LMS Course"
 							:label="__('Courses')"
@@ -230,17 +226,6 @@
 							ref="multiSelectRef"
 							:exclude="
 								(program.program_courses || []).map((c: any) => c.course)
-							"
-						/>
-						<Link
-							v-if="currentForm == 'member'"
-							v-model="member"
-							doctype="User"
-							:filters="{ ignore_user_type: 1 }"
-							:label="__('Program Member')"
-							:onCreate="
-								(value: string, close: () => void) =>
-									openSettings('Members', close)
 							"
 						/>
 					</div>
@@ -390,7 +375,7 @@ import ListSelectBanner from '@/overrides/frappe-ui/src/components/ListView/List
 import { computed, ref, watch, getCurrentInstance } from 'vue'
 import { Plus, Trash2, TrendingUp } from 'lucide-vue-next'
 import { Programs, Program } from '@/types/programs'
-import { sanitizeHTML, openSettings } from '@/utils'
+import { sanitizeHTML } from '@/utils'
 import Link from '@/components/Controls/Link.vue'
 import Draggable from 'vuedraggable'
 import ProgramProgressSummary from '@/pages/Programs/ProgramProgressSummary.vue'
@@ -399,9 +384,7 @@ import MultiSelect from '@/components/Controls/MultiSelect.vue'
 const show = defineModel<boolean>()
 const programs = defineModel<Programs>('programs')
 const showFormDialog = ref(false)
-const currentForm = ref<'course' | 'member'>('course')
 const selectedCourses = ref<string[]>([])
-const member = ref<string>('')
 const showProgressDialog = ref(false)
 const dirty = ref(false)
 const showMemberDialog = ref(false)
@@ -709,14 +692,9 @@ const updateProgram = async (close: () => void) => {
 	}
 }
 
-const openForm = (formType: 'course' | 'member') => {
-	currentForm.value = formType
+const openForm = () => {
 	showFormDialog.value = true
-	if (formType === 'course') {
-		selectedCourses.value = []
-	} else {
-		member.value = ''
-	}
+	selectedCourses.value = []
 }
 
 const addCourses = (close: () => void) => {
@@ -922,7 +900,7 @@ const selectionText = (count: number) =>
 const courseColumns = computed(() => {
 	return [
 		{
-			label: 'Title',
+			label: __('Title'),
 			key: props.programName === 'new' ? 'course' : 'course_title',
 			width: 1,
 		},
@@ -932,13 +910,13 @@ const courseColumns = computed(() => {
 const memberColumns = computed(() => {
 	return [
 		{
-			label: 'Member',
+			label: __('Member'),
 			key: 'member',
 			width: 3,
 			align: 'left',
 		},
 		{
-			label: 'Full Name',
+			label: __('Full Name'),
 			key: 'full_name',
 			width: 3,
 			align: 'left',
