@@ -579,17 +579,16 @@ class TestPermissions(IntegrationTestCase):
 
 - [ ] **Step 2: Add fixture helper**
 
-Add to `apps/os_lms/os_lms/os_lms/ai/simulations/tests/_fixtures.py`:
+The existing `_fixtures.py` exposes `make_published_scenario(*, name, course, evaluation_schema)` and `make_evaluation_schema()`. We layer `make_scenario_with_instructor()` on top — no extraction needed. Append to `apps/os_lms/os_lms/os_lms/ai/simulations/tests/_fixtures.py`:
 
 ```python
 def make_scenario_with_instructor():
     """Returns (scenario_doc, instructor_user_doc, outsider_user_doc).
 
-    Course has `instructor` listed in Course Instructor child table.
-    Outsider is a different user with no instructor relation.
+    Builds: 2 users, 1 LMS Course with the first user listed in the Course
+    Instructor child table, 1 LMSA Simulation Scenario published on that
+    course via the existing make_published_scenario helper.
     """
-    import frappe
-
     instructor = frappe.get_doc({
         "doctype": "User",
         "email": f"instr-{frappe.generate_hash(length=6)}@example.com",
@@ -606,17 +605,17 @@ def make_scenario_with_instructor():
 
     course = frappe.get_doc({
         "doctype": "LMS Course",
-        "title": "Eval Test Course",
+        "title": f"Eval Test Course {frappe.generate_hash(length=4)}",
         "instructors": [{"instructor": instructor.name}],
     }).insert(ignore_permissions=True)
 
-    scenario = build_scenario_doc(course=course.name)  # existing helper
-    scenario.insert(ignore_permissions=True)
+    scenario = make_published_scenario(
+        name=f"Eval Test Scenario {frappe.generate_hash(length=4)}",
+        course=course.name,
+    )
 
     return scenario, instructor, outsider
 ```
-
-If `build_scenario_doc` doesn't yet exist in `_fixtures.py`, extract the doc construction from the existing `make_scenario()` helper into a `build_scenario_doc(course=...)` function and have `make_scenario()` call it. Don't change `make_scenario()`'s public behaviour.
 
 - [ ] **Step 3: Run test, expect failure (module missing)**
 
@@ -1782,7 +1781,7 @@ git commit -m "feat(eval): add LLM-student profiles and prompt builder"
 - Create: `apps/os_lms/os_lms/os_lms/ai/simulations/eval/pipeline.py`
 - Create: `apps/os_lms/os_lms/os_lms/ai/simulations/eval/tests/test_pipeline.py`
 
-The pipeline depends on the LLM provider abstraction already used by `prompts/scenario_generator.py`. The existing code path is `simulations.providers.get_provider(name).chat(system, messages, model)`. We reuse it. Tests inject a `FakeProvider` that returns pre-staged JSON strings.
+**Important:** the pipeline uses the real provider layer at `os_lms.os_lms.ai.utils.llm`. See `CONTRACT.md` for the exact signature of `LLMProvider.chat()` — `chat(messages: list[ChatMessage], *, system: str | None, ...) -> ChatResponse`. The pipeline converts our judge dict format `{"role", "content"}` to `ChatMessage` objects, calls the provider, reads `response.text`. Tests inject a `FakeProvider` that mirrors the real shape (returns `ChatResponse`).
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1790,8 +1789,10 @@ The pipeline depends on the LLM provider abstraction already used by `prompts/sc
 # tests/test_pipeline.py
 import json
 from dataclasses import dataclass, field
-from typing import Any
 
+from os_lms.os_lms.ai.utils.llm.provider import (
+    ChatMessage, ChatResponse, Usage,
+)
 from os_lms.os_lms.ai.simulations.eval.pipeline import evaluate_transcript
 from os_lms.os_lms.ai.simulations.eval.types import (
     ScenarioRef, ALL_DIMENSIONS,
@@ -1801,15 +1802,27 @@ from os_lms.os_lms.ai.simulations.eval.types import (
 
 @dataclass
 class FakeProvider:
-    """Returns the queued response for each chat() call, in order."""
+    """Returns the queued ChatResponse for each chat() call, in order.
+
+    Mirrors the real LLMProvider.chat() signature so swapping the production
+    provider in is a no-op for the pipeline.
+    """
     responses: list[str]
     calls: list[dict] = field(default_factory=list)
+    name: str = "fake"
 
-    def chat(self, *, system: str, messages: list[dict], model: str = "") -> str:
-        self.calls.append({"system": system, "messages": messages})
+    def chat(self, messages, *, system=None, model=None, **kwargs):
+        self.calls.append({"system": system, "messages": list(messages)})
         if not self.responses:
             raise AssertionError("FakeProvider exhausted")
-        return self.responses.pop(0)
+        text = self.responses.pop(0)
+        return ChatResponse(
+            text=text,
+            finish_reason="stop",
+            usage=Usage(prompt_tokens=0, completion_tokens=0),
+            model=model or "fake-1",
+            provider="fake",
+        )
 
 
 _SCENARIO = ScenarioRef(
@@ -1899,9 +1912,11 @@ def test_evaluate_returns_failed_score_on_bad_judge_json():
 # apps/os_lms/os_lms/os_lms/ai/simulations/eval/pipeline.py
 """Source-agnostic evaluation pipeline.
 
-Given a transcript + a ScenarioRef + an LLM provider, run all four judges
-and return their DimensionScore objects. Provider is injected so tests can
-substitute a fake.
+Given a transcript + a ScenarioRef + an LLMProvider, run all four judges
+and return their DimensionScore objects. The provider follows the project's
+real abstraction (utils.llm.provider.LLMProvider) — tests can substitute a
+fake that matches the same shape; production code passes the result of
+`resolve_provider("debrief")`.
 
 The pipeline never raises on a judge failure: it returns a DimensionScore
 with score=None and a warning so the caller can decide whether to surface
@@ -1909,8 +1924,7 @@ the trace as 'failed' or just exclude that dimension from aggregates.
 """
 from __future__ import annotations
 
-from typing import Protocol
-
+from os_lms.os_lms.ai.utils.llm.provider import ChatMessage, LLMProvider
 from os_lms.os_lms.ai.simulations.eval.judges import (
     persona as persona_judge,
     coverage as coverage_judge,
@@ -1927,24 +1941,28 @@ from os_lms.os_lms.ai.simulations.eval.types import (
 )
 
 
-class LlmProvider(Protocol):
-    def chat(
-        self, *, system: str, messages: list[dict], model: str = ""
-    ) -> str: ...
+def _to_chat_messages(messages: list[dict]) -> list[ChatMessage]:
+    return [ChatMessage(role=m["role"], content=m["content"]) for m in messages]
 
 
 def _run_judge(
     *,
     judge_module,
     dimension: str,
-    provider: LlmProvider,
+    provider: LLMProvider,
     build_kwargs: dict,
-    model: str = "",
+    model: str | None = None,
 ) -> DimensionScore:
     try:
         system, messages = judge_module.build_messages(**build_kwargs)
-        text = provider.chat(system=system, messages=messages, model=model)
-        return judge_module.parse_output(text)
+        response = provider.chat(
+            _to_chat_messages(messages),
+            system=system,
+            model=model,
+            temperature=0.0,            # judges want determinism
+            max_tokens=1024,
+        )
+        return judge_module.parse_output(response.text)
     except ValueError as e:
         return DimensionScore(
             dimension=dimension,
@@ -1966,9 +1984,9 @@ def evaluate_transcript(
     transcript: list[dict],
     scenario: ScenarioRef,
     trace_kind: str,
-    provider: LlmProvider,
+    provider: LLMProvider,
     debrief_payload: dict | None = None,
-    model: str = "",
+    model: str | None = None,
 ) -> list[DimensionScore]:
     """Run the 4 judges. Returns scores in fixed order (persona, coverage,
     debrief, difficulty)."""
@@ -2071,13 +2089,24 @@ from frappe.tests import IntegrationTestCase
 from os_lms.os_lms.ai.simulations.eval.jobs import run_production_evaluation
 
 
+from os_lms.os_lms.ai.utils.llm.provider import ChatResponse, Usage
+
+
 class FakeProvider:
+    """Mirrors LLMProvider shape, returns queued ChatResponse objects."""
+    name = "fake"
     def __init__(self, responses):
         self.responses = list(responses)
         self.calls = 0
-    def chat(self, *, system, messages, model=""):
+    def chat(self, messages, *, system=None, model=None, **kwargs):
         self.calls += 1
-        return self.responses.pop(0)
+        return ChatResponse(
+            text=self.responses.pop(0),
+            finish_reason="stop",
+            usage=Usage(),
+            model=model or "fake-1",
+            provider="fake",
+        )
 
 
 def _ok_payload(extra=None):
@@ -2145,7 +2174,44 @@ class TestProductionJob(IntegrationTestCase):
 
 - [ ] **Step 2: Add `make_completed_session` to fixtures**
 
-Update `apps/os_lms/os_lms/os_lms/ai/simulations/tests/_fixtures.py` to add a helper that creates an LMSA Simulation Session in Completed status with 2 LMSA Simulation Turn rows. Mirror whatever the existing `make_session()` helper does and set `status="Completed"`.
+`_fixtures.py` does NOT have a `make_session()` helper (verified). Build one from scratch. Append to `apps/os_lms/os_lms/os_lms/ai/simulations/tests/_fixtures.py`:
+
+```python
+def make_completed_session(scenario=None):
+    """Create a LMSA Simulation Session in Completed status with 2 turns.
+
+    If no scenario is provided, builds one via make_published_scenario.
+    Returns the session doc.
+    """
+    scenario = scenario or make_published_scenario(
+        name=f"Eval Session Scenario {frappe.generate_hash(length=4)}",
+    )
+
+    session = frappe.get_doc({
+        "doctype": "LMSA Simulation Session",
+        "scenario": scenario.name,
+        "course": scenario.lms_course,
+        "status": "Completed",
+        "modality": "chat",
+        "started_at": frappe.utils.now_datetime(),
+    }).insert(ignore_permissions=True)
+
+    for i, (role, text) in enumerate([
+        ("user", "Buongiorno"),
+        ("assistant", "Buongiorno a lei."),
+    ]):
+        frappe.get_doc({
+            "doctype": "LMSA Simulation Turn",
+            "session": session.name,
+            "turn_index": i,
+            "role": role,
+            "text_content": text,
+        }).insert(ignore_permissions=True)
+
+    return session
+```
+
+Verify the actual LMSA Simulation Session field names before saving. If `course` or `started_at` aren't required fields or have different names, drop them; the test only needs `scenario`, `status`, and the linked turns.
 
 - [ ] **Step 3: Run test, expect ImportError**
 
@@ -2183,18 +2249,16 @@ REALTIME_EVENT = "simulation:eval_complete"
 
 
 def _get_provider():
-    """Default provider resolution. Mirrors the existing prompts/role_play
-    usage by reading from LMSA Settings. Real implementation reuses
-    simulations.providers.get_provider; tests patch this function."""
-    from os_lms.os_lms.ai.simulations import providers
-    settings = frappe.get_single("LMSA Settings")
-    provider_name = settings.get("simulation_debrief_provider") or "openai"
-    return providers.get_provider(provider_name)
+    """Resolve the configured 'debrief' provider — judges are non-realtime
+    so we use the same purpose-based factory the runtime uses. Tests patch
+    this function to inject a FakeProvider."""
+    from os_lms.os_lms.ai.utils.llm import resolve_provider
+    return resolve_provider("debrief")
 
 
-def _get_eval_model() -> str:
+def _get_eval_model() -> str | None:
     settings = frappe.get_single("LMSA Settings")
-    return settings.get("simulation_debrief_model") or ""
+    return settings.get("simulation_debrief_model") or None
 
 
 def _scenario_ref(scenario_name: str) -> ScenarioRef:
@@ -2230,22 +2294,32 @@ def _load_session_transcript(session_name: str) -> list[dict]:
 
 
 def _load_session_debrief(session_name: str) -> dict | None:
+    """Read the most recent debrief for a session. Field names match the
+    actual LMSA Simulation Debrief doctype (Code fields containing JSON,
+    NOT *_json-suffixed)."""
     debriefs = frappe.get_all(
         "LMSA Simulation Debrief",
         filters={"session": session_name},
-        fields=["overall_score", "passed", "criterion_scores_json",
-                "strengths_json", "improvements_json"],
+        fields=["overall_score", "passed", "criterion_scores",
+                "strengths", "improvements"],
         limit=1,
     )
     if not debriefs:
         return None
     d = debriefs[0]
+    def _parse(value, default):
+        if not value:
+            return default
+        try:
+            return json.loads(value)
+        except (json.JSONDecodeError, TypeError):
+            return default
     return {
         "overall_score": d.overall_score,
         "passed": bool(d.passed),
-        "criterion_scores": json.loads(d.criterion_scores_json or "[]"),
-        "strengths": json.loads(d.strengths_json or "[]"),
-        "improvements": json.loads(d.improvements_json or "[]"),
+        "criterion_scores": _parse(d.criterion_scores, []),
+        "strengths": _parse(d.strengths, []),
+        "improvements": _parse(d.improvements, []),
     }
 
 
@@ -2374,6 +2448,8 @@ The runner orchestrates synthetic sessions: golden replay + N LLM-student profil
 ```python
 # tests/test_runner.py
 import json
+
+from os_lms.os_lms.ai.utils.llm.provider import ChatResponse, Usage
 from os_lms.os_lms.ai.simulations.eval.runner import (
     run_synthetic_llm_student, run_golden_replay,
 )
@@ -2381,10 +2457,18 @@ from os_lms.os_lms.ai.simulations.eval.types import ScenarioRef
 
 
 class FakeProvider:
+    """Returns queued ChatResponse objects matching the real provider shape."""
+    name = "fake"
     def __init__(self, responses):
         self.responses = list(responses)
-    def chat(self, *, system, messages, model=""):
-        return self.responses.pop(0)
+    def chat(self, messages, *, system=None, model=None, **kwargs):
+        return ChatResponse(
+            text=self.responses.pop(0),
+            finish_reason="stop",
+            usage=Usage(),
+            model=model or "fake-1",
+            provider="fake",
+        )
 
 
 def _scenario():
@@ -2407,9 +2491,20 @@ def test_golden_replay_returns_transcript_and_no_provider_call():
 
 
 def test_llm_student_alternates_student_and_cliente_until_max_turns():
-    # 4 max turns → 2 student + 2 cliente calls.
+    # The runner first generates a scenario variant (1 LLM call returning
+    # JSON conforming to SCENARIO_SCHEMA), then alternates student + cliente
+    # for max_turns. With max_turns=4: 1 variant + 2 student + 2 cliente = 5 calls.
+    variant_json = json.dumps({
+        "situation": "Cliente competitor.",
+        "persona": {
+            "name": "Mario", "role": "CTO", "company": "AcmeCo",
+            "mood": "scettico", "key_objection": "prezzo",
+            "hidden_motivation": "vuole sconto",
+        },
+    })
     provider = FakeProvider(responses=[
-        "Buongiorno",            # student turn 0
+        variant_json,             # scenario_generator
+        "Buongiorno",             # student turn 0
         "Buongiorno a lei",       # cliente turn 1
         "Vorrei un preventivo",   # student turn 2
         "Dipende dal volume",     # cliente turn 3
@@ -2434,13 +2529,27 @@ def test_llm_student_alternates_student_and_cliente_until_max_turns():
 """Synthetic session generators for authoring mode.
 
 Two strategies:
-- run_golden_replay: deterministic, no LLM calls (uses student/golden.replay_golden)
-- run_synthetic_llm_student: alternates student (LLM) + cliente (LLM, reuses
-  prompts/role_play.py) until max_turns or natural completion
+- run_golden_replay: deterministic, no LLM calls
+- run_synthetic_llm_student: mirrors the orchestrator's runtime flow ---
+  first generate a scenario variant via scenario_generator (PersonaVariant +
+  situation), then alternate LLM-student + LLM-cliente turns using the same
+  role_play system prompt the real student sees.
+
+Mirroring the runtime chain matters: if we bypassed scenario_generator the
+eval would not catch drift in that prompt. Cost is +1 LLM call per trace.
 """
 from __future__ import annotations
 
-from os_lms.os_lms.ai.simulations.eval.pipeline import LlmProvider
+import time
+
+from os_lms.os_lms.ai.utils.llm.provider import ChatMessage, LLMProvider
+from os_lms.os_lms.ai.simulations.prompts.role_play import (
+    build_role_play_system_prompt,
+)
+from os_lms.os_lms.ai.simulations.prompts.scenario_generator import (
+    build_scenario_generator_messages,
+    parse_scenario_generator_output,
+)
 from os_lms.os_lms.ai.simulations.eval.student.golden import replay_golden
 from os_lms.os_lms.ai.simulations.eval.student.llm_student import (
     build_student_messages,
@@ -2448,49 +2557,101 @@ from os_lms.os_lms.ai.simulations.eval.student.llm_student import (
 from os_lms.os_lms.ai.simulations.eval.types import ScenarioRef
 
 
-def run_golden_replay(*, turns_json: str, provider: LlmProvider) -> list[dict]:
-    # Provider is accepted for symmetry of signature but never called for
-    # golden replays — they are deterministic.
+def run_golden_replay(*, turns_json: str, provider: LLMProvider) -> list[dict]:
+    # Provider accepted for signature symmetry; deterministic — never called.
     return replay_golden(turns_json)
+
+
+def _to_chat_messages(transcript: list[dict]) -> list[ChatMessage]:
+    return [
+        ChatMessage(role=t["role"], content=t.get("text", ""))
+        for t in transcript
+        if t["role"] in ("user", "assistant")
+    ]
+
+
+def _generate_variant(
+    scenario: ScenarioRef,
+    provider: LLMProvider,
+    model: str | None,
+):
+    """Run scenario_generator once at the start of a synthetic trace.
+
+    Returns the parsed ScenarioVariant (with .situation and .persona).
+    Raises ValueError on parse failure — the caller surfaces this as a
+    trace failure.
+    """
+    seed = f"eval-{int(time.time() * 1000)}"
+    system, messages = build_scenario_generator_messages(
+        scenario_name=scenario.scenario_name,
+        difficulty=scenario.difficulty,
+        customer_persona=scenario.customer_persona,
+        situation_template=scenario.situation_template,
+        learning_objectives=scenario.learning_objectives,
+        seed_variations={},
+        seed=seed,
+    )
+    response = provider.chat(
+        [ChatMessage(role=m["role"], content=m["content"]) for m in messages],
+        system=system,
+        model=model,
+        temperature=0.7,
+        max_tokens=1024,
+    )
+    return parse_scenario_generator_output(response.text)
 
 
 def run_synthetic_llm_student(
     *,
     scenario: ScenarioRef,
     profile_name: str,
-    provider: LlmProvider,
-    model: str = "",
+    provider: LLMProvider,
+    model: str | None = None,
 ) -> list[dict]:
+    """Generate a full synthetic session: 1 variant call + alternating
+    student/cliente turns up to scenario.max_turns."""
+    variant = _generate_variant(scenario, provider, model)
+
     transcript: list[dict] = []
     for turn_index in range(scenario.max_turns):
         if turn_index % 2 == 0:
-            # Student turn
+            # Student turn — our own LLM-student prompt
             system, messages = build_student_messages(
                 scenario=scenario,
                 history=transcript,
                 profile_name=profile_name,
             )
-            text = provider.chat(system=system, messages=messages, model=model)
+            response = provider.chat(
+                [ChatMessage(role=m["role"], content=m["content"]) for m in messages],
+                system=system,
+                model=model,
+                temperature=0.8,
+                max_tokens=400,
+            )
             transcript.append({
                 "turn_index": turn_index,
                 "role": "user",
-                "text": text.strip(),
+                "text": response.text.strip(),
             })
         else:
-            # Cliente turn — reuses the runtime role_play prompt
-            from os_lms.os_lms.ai.simulations.prompts import role_play
-            system, messages = role_play.build_messages(
-                scenario_name=scenario.scenario_name,
+            # Cliente turn — same chain the real student sees
+            system_prompt = build_role_play_system_prompt(
+                persona=variant.persona,
+                generated_situation=variant.situation,
                 difficulty=scenario.difficulty,
-                generated_persona=scenario.customer_persona,
-                generated_situation=scenario.situation_template,
-                history=transcript,
             )
-            text = provider.chat(system=system, messages=messages, model=model)
+            history_msgs = _to_chat_messages(transcript)
+            response = provider.chat(
+                history_msgs,
+                system=system_prompt,
+                model=model,
+                temperature=0.7,
+                max_tokens=400,
+            )
             transcript.append({
                 "turn_index": turn_index,
                 "role": "assistant",
-                "text": text.strip(),
+                "text": response.text.strip(),
             })
     return transcript
 ```
@@ -2999,13 +3160,21 @@ from unittest.mock import patch
 import frappe
 from frappe.tests import IntegrationTestCase
 
+from os_lms.os_lms.ai.utils.llm.provider import ChatResponse, Usage
 from os_lms.os_lms.ai.simulations.eval import api
 from os_lms.os_lms.ai.simulations.eval.jobs import run_production_evaluation
 
 
 class FakeProvider:
+    """Mirrors LLMProvider shape with queued ChatResponse objects."""
+    name = "fake"
     def __init__(self, payloads): self.payloads = list(payloads)
-    def chat(self, *, system, messages, model=""): return self.payloads.pop(0)
+    def chat(self, messages, *, system=None, model=None, **kwargs):
+        return ChatResponse(
+            text=self.payloads.pop(0),
+            finish_reason="stop", usage=Usage(),
+            model=model or "fake-1", provider="fake",
+        )
 
 
 def _ok(extra=None):
@@ -3076,23 +3245,38 @@ from unittest.mock import patch
 import frappe
 from frappe.tests import IntegrationTestCase
 
+from os_lms.os_lms.ai.utils.llm.provider import ChatResponse, Usage
 from os_lms.os_lms.ai.simulations.eval import api
 from os_lms.os_lms.ai.simulations.eval.jobs import run_authoring_evaluation
 
 
 class FakeProvider:
+    """Mirrors LLMProvider shape with queued ChatResponse objects."""
+    name = "fake"
     def __init__(self, payloads): self.payloads = list(payloads)
-    def chat(self, *, system, messages, model=""): return self.payloads.pop(0)
-
-
-def _student_text(text):
-    return text  # raw text for student/cliente turns
+    def chat(self, messages, *, system=None, model=None, **kwargs):
+        return ChatResponse(
+            text=self.payloads.pop(0),
+            finish_reason="stop", usage=Usage(),
+            model=model or "fake-1", provider="fake",
+        )
 
 
 def _judge_ok(extra=None):
     base = {"score": 0.8, "summary": "ok", "evidence_quotes": []}
     if extra: base.update(extra)
     return json.dumps(base)
+
+
+def _variant_ok():
+    return json.dumps({
+        "situation": "Cliente competitor.",
+        "persona": {
+            "name": "Mario", "role": "CTO", "company": "AcmeCo",
+            "mood": "scettico", "key_objection": "prezzo",
+            "hidden_motivation": "vuole sconto",
+        },
+    })
 
 
 class TestAuthoringQuickEndToEnd(IntegrationTestCase):
@@ -3123,18 +3307,18 @@ class TestAuthoringQuickEndToEnd(IntegrationTestCase):
             res = api.run_quick_check(scenario=self.scenario.name)
         eval_id = res["eval_id"]
 
-        # Provider responses (in order):
-        #   trace 0 (golden) — no chat calls during generation
-        #   trace 0 judges — 4 calls (persona, coverage, debrief skipped, difficulty)
-        #     debrief is SKIPPED because debrief_payload=None for golden
-        #     → 3 actual chat() calls for trace 0 judges
-        #   trace 1 (llm_student competent):
-        #     2 generation calls (1 student + 1 cliente)
+        # Provider call sequence (in order):
+        #   trace 0 = golden_replay (deterministic, 0 generation calls)
+        #   trace 0 judges: 3 calls (debrief skipped, no debrief_payload for golden)
+        #   trace 1 = llm_student[competent]:
+        #     1 variant call (scenario_generator → JSON ScenarioVariant)
+        #     1 student turn (turn_index=0)
+        #     1 cliente turn (turn_index=1)
         #     3 judge calls (debrief skipped again)
-        # Total: 3 + 2 + 3 = 8 calls
+        # Total: 3 + 1 + 2 + 3 = 9 calls
         responses = (
             [_judge_ok(), _judge_ok({"by_objective": []}), _judge_ok({"calibration_offset": 0})]
-            + [_student_text("hi"), _student_text("ciao")]
+            + [_variant_ok(), "hi", "ciao"]
             + [_judge_ok(), _judge_ok({"by_objective": []}), _judge_ok({"calibration_offset": 0})]
         )
         with patch(
