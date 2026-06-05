@@ -303,56 +303,56 @@ const tabsStructure = computed(() => {
 					],
 				},
 					{
-					label: 'Course Progress',
+					label: __('Course Progress'),
 					icon: 'Activity',
 					description:
-						'Control how lessons are marked complete: dwell time and enforcement toggles for video, quiz, and assignment.',
+						__('Control how lessons are marked complete: dwell time and enforcement toggles for video, quiz, and assignment.'),
 					sections: [
 						{
-							label: 'Dwell Time',
+							label: __('Dwell Time'),
 							columns: [
 								{
 									fields: [
 										{
-											label: 'Lesson dwell time (seconds)',
+											label: __('Lesson dwell time (seconds)'),
 											name: 'lesson_dwell_time',
 											type: 'number',
 											description:
-												'Seconds a learner must stay on a lesson before it auto-marks complete.',
+												__('Seconds a learner must stay on a lesson before it auto-marks complete.'),
 										},
 									],
 								},
 							],
 						},
 						{
-							label: 'Enforcement',
+							label: __('Enforcement'),
 							columns: [
 								{
 									fields: [
 										{
-											label: 'Enforce video completion',
+											label: __('Enforce video completion'),
 											name: 'enforce_video_completion',
 											type: 'checkbox',
 											description:
-												'When enabled, lessons that contain a video can only be marked complete by playing the video to the end. If the video fails to load, the dwell timer is used as a fallback.',
+												__('When enabled, lessons that contain a video can only be marked complete by playing the video to the end. If the video fails to load, the dwell timer is used as a fallback.'),
 										},
 										{
-											label: 'Enforce assignment completion',
+											label: __('Enforce assignment completion'),
 											name: 'enforce_assignment_completion',
 											type: 'checkbox',
 											description:
-												'When enabled, lessons with an assignment cannot be marked complete until the assignment is submitted.',
+												__('When enabled, lessons with an assignment cannot be marked complete until the assignment is submitted.'),
 										},
 									],
 								},
 								{
 									fields: [
 										{
-											label: 'Enforce quiz completion',
+											label: __('Enforce quiz completion'),
 											name: 'enforce_quiz_completion',
 											type: 'checkbox',
 											description:
-												'When enabled, lessons with a quiz cannot be marked complete until the quiz is submitted.',
+												__('When enabled, lessons with a quiz cannot be marked complete until the quiz is submitted.'),
 										},
 									],
 								},
