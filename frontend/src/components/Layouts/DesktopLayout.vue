@@ -12,5 +12,5 @@
 </template>
 <script setup>
 import AppSidebar from '@/components/Sidebar/AppSidebar.vue'
-import AiFixedButtons from '@/oslms/components/AiFixedButtons.vue';
+import AiFixedButtons from '@/oslms/components/AiFixedButtons.vue'
 </script>

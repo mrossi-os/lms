@@ -228,12 +228,12 @@ const trashCourse = (): void => {
 const courseMenu = computed<CourseMenuItem[]>(() => [
 	{
 		label: __('Export'),
-		icon: 'lucide-download',
+		icon: 'download',
 		onClick: () => exportCourseAsZip(courseResource.doc?.name??""),
 	},
 	{
 		label: __('Delete'),
-		icon: 'lucide-trash-2',
+		icon: 'trash-2',
 		theme: 'red',
 		onClick: () => trashCourse(),
 	},

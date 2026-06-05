@@ -20,7 +20,10 @@
 					<X class="w-3 h-3" />
 				</button>
 			</span>
-			<span v-if="!selectedTagObjects.length" class="text-xs text-ink-gray-4 italic">
+			<span
+				v-if="!selectedTagObjects.length"
+				class="text-xs text-ink-gray-4 italic"
+			>
 				{{ __('No tags selected') }}
 			</span>
 		</div>
@@ -29,7 +32,7 @@
 			<!-- Add existing tag to course -->
 			<Popover placement="bottom-start">
 				<template #target="{ togglePopover }">
-					<Button variant="outline" size="sm" @click="togglePopover()">
+					<Button size="sm" @click="togglePopover()">
 						<template #prefix>
 							<Plus class="w-3.5 h-3.5" />
 						</template>
@@ -86,7 +89,7 @@
 			<!-- Manage tags catalog -->
 			<Popover placement="bottom-start">
 				<template #target="{ togglePopover }">
-					<Button variant="outline" size="sm" @click="togglePopover()">
+					<Button size="sm" @click="togglePopover()">
 						<template #prefix>
 							<SettingsIcon class="w-3.5 h-3.5" />
 						</template>

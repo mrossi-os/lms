@@ -23,3 +23,58 @@ body {
 	border-bottom-left-radius: 0.5rem !important;
 	border-bottom-right-radius: 0.5rem !important;
 }
+
+/* Inputs */
+input[type='text'],
+input[type='email'],
+input[type='password'] {
+	background-color: var(--surface-gray-2);
+}
+
+textarea {
+	background-color: var(--surface-gray-2) !important;
+}
+
+.ProseMirror {
+	background-color: var(--surface-gray-2) !important;
+}
+.ProseMirror-wrapper div div:nth-child(1) {
+	background-color: var(--surface-gray-2) !important;
+}
+.OS-LinkWrapper div div div div {
+	background-color: var(--surface-gray-2);
+}
+
+/* SCROLBAR */
+/* larghezza scrollbar */
+::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+
+/* sfondo barra */
+::-webkit-scrollbar-track {
+	background: var(--ink-gray-8);
+	border-radius: 999px;
+}
+
+/* cursore della barra */
+::-webkit-scrollbar-thumb {
+	background: var(--surface-gray-2);
+	border-radius: 999px;
+}
+
+/* hover */
+::-webkit-scrollbar-thumb:hover {
+	background: var(--surface-gray-7);
+}
+
+/* IFRAME */
+
+.os-frame {
+	height: 100vh;
+}
+
+#scrollContainer {
+	overflow-x: hidden;
+}

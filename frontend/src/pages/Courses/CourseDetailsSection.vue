@@ -11,23 +11,22 @@
 				variant="outline"
 				@input="markDirty()"
 			/>
-			<Link
-				v-model="doc.category"
-				doctype="LMS Category"
-				:label="__('Category')"
-				:placeholder="__('Select category')"
-				:inlineCreate="true"
-				:inlineCreatePlaceholder="__('Category name')"
-				:onCreate="createCategory"
-				variant="outline"
-				@update:modelValue="markDirty()"
-			/>
+			<div class="OS-LinkWrapper">
+				<Link
+					v-model="doc.category"
+					doctype="LMS Category"
+					:label="__('Category')"
+					:placeholder="__('Select category')"
+					:inlineCreate="true"
+					:inlineCreatePlaceholder="__('Category name')"
+					:onCreate="createCategory"
+					variant="outline"
+					@update:modelValue="markDirty()"
+				/>
+			</div>
 			<CourseInstructorsField />
 			<div class="space-y-1.5">
-				<TagPicker
-					v-model="doc.tags"
-					@dirty="markDirty()"
-							/>
+				<TagPicker v-model="doc.tags" @dirty="markDirty()" />
 			</div>
 			<FormControl
 				v-model="doc.short_introduction"

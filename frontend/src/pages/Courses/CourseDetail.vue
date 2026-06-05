@@ -14,7 +14,7 @@
 					</Badge>
 					<Dropdown
 						:options="courseFormRef.courseMenu"
-						:button="{ icon: 'lucide-ellipsis', variant: 'ghost' }"
+						:button="{ icon: 'more-horizontal', variant: 'ghost' }"
 						side="bottom"
 						align="end"
 					/>
@@ -99,10 +99,10 @@
 			</template>
 		</LayoutHeader>
 
-		<div v-if="!isAdmin" class="flex-1 min-h-0">
+		<div v-if="!isAdmin" class="flex-1">
 			<CourseOverview :course="course" />
 		</div>
-		<div v-else class="relative flex flex-1 min-h-0 flex-col">
+		<div v-else class="relative flex flex-1 flex-col">
 			<Tabs :tabs="tabs" v-model="tabIndex">
 				<template #tab-panel="{ tab }">
 					<template v-if="course.data">
@@ -261,7 +261,9 @@ const publishToggle = createResource({
 	},
 	onSuccess() {
 		toast.success(
-			course.data?.published ? __('Course unpublished') : __('Course published')
+			course.data?.published
+				? __('Course unpublished')
+				: __('Course published'),
 		)
 		course.reload()
 	},
@@ -269,7 +271,7 @@ const publishToggle = createResource({
 		const msg =
 			typeof err === 'string'
 				? err
-				: err.messages?.[0] ?? __('Could not update publish status')
+				: (err.messages?.[0] ?? __('Could not update publish status'))
 		toast.error(msg)
 	},
 }) as Resource<unknown>
@@ -355,7 +357,7 @@ watch(
 	() => props.courseName,
 	() => {
 		course.reload()
-	}
+	},
 )
 
 watch(course, () => {
