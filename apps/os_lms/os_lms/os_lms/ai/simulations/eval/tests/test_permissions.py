@@ -9,6 +9,9 @@ from os_lms.os_lms.ai.simulations.eval.permissions import (
 
 class TestPermissions(IntegrationTestCase):
 	def setUp(self):
+		# Reset to Administrator so fixture inserts always pass permission
+		# checks regardless of which user the previous test ended with.
+		frappe.set_user("Administrator")
 		from os_lms.os_lms.ai.simulations.tests._fixtures import (
 			make_scenario_with_instructor,
 		)
