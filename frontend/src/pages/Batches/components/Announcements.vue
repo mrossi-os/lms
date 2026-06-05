@@ -26,7 +26,7 @@
 							</div>
 						</div>
 
-						<div class="text-sm">
+						<div class="text-sm text-ink-gray-9">
 							{{ timeAgo(comm.communication_date) }}
 						</div>
 					</div>
@@ -113,7 +113,9 @@ const canMakeAnnouncement = computed(() => {
 const isPlainNotification = (html) => {
 	const s = String(html || '').trim()
 	if (!s) return true
-	if (/<(?:!doctype|html|head|body|style|table|center|tbody|td|tr)[\s>]/i.test(s))
+	if (
+		/<(?:!doctype|html|head|body|style|table|center|tbody|td|tr)[\s>]/i.test(s)
+	)
 		return false
 	if (/(?:background(?:-color)?|max-width|width)\s*:/i.test(s)) return false
 	return true
