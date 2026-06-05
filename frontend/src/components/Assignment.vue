@@ -1,11 +1,11 @@
 <template>
 	<div
 		v-if="assignment.data"
-		class="grid grid-cols-1 md:grid-cols-2 h-full"
+		class="grid grid-cols-2 h-full"
 		:class="{ 'border rounded-lg overflow-auto': !showTitle }"
 	>
 		<div
-			class="border-b md:border-b-0 md:border-r p-5 overflow-y-auto md:h-[calc(100vh-3.2rem)]"
+			class="border-e p-5 overflow-y-auto h-[calc(100vh-3.2rem)]"
 			:class="{ 'h-full': !showTitle }"
 		>
 			<div v-if="showTitle" class="text-lg font-semibold mb-5 text-ink-gray-9">
@@ -67,8 +67,8 @@
 					}}
 					{{ __('Feel free to make edits to your submission if needed.') }}
 				</div>
-				<div v-if="showUploader()" class="border rounded-lg p-3 card">
-					<div class="font-semibold mb-2 text-ink-gray-9">
+				<div v-if="showUploader()" class="border rounded-lg p-3">
+					<div class="font-semibold mb-2">
 						{{ __('Upload Assignment') }}
 					</div>
 					<div class="text-ink-gray-5 text-sm mt-1 mb-4">

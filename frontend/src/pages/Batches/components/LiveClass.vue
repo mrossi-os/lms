@@ -14,7 +14,7 @@
 			</span>
 		</div>
 
-		<div class="flex items-center justify-between gap-3 flex-wrap">
+		<div class="flex items-center justify-between">
 			<div class="text-lg font-semibold text-ink-gray-9">
 				{{ __('Live Class') }}
 			</div>
@@ -59,7 +59,7 @@
 		>
 			<div
 				v-for="cls in liveClasses.data"
-				class="relative flex flex-col border rounded-md h-full text-ink-gray-7 hover:border-outline-gray-3 p-3 card"
+				class="flex flex-col border rounded-md h-full text-ink-gray-7 hover:border-outline-gray-3 p-3"
 				:class="{
 					'cursor-pointer': isAdmin() && cls.attendees > 0,
 				}"

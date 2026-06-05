@@ -26,7 +26,7 @@
 							</div>
 						</div>
 
-						<div class="text-sm text-ink-gray-9">
+						<div class="text-sm">
 							{{ timeAgo(comm.communication_date) }}
 						</div>
 					</div>
@@ -37,7 +37,7 @@
 					     iframe; a plain notification keeps the app's themed card. -->
 					<div
 						v-if="isPlainNotification(comm.content)"
-						class="announcement-card prose prose-sm bg-surface-menu-bar !min-w-full px-4 py-3 rounded-md mt-1"
+						class="prose prose-sm bg-surface-menu-bar !min-w-full px-4 py-2 rounded-md"
 						v-html="comm.content"
 					></div>
 					<AnnouncementContent v-else :content="comm.content" />

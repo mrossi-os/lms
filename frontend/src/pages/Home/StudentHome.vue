@@ -10,7 +10,7 @@
 				<div class="grid grid-cols-1 md:grid-cols-4 gap-5">
 					<div
 						v-for="cls in myLiveClasses.data"
-						class="border rounded-md hover:border-outline-gray-3 p-3 card"
+						class="border rounded-md hover:border-outline-gray-3 p-3"
 					>
 						<div class="font-semibold text-ink-gray-9 leading-5 mb-1">
 							{{ cls.title }}
@@ -88,7 +88,7 @@
 					}"
 				>
 					<span
-						class="flex items-center space-x-1 text-ink-gray-5 text-xs card p-1.5"
+						class="flex items-center gap-x-1 text-ink-gray-5 text-xs"
 					>
 						<span>
 							{{ __('See all') }}
@@ -97,7 +97,7 @@
 					</span>
 				</router-link>
 			</div>
-			<div class="grid gap-5" :class="courseGridClass">
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" :class="courseGridClass">
 				<router-link
 					v-for="course in myCourses.data"
 					:to="{ name: 'CourseDetail', params: { courseName: course.name } }"
@@ -174,7 +174,7 @@
 					}"
 				>
 					<span
-						class="flex items-center space-x-1 text-ink-gray-5 text-xs card p-1.5"
+						class="flex items-center gap-x-1 text-ink-gray-5 text-xs"
 					>
 						<span>
 							{{ __('See all') }}

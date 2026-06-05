@@ -3,7 +3,7 @@
 		<div class="grid grid-cols-1 lg:grid-cols-[3fr,2fr]">
 			<div v-if="batchDetail.doc" class="py-5 lg:h-[88vh] lg:overflow-y-auto">
 				<div class="px-5 pb-5 space-y-5 border-b mb-5">
-					<div class="text-lg text-ink-gray-9 font-semibold mb-4">
+					<div class="text-base font-semibold text-ink-gray-9">
 						{{ __('Details') }}
 					</div>
 
@@ -69,7 +69,7 @@
 				</div>
 
 				<div class="px-5 pb-5 space-y-5 border-b mb-5">
-					<div class="text-lg text-ink-gray-9 font-semibold mb-4">
+					<div class="text-base font-semibold text-ink-gray-9">
 						{{ __('Enrollment & Certification') }}
 					</div>
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
@@ -235,7 +235,7 @@
 				</div>
 
 				<div class="px-5 pb-5 space-y-5">
-					<div class="text-lg text-ink-gray-9 font-semibold">
+					<div class="text-base font-semibold text-ink-gray-9">
 						{{ __('Meta Tags') }}
 					</div>
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-5">

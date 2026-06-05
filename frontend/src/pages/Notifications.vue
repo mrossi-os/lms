@@ -65,7 +65,7 @@
 				<div
 					v-if="isMentionOrComment(log)"
 					v-html="log.email_content"
-					class="bg-surface-gray-2 text-ink-gray-9 rounded-md px-3 py-2 line-clamp-3 overflow-hidden"
+					class="bg-surface-gray-2 rounded-md px-3 py-2 line-clamp-3 overflow-hidden"
 				></div>
 				<div
 					v-else-if="showDetails(log) && log.document_type === 'LMS Live Class'"
@@ -121,7 +121,7 @@
 				</div>
 				<div
 					v-else-if="showDetails(log)"
-					class="flex flex-col sm:flex-row sm:items-stretch border border-outline-gray-2 sm:space-x-2 rounded-md card"
+					class="flex items-stretch border border-outline-gray-2 gap-x-2 rounded-md"
 				>
 					<iframe
 						v-if="
@@ -157,7 +157,7 @@
 						</div>
 						<div
 							v-if="log.document_details.start_date"
-							class="flex items-center gap-x-2 text-sm mt-5 text-white"
+							class="flex items-center gap-x-2 text-sm mt-5"
 						>
 							<Calendar class="size-3 stroke-1.5" />
 							<span>

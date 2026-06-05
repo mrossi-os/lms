@@ -20,7 +20,7 @@
 			</router-link>
 			<p
 				v-if="instructors[0].bio"
-				class="text-p-sm text-ink-gray-7 leading-6 mt-4 line-clamp-3"
+				class="ProseMirror prose prose-sm max-w-none text-p-sm text-ink-gray-7 leading-6 mt-4 line-clamp-3"
 			>
 				{{ instructors[0].bio }}
 			</p>
@@ -41,7 +41,7 @@
 			</router-link>
 			<p
 				v-if="focused?.bio"
-				class="text-p-sm text-ink-gray-7 leading-6 mt-4 line-clamp-3"
+				class="ProseMirror prose prose-sm max-w-none text-p-sm text-ink-gray-7 leading-6 mt-4 line-clamp-3"
 			>
 				{{ focused.bio }}
 			</p>

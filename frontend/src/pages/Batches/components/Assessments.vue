@@ -16,7 +16,7 @@
 				:columns="getAssessmentColumns()"
 				:rows="assessments.data"
 				row-key="name"
-				class="border rounded-lg os-list-view"
+				class="border rounded-lg"
 				:options="{
 					showTooltip: false,
 					getRowRoute: (row) => getRowRoute(row),
@@ -24,7 +24,7 @@
 				}"
 			>
 				<ListHeader
-					class="grid items-center space-x-4 rounded-none rounded-t bg-surface-gray-2 p-2"
+					class="mb-2 grid items-center gap-x-4 rounded-none rounded-t bg-surface-gray-2 p-2"
 				>
 					<ListHeaderItem :item="item" v-for="item in getAssessmentColumns()">
 					</ListHeaderItem>

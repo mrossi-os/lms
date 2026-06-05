@@ -1,7 +1,7 @@
 <template>
 	<Dialog v-model="show" :options="{ size: '5xl' }">
 		<template #body>
-			<div class="flex h-[calc(100vh_-_8rem)] card" id="settings-modal">
+			<div class="flex h-[calc(100vh_-_8rem)]" id="settings-modal">
 				<div
 					class="flex w-52 shrink-0 flex-col bg-surface-gray-2 p-2 overflow-y-auto"
 				>
@@ -31,7 +31,7 @@
 				<div
 					v-if="activeTab && data.doc"
 					:key="activeTab.key"
-					class="flex flex-1 flex-col p-8 bg-surface-modal overflow-x-auto"
+					class="flex flex-1 flex-col p-8 bg-surface-modal overflow-x-auto overflow-y-auto"
 				>
 					<component
 						v-if="activeTab.template"

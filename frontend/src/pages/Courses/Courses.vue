@@ -37,7 +37,7 @@
 				{{ __('All Courses') }}
 			</div>
 			<div
-				class="flex flex-col space-y-3 lg:space-y-0 lg:flex-row lg:items-center lg:gap-x-4"
+				class="flex flex-col space-y-3 lg:flex-row lg:items-center lg:gap-x-4 lg:space-y-0"
 			>
 				<TabButtons :buttons="courseTabs" v-model="currentTab" class="w-fit" />
 
@@ -46,7 +46,7 @@
 						v-model="title"
 						:placeholder="__('Search')"
 						type="text"
-						class="w-full lg:min-w-0 lg:w-32 xl:w-40 small-form bg-surface-gray-2 rounded-md"
+						class="w-full"
 						@input="updateCourses()"
 					/>
 					<Select

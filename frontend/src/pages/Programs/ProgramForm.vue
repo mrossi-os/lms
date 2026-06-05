@@ -133,7 +133,7 @@
 						<div class="text-lg font-semibold text-ink-gray-9">
 							{{ __('Members') }}
 						</div>
-						<div class="space-x-2">
+						<div class="flex gap-x-2">
 							<Button
 								v-if="program.program_members?.length > 0"
 								@click="showProgressDialog = true"

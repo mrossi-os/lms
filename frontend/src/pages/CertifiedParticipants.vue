@@ -20,7 +20,7 @@
 				{{ memberCount }} {{ __('Certified Members') }}
 			</div>
 			<div
-				class="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:gap-x-4"
+				class="flex flex-col space-y-4 md:flex-row md:items-center md:gap-x-4 md:space-y-0"
 			>
 				<div class="flex items-center gap-x-4">
 					<FormControl

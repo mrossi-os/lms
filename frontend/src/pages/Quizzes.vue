@@ -32,10 +32,10 @@
 			:rows="quizzes.data"
 			row-key="name"
 			:options="{ showTooltip: false, selectable: true }"
-			class="px-2 sm:px-5 os-list-view !w-auto md:w-max"
+			class="flex-1 overflow-y-auto px-5"
 		>
 			<ListHeader
-				class="grid items-center space-x-4 rounded-none rounded-t bg-surface-gray-2 p-2"
+				class="mb-2 grid items-center rounded-none border-b bg-surface-white p-2"
 			>
 				<ListHeaderItem :item="item" v-for="item in quizColumns">
 					<template v-if="!isMobile" #prefix="{ item }">
@@ -53,7 +53,7 @@
 						},
 					}"
 				>
-					<ListRow :row="row" class="rounded-none">
+					<ListRow :row="row" class="hover:bg-surface-gray-2">
 						<template #default="{ column, item }">
 							<ListRowItem :item="row[column.key]" :align="column.align">
 								<div v-if="column.key == 'show_answers'">

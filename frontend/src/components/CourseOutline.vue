@@ -1,8 +1,8 @@
 <template>
-	<div class="card rounded-lg">
+	<div class="p-3 h-full">
 		<div
 			v-if="title && (outline.data?.length || allowEdit)"
-			class="flex items-center justify-between space-x-2 mb-2 p-2"
+			class="flex items-center justify-between gap-x-2 mb-4 px-2"
 			:class="{
 				'sticky top-0 z-10 main-page-header border-b px-3 py-2.5 sm:px-5 rounded-t-lg':
 					allowEdit,

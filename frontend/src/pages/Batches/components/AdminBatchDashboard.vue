@@ -25,8 +25,8 @@
 		</div>
 
 		<div class="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-5 items-start">
-			<div class="border rounded-lg py-3 px-4 order-2 lg:order-1 card">
-				<div class="flex items-center justify-between space-x-2 mb-3">
+			<div class="border rounded-lg py-3 px-4 order-2 lg:order-1">
+				<div class="flex items-center justify-between gap-x-2 mb-3">
 					<div class="text-lg text-ink-gray-9 font-semibold">
 						{{ __('Students') }}
 					</div>
@@ -141,10 +141,10 @@
 				</div>
 			</div>
 
-			<div class="order-1 lg:order-2 flex flex-col gap-2">
+			<div class="order-1 lg:order-2">
 				<AxisChart
 					v-if="showProgressChart"
-					class="border rounded-lg p-3 min-h-[300px] card"
+					class="border rounded-lg p-3 min-h-[300px]"
 					:config="{
 						data: filteredChartData,
 						title: __('Batch Summary'),

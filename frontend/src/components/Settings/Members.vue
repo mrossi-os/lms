@@ -31,14 +31,14 @@
 					<Search class="size-4 stroke-1.5 text-ink-gray-5" />
 				</template>
 			</FormControl>
-			<div class="overflow-y-auto max-h-[60vh] pr-2">
+			<div class="overflow-y-auto max-h-[60vh]">
 				<ul class="divide-y divide-outline-gray-modals">
 					<li
 						v-for="member in memberList"
 						class="flex items-center justify-between py-2 cursor-pointer"
 						@click="openEditMember(member)"
 					>
-						<div class="flex items-center space-x-3 col-span-2">
+						<div class="flex items-center gap-x-3 col-span-2">
 							<Avatar
 								:image="member.user_image"
 								:label="member.full_name"

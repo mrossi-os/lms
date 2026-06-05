@@ -1,9 +1,9 @@
 <template>
 	<header
-		class="sticky top-0 z-10 flex items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5"
+		class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
 	>
 		<Breadcrumbs :items="breadcrumbs" />
-		<div v-if="!readOnlyMode" class="hidden md:flex items-center space-x-2">
+		<div v-if="!readOnlyMode" class="flex items-center gap-x-2">
 			<Badge v-if="quizDetails.isDirty" theme="orange">
 				{{ __('Not Saved') }}
 			</Badge>
@@ -60,11 +60,11 @@
 		</div>
 	</header>
 	<div v-if="quizDetails.doc" class="py-5">
-		<div class="px-4 lg:px-20 pb-5 space-y-5 border-b mb-5">
+		<div class="px-20 pb-5 space-y-5 border-b mb-5">
 			<div class="text-lg text-ink-gray-9 font-semibold mb-4">
 				{{ __('Details') }}
 			</div>
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+			<div class="grid grid-cols-2 gap-5">
 				<div class="space-y-5">
 					<FormControl
 						v-model="quizDetails.doc.title"
@@ -96,7 +96,7 @@
 				</div>
 			</div>
 		</div>
-		<div class="px-4 lg:px-20 pb-5 space-y-5 border-b mb-5">
+		<div class="px-20 pb-5 space-y-5 border-b mb-5">
 			<div class="text-lg text-ink-gray-9 font-semibold mb-4">
 				{{ __('Settings') }}
 			</div>
@@ -150,7 +150,7 @@
 			</div>
 		</div>
 
-		<div class="px-4 lg:px-20 pb-5 space-y-5 mb-5">
+		<div class="px-20 pb-5 space-y-5 mb-5">
 			<div class="flex items-center justify-between mb-4">
 				<div class="text-lg font-semibold text-ink-gray-9">
 					{{ __('Questions') }}
@@ -172,7 +172,7 @@
 				}"
 				class="os-list-view"
 			>
-				<ListHeader class="grid items-center rounded bg-surface-gray-2 p-2">
+				<ListHeader class="mb-2 grid items-center gap-x-4 rounded bg-surface-gray-2 p-2">
 					<ListHeaderItem :item="item" v-for="item in questionColumns" />
 				</ListHeader>
 				<ListRows>

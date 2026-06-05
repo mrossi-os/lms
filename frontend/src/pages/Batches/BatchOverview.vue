@@ -1,11 +1,11 @@
 <template>
 	<div class="m-5 pb-10">
 		<div class="flex justify-between w-full">
-			<div class="w-full md:w-2/3">
+			<div class="md:w-2/3">
 				<div class="text-3xl font-semibold text-ink-gray-9">
 					{{ batch.data.title }}
 				</div>
-				<div class="my-3 leading-6 text-ink-gray-7 card p-4">
+				<div class="my-3 leading-6 text-ink-gray-7">
 					{{ batch.data.description }}
 				</div>
 				<div class="flex avatar-group overlap">
@@ -22,9 +22,9 @@
 					</div>
 					<CourseInstructors :instructors="batch.data.instructors" />
 				</div>
-				<BatchOverlay :batch="batch" class="md:hidden mt-5 card" />
+				<BatchOverlay :batch="batch" class="md:hidden mt-5" />
 				<div
-					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-10 card p-4"
+					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-10"
 					v-html="batch.data.batch_details"
 				></div>
 				<FeaturedSectionView

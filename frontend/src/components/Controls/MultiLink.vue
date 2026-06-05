@@ -1,5 +1,5 @@
 <template>
-	<div class="space-y-1.5 multi-link">
+	<div class="space-y-1.5">
 		<FormLabel v-if="label" :label="label" :required="required" />
 		<MultiSelect
 			v-model="value"
@@ -55,7 +55,7 @@
 			<template #footer="{ clearAll }">
 				<slot name="footer" :close="closePopover">
 					<div
-						class="flex items-center justify-between gap-2 border-t border-outline-gray-1 px-2 py-1.5"
+						class="flex items-center justify-between gap-2 border-t border-outline-gray-1 px-2 py-1.5 mt-1"
 					>
 						<Button
 							variant="ghost"
