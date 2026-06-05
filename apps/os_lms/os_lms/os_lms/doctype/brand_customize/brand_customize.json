@@ -28,6 +28,7 @@
 		"ink_gray_8",
 		"ink_gray_9",
 		"ink_gray_10",
+		"ink_white",
 		"section_borders",
 		"outline_gray_1",
 		"column_break_borders",
@@ -35,6 +36,7 @@
 		"section_layout",
 		"color_sidebar_menu",
 		"surface_card",
+		"surface_cards",
 		"column_break_layout",
 		"color_menu_bar",
 		"section_gradient_overlay",
@@ -180,6 +182,12 @@
 			"description": "CSS: --ink-gray-10"
 		},
 		{
+			"fieldname": "ink_white",
+			"fieldtype": "Color",
+			"label": "Ink White",
+			"description": "CSS: --ink-white"
+		},
+		{
 			"fieldname": "section_borders",
 			"fieldtype": "Section Break",
 			"label": "Borders"
@@ -218,6 +226,12 @@
 			"description": "CSS: --surface-card"
 		},
 		{
+			"fieldname": "surface_cards",
+			"fieldtype": "Color",
+			"label": "Surface Cards",
+			"description": "CSS: --surface-cards"
+		},
+		{
 			"fieldname": "column_break_layout",
 			"fieldtype": "Column Break"
 		},
@@ -253,7 +267,7 @@
 	"index_web_pages_for_search": 1,
 	"issingle": 1,
 	"links": [],
-	"modified": "2026-06-05 13:00:00.000000",
+	"modified": "2026-06-05 14:45:00.000000",
 	"modified_by": "Administrator",
 	"module": "OS LMS",
 	"name": "Brand Customize",
