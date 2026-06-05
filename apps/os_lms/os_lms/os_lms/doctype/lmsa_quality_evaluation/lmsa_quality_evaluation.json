@@ -7,6 +7,8 @@
 	"field_order": [
 		"scenario",
 		"run_mode",
+		"student_profile",
+		"num_variants",
 		"status",
 		"triggered_by",
 		"triggered_at",
@@ -31,10 +33,21 @@
 		{
 			"fieldname": "run_mode",
 			"fieldtype": "Select",
-			"options": "quick\ndeep\nproduction",
+			"options": "simulation_test\nproduction\ngolden_regression\nquick\ndeep",
 			"label": "Run Mode",
 			"reqd": 1,
 			"in_list_view": 1
+		},
+		{
+			"fieldname": "student_profile",
+			"fieldtype": "Data",
+			"label": "Student Profile"
+		},
+		{
+			"fieldname": "num_variants",
+			"fieldtype": "Int",
+			"label": "Num Variants",
+			"default": 1
 		},
 		{
 			"fieldname": "status",

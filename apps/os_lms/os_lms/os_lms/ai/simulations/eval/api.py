@@ -14,62 +14,89 @@ from os_lms.os_lms.ai.simulations.eval.permissions import (
 	require_scenario_access,
 	require_session_access,
 )
+from os_lms.os_lms.ai.simulations.eval.student.profiles import (
+	LLM_STUDENT_PROFILES,
+)
 
 
-def _has_active_golden(scenario_name: str) -> bool:
-	return bool(frappe.get_all(
-		"LMSA Scenario Golden Run",
-		filters={"scenario": scenario_name, "active": 1},
-		limit=1,
-	))
+VALID_PROFILES = {p["name"] for p in LLM_STUDENT_PROFILES}
+MAX_VARIANTS = 3
 
 
-def _create_evaluation(scenario_name: str, run_mode: str) -> str:
+@frappe.whitelist()
+def run_simulation_test(
+	scenario: str,
+	student_profile: str,
+	num_variants: int = 1,
+) -> dict:
+	"""Run an authoring simulation test.
+
+	The user picks a student profile and a number of conversation variants
+	(1-3). The job spawns N LLM-student conversations against the scenario
+	prompts, then runs the 4 judges on each transcript. No golden runs.
+	"""
+	require_scenario_access(scenario)
+	if student_profile not in VALID_PROFILES:
+		frappe.throw(
+			f"Profilo studente non valido: {student_profile}. "
+			f"Ammessi: {', '.join(sorted(VALID_PROFILES))}."
+		)
+	try:
+		n = int(num_variants)
+	except (TypeError, ValueError):
+		frappe.throw("num_variants deve essere un intero.")
+	if n < 1 or n > MAX_VARIANTS:
+		frappe.throw(f"num_variants deve essere tra 1 e {MAX_VARIANTS}.")
+
 	doc = frappe.get_doc({
 		"doctype": "LMSA Quality Evaluation",
-		"scenario": scenario_name,
-		"run_mode": run_mode,
+		"scenario": scenario,
+		"run_mode": "simulation_test",
+		"student_profile": student_profile,
+		"num_variants": n,
 		"status": "queued",
 		"triggered_by": frappe.session.user,
 		"triggered_at": frappe.utils.now_datetime(),
 	})
 	doc.insert(ignore_permissions=True)
 	frappe.db.commit()
-	return doc.name
+	frappe.enqueue(
+		"os_lms.os_lms.ai.simulations.eval.jobs.run_authoring_evaluation",
+		queue="long" if n > 1 else "default",
+		timeout=600 + 600 * (n - 1),
+		eval_id=doc.name,
+	)
+	return {"eval_id": doc.name}
 
 
 @frappe.whitelist()
-def run_quick_check(scenario: str) -> dict:
+def run_golden_regression(scenario: str, golden_name: str | None = None) -> dict:
+	"""Run a regression evaluation using golden runs.
+
+	If golden_name is provided, only that golden is replayed; otherwise all
+	active goldens for the scenario are replayed. Each golden produces one
+	trace, judged by the 4 dimensions. Manual feature — not invoked by the
+	standard Test simulazione flow.
+	"""
 	require_scenario_access(scenario)
-	if not _has_active_golden(scenario):
-		frappe.throw(
-			"Crea almeno un golden run attivo per lanciare la valutazione."
-		)
-	eval_id = _create_evaluation(scenario, "quick")
+	doc = frappe.get_doc({
+		"doctype": "LMSA Quality Evaluation",
+		"scenario": scenario,
+		"run_mode": "golden_regression",
+		"status": "queued",
+		"triggered_by": frappe.session.user,
+		"triggered_at": frappe.utils.now_datetime(),
+	})
+	doc.insert(ignore_permissions=True)
+	frappe.db.commit()
 	frappe.enqueue(
-		"os_lms.os_lms.ai.simulations.eval.jobs.run_authoring_evaluation",
+		"os_lms.os_lms.ai.simulations.eval.jobs.run_golden_regression",
 		queue="default",
 		timeout=600,
-		eval_id=eval_id,
+		eval_id=doc.name,
+		golden_name=golden_name,
 	)
-	return {"eval_id": eval_id}
-
-
-@frappe.whitelist()
-def run_deep_evaluation(scenario: str) -> dict:
-	require_scenario_access(scenario)
-	if not _has_active_golden(scenario):
-		frappe.throw(
-			"Crea almeno un golden run attivo per lanciare la valutazione."
-		)
-	eval_id = _create_evaluation(scenario, "deep")
-	frappe.enqueue(
-		"os_lms.os_lms.ai.simulations.eval.jobs.run_authoring_evaluation",
-		queue="long",
-		timeout=1800,
-		eval_id=eval_id,
-	)
-	return {"eval_id": eval_id}
+	return {"eval_id": doc.name}
 
 
 @frappe.whitelist()
@@ -111,6 +138,8 @@ def get_evaluation_status(eval_id: str) -> dict:
 		"eval_id": evaluation.name,
 		"scenario": evaluation.scenario,
 		"run_mode": evaluation.run_mode,
+		"student_profile": evaluation.get("student_profile"),
+		"num_variants": evaluation.get("num_variants"),
 		"status": evaluation.status,
 		"aggregate_persona_score": evaluation.aggregate_persona_score,
 		"aggregate_coverage_score": evaluation.aggregate_coverage_score,
@@ -141,6 +170,8 @@ def get_evaluation_result(eval_id: str) -> dict:
 		"eval_id": evaluation.name,
 		"scenario": evaluation.scenario,
 		"run_mode": evaluation.run_mode,
+		"student_profile": evaluation.get("student_profile"),
+		"num_variants": evaluation.get("num_variants"),
 		"status": evaluation.status,
 		"triggered_by": evaluation.triggered_by,
 		"triggered_at": evaluation.triggered_at,
@@ -190,6 +221,15 @@ def list_evaluations_for_session(session_id: str) -> list[dict]:
 		order_by="triggered_at desc",
 		limit=50,
 	)
+
+
+@frappe.whitelist()
+def list_student_profiles() -> list[dict]:
+	"""Return the available LLM-student profiles for the test dialog."""
+	return [
+		{"name": p["name"], "label": p["label"]}
+		for p in LLM_STUDENT_PROFILES
+	]
 
 
 @frappe.whitelist()

@@ -1,4 +1,4 @@
-"""End-to-end integration test: authoring quick check API + job."""
+"""End-to-end integration test: simulation_test authoring API + job."""
 from __future__ import annotations
 
 import json
@@ -42,7 +42,7 @@ def _variant_ok():
 	})
 
 
-class TestAuthoringQuickEndToEnd(IntegrationTestCase):
+class TestSimulationTestEndToEnd(IntegrationTestCase):
 	def setUp(self):
 		frappe.set_user("Administrator")
 		from os_lms.os_lms.ai.simulations.tests._fixtures import (
@@ -52,39 +52,26 @@ class TestAuthoringQuickEndToEnd(IntegrationTestCase):
 		# max_turns = 2 to keep the call sequence short
 		self.scenario.max_turns = 2
 		self.scenario.save(ignore_permissions=True)
-		# At least one active golden is required
-		frappe.get_doc({
-			"doctype": "LMSA Scenario Golden Run",
-			"scenario": self.scenario.name,
-			"name_label": "Default",
-			"active": 1,
-			"turns": json.dumps([
-				{"role": "user", "text": "g-student"},
-				{"role": "assistant", "text": "g-cliente"},
-			]),
-		}).insert(ignore_permissions=True)
 
-	def test_quick_check_end_to_end(self):
+	def test_simulation_test_end_to_end(self):
 		with patch(
 			"os_lms.os_lms.ai.simulations.eval.api.frappe.enqueue"
 		):
-			res = api.run_quick_check(scenario=self.scenario.name)
+			res = api.run_simulation_test(
+				scenario=self.scenario.name,
+				student_profile="competent",
+				num_variants=1,
+			)
 		eval_id = res["eval_id"]
 
-		# Quick mode runs 2 traces: golden_replay + 1 llm_student[competent].
-		# Provider call sequence (in order):
-		#   trace 0 = golden_replay (deterministic, 0 generation calls)
-		#   trace 0 judges: 3 calls (debrief skipped — no debrief_payload)
-		#   trace 1 = llm_student[competent]:
-		#     1 variant call
-		#     1 student turn (turn_index=0)
-		#     1 cliente turn (turn_index=1)
-		#     3 judge calls (debrief skipped)
-		# Total: 3 + 1 + 2 + 3 = 9 calls
+		# 1 LLM-student variant:
+		#   1 variant call
+		#   1 student turn (turn_index=0)
+		#   1 cliente turn (turn_index=1)
+		#   3 judge calls (debrief skipped — no debrief_payload)
+		# Total: 1 + 2 + 3 = 6 calls
 		responses = (
-			[_judge_ok(), _judge_ok({"by_objective": []}),
-			 _judge_ok({"calibration_offset": 0})]
-			+ [_variant_ok(), "hi", "ciao"]
+			[_variant_ok(), "hi", "ciao"]
 			+ [_judge_ok(), _judge_ok({"by_objective": []}),
 			   _judge_ok({"calibration_offset": 0})]
 		)
@@ -96,7 +83,6 @@ class TestAuthoringQuickEndToEnd(IntegrationTestCase):
 
 		result = api.get_evaluation_result(eval_id=eval_id)
 		self.assertEqual(result["status"], "complete")
-		self.assertEqual(len(result["traces"]), 2)
-		self.assertEqual(result["traces"][0]["trace_kind"], "golden_replay")
-		self.assertEqual(result["traces"][1]["trace_kind"], "llm_student")
-		self.assertEqual(result["traces"][1]["student_profile"], "competent")
+		self.assertEqual(len(result["traces"]), 1)
+		self.assertEqual(result["traces"][0]["trace_kind"], "llm_student")
+		self.assertEqual(result["traces"][0]["student_profile"], "competent")
