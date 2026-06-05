@@ -6,7 +6,7 @@
 				<h2 class="text-lg font-semibold text-ink-gray-9">
 					{{ __('Simulazioni AI') }}
 				</h2>
-				<p class="text-sm text-ink-gray-5">
+				<p class="text-sm ">
 					{{ __('Gestisci gli scenari di simulazione per questo corso.') }}
 				</p>
 			</div>
@@ -35,7 +35,7 @@
 				:key="card.label"
 				class="border rounded-md p-4 bg-surface-menu-bar"
 			>
-				<div class="text-xs text-ink-gray-5">{{ card.label }}</div>
+				<div class="text-xs ">{{ card.label }}</div>
 				<div class="text-2xl font-semibold text-ink-gray-9 mt-1">
 					{{ card.value }}
 				</div>
@@ -64,8 +64,8 @@
 						:key="s.name"
 						class="border-t hover:bg-surface-gray-1"
 					>
-						<td class="px-3 py-2 text-ink-gray-5">{{ s.scenario_name }}</td>
-						<td class="px-3 py-2 text-ink-gray-5">
+						<td class="px-3 py-2 ">{{ s.scenario_name }}</td>
+						<td class="px-3 py-2 ">
 							{{ s.course_lesson || '—' }}
 						</td>
 						<td class="px-3 py-2">
@@ -74,7 +74,7 @@
 								:theme="difficultyTheme(s.difficulty)"
 							/>
 						</td>
-						<td class="px-3 py-2 capitalize text-ink-gray-5">{{ s.modality }}</td>
+						<td class="px-3 py-2 capitalize ">{{ s.modality }}</td>
 						<td class="px-3 py-2">
 							<Badge :label="s.status" :theme="statusTheme(s.status)" />
 						</td>
@@ -95,7 +95,7 @@
 					<tr v-if="!scenarios.length">
 						<td
 							colspan="6"
-							class="px-3 py-8 text-center text-ink-gray-5"
+							class="px-3 py-8 text-center "
 						>
 							{{ __('Nessuno scenario configurato per questo corso.') }}
 						</td>
@@ -138,9 +138,9 @@
 						:key="s.name"
 						class="border-t hover:bg-surface-gray-1"
 					>
-						<td class="px-3 py-2 text-ink-gray-5">{{ s.student }}</td>
-						<td class="px-3 py-2 text-ink-gray-5">{{ s.scenario }}</td>
-						<td class="px-3 py-2 text-ink-gray-5">
+						<td class="px-3 py-2 ">{{ s.student }}</td>
+						<td class="px-3 py-2 ">{{ s.scenario }}</td>
+						<td class="px-3 py-2 ">
 							{{ formatDate(s.started_at) }}
 						</td>
 						<td class="px-3 py-2">
@@ -149,11 +149,11 @@
 								:theme="sessionStatusTheme(s.status)"
 							/>
 						</td>
-						<td class="px-3 py-2 text-right text-ink-gray-5">
+						<td class="px-3 py-2 text-right ">
 							<span v-if="s.overall_score !== null && s.overall_score !== undefined">
 								{{ Math.round(s.overall_score) }}
 							</span>
-							<span v-else class="text-ink-gray-5">—</span>
+							<span v-else class="">—</span>
 						</td>
 						<td class="px-3 py-2 text-right whitespace-nowrap">
 							<Button
@@ -168,7 +168,7 @@
 					<tr v-if="!sessions.length">
 						<td
 							colspan="6"
-							class="px-3 py-8 text-center text-ink-gray-5"
+							class="px-3 py-8 text-center "
 						>
 							{{ __('Nessuna sessione nel periodo selezionato.') }}
 						</td>

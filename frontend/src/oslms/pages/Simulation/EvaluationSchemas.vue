@@ -28,9 +28,9 @@
 						:key="r.name"
 						class="border-t hover:bg-surface-gray-1"
 					>
-						<td class="px-3 py-2 text-ink-gray-5">{{ r.schema_name }}</td>
-						<td class="px-3 py-2 text-ink-gray-5">{{ r.scoring_scale }}</td>
-						<td class="px-3 py-2 text-ink-gray-5">{{ r.passing_threshold }}%</td>
+						<td class="px-3 py-2">{{ r.schema_name }}</td>
+						<td class="px-3 py-2">{{ r.scoring_scale }}</td>
+						<td class="px-3 py-2">{{ r.passing_threshold }}%</td>
 						<td class="px-3 py-2">
 							<Badge v-if="r.is_shared" :label="__('Sì')" theme="green" />
 						</td>
@@ -41,7 +41,7 @@
 						</td>
 					</tr>
 					<tr v-if="!schemas.length">
-						<td colspan="5" class="px-3 py-6 text-center text-ink-gray-5">
+						<td colspan="5" class="px-3 py-6 text-center">
 							{{ __('Nessuno schema di valutazione.') }}
 						</td>
 					</tr>

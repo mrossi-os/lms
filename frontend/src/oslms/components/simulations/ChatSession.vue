@@ -30,15 +30,20 @@
 				:class="[
 					'max-w-[80%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap',
 					turn.role === 'user'
-						? 'bg-surface-blue-3 text-ink-gray-9 ml-auto'
+						? 'bg-surface-blue-3 text-white ml-auto'
 						: 'bg-surface-gray-2 text-ink-gray-9 mr-auto',
 				]"
 			>
-				<div class="text-xs text-ink-gray-5 mb-1 flex items-center gap-2">
+				<div
+					:class="[
+						'text-xs mb-1 flex items-center gap-2',
+						turn.role === 'user' ? 'text-white/80' : 'text-ink-gray-5',
+					]"
+				>
 					<span>{{ turn.role === 'user' ? __('Tu') : customerLabel }}</span>
 					<span
 						v-if="turn.injection_attempt_detected"
-						class="text-ink-orange-5"
+						:class="turn.role === 'user' ? 'text-white' : 'text-ink-orange-5'"
 						:title="__('Tentativo di prompt injection rilevato')"
 					>⚠️</span>
 				</div>

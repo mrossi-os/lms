@@ -39,16 +39,15 @@
 							<Autocomplete v-model="model.evaluation_schema" :options="schemaOptions"
 								:label="__('Schema di valutazione')" required class="lms-auto-complete" />
 						</div>
-						<div class="pb-1">
-							<Button @click="schemaEditorOpen = true"">
+
+						<Button @click="schemaEditorOpen = true"">
 							+ {{ __('Nuovo') }}
 						</Button>
-						</div>
-						<div class=" pb-1">
-								<Button variant="ghost" @click="openSchemaManagement">
-									{{ __('Gestisci') }}
-								</Button>
-						</div>
+						
+								<Button variant=" ghost" @click="openSchemaManagement">
+							{{ __('Gestisci') }}
+						</Button>
+
 					</div>
 
 					<!-- Limits -->
@@ -67,7 +66,7 @@
 									" required />
 						</div>
 						<FormControl v-model="model.situation_template" type="textarea" :rows="15"
-							:label="__('Template situazione')" :description="__('Variabili randomizzate vengono sostituite al runtime.')
+							:label="__('Template situazione')" :description="__('Variabili randomizzate vengono sostituite al runtime. Per inserire una variabile nel testo usa la sintassi {nome_variabile}: il nome deve corrispondere esattamente a una variabile definita nella sezione \'Variabili scenario\'.')
 								" required />
 					</div>
 				</div>
@@ -87,14 +86,26 @@
 						<div class="space-y-2">
 							<div v-for="(row, i) in model.learning_objectives" :key="`obj-${i}`"
 								class="flex gap-2 items-start border border-outline-gray-2 rounded-md p-2">
-								<textarea v-model="row.objective_text" :rows="5"
-									class="flex-1 rounded-md border border-outline-gray-2 px-2 py-1 text-sm"
-									:placeholder="__('Descrizione obiettivo')"></textarea>
-								<input v-model.number="row.weight" type="number" step="0.05" min="0" max="1"
-									class="w-20 rounded-md border border-outline-gray-2 px-2 py-1 text-sm"
-									:placeholder="__('Peso')" />
+								<FormControl
+									v-model="row.objective_text"
+									type="textarea"
+									:rows="5"
+									class="flex-1"
+									:placeholder="__('Descrizione obiettivo')"
+								/>
+								<FormControl
+									v-model.number="row.weight"
+									type="number"
+									step="0.05"
+									min="0"
+									max="1"
+									class="w-20"
+									:placeholder="__('Peso')"
+								/>
 								<Button variant="ghost" size="sm" @click="removeObjective(i)">
-									×
+									<template #icon>
+										<Trash2 class="size-4 stroke-1.5" />
+									</template>
 								</Button>
 							</div>
 						</div>
@@ -112,18 +123,47 @@
 						</div>
 						<div class="space-y-2">
 							<div v-for="(row, i) in model.seed_variations" :key="`seed-${i}`"
-								class="flex flex-col gap-2 border border-outline-gray-2 rounded-md p-2">
-								<div class="flex gap-2 items-center">
-									<input v-model="row.variable_name" type="text"
-										class="flex-1 rounded-md border border-outline-gray-2 px-2 py-1 text-sm"
-										:placeholder="__('Nome variabile')" />
-									<Button variant="ghost" size="sm" @click="removeVariation(i)">
-										×
+								class="border border-outline-gray-2 rounded-md">
+								<!-- Accordion header: always visible -->
+								<div
+									class="flex items-center gap-2 p-3 cursor-pointer hover:bg-surface-gray-1 rounded-md"
+									@click="toggleVariation(i)"
+								>
+									<ChevronDown
+										class="size-4 stroke-1.5 text-ink-gray-5 transition-transform"
+										:class="{ '-rotate-90': !expandedVariations[i] }"
+									/>
+									<div class="flex-1 text-sm font-medium text-ink-gray-9 truncate">
+										{{ row.variable_name || __('Nuova variabile') }}
+									</div>
+									<Button
+										variant="ghost"
+										size="sm"
+										@click.stop="removeVariation(i)"
+									>
+										<template #icon>
+											<Trash2 class="size-4 stroke-1.5" />
+										</template>
 									</Button>
 								</div>
-								<textarea v-model="row.possible_values" :rows="5"
-									class="rounded-md border border-outline-gray-2 px-2 py-1 text-sm"
-									:placeholder="__('Un valore per riga')"></textarea>
+
+								<!-- Accordion body: only when expanded -->
+								<div
+									v-if="expandedVariations[i]"
+									class="p-3 border-t border-outline-gray-2 space-y-2"
+								>
+									<FormControl
+										v-model="row.variable_name"
+										type="text"
+										:placeholder="__('Nome variabile')"
+									/>
+									<FormControl
+										v-model="row.possible_values"
+										type="textarea"
+										:rows="5"
+										:placeholder="__('Un valore per riga')"
+									/>
+								</div>
 							</div>
 						</div>
 					</section>
@@ -136,6 +176,51 @@
 			}">
 				<template #body-content>
 					<EvaluationSchemaEditor schemaName="" @saved="onSchemaCreated" />
+				</template>
+			</Dialog>
+
+			<!--
+				Test-as-student simulation. The default body-header slot is
+				overridden so the X close button is not rendered: the only way to
+				close this dialog is via the "Termina" button inside ChatSession,
+				which moves the session to a terminal status and triggers the
+				auto-close watcher on `simulationIsTerminal`.
+
+				ESC + backdrop are still attempted by Radix; they are silently
+				rejected by `simulationDialogModel` and `disableOutsideClickToClose`.
+			-->
+			<Dialog
+				v-model="simulationDialogModel"
+				:disableOutsideClickToClose="true"
+				:options="{
+					title: __('Simulazione di prova'),
+					size: '4xl',
+				}"
+			>
+				<template #body-header>
+					<div class="mb-6 flex items-center">
+						<h3 class="text-2xl font-semibold leading-6 text-ink-gray-9">
+							{{ __('Simulazione di prova') }}
+						</h3>
+					</div>
+				</template>
+				<template #body-content>
+					<div
+						v-if="simulationSessionId"
+						class="h-[70vh] flex flex-col"
+					>
+						<ChatSession
+							class="flex-1"
+							:scenarioName="model.scenario_name"
+							:persona="simulationPersona"
+							:turns="simulationTurns"
+							:status="simulationSession?.status || 'In Progress'"
+							:sending="simulationSending"
+							:ending="simulationEnding"
+							@send="simulationSend"
+							@end="simulationEnd"
+						/>
+					</div>
 				</template>
 			</Dialog>
 		</div>
@@ -155,7 +240,10 @@ import {
 	usePageMeta,
 } from 'frappe-ui'
 import { useRouter } from 'vue-router'
+import { ChevronDown, Trash2 } from 'lucide-vue-next'
 import EvaluationSchemaEditor from '@/oslms/components/simulations/EvaluationSchemaEditor.vue'
+import ChatSession from '@/oslms/components/simulations/ChatSession.vue'
+import { useSimulationSession } from '@/oslms/composables/useSimulationSession.js'
 
 const props = defineProps({
 	scenarioName: { type: String, default: '' },
@@ -167,6 +255,57 @@ const router = useRouter()
 const saving = ref(false)
 const testing = ref(false)
 const schemaEditorOpen = ref(false)
+// Accordion open/closed state for seed variations, one boolean per row.
+// New variations added via UI start expanded; variations loaded from backend
+// start collapsed.
+const expandedVariations = ref([])
+
+// ---- Simulation dialog state (Prova come studente) ----
+const simulationDialogOpen = ref(false)
+const simulationSessionId = ref('')
+const {
+	session: simulationSession,
+	turns: simulationTurns,
+	sending: simulationSending,
+	ending: simulationEnding,
+	isTerminal: simulationIsTerminal,
+	send: simulationSend,
+	end: simulationEnd,
+} = useSimulationSession(simulationSessionId)
+
+const simulationPersona = computed(() => {
+	const raw = simulationSession.value?.generated_persona
+	if (!raw) return null
+	try {
+		return JSON.parse(raw)
+	} catch {
+		return null
+	}
+})
+
+// Closing is blocked until the session is terminal (i.e. the user clicked
+// "Termina" inside ChatSession or the backend marked it as finished). This
+// computed intercepts every close attempt — backdrop click, ESC, X — and
+// silently ignores them while the simulation is still running.
+const simulationDialogModel = computed({
+	get: () => simulationDialogOpen.value,
+	set: (value) => {
+		if (!value && !simulationIsTerminal.value) return
+		simulationDialogOpen.value = value
+	},
+})
+
+// When the simulation terminates, auto-close the dialog and clear the session
+// id so the composable unsubscribes from realtime events.
+watch(simulationIsTerminal, (terminal) => {
+	if (!terminal) return
+	toast.success(__('Simulazione conclusa.'))
+	simulationDialogOpen.value = false
+})
+
+watch(simulationDialogOpen, (open) => {
+	if (!open) simulationSessionId.value = ''
+})
 
 const model = reactive({
 	name: props.scenarioName || '',
@@ -241,6 +380,7 @@ const loadRes = createResource({
 		Object.assign(model, data)
 		model.learning_objectives = data.learning_objectives || []
 		model.seed_variations = data.seed_variations || []
+		expandedVariations.value = model.seed_variations.map(() => false)
 	},
 })
 watch(
@@ -297,14 +437,48 @@ function removeObjective(i) {
 }
 function addVariation() {
 	model.seed_variations.push({ variable_name: '', possible_values: '' })
+	expandedVariations.value.push(true)
 }
 function removeVariation(i) {
 	model.seed_variations.splice(i, 1)
+	expandedVariations.value.splice(i, 1)
+}
+function toggleVariation(i) {
+	expandedVariations.value[i] = !expandedVariations.value[i]
 }
 
 // ---- Save / preview ----
 
+// Matches {variable_name} placeholders in the situation_template (single-brace
+// convention, matching what the backend pipeline expects).
+// Identifier rules: ASCII letter/underscore start, alphanumeric/underscore tail —
+// matches what we accept as a variable name in the Variazioni section.
+const VAR_REF_RE = /\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}/g
+
+function findUndefinedVariables() {
+	const referenced = new Set()
+	const text = model.situation_template || ''
+	for (const m of text.matchAll(VAR_REF_RE)) {
+		referenced.add(m[1])
+	}
+	const defined = new Set(
+		(model.seed_variations || [])
+			.map((v) => (v.variable_name || '').trim())
+			.filter(Boolean),
+	)
+	return [...referenced].filter((v) => !defined.has(v))
+}
+
 async function onSave() {
+	const missing = findUndefinedVariables()
+	if (missing.length) {
+		toast.error(
+			__('Variabili usate nel testo ma non definite: {0}', [
+				missing.join(', '),
+			]),
+		)
+		return
+	}
 	saving.value = true
 	try {
 		const result = await saveRes.submit({ payload: { ...model } })
@@ -330,7 +504,8 @@ async function onTestRun() {
 			scenario_id: props.scenarioName,
 			modality: model.modality || 'chat',
 		})
-		router.push({ name: 'SimulationPlay', params: { sessionId: result.session } })
+		simulationSessionId.value = result.session
+		simulationDialogOpen.value = true
 	} catch (e) {
 		toast.error(e.messages?.[0] || __('Avvio sessione fallito'))
 	} finally {

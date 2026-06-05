@@ -56,42 +56,13 @@
 				<Button size="sm" variant="ghost" @click="addCriterion">+ {{ __('Aggiungi criterio') }}</Button>
 			</div>
 			<div class="space-y-2">
-				<div
+				<CriterionEditor
 					v-for="(row, i) in model.criteria"
 					:key="`crit-${i}`"
-					class="border border-outline-gray-2 rounded-md p-3 space-y-2"
-				>
-					<div class="flex gap-2 items-start">
-						<input
-							v-model="row.criterion_name"
-							type="text"
-							class="flex-1 rounded-md border border-outline-gray-2 px-2 py-1 text-sm"
-							:placeholder="__('Es. Ascolto attivo')"
-						/>
-						<input
-							v-model.number="row.weight"
-							type="number"
-							step="0.05"
-							min="0"
-							max="1"
-							class="w-24 rounded-md border border-outline-gray-2 px-2 py-1 text-sm"
-							:placeholder="__('Peso')"
-						/>
-						<Button variant="ghost" size="sm" @click="removeCriterion(i)">×</Button>
-					</div>
-					<textarea
-						v-model="row.description"
-						:rows="3"
-						class="w-full rounded-md border border-outline-gray-2 px-2 py-1 text-sm"
-						:placeholder="__('Descrizione (cosa va osservato)')"
-					></textarea>
-					<textarea
-						v-model="row.observable_behaviors"
-						:rows="5"
-						class="w-full rounded-md border border-outline-gray-2 px-2 py-1 text-sm"
-						:placeholder="__('Comportamenti osservabili (per il prompt)')"
-					></textarea>
-				</div>
+					:criterion="row"
+					v-model:expanded="expandedCriteria[i]"
+					@remove="removeCriterion(i)"
+				/>
 			</div>
 			<div v-if="!model.criteria.length" class="text-xs text-ink-gray-5 mt-2">
 				{{ __('Aggiungi almeno un criterio.') }}
@@ -103,6 +74,7 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
 import { Button, FormControl, createResource, toast } from 'frappe-ui'
+import CriterionEditor from '@/oslms/components/simulations/CriterionEditor.vue'
 
 const props = defineProps({
 	schemaName: { type: String, default: '' },
@@ -110,6 +82,10 @@ const props = defineProps({
 const emit = defineEmits(['saved'])
 
 const saving = ref(false)
+// Parallel array of accordion open/closed state, one boolean per criterion.
+// New criteria added via UI start expanded; criteria loaded from backend
+// start collapsed.
+const expandedCriteria = ref([])
 
 const model = reactive({
 	name: props.schemaName || '',
@@ -135,6 +111,7 @@ const loadRes = createResource({
 		if (!data) return
 		Object.assign(model, data)
 		model.criteria = data.criteria || []
+		expandedCriteria.value = model.criteria.map(() => false)
 	},
 })
 watch(
@@ -157,9 +134,11 @@ function addCriterion() {
 		weight: 0,
 		observable_behaviors: '',
 	})
+	expandedCriteria.value.push(true)
 }
 function removeCriterion(i) {
 	model.criteria.splice(i, 1)
+	expandedCriteria.value.splice(i, 1)
 }
 
 async function onSave() {
