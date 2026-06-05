@@ -1,6 +1,6 @@
 # Simulation Prompt Evaluation — Design
 
-**Status:** Draft — awaiting user review
+**Status:** Shipped on 2026-06-05
 **Date:** 2026-06-05
 **Module:** `apps/os_lms/os_lms/os_lms/ai/simulations/eval/`
 

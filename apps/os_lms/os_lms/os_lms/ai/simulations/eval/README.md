@@ -89,6 +89,8 @@ instructor status on its `lms_course`.
 ## Milestone status
 
 - **M1 — Backend feature-complete**: production + authoring eval works
-  end-to-end via API + queue jobs. Reached at commit `9bb21dc8`.
-- M2 — Authoring UI in ScenarioEditor: pending
-- M3 — Production UI in TranscriptDrawer: pending
+  end-to-end via API + queue jobs.
+- **M2 — Authoring UI in ScenarioEditor**: Quick + Deep buttons,
+  EvaluationResultsDialog, GoldenRunsModal.
+- **M3 — Production UI in TranscriptDrawer**: "Valuta sessione" button +
+  evaluation history list, on-demand from instructor view.
