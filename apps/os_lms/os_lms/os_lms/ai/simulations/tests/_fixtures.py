@@ -125,3 +125,38 @@ def make_scenario_with_instructor():
     )
 
     return scenario, instructor, outsider
+
+
+def make_completed_session(scenario=None, student: str = "Administrator"):
+    """Create a LMSA Simulation Session in Completed status with 2 turns.
+
+    If no scenario is provided, builds one via make_published_scenario.
+    Returns the session doc.
+    """
+    scenario = scenario or make_published_scenario(
+        name=f"Eval Session Scenario {frappe.generate_hash(length=4)}",
+    )
+
+    session = frappe.get_doc({
+        "doctype": "LMSA Simulation Session",
+        "scenario": scenario.name,
+        "course": scenario.lms_course,
+        "student": student,
+        "modality": "chat",
+        "status": "Completed",
+        "started_at": frappe.utils.now_datetime(),
+    }).insert(ignore_permissions=True)
+
+    for i, (role, text) in enumerate([
+        ("user", "Buongiorno"),
+        ("assistant", "Buongiorno a lei."),
+    ]):
+        frappe.get_doc({
+            "doctype": "LMSA Simulation Turn",
+            "session": session.name,
+            "turn_index": i,
+            "role": role,
+            "text_content": text,
+        }).insert(ignore_permissions=True)
+
+    return session
