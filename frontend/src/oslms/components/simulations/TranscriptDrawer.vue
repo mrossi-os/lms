@@ -84,7 +84,16 @@
 								:rows="4"
 								:placeholder="__('Aggiungi un commento privato per lo studente.')"
 							/>
-							<div class="flex justify-end mt-2">
+							<div class="flex justify-end gap-2 mt-2">
+								<Button
+									v-if="isTerminal"
+									variant="outline"
+									size="sm"
+									:loading="evaluating"
+									@click="onEvaluate"
+								>
+									{{ __('Valuta sessione') }}
+								</Button>
 								<Button
 									variant="solid"
 									size="sm"
@@ -96,6 +105,23 @@
 								</Button>
 							</div>
 						</section>
+
+						<section v-if="evalHistory.length" class="mt-4">
+							<div class="text-xs font-semibold text-ink-gray-9 mb-1">
+								{{ __('Valutazioni precedenti') }}
+							</div>
+							<ul class="text-xs space-y-1">
+								<li
+									v-for="ev in evalHistory"
+									:key="ev.eval_id"
+									class="flex items-center justify-between cursor-pointer hover:bg-surface-gray-1 px-1 py-0.5 rounded"
+									@click="openEvaluation(ev.eval_id)"
+								>
+									<span class="text-ink-gray-7">{{ ev.triggered_at }}</span>
+									<Badge :label="ev.status" :theme="evalStatusTheme(ev.status)" />
+								</li>
+							</ul>
+						</section>
 					</div>
 					<div v-else class="text-sm text-ink-gray-5">
 						{{ __('Debrief non disponibile per questa sessione.') }}
@@ -104,12 +130,19 @@
 			</div>
 		</template>
 	</Dialog>
+
+	<EvaluationResultsDialog
+		v-model="evalDialogOpen"
+		:evalId="evalDialogId"
+	/>
 </template>
 
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { Badge, Button, Dialog, FormControl, createResource, toast } from 'frappe-ui'
 import ChatSession from '@/oslms/components/simulations/ChatSession.vue'
+import EvaluationResultsDialog from '@/oslms/components/simulations/eval/EvaluationResultsDialog.vue'
+import { useEvaluation } from '@/oslms/composables/useEvaluation.js'
 
 const props = defineProps({
 	modelValue: { type: Boolean, default: false },
@@ -176,4 +209,75 @@ async function onSaveReview() {
 		savingReview.value = false
 	}
 }
+
+// ---- Production evaluation ----
+const evaluation = useEvaluation()
+const evalDialogOpen = ref(false)
+const evalDialogId = ref('')
+const evaluating = ref(false)
+
+const historyRes = createResource({
+	url: 'os_lms.os_lms.ai.simulations.eval.api.list_evaluations_for_session',
+	makeParams() {
+		return { session_id: props.sessionId }
+	},
+})
+const evalHistory = computed(() => historyRes.data || [])
+
+watch(
+	() => [visible.value, props.sessionId],
+	([open, id]) => {
+		if (open && id) historyRes.submit()
+	},
+	{ immediate: true },
+)
+
+const isTerminal = computed(() => {
+	const s = payload.value?.session?.status
+	return ['Completed', 'Needs Review', 'Abandoned', 'Error'].includes(s)
+})
+
+async function onEvaluate() {
+	if (!props.sessionId) return
+	evaluating.value = true
+	try {
+		const evalId = await evaluation.runProductionEvaluation(props.sessionId)
+		if (!evalId) return
+		try {
+			await evaluation.pollUntilComplete(evalId, {
+				intervalMs: 2000,
+				timeoutMs: 90_000,
+			})
+			evalDialogId.value = evalId
+			evalDialogOpen.value = true
+			historyRes.submit()
+		} catch (e) {
+			if (e?.message === 'poll_timeout') {
+				toast.success(__('Sta richiedendo più del previsto, ti notificheremo.'))
+			} else {
+				toast.error(e?.message || __('Polling fallito'))
+			}
+		}
+	} finally {
+		evaluating.value = false
+	}
+}
+
+function openEvaluation(evalId) {
+	evalDialogId.value = evalId
+	evalDialogOpen.value = true
+}
+
+function evalStatusTheme(s) {
+	return { queued: 'gray', running: 'blue', complete: 'green', failed: 'red' }[s] || 'gray'
+}
+
+evaluation.subscribeToCompletion({
+	filter: (p) => p?.source_session === props.sessionId,
+	onComplete: (p) => {
+		evalDialogId.value = p.eval_id
+		evalDialogOpen.value = true
+		historyRes.submit()
+	},
+})
 </script>
