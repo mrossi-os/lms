@@ -39,6 +39,7 @@
 			</div>
 		</template>
 		<template #actions>
+			<div class="flex gap-2 justify-end">
 			<Button @click="visible = false">{{ __('Annulla') }}</Button>
 			<Button
 				variant="solid"
@@ -48,6 +49,7 @@
 			>
 				{{ __('Avvia') }}
 			</Button>
+			</div>
 		</template>
 	</Dialog>
 </template>
