@@ -14,7 +14,7 @@
 					</Badge>
 					<Dropdown
 						:options="courseFormRef.courseMenu"
-						:button="{ icon: 'lucide-ellipsis', variant: 'ghost' }"
+						:button="{ icon: 'more-horizontal', variant: 'ghost' }"
 						side="bottom"
 						align="end"
 					/>
