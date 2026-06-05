@@ -4,9 +4,38 @@
 			<h2 class="text-lg font-semibold text-ink-gray-9">
 				{{ schemaName ? __('Modifica schema di valutazione') : __('Nuovo schema di valutazione') }}
 			</h2>
-			<Button variant="solid" :loading="saving" type="submit">
-				{{ __('Salva') }}
-			</Button>
+			<div class="flex items-center gap-2">
+				<Button
+					variant="ghost"
+					type="button"
+					:title="__('Esporta schema in JSON')"
+					@click="onExportSchema"
+				>
+					<template #icon>
+						<Download class="size-4 stroke-1.5" />
+					</template>
+				</Button>
+				<Button
+					variant="ghost"
+					type="button"
+					:title="__('Importa schema da JSON')"
+					@click="onImportSchemaClick"
+				>
+					<template #icon>
+						<Upload class="size-4 stroke-1.5" />
+					</template>
+				</Button>
+				<input
+					ref="importFileInput"
+					type="file"
+					accept="application/json,.json"
+					class="hidden"
+					@change="onImportSchemaFileSelected"
+				/>
+				<Button variant="solid" :loading="saving" type="submit">
+					{{ __('Salva') }}
+				</Button>
+			</div>
 		</div>
 
 		<div class="grid grid-cols-2 gap-4">
@@ -74,6 +103,7 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
 import { Button, FormControl, createResource, toast } from 'frappe-ui'
+import { Download, Upload } from 'lucide-vue-next'
 import CriterionEditor from '@/oslms/components/simulations/CriterionEditor.vue'
 
 const props = defineProps({
@@ -139,6 +169,73 @@ function addCriterion() {
 function removeCriterion(i) {
 	model.criteria.splice(i, 1)
 	expandedCriteria.value.splice(i, 1)
+}
+
+// ---- JSON import / export ----
+
+// `name` (the doctype id) is intentionally NOT exported: importing should
+// never silently overwrite a different document — the payload populates the
+// editor and gets persisted under the current schema id on Save.
+const SCHEMA_EXPORT_FIELDS = [
+	'schema_name',
+	'description',
+	'scoring_scale',
+	'passing_threshold',
+	'is_shared',
+]
+
+const importFileInput = ref(null)
+
+function onExportSchema() {
+	const data = {}
+	for (const field of SCHEMA_EXPORT_FIELDS) {
+		data[field] = model[field]
+	}
+	data.criteria = model.criteria
+	const json = JSON.stringify(data, null, 2)
+	const blob = new Blob([json], { type: 'application/json' })
+	const url = URL.createObjectURL(blob)
+	const slug = (model.schema_name || 'evaluation-schema')
+		.replace(/[^a-z0-9_-]+/gi, '_')
+		.replace(/^_+|_+$/g, '')
+		.toLowerCase() || 'evaluation-schema'
+	const link = document.createElement('a')
+	link.href = url
+	link.download = `${slug}.json`
+	document.body.appendChild(link)
+	link.click()
+	document.body.removeChild(link)
+	URL.revokeObjectURL(url)
+}
+
+function onImportSchemaClick() {
+	importFileInput.value?.click()
+}
+
+async function onImportSchemaFileSelected(event) {
+	const file = event.target.files?.[0]
+	if (!file) return
+	try {
+		const text = await file.text()
+		const data = JSON.parse(text)
+		if (!data || typeof data !== 'object' || Array.isArray(data)) {
+			throw new Error(__('Formato JSON non valido'))
+		}
+		for (const field of SCHEMA_EXPORT_FIELDS) {
+			if (data[field] !== undefined) {
+				model[field] = data[field]
+			}
+		}
+		model.criteria = Array.isArray(data.criteria) ? data.criteria : []
+		expandedCriteria.value = model.criteria.map(() => false)
+		toast.success(__('Schema importato'))
+	} catch (e) {
+		toast.error(
+			__('Importazione fallita: {0}', [e.message || String(e)]),
+		)
+	} finally {
+		event.target.value = ''
+	}
 }
 
 async function onSave() {

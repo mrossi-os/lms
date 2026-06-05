@@ -4,6 +4,23 @@
 			class="sticky top-0 z-10 flex items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5">
 			<Breadcrumbs class="h-7" :items="breadcrumbs" />
 			<div class="flex items-center gap-x-2">
+				<Button variant="ghost" :title="__('Esporta scenario in JSON')" @click="onExportScenario">
+					<template #icon>
+						<Download class="size-4 stroke-1.5" />
+					</template>
+				</Button>
+				<Button variant="ghost" :title="__('Importa scenario da JSON')" @click="onImportScenarioClick">
+					<template #icon>
+						<Upload class="size-4 stroke-1.5" />
+					</template>
+				</Button>
+				<input
+					ref="importFileInput"
+					type="file"
+					accept="application/json,.json"
+					class="hidden"
+					@change="onImportScenarioFileSelected"
+				/>
 				<Button v-if="scenarioName" variant="ghost" @click="onTestRun" :loading="testing">
 					{{ __('Prova come studente') }}
 				</Button>
@@ -240,7 +257,7 @@ import {
 	usePageMeta,
 } from 'frappe-ui'
 import { useRouter } from 'vue-router'
-import { ChevronDown, Trash2 } from 'lucide-vue-next'
+import { ChevronDown, Download, Trash2, Upload } from 'lucide-vue-next'
 import EvaluationSchemaEditor from '@/oslms/components/simulations/EvaluationSchemaEditor.vue'
 import ChatSession from '@/oslms/components/simulations/ChatSession.vue'
 import { useSimulationSession } from '@/oslms/composables/useSimulationSession.js'
@@ -515,6 +532,89 @@ async function onTestRun() {
 
 function openSchemaManagement() {
 	router.push({ name: 'EvaluationSchemas' })
+}
+
+// ---- JSON import / export ----
+
+// Fields that travel with the scenario across instances. `name` (the doctype
+// id) is intentionally NOT exported: importing should never silently overwrite
+// a different document — the imported payload populates the editor and is
+// persisted under the current scenario id on Save.
+const SCENARIO_EXPORT_FIELDS = [
+	'scenario_name',
+	'lms_course',
+	'course_lesson',
+	'difficulty',
+	'modality',
+	'status',
+	'customer_persona',
+	'situation_template',
+	'evaluation_schema',
+	'max_turns',
+	'time_limit_minutes',
+	'provider_override',
+	'model_override',
+]
+
+const importFileInput = ref(null)
+
+function onExportScenario() {
+	const data = {}
+	for (const field of SCENARIO_EXPORT_FIELDS) {
+		data[field] = model[field]
+	}
+	data.learning_objectives = model.learning_objectives
+	data.seed_variations = model.seed_variations
+	const json = JSON.stringify(data, null, 2)
+	const blob = new Blob([json], { type: 'application/json' })
+	const url = URL.createObjectURL(blob)
+	const slug = (model.scenario_name || 'scenario')
+		.replace(/[^a-z0-9_-]+/gi, '_')
+		.replace(/^_+|_+$/g, '')
+		.toLowerCase() || 'scenario'
+	const link = document.createElement('a')
+	link.href = url
+	link.download = `${slug}.json`
+	document.body.appendChild(link)
+	link.click()
+	document.body.removeChild(link)
+	URL.revokeObjectURL(url)
+}
+
+function onImportScenarioClick() {
+	importFileInput.value?.click()
+}
+
+async function onImportScenarioFileSelected(event) {
+	const file = event.target.files?.[0]
+	if (!file) return
+	try {
+		const text = await file.text()
+		const data = JSON.parse(text)
+		if (!data || typeof data !== 'object' || Array.isArray(data)) {
+			throw new Error(__('Formato JSON non valido'))
+		}
+		for (const field of SCENARIO_EXPORT_FIELDS) {
+			if (data[field] !== undefined) {
+				model[field] = data[field]
+			}
+		}
+		model.learning_objectives = Array.isArray(data.learning_objectives)
+			? data.learning_objectives
+			: []
+		model.seed_variations = Array.isArray(data.seed_variations)
+			? data.seed_variations
+			: []
+		expandedVariations.value = model.seed_variations.map(() => false)
+		toast.success(__('Scenario importato'))
+	} catch (e) {
+		toast.error(
+			__('Importazione fallita: {0}', [e.message || String(e)]),
+		)
+	} finally {
+		// Reset so re-importing the same file fires `change` again.
+		event.target.value = ''
+	}
 }
 
 async function onSchemaCreated(result) {
