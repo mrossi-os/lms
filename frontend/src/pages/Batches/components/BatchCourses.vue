@@ -16,7 +16,7 @@
 				:columns="getCoursesColumns()"
 				:rows="courses.data"
 				row-key="name"
-				class="border rounded-lg"
+				class="border rounded-lg os-list-view"
 				:options="{
 					showTooltip: false,
 					selectable: user.data?.is_student ? false : true,

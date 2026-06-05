@@ -16,7 +16,7 @@
 				:columns="getAssessmentColumns()"
 				:rows="assessments.data"
 				row-key="name"
-				class="border rounded-lg"
+				class="border rounded-lg os-list-view"
 				:options="{
 					showTooltip: false,
 					getRowRoute: (row) => getRowRoute(row),

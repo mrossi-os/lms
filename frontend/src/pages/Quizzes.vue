@@ -32,7 +32,7 @@
 			:rows="quizzes.data"
 			row-key="name"
 			:options="{ showTooltip: false, selectable: true }"
-			class="flex-1 overflow-y-auto px-5"
+			class="px-2 sm:px-5 os-list-view !w-auto md:w-max"
 		>
 			<ListHeader
 				class="mb-2 grid items-center rounded-none border-b bg-surface-white p-2"

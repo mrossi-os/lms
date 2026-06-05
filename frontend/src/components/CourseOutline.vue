@@ -1,5 +1,5 @@
 <template>
-	<div class="p-3 h-full">
+	<div class="p-3 h-full card">
 		<div
 			v-if="!hideHeader && title && (outline.data?.length || allowEdit)"
 			class="flex items-center justify-between gap-x-2 mb-4 px-2"

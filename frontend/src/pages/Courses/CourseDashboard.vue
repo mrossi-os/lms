@@ -20,7 +20,7 @@
 			<NumberChartGraph :title="__('Lessons')" :value="course.data?.lessons" />
 		</div>
 		<div class="grid grid-cols-[2fr_1fr] gap-5 items-start">
-			<div class="border rounded-lg py-3 px-4">
+			<div class="border rounded-lg py-3 px-4 card">
 				<div class="flex items-center justify-between mb-3">
 					<div class="text-lg text-ink-gray-9 font-semibold">
 						{{ __('Students') }}
@@ -54,7 +54,7 @@
 						}"
 					>
 						<ListHeader
-							class="mb-2 grid items-center gap-x-4 rounded bg-surface-white border-b rounded-none p-2"
+							class="mb-2 grid items-center md:space-x-4 rounded-sm bg-surface-white-2 border-b p-2"
 						>
 							<ListHeaderItem
 								:item="item"
@@ -125,7 +125,7 @@
 			<div class="space-y-5">
 				<div
 					v-if="chartDetails.data?.average_progress > 0"
-					class="border rounded-lg p-4"
+					class="border rounded-lg p-4 card"
 				>
 					<div class="text-ink-gray-5 mb-4">
 						{{ __('Progress Summary') }}
@@ -195,7 +195,7 @@
 				</div>
 				<div
 					v-if="lessonProgress.data?.length"
-					class="border rounded-lg pt-4 px-4"
+					class="border rounded-lg pt-4 px-4 card"
 				>
 					<div class="flex items-center justify-between mb-4">
 						<div class="text-ink-gray-5">

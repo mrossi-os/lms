@@ -121,7 +121,7 @@
 				</div>
 				<div
 					v-else-if="showDetails(log)"
-					class="flex items-stretch border border-outline-gray-2 gap-x-2 rounded-md"
+					class="flex items-stretch border border-outline-gray-2 gap-x-2 rounded-md card"
 				>
 					<iframe
 						v-if="

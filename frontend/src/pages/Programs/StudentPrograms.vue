@@ -15,7 +15,7 @@
 					<div
 						v-for="program in data"
 						@click="openDetails(program.name, category)"
-						class="border rounded-md p-3 hover:border-outline-gray-3 cursor-pointer"
+						class="border rounded-md p-3 hover:border-outline-gray-3 cursor-pointer card"
 					>
 						<div class="text-lg font-semibold text-ink-gray-9 mb-2">
 							{{ program.name }}

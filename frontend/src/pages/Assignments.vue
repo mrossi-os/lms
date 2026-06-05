@@ -55,17 +55,14 @@
 					showAssignmentForm = true
 				},
 			}"
-			class="flex-1 px-5"
+			class="!w-auto px-2 sm:px-5 os-list-view"
 		>
 			<ListHeader
 				class="mb-2 grid items-center rounded-none border-b bg-surface-white p-2"
 			>
 				<ListHeaderItem :item="item" v-for="item in assignmentColumns">
 					<template #prefix="{ item }">
-						<FeatherIcon
-							:name="item.icon?.toString()"
-							class="h-4 w-4"
-						/>
+						<FeatherIcon :name="item.icon?.toString()" class="h-4 w-4" />
 					</template>
 				</ListHeaderItem>
 			</ListHeader>

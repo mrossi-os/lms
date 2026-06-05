@@ -1,3 +1,25 @@
-body{
-	
+body {
+}
+
+.card {
+	background-color: var(--surface-card);
+	border: 1px solid var(--outline-gray-1);
+	border-radius: 0.5rem;
+	padding: 1rem;
+}
+
+/* List header */
+.os-list-view > div:first-of-type {
+	background-color: var(--surface-gray-2);
+	margin-bottom: 0px;
+	border-top-left-radius: 0.5rem;
+	border-top-right-radius: 0.5rem;
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+}
+/* List rows */
+.os-list-view > div:nth-of-type(2) {
+	background-color: var(--color-company-primary);
+	border-bottom-left-radius: 0.5rem !important;
+	border-bottom-right-radius: 0.5rem !important;
 }

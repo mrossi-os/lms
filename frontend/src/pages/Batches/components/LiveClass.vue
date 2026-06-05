@@ -59,7 +59,7 @@
 		>
 			<div
 				v-for="cls in liveClasses.data"
-				class="flex flex-col border rounded-md h-full text-ink-gray-7 hover:border-outline-gray-3 p-3"
+				class="flex flex-col border rounded-md h-full text-ink-gray-7 hover:border-outline-gray-3 p-3 card"
 				:class="{
 					'cursor-pointer': isAdmin() && cls.attendees > 0,
 				}"

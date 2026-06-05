@@ -29,7 +29,7 @@
 			<div
 				v-for="program in programs.data"
 				@click="openForm(program.name)"
-				class="border rounded-md p-3 hover:border-outline-gray-3 cursor-pointer space-y-2"
+				class="border rounded-md p-3 hover:border-outline-gray-3 cursor-pointer space-y-2 card"
 			>
 				<div class="text-lg font-semibold text-ink-gray-9">
 					{{ program.name }}

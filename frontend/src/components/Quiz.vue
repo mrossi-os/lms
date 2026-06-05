@@ -80,7 +80,7 @@
 		</div>
 
 		<div v-if="activeQuestion == 0">
-			<div class="border text-center p-20 rounded-md">
+			<div class="border text-center p-20 rounded-md card">
 				<div class="font-semibold text-lg text-ink-gray-9">
 					{{ quiz.data.title }}
 				</div>
@@ -120,7 +120,7 @@
 			<div v-for="(question, qtidx) in questions">
 				<div
 					v-if="qtidx == activeQuestion - 1 && questionDetails.data"
-					class="border rounded-lg p-5"
+					class="border rounded-lg p-5 card"
 				>
 					<div class="flex justify-between">
 						<div class="text-sm text-ink-gray-5">
