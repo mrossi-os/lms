@@ -90,6 +90,27 @@ def cleanup_sessions_and_turns():
     frappe.db.commit()
 
 
+def _make_test_user(prefix: str):
+    """Create a User bypassing Frappe's per-minute creation throttle.
+
+    The throttle (`throttle_user_creation`) trips after 60 user inserts
+    in 60s — easy to hit when many tests in a row build fixture users.
+    Tests don't care about the throttle so we flip `in_import` for the
+    insert.
+    """
+    prev = frappe.flags.get("in_import")
+    frappe.flags.in_import = True
+    try:
+        return frappe.get_doc({
+            "doctype": "User",
+            "email": f"{prefix}-{frappe.generate_hash(length=6)}@example.com",
+            "first_name": prefix.title(),
+            "send_welcome_email": 0,
+        }).insert(ignore_permissions=True)
+    finally:
+        frappe.flags.in_import = prev
+
+
 def make_scenario_with_instructor():
     """Returns (scenario_doc, instructor_user_doc, outsider_user_doc).
 
@@ -97,19 +118,8 @@ def make_scenario_with_instructor():
     first user listed in Course Instructor, and 1 LMSA Simulation Scenario
     published on that course via make_published_scenario.
     """
-    instructor = frappe.get_doc({
-        "doctype": "User",
-        "email": f"instr-{frappe.generate_hash(length=6)}@example.com",
-        "first_name": "Instr",
-        "send_welcome_email": 0,
-    }).insert(ignore_permissions=True)
-
-    outsider = frappe.get_doc({
-        "doctype": "User",
-        "email": f"out-{frappe.generate_hash(length=6)}@example.com",
-        "first_name": "Out",
-        "send_welcome_email": 0,
-    }).insert(ignore_permissions=True)
+    instructor = _make_test_user("instr")
+    outsider = _make_test_user("out")
 
     course = frappe.get_doc({
         "doctype": "LMS Course",
@@ -140,12 +150,7 @@ def make_completed_session(scenario=None, student: str | None = None):
     )
 
     if student is None:
-        student_doc = frappe.get_doc({
-            "doctype": "User",
-            "email": f"student-{frappe.generate_hash(length=6)}@example.com",
-            "first_name": "Student",
-            "send_welcome_email": 0,
-        }).insert(ignore_permissions=True)
+        student_doc = _make_test_user("student")
         student = student_doc.name
 
     session = frappe.get_doc({
