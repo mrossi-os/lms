@@ -4,6 +4,8 @@
 	"doctype": "DocType",
 	"engine": "InnoDB",
 	"field_order": [
+		"section_theme",
+		"theme",
 		"section_brand",
 		"company_primary",
 		"column_break_brand",
@@ -41,6 +43,19 @@
 		"gradient_overlay_to"
 	],
 	"fields": [
+		{
+			"fieldname": "section_theme",
+			"fieldtype": "Section Break",
+			"label": "Theme"
+		},
+		{
+			"default": "light",
+			"description": "Forces the UI theme (light/dark) for every user. The frontend honors this value over any local preference.",
+			"fieldname": "theme",
+			"fieldtype": "Select",
+			"label": "Theme",
+			"options": "light\ndark"
+		},
 		{
 			"fieldname": "section_brand",
 			"fieldtype": "Section Break",
@@ -238,7 +253,7 @@
 	"index_web_pages_for_search": 1,
 	"issingle": 1,
 	"links": [],
-	"modified": "2026-05-04 12:00:00.000000",
+	"modified": "2026-06-05 13:00:00.000000",
 	"modified_by": "Administrator",
 	"module": "OS LMS",
 	"name": "Brand Customize",

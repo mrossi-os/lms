@@ -4,8 +4,6 @@
 	"doctype": "DocType",
 	"engine": "InnoDB",
 	"field_order": [
-		"section_appearance",
-		"theme",
 		"section_rag",
 		"enabled",
 		"column_break_1",
@@ -37,19 +35,6 @@
 		"simulation_debrief_model"
 	],
 	"fields": [
-		{
-			"fieldname": "section_appearance",
-			"fieldtype": "Section Break",
-			"label": "Appearance"
-		},
-		{
-			"default": "light",
-			"description": "Forces the UI theme for every user. The frontend honors this value over any local preference.",
-			"fieldname": "theme",
-			"fieldtype": "Select",
-			"label": "Theme",
-			"options": "light\ndark"
-		},
 		{
 			"fieldname": "section_rag",
 			"fieldtype": "Section Break",
@@ -216,7 +201,7 @@
 	"index_web_pages_for_search": 1,
 	"issingle": 1,
 	"links": [],
-	"modified": "2026-06-05 12:00:00.000000",
+	"modified": "2026-06-05 13:00:00.000000",
 	"modified_by": "Administrator",
 	"module": "OS LMS",
 	"name": "LMSA Settings",
