@@ -151,12 +151,12 @@ const user = inject<SessionUser>('$user')
 
 const isCourseInstructor = computed<boolean>(() =>
 	(props.course.data?.instructors || []).some(
-		(i) => i.name === user?.data?.name
-	)
+		(i) => i.name === user?.data?.name,
+	),
 )
 
 const isCourseAdmin = computed<boolean>(
-	() => Boolean(user?.data?.is_moderator) || isCourseInstructor.value
+	() => Boolean(user?.data?.is_moderator) || isCourseInstructor.value,
 )
 
 const outline = createResource({
@@ -172,19 +172,19 @@ const outlineStats = computed(() => {
 	const chapters = outline.data || []
 	const lessonCount = chapters.reduce(
 		(acc, c) => acc + (c.lessons?.length || 0),
-		0
+		0,
 	)
 	const parts: string[] = []
 	if (chapters.length) {
 		parts.push(
 			`${chapters.length} ${
 				chapters.length === 1 ? __('section') : __('sections')
-			}`
+			}`,
 		)
 	}
 	if (lessonCount) {
 		parts.push(
-			`${lessonCount} ${lessonCount === 1 ? __('lesson') : __('lessons')}`
+			`${lessonCount} ${lessonCount === 1 ? __('lesson') : __('lessons')}`,
 		)
 	}
 	return parts.join(' · ')

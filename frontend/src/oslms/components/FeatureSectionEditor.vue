@@ -15,7 +15,7 @@
 					}}
 				</div>
 			</div>
-			<Button variant="outline" @click="addSection" class="w-full md:w-auto">
+			<Button @click="addSection" class="w-full md:w-auto">
 				<template #prefix>
 					<Plus class="w-4 h-4" />
 				</template>

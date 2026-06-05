@@ -1,7 +1,7 @@
 <template>
 	<!-- OSLMS-CUSTOM: push the card down when the video is hidden (hero shows it) -->
 	<div
-		class="border-2 rounded-md w-full md:min-w-80 max-w-sm card"
+		class="border-2 rounded-md w-full md:min-w-80 max-w-sm card !p-0"
 		:class="{ 'md:mt-16': hideVideo }"
 	>
 		<!-- OSLMS-CUSTOM: hide the preview video when a hero banner already shows it -->

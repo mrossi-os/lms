@@ -18,7 +18,7 @@
 				:required="true"
 			/>
 			<div
-				class="rounded-t-lg rounded-b-md outline-none transition-[box-shadow] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] focus-within:ring-2 ring-outline-gray-3"
+				class="ProseMirror-wrapper rounded-t-lg rounded-b-md outline-none transition-[box-shadow] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] focus-within:ring-2 ring-outline-gray-3"
 			>
 				<TextEditor
 					:id="descriptionId"
@@ -55,7 +55,7 @@
 			<div class="mt-1 text-p-sm text-ink-gray-6">
 				{{
 					__(
-						'These tags help search engines describe and rank your course in results.'
+						'These tags help search engines describe and rank your course in results.',
 					)
 				}}
 			</div>
