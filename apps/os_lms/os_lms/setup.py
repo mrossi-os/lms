@@ -47,6 +47,18 @@ CUSTOM_FIELDS = {
             "length": 16,
         },
     ],
+    "Email Template": [
+        {
+            "fieldname": "custom_available_for_announcements",
+            "fieldtype": "Check",
+            "label": "Available for Batch Announcements",
+            "insert_after": "subject",
+            "description": (
+                "Show this template in the batch announcement composer so moderators "
+                "can pick it as a starting point. The template itself is never modified."
+            ),
+        },
+    ],
 }
 
 
