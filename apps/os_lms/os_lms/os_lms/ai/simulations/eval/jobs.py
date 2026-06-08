@@ -47,6 +47,13 @@ def _scenario_ref(scenario_name: str) -> ScenarioRef:
 		for row in (doc.learning_objectives or [])
 		if (row.objective_text or "").strip()
 	]
+	variations = {
+		(row.variable_name or "").strip(): [
+			v.strip() for v in (row.possible_values or "").splitlines() if v.strip()
+		]
+		for row in (doc.seed_variations or [])
+		if (row.variable_name or "").strip()
+	}
 	return ScenarioRef(
 		name=doc.name,
 		scenario_name=doc.scenario_name,
@@ -56,6 +63,7 @@ def _scenario_ref(scenario_name: str) -> ScenarioRef:
 		situation_template=doc.situation_template or "",
 		max_turns=doc.max_turns or 20,
 		evaluation_schema=doc.evaluation_schema or "",
+		seed_variations=variations,
 	)
 
 
