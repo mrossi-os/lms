@@ -7,6 +7,7 @@ import json
 from frappe.tests import UnitTestCase
 
 from os_lms.os_lms.ai.utils.llm.provider import ChatMessage, ChatResponse, Usage
+from os_lms.os_lms.ai.simulations.prompts import PersonaVariant
 from os_lms.os_lms.ai.simulations.customer import (
 	ScenarioVariantGenerator,
 	CustomerTurnService,
@@ -93,3 +94,39 @@ class TestScenarioVariantGenerator(UnitTestCase):
 		gen = ScenarioVariantGenerator(provider=provider, model=None)
 		with self.assertRaises(ValueError):
 			gen.generate(_scenario_ref(), seed="seed-4")
+
+
+def _persona() -> PersonaVariant:
+	return PersonaVariant(
+		name="Anna", role="CFO", company="Foo Srl",
+		mood="diffidente", key_objection="costo",
+		hidden_motivation="convincere il CEO",
+	)
+
+
+class TestCustomerTurnService(UnitTestCase):
+	def test_ask_invokes_chat_fn_with_role_play_system_prompt(self):
+		captured: dict = {}
+
+		def chat_fn(*, messages, system, **kwargs):
+			captured["messages"] = list(messages)
+			captured["system"] = system
+			captured["kwargs"] = dict(kwargs)
+			return ChatResponse(
+				text="Risposta del cliente",
+				finish_reason="stop", usage=Usage(),
+				model="t-1", provider="test",
+			)
+
+		service = CustomerTurnService(chat_fn=chat_fn)
+		response = service.ask(
+			persona=_persona(),
+			situation="Trattativa in corso.",
+			difficulty="hard",
+			history=[ChatMessage(role="user", content="Buongiorno")],
+		)
+		self.assertEqual(response.text, "Risposta del cliente")
+		self.assertIn("Anna", captured["system"])
+		self.assertEqual(len(captured["messages"]), 1)
+		self.assertEqual(captured["kwargs"].get("temperature"), 0.7)
+		self.assertEqual(captured["kwargs"].get("max_tokens"), 400)

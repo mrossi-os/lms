@@ -88,10 +88,37 @@ class ScenarioVariantGenerator:
 			return parse_scenario_generator_output(retry.text)
 
 
-class CustomerTurnService:
-	"""Placeholder — full implementation added in Task 3."""
-	pass
-
-
-# Type alias for a chat callable — used by CustomerTurnService in Task 3.
 ChatFn = Callable[..., ChatResponse]
+
+
+class CustomerTurnService:
+	"""Ask the AI customer for its next turn given the conversation history.
+
+	The caller injects `chat_fn` so the same service works in production
+	(where `chat_fn = chat_with_fallback("chat", ..., override=...)`) and in
+	eval (where `chat_fn = lambda **kw: provider.chat(**kw)`). The service
+	itself stays unaware of fallback and purpose routing.
+	"""
+
+	def __init__(self, chat_fn: ChatFn):
+		self._chat = chat_fn
+
+	def ask(
+		self,
+		*,
+		persona: PersonaVariant,
+		situation: str,
+		difficulty: str,
+		history: list[ChatMessage],
+	) -> ChatResponse:
+		system = build_role_play_system_prompt(
+			persona=persona,
+			generated_situation=situation,
+			difficulty=difficulty,
+		)
+		return self._chat(
+			messages=history,
+			system=system,
+			temperature=0.7,
+			max_tokens=400,
+		)
