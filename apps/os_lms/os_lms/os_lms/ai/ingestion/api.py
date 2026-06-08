@@ -36,36 +36,10 @@ def get_lesson_ingestion_status(lesson_id):
 	"""
 	if not frappe.db.exists("Course Lesson", lesson_id):
 		frappe.throw(_("Lesson not found"), frappe.DoesNotExistError)
-
-	material = frappe.db.get_value(
-		"LMSA Material",
-		{"lesson": lesson_id},
-		["name", "status", "chunk_count", "last_ingested_on", "source_hash"],
-		as_dict=True,
-	)
-
-	if not material:
-		return {
-			"status": "not_ingested",
-			"chunk_count": 0,
-			"last_ingested_on": None,
-			"needs_update": True,
-		}
-
-	from .pipeline import material_hash, normalize_lesson_text
-
-	current_text = normalize_lesson_text(lesson_id)
-	current_hash = material_hash(current_text) if current_text else ""
-	needs_update = material.source_hash != current_hash
-	if material.status and material.status.lower() == "failed":
-		needs_update = True
-
+	lesson = frappe.get_doc("Course Lesson", lesson_id)
 	return {
-		"status": material.status.lower(),
-		"chunk_count": material.chunk_count or 0,
-		"last_ingested_on": (str(material.last_ingested_on) if material.last_ingested_on else None),
-		"needs_update": needs_update,
-		"material": material.name,
+		"status": lesson.index_status or "not_ingested",
+		"last_ingested_on": lesson.indexed_at,
 	}
 
 
