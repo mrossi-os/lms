@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import time
 
-from os_lms.os_lms.ai.utils.llm.provider import ChatMessage, ChatResponse, LLMProvider
+from os_lms.os_lms.ai.utils.llm.provider import ChatMessage, LLMProvider
 from os_lms.os_lms.ai.simulations.customer import (
 	CustomerTurnService,
 	ScenarioVariantGenerator,
