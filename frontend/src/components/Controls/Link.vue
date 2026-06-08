@@ -9,12 +9,11 @@
 			:options="resolvedOptions"
 			:placeholder="attrs.placeholder as string"
 			:disabled="attrs.readonly as boolean"
-			:size="(attrs.size as ComboboxSize) || 'sm'"
 			:variant="attrs.variant as ComboboxVariant"
-			:loading="options.loading"
+			:open-on-focus="true"
 			@update:modelValue="onSelect"
-			@update:query="onQuery"
-			@update:open="onOpen"
+			@input="onQuery"
+			@focus="onFocus"
 			class="w-full"
 		>
 			<template #footer>
@@ -83,7 +82,6 @@ import { useAttrs, computed, ref } from 'vue'
 import { useSettings } from '@/stores/settings'
 import type { Resource } from '@/types/api'
 
-type ComboboxSize = 'sm' | 'md' | 'lg' | 'xl'
 type ComboboxVariant = 'subtle' | 'outline' | 'ghost'
 
 interface LinkOption {
@@ -164,8 +162,10 @@ function reload(txt: string = ''): void {
 	options.reload()
 }
 
-function onOpen(open: boolean): void {
-	if (open && !loaded) reload('')
+function onFocus(): void {
+	// Combobox has no `update:open` event; load the initial list the first
+	// time the field is focused (the dropdown opens via `open-on-focus`).
+	if (!loaded) reload('')
 }
 
 const onQuery = useDebounceFn((txt: string) => reload(txt), 300)

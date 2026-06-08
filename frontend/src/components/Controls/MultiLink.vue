@@ -1,17 +1,13 @@
 <template>
 	<div class="space-y-1.5">
 		<FormLabel v-if="label" :label="label" :required="required" />
-		<MultiSelect
-			v-model="value"
-			v-model:open="popoverOpen"
-			:options="mergedOptions"
-			:placeholder="placeholder"
-			:variant="variant"
-			@update:open="onOpen"
-			@update:query="onQuery"
-			@update:modelValue="onChange"
+		<Popover
+			:show="popoverOpen"
+			:matchTargetWidth="true"
+			placement="bottom-start"
+			@update:show="onPopoverToggle"
 		>
-			<template #trigger="{ open, toggleOpen, selectedOptions, displayValue }">
+			<template #target="{ togglePopover, isOpen }">
 				<button
 					type="button"
 					:class="[
@@ -19,8 +15,8 @@
 						triggerVariantClasses[variant],
 						'min-h-7 rounded px-2 w-full justify-between text-base',
 					]"
-					:data-state="open ? 'open' : 'closed'"
-					@click="toggleOpen"
+					:data-state="isOpen ? 'open' : 'closed'"
+					@click="togglePopover"
 				>
 					<span class="flex min-w-0 flex-1 items-center gap-2">
 						<slot name="prefix" :selected="selectedOptions" />
@@ -42,52 +38,115 @@
 					</span>
 					<ChevronDown
 						class="size-4 shrink-0 text-ink-gray-4 transition-transform duration-200"
-						:class="open && 'rotate-180'"
+						:class="isOpen && 'rotate-180'"
 					/>
 				</button>
 			</template>
-			<template v-if="$slots['item-prefix']" #item-prefix="slotProps">
-				<slot name="item-prefix" v-bind="slotProps" />
-			</template>
-			<template v-if="$slots['item-label']" #item-label="slotProps">
-				<slot name="item-label" v-bind="slotProps" />
-			</template>
-			<template #footer="{ clearAll }">
-				<slot name="footer" :close="closePopover">
-					<div
-						class="flex items-center justify-between gap-2 border-t border-outline-gray-1 px-2 py-1.5 mt-1"
+			<template #body>
+				<div
+					class="rounded-lg border border-outline-gray-1 bg-surface-modal shadow-xl"
+				>
+					<!--
+						`ignore-filter` disables reka's built-in client filtering: search
+						is server-side via `reload(txt)`. `open` is hardcoded since the list
+						is already mounted inside the (conditionally rendered) popover body.
+					-->
+					<ComboboxRoot
+						v-model="value"
+						multiple
+						:open="true"
+						:ignore-filter="true"
+						class="p-2 pb-0"
+						@update:modelValue="onChange"
 					>
-						<Button
-							variant="ghost"
-							size="sm"
-							:aria-label="__('Clear')"
-							@click="clearAll"
+						<div
+							class="flex w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 ring-2 ring-outline-gray-2 transition-colors hover:bg-surface-gray-3"
 						>
-							{{ __('Clear') }}
-						</Button>
-						<Button
-							v-if="props.onCreate"
-							variant="ghost"
-							size="sm"
-							:aria-label="__(createLabel)"
-							@click="handleCreate"
-						>
-							<template #prefix>
-								<Plus class="size-4 stroke-1.5" />
-							</template>
-							{{ __(createLabel) }}
-						</Button>
-					</div>
-				</slot>
+							<ComboboxInput
+								class="h-full w-full border-0 bg-transparent p-0 text-base text-ink-gray-8 placeholder:text-ink-gray-4 focus:border-0 focus:outline-0 focus:ring-0"
+								:placeholder="__('Search...')"
+								autocomplete="off"
+								@input="onInput"
+							/>
+							<LoadingIndicator
+								v-if="options.loading"
+								class="size-4 shrink-0 text-ink-gray-5"
+							/>
+						</div>
+						<ComboboxContent class="z-10 mt-2 overflow-hidden">
+							<ComboboxViewport class="max-h-60 overflow-auto pb-1.5">
+								<ComboboxEmpty
+									class="px-2.5 py-1.5 text-center text-base text-ink-gray-5"
+								>
+									{{ __('No results found') }}
+								</ComboboxEmpty>
+								<ComboboxItem
+									v-for="item in mergedOptions"
+									:key="item.value"
+									:value="item.value"
+									:disabled="(item.disabled as boolean) || false"
+									class="relative flex h-7 select-none items-center gap-2 rounded p-1.5 text-base leading-none text-ink-gray-7 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-surface-gray-3 data-[highlighted]:outline-none"
+								>
+									<slot name="item-prefix" :item="item" />
+									<span class="min-w-0 flex-1 pr-6">
+										<slot name="item-label" :item="item">
+											{{ item.label }}
+										</slot>
+									</span>
+									<ComboboxItemIndicator
+										class="absolute right-1.5 inline-flex items-center justify-center"
+									>
+										<Check class="size-4" />
+									</ComboboxItemIndicator>
+								</ComboboxItem>
+							</ComboboxViewport>
+							<slot name="footer" :close="closePopover">
+								<div
+									class="mt-1 flex items-center justify-between gap-2 border-t border-outline-gray-1 px-2 py-1.5"
+								>
+									<Button
+										variant="ghost"
+										size="sm"
+										:aria-label="__('Clear')"
+										@click="clearAll"
+									>
+										{{ __('Clear') }}
+									</Button>
+									<Button
+										v-if="props.onCreate"
+										variant="ghost"
+										size="sm"
+										:aria-label="__(createLabel)"
+										@click="handleCreate"
+									>
+										<template #prefix>
+											<Plus class="size-4 stroke-1.5" />
+										</template>
+										{{ __(createLabel) }}
+									</Button>
+								</div>
+							</slot>
+						</ComboboxContent>
+					</ComboboxRoot>
+				</div>
 			</template>
-		</MultiSelect>
+		</Popover>
 	</div>
 </template>
 
 <script setup lang="ts">
-import { Button, FormLabel, MultiSelect, createResource } from 'frappe-ui'
+import { Button, FormLabel, LoadingIndicator, Popover, createResource } from 'frappe-ui'
+import {
+	ComboboxRoot,
+	ComboboxInput,
+	ComboboxContent,
+	ComboboxViewport,
+	ComboboxEmpty,
+	ComboboxItem,
+	ComboboxItemIndicator,
+} from 'reka-ui'
 import { useDebounceFn } from '@vueuse/core'
-import { ChevronDown, Plus } from 'lucide-vue-next'
+import { ChevronDown, Plus, Check } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 import type { Resource } from '@/types/api'
 
@@ -175,11 +234,17 @@ function reload(txt: string = '') {
 	options.reload()
 }
 
-function onOpen(open: boolean) {
+// Popover has no `open` event; load the initial list the first time it opens.
+function onPopoverToggle(open: boolean) {
+	popoverOpen.value = open
 	if (open && !loaded) reload()
 }
 
 const onQuery = useDebounceFn((txt: string) => reload(txt || ''), 300)
+
+function onInput(event: Event) {
+	onQuery((event.target as HTMLInputElement).value)
+}
 
 const emit = defineEmits<{
 	(e: 'change', value: string[]): void
@@ -219,8 +284,25 @@ const optionByValue = computed<Map<string, SelectOption>>(() => {
 	return map
 })
 
+// Resolve currently selected values to full option objects (falling back to a
+// bare {label,value} when an option hasn't been loaded yet) for the trigger.
+const selectedOptions = computed<SelectOption[]>(() =>
+	(value.value || []).map(
+		(v) => optionByValue.value.get(v) || { label: v, value: v }
+	)
+)
+
+const displayValue = computed<string>(() =>
+	defaultSummary(selectedOptions.value)
+)
+
 function defaultSummary(selected: { label: string }[]) {
 	return selected.map((o) => o.label).join(', ')
+}
+
+function clearAll() {
+	value.value = []
+	onChange([])
 }
 
 defineExpose({ reload, options, optionByValue })
