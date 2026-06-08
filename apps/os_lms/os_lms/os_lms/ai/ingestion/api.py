@@ -1,7 +1,8 @@
 import frappe
 from frappe import _
 
-from .._lesson_access import load_lesson
+from lms.lms.utils import has_course_instructor_role, has_moderator_role, is_instructor
+
 from .service import IngestionService
 
 
@@ -16,7 +17,7 @@ def start_lesson_ingestion(lesson_id):
 	Returns:
 	        dict with status, message, material name and chunk_count
 	"""
-	lesson = load_lesson(lesson_id)
+	lesson = _load_lesson(lesson_id)
 	service = IngestionService()
 	service.ingest_lesson(lesson)
 	return {"success": True}
@@ -66,3 +67,19 @@ def get_lesson_ingestion_status(lesson_id):
 		"needs_update": needs_update,
 		"material": material.name,
 	}
+
+
+def _load_lesson(lesson_id):
+	lesson = frappe.get_doc("Course Lesson", lesson_id)
+	if not lesson:
+		frappe.throw(_("Lesson not found"), frappe.DoesNotExistError)
+	if has_moderator_role():
+		return lesson
+
+	if has_course_instructor_role() and is_instructor(lesson.course):
+		return lesson
+
+	if frappe.db.exists("LMS Enrollment", {"member": frappe.session.user, "course": lesson.course}):
+		return lesson
+
+	frappe.throw(_("You don't have permission to access this lesson"), frappe.PermissionError)
