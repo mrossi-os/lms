@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import frappe
 from frappe import _
 
@@ -32,7 +34,16 @@ class TutorAi:
 			if not details:
 				frappe.throw(_("Course not found or inaccessible"))
 			self._course_details = details
+			self._course_details.feature_sections = self._load_feature_sections()
+
 		return self._course_details
+
+	def _load_feature_sections(self):
+		raw = frappe.db.get_value("LMS Course", self.course, "feature_sections")
+		try:
+			return json.loads(raw) if raw else []
+		except (json.JSONDecodeError, TypeError):
+			return []
 
 	@property
 	def settings(self) -> OsLmsSettings:
@@ -44,15 +55,26 @@ class TutorAi:
 		if not question or not question.strip():
 			frappe.throw(_("Question is required"))
 
-		messages = self._build_messages(question.strip(), history or [])
-		provider = resolve_provider("chat")
-		response = provider.chat(messages=messages, system=self._system_prompt(question))
-		return response.text
+		question = question.strip()
+		messages = self._build_messages(question, history or [])
 
-	def _system_prompt(self, question: str) -> str:
-		course = get_course_details(self.course)
-		if not course:
-			frappe.throw(_("Course not found or inaccessible"))
+		answer = ""
+		context = ""
+		status = "Failed"
+		try:
+			system_prompt, context = self._system_prompt(question)
+			provider = resolve_provider("chat")
+			response = provider.chat(messages=messages, system=system_prompt)
+			answer = response.text
+			status = "Answered"
+			return answer
+		finally:
+			self._log_query(question=question, answer=answer, context=context, status=status)
+
+	def _system_prompt(self, question: str) -> tuple[str, str]:
+		"""Build the system prompt and return it together with the labeled
+		chunks string used as context — so `ask` can log both."""
+		course = self.course_details
 		service = IngestionService(settings=self.settings)
 
 		chunks = []
@@ -74,12 +96,47 @@ class TutorAi:
 			c.get("content", "") for c in chunks if c.get("lesson") == self.lesson
 		)
 		prompt = self.settings.system_prompt or ""
-		return (
+		prompt = (
 			prompt.replace("{{COURSE_TITLE}}", course.get("title") or "")
-			.replace("{{COURSE_DESCRIPTION}}", course.get("description") or "")
+			.replace("{{COURSE_DESCRIPTION}}", self._course_description(course))
 			.replace("{{LESSONS_CONTENT}}", lessons_content)
 			.replace("{{CURRENT_LESSON_CONTENT}}", current_lesson_content)
 		)
+		return prompt, lessons_content
+
+	def _log_query(self, *, question: str, answer: str, context: str, status: str) -> None:
+		"""Persist the Q&A interaction to LMSA Query Log (best-effort).
+
+		``lesson`` is optional in the doctype: course-level questions are
+		logged with an empty lesson link. Failures never propagate — audit
+		must never break the user-facing flow.
+		"""
+		try:
+			log = frappe.new_doc("LMSA Query Log")
+			log.course = self.course
+			log.lesson = self.lesson or ""
+			log.member = self.user
+			log.question = question
+			log.answer = answer
+			log.context = context
+			log.status = status
+			log.save(ignore_permissions=True)
+			frappe.db.commit()
+		except Exception:
+			frappe.log_error(title="LMSA Query Log write failed")
+
+	def _course_description(self, course):
+		description = course.get("description") or ""
+
+		feature_sections = course.get("feature_sections") or []
+		if len(feature_sections) > 0:
+			description += "\n COURSE FEATURES:\n"
+			for feature in feature_sections:
+				title = feature.get("title", "")
+				feature_description = feature.get("description", "")
+				description += f"\n{title}\n{feature_description}"
+
+		return description
 
 	def _label_chunks(self, chunks: list[dict]) -> list[str]:
 		"""Prefix each retrieved chunk with its source lesson, so the model can
