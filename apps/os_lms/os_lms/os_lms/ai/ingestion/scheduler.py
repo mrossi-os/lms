@@ -1,6 +1,6 @@
 import frappe
 
-from .ingestion_service import IngestionService
+from .service import IngestionService
 
 
 def reindex_lesson_content():

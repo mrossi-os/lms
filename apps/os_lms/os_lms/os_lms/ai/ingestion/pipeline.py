@@ -8,8 +8,8 @@ import frappe
 import redis
 from frappe.utils import now_datetime
 
-from .utils.lesson_parser import LessonContentParser
-from .utils.rag_db import RagDB
+from ..utils.lesson_parser import LessonContentParser
+from ..utils.rag_db import RagDB
 
 
 def get_settings():

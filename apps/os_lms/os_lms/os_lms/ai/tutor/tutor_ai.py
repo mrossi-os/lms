@@ -4,7 +4,7 @@ import frappe
 from frappe import _
 
 from lms.lms.utils import get_course_details, has_moderator_role, is_instructor
-from os_lms.os_lms.ai.ingestion_service import IngestionService
+from os_lms.os_lms.ai.ingestion import IngestionService
 from os_lms.os_lms.ai.utils.llm import ChatMessage, load_settings, resolve_provider
 from os_lms.os_lms.ai.utils.oslms_settings import OsLmsSettings
 

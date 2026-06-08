@@ -154,7 +154,7 @@ on_session_creation = ["os_lms.auth.on_session_creation"]
 
 scheduler_events = {
     "daily": [
-        "os_lms.os_lms.ai.scheduler.reindex_lesson_content",
+        "os_lms.os_lms.ai.ingestion.scheduler.reindex_lesson_content",
     ],
     "cron": {
         "*/15 * * * *": [
