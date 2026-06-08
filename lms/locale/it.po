@@ -3617,7 +3617,7 @@ msgstr "Importa"
 
 #: frontend/src/pages/Batches/Batches.vue:17
 msgid "Import Batch"
-msgstr "Importa Gruppo"
+msgstr "Importa Classe"
 
 #: frontend/src/pages/Courses/CourseImportModal.vue:5
 msgid "Import Course from ZIP"

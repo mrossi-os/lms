@@ -24,12 +24,12 @@
 						/>
 					</div>
 					<FormControl
-						v-if="sendEmail && !defaultTemplateFound"
+						v-if="sendEmail"
 						class="flex-1 max-w-52"
 						:label="__('Email Template')"
 						type="select"
 						:placeholder="__('Select option')"
-						:options="emailTemplates.data || []"
+						:options="templateOptions"
 						v-model="announcement.template"
 					/>
 				</div>
@@ -94,8 +94,11 @@
 						</div>
 					</div>
 				</div>
-				<div v-if="sendEmail && isHtmlMode" class="mb-4 flex flex-col gap-3">
-					<div v-if="hasMessagePlaceholder">
+				<div
+					v-if="sendEmail && isHtmlMode && hasMessagePlaceholder"
+					class="mb-4 flex flex-col gap-3"
+				>
+					<div>
 						<div class="mb-1.5 text-sm text-ink-gray-5">
 							{{ __('Message') }}
 							<span class="text-ink-red-3">*</span>
@@ -132,6 +135,38 @@
 							v-if="showAdvanced"
 							v-model="announcement.announcement"
 							class="mt-2 w-full min-h-[200px] max-h-[400px] border rounded-md p-2 text-sm font-mono bg-surface-gray-3 border-outline-gray-2"
+							spellcheck="false"
+						></textarea>
+					</div>
+				</div>
+				<!--
+					HTML template without a {{ message }} placeholder (e.g. a generic
+					email): the rich editor can't round-trip email HTML without dropping
+					inline styles and buttons, so edit the raw HTML directly — body text
+					and button URLs alike — with a faithful live preview above it.
+				-->
+				<div
+					v-else-if="sendEmail && isHtmlMode"
+					class="mb-4 flex flex-col gap-3"
+				>
+					<div>
+						<div class="mb-1.5 text-sm text-ink-gray-5">
+							{{ __('Preview') }}
+						</div>
+						<div
+							class="border rounded-md min-h-[200px] max-h-[400px] overflow-auto"
+						>
+							<AnnouncementContent :content="previewHtml" />
+						</div>
+					</div>
+					<div>
+						<div class="mb-1.5 text-sm text-ink-gray-5">
+							{{ __('Announcement (HTML)') }}
+							<span class="text-ink-red-3">*</span>
+						</div>
+						<textarea
+							v-model="announcement.announcement"
+							class="w-full min-h-[240px] max-h-[400px] border rounded-md p-2 text-sm font-mono bg-surface-gray-3 border-outline-gray-2"
 							spellcheck="false"
 						></textarea>
 					</div>
@@ -220,7 +255,6 @@ const recipientMode = ref('all')
 const selectedStudents = ref([])
 const sendEmail = ref(false)
 const studentSearch = ref('')
-const defaultTemplateFound = ref(false)
 
 const DEFAULT_TEMPLATE_NAME = 'Announcement Email Template'
 
@@ -290,8 +324,11 @@ const toggleStudent = (email, checked) => {
 watch(
 	() => announcement.template,
 	(newVal) => {
-		console.log('[AnnouncementModal] template changed:', newVal)
-		applyTemplate(newVal)
+		// Loads the selected template into the editor for this announcement only.
+		// The Email Template document is never written back to.
+		applyTemplate(newVal).catch((err) => {
+			console.warn('[AnnouncementModal] could not apply template:', newVal, err)
+		})
 	},
 )
 
@@ -301,28 +338,38 @@ watch(sendEmail, async (enabled) => {
 		announcement.message = ''
 		isHtmlMode.value = false
 		showAdvanced.value = false
-		defaultTemplateFound.value = false
 		return
 	}
-	try {
-		await applyTemplate(DEFAULT_TEMPLATE_NAME)
-		defaultTemplateFound.value = true
-	} catch (err) {
-		defaultTemplateFound.value = false
-		announcement.template = ''
+	// Pre-select the default template when present so the composer is ready to go,
+	// while still leaving the picker visible for the user to choose another one.
+	// The template watcher applies whatever ends up selected.
+	if (!emailTemplates.data) {
+		await emailTemplates.reload()
 	}
+	const hasDefault = (emailTemplates.data || []).some(
+		(t) => t.name === DEFAULT_TEMPLATE_NAME,
+	)
+	announcement.template = hasDefault ? DEFAULT_TEMPLATE_NAME : ''
 })
 
 const emailTemplates = createResource({
 	url: 'frappe.client.get_list',
 	params: {
 		doctype: 'Email Template',
-		fields: ['name', 'subject'],
+		fields: ['name', 'subject', 'custom_available_for_announcements'],
+		limit_page_length: 0,
 	},
 	auto: true,
-	transform(data) {
-		return data.map((t) => ({ label: t.name, value: t.name }))
-	},
+})
+
+// Prefer templates explicitly flagged for announcements so the list stays clean.
+// If none are flagged (e.g. a fresh install where no admin has opted any in yet),
+// fall back to every template so the picker is never empty.
+const templateOptions = computed(() => {
+	const all = emailTemplates.data || []
+	const flagged = all.filter((t) => t.custom_available_for_announcements)
+	const list = flagged.length ? flagged : all
+	return list.map((t) => ({ label: t.name, value: t.name }))
 })
 
 const templateResource = createResource({
@@ -358,6 +405,7 @@ const announcementResource = createResource({
 		return {
 			batch: props.batch,
 			recipients: recipients,
+			subject: announcement.subject,
 			// When emailing, bake named colors to hex so they survive in the
 			// recipient's email client (which lacks the editor's CSS variables).
 			// Notification-only content keeps the variables so the themed in-app

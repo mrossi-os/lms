@@ -9,12 +9,11 @@
 			:options="resolvedOptions"
 			:placeholder="attrs.placeholder as string"
 			:disabled="attrs.readonly as boolean"
-			:size="(attrs.size as ComboboxSize) || 'sm'"
 			:variant="attrs.variant as ComboboxVariant"
-			:loading="options.loading"
+			:open-on-click="true"
 			@update:modelValue="onSelect"
-			@update:query="onQuery"
-			@update:open="onOpen"
+			@input="onQuery"
+			@focus="onFocus"
 			class="w-full"
 		>
 			<template #footer>
@@ -83,7 +82,6 @@ import { useAttrs, computed, ref } from 'vue'
 import { useSettings } from '@/stores/settings'
 import type { Resource } from '@/types/api'
 
-type ComboboxSize = 'sm' | 'md' | 'lg' | 'xl'
 type ComboboxVariant = 'subtle' | 'outline' | 'ghost'
 
 interface LinkOption {
@@ -164,8 +162,12 @@ function reload(txt: string = ''): void {
 	options.reload()
 }
 
-function onOpen(open: boolean): void {
-	if (open && !loaded) reload('')
+function onFocus(): void {
+	// Load the initial list the first time the field is focused. The dropdown
+	// itself opens via `open-on-click` (not `open-on-focus`): focusing keeps the
+	// list from re-opening when the Combobox restores focus to the input after a
+	// selection, which otherwise made the dropdown impossible to close by mouse.
+	if (!loaded) reload('')
 }
 
 const onQuery = useDebounceFn((txt: string) => reload(txt), 300)

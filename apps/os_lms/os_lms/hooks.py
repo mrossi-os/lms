@@ -118,6 +118,7 @@ fixtures = [
                     "LMS Batch",
                     "LMS Live Class",
                     "User",
+                    "Email Template",
                 ],
             ]
         ],
