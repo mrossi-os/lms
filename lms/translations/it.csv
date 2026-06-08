@@ -843,6 +843,7 @@
 "URL for documentation or help ","URL della documentazione o della guida"
 "Hide sidebar, menu, and comments","Nascondi barra laterale, munù e commenti"
 "Hide Copy","Nascondi copia"
+"Import Batch","Importa Classe"
 "Allow Import (via data import Tool)","Consenti importazione (tramite lo strumento di importazione dati)"
 "Allow events in timeline","Consenti eventi nella cronologia"
 "Allow Auto Repeat","Consenti ripetizione automatica"
@@ -5174,3 +5175,4 @@ restrict_ip
 "{} Granted","{} Concessi"
 "{} Passed","{} Superati"
 "{} Published","{} Pubblicati"
+"Submitted","Inviato"
