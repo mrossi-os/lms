@@ -59,6 +59,7 @@ class ScenarioRef:
 	situation_template: str
 	max_turns: int
 	evaluation_schema: str = ""
+	seed_variations: dict[str, list[str]] = field(default_factory=dict)
 
 
 @dataclass

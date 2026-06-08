@@ -62,6 +62,26 @@ class TestScenarioRef(UnitTestCase):
 		self.assertEqual(len(ref.learning_objectives), 2)
 
 
+	def test_scenario_ref_defaults_seed_variations_to_empty_dict(self):
+		ref = ScenarioRef(
+			name="X", scenario_name="X",
+			learning_objectives=[], difficulty="easy",
+			customer_persona="", situation_template="",
+			max_turns=10,
+		)
+		assert ref.seed_variations == {}
+
+	def test_scenario_ref_accepts_seed_variations(self):
+		ref = ScenarioRef(
+			name="X", scenario_name="X",
+			learning_objectives=[], difficulty="easy",
+			customer_persona="", situation_template="",
+			max_turns=10,
+			seed_variations={"mood": ["happy", "sad"]},
+		)
+		assert ref.seed_variations == {"mood": ["happy", "sad"]}
+
+
 class TestGoldenExpectations(UnitTestCase):
 	def test_defaults(self):
 		exp = GoldenExpectations(name_label="x", expected_outcomes="y")
