@@ -10,7 +10,7 @@
 			:placeholder="attrs.placeholder as string"
 			:disabled="attrs.readonly as boolean"
 			:variant="attrs.variant as ComboboxVariant"
-			:open-on-focus="true"
+			:open-on-click="true"
 			@update:modelValue="onSelect"
 			@input="onQuery"
 			@focus="onFocus"
@@ -163,8 +163,10 @@ function reload(txt: string = ''): void {
 }
 
 function onFocus(): void {
-	// Combobox has no `update:open` event; load the initial list the first
-	// time the field is focused (the dropdown opens via `open-on-focus`).
+	// Load the initial list the first time the field is focused. The dropdown
+	// itself opens via `open-on-click` (not `open-on-focus`): focusing keeps the
+	// list from re-opening when the Combobox restores focus to the input after a
+	// selection, which otherwise made the dropdown impossible to close by mouse.
 	if (!loaded) reload('')
 }
 
