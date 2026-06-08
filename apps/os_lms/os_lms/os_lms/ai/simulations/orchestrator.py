@@ -24,7 +24,6 @@ from frappe import _
 from os_lms.os_lms.ai.utils.llm import (
     ChatMessage,
     ChatResponse,
-    JsonSchema,
     LLMError,
     LLMProvider,
     chat_with_fallback,
@@ -35,14 +34,10 @@ from os_lms.os_lms.ai.utils.oslms_settings import OsLmsSettings
 from .prompts import (
     ROLE_PLAY_VERSION,
     SCENARIO_GEN_VERSION,
-    SCENARIO_SCHEMA,
     PersonaVariant,
     ScenarioVariant,
-    build_role_play_system_prompt,
-    build_scenario_generator_messages,
     detect_injection,
     in_character_refusal,
-    parse_scenario_generator_output,
 )
 
 # Status constants live next to the doctype that owns them
@@ -282,8 +277,21 @@ class SessionOrchestrator:
         return resolve_provider(purpose=purpose, override=override)
 
     def _generate_variant(self, scenario, seed: str, provider: LLMProvider) -> ScenarioVariant:
+        from os_lms.os_lms.ai.simulations.customer import ScenarioVariantGenerator
+
+        scenario_ref = self._scenario_ref_from_doc(scenario)
+        generator = ScenarioVariantGenerator(
+            provider=provider,
+            model=_model_from_provider(provider) or None,
+        )
+        return generator.generate(scenario_ref, seed=seed)
+
+    def _scenario_ref_from_doc(self, scenario) -> "ScenarioRef":
+        from os_lms.os_lms.ai.simulations.eval.types import ScenarioRef
+
         objectives = [
-            (row.objective_text or "").strip() for row in (scenario.learning_objectives or [])
+            (row.objective_text or "").strip()
+            for row in (scenario.learning_objectives or [])
         ]
         objectives = [o for o in objectives if o]
         variations = {
@@ -293,73 +301,37 @@ class SessionOrchestrator:
             for row in (scenario.seed_variations or [])
             if (row.variable_name or "").strip()
         }
-        system, messages = build_scenario_generator_messages(
+        return ScenarioRef(
+            name=scenario.name,
             scenario_name=scenario.scenario_name,
-            difficulty=scenario.difficulty,
-            customer_persona=scenario.customer_persona,
-            situation_template=scenario.situation_template,
             learning_objectives=objectives,
+            difficulty=scenario.difficulty,
+            customer_persona=scenario.customer_persona or "",
+            situation_template=scenario.situation_template or "",
+            max_turns=scenario.max_turns or 20,
+            evaluation_schema=scenario.evaluation_schema or "",
             seed_variations=variations,
-            seed=seed,
         )
-
-        # Structured output: ancoriamo l'LLM allo schema della variante, così
-        # otteniamo sempre lo stesso JSON shape (situation + persona{...})
-        # invece di lasciare libertà inventiva al modello.
-        response_format = JsonSchema(
-            name="scenario_variant", schema=SCENARIO_SCHEMA
-        )
-
-        response = provider.chat(
-            messages=[ChatMessage(role=m["role"], content=m["content"]) for m in messages],
-            system=system,
-            temperature=0.7,
-            max_tokens=600,
-            response_format=response_format,
-        )
-        try:
-            return parse_scenario_generator_output(response.text)
-        except ValueError:
-            # Retry once at temperature 0 with a corrective hint. response_format
-            # is reaffirmed so anche il retry resta vincolato allo schema.
-            retry = provider.chat(
-                messages=[
-                    ChatMessage(role=m["role"], content=m["content"]) for m in messages
-                ]
-                + [
-                    ChatMessage(
-                        role="assistant",
-                        content=response.text,
-                    ),
-                    ChatMessage(
-                        role="user",
-                        content="L'output non era JSON valido. Riprova rispondendo ESCLUSIVAMENTE "
-                        "con un oggetto JSON valido conforme allo schema, senza testo aggiuntivo.",
-                    ),
-                ],
-                system=system,
-                temperature=0,
-                max_tokens=600,
-                response_format=response_format,
-            )
-            return parse_scenario_generator_output(retry.text)
 
     def _ask_customer(self, session, persona: PersonaVariant) -> ChatResponse:
         """Send the full history + role-play system prompt to the LLM."""
+        from os_lms.os_lms.ai.simulations.customer import CustomerTurnService
+
         history = _load_chat_history(session.name)
-        system_prompt = build_role_play_system_prompt(
-            persona=persona,
-            generated_situation=session.generated_situation,
-            difficulty=_scenario_difficulty(session.scenario),
-        )
         override = _scenario_provider_override(session.scenario)
-        return chat_with_fallback(
-            "chat",
-            history,
-            override=override,
-            system=system_prompt,
-            temperature=0.7,
-            max_tokens=400,
+
+        def _chat_fn(*, messages, system, **kwargs):
+            return chat_with_fallback(
+                "chat", messages, override=override,
+                system=system, **kwargs,
+            )
+
+        service = CustomerTurnService(chat_fn=_chat_fn)
+        return service.ask(
+            persona=persona,
+            situation=session.generated_situation,
+            difficulty=_scenario_difficulty(session.scenario),
+            history=history,
         )
 
     def _persist_turn(
