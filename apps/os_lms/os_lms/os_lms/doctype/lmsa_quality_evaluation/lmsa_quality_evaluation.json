@@ -9,6 +9,7 @@
 		"run_mode",
 		"student_profile",
 		"num_variants",
+		"student_scenario_brief",
 		"status",
 		"triggered_by",
 		"triggered_at",
@@ -48,6 +49,12 @@
 			"fieldtype": "Int",
 			"label": "Num Variants",
 			"default": 1
+		},
+		{
+			"fieldname": "student_scenario_brief",
+			"fieldtype": "Long Text",
+			"label": "Student Scenario Brief",
+			"description": "Optional opening of the LLM-student system prompt. Overrides the generic default; the fixed response rules are always appended at the end."
 		},
 		{
 			"fieldname": "status",
@@ -114,7 +121,7 @@
 			"label": "Traces"
 		}
 	],
-	"modified": "2026-06-05 12:00:00.000000",
+	"modified": "2026-06-08 12:00:00.000000",
 	"modified_by": "Administrator",
 	"module": "OS LMS",
 	"name": "LMSA Quality Evaluation",

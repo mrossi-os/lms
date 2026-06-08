@@ -38,9 +38,20 @@ def run_synthetic_llm_student(
 	profile_name: str,
 	provider: LLMProvider,
 	model: str | None = None,
+	lesson_context: str = "",
+	scenario_brief: str = "",
 ) -> list[dict]:
 	"""Generate a full synthetic session: 1 variant call + alternating
-	student/cliente turns up to scenario.max_turns."""
+	student/cliente turns up to scenario.max_turns.
+
+	``lesson_context`` is an optional pre-built blob of RAG chunks injected
+	into every student turn — it represents what the simulated student has
+	studied. Empty string disables the injection.
+
+	``scenario_brief`` is an optional instructor-written opening that
+	replaces the generic default at the top of the LLM-student system
+	prompt. The fixed response-format rules are always appended.
+	"""
 	variant_gen = ScenarioVariantGenerator(provider=provider, model=model)
 	variant = variant_gen.generate(
 		scenario, seed=f"eval-{int(time.time() * 1000)}",
@@ -59,6 +70,8 @@ def run_synthetic_llm_student(
 				scenario=scenario,
 				history=transcript,
 				profile_name=profile_name,
+				lesson_context=lesson_context,
+				scenario_brief=scenario_brief,
 			)
 			response = provider.chat(
 				[ChatMessage(role=m["role"], content=m["content"]) for m in messages],

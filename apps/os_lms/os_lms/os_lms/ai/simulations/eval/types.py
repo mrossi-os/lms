@@ -60,6 +60,10 @@ class ScenarioRef:
 	max_turns: int
 	evaluation_schema: str = ""
 	seed_variations: dict[str, list[str]] = field(default_factory=dict)
+	# LMS Course / Course Lesson the scenario is anchored to. Used to pull
+	# lesson content from the RAG index as context for the LLM-student.
+	course: str = ""
+	course_lesson: str = ""
 
 
 @dataclass

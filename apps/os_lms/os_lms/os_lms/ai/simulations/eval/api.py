@@ -4,6 +4,7 @@ All endpoints return JSON-serialisable dicts. Permissions are enforced via
 eval.permissions helpers; missing prerequisites surface as frappe.throw
 with UX-actionable messages.
 """
+
 from __future__ import annotations
 
 import json
@@ -18,9 +19,12 @@ from os_lms.os_lms.ai.simulations.eval.student.profiles import (
 	LLM_STUDENT_PROFILES,
 )
 
-
 VALID_PROFILES = {p["name"] for p in LLM_STUDENT_PROFILES}
 MAX_VARIANTS = 3
+
+from os_lms.os_lms.ai.simulations.eval.authoring_runner import (  # noqa: E402
+	AuthoringEvaluationRunner,
+)
 
 
 @frappe.whitelist()
@@ -38,8 +42,7 @@ def run_simulation_test(
 	require_scenario_access(scenario)
 	if student_profile not in VALID_PROFILES:
 		frappe.throw(
-			f"Profilo studente non valido: {student_profile}. "
-			f"Ammessi: {', '.join(sorted(VALID_PROFILES))}."
+			f"Profilo studente non valido: {student_profile}. Ammessi: {', '.join(sorted(VALID_PROFILES))}."
 		)
 	try:
 		n = int(num_variants)
@@ -48,24 +51,29 @@ def run_simulation_test(
 	if n < 1 or n > MAX_VARIANTS:
 		frappe.throw(f"num_variants deve essere tra 1 e {MAX_VARIANTS}.")
 
-	doc = frappe.get_doc({
-		"doctype": "LMSA Quality Evaluation",
-		"scenario": scenario,
-		"run_mode": "simulation_test",
-		"student_profile": student_profile,
-		"num_variants": n,
-		"status": "queued",
-		"triggered_by": frappe.session.user,
-		"triggered_at": frappe.utils.now_datetime(),
-	})
+	doc = frappe.get_doc(
+		{
+			"doctype": "LMSA Quality Evaluation",
+			"scenario": scenario,
+			"run_mode": "simulation_test",
+			"student_profile": student_profile,
+			"num_variants": n,
+			"status": "queued",
+			"triggered_by": frappe.session.user,
+			"triggered_at": frappe.utils.now_datetime(),
+		}
+	)
 	doc.insert(ignore_permissions=True)
 	frappe.db.commit()
-	frappe.enqueue(
+
+	AuthoringEvaluationRunner(doc.name).run()
+
+	"""frappe.enqueue(
 		"os_lms.os_lms.ai.simulations.eval.jobs.run_authoring_evaluation",
 		queue="long" if n > 1 else "default",
 		timeout=600 + 600 * (n - 1),
 		eval_id=doc.name,
-	)
+	)"""
 	return {"eval_id": doc.name}
 
 
@@ -79,14 +87,16 @@ def run_golden_regression(scenario: str, golden_name: str | None = None) -> dict
 	standard Test simulazione flow.
 	"""
 	require_scenario_access(scenario)
-	doc = frappe.get_doc({
-		"doctype": "LMSA Quality Evaluation",
-		"scenario": scenario,
-		"run_mode": "golden_regression",
-		"status": "queued",
-		"triggered_by": frappe.session.user,
-		"triggered_at": frappe.utils.now_datetime(),
-	})
+	doc = frappe.get_doc(
+		{
+			"doctype": "LMSA Quality Evaluation",
+			"scenario": scenario,
+			"run_mode": "golden_regression",
+			"status": "queued",
+			"triggered_by": frappe.session.user,
+			"triggered_at": frappe.utils.now_datetime(),
+		}
+	)
 	doc.insert(ignore_permissions=True)
 	frappe.db.commit()
 	frappe.enqueue(
@@ -102,23 +112,25 @@ def run_golden_regression(scenario: str, golden_name: str | None = None) -> dict
 @frappe.whitelist()
 def run_production_evaluation(session_id: str) -> dict:
 	require_session_access(session_id)
-	scenario = frappe.db.get_value(
-		"LMSA Simulation Session", session_id, "scenario"
-	)
+	scenario = frappe.db.get_value("LMSA Simulation Session", session_id, "scenario")
 	if not scenario:
 		frappe.throw(f"Session {session_id} has no scenario.")
-	doc = frappe.get_doc({
-		"doctype": "LMSA Quality Evaluation",
-		"scenario": scenario,
-		"run_mode": "production",
-		"status": "queued",
-		"triggered_by": frappe.session.user,
-		"triggered_at": frappe.utils.now_datetime(),
-		"traces": [{
-			"trace_kind": "production_session",
-			"source_session": session_id,
-		}],
-	})
+	doc = frappe.get_doc(
+		{
+			"doctype": "LMSA Quality Evaluation",
+			"scenario": scenario,
+			"run_mode": "production",
+			"status": "queued",
+			"triggered_by": frappe.session.user,
+			"triggered_at": frappe.utils.now_datetime(),
+			"traces": [
+				{
+					"trace_kind": "production_session",
+					"source_session": session_id,
+				}
+			],
+		}
+	)
 	doc.insert(ignore_permissions=True)
 	frappe.db.commit()
 	frappe.enqueue(
@@ -155,17 +167,19 @@ def get_evaluation_result(eval_id: str) -> dict:
 	require_scenario_access(evaluation.scenario)
 	traces_out = []
 	for trace in evaluation.traces:
-		traces_out.append({
-			"trace_kind": trace.trace_kind,
-			"student_profile": trace.student_profile,
-			"source_session": trace.source_session,
-			"source_golden": trace.source_golden,
-			"trace_status": trace.trace_status,
-			"trace_error": trace.trace_error,
-			"transcript": json.loads(trace.transcript_json or "[]"),
-			"dimension_scores": json.loads(trace.dimension_scores_json or "[]"),
-			"judge_versions": json.loads(trace.judge_versions_json or "{}"),
-		})
+		traces_out.append(
+			{
+				"trace_kind": trace.trace_kind,
+				"student_profile": trace.student_profile,
+				"source_session": trace.source_session,
+				"source_golden": trace.source_golden,
+				"trace_status": trace.trace_status,
+				"trace_error": trace.trace_error,
+				"transcript": json.loads(trace.transcript_json or "[]"),
+				"dimension_scores": json.loads(trace.dimension_scores_json or "[]"),
+				"judge_versions": json.loads(trace.judge_versions_json or "{}"),
+			}
+		)
 	return {
 		"eval_id": evaluation.name,
 		"scenario": evaluation.scenario,
@@ -191,9 +205,14 @@ def list_evaluations_for_scenario(scenario: str) -> list[dict]:
 		"LMSA Quality Evaluation",
 		filters={"scenario": scenario},
 		fields=[
-			"name as eval_id", "triggered_at", "run_mode", "status",
-			"aggregate_persona_score", "aggregate_coverage_score",
-			"aggregate_debrief_score", "aggregate_difficulty_score",
+			"name as eval_id",
+			"triggered_at",
+			"run_mode",
+			"status",
+			"aggregate_persona_score",
+			"aggregate_coverage_score",
+			"aggregate_debrief_score",
+			"aggregate_difficulty_score",
 		],
 		order_by="triggered_at desc",
 		limit=50,
@@ -214,9 +233,13 @@ def list_evaluations_for_session(session_id: str) -> list[dict]:
 		"LMSA Quality Evaluation",
 		filters={"name": ["in", eval_names]},
 		fields=[
-			"name as eval_id", "triggered_at", "status",
-			"aggregate_persona_score", "aggregate_coverage_score",
-			"aggregate_debrief_score", "aggregate_difficulty_score",
+			"name as eval_id",
+			"triggered_at",
+			"status",
+			"aggregate_persona_score",
+			"aggregate_coverage_score",
+			"aggregate_debrief_score",
+			"aggregate_difficulty_score",
 		],
 		order_by="triggered_at desc",
 		limit=50,
@@ -226,10 +249,7 @@ def list_evaluations_for_session(session_id: str) -> list[dict]:
 @frappe.whitelist()
 def list_student_profiles() -> list[dict]:
 	"""Return the available LLM-student profiles for the test dialog."""
-	return [
-		{"name": p["name"], "label": p["label"]}
-		for p in LLM_STUDENT_PROFILES
-	]
+	return [{"name": p["name"], "label": p["label"]} for p in LLM_STUDENT_PROFILES]
 
 
 @frappe.whitelist()
@@ -275,7 +295,5 @@ def save_golden(payload: dict) -> dict:
 def delete_golden(golden_name: str) -> dict:
 	doc = frappe.get_doc("LMSA Scenario Golden Run", golden_name)
 	require_scenario_access(doc.scenario)
-	frappe.delete_doc(
-		"LMSA Scenario Golden Run", golden_name, ignore_permissions=True
-	)
+	frappe.delete_doc("LMSA Scenario Golden Run", golden_name, ignore_permissions=True)
 	return {"ok": True}

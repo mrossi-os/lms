@@ -1,23 +1,13 @@
 """Authorization helpers shared by every eval API endpoint.
 
-The "instructor of a course" definition follows the existing pattern used in
-simulations.api: a user is an instructor of an LMS Course iff there exists a
-Course Instructor child row with `instructor = user` and `parent = course`.
+Instructor membership is delegated to ``lms.lms.utils.is_instructor`` so the
+definition stays in sync with the rest of the LMS app.
 """
 from __future__ import annotations
 
 import frappe
 
-
-def user_is_course_instructor(user: str, course: str) -> bool:
-	if not user or not course:
-		return False
-	courses_for_user = frappe.get_all(
-		"Course Instructor",
-		filters={"instructor": user},
-		pluck="parent",
-	)
-	return course in courses_for_user
+from lms.lms.utils import is_instructor
 
 
 def require_scenario_access(scenario_name: str) -> None:
@@ -39,7 +29,7 @@ def require_scenario_access(scenario_name: str) -> None:
 	course = frappe.db.get_value(
 		"LMSA Simulation Scenario", scenario_name, "lms_course"
 	)
-	if user_is_course_instructor(user, course):
+	if course and is_instructor(course):
 		return
 	raise frappe.PermissionError(
 		f"User {user} is not allowed to access scenario {scenario_name}"

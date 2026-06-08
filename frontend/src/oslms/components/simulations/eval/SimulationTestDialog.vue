@@ -29,6 +29,15 @@
 					:description="__('Più conversazioni = più robusto, ma anche più lento e costoso (max 3).')"
 				/>
 
+				<FormControl
+					v-model="studentScenarioBrief"
+					type="textarea"
+					:label="__('Brief del ruolo dello studente (opzionale)')"
+					:rows="4"
+					:placeholder="__('Es. Sei uno studente venditore al primo colloquio con un buyer scettico. Stai applicando le tecniche di anchoring viste in classe.')"
+					:description="__('Sovrascrive il prompt di apertura dello studente AI. Lascia vuoto per il default generico. Le regole di formato della risposta (una battuta per turno, niente meta-commentario) vengono sempre aggiunte automaticamente in coda.')"
+				/>
+
 				<div class="flex justify-end gap-2 pt-2">
 					<Button @click="visible = false">{{ __('Annulla') }}</Button>
 					<Button
@@ -62,6 +71,7 @@ const visible = computed({
 
 const studentProfile = ref('competent')
 const numVariants = ref(1)
+const studentScenarioBrief = ref('')
 const starting = ref(false)
 
 const profilesRes = createResource({
@@ -76,6 +86,7 @@ watch(visible, (open) => {
 	if (open) {
 		studentProfile.value = 'competent'
 		numVariants.value = 1
+		studentScenarioBrief.value = ''
 		profilesRes.reload()
 	}
 })
@@ -93,6 +104,7 @@ async function onStart() {
 			scenario: props.scenario,
 			student_profile: studentProfile.value,
 			num_variants: numVariants.value,
+			student_scenario_brief: studentScenarioBrief.value,
 		})
 		const evalId = out?.eval_id
 		if (!evalId) return

@@ -67,6 +67,16 @@ export default defineConfig(async ({ mode }) => {
 						'node_modules/frappe-ui/src/components/Switch/Switch.vue'
 					),
 				},
+				// Same pattern as Switch: the FileUploader override re-imports
+				// the ORIGINAL component to extend its components map (to register
+				// `Button`, which the original imports but forgets to declare).
+				{
+					find: 'frappe-ui-fileuploader-original',
+					replacement: path.resolve(
+						__dirname,
+						'node_modules/frappe-ui/src/components/FileUploader/FileUploader.vue'
+					),
+				},
 				{
 					find: /^@\/utils$/,
 					replacement: path.resolve(__dirname, 'src/oslms/utils/index.js'),

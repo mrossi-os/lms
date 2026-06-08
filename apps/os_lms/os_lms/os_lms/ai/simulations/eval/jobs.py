@@ -64,6 +64,8 @@ def _scenario_ref(scenario_name: str) -> ScenarioRef:
 		max_turns=doc.max_turns or 20,
 		evaluation_schema=doc.evaluation_schema or "",
 		seed_variations=variations,
+		course=doc.get("lms_course") or "",
+		course_lesson=doc.get("course_lesson") or "",
 	)
 
 
@@ -219,9 +221,7 @@ def run_production_evaluation(eval_id: str) -> None:
 
 # ---- Authoring evaluation (simulation_test) ----
 
-from os_lms.os_lms.ai.simulations.eval.runner import (
-	run_golden_replay, run_synthetic_llm_student,
-)
+from os_lms.os_lms.ai.simulations.eval.runner import run_golden_replay
 
 
 def _build_trace(
@@ -245,62 +245,19 @@ def _build_trace(
 
 
 def run_authoring_evaluation(eval_id: str) -> None:
-	"""Job entry point: simulation_test authoring evaluation.
+	"""Job entry point invoked by ``frappe.enqueue`` from ``api.py``.
 
-	Generates N LLM-student conversations (N = evaluation.num_variants) using
-	the chosen student profile (evaluation.student_profile). Each conversation
-	is judged by the 4 dimensions. No golden runs involved.
+	Thin wrapper around :class:`AuthoringEvaluationRunner`. The import is
+	deferred to call time on purpose: ``authoring_runner`` does
+	``from .jobs import _get_provider, ...`` at module level, so a
+	top-level import here would create a circular load chain when
+	``authoring_runner`` is the first module touched.
 	"""
-	evaluation = frappe.get_doc("LMSA Quality Evaluation", eval_id)
-	try:
-		evaluation.status = "running"
-		evaluation.save(ignore_permissions=True)
-		frappe.db.commit()
+	from os_lms.os_lms.ai.simulations.eval.authoring_runner import (
+		AuthoringEvaluationRunner,
+	)
 
-		provider = _get_provider()
-		model = _get_eval_model()
-		scenario = _scenario_ref(evaluation.scenario)
-
-		profile_name = evaluation.get("student_profile")
-		if not profile_name:
-			raise ValueError("student_profile non impostato sulla valutazione.")
-		num_variants = int(evaluation.get("num_variants") or 1)
-		if num_variants < 1:
-			num_variants = 1
-
-		for _ in range(num_variants):
-			transcript = run_synthetic_llm_student(
-				scenario=scenario,
-				profile_name=profile_name,
-				provider=provider,
-				model=model,
-			)
-			trace = _build_trace(
-				evaluation,
-				trace_kind="llm_student",
-				student_profile=profile_name,
-				transcript=transcript,
-			)
-			scores = evaluate_transcript(
-				transcript=transcript,
-				scenario=scenario,
-				trace_kind="llm_student",
-				provider=provider,
-				debrief_payload=None,
-				model=model,
-			)
-			_persist_trace_scores(trace, scores)
-
-		_compute_aggregates(evaluation)
-		evaluation.status = "complete"
-	except Exception as e:  # noqa: BLE001
-		evaluation.status = "failed"
-		evaluation.error_message = str(e)
-		frappe.log_error(message=str(e), title="run_authoring_evaluation")
-	finally:
-		evaluation.save(ignore_permissions=True)
-		frappe.db.commit()
-		_publish(evaluation)
+	AuthoringEvaluationRunner(eval_id).run()
 
 
 # ---- Golden regression (manual, separate feature) ----

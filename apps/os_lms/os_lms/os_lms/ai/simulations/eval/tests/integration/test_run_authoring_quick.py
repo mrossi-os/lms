@@ -76,7 +76,7 @@ class TestSimulationTestEndToEnd(IntegrationTestCase):
 			   _judge_ok({"calibration_offset": 0})]
 		)
 		with patch(
-			"os_lms.os_lms.ai.simulations.eval.jobs._get_provider",
+			"os_lms.os_lms.ai.simulations.eval.authoring_runner._get_provider",
 			return_value=FakeProvider(responses),
 		):
 			run_authoring_evaluation(eval_id)

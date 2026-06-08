@@ -311,6 +311,8 @@ class SessionOrchestrator:
             max_turns=scenario.max_turns or 20,
             evaluation_schema=scenario.evaluation_schema or "",
             seed_variations=variations,
+            course=getattr(scenario, "lms_course", "") or "",
+            course_lesson=getattr(scenario, "course_lesson", "") or "",
         )
 
     def _ask_customer(self, session, persona: PersonaVariant) -> ChatResponse:
