@@ -27,6 +27,7 @@ from os_lms.os_lms.ai.simulations.prompts import (
 	build_role_play_system_prompt,
 	build_scenario_generator_messages,
 	parse_scenario_generator_output,
+	render_situation_template,
 )
 from os_lms.os_lms.ai.utils.llm.provider import (
 	ChatMessage,
@@ -49,13 +50,20 @@ class ScenarioVariantGenerator:
 		self._model = model
 
 	def generate(self, scenario: ScenarioRef, *, seed: str) -> ScenarioVariant:
+		# Resolve {variable_name} placeholders in code before calling the LLM.
+		# The model receives the already-concretised setup and only owns the
+		# persona generation + the narrative expansion of the situation.
+		rendered_situation, _picked = render_situation_template(
+			scenario.situation_template,
+			scenario.seed_variations,
+			seed=seed,
+		)
 		system, messages = build_scenario_generator_messages(
 			scenario_name=scenario.scenario_name,
 			difficulty=scenario.difficulty,
 			roleplay_persona=scenario.roleplay_persona,
-			situation_template=scenario.situation_template,
+			situation_template=rendered_situation,
 			learning_objectives=scenario.learning_objectives,
-			seed_variations=scenario.seed_variations,
 			seed=seed,
 		)
 		response_format = JsonSchema(

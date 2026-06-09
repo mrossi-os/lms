@@ -30,6 +30,7 @@ from .scenario_generator import (
     ScenarioVariant,
     build_scenario_generator_messages,
     parse_scenario_generator_output,
+    render_situation_template,
 )
 
 __all__ = [
@@ -53,4 +54,5 @@ __all__ = [
     "in_character_refusal",
     "parse_debrief_output",
     "parse_scenario_generator_output",
+    "render_situation_template",
 ]

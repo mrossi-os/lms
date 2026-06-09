@@ -57,20 +57,13 @@ class DebriefResult:
     recommended_content: list[RecommendationDC] = field(default_factory=list)
 
 
-SYSTEM_PROMPT = (
-    "Sei un coach esperto di vendita e formatore. Valuta la simulazione "
-    "secondo lo schema di valutazione fornito.\n\n"
-    "Linee guida:\n"
-    "- Sii specifico, costruttivo, basato sulle evidenze testuali della "
-    "trascrizione. Cita frasi precise quando possibile.\n"
-    "- Per ogni criterio dello schema fornisci un punteggio numerico e una "
-    "breve evidenza.\n"
-    "- Le aree di miglioramento devono includere un suggerimento concreto.\n"
-    "- L'analisi comportamentale identifica pattern ricorrenti (interruzioni, "
-    "domande chiuse, ascolto attivo, gestione obiezioni).\n\n"
-    "Rispondi ESCLUSIVAMENTE con un oggetto JSON valido conforme allo schema, "
-    "senza testo prima o dopo."
-)
+# SYSTEM_PROMPT used to be hardcoded here; it now lives in `LMSA Prompt
+# Template` (purpose `debrief`) with a hardcoded fallback in
+# `template_loader.DEFAULTS`.
+def _current_system_prompt() -> str:
+    from .template_loader import PURPOSE_DEBRIEF, load_prompt_template
+
+    return load_prompt_template(PURPOSE_DEBRIEF)["system_template"]
 
 
 # JSON schema used both for documentation and for providers that support
@@ -169,11 +162,20 @@ def build_debrief_messages(
 ) -> tuple[str, list[dict]]:
     """Return (system, messages) for the debrief call.
 
+    Loads the prompt from ``LMSA Prompt Template`` (purpose ``debrief``)
+    and substitutes placeholders.
+
     schema_criteria: list of dicts with keys: name, weight, description,
-        observable_behaviors. Weights are passed verbatim to the prompt so the
-        LLM can weigh evidence consistently with the scenario design.
+        observable_behaviors. Weights are passed verbatim to the prompt
+        so the LLM can weigh evidence consistently with the scenario design.
     transcript: list of dicts {role, text} ordered by turn_index.
     """
+    from .template_loader import (
+        PURPOSE_DEBRIEF,
+        load_prompt_template,
+        render_template,
+    )
+
     schema_block = "\n".join(
         f"- {c['name']} (peso {c['weight']:.2f}): "
         f"{c.get('description', '').strip() or '—'} "
@@ -182,20 +184,21 @@ def build_debrief_messages(
     ) or "— (schema di valutazione vuoto)"
 
     objectives_block = "\n".join(f"- {o}" for o in learning_objectives) or "—"
-
     transcript_block = "\n".join(
         f"{i + 1}. [{t['role'].upper()}] {t['text']}" for i, t in enumerate(transcript)
     )
 
-    user = (
-        f"Scenario: {scenario_name}\n"
-        f"Difficoltà: {difficulty}\n\n"
-        f"Obiettivi formativi:\n{objectives_block}\n\n"
-        f"Schema di valutazione:\n{schema_block}\n\n"
-        f"Trascrizione completa:\n{transcript_block}\n\n"
-        "Produci ora la valutazione completa come JSON conforme allo schema."
-    )
-    return SYSTEM_PROMPT, [{"role": "user", "content": user}]
+    config = load_prompt_template(PURPOSE_DEBRIEF)
+    ctx = {
+        "scenario_name": scenario_name,
+        "difficulty": difficulty,
+        "learning_objectives": objectives_block,
+        "schema_criteria": schema_block,
+        "transcript": transcript_block,
+    }
+    system = render_template(config["system_template"], ctx)
+    user = render_template(config["user_template"], ctx)
+    return system, [{"role": "user", "content": user}]
 
 
 def parse_debrief_output(text: str) -> DebriefResult:

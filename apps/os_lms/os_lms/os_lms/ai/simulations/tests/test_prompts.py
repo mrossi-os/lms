@@ -12,6 +12,7 @@ from os_lms.os_lms.ai.simulations.prompts import (
     detect_injection,
     in_character_refusal,
     parse_scenario_generator_output,
+    render_situation_template,
 )
 
 
@@ -33,13 +34,60 @@ class TestScenarioGenerator(UnitTestCase):
             roleplay_persona="Marco, 45.",
             situation_template="Cliente competitor.",
             learning_objectives=["A", "B"],
-            seed_variations={"x": ["1", "2"]},
             seed="seed-42",
         )
         self.assertIn("Obiezione", msgs[0]["content"])
         self.assertIn("seed-42", msgs[0]["content"])
         self.assertIn("Marco", msgs[0]["content"])
         self.assertIn("JSON", system)
+        # No "Variabili da randomizzare" block any more — placeholder
+        # substitution happens in code via render_situation_template.
+        self.assertNotIn("Variabili da randomizzare", msgs[0]["content"])
+
+    def test_render_situation_template_substitutes_placeholders(self):
+        rendered, picked = render_situation_template(
+            "Il {role} di {company} si oppone.",
+            {"role": ["CTO", "CFO"], "company": ["Acme", "Globex"]},
+            seed="abc",
+        )
+        # Same seed → deterministic pick from each candidate list.
+        rendered2, picked2 = render_situation_template(
+            "Il {role} di {company} si oppone.",
+            {"role": ["CTO", "CFO"], "company": ["Acme", "Globex"]},
+            seed="abc",
+        )
+        self.assertEqual(rendered, rendered2)
+        self.assertEqual(picked, picked2)
+        self.assertIn(picked["role"], ("CTO", "CFO"))
+        self.assertIn(picked["company"], ("Acme", "Globex"))
+        self.assertIn(picked["role"], rendered)
+        self.assertIn(picked["company"], rendered)
+        self.assertNotIn("{role}", rendered)
+        self.assertNotIn("{company}", rendered)
+
+    def test_render_situation_template_leaves_undefined_placeholders(self):
+        rendered, picked = render_situation_template(
+            "Il {role} non definito.",
+            {},
+            seed="x",
+        )
+        # No candidates → placeholder stays as literal text (caller is
+        # expected to flag this at edit time).
+        self.assertEqual(rendered, "Il {role} non definito.")
+        self.assertEqual(picked, {})
+
+    def test_render_situation_template_skips_empty_value_lists(self):
+        rendered, picked = render_situation_template(
+            "Il {x} è {y}.",
+            {"x": [], "y": ["definito"]},
+            seed="seed",
+        )
+        # Variable with no candidates stays literal; the populated one is
+        # substituted normally.
+        self.assertIn("{x}", rendered)
+        self.assertIn("definito", rendered)
+        self.assertNotIn("x", picked)
+        self.assertEqual(picked.get("y"), "definito")
 
     def test_parser_happy_path(self):
         payload = (

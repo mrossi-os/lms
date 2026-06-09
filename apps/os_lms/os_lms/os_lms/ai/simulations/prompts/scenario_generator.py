@@ -4,14 +4,27 @@ Given a Scenario template + a seed, asks the LLM to produce a concrete
 situation/persona variant in JSON. The orchestrator persists the result on
 the Simulation Session (generated_situation, generated_persona).
 
+The randomisation of ``{variable_name}`` placeholders inside the
+``situation_template`` is **done in code** (``render_situation_template``)
+before the prompt is built — the LLM only sees the already-rendered
+template and is in charge of the persona + the narrative expansion of the
+setup. This keeps the seed selection deterministic (same seed → same
+choices) without relying on the model to behave randomly.
+
 Pure functions only — no frappe / no HTTP imports.
 """
 from __future__ import annotations
 
 import json
+import random
+import re
 from dataclasses import dataclass
 
 SCENARIO_GEN_VERSION = "gen.v1"
+
+# `{variable_name}` placeholders in the situation_template. Same convention
+# enforced client-side by the ScenarioEditor (`VAR_REF_RE`).
+_PLACEHOLDER_RE = re.compile(r"\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}")
 
 
 @dataclass
@@ -30,18 +43,17 @@ class ScenarioVariant:
     persona: PersonaVariant
 
 
-SYSTEM_PROMPT = (
-    "Sei un instructional designer esperto di simulazioni didattiche.\n"
-    "Generi una variante concreta di uno scenario di role-play partendo dal "
-    "template fornito. Il personaggio interpretato dall'AI può essere un "
-    "cliente, un esaminatore, un paziente, un intervistatore, ecc., a "
-    "seconda della persona base.\n\n"
-    "Mantieni invariati: obiettivi formativi, difficoltà, schema di valutazione.\n"
-    "Varia: nome del personaggio, settore/contesto, obiezione o resistenza "
-    "principale, mood iniziale, motivazione nascosta.\n\n"
-    "Rispondi ESCLUSIVAMENTE con un oggetto JSON valido conforme allo "
-    "schema fornito, senza alcun testo prima o dopo."
-)
+# SYSTEM_PROMPT used to be hardcoded here; it now lives in `LMSA Prompt
+# Template` (purpose `scenario_variant_generator`) with a hardcoded
+# fallback in `template_loader.DEFAULTS`. Kept as a thin wrapper for
+# external modules that may import it.
+def _current_system_prompt() -> str:
+    from .template_loader import (
+        PURPOSE_SCENARIO_VARIANT_GENERATOR,
+        load_prompt_template,
+    )
+
+    return load_prompt_template(PURPOSE_SCENARIO_VARIANT_GENERATOR)["system_template"]
 
 
 SCENARIO_SCHEMA: dict = {
@@ -83,6 +95,41 @@ SCENARIO_SCHEMA: dict = {
 }
 
 
+def render_situation_template(
+    template: str,
+    seed_variations: dict[str, list[str]] | None,
+    seed: str | None = None,
+) -> tuple[str, dict[str, str]]:
+    """Resolve ``{variable_name}`` placeholders by picking one value per
+    variable from ``seed_variations``.
+
+    ``seed`` (str | None) seeds the RNG for reproducibility — same seed +
+    same seed_variations yields the same picks, so a session can be
+    replayed deterministically.
+
+    Returns ``(rendered_template, chosen_values)``. ``chosen_values`` is
+    the ``variable_name → picked_value`` map; callers can persist it for
+    audit (e.g. on the Simulation Session).
+
+    Placeholders whose variable has no candidates (or that don't appear
+    in ``seed_variations``) are left untouched as literal text — same
+    behaviour the frontend's `findUndefinedVariables` is designed to
+    catch at edit time.
+    """
+    rng = random.Random(seed) if seed is not None else random.Random()
+    chosen: dict[str, str] = {}
+    for var, values in (seed_variations or {}).items():
+        if not values:
+            continue
+        chosen[var] = rng.choice(values)
+
+    def _sub(m: "re.Match[str]") -> str:
+        return chosen.get(m.group(1), m.group(0))
+
+    rendered = _PLACEHOLDER_RE.sub(_sub, template or "")
+    return rendered, chosen
+
+
 def build_scenario_generator_messages(
     *,
     scenario_name: str,
@@ -90,32 +137,34 @@ def build_scenario_generator_messages(
     roleplay_persona: str,
     situation_template: str,
     learning_objectives: list[str],
-    seed_variations: dict[str, list[str]],
     seed: str,
 ) -> tuple[str, list[dict]]:
     """Return (system_prompt, messages) ready for LLMProvider.chat.
 
-    `seed_variations`: mapping variable_name → list of possible_values.
-    The seed is sent as part of the user message so the model can latch onto
-    it for reproducibility (deterministic only with temperature=0).
+    Loads the prompt from ``LMSA Prompt Template`` (purpose
+    ``scenario_variant_generator``) and substitutes placeholders. The
+    ``situation_template`` arrives with placeholders already substituted
+    by ``render_situation_template`` — the LLM does not see the seed
+    variations and is not asked to pick values.
     """
-    objectives_block = "\n".join(f"- {o}" for o in learning_objectives) or "—"
-    variations_block = (
-        "\n".join(f"- {k}: {', '.join(v)}" for k, v in seed_variations.items())
-        or "—"
+    from .template_loader import (
+        PURPOSE_SCENARIO_VARIANT_GENERATOR,
+        load_prompt_template,
+        render_template,
     )
 
-    user = (
-        f"Scenario: {scenario_name}\n"
-        f"Difficoltà: {difficulty}\n\n"
-        f"Persona base del personaggio:\n{roleplay_persona}\n\n"
-        f"Template situazione:\n{situation_template}\n\n"
-        f"Obiettivi formativi:\n{objectives_block}\n\n"
-        f"Variabili da randomizzare:\n{variations_block}\n\n"
-        f"Seed di generazione: {seed}\n\n"
-        "Produci ora la variante concreta come JSON valido secondo lo schema."
-    )
-    return SYSTEM_PROMPT, [{"role": "user", "content": user}]
+    config = load_prompt_template(PURPOSE_SCENARIO_VARIANT_GENERATOR)
+    ctx = {
+        "scenario_name": scenario_name,
+        "difficulty": difficulty,
+        "roleplay_persona": roleplay_persona,
+        "situation_template": situation_template,
+        "learning_objectives": "\n".join(f"- {o}" for o in learning_objectives) or "—",
+        "seed": seed,
+    }
+    system = render_template(config["system_template"], ctx)
+    user = render_template(config["user_template"], ctx)
+    return system, [{"role": "user", "content": user}]
 
 
 def parse_scenario_generator_output(text: str) -> ScenarioVariant:
