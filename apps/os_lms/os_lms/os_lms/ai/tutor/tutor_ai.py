@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import json
-
 import frappe
 from frappe import _
 
 from lms.lms.utils import get_course_details, has_moderator_role, is_instructor
 from os_lms.os_lms.ai.ingestion import IngestionService
+from os_lms.os_lms.ai.utils.course_context import format_course_context
 from os_lms.os_lms.ai.utils.llm import ChatMessage, load_settings, resolve_provider
 from os_lms.os_lms.ai.utils.oslms_settings import OsLmsSettings
 
@@ -34,16 +33,8 @@ class TutorAi:
 			if not details:
 				frappe.throw(_("Course not found or inaccessible"))
 			self._course_details = details
-			self._course_details.feature_sections = self._load_feature_sections()
 
 		return self._course_details
-
-	def _load_feature_sections(self):
-		raw = frappe.db.get_value("LMS Course", self.course, "feature_sections")
-		try:
-			return json.loads(raw) if raw else []
-		except (json.JSONDecodeError, TypeError):
-			return []
 
 	@property
 	def settings(self) -> OsLmsSettings:
@@ -95,10 +86,11 @@ class TutorAi:
 		current_lesson_content = "\n\n---\n\n".join(
 			c.get("content", "") for c in chunks if c.get("lesson") == self.lesson
 		)
+		course_context = format_course_context(self.course, include_title=False)
 		prompt = self.settings.system_prompt or ""
 		prompt = (
 			prompt.replace("{{COURSE_TITLE}}", course.get("title") or "")
-			.replace("{{COURSE_DESCRIPTION}}", self._course_description(course))
+			.replace("{{COURSE_DESCRIPTION}}", course_context)
 			.replace("{{LESSONS_CONTENT}}", lessons_content)
 			.replace("{{CURRENT_LESSON_CONTENT}}", current_lesson_content)
 		)
@@ -124,19 +116,6 @@ class TutorAi:
 			frappe.db.commit()
 		except Exception:
 			frappe.log_error(title="LMSA Query Log write failed")
-
-	def _course_description(self, course):
-		description = course.get("description") or ""
-
-		feature_sections = course.get("feature_sections") or []
-		if len(feature_sections) > 0:
-			description += "\n COURSE FEATURES:\n"
-			for feature in feature_sections:
-				title = feature.get("title", "")
-				feature_description = feature.get("description", "")
-				description += f"\n{title}\n{feature_description}"
-
-		return description
 
 	def _label_chunks(self, chunks: list[dict]) -> list[str]:
 		"""Prefix each retrieved chunk with its source lesson, so the model can
