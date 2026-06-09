@@ -314,6 +314,8 @@ def get_minutes(duration_in_seconds):
 
 
 def has_permission(doc, ptype="read", user=None):
+	from lms.lms.utils import is_batch_valutatore
+
 	user = user or frappe.session.user
 	roles = frappe.get_roles(user)
 	if "Moderator" in roles or "Batch Evaluator" in roles:
@@ -322,7 +324,12 @@ def has_permission(doc, ptype="read", user=None):
 	if ptype not in ("read", "select", "print"):
 		return False
 
-	return frappe.db.exists(
-		"LMS Batch Enrollment",
-		{"batch": doc.batch_name, "member": user},
+	# A custom "Valutatore" can read (only) the live classes of the batch they
+	# are assigned to, just like an enrolled student.
+	return bool(
+		frappe.db.exists(
+			"LMS Batch Enrollment",
+			{"batch": doc.batch_name, "member": user},
+		)
+		or is_batch_valutatore(doc.batch_name, user)
 	)

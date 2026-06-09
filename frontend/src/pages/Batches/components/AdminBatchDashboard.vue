@@ -37,13 +37,13 @@
 							:placeholder="__('Search by name')"
 							type="text"
 						/>
-						<Button @click="showEnrollmentModal = true">
+						<Button v-if="isFullAdmin" @click="showEnrollmentModal = true">
 							<template #prefix>
 								<Plus class="size-4 stroke-1.5" />
 							</template>
 							{{ __('Iscrivi') }}
 						</Button>
-						<Button @click="goToImport">
+						<Button v-if="isFullAdmin" @click="goToImport">
 							<template #prefix>
 								<Import class="size-4 stroke-1.5" />
 							</template>
@@ -60,7 +60,7 @@
 						:rows="students.data"
 						rowKey="name"
 						:options="{
-							selectable: true,
+							selectable: isFullAdmin,
 							showTooltip: false,
 							onRowClick: (row: any) => {
 								currentStudent = row.member
@@ -214,7 +214,17 @@ import NumberChartGraph from '@/components/NumberChartGraph.vue'
 import StudentModal from '@/components/Modals/StudentModal.vue'
 
 const dayjs = inject<typeof dayjsType>('$dayjs')!
+const user = inject<{ data?: Record<string, any> }>('$user')
 const router = useRouter()
+
+// A "Valutatore" of this batch sees the dashboard read-only: hide enroll/import
+// and student removal, which require full batch-admin rights.
+const isFullAdmin = computed(
+	() =>
+		user?.data?.is_moderator ||
+		user?.data?.is_evaluator ||
+		user?.data?.is_docente,
+)
 const searchFilter = ref<string | null>(null)
 const showEnrollmentModal = ref<boolean>(false)
 const showProgressModal = ref<boolean>(false)
@@ -238,11 +248,10 @@ const chartData = createResource({
 })
 
 const certificationCount = createResource({
-	url: 'frappe.client.get_count',
+	url: 'os_lms.os_lms.api.get_batch_certified_count',
 	cache: ['batch_certificate_count', props.batch?.data?.name],
 	params: {
-		doctype: 'LMS Certificate',
-		filters: { batch_name: props.batch?.data?.name },
+		batch: props.batch?.data?.name,
 	},
 	auto: true,
 })

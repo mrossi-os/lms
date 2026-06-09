@@ -27,6 +27,7 @@ after_migrate = [
     "os_lms.setup.ensure_italian_language",
     "os_lms.setup.remove_deprecated_custom_fields",
     "os_lms.setup.create_custom_fields",
+    "os_lms.setup.setup_valutatore_role_and_permissions",
     "os_lms.setup.create_redis_index",
     "os_lms.setup.rebuild_search_index",
 ]
@@ -53,6 +54,11 @@ permission_query_conditions = {
     "LMSA Simulation Debrief": (
         "os_lms.os_lms.doctype.lmsa_simulation_debrief.lmsa_simulation_debrief.get_permission_query_conditions"
     ),
+    # Scope list views to the batches a "Valutatore" is assigned to.
+    "LMS Batch Enrollment": "os_lms.os_lms.valutatore.batch_enrollment_query_conditions",
+    "LMS Live Class": "os_lms.os_lms.valutatore.live_class_query_conditions",
+    "LMS Quiz Submission": "os_lms.os_lms.valutatore.quiz_submission_query_conditions",
+    "LMS Assignment Submission": "os_lms.os_lms.valutatore.assignment_submission_query_conditions",
 }
 has_permission = {
     "LMSA Simulation Scenario": (
@@ -67,6 +73,9 @@ has_permission = {
     "LMSA Simulation Debrief": (
         "os_lms.os_lms.doctype.lmsa_simulation_debrief.lmsa_simulation_debrief.has_permission"
     ),
+    # Veto by-name access to submissions outside the valutatore's batches.
+    "LMS Quiz Submission": "os_lms.os_lms.valutatore.submission_has_permission",
+    "LMS Assignment Submission": "os_lms.os_lms.valutatore.submission_has_permission",
 }
 # override sqlite search to add custom doctypes
 sqlite_search = ["os_lms.overrides.sqlite.CustomLearningSearch"]
@@ -140,6 +149,11 @@ doc_events = {
     },
     "LMS Live Class": {
         "before_save": "os_lms.os_lms.live_class_reminders.reset_sent_at",
+    },
+    "LMS Batch": {
+        # Keep the "Valutatore" role aligned with the batch `valutatori` field.
+        "on_update": "os_lms.os_lms.valutatore.sync_batch_valutatore_roles",
+        "on_trash": "os_lms.os_lms.valutatore.cleanup_batch_valutatore_roles",
     },
     "Brand Customize": {
         "on_update": "os_lms.os_lms.branding.clear_brand_cache",

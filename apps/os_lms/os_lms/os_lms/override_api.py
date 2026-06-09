@@ -77,6 +77,13 @@ def get_user_info():
         if is_docente:
             result["is_instructor"] = True
             result["is_student"] = False
+        # A "Valutatore" is scoped to specific batches (see the `valutatori` field
+        # on LMS Batch). This flag only lets the SPA open the global submission
+        # list pages; the actual data is scoped per-batch in os_lms.os_lms.valutatore.
+        is_valutatore = "Valutatore" in result.get("roles", [])
+        result["is_valutatore"] = is_valutatore
+        if is_valutatore:
+            result["is_student"] = False
     return result
 
 
@@ -226,12 +233,19 @@ def get_announcements(batch: str, start: int = 0, page_length: int = 10):
     Restituisce {data, total} per supportare la paginazione lato client.
     """
     from frappe import _
+    from lms.lms.utils import is_batch_valutatore
 
     roles = frappe.get_roles()
     is_batch_student = frappe.db.exists(
         "LMS Batch Enrollment", {"batch": batch, "member": frappe.session.user}
     )
-    is_admin = "Moderator" in roles or "Batch Evaluator" in roles
+    # A valutatore of this batch sees all its announcements (read-only, like an
+    # admin); sending announcements stays restricted to Moderator/Batch Evaluator.
+    is_admin = (
+        "Moderator" in roles
+        or "Batch Evaluator" in roles
+        or is_batch_valutatore(batch)
+    )
 
     if not (is_batch_student or is_admin):
         frappe.throw(

@@ -306,6 +306,80 @@ def send_batch_announcement(
     return {"ok": True, "recipients_count": len(recipients)}
 
 
+@frappe.whitelist()
+def search_non_student_users(txt: str = "", page_length: int = 20, names=None) -> list[dict]:
+    """Users that can be assigned as batch "Valutatori": everyone except students.
+
+    Mirrors the shape returned by ``lms.lms.api.search_users_by_role`` so it can
+    back a frappe-ui MultiSelect (value/description/label/user_image). ``names``
+    is used to hydrate already-selected chips after a page reload.
+    """
+    frappe.only_for(["Moderator", "Course Creator", "Batch Evaluator", "System Manager"])
+
+    if isinstance(names, str):
+        names = json.loads(names) if names.strip().startswith("[") else [names]
+
+    student_users = set(
+        frappe.get_all(
+            "Has Role",
+            filters={"role": "LMS Student", "parenttype": "User"},
+            pluck="parent",
+        )
+    )
+
+    filters = {
+        "enabled": 1,
+        "name": ["not in", ["Administrator", "Guest"]],
+    }
+    or_filters = None
+    if names:
+        filters["name"] = ["in", names]
+    elif txt:
+        or_filters = {
+            "full_name": ["like", f"%{txt}%"],
+            "name": ["like", f"%{txt}%"],
+        }
+
+    users = frappe.get_all(
+        "User",
+        filters=filters,
+        or_filters=or_filters,
+        fields=["name", "full_name", "user_image"],
+        order_by="full_name asc",
+        limit_page_length=int(page_length) * 4,
+    )
+
+    out = []
+    for user in users:
+        if user.name in student_users:
+            continue
+        out.append(
+            {
+                "value": user.name,
+                "description": user.full_name or user.name,
+                "label": user.full_name or user.name,
+                "user_image": user.user_image,
+            }
+        )
+        if len(out) >= int(page_length):
+            break
+    return out
+
+
+@frappe.whitelist()
+def get_batch_certified_count(batch: str) -> int:
+    """Number of certificates issued for a batch. Available to batch admins and
+    to the batch's valutatori (scoped read for the admin dashboard counter)."""
+    from lms.lms.utils import can_modify_batch, is_batch_valutatore
+
+    if not (can_modify_batch(batch) or is_batch_valutatore(batch)):
+        frappe.throw(
+            frappe._("You are not authorized to view this batch."),
+            frappe.PermissionError,
+        )
+    return frappe.db.count("LMS Certificate", {"batch_name": batch})
+
+
 BATCH_TAB_SECTIONS = ("classes", "announcements", "discussions")
 
 
