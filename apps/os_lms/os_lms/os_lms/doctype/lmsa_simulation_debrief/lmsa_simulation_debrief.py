@@ -50,13 +50,14 @@ def get_permission_query_conditions(user: str | None = None) -> str:
 		)
 		if not courses:
 			return "1=0"
-		quoted = ",".join("'" + frappe.db.escape(c, percent=False) + "'" for c in courses)
+		# frappe.db.escape() already wraps each value in quotes.
+		quoted = ",".join(frappe.db.escape(c, percent=False) for c in courses)
 		return f"`tabLMSA Simulation Debrief`.course IN ({quoted})"
 
 	if "LMS Student" in roles:
 		return (
 			f"`tabLMSA Simulation Debrief`.student = "
-			f"'{frappe.db.escape(user, percent=False)}'"
+			f"{frappe.db.escape(user, percent=False)}"
 		)
 
 	return "1=0"
