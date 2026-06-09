@@ -80,6 +80,19 @@ textarea {
 }
 
 /* PROSE EDITOR */
+.ProseMirror {
+	border-radius: 0.5rem;
+	padding: 0.7rem;
+}
+.ProseMirror #editor {
+	background-color: var(--surface-gray-2) !important;
+}
+.ProseMirror #editor ::selection {
+	background-color: var(--surface-gray-3) !important;
+}
+.ce-block--selected .ce-block__content {
+	background-color: var(--surface-gray-3) !important;
+}
 
 .ce-inline-toolbar,
 .ce-conversion-toolbar {
