@@ -80,6 +80,19 @@ textarea {
 }
 
 /* PROSE EDITOR */
+.ProseMirror {
+	border-radius: 0.5rem;
+	padding: 0.7rem;
+}
+.ProseMirror #editor {
+	background-color: var(--surface-gray-2) !important;
+}
+.ProseMirror #editor ::selection {
+	background-color: var(--surface-gray-3) !important;
+}
+.ce-block--selected .ce-block__content {
+	background-color: var(--surface-gray-3) !important;
+}
 
 .ce-inline-toolbar,
 .ce-conversion-toolbar {
@@ -93,4 +106,9 @@ textarea {
 }
 .ce-inline-toolbar__toggler-and-button-wrapper svg {
 	fill: var(--ink-gray-10);
+}
+
+/* Inputs */
+.os-multilink div button {
+	background-color: var(--surface-gray-2) !important;
 }

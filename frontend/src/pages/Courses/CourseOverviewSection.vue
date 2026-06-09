@@ -44,6 +44,7 @@
 			variant="outline"
 			:onCreate="goToCreateCourse"
 			@update:modelValue="markDirty()"
+			class="os-multilink"
 		/>
 	</section>
 

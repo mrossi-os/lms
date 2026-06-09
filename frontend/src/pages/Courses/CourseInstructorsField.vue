@@ -13,6 +13,7 @@
 		variant="outline"
 		:onCreate="openMemberModal"
 		@update:modelValue="markDirty()"
+		class="os-multilink"
 	>
 		<template #prefix>
 			<div v-if="visibleAvatars.length" class="flex -space-x-1.5">
@@ -125,13 +126,13 @@ watch(
 		const missing = (vals || []).filter((v) => !resolvedDetails.value.has(v))
 		if (missing.length) selectedDetails.reload()
 	},
-	{ immediate: true }
+	{ immediate: true },
 )
 
 const resolvedSelected = computed<InstructorOption[]>(() =>
 	instructors.value
 		.map((v) => resolvedDetails.value.get(v))
-		.filter((o): o is InstructorOption => Boolean(o))
+		.filter((o): o is InstructorOption => Boolean(o)),
 )
 
 const optionByValue = computed<Map<string, InstructorOption>>(() => {
@@ -154,13 +155,13 @@ const visibleAvatars = computed<InstructorOption[]>(() =>
 					label: v,
 					image: '',
 					description: '',
-				} as InstructorOption)
+				} as InstructorOption),
 		)
-		.filter((o): o is InstructorOption => Boolean(o))
+		.filter((o): o is InstructorOption => Boolean(o)),
 )
 
 const overflowCount = computed<number>(() =>
-	Math.max(0, instructors.value.length - MAX_VISIBLE_AVATARS)
+	Math.max(0, instructors.value.length - MAX_VISIBLE_AVATARS),
 )
 
 function openMemberModal(close: () => void) {
