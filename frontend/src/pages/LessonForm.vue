@@ -177,7 +177,9 @@ const addInstructorNotes = (data) => {
 
 const enableAutoSave = () => {
 	autoSaveInterval = setInterval(() => {
-		saveLesson({ showSuccessMessage: false })
+		// Only autosave when there are unsaved edits — otherwise we keep POSTing
+		// the whole document every 10s while the header shows "No changes to save".
+		if (isDirty.value) saveLesson({ showSuccessMessage: false })
 	}, 10000)
 }
 
@@ -211,13 +213,31 @@ const newLessonResource = createResource({
 	},
 })
 
+// Fields the editor is allowed to write. Server-managed fields like
+// index_status/indexed_at (AI ingestion) must NOT be echoed back, otherwise
+// every save/autosave overwrites them with the values loaded at form open.
+const EDITABLE_LESSON_FIELDS = [
+	'title',
+	'include_in_preview',
+	'body',
+	'instructor_notes',
+	'content',
+	'instructor_content',
+	'duration',
+	'tags',
+]
+
 const editLesson = createResource({
 	url: 'frappe.client.set_value',
 	makeParams(values) {
+		const fieldname = {}
+		for (const key of EDITABLE_LESSON_FIELDS) {
+			if (key in lesson) fieldname[key] = lesson[key]
+		}
 		return {
 			doctype: 'Course Lesson',
 			name: values.lesson,
-			fieldname: lesson,
+			fieldname,
 		}
 	},
 })
