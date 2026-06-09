@@ -78,3 +78,19 @@ textarea {
 #scrollContainer {
 	overflow-x: hidden;
 }
+
+/* PROSE EDITOR */
+
+.ce-inline-toolbar,
+.ce-conversion-toolbar {
+	background-color: var(--surface-gray-3);
+	border-color: var(--surface-gray-3);
+}
+.ce-inline-tool:hover,
+.ce-inline-toolbar__dropdown:hover {
+	background-color: var(--surface-gray-1);
+	border-radius: 4px;
+}
+.ce-inline-toolbar__toggler-and-button-wrapper svg {
+	fill: var(--ink-gray-10);
+}
