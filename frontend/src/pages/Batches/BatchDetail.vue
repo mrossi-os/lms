@@ -10,7 +10,7 @@
 				</Badge>
 			</div>
 			<div class="flex items-center gap-x-2">
-				<template v-if="tabIndex == 5 && isAdmin">
+				<template v-if="activeTabKey === 'Settings' && isAdmin">
 					<Badge v-if="childRef?.isDirty" theme="orange">
 						{{ __('Not Saved') }}
 					</Badge>
@@ -298,6 +298,10 @@ const isBatchValutatore = computed(() => {
 const isStudent = computed(() => {
 	return batch.data?.students?.includes(user.data?.name)
 })
+
+// Gate the Settings save/delete bar on the active tab's key rather than a
+// hardcoded index, which breaks when a tab (e.g. Classes) is hidden.
+const activeTabKey = computed(() => tabs.value[tabIndex.value]?.key)
 
 const openAnnouncementModal = () => {
 	showAnnouncementModal.value = true
