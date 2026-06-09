@@ -702,7 +702,21 @@ async function onSave() {
 	try {
 		const result = await saveRes.submit({ payload: { ...model } })
 		toast.success(__('Scenario salvato'))
-		emit('saved', result)
+		// Stay on the editor page on save. For a freshly-created scenario,
+		// update `model.name` and `router.replace` to the edit URL so
+		// (a) a subsequent save goes through as an UPDATE (the backend
+		//     branches on payload.name and would otherwise re-create), and
+		// (b) the URL becomes refresh-safe (currently it would be
+		//     `ScenarioCreate?course=...` with no record id).
+		if (result?.name) {
+			model.name = result.name
+			if (!props.scenarioName) {
+				router.replace({
+					name: 'ScenarioEdit',
+					params: { name: result.name },
+				})
+			}
+		}
 	} catch (e) {
 		toast.error(formatBackendError(e) || __('Salvataggio fallito'))
 	} finally {

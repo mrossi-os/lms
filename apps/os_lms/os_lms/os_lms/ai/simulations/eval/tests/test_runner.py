@@ -47,14 +47,15 @@ def _variant_ok():
 
 
 class TestLlmStudentRunner(UnitTestCase):
-	def test_alternates_student_and_role_player_until_max_turns(self):
-		# max_turns=4 → 1 variant call + 2 student + 2 role-player = 5 calls.
+	def test_alternates_role_player_and_student_until_max_turns(self):
+		# max_turns=4 → 1 variant call + 2 role-player + 2 student = 5 calls.
+		# The role-player opens, mirroring the production flow.
 		provider = FakeProvider(responses=[
 			_variant_ok(),
-			"Buongiorno",             # student turn 0
-			"Buongiorno a lei",        # role-player turn 1
-			"Vorrei un preventivo",    # student turn 2
-			"Dipende dal volume",      # role-player turn 3
+			"Buongiorno",             # role-player turn 0 (opener)
+			"Buongiorno a lei",        # student turn 1
+			"Vorrei un preventivo",    # role-player turn 2
+			"Dipende dal volume",      # student turn 3
 		])
 		transcript = run_synthetic_llm_student(
 			scenario=_scenario(max_turns=4),
@@ -62,7 +63,7 @@ class TestLlmStudentRunner(UnitTestCase):
 			provider=provider,
 		)
 		self.assertEqual(len(transcript), 4)
-		self.assertEqual(transcript[0]["role"], "user")
-		self.assertEqual(transcript[1]["role"], "assistant")
+		self.assertEqual(transcript[0]["role"], "assistant")
+		self.assertEqual(transcript[1]["role"], "user")
 		self.assertEqual(transcript[0]["text"], "Buongiorno")
 		self.assertEqual(transcript[3]["text"], "Dipende dal volume")
