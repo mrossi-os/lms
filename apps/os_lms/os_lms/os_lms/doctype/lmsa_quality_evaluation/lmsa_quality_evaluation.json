@@ -34,7 +34,7 @@
 		{
 			"fieldname": "run_mode",
 			"fieldtype": "Select",
-			"options": "simulation_test\nproduction\ngolden_regression\nquick\ndeep",
+			"options": "simulation_test\nproduction\nquick\ndeep",
 			"label": "Run Mode",
 			"reqd": 1,
 			"in_list_view": 1

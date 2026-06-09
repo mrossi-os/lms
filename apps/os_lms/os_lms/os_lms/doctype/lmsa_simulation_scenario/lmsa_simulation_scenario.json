@@ -15,7 +15,7 @@
   "status",
   "created_by_instructor",
   "section_persona",
-  "customer_persona",
+  "roleplay_persona",
   "situation_template",
   "section_objectives",
   "evaluation_schema",
@@ -101,10 +101,10 @@
    "label": "Persona & Situation"
   },
   {
-   "description": "Base customer persona: age, role, context, emotional baseline. Variables are randomized via Seed Variations.",
-   "fieldname": "customer_persona",
+   "description": "Base persona of the role the AI plays opposite the student (e.g. customer, examiner, patient). Variables are randomized via Seed Variations.",
+   "fieldname": "roleplay_persona",
    "fieldtype": "Long Text",
-   "label": "Customer Persona",
+   "label": "Role-play Persona",
    "reqd": 1
   },
   {

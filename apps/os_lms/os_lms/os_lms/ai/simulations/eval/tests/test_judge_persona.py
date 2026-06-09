@@ -19,15 +19,15 @@ def _scenario():
 		scenario_name="Negoziazione",
 		learning_objectives=["o1"],
 		difficulty="medium",
-		customer_persona="42 anni, dirigente, scettico",
+		roleplay_persona="42 anni, dirigente, scettico",
 		situation_template="Cliente competitor.",
 		max_turns=20,
 	)
 
 
 class TestPersonaJudge(UnitTestCase):
-	def test_build_messages(self):
-		system, msgs = persona.build_messages(
+	def test_build_user_message(self):
+		content = persona.build_user_message(
 			transcript=[
 				{"turn_index": 0, "role": "user", "text": "Buongiorno"},
 				{"turn_index": 1, "role": "assistant", "text": "Buongiorno."},
@@ -35,13 +35,14 @@ class TestPersonaJudge(UnitTestCase):
 			scenario=_scenario(),
 			trace_kind="llm_student",
 		)
-		self.assertTrue(system.strip())
-		self.assertEqual(len(msgs), 1)
-		self.assertEqual(msgs[0]["role"], "user")
-		content = msgs[0]["content"]
 		self.assertIn("Negoziazione", content)
 		self.assertIn("42 anni", content)
 		self.assertIn("Buongiorno", content)
+
+	def test_default_system_prompt_non_empty(self):
+		# SYSTEM_PROMPT lives in the module as a default; the runtime config
+		# comes from judge_loader, which falls back to this value.
+		self.assertTrue(persona.SYSTEM_PROMPT.strip())
 
 	def test_parse_output_valid(self):
 		text = json.dumps({

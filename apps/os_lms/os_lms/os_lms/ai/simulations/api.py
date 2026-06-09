@@ -102,7 +102,7 @@ def _resolve_published_scenario(scenario_id: str):
 
 @frappe.whitelist()
 def start_session(scenario_id: str, modality: str = "chat") -> dict:
-    """Create a Session for the current user and return the first customer turn."""
+    """Create a Session for the current user and return the first role-player turn."""
     if modality not in ("chat", "voice"):
         frappe.throw(_("Unsupported modality: {0}").format(modality))
 
@@ -601,7 +601,7 @@ def get_scenario(name: str) -> dict:
         "difficulty": doc.difficulty,
         "modality": doc.modality,
         "status": doc.status,
-        "customer_persona": doc.customer_persona,
+        "roleplay_persona": doc.roleplay_persona,
         "situation_template": doc.situation_template,
         "evaluation_schema": doc.evaluation_schema,
         "max_turns": doc.max_turns,
@@ -649,7 +649,7 @@ def save_scenario(payload: dict) -> dict:
         "difficulty",
         "modality",
         "status",
-        "customer_persona",
+        "roleplay_persona",
         "situation_template",
         "evaluation_schema",
         "max_turns",
@@ -811,6 +811,58 @@ def delete_evaluation_schema(name: str) -> dict:
     frappe.delete_doc("LMSA Evaluation Schema", name, force=True, ignore_permissions=True)
     frappe.db.commit()
     return {"deleted": name}
+
+
+# ---------- AI authoring helpers ----------
+
+
+@frappe.whitelist()
+def ai_generate_scenario(
+    course: str, lesson: str | None = None, hint: str = ""
+) -> dict:
+    """Generate a scenario payload via LLM and return it to the editor.
+
+    The payload mirrors ``save_scenario``'s input shape (minus ``lms_course``,
+    ``course_lesson`` and ``evaluation_schema``, which the editor already
+    holds). Nothing is persisted — the user reviews and explicitly saves.
+    """
+    if not course:
+        frappe.throw(_("course is required"))
+    _ensure_instructor_of_course(course)
+
+    from .authoring_ai import generate_scenario_payload
+
+    payload = generate_scenario_payload(
+        course=course, lesson=lesson or None, hint=hint or ""
+    )
+    return {"payload": payload}
+
+
+@frappe.whitelist()
+def ai_generate_evaluation_schema(
+    hint: str = "", course: str | None = None, lesson: str | None = None
+) -> dict:
+    """Generate an evaluation-schema payload via LLM and return it.
+
+    ``course`` and ``lesson`` are optional: when provided they unlock RAG
+    context retrieval, otherwise the LLM relies purely on ``hint`` and the
+    system prompt. Nothing is persisted.
+    """
+    if not has_course_instructor_role() and not has_moderator_role():
+        frappe.throw(
+            _("Only instructors can generate evaluation schemas"),
+            frappe.PermissionError,
+        )
+    if course:
+        # When a course is supplied, enforce it belongs to the user.
+        _ensure_instructor_of_course(course)
+
+    from .authoring_ai import generate_evaluation_schema_payload
+
+    payload = generate_evaluation_schema_payload(
+        hint=hint or "", course=course or None, lesson=lesson or None
+    )
+    return {"payload": payload}
 
 
 @frappe.whitelist()

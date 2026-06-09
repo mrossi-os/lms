@@ -28,7 +28,7 @@ class AuthoringEvaluationRunner:
 
 	Owns the LMSA Quality Evaluation doc, status transitions, save+commit
 	and realtime publish. Generates N LLM-student conversations using the
-	chosen student profile and runs the 4 judges on each. No golden runs.
+	chosen student profile and runs the 4 judges on each.
 
 	Service Pattern: lazy properties for provider/model/scenario_ref so
 	tests that patch ``_get_provider`` (or any other helper) keep working —
@@ -140,6 +140,13 @@ class AuthoringEvaluationRunner:
 			model=self.model,
 		)
 		_persist_trace_scores(trace, scores)
+		# Persist this variant before starting the next one. Without this,
+		# a save() failure on a later variant (or in the aggregate step)
+		# would lose every trace produced in this run — and if any variant
+		# in the loop overlaps with a stale in-memory state from a parallel
+		# job, the late save() can clobber the good trace with stale data.
+		self.evaluation.save(ignore_permissions=True)
+		frappe.db.commit()
 
 	def _build_lesson_context(self) -> str:
 		"""Pull lesson excerpts from the RAG index, scoped to the scenario's

@@ -55,7 +55,7 @@ class ScenarioRef:
 	scenario_name: str
 	learning_objectives: list[str]
 	difficulty: str
-	customer_persona: str
+	roleplay_persona: str
 	situation_template: str
 	max_turns: int
 	evaluation_schema: str = ""
@@ -64,11 +64,3 @@ class ScenarioRef:
 	# lesson content from the RAG index as context for the LLM-student.
 	course: str = ""
 	course_lesson: str = ""
-
-
-@dataclass
-class GoldenExpectations:
-	"""Subset of LMSA Scenario Golden Run fields the pipeline needs."""
-
-	name_label: str = ""
-	expected_outcomes: str = ""

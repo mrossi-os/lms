@@ -197,6 +197,7 @@ const simulationsEnabledGlobal = computed(
 
 type Brand = { name?: string; logo?: string; favicon?: string }
 interface TabDef {
+	id: string
 	label: string
 	component: ReturnType<typeof markRaw>
 	icon: Component
@@ -289,20 +290,22 @@ onMounted(() => {
 })
 
 const updateTabIndex = () => {
-	const hash = route.hash
-	if (hash) {
-		tabs.value.forEach((tab, index) => {
-			if (tab.label?.toLowerCase() === hash.replace('#', '')) {
-				tabIndex.value = index
-			}
-		})
-	}
+	// Match against the stable `id` (not the translated `label`) so deep
+	// links like `#simulations` keep working in every locale.
+	const wanted = route.hash.replace('#', '').toLowerCase()
+	if (!wanted) return
+	tabs.value.forEach((tab, index) => {
+		if (tab.id?.toLowerCase() === wanted) {
+			tabIndex.value = index
+		}
+	})
 }
 
 watch(tabIndex, () => {
 	const tab = tabs.value[tabIndex.value]
-	if (tab.label != route.hash.replace('#', '')) {
-		router.push({ ...route, hash: `#${tab.label.toLowerCase()}` })
+	const targetHash = `#${tab.id.toLowerCase()}`
+	if (route.hash !== targetHash) {
+		router.push({ ...route, hash: targetHash })
 	}
 })
 
@@ -323,21 +326,25 @@ const course = createResource({
 const tabs = computed<TabDef[]>(() => {
 	const t: TabDef[] = [
 		{
+			id: 'overview',
 			label: __('Overview'),
 			component: markRaw(CourseOverview),
 			icon: markRaw(List),
 		},
 		{
+			id: 'dashboard',
 			label: __('Dashboard'),
 			component: markRaw(CourseDashboard),
 			icon: markRaw(TrendingUp),
 		},
 		{
+			id: 'editor',
 			label: __('Course editor'),
 			component: markRaw(CourseEditor),
 			icon: markRaw(BookOpen),
 		},
 		{
+			id: 'settings',
 			label: __('Settings'),
 			component: markRaw(CourseForm),
 			icon: markRaw(Settings2),
@@ -345,6 +352,7 @@ const tabs = computed<TabDef[]>(() => {
 	]
 	if (simulationsEnabledGlobal.value) {
 		t.push({
+			id: 'simulations',
 			label: __('Simulations'),
 			component: markRaw(CourseSimulations),
 			icon: markRaw(Bot),

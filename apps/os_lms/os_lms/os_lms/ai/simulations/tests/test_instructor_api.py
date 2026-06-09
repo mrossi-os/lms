@@ -241,7 +241,7 @@ class TestScenarioCRUD(_MockBase):
             "difficulty": "easy",
             "modality": "chat",
             "status": "Draft",
-            "customer_persona": "P",
+            "roleplay_persona": "P",
             "situation_template": "S",
             "evaluation_schema": self.schema.name,
             "learning_objectives": [{"objective_text": "O1", "weight": 1.0}],
@@ -266,7 +266,7 @@ class TestScenarioCRUD(_MockBase):
             "difficulty": "medium",
             "modality": "chat",
             "status": "Draft",
-            "customer_persona": "x",
+            "roleplay_persona": "x",
             "situation_template": "y",
             "evaluation_schema": self.schema.name,
         })
@@ -281,7 +281,7 @@ class TestScenarioCRUD(_MockBase):
             "difficulty": "easy",
             "modality": "chat",
             "status": "Draft",
-            "customer_persona": "x",
+            "roleplay_persona": "x",
             "situation_template": "y",
             "evaluation_schema": self.schema.name,
         })

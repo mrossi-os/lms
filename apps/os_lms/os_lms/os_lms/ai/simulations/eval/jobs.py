@@ -8,6 +8,7 @@ Called by frappe.enqueue from api.py. All jobs follow the same shape:
     5. Mark status=complete (or failed)
     6. publish_realtime
 """
+
 from __future__ import annotations
 
 import json
@@ -17,12 +18,13 @@ import frappe
 
 from os_lms.os_lms.ai.simulations.eval.pipeline import evaluate_transcript
 from os_lms.os_lms.ai.simulations.eval.types import (
+	DIMENSION_COVERAGE,
+	DIMENSION_DEBRIEF,
+	DIMENSION_DIFFICULTY,
+	DIMENSION_PERSONA,
 	DimensionScore,
-	DIMENSION_PERSONA, DIMENSION_COVERAGE,
-	DIMENSION_DEBRIEF, DIMENSION_DIFFICULTY,
 	ScenarioRef,
 )
-
 
 REALTIME_EVENT = "simulation:eval_complete"
 
@@ -32,6 +34,7 @@ def _get_provider():
 	so we use the same purpose-based factory the runtime uses. Tests patch
 	this function to inject a FakeProvider."""
 	from os_lms.os_lms.ai.utils.llm import resolve_provider
+
 	return resolve_provider("debrief")
 
 
@@ -43,9 +46,7 @@ def _get_eval_model() -> str | None:
 def _scenario_ref(scenario_name: str) -> ScenarioRef:
 	doc = frappe.get_doc("LMSA Simulation Scenario", scenario_name)
 	objectives = [
-		row.objective_text
-		for row in (doc.learning_objectives or [])
-		if (row.objective_text or "").strip()
+		row.objective_text for row in (doc.learning_objectives or []) if (row.objective_text or "").strip()
 	]
 	variations = {
 		(row.variable_name or "").strip(): [
@@ -59,7 +60,7 @@ def _scenario_ref(scenario_name: str) -> ScenarioRef:
 		scenario_name=doc.scenario_name,
 		learning_objectives=objectives,
 		difficulty=doc.difficulty,
-		customer_persona=doc.customer_persona or "",
+		roleplay_persona=doc.roleplay_persona or "",
 		situation_template=doc.situation_template or "",
 		max_turns=doc.max_turns or 20,
 		evaluation_schema=doc.evaluation_schema or "",
@@ -76,10 +77,7 @@ def _load_session_transcript(session_name: str) -> list[dict]:
 		fields=["turn_index", "role", "text_content"],
 		order_by="turn_index asc",
 	)
-	return [
-		{"turn_index": t.turn_index, "role": t.role, "text": t.text_content or ""}
-		for t in turns
-	]
+	return [{"turn_index": t.turn_index, "role": t.role, "text": t.text_content or ""} for t in turns]
 
 
 def _load_session_debrief(session_name: str) -> dict | None:
@@ -111,8 +109,7 @@ def _load_session_debrief(session_name: str) -> dict | None:
 			for row in (doc.criterion_scores or [])
 		],
 		"strengths": [
-			{"title": row.get("title", ""), "quote": row.get("quote", "")}
-			for row in (doc.strengths or [])
+			{"title": row.get("title", ""), "quote": row.get("quote", "")} for row in (doc.strengths or [])
 		],
 		"improvements": [
 			{
@@ -132,17 +129,17 @@ def _persist_trace_scores(trace, scores: list[DimensionScore]) -> None:
 		DIMENSION_DEBRIEF: "debrief.v1",
 		DIMENSION_DIFFICULTY: "difficulty.v1",
 	}
-	trace.dimension_scores_json = json.dumps(
-		[s.to_dict() for s in scores], ensure_ascii=False
-	)
+	trace.dimension_scores_json = json.dumps([s.to_dict() for s in scores], ensure_ascii=False)
 	trace.judge_versions_json = json.dumps(judge_versions)
 	trace.trace_status = "complete"
 
 
 def _compute_aggregates(evaluation) -> None:
 	by_dim: dict[str, list[float]] = {
-		DIMENSION_PERSONA: [], DIMENSION_COVERAGE: [],
-		DIMENSION_DEBRIEF: [], DIMENSION_DIFFICULTY: [],
+		DIMENSION_PERSONA: [],
+		DIMENSION_COVERAGE: [],
+		DIMENSION_DEBRIEF: [],
+		DIMENSION_DIFFICULTY: [],
 	}
 	for trace in evaluation.traces:
 		if trace.trace_status != "complete":
@@ -221,8 +218,6 @@ def run_production_evaluation(eval_id: str) -> None:
 
 # ---- Authoring evaluation (simulation_test) ----
 
-from os_lms.os_lms.ai.simulations.eval.runner import run_golden_replay
-
 
 def _build_trace(
 	evaluation,
@@ -231,16 +226,17 @@ def _build_trace(
 	transcript: list[dict],
 	student_profile: str | None = None,
 	source_session: str | None = None,
-	source_golden: str | None = None,
 ):
-	trace = evaluation.append("traces", {
-		"trace_kind": trace_kind,
-		"student_profile": student_profile,
-		"source_session": source_session,
-		"source_golden": source_golden,
-		"trace_status": "complete",
-		"transcript_json": json.dumps(transcript, ensure_ascii=False),
-	})
+	trace = evaluation.append(
+		"traces",
+		{
+			"trace_kind": trace_kind,
+			"student_profile": student_profile,
+			"source_session": source_session,
+			"trace_status": "complete",
+			"transcript_json": json.dumps(transcript, ensure_ascii=False),
+		},
+	)
 	return trace
 
 
@@ -258,71 +254,3 @@ def run_authoring_evaluation(eval_id: str) -> None:
 	)
 
 	AuthoringEvaluationRunner(eval_id).run()
-
-
-# ---- Golden regression (manual, separate feature) ----
-
-
-def _goldens_to_replay(scenario_name: str, golden_name: str | None):
-	filters = {"scenario": scenario_name, "active": 1}
-	if golden_name:
-		filters["name"] = golden_name
-	return frappe.get_all(
-		"LMSA Scenario Golden Run",
-		filters=filters,
-		fields=["name", "name_label", "turns"],
-		order_by="creation asc",
-	)
-
-
-def run_golden_regression(eval_id: str, golden_name: str | None = None) -> None:
-	"""Job entry point: regression evaluation against golden runs.
-
-	Replays each active golden (or the specified one) deterministically and
-	runs the 4 judges. Decoupled from run_authoring_evaluation so the
-	standard test flow stays golden-free.
-	"""
-	evaluation = frappe.get_doc("LMSA Quality Evaluation", eval_id)
-	try:
-		evaluation.status = "running"
-		evaluation.save(ignore_permissions=True)
-		frappe.db.commit()
-
-		provider = _get_provider()
-		model = _get_eval_model()
-		scenario = _scenario_ref(evaluation.scenario)
-
-		goldens = _goldens_to_replay(evaluation.scenario, golden_name)
-		if not goldens:
-			raise ValueError("Nessun golden run attivo per questo scenario.")
-
-		for golden in goldens:
-			golden_transcript = run_golden_replay(
-				turns_json=golden.turns or "[]", provider=provider,
-			)
-			trace = _build_trace(
-				evaluation,
-				trace_kind="golden_replay",
-				source_golden=golden.name,
-				transcript=golden_transcript,
-			)
-			scores = evaluate_transcript(
-				transcript=golden_transcript,
-				scenario=scenario,
-				trace_kind="golden_replay",
-				provider=provider,
-				debrief_payload=None,
-				model=model,
-			)
-			_persist_trace_scores(trace, scores)
-
-		_compute_aggregates(evaluation)
-		evaluation.status = "complete"
-	except Exception as e:  # noqa: BLE001
-		evaluation.status = "failed"
-		evaluation.error_message = str(e)
-		frappe.log_error(message=str(e), title="run_golden_regression")
-	finally:
-		evaluation.save(ignore_permissions=True)
-		frappe.db.commit()
-		_publish(evaluation)

@@ -1,3 +1,5 @@
+import json
+
 from os_lms.os_lms.ai.utils.rag.redis_rag_storage import RedisRagStorage
 import frappe
 
@@ -159,3 +161,68 @@ def rebuild_search_index():
 
     CustomLearningSearch().build_index()
     print("Rebuilt SQLite search index with CustomLearningSearch")
+
+
+def seed_prompt_templates():
+    """Insert one LMSA Prompt Template record per template purpose if missing.
+
+    Mirrors `seed_judge_prompts` for parametric templates (system + user
+    with `{{var}}` placeholders). Pipeline code reads from here at runtime
+    and falls back to the in-module defaults when a record is absent.
+    """
+    from os_lms.os_lms.ai.simulations.prompts.template_loader import DEFAULTS
+
+    created = 0
+    for purpose, data in DEFAULTS.items():
+        if frappe.db.exists("LMSA Prompt Template", purpose):
+            continue
+        doc = frappe.new_doc("LMSA Prompt Template")
+        doc.purpose = purpose
+        doc.label = data["label"]
+        doc.version = data["version"]
+        doc.system_template = data["system_template"]
+        doc.user_template = data["user_template"]
+        doc.temperature = data["temperature"]
+        doc.max_tokens = data["max_tokens"]
+        doc.available_placeholders = data["available_placeholders"]
+        doc.enabled = 1
+        doc.insert(ignore_permissions=True)
+        created += 1
+        print(f"Seeded LMSA Prompt Template: {purpose}")
+    if created:
+        frappe.db.commit()
+    else:
+        print("LMSA Prompt Template: all records already present, nothing to seed")
+
+
+def seed_judge_prompts():
+    """Insert one LMSA Judge Prompt record per judge purpose if missing.
+
+    The pipeline reads judge configuration (system_prompt, output_schema,
+    temperature, max_tokens) from this doctype and falls back to the
+    hardcoded defaults in the judge modules when a record is missing. This
+    seeder makes the defaults editable from the Desk on first install /
+    after every migration, without touching existing customised records.
+    """
+    from os_lms.os_lms.ai.simulations.prompts.judge_loader import DEFAULTS
+
+    created = 0
+    for purpose, data in DEFAULTS.items():
+        if frappe.db.exists("LMSA Judge Prompt", purpose):
+            continue
+        doc = frappe.new_doc("LMSA Judge Prompt")
+        doc.purpose = purpose
+        doc.label = data["label"]
+        doc.version = data["version"]
+        doc.system_prompt = data["system_prompt"]
+        doc.output_schema = json.dumps(data["output_schema"], indent=2, ensure_ascii=False)
+        doc.temperature = data["temperature"]
+        doc.max_tokens = data["max_tokens"]
+        doc.enabled = 1
+        doc.insert(ignore_permissions=True)
+        created += 1
+        print(f"Seeded LMSA Judge Prompt: {purpose}")
+    if created:
+        frappe.db.commit()
+    else:
+        print("LMSA Judge Prompt: all records already present, nothing to seed")

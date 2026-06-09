@@ -65,9 +65,6 @@ const traceAggregate = computed(() => {
 
 const headline = computed(() => {
 	const kind = props.trace.trace_kind
-	if (kind === 'golden_replay') {
-		return `${__('Golden replay')} · ${props.trace.source_golden || ''}`
-	}
 	if (kind === 'llm_student') {
 		return `${__('LLM-student')} · ${props.trace.student_profile || ''}`
 	}

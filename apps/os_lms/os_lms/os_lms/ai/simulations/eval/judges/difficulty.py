@@ -1,9 +1,9 @@
 """Difficulty calibration judge.
 
 Checks whether scenario.difficulty (`easy|medium|hard`) is reflected in the
-cliente behaviour: an `easy` scenario should yield to basic techniques in
-2-3 turns; a `hard` scenario should resist advanced techniques. Cross-checks
-against the runtime debrief's overall_score when available.
+role-player behaviour: an `easy` scenario should yield to basic techniques
+in 2-3 turns; a `hard` scenario should resist advanced techniques. Cross-
+checks against the runtime debrief's overall_score when available.
 """
 from __future__ import annotations
 
@@ -14,6 +14,41 @@ from os_lms.os_lms.ai.simulations.eval.types import (
 )
 
 JUDGE_VERSION = "difficulty.v1"
+
+OUTPUT_SCHEMA: dict = {
+	"type": "object",
+	"additionalProperties": False,
+	"required": [
+		"score",
+		"summary",
+		"evidence_quotes",
+		"warnings",
+		"expected_difficulty",
+		"perceived_difficulty",
+		"calibration_offset",
+	],
+	"properties": {
+		"score": {"type": "number"},
+		"summary": {"type": "string"},
+		"evidence_quotes": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"additionalProperties": False,
+				"required": ["turn_index", "quote", "comment"],
+				"properties": {
+					"turn_index": {"type": "integer"},
+					"quote": {"type": "string"},
+					"comment": {"type": "string"},
+				},
+			},
+		},
+		"warnings": {"type": "array", "items": {"type": "string"}},
+		"expected_difficulty": {"type": "string"},
+		"perceived_difficulty": {"type": "string"},
+		"calibration_offset": {"type": "number"},
+	},
+}
 
 SYSTEM_PROMPT = (
 	"Sei un valutatore di calibrazione difficoltà di scenari didattici.\n"
@@ -26,13 +61,15 @@ SYSTEM_PROMPT = (
 )
 
 
-def build_messages(
+def build_user_message(
 	*,
 	transcript: list[dict],
 	scenario: ScenarioRef,
 	trace_kind: str,
 	runtime_overall_score: float | int | None = None,
-) -> tuple[str, list[dict]]:
+) -> str:
+	"""Return the user-side message for this judge. The system prompt is
+	supplied separately by the pipeline via the judge_loader (DB-driven)."""
 	transcript_block = "\n".join(
 		f"[{t.get('turn_index', i)}] {t['role'].upper()}: {t.get('text', '')}"
 		for i, t in enumerate(transcript)
@@ -44,7 +81,7 @@ def build_messages(
 			f"Overall score finale del debrief runtime: "
 			f"{runtime_overall_score}/100\n"
 		)
-	user = (
+	return (
 		f"Difficoltà dichiarata: {scenario.difficulty}\n"
 		f"{overall_block}\n"
 		f"Trascrizione:\n{transcript_block}\n\n"
@@ -52,7 +89,6 @@ def build_messages(
 		"Restituisci JSON valido con expected_difficulty, "
 		"perceived_difficulty, calibration_offset, score, summary."
 	)
-	return SYSTEM_PROMPT, [{"role": "user", "content": user}]
 
 
 def parse_output(text: str) -> DimensionScore:

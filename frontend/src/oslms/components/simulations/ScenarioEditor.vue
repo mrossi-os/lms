@@ -16,14 +16,6 @@
 				>
 					{{ __('Test simulazione') }}
 				</Button>
-				<Button
-					v-if="scenarioName"
-					variant="ghost"
-					:title="__('Test di regressione (golden runs)')"
-					@click="goldensModalOpen = true"
-				>
-					{{ __('Test di regressione') }}
-				</Button>
 				<Button variant="ghost" :title="__('Esporta scenario in JSON')" @click="onExportScenario">
 					<template #icon>
 						<Download class="size-4 stroke-1.5" />
@@ -41,6 +33,17 @@
 					class="hidden"
 					@change="onImportScenarioFileSelected"
 				/>
+				<Button
+					variant="ghost"
+					:title="__('Compila i campi dello scenario con AI, usando il materiale del corso/lezione selezionato')"
+					:disabled="!model.lms_course || aiGenerating"
+					@click="aiDialogOpen = true"
+				>
+					<template #prefix>
+						<Sparkles class="size-4 stroke-1.5" />
+					</template>
+					{{ __('Compila con IA') }}
+				</Button>
 				<Button v-if="scenarioName" variant="ghost" @click="onTestRun" :loading="testing">
 					{{ __('Prova come studente') }}
 				</Button>
@@ -98,8 +101,8 @@
 					<!-- Persona & situation -->
 					<div class="">
 						<div class="mb-4">
-							<FormControl v-model="model.customer_persona" type="textarea" :rows="15"
-								:label="__('Persona base')" :description="__('Età, ruolo, contesto, stato emotivo iniziale.')
+							<FormControl v-model="model.roleplay_persona" type="textarea" :rows="15"
+								:label="__('Persona del personaggio')" :description="__('Età, ruolo, contesto, stato emotivo iniziale del personaggio AI (cliente, esaminatore, paziente, ecc.).')
 									" required />
 						</div>
 						<FormControl v-model="model.situation_template" type="textarea" :rows="15"
@@ -273,11 +276,33 @@
 				@started="onSimTestStarted"
 			/>
 
-			<GoldenRunsModal
-				v-if="scenarioName"
-				v-model="goldensModalOpen"
-				:scenario="scenarioName"
-			/>
+			<Dialog v-model="aiDialogOpen" :options="{
+				title: __('Compila scenario con IA'),
+				size: 'lg',
+			}">
+				<template #body-content>
+					<div class="space-y-3">
+						<p class="text-sm text-ink-gray-7">
+							{{ __('Il modello leggerà gli estratti del corso/lezione selezionato (via RAG) e produrrà uno scenario completo. Tutti i campi del form verranno sostituiti — il salvataggio rimane manuale.') }}
+						</p>
+						<FormControl
+							v-model="aiHint"
+							type="textarea"
+							:rows="4"
+							:label="__('Hint (opzionale)')"
+							:placeholder="__('Es: scenario incentrato sulla gestione delle obiezioni privacy in vendita B2B...')"
+						/>
+						<div class="flex justify-end gap-2 pt-2">
+							<Button @click="aiDialogOpen = false" :disabled="aiGenerating">
+								{{ __('Annulla') }}
+							</Button>
+							<Button variant="solid" :loading="aiGenerating" @click="onAiGenerate">
+								{{ __('Genera') }}
+							</Button>
+						</div>
+					</div>
+				</template>
+			</Dialog>
 		</div>
 	</div>
 </template>
@@ -296,11 +321,10 @@ import {
 	usePageMeta,
 } from 'frappe-ui'
 import { useRouter } from 'vue-router'
-import { ChevronDown, Download, Trash2, Upload } from 'lucide-vue-next'
+import { ChevronDown, Download, Sparkles, Trash2, Upload } from 'lucide-vue-next'
 import EvaluationSchemaEditor from '@/oslms/components/simulations/EvaluationSchemaEditor.vue'
 import ChatSession from '@/oslms/components/simulations/ChatSession.vue'
 import EvaluationResultsDialog from '@/oslms/components/simulations/eval/EvaluationResultsDialog.vue'
-import GoldenRunsModal from '@/oslms/components/simulations/eval/GoldenRunsModal.vue'
 import SimulationTestDialog from '@/oslms/components/simulations/eval/SimulationTestDialog.vue'
 import { useSimulationSession } from '@/oslms/composables/useSimulationSession.js'
 import { useEvaluation } from '@/oslms/composables/useEvaluation.js'
@@ -316,13 +340,70 @@ const saving = ref(false)
 const testing = ref(false)
 const schemaEditorOpen = ref(false)
 
+// ---- "Compila con IA" state ----
+const aiDialogOpen = ref(false)
+const aiHint = ref('')
+const aiGenerating = ref(false)
+const aiGenerateRes = createResource({
+	url: 'os_lms.os_lms.ai.simulations.api.ai_generate_scenario',
+	method: 'POST',
+})
+
+async function onAiGenerate() {
+	if (!model.lms_course) {
+		toast.error(__('Seleziona prima un corso.'))
+		return
+	}
+	aiGenerating.value = true
+	try {
+		const result = await aiGenerateRes.submit({
+			course: model.lms_course,
+			lesson: model.course_lesson || null,
+			hint: aiHint.value || '',
+		})
+		const payload = result?.payload
+		if (!payload) {
+			throw new Error(__('Risposta vuota dal generatore.'))
+		}
+		// Replace generated fields; lms_course / course_lesson /
+		// evaluation_schema / status / provider_override stay as the user set
+		// them (the AI payload doesn't include those).
+		const REPLACE_FIELDS = [
+			'scenario_name',
+			'difficulty',
+			'modality',
+			'roleplay_persona',
+			'situation_template',
+			'max_turns',
+			'time_limit_minutes',
+		]
+		for (const field of REPLACE_FIELDS) {
+			if (payload[field] !== undefined) {
+				model[field] = payload[field]
+			}
+		}
+		model.learning_objectives = Array.isArray(payload.learning_objectives)
+			? payload.learning_objectives
+			: []
+		model.seed_variations = Array.isArray(payload.seed_variations)
+			? payload.seed_variations
+			: []
+		aiDialogOpen.value = false
+		aiHint.value = ''
+		toast.success(__('Scenario precompilato. Rivedi e salva.'))
+	} catch (e) {
+		toast.error(e.messages?.[0] || e.message || __('Generazione fallita'))
+	} finally {
+		aiGenerating.value = false
+	}
+}
+
 // ---- Evaluation state (Test simulazione) ----
 const evaluation = useEvaluation()
 const evalDialogOpen = ref(false)
 const evalDialogId = ref('')
 const simTestDialogOpen = ref(false)
 const runningEvalId = ref('')   // non-empty while a test is in flight
-const goldensModalOpen = ref(false)
 
 async function onSimTestStarted({ eval_id, num_variants }) {
 	if (!eval_id) return
@@ -423,7 +504,7 @@ const model = reactive({
 	difficulty: 'medium',
 	modality: 'chat',
 	status: 'Draft',
-	customer_persona: '',
+	roleplay_persona: '',
 	situation_template: '',
 	evaluation_schema: '',
 	max_turns: 20,
@@ -581,9 +662,39 @@ async function onSave() {
 	const missing = findUndefinedVariables()
 	if (missing.length) {
 		toast.error(
-			__('Variabili usate nel testo ma non definite: {0}', [
+			__('Variabili usate nel testo ma non definite: {0}').format(
 				missing.join(', '),
-			]),
+			),
+		)
+		return
+	}
+	// Block on empty required fields with a clear message instead of waiting
+	// for the backend MandatoryError (the server message hits the toast as
+	// raw `Errore: Campo ... mancante` and disorients the user).
+	const REQUIRED_FIELDS = [
+		['scenario_name', __('Nome scenario')],
+		['lms_course', __('Corso')],
+		['roleplay_persona', __('Persona del personaggio')],
+		['situation_template', __('Template situazione')],
+	]
+	for (const [field, label] of REQUIRED_FIELDS) {
+		if (!String(model[field] ?? '').trim()) {
+			toast.error(__('Campo obbligatorio mancante: {0}').format(label))
+			return
+		}
+	}
+	// frappe-ui Autocomplete writes {label, value} into v-model when the user
+	// picks from the dropdown, but a plain string when populated
+	// programmatically (get_scenario response, onSchemaCreated). Normalize
+	// every Autocomplete-backed field to a plain string so the payload that
+	// hits the backend never contains a {label, value} object.
+	model.lms_course = unwrapAutocomplete(model.lms_course)
+	model.course_lesson = unwrapAutocomplete(model.course_lesson)
+	model.evaluation_schema = unwrapAutocomplete(model.evaluation_schema)
+	const validSchemas = new Set(schemaOptions.value.map((o) => o.value))
+	if (!model.evaluation_schema || !validSchemas.has(model.evaluation_schema)) {
+		toast.error(
+			__('Seleziona uno schema di valutazione dalla lista (oppure creane uno nuovo).'),
 		)
 		return
 	}
@@ -593,10 +704,33 @@ async function onSave() {
 		toast.success(__('Scenario salvato'))
 		emit('saved', result)
 	} catch (e) {
-		toast.error(e.messages?.[0] || __('Salvataggio fallito'))
+		toast.error(formatBackendError(e) || __('Salvataggio fallito'))
 	} finally {
 		saving.value = false
 	}
+}
+
+// Returns the plain-string value of an Autocomplete-bound field. Accepts a
+// string (returned as-is) or a {label, value} object (returns `value`).
+function unwrapAutocomplete(v) {
+	if (v && typeof v === 'object') {
+		return v.value ?? ''
+	}
+	return v ?? ''
+}
+
+// Some Frappe handlers return server_messages whose entries are objects
+// `{message, indicator, title}` instead of plain strings — passing the object
+// straight to toast.error renders as "[object Object]". Extract the human-
+// readable message safely.
+function formatBackendError(e) {
+	const first = e?.messages?.[0]
+	if (typeof first === 'string') return first
+	if (first && typeof first === 'object') {
+		return first.message || JSON.stringify(first)
+	}
+	if (e?.message) return String(e.message)
+	return ''
 }
 
 const startRes = createResource({
@@ -638,7 +772,7 @@ const SCENARIO_EXPORT_FIELDS = [
 	'difficulty',
 	'modality',
 	'status',
-	'customer_persona',
+	'roleplay_persona',
 	'situation_template',
 	'evaluation_schema',
 	'max_turns',
@@ -700,7 +834,7 @@ async function onImportScenarioFileSelected(event) {
 		toast.success(__('Scenario importato'))
 	} catch (e) {
 		toast.error(
-			__('Importazione fallita: {0}', [e.message || String(e)]),
+			__('Importazione fallita: {0}').format(e.message || String(e)),
 		)
 	} finally {
 		// Reset so re-importing the same file fires `change` again.
