@@ -422,6 +422,24 @@ watch(
 	{ deep: true }
 )
 
+// The instructors/valutatori pickers use standalone refs (not batchDetail.doc),
+// so the deep doc watcher above never sees their edits. Mark the form dirty when
+// they diverge from the values currently loaded in the doc.
+const pluckSorted = (rows, field) =>
+	JSON.stringify((rows || []).map((row) => row[field]).sort())
+
+watch([instructors, valutatori], () => {
+	if (!batchDetail.doc) return
+	if (
+		JSON.stringify([...instructors.value].sort()) !==
+			pluckSorted(batchDetail.doc.instructors, 'instructor') ||
+		JSON.stringify([...valutatori.value].sort()) !==
+			pluckSorted(batchDetail.doc.valutatori, 'valutatore')
+	) {
+		isDirty.value = true
+	}
+})
+
 const updateBatchData = () => {
 	Object.keys(batchDetail.doc).forEach((key) => {
 		if (key == 'instructors') {
