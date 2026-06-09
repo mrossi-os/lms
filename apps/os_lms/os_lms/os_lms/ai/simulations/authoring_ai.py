@@ -27,6 +27,7 @@ from os_lms.os_lms.ai.simulations.prompts.template_loader import (
 	load_prompt_template,
 	render_template,
 )
+from os_lms.os_lms.ai.utils.course_context import format_course_context
 from os_lms.os_lms.ai.utils.llm.provider import ChatMessage, JsonSchema
 
 # ---------- response_format schemas (OpenAI strict-mode compatible) ----------
@@ -146,8 +147,19 @@ def generate_scenario_payload(
 
 	rag_query = " ".join(p for p in [lesson_title, course_name, hint] if p).strip()
 	lesson_context = _fetch_rag_context(course=course, lesson=lesson, query=rag_query)
+	course_context = format_course_context(course)
+
+	# Pack the contextual blocks under the {{lesson_context_block}} placeholder
+	# the template already declares. This keeps existing DB-seeded templates
+	# working without needing operators to edit them when we add new context
+	# sources (course meta, RAG excerpts, ...).
+	context_parts: list[str] = []
+	if course_context:
+		context_parts.append(f"Contesto del corso:\n{course_context}")
+	if lesson_context:
+		context_parts.append(f"Estratti del materiale (RAG):\n{lesson_context}")
 	lesson_context_block = (
-		f"Estratti del materiale (RAG):\n{lesson_context}\n\n" if lesson_context else ""
+		"\n\n".join(context_parts) + "\n\n" if context_parts else ""
 	)
 
 	config = load_prompt_template(PURPOSE_SCENARIO_GENERATOR_AI)
@@ -182,6 +194,7 @@ def generate_evaluation_schema_payload(
 	) or ""
 
 	lesson_context = ""
+	course_context = ""
 	if course:
 		rag_query = " ".join(
 			p for p in [lesson_title, course_name, hint] if p
@@ -189,16 +202,20 @@ def generate_evaluation_schema_payload(
 		lesson_context = _fetch_rag_context(
 			course=course, lesson=lesson, query=rag_query
 		)
+		course_context = format_course_context(course)
 
 	course_block_parts: list[str] = []
-	if course_name:
+	if course_context:
+		course_block_parts.append(f"Contesto del corso:\n{course_context}")
+	elif course_name:
+		# Fallback: doctype lookup failed but we have the raw course name
 		course_block_parts.append(f"Corso: {course_name}")
 	if lesson_title:
 		course_block_parts.append(f"Lezione: {lesson_title}")
 	if lesson_context:
 		course_block_parts.append(f"Estratti del materiale:\n{lesson_context}")
 	course_block = (
-		"\n".join(course_block_parts) + "\n\n" if course_block_parts else ""
+		"\n\n".join(course_block_parts) + "\n\n" if course_block_parts else ""
 	)
 
 	config = load_prompt_template(PURPOSE_EVALUATION_SCHEMA_GENERATOR_AI)
