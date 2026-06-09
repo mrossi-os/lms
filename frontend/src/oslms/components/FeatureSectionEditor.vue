@@ -191,7 +191,7 @@ const props = defineProps({
 	},
 })
 
-const emit = defineEmits(['update:modelValue', 'dirty'])
+const emit = defineEmits(['dirty'])
 
 // ─── Stato locale ─────────────────────────────────────────────────────────────
 

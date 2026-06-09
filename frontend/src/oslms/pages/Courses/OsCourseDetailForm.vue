@@ -21,7 +21,7 @@
                 </template>
             </div>
         </div>
-        <FeatureSectionEditor v-model="doc" @dirty="markDirty()" />
+        <FeatureSectionEditor :modelValue="doc" @dirty="markDirty()" />
     </section>
 </template>
 

@@ -47,50 +47,16 @@
 <script setup lang="ts">
 import TagPicker from '@/oslms/components/TagPicker.vue'
 import { FormControl } from 'frappe-ui'
-import { computed, inject, ref } from 'vue'
+import { computed, inject } from 'vue'
 import { createLMSCategory } from '@/utils'
 import Link from '@/components/Controls/Link.vue'
 import CourseInstructorsField from '@/pages/Courses/CourseInstructorsField.vue'
 import CourseThumbnailField from '@/pages/Courses/CourseThumbnailField.vue'
 import type { CourseFormContext } from '@/types/api'
 
-interface TagOption {
-	label: string
-	value: string
-}
-
 const { resource, markDirty } = inject<CourseFormContext>('courseForm')!
 
 const doc = computed(() => resource.doc)
-
-const parsedTags = computed<string[]>(() => {
-	const tags = resource.doc?.tags
-	return tags ? tags.split(', ').filter(Boolean) : []
-})
-
-const tagsArray = computed<string[]>({
-	get: () => parsedTags.value,
-	set: (vals: string[]) => {
-		if (!resource.doc) return
-		resource.doc.tags = vals.join(', ')
-		markDirty()
-	},
-})
-
-const tagQuery = ref<string>('')
-const tagOptions = computed<TagOption[]>(() => {
-	const selected: TagOption[] = parsedTags.value.map((t) => ({
-		label: t,
-		value: t,
-	}))
-	const q = tagQuery.value.trim()
-	if (q && !parsedTags.value.includes(q)) {
-		return [...selected, { label: `${__('Create')} "${q}"`, value: q }]
-	}
-	return selected
-})
-
-const tagsSelectedLabels = computed<string>(() => tagsArray.value.join(', '))
 
 function createCategory(name: string | null, done?: () => void) {
 	if (!name) return
