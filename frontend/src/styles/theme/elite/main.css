@@ -107,3 +107,8 @@ textarea {
 .ce-inline-toolbar__toggler-and-button-wrapper svg {
 	fill: var(--ink-gray-10);
 }
+
+/* Inputs */
+.os-multilink div button {
+	background-color: var(--surface-gray-2) !important;
+}
