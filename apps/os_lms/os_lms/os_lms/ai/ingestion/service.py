@@ -131,6 +131,20 @@ class IngestionService:
 			"material": material.name,
 		}
 
+	def remove_lesson(self, course: str, lesson: str) -> None:
+		"""Delete a lesson's vectors from the RAG index.
+
+		Best-effort and never raises: it runs from the Course Lesson on_trash
+		hook, so a missing Redis config or an index error must not block the
+		lesson deletion.
+		"""
+		if not lesson or not frappe.conf.get("redis_vector_store"):
+			return
+		try:
+			self.rag_db.delete_lesson(course, lesson)
+		except Exception as e:
+			self.logger.error("RAG cleanup failed for lesson %s: %s", lesson, e)
+
 	def search_chunks_by_course(self, course: str, question: str) -> list[dict]:
 		"""Retrieve relevant chunks across all lessons of a course."""
 		return self.rag_db.search(course, [], question)

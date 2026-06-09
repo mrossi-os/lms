@@ -141,7 +141,8 @@ doc_events = {
         "after_insert": "os_lms.badge_utils.clear_cache_on_badge_create"
     },
     "Course Lesson": {
-        "before_save": "os_lms.events.lesson.reset_index_status_on_content_change"
+        "before_save": "os_lms.events.lesson.reset_index_status_on_content_change",
+        "on_trash": "os_lms.events.lesson.cleanup_lesson_links",
     },
     "User": {
         "after_insert": "os_lms.auth.mark_first_login",
