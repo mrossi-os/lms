@@ -148,6 +148,12 @@
 							:required="true"
 						/>
 					</div>
+					<MultiSelect
+						v-model="valutatori"
+						doctype="User"
+						:label="__('Valutatori')"
+						url="os_lms.os_lms.api.search_non_student_users"
+					/>
 					<div>
 						<label class="block text-sm text-ink-gray-5 mb-2">
 							{{ __('Batch Details') }}
@@ -327,6 +333,7 @@ import EmailTemplateModal from '@/components/Modals/EmailTemplateModal.vue'
 const router = useRouter()
 const user = inject('$user')
 const instructors = ref([])
+const valutatori = ref([])
 const app = getCurrentInstance()
 const { capture } = useTelemetry()
 const { $dialog } = app.appContext.config.globalProperties
@@ -415,12 +422,35 @@ watch(
 	{ deep: true }
 )
 
+// The instructors/valutatori pickers use standalone refs (not batchDetail.doc),
+// so the deep doc watcher above never sees their edits. Mark the form dirty when
+// they diverge from the values currently loaded in the doc.
+const pluckSorted = (rows, field) =>
+	JSON.stringify((rows || []).map((row) => row[field]).sort())
+
+watch([instructors, valutatori], () => {
+	if (!batchDetail.doc) return
+	if (
+		JSON.stringify([...instructors.value].sort()) !==
+			pluckSorted(batchDetail.doc.instructors, 'instructor') ||
+		JSON.stringify([...valutatori.value].sort()) !==
+			pluckSorted(batchDetail.doc.valutatori, 'valutatore')
+	) {
+		isDirty.value = true
+	}
+})
+
 const updateBatchData = () => {
 	Object.keys(batchDetail.doc).forEach((key) => {
 		if (key == 'instructors') {
 			instructors.value = []
 			batchDetail.doc.instructors.forEach((instructor) => {
 				instructors.value.push(instructor.instructor)
+			})
+		} else if (key == 'valutatori') {
+			valutatori.value = []
+			batchDetail.doc.valutatori?.forEach((row) => {
+				if (row.valutatore) valutatori.value.push(row.valutatore)
 			})
 		} else if (['start_time', 'end_time'].includes(key)) {
 			batchDetail.doc[key] = formatTime(batchDetail.doc[key])
@@ -456,6 +486,9 @@ const updateBatch = () => {
 			...batchDetail.doc,
 			instructors: instructors.value.map((instructor) => ({
 				instructor: instructor,
+			})),
+			valutatori: valutatori.value.map((valutatore) => ({
+				valutatore: valutatore,
 			})),
 		},
 		{

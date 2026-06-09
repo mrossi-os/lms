@@ -64,7 +64,7 @@ def get_permission_query_conditions(user: str | None = None) -> str:
 		)
 		if not courses:
 			return "1=0"
-		quoted = ",".join("'" + frappe.db.escape(c, percent=False) + "'" for c in courses)
+		quoted = ",".join(frappe.db.escape(c, percent=False) for c in courses)
 		return f"`tabLMSA Simulation Scenario`.lms_course IN ({quoted})"
 
 	# Student: only Published scenarios for enrolled courses
@@ -76,7 +76,7 @@ def get_permission_query_conditions(user: str | None = None) -> str:
 		)
 		if not courses:
 			return "1=0"
-		quoted = ",".join("'" + frappe.db.escape(c, percent=False) + "'" for c in courses)
+		quoted = ",".join(frappe.db.escape(c, percent=False) for c in courses)
 		return (
 			f"(`tabLMSA Simulation Scenario`.lms_course IN ({quoted}) AND "
 			f"`tabLMSA Simulation Scenario`.status = 'Published')"

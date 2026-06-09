@@ -61,7 +61,58 @@ CUSTOM_FIELDS = {
             ),
         },
     ],
+    "LMS Batch": [
+        {
+            "fieldname": "valutatori",
+            "fieldtype": "Table MultiSelect",
+            "label": "Valutatori",
+            "options": "LMS Batch Valutatore",
+            "insert_after": "instructors",
+            "description": (
+                "Non-student users who can evaluate this batch: they may view the "
+                "batch dashboard, live classes and announcements, and grade the "
+                "quizzes/assignments of the students enrolled in this batch only."
+            ),
+        },
+    ],
 }
+
+
+# Custom role used as the technical container for the per-batch valutatore
+# permissions. Scoping to a single batch is enforced at runtime in
+# os_lms.os_lms.valutatore (query conditions + has_permission).
+VALUTATORE_ROLE = "Valutatore"
+VALUTATORE_DOCPERMS = {
+    "LMS Batch Enrollment": {"read": 1},
+    "LMS Live Class": {"read": 1},
+    "LMS Quiz Submission": {"read": 1},
+    "LMS Assignment Submission": {"read": 1, "write": 1},
+}
+
+
+def setup_valutatore_role_and_permissions():
+    """Ensure the "Valutatore" role exists and carries the baseline DocPerms.
+
+    Idempotent: skips creation when the admin has already created the role in the
+    desk. The per-batch scoping lives in os_lms.os_lms.valutatore, not here.
+    """
+    from frappe.permissions import add_permission, update_permission_property
+
+    if not frappe.db.exists("Role", VALUTATORE_ROLE):
+        role = frappe.new_doc("Role")
+        role.update({"role_name": VALUTATORE_ROLE, "desk_access": 0, "home_page": ""})
+        role.insert(ignore_permissions=True)
+        print(f"Created Role: {VALUTATORE_ROLE}")
+
+    for doctype, perms in VALUTATORE_DOCPERMS.items():
+        if not frappe.db.exists("DocType", doctype):
+            continue
+        add_permission(doctype, VALUTATORE_ROLE, 0)
+        for ptype, value in perms.items():
+            update_permission_property(
+                doctype, VALUTATORE_ROLE, 0, ptype, value, validate=False
+            )
+    frappe.db.commit()
 
 
 def create_custom_fields():

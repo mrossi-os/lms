@@ -10,7 +10,7 @@
 				</Badge>
 			</div>
 			<div class="flex items-center gap-x-2">
-				<template v-if="tabIndex == 5 && isAdmin">
+				<template v-if="activeTabKey === 'Settings' && isAdmin">
 					<Badge v-if="childRef?.isDirty" theme="orange">
 						{{ __('Not Saved') }}
 					</Badge>
@@ -49,7 +49,10 @@
 			</div>
 		</header>
 		<div>
-			<BatchOverview v-if="!isAdmin && !isStudent" :batch="batch" />
+			<BatchOverview
+				v-if="!isAdmin && !isStudent && !isBatchValutatore"
+				:batch="batch"
+			/>
 			<div v-else>
 				<Tabs :tabs="tabs" v-model="tabIndex">
 					<template #tab-item="{ tab }">
@@ -241,7 +244,7 @@ watch(batch, () => {
 const updateTabs = () => {
 	addToTabs('Overview', __('Overview'), markRaw(BatchOverview), List)
 	if (!user.data) return
-	if (isAdmin.value) {
+	if (isAdmin.value || isBatchValutatore.value) {
 		addToTabs(
 			'Dashboard',
 			__('Dashboard'),
@@ -286,9 +289,19 @@ const isAdmin = computed(() => {
 	return user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente
 })
 
+// A "Valutatore" of this batch gets the admin Dashboard + the live class and
+// announcements tabs (read-only), but NOT the Settings tab nor publish controls.
+const isBatchValutatore = computed(() => {
+	return Boolean(batch.data?.is_valutatore)
+})
+
 const isStudent = computed(() => {
 	return batch.data?.students?.includes(user.data?.name)
 })
+
+// Gate the Settings save/delete bar on the active tab's key rather than a
+// hardcoded index, which breaks when a tab (e.g. Classes) is hidden.
+const activeTabKey = computed(() => tabs.value[tabIndex.value]?.key)
 
 const openAnnouncementModal = () => {
 	showAnnouncementModal.value = true

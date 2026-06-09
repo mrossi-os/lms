@@ -33,17 +33,17 @@
 			</div>
 			<div class="flex ms-auto gap-x-4 shrink-0">
 				<Tooltip :text="__('Edit Chapter')" placement="bottom">
-					<span
+					<FilePenLine
 						v-if="allowEdit"
 						@click.prevent="emit('edit-chapter', chapter)"
-						class="lucide-file-pen-line size-4 text-ink-gray-9 invisible group-hover:visible"
+						class="size-4 text-ink-gray-9 invisible group-hover:visible cursor-pointer"
 					/>
 				</Tooltip>
 				<Tooltip :text="__('Delete Chapter')" placement="bottom">
-					<span
+					<Trash2
 						v-if="allowEdit"
 						@click.prevent="emit('delete-chapter', chapter.name)"
-						class="lucide-trash-2 size-4 text-ink-red-3 invisible group-hover:visible"
+						class="size-4 text-ink-red-3 invisible group-hover:visible cursor-pointer"
 					/>
 				</Tooltip>
 			</div>

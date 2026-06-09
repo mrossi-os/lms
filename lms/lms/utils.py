@@ -1280,10 +1280,13 @@ def get_batch_details(batch: str):
 
 	batch_students = frappe.get_all("LMS Batch Enrollment", {"batch": batch}, pluck="member")
 	is_batch_admin = can_modify_batch(batch)
+	is_valutatore_of_batch = is_batch_valutatore(batch)
 	is_batch_published = frappe.db.get_value("LMS Batch", batch, "published")
 	is_student_enrolled = frappe.session.user in batch_students
 
-	if not (is_batch_published or is_batch_admin or is_student_enrolled):
+	if not (
+		is_batch_published or is_batch_admin or is_student_enrolled or is_valutatore_of_batch
+	):
 		return {}
 
 	batch_details = frappe.db.get_value(
@@ -1336,7 +1339,9 @@ def get_batch_details(batch: str):
 		"LMS Assessment", {"parent": batch}, ["assessment_name", "assessment_type"]
 	)
 
-	if can_modify_batch(batch):
+	batch_details.is_valutatore = is_valutatore_of_batch
+
+	if is_batch_admin or is_valutatore_of_batch:
 		batch_details.students = batch_students
 	elif is_student_enrolled:
 		batch_details.students = [frappe.session.user]
@@ -1610,7 +1615,7 @@ def get_exercise_details(assessment: dict, member: str) -> dict:
 
 @frappe.whitelist()
 def get_batch_student_progress(member: str, batch: str) -> dict:
-	if not can_modify_batch(batch):
+	if not (can_modify_batch(batch) or is_batch_valutatore(batch)):
 		frappe.throw(_("You are not authorized to view the students of this batch."))
 
 	details = get_batch_student_details(member)
@@ -1701,7 +1706,7 @@ def get_quiz_pass_stats(batch: str) -> list:
 @frappe.whitelist()
 def get_batch_chart_data(batch: str) -> list:
 	"""Get completion counts per course and assessment"""
-	if not can_modify_batch(batch):
+	if not (can_modify_batch(batch) or is_batch_valutatore(batch)):
 		frappe.throw(_("You are not authorized to view the chart data of this batch."))
 	if not frappe.db.exists("LMS Batch", batch):
 		frappe.throw(_("The specified batch does not exist."))
@@ -1857,7 +1862,7 @@ def can_access_topic(doctype: str, docname: str) -> bool:
 		is_student = frappe.db.exists(
 			"LMS Batch Enrollment", {"batch": docname, "member": frappe.session.user}
 		)
-		if not is_student and not can_modify_batch(docname):
+		if not is_student and not can_modify_batch(docname) and not is_batch_valutatore(docname):
 			return False
 	return True
 
@@ -2573,6 +2578,24 @@ def can_modify_batch(batch: str) -> bool:
 	if not (has_moderator_role() or is_instructor or "Docente" in frappe.get_roles()):
 		return False
 	return True
+
+
+def is_batch_valutatore(batch: str, user: str = None) -> bool:
+	"""True if the user is a custom "Valutatore" of this specific batch.
+
+	A valutatore gets read access to the batch dashboard, live classes and
+	announcements, but NOT edit/publish rights (so it is intentionally separate
+	from can_modify_batch). Per-batch scoping lives in os_lms.os_lms.valutatore.
+	"""
+	user = user or frappe.session.user
+	if not batch:
+		return False
+	return bool(
+		frappe.db.exists(
+			"LMS Batch Valutatore",
+			{"parent": batch, "parenttype": "LMS Batch", "valutatore": user},
+		)
+	)
 
 
 def has_lms_role():
