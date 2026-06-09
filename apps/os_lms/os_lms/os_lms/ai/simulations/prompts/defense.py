@@ -5,7 +5,7 @@ Two complementary defenses:
    Returns True if a likely attempt is found. Used by the orchestrator to flag
    the user turn (injection_attempt_detected=1) and force an in-character
    refusal, bypassing the LLM call.
-2. in_character_refusal(persona): canned customer-voice rebuttal that keeps
+2. in_character_refusal(persona): canned in-character rebuttal that keeps
    the simulation immersive even when the student tries to break it.
 
 Pure functions only — no frappe / no HTTP imports.
@@ -35,7 +35,7 @@ INJECTION_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
         # `dimentica [articoli/possessivi opzionali, max 20 char] (target)`
         r"dimentic[ao] [\w ']{0,20}?(istruzioni|regole|prompt|persona|ruolo|carattere|sistema)",
         r"sei (in realtà |adesso |davvero |veramente )?(un|una|un'?) (ai|chatbot|assistente|llm|modello)",
-        r"non sei (un|una|un'?) (cliente|persona|umano|umana)",
+        r"non sei (un|una|un'?) (cliente|personaggio|persona|umano|umana)",
         r"comportati come (un|una|un'?) (ai|chatbot|assistente|sviluppatore)",
         r"mostrami (le |il |la )?(istruzioni|prompt|regole|sistema)",
         r"rivela (le |il |la )?(istruzioni|prompt|regole|sistema|persona)",
@@ -53,7 +53,7 @@ def detect_injection(text: str) -> bool:
     return False
 
 
-def in_character_refusal(customer_name: str | None = None) -> str:
+def in_character_refusal(roleplay_name: str | None = None) -> str:
     """Return a short, in-character message used as a fallback assistant turn
     when an injection attempt is detected.
 
@@ -61,7 +61,7 @@ def in_character_refusal(customer_name: str | None = None) -> str:
     without consulting the LLM, to deny the attacker any control over the
     response stream.
     """
-    name_clause = f" Sono {customer_name}," if customer_name else ""
+    name_clause = f" Sono {roleplay_name}," if roleplay_name else ""
     return (
         f"Mi scusi, ma non ho capito.{name_clause} torniamo a quello che stavamo "
         "discutendo: è la mia situazione che mi interessa, non altre questioni."

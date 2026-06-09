@@ -30,7 +30,7 @@ class TestScenarioGenerator(UnitTestCase):
         system, msgs = build_scenario_generator_messages(
             scenario_name="Obiezione",
             difficulty="medium",
-            customer_persona="Marco, 45.",
+            roleplay_persona="Marco, 45.",
             situation_template="Cliente competitor.",
             learning_objectives=["A", "B"],
             seed_variations={"x": ["1", "2"]},

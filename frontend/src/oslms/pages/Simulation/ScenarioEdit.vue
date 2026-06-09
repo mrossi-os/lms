@@ -31,6 +31,7 @@ function goBack(result) {
 		router.push({
 			name: 'CourseDetail',
 			params: { courseName },
+			hash: '#simulations',
 		})
 		return
 	}

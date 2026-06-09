@@ -1,5 +1,5 @@
-"""Unit tests for the pure customer services (ScenarioVariantGenerator,
-CustomerTurnService). Pure tests — no frappe, no DB."""
+"""Unit tests for the pure role-player services (ScenarioVariantGenerator,
+RolePlayerTurnService). Pure tests — no frappe, no DB."""
 from __future__ import annotations
 
 import json
@@ -8,9 +8,9 @@ from frappe.tests import UnitTestCase
 
 from os_lms.os_lms.ai.utils.llm.provider import ChatMessage, ChatResponse, Usage
 from os_lms.os_lms.ai.simulations.prompts import PersonaVariant
-from os_lms.os_lms.ai.simulations.customer import (
+from os_lms.os_lms.ai.simulations.role_player import (
 	ScenarioVariantGenerator,
-	CustomerTurnService,
+	RolePlayerTurnService,
 )
 from os_lms.os_lms.ai.simulations.eval.types import ScenarioRef
 
@@ -40,7 +40,7 @@ class _RecordingProvider:
 
 def _valid_variant_json() -> str:
 	return json.dumps({
-		"situation": "Cliente del settore manifatturiero.",
+		"situation": "Personaggio del settore manifatturiero.",
 		"persona": {
 			"name": "Mario", "role": "CTO", "company": "AcmeCo",
 			"mood": "scettico", "key_objection": "prezzo",
@@ -54,7 +54,7 @@ def _scenario_ref() -> ScenarioRef:
 		name="SC-1", scenario_name="X",
 		learning_objectives=["o1", "o2"],
 		difficulty="medium",
-		customer_persona="base persona",
+		roleplay_persona="base persona",
 		situation_template="template",
 		max_turns=4,
 		seed_variations={"mood": ["calm", "tense"]},
@@ -104,7 +104,7 @@ def _persona() -> PersonaVariant:
 	)
 
 
-class TestCustomerTurnService(UnitTestCase):
+class TestRolePlayerTurnService(UnitTestCase):
 	def test_ask_invokes_chat_fn_with_role_play_system_prompt(self):
 		captured: dict = {}
 
@@ -113,19 +113,19 @@ class TestCustomerTurnService(UnitTestCase):
 			captured["system"] = system
 			captured["kwargs"] = dict(kwargs)
 			return ChatResponse(
-				text="Risposta del cliente",
+				text="Risposta del personaggio",
 				finish_reason="stop", usage=Usage(),
 				model="t-1", provider="test",
 			)
 
-		service = CustomerTurnService(chat_fn=chat_fn)
+		service = RolePlayerTurnService(chat_fn=chat_fn)
 		response = service.ask(
 			persona=_persona(),
 			situation="Trattativa in corso.",
 			difficulty="hard",
 			history=[ChatMessage(role="user", content="Buongiorno")],
 		)
-		self.assertEqual(response.text, "Risposta del cliente")
+		self.assertEqual(response.text, "Risposta del personaggio")
 		self.assertIn("Anna", captured["system"])
 		self.assertEqual(len(captured["messages"]), 1)
 		self.assertEqual(captured["kwargs"].get("temperature"), 0.7)

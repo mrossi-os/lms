@@ -7,7 +7,7 @@
 					{{ scenarioName || __('Simulazione') }}
 				</div>
 				<div class="text-xs text-ink-gray-5">
-					{{ personaSummary || __('Cliente') }}
+					{{ personaSummary || __('Personaggio') }}
 				</div>
 			</div>
 			<Badge v-if="status" :label="status" :theme="statusTheme" />
@@ -40,7 +40,7 @@
 						turn.role === 'user' ? 'text-white/80' : 'text-ink-gray-5',
 					]"
 				>
-					<span>{{ turn.role === 'user' ? __('Tu') : customerLabel }}</span>
+					<span>{{ turn.role === 'user' ? __('Tu') : rolePlayerLabel }}</span>
 					<span
 						v-if="turn.injection_attempt_detected"
 						:class="turn.role === 'user' ? 'text-white' : 'text-ink-orange-5'"
@@ -51,7 +51,7 @@
 			</div>
 			<div v-if="sending" class="flex items-center gap-2 text-ink-gray-5 text-sm">
 				<span class="animate-pulse">…</span>
-				<span>{{ __('Il cliente sta rispondendo') }}</span>
+				<span>{{ __('Il personaggio sta rispondendo') }}</span>
 			</div>
 		</div>
 
@@ -61,7 +61,7 @@
 				<textarea
 					v-model="draft"
 					rows="2"
-					:placeholder="__('Scrivi al cliente… (Cmd/Ctrl+Enter per inviare)')"
+					:placeholder="__('Scrivi al personaggio… (Cmd/Ctrl+Enter per inviare)')"
 					class="flex-1 resize-none rounded-md border border-outline-gray-2 px-3 py-2 text-sm focus:border-outline-gray-3 focus:outline-none"
 					:disabled="sending"
 					@keydown.meta.enter.prevent="onSend"
@@ -112,7 +112,7 @@ const personaSummary = computed(() => {
 	return parts.filter(Boolean).join(' — ')
 })
 
-const customerLabel = computed(() => props.persona?.name || __('Cliente'))
+const rolePlayerLabel = computed(() => props.persona?.name || __('Personaggio'))
 
 const isTerminal = computed(() =>
 	['Completed', 'Abandoned', 'Error', 'Needs Review'].includes(props.status),

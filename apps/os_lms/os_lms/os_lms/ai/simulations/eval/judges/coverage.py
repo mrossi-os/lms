@@ -14,6 +14,44 @@ from os_lms.os_lms.ai.simulations.eval.types import (
 
 JUDGE_VERSION = "coverage.v1"
 
+OUTPUT_SCHEMA: dict = {
+	"type": "object",
+	"additionalProperties": False,
+	"required": ["score", "summary", "evidence_quotes", "warnings", "by_objective"],
+	"properties": {
+		"score": {"type": "number"},
+		"summary": {"type": "string"},
+		"evidence_quotes": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"additionalProperties": False,
+				"required": ["turn_index", "quote", "comment"],
+				"properties": {
+					"turn_index": {"type": "integer"},
+					"quote": {"type": "string"},
+					"comment": {"type": "string"},
+				},
+			},
+		},
+		"warnings": {"type": "array", "items": {"type": "string"}},
+		"by_objective": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"additionalProperties": False,
+				"required": ["objective", "covered", "reason", "score"],
+				"properties": {
+					"objective": {"type": "string"},
+					"covered": {"type": "boolean"},
+					"reason": {"type": "string"},
+					"score": {"type": "number"},
+				},
+			},
+		},
+	},
+}
+
 SYSTEM_PROMPT = (
 	"Sei un valutatore di scenari didattici.\n"
 	"Per ogni obiettivo formativo elencato decidi se la conversazione ha "
@@ -26,21 +64,22 @@ SYSTEM_PROMPT = (
 )
 
 
-def build_messages(
+def build_user_message(
 	*, transcript: list[dict], scenario: ScenarioRef, trace_kind: str,
-) -> tuple[str, list[dict]]:
+) -> str:
+	"""Return the user-side message for this judge. The system prompt is
+	supplied separately by the pipeline via the judge_loader (DB-driven)."""
 	transcript_block = "\n".join(
 		f"[{t.get('turn_index', i)}] {t['role'].upper()}: {t.get('text', '')}"
 		for i, t in enumerate(transcript)
 	)
 	objectives = "\n".join(f"- {o}" for o in scenario.learning_objectives) or "—"
-	user = (
+	return (
 		f"Obiettivi formativi da valutare:\n{objectives}\n\n"
 		f"Trascrizione completa:\n{transcript_block}\n\n"
 		f"Tipo di trace: {trace_kind}\n\n"
 		"Restituisci JSON valido con score complessivo + by_objective[]."
 	)
-	return SYSTEM_PROMPT, [{"role": "user", "content": user}]
 
 
 def parse_output(text: str) -> DimensionScore:

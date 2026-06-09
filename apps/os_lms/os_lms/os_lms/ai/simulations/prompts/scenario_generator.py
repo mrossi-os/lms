@@ -31,12 +31,14 @@ class ScenarioVariant:
 
 
 SYSTEM_PROMPT = (
-    "Sei un instructional designer esperto di formazione vendite.\n"
-    "Generi una variante concreta di uno scenario di vendita partendo dal "
-    "template fornito.\n\n"
+    "Sei un instructional designer esperto di simulazioni didattiche.\n"
+    "Generi una variante concreta di uno scenario di role-play partendo dal "
+    "template fornito. Il personaggio interpretato dall'AI può essere un "
+    "cliente, un esaminatore, un paziente, un intervistatore, ecc., a "
+    "seconda della persona base.\n\n"
     "Mantieni invariati: obiettivi formativi, difficoltà, schema di valutazione.\n"
-    "Varia: nome del cliente, settore, contesto, obiezione principale, mood "
-    "iniziale, motivazione nascosta.\n\n"
+    "Varia: nome del personaggio, settore/contesto, obiezione o resistenza "
+    "principale, mood iniziale, motivazione nascosta.\n\n"
     "Rispondi ESCLUSIVAMENTE con un oggetto JSON valido conforme allo "
     "schema fornito, senza alcun testo prima o dopo."
 )
@@ -66,14 +68,14 @@ SCENARIO_SCHEMA: dict = {
                 "name": {"type": "string"},
                 "role": {"type": "string"},
                 "company": {"type": "string"},
-                "mood": {"type": "string", "description": "Stato emotivo iniziale del cliente."},
+                "mood": {"type": "string", "description": "Stato emotivo iniziale del personaggio."},
                 "key_objection": {
                     "type": "string",
-                    "description": "L'obiezione principale che il cliente porterà nel dialogo.",
+                    "description": "L'obiezione o resistenza principale che il personaggio porterà nel dialogo.",
                 },
                 "hidden_motivation": {
                     "type": "string",
-                    "description": "Motivazione reale del cliente, non rivelata esplicitamente.",
+                    "description": "Motivazione reale del personaggio, non rivelata esplicitamente.",
                 },
             },
         },
@@ -85,7 +87,7 @@ def build_scenario_generator_messages(
     *,
     scenario_name: str,
     difficulty: str,
-    customer_persona: str,
+    roleplay_persona: str,
     situation_template: str,
     learning_objectives: list[str],
     seed_variations: dict[str, list[str]],
@@ -106,7 +108,7 @@ def build_scenario_generator_messages(
     user = (
         f"Scenario: {scenario_name}\n"
         f"Difficoltà: {difficulty}\n\n"
-        f"Persona base:\n{customer_persona}\n\n"
+        f"Persona base del personaggio:\n{roleplay_persona}\n\n"
         f"Template situazione:\n{situation_template}\n\n"
         f"Obiettivi formativi:\n{objectives_block}\n\n"
         f"Variabili da randomizzare:\n{variations_block}\n\n"

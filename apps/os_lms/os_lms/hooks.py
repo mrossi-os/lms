@@ -29,6 +29,8 @@ after_migrate = [
     "os_lms.setup.create_custom_fields",
     "os_lms.setup.create_redis_index",
     "os_lms.setup.rebuild_search_index",
+    "os_lms.setup.seed_judge_prompts",
+    "os_lms.setup.seed_prompt_templates",
 ]
 
 # fix error email check content MAX SIZE

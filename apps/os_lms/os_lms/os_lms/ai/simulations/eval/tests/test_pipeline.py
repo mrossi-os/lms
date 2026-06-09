@@ -40,7 +40,7 @@ class FakeProvider:
 _SCENARIO = ScenarioRef(
 	name="SC-1", scenario_name="X",
 	learning_objectives=["o1"], difficulty="medium",
-	customer_persona="x", situation_template="y", max_turns=10,
+	roleplay_persona="x", situation_template="y", max_turns=10,
 )
 
 _TRANSCRIPT = [

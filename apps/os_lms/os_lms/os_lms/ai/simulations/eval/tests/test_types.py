@@ -6,7 +6,6 @@ from frappe.tests import UnitTestCase
 from os_lms.os_lms.ai.simulations.eval.types import (
 	DimensionScore,
 	ScenarioRef,
-	GoldenExpectations,
 	DIMENSION_PERSONA,
 	DIMENSION_COVERAGE,
 	DIMENSION_DEBRIEF,
@@ -54,7 +53,7 @@ class TestScenarioRef(UnitTestCase):
 			scenario_name="Negoziazione",
 			learning_objectives=["o1", "o2"],
 			difficulty="medium",
-			customer_persona="...",
+			roleplay_persona="...",
 			situation_template="...",
 			max_turns=20,
 		)
@@ -66,7 +65,7 @@ class TestScenarioRef(UnitTestCase):
 		ref = ScenarioRef(
 			name="X", scenario_name="X",
 			learning_objectives=[], difficulty="easy",
-			customer_persona="", situation_template="",
+			roleplay_persona="", situation_template="",
 			max_turns=10,
 		)
 		assert ref.seed_variations == {}
@@ -75,18 +74,11 @@ class TestScenarioRef(UnitTestCase):
 		ref = ScenarioRef(
 			name="X", scenario_name="X",
 			learning_objectives=[], difficulty="easy",
-			customer_persona="", situation_template="",
+			roleplay_persona="", situation_template="",
 			max_turns=10,
 			seed_variations={"mood": ["happy", "sad"]},
 		)
 		assert ref.seed_variations == {"mood": ["happy", "sad"]}
-
-
-class TestGoldenExpectations(UnitTestCase):
-	def test_defaults(self):
-		exp = GoldenExpectations(name_label="x", expected_outcomes="y")
-		self.assertEqual(exp.name_label, "x")
-		self.assertEqual(exp.expected_outcomes, "y")
 
 
 class TestDimensionConstants(UnitTestCase):

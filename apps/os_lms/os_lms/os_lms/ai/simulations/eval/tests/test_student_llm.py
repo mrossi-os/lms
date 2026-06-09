@@ -34,7 +34,7 @@ class TestStudentMessages(UnitTestCase):
 		scenario = ScenarioRef(
 			name="SC-1", scenario_name="Sales",
 			learning_objectives=["Gestire prezzo"], difficulty="medium",
-			customer_persona="42 anni, dirigente",
+			roleplay_persona="42 anni, dirigente",
 			situation_template="Cliente competitor.",
 			max_turns=10,
 		)
@@ -42,15 +42,19 @@ class TestStudentMessages(UnitTestCase):
 			{"turn_index": 0, "role": "user", "text": "Buongiorno"},
 			{"turn_index": 1, "role": "assistant", "text": "Salve."},
 		]
-		system, msgs = build_student_messages(
+		params = build_student_messages(
 			scenario=scenario,
 			history=history,
 			profile_name=PROFILE_COMPETENT,
 		)
 		# System prompt mentions the student role
-		self.assertTrue("studente" in system.lower() or "venditor" in system.lower())
+		self.assertTrue("studente" in params.system.lower() or "venditor" in params.system.lower())
 		# Last user message contains the recent assistant turn so the model
 		# has the context to produce the next student reply.
-		content = msgs[-1]["content"]
+		content = params.messages[-1]["content"]
 		self.assertIn("Salve.", content)
 		self.assertIn("Gestire prezzo", content)
+		# Sampling params come from the loader (default 0.8 / 400)
+		self.assertEqual(params.temperature, 0.8)
+		self.assertEqual(params.max_tokens, 400)
+		self.assertTrue(params.version)

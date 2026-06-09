@@ -67,7 +67,7 @@ class TestSimulationTestEndToEnd(IntegrationTestCase):
 		# 1 LLM-student variant:
 		#   1 variant call
 		#   1 student turn (turn_index=0)
-		#   1 cliente turn (turn_index=1)
+		#   1 role-player turn (turn_index=1)
 		#   3 judge calls (debrief skipped — no debrief_payload)
 		# Total: 1 + 2 + 3 = 6 calls
 		responses = (

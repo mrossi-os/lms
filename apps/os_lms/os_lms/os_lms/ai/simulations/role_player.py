@@ -1,30 +1,38 @@
-"""Pure customer-side services for simulation flows.
+"""Pure role-player services for simulation flows.
 
 Both `SessionOrchestrator` (human↔AI) and `eval/runner.py` (AI↔AI) depend on
-the same scenario-variant generation and customer-turn generation logic. To
-avoid drift, that logic lives here as injectable services with NO frappe /
+the same scenario-variant generation and role-player-turn generation logic.
+To avoid drift, that logic lives here as injectable services with NO frappe /
 HTTP imports.
 
+The "role-player" is whatever role the AI plays opposite the student —
+customer, examiner, patient, interviewer, etc. — driven by the scenario's
+roleplay_persona field.
+
 Composition over inheritance: each service is built per-call by the caller,
-who supplies the provider (and, for customer turns, a `chat_fn` callable so
-production can plug in `chat_with_fallback` while eval plugs in a raw
+who supplies the provider (and, for role-player turns, a `chat_fn` callable
+so production can plug in `chat_with_fallback` while eval plugs in a raw
 provider).
 """
+
 from __future__ import annotations
 
 from collections.abc import Callable
 
-from os_lms.os_lms.ai.utils.llm.provider import (
-	ChatMessage, ChatResponse, JsonSchema, LLMProvider,
-)
 from os_lms.os_lms.ai.simulations.eval.types import ScenarioRef
 from os_lms.os_lms.ai.simulations.prompts import (
-	PersonaVariant,
 	SCENARIO_SCHEMA,
+	PersonaVariant,
 	ScenarioVariant,
 	build_role_play_system_prompt,
 	build_scenario_generator_messages,
 	parse_scenario_generator_output,
+)
+from os_lms.os_lms.ai.utils.llm.provider import (
+	ChatMessage,
+	ChatResponse,
+	JsonSchema,
+	LLMProvider,
 )
 
 
@@ -44,18 +52,17 @@ class ScenarioVariantGenerator:
 		system, messages = build_scenario_generator_messages(
 			scenario_name=scenario.scenario_name,
 			difficulty=scenario.difficulty,
-			customer_persona=scenario.customer_persona,
+			roleplay_persona=scenario.roleplay_persona,
 			situation_template=scenario.situation_template,
 			learning_objectives=scenario.learning_objectives,
 			seed_variations=scenario.seed_variations,
 			seed=seed,
 		)
 		response_format = JsonSchema(
-			name="scenario_variant", schema=SCENARIO_SCHEMA,
+			name="scenario_variant",
+			schema=SCENARIO_SCHEMA,
 		)
-		chat_messages = [
-			ChatMessage(role=m["role"], content=m["content"]) for m in messages
-		]
+		chat_messages = [ChatMessage(role=m["role"], content=m["content"]) for m in messages]
 		response = self._provider.chat(
 			messages=chat_messages,
 			system=system,
@@ -68,7 +75,8 @@ class ScenarioVariantGenerator:
 			return parse_scenario_generator_output(response.text)
 		except ValueError:
 			retry = self._provider.chat(
-				messages=chat_messages + [
+				messages=chat_messages
+				+ [
 					ChatMessage(role="assistant", content=response.text),
 					ChatMessage(
 						role="user",
@@ -91,8 +99,8 @@ class ScenarioVariantGenerator:
 ChatFn = Callable[..., ChatResponse]
 
 
-class CustomerTurnService:
-	"""Ask the AI customer for its next turn given the conversation history.
+class RolePlayerTurnService:
+	"""Ask the AI role-player for its next turn given the conversation history.
 
 	The caller injects `chat_fn` so the same service works in production
 	(where `chat_fn = chat_with_fallback("chat", ..., override=...)`) and in

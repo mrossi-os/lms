@@ -5,7 +5,7 @@ quotes, scores supported by tone-consistent evidence, overall_score coherent
 with criterion_scores aggregation.
 
 When `debrief_payload` is missing the pipeline calls `skipped_score()`
-instead of `build_messages()` — no LLM call is made.
+instead of `build_user_message()` — no LLM call is made.
 """
 from __future__ import annotations
 
@@ -16,6 +16,52 @@ from os_lms.os_lms.ai.simulations.eval.types import (
 )
 
 JUDGE_VERSION = "debrief.v1"
+
+OUTPUT_SCHEMA: dict = {
+	"type": "object",
+	"additionalProperties": False,
+	"required": [
+		"score",
+		"summary",
+		"evidence_quotes",
+		"warnings",
+		"hallucinated_quotes",
+		"score_inconsistencies",
+		"overall_consistency_delta",
+	],
+	"properties": {
+		"score": {"type": "number"},
+		"summary": {"type": "string"},
+		"evidence_quotes": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"additionalProperties": False,
+				"required": ["turn_index", "quote", "comment"],
+				"properties": {
+					"turn_index": {"type": "integer"},
+					"quote": {"type": "string"},
+					"comment": {"type": "string"},
+				},
+			},
+		},
+		"warnings": {"type": "array", "items": {"type": "string"}},
+		"hallucinated_quotes": {"type": "array", "items": {"type": "string"}},
+		"score_inconsistencies": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"additionalProperties": False,
+				"required": ["criterion", "issue"],
+				"properties": {
+					"criterion": {"type": "string"},
+					"issue": {"type": "string"},
+				},
+			},
+		},
+		"overall_consistency_delta": {"type": ["number", "null"]},
+	},
+}
 
 SYSTEM_PROMPT = (
 	"Sei un valutatore del prompt di debrief.\n"
@@ -28,13 +74,15 @@ SYSTEM_PROMPT = (
 )
 
 
-def build_messages(
+def build_user_message(
 	*,
 	transcript: list[dict],
 	scenario: ScenarioRef,
 	trace_kind: str,
 	debrief_payload: dict | None,
-) -> tuple[str, list[dict]]:
+) -> str:
+	"""Return the user-side message for this judge. The system prompt is
+	supplied separately by the pipeline via the judge_loader (DB-driven)."""
 	transcript_block = "\n".join(
 		f"[{t.get('turn_index', i)}] {t['role'].upper()}: {t.get('text', '')}"
 		for i, t in enumerate(transcript)
@@ -43,13 +91,12 @@ def build_messages(
 		debrief_block = "(debrief non disponibile)"
 	else:
 		debrief_block = json.dumps(debrief_payload, ensure_ascii=False, indent=2)
-	user = (
+	return (
 		f"Trascrizione:\n{transcript_block}\n\n"
 		f"Debrief prodotto dal prompt runtime:\n{debrief_block}\n\n"
 		f"Tipo di trace: {trace_kind}\n\n"
 		"Valuta l'accuratezza del debrief rispetto alla trascrizione."
 	)
-	return SYSTEM_PROMPT, [{"role": "user", "content": user}]
 
 
 def parse_output(text: str) -> DimensionScore:

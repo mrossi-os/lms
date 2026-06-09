@@ -8,6 +8,18 @@
 				<Button
 					variant="ghost"
 					type="button"
+					:title="__('Compila lo schema con AI')"
+					:disabled="aiGenerating"
+					@click="aiDialogOpen = true"
+				>
+					<template #prefix>
+						<Sparkles class="size-4 stroke-1.5" />
+					</template>
+					{{ __('Compila con IA') }}
+				</Button>
+				<Button
+					variant="ghost"
+					type="button"
 					:title="__('Esporta schema in JSON')"
 					@click="onExportSchema"
 				>
@@ -98,12 +110,53 @@
 			</div>
 		</div>
 	</form>
+
+	<Dialog v-model="aiDialogOpen" :options="{
+		title: __('Compila schema con IA'),
+		size: 'lg',
+	}">
+		<template #body-content>
+			<div class="space-y-3">
+				<p class="text-sm text-ink-gray-7">
+					{{ __('Descrivi brevemente il dominio o le competenze da valutare. Se selezioni un corso (opzionale) verranno usati anche gli estratti del materiale via RAG. Tutti i campi del form verranno sostituiti — il salvataggio rimane manuale.') }}
+				</p>
+				<FormControl
+					v-model="aiHint"
+					type="textarea"
+					:rows="4"
+					:label="__('Hint')"
+					:placeholder="__('Es: rubrica per una simulazione di vendita B2B focalizzata su ascolto attivo, gestione obiezioni e chiusura.')"
+				/>
+				<div class="grid grid-cols-2 gap-3">
+					<Autocomplete
+						v-model="aiCourse"
+						:options="aiCourseOptions"
+						:label="__('Corso (opzionale)')"
+					/>
+					<Autocomplete
+						v-model="aiLesson"
+						:options="aiLessonOptions"
+						:label="__('Lezione (opzionale)')"
+						:disabled="!aiCourse"
+					/>
+				</div>
+				<div class="flex justify-end gap-2 pt-2">
+					<Button @click="aiDialogOpen = false" :disabled="aiGenerating">
+						{{ __('Annulla') }}
+					</Button>
+					<Button variant="solid" :loading="aiGenerating" @click="onAiGenerate">
+						{{ __('Genera') }}
+					</Button>
+				</div>
+			</div>
+		</template>
+	</Dialog>
 </template>
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
-import { Button, FormControl, createResource, toast } from 'frappe-ui'
-import { Download, Upload } from 'lucide-vue-next'
+import { Autocomplete, Button, Dialog, FormControl, createResource, toast } from 'frappe-ui'
+import { Download, Sparkles, Upload } from 'lucide-vue-next'
 import CriterionEditor from '@/oslms/components/simulations/CriterionEditor.vue'
 
 const props = defineProps({
@@ -231,12 +284,98 @@ async function onImportSchemaFileSelected(event) {
 		toast.success(__('Schema importato'))
 	} catch (e) {
 		toast.error(
-			__('Importazione fallita: {0}', [e.message || String(e)]),
+			__('Importazione fallita: {0}').format(e.message || String(e)),
 		)
 	} finally {
 		event.target.value = ''
 	}
 }
+
+// ---- "Compila con IA" state ----
+
+const aiDialogOpen = ref(false)
+const aiHint = ref('')
+const aiCourse = ref('')
+const aiLesson = ref('')
+const aiGenerating = ref(false)
+
+const aiCourseRes = createResource({
+	url: 'frappe.client.get_list',
+	auto: true,
+	makeParams() {
+		return { doctype: 'LMS Course', fields: ['name', 'title'], limit_page_length: 500 }
+	},
+})
+const aiCourseOptions = computed(() =>
+	(aiCourseRes.data || []).map((c) => ({ label: c.title || c.name, value: c.name })),
+)
+
+const aiLessonRes = createResource({
+	url: 'frappe.client.get_list',
+	auto: false,
+	makeParams() {
+		return {
+			doctype: 'Course Lesson',
+			filters: { course: aiCourse.value },
+			fields: ['name', 'title'],
+			limit_page_length: 500,
+		}
+	},
+})
+const aiLessonOptions = computed(() =>
+	(aiLessonRes.data || []).map((l) => ({ label: l.title || l.name, value: l.name })),
+)
+watch(aiCourse, (c) => {
+	aiLesson.value = ''
+	if (c) aiLessonRes.submit()
+})
+
+const aiGenerateRes = createResource({
+	url: 'os_lms.os_lms.ai.simulations.api.ai_generate_evaluation_schema',
+	method: 'POST',
+})
+
+async function onAiGenerate() {
+	if (!aiHint.value.trim() && !aiCourse.value) {
+		toast.error(__('Inserisci un hint o seleziona un corso.'))
+		return
+	}
+	aiGenerating.value = true
+	try {
+		const result = await aiGenerateRes.submit({
+			hint: aiHint.value || '',
+			course: aiCourse.value || null,
+			lesson: aiLesson.value || null,
+		})
+		const payload = result?.payload
+		if (!payload) {
+			throw new Error(__('Risposta vuota dal generatore.'))
+		}
+		const REPLACE_FIELDS = [
+			'schema_name',
+			'description',
+			'scoring_scale',
+			'passing_threshold',
+		]
+		for (const field of REPLACE_FIELDS) {
+			if (payload[field] !== undefined) {
+				model[field] = payload[field]
+			}
+		}
+		model.criteria = Array.isArray(payload.criteria) ? payload.criteria : []
+		expandedCriteria.value = model.criteria.map(() => false)
+		aiDialogOpen.value = false
+		aiHint.value = ''
+		aiCourse.value = ''
+		aiLesson.value = ''
+		toast.success(__('Schema precompilato. Rivedi e salva.'))
+	} catch (e) {
+		toast.error(e.messages?.[0] || e.message || __('Generazione fallita'))
+	} finally {
+		aiGenerating.value = false
+	}
+}
+
 
 async function onSave() {
 	if (!model.criteria.length) {

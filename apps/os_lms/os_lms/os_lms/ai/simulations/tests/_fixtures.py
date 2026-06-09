@@ -47,7 +47,7 @@ def make_published_scenario(
     sc.lms_course = course
     sc.difficulty = "medium"
     sc.modality = "chat"
-    sc.customer_persona = "Cliente B2B."
+    sc.roleplay_persona = "Cliente B2B."
     sc.situation_template = "Il cliente esita."
     sc.evaluation_schema = evaluation_schema
     sc.status = "Published"

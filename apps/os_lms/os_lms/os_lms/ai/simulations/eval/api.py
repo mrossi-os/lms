@@ -37,7 +37,7 @@ def run_simulation_test(
 
 	The user picks a student profile and a number of conversation variants
 	(1-3). The job spawns N LLM-student conversations against the scenario
-	prompts, then runs the 4 judges on each transcript. No golden runs.
+	prompts, then runs the 4 judges on each transcript.
 	"""
 	require_scenario_access(scenario)
 	if student_profile not in VALID_PROFILES:
@@ -74,38 +74,6 @@ def run_simulation_test(
 		timeout=600 + 600 * (n - 1),
 		eval_id=doc.name,
 	)"""
-	return {"eval_id": doc.name}
-
-
-@frappe.whitelist()
-def run_golden_regression(scenario: str, golden_name: str | None = None) -> dict:
-	"""Run a regression evaluation using golden runs.
-
-	If golden_name is provided, only that golden is replayed; otherwise all
-	active goldens for the scenario are replayed. Each golden produces one
-	trace, judged by the 4 dimensions. Manual feature — not invoked by the
-	standard Test simulazione flow.
-	"""
-	require_scenario_access(scenario)
-	doc = frappe.get_doc(
-		{
-			"doctype": "LMSA Quality Evaluation",
-			"scenario": scenario,
-			"run_mode": "golden_regression",
-			"status": "queued",
-			"triggered_by": frappe.session.user,
-			"triggered_at": frappe.utils.now_datetime(),
-		}
-	)
-	doc.insert(ignore_permissions=True)
-	frappe.db.commit()
-	frappe.enqueue(
-		"os_lms.os_lms.ai.simulations.eval.jobs.run_golden_regression",
-		queue="default",
-		timeout=600,
-		eval_id=doc.name,
-		golden_name=golden_name,
-	)
 	return {"eval_id": doc.name}
 
 
@@ -172,7 +140,6 @@ def get_evaluation_result(eval_id: str) -> dict:
 				"trace_kind": trace.trace_kind,
 				"student_profile": trace.student_profile,
 				"source_session": trace.source_session,
-				"source_golden": trace.source_golden,
 				"trace_status": trace.trace_status,
 				"trace_error": trace.trace_error,
 				"transcript": json.loads(trace.transcript_json or "[]"),
@@ -252,48 +219,3 @@ def list_student_profiles() -> list[dict]:
 	return [{"name": p["name"], "label": p["label"]} for p in LLM_STUDENT_PROFILES]
 
 
-@frappe.whitelist()
-def list_goldens(scenario: str) -> list[dict]:
-	require_scenario_access(scenario)
-	rows = frappe.get_all(
-		"LMSA Scenario Golden Run",
-		filters={"scenario": scenario},
-		fields=["name", "name_label", "active", "turns"],
-		order_by="creation asc",
-	)
-	for r in rows:
-		try:
-			r["turn_count"] = len(json.loads(r.pop("turns") or "[]"))
-		except (json.JSONDecodeError, TypeError):
-			r["turn_count"] = 0
-	return rows
-
-
-@frappe.whitelist()
-def save_golden(payload: dict) -> dict:
-	if isinstance(payload, str):
-		payload = json.loads(payload)
-	scenario = payload.get("scenario")
-	if not scenario:
-		frappe.throw("scenario is required")
-	require_scenario_access(scenario)
-	name = payload.get("name")
-	if name and frappe.db.exists("LMSA Scenario Golden Run", name):
-		doc = frappe.get_doc("LMSA Scenario Golden Run", name)
-	else:
-		doc = frappe.new_doc("LMSA Scenario Golden Run")
-		doc.scenario = scenario
-	doc.name_label = payload.get("name_label", "")
-	doc.active = 1 if payload.get("active", True) else 0
-	doc.expected_outcomes = payload.get("expected_outcomes", "")
-	doc.turns = json.dumps(payload.get("turns") or [], ensure_ascii=False)
-	doc.save(ignore_permissions=True)
-	return {"name": doc.name}
-
-
-@frappe.whitelist()
-def delete_golden(golden_name: str) -> dict:
-	doc = frappe.get_doc("LMSA Scenario Golden Run", golden_name)
-	require_scenario_access(doc.scenario)
-	frappe.delete_doc("LMSA Scenario Golden Run", golden_name, ignore_permissions=True)
-	return {"ok": True}

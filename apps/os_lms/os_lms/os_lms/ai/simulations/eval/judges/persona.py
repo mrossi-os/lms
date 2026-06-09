@@ -1,6 +1,6 @@
 """Persona consistency judge.
 
-Verifies the "cliente" role-play stays in character throughout the chat:
+Verifies the AI role-player stays in character throughout the chat:
 name, role, company, mood, key_objection, hidden_motivation. Penalises
 character breaks (assistant offering help, revealing meta), premature
 hidden_motivation reveals, and out-of-character replies to off-topic input.
@@ -19,8 +19,9 @@ JUDGE_VERSION = "persona.v1"
 
 SYSTEM_PROMPT = (
 	"Sei un valutatore esperto di scenari di role-play didattici.\n"
-	"Analizzi la trascrizione e decidi se il personaggio 'cliente' resta "
-	"in personaggio per tutta la conversazione.\n\n"
+	"Analizzi la trascrizione e decidi se il personaggio interpretato "
+	"dall'AI (cliente, esaminatore, paziente, ecc.) resta in personaggio "
+	"per tutta la conversazione.\n\n"
 	"Devi penalizzare: rotture di personaggio (es. 'come AI ti aiuto'), "
 	"rivelazioni della motivazione nascosta, risposte meta a domande "
 	"off-topic invece di restare nel ruolo.\n\n"
@@ -30,15 +31,16 @@ SYSTEM_PROMPT = (
 OUTPUT_SCHEMA: dict = {
 	"type": "object",
 	"additionalProperties": False,
-	"required": ["score", "summary", "evidence_quotes"],
+	"required": ["score", "summary", "evidence_quotes", "warnings"],
 	"properties": {
-		"score": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+		"score": {"type": "number"},
 		"summary": {"type": "string"},
 		"evidence_quotes": {
 			"type": "array",
 			"items": {
 				"type": "object",
-				"required": ["turn_index", "quote"],
+				"additionalProperties": False,
+				"required": ["turn_index", "quote", "comment"],
 				"properties": {
 					"turn_index": {"type": "integer"},
 					"quote": {"type": "string"},
@@ -51,18 +53,20 @@ OUTPUT_SCHEMA: dict = {
 }
 
 
-def build_messages(
+def build_user_message(
 	*,
 	transcript: list[dict],
 	scenario: ScenarioRef,
 	trace_kind: str,
-) -> tuple[str, list[dict]]:
+) -> str:
+	"""Return the user-side message for this judge. The system prompt is
+	supplied separately by the pipeline via the judge_loader (DB-driven)."""
 	transcript_block = "\n".join(
 		f"[{t.get('turn_index', i)}] {t['role'].upper()}: {t.get('text', '')}"
 		for i, t in enumerate(transcript)
 	)
-	user = (
-		f"Persona base:\n{scenario.customer_persona}\n\n"
+	return (
+		f"Persona base:\n{scenario.roleplay_persona}\n\n"
 		f"Template situazione:\n{scenario.situation_template}\n\n"
 		f"Scenario: {scenario.scenario_name}\n\n"
 		f"Trascrizione completa:\n{transcript_block}\n\n"
@@ -70,7 +74,6 @@ def build_messages(
 		"Valuta la persona consistency. Restituisci JSON valido secondo "
 		"lo schema fornito."
 	)
-	return SYSTEM_PROMPT, [{"role": "user", "content": user}]
 
 
 def parse_output(text: str) -> DimensionScore:

@@ -14,30 +14,30 @@ from os_lms.os_lms.ai.simulations.eval.types import (
 def _scenario(diff="medium"):
 	return ScenarioRef(
 		name="SC-1", scenario_name="X", learning_objectives=["o1"],
-		difficulty=diff, customer_persona="x", situation_template="y",
+		difficulty=diff, roleplay_persona="x", situation_template="y",
 		max_turns=20,
 	)
 
 
 class TestDifficultyJudge(UnitTestCase):
-	def test_build_messages_includes_difficulty_and_score(self):
-		_, msgs = judge.build_messages(
+	def test_build_user_message_includes_difficulty_and_score(self):
+		content = judge.build_user_message(
 			transcript=[{"turn_index": 0, "role": "user", "text": "x"}],
 			scenario=_scenario("hard"),
 			trace_kind="llm_student",
 			runtime_overall_score=85,
 		)
-		self.assertIn("hard", msgs[0]["content"])
-		self.assertIn("85", msgs[0]["content"])
+		self.assertIn("hard", content)
+		self.assertIn("85", content)
 
-	def test_build_messages_handles_missing_score(self):
-		_, msgs = judge.build_messages(
+	def test_build_user_message_handles_missing_score(self):
+		content = judge.build_user_message(
 			transcript=[{"turn_index": 0, "role": "user", "text": "x"}],
 			scenario=_scenario("easy"),
 			trace_kind="llm_student",
 			runtime_overall_score=None,
 		)
-		self.assertIn("non disponibile", msgs[0]["content"].lower())
+		self.assertIn("non disponibile", content.lower())
 
 	def test_parse_output_with_calibration(self):
 		text = json.dumps({

@@ -2,31 +2,45 @@
 
 The runner calls `build_student_messages()` on every turn the student has
 to play, giving the LLM the full conversation history and the persona-base
-of the cliente. The LLM responds in role as the student.
+of the role-player. The LLM responds in role as the student.
+
+The system/user prompts are loaded via `template_loader` so they can be
+edited from the Desk (LMSA Prompt Template, purpose=llm_student) without
+a redeploy. Hardcoded defaults in template_loader.DEFAULTS are used as
+fallback when no DB record exists.
 """
+
 from __future__ import annotations
+
+from dataclasses import dataclass
 
 from os_lms.os_lms.ai.simulations.eval.student.profiles import get_profile
 from os_lms.os_lms.ai.simulations.eval.types import ScenarioRef
+from os_lms.os_lms.ai.simulations.prompts.template_loader import (
+	PURPOSE_LLM_STUDENT,
+	load_prompt_template,
+	render_template,
+)
 
-
-# Generic fallback opening — used when the instructor leaves the
-# scenario_brief empty. Kept domain-neutral on purpose so it doesn't bias
-# non-sales simulations (medical, customer service, etc.).
+# Generic fallback opening — substituted into {{scenario_brief}} when the
+# instructor leaves the scenario_brief empty. Kept domain-neutral on purpose
+# so it doesn't bias non-sales simulations (medical, customer service, etc.).
 _DEFAULT_OPENING = (
 	"Sei uno studente che sta facendo una simulazione didattica. "
 	"Il tuo obiettivo è mettere in pratica le tecniche apprese e "
 	"raggiungere gli obiettivi formativi dello scenario."
 )
 
-# Fixed response-format coda, always appended at the end of the system
-# prompt. The downstream pipeline relies on the "one short reply, no
-# meta-commentary, no role prefix" contract to parse the LLM output.
-_RESPONSE_RULES = (
-	"Rispondi sempre nel ruolo dello studente: una sola battuta per "
-	"turno, naturale, senza meta-commentario. Niente prefissi come "
-	"'STUDENTE:'."
-)
+
+@dataclass
+class StudentCallParams:
+	"""Everything the runner needs to invoke the LLM-student for one turn."""
+
+	system: str
+	messages: list[dict]
+	temperature: float
+	max_tokens: int
+	version: str
 
 
 def build_student_messages(
@@ -36,16 +50,45 @@ def build_student_messages(
 	profile_name: str,
 	lesson_context: str = "",
 	scenario_brief: str = "",
-) -> tuple[str, list[dict]]:
+) -> StudentCallParams:
+	"""Render the LLM-student call params for one turn.
+
+	The system/user templates come from `LMSA Prompt Template` (purpose
+	`llm_student`) with a hardcoded fallback. `{{var}}` placeholders are
+	substituted from the context built below.
+	"""
 	profile = get_profile(profile_name)
-	opening = scenario_brief.strip() or _DEFAULT_OPENING
-	system = (
-		f"{opening}\n\n"
-		f"Profilo: {profile['system_prompt_addendum']}\n\n"
-		f"{_RESPONSE_RULES}"
+	config = load_prompt_template(PURPOSE_LLM_STUDENT)
+
+	ctx = _build_context(
+		scenario=scenario,
+		history=history,
+		profile=profile,
+		lesson_context=lesson_context,
+		scenario_brief=scenario_brief,
 	)
+	system = render_template(config["system_template"], ctx)
+	user = render_template(config["user_template"], ctx)
+	return StudentCallParams(
+		system=system,
+		messages=[{"role": "user", "content": user}],
+		temperature=config["temperature"],
+		max_tokens=config["max_tokens"],
+		version=config["version"],
+	)
+
+
+def _build_context(
+	*,
+	scenario: ScenarioRef,
+	history: list[dict],
+	profile: dict,
+	lesson_context: str,
+	scenario_brief: str,
+) -> dict:
+	"""Compose the placeholder substitution map for the LLM-student templates."""
 	objectives = "\n".join(f"- {o}" for o in scenario.learning_objectives) or "—"
-	transcript_block = "\n".join(
+	transcript = "\n".join(
 		f"{t['role'].upper()}: {t.get('text', '')}" for t in history
 	)
 	lesson_block = (
@@ -53,14 +96,13 @@ def build_student_messages(
 		if lesson_context.strip()
 		else ""
 	)
-	user = (
-		f"Scenario: {scenario.scenario_name}\n"
-		f"Difficoltà: {scenario.difficulty}\n"
-		f"Persona del cliente:\n{scenario.customer_persona}\n\n"
-		f"Obiettivi formativi:\n{objectives}\n\n"
-		f"{lesson_block}"
-		f"Conversazione finora:\n{transcript_block}\n\n"
-		"Produci la prossima battuta dello STUDENTE. Una sola battuta. "
-		"Niente meta-commentario, niente prefissi come 'STUDENTE:'."
-	)
-	return system, [{"role": "user", "content": user}]
+	return {
+		"scenario_brief": scenario_brief.strip() or _DEFAULT_OPENING,
+		"profile_addendum": profile["system_prompt_addendum"],
+		"scenario_name": scenario.scenario_name,
+		"difficulty": scenario.difficulty,
+		"roleplay_persona": scenario.roleplay_persona,
+		"learning_objectives": objectives,
+		"lesson_block": lesson_block,
+		"transcript": transcript,
+	}

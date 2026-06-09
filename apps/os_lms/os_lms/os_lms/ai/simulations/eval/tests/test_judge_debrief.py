@@ -26,14 +26,14 @@ _DEBRIEF_PAYLOAD = {
 def _scenario():
 	return ScenarioRef(
 		name="SC-1", scenario_name="X", learning_objectives=["o1"],
-		difficulty="medium", customer_persona="x", situation_template="y",
+		difficulty="medium", roleplay_persona="x", situation_template="y",
 		max_turns=20,
 	)
 
 
 class TestDebriefJudge(UnitTestCase):
-	def test_build_messages_includes_debrief_payload(self):
-		_, msgs = judge.build_messages(
+	def test_build_user_message_includes_debrief_payload(self):
+		content = judge.build_user_message(
 			transcript=[
 				{"turn_index": 0, "role": "user", "text": "ascolto attentamente"}
 			],
@@ -41,8 +41,8 @@ class TestDebriefJudge(UnitTestCase):
 			trace_kind="production_session",
 			debrief_payload=_DEBRIEF_PAYLOAD,
 		)
-		self.assertIn("Ascolto attivo", msgs[0]["content"])
-		self.assertIn("65", msgs[0]["content"])
+		self.assertIn("Ascolto attivo", content)
+		self.assertIn("65", content)
 
 	def test_parse_output_returns_score_with_extras(self):
 		text = json.dumps({
@@ -58,14 +58,14 @@ class TestDebriefJudge(UnitTestCase):
 		self.assertEqual(result.score, 0.85)
 		self.assertEqual(len(result.extras["hallucinated_quotes"]), 1)
 
-	def test_build_messages_missing_debrief_mentions_absence(self):
-		_, msgs = judge.build_messages(
+	def test_build_user_message_missing_debrief_mentions_absence(self):
+		content = judge.build_user_message(
 			transcript=[{"turn_index": 0, "role": "user", "text": "x"}],
 			scenario=_scenario(),
 			trace_kind="production_session",
 			debrief_payload=None,
 		)
-		self.assertIn("debrief non disponibile", msgs[0]["content"].lower())
+		self.assertIn("debrief non disponibile", content.lower())
 
 	def test_skipped_score_helper(self):
 		skipped = judge.skipped_score(reason="debrief_missing")

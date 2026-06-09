@@ -16,20 +16,20 @@ def _scenario():
 	return ScenarioRef(
 		name="SC-1", scenario_name="X",
 		learning_objectives=["Gestire obiezione prezzo", "Chiusura"],
-		difficulty="medium", customer_persona="...",
+		difficulty="medium", roleplay_persona="...",
 		situation_template="...", max_turns=20,
 	)
 
 
 class TestCoverageJudge(UnitTestCase):
-	def test_build_messages_includes_objectives(self):
-		_, msgs = coverage.build_messages(
+	def test_build_user_message_includes_objectives(self):
+		content = coverage.build_user_message(
 			transcript=[{"turn_index": 0, "role": "user", "text": "hi"}],
 			scenario=_scenario(),
 			trace_kind="llm_student",
 		)
-		self.assertIn("Gestire obiezione prezzo", msgs[0]["content"])
-		self.assertIn("Chiusura", msgs[0]["content"])
+		self.assertIn("Gestire obiezione prezzo", content)
+		self.assertIn("Chiusura", content)
 
 	def test_parse_output_with_by_objective(self):
 		text = json.dumps({
