@@ -9,7 +9,7 @@ from lms.lms.doctype.lms_live_class.lms_live_class import LMSLiveClass
 from lms.lms.utils import get_lms_route
 
 from os_lms.os_lms.email_utils import send_templated_email
-from os_lms.os_lms.live_class_ics import build_ics, get_ics_url
+from os_lms.os_lms.live_class_ics import get_ics_url
 
 
 def _lc_log(msg):
@@ -161,22 +161,14 @@ class CustomLMSLiveClass(LMSLiveClass):
 			f"participants={participants} instructors={instructors} "
 			f"join_url={self.join_url} start_url={self.start_url} title={self.title!r}"
 		)
-		try:
-			ics_content = build_ics(self)
-		except Exception as exc:
-			ics_content = None
-			_lc_log(
-				f"[send_invitation_email] {self.name} build_ics FAILED "
-				f"type={type(exc).__name__} msg={exc!r}"
-			)
-		ics_attachment = (
-			[{"fname": f"live-class-{self.name}.ics", "fcontent": ics_content.encode("utf-8")}]
-			if ics_content
-			else None
-		)
-		# Signed, guest-accessible link for the "Add to calendar" button. Exposed in
-		# `args` so any template (file-based or per-client desk Email Template) can
-		# render `{{ ics_url }}`.
+		# No .ics attachment: an attached calendar file makes Gmail/Outlook render
+		# their own native "Add to Google Calendar" card, which adds the event to one
+		# calendar automatically without letting the user choose. We rely solely on the
+		# "Add to calendar" button below, which downloads the raw .ics so the
+		# recipient's OS lets them pick the calendar app.
+		#
+		# Signed, guest-accessible link for that button. Exposed in `args` so any
+		# template (file-based or per-client desk Email Template) can render `{{ ics_url }}`.
 		ics_url = get_ics_url(self.name)
 		sent = 0
 		failed = 0
@@ -205,7 +197,6 @@ class CustomLMSLiveClass(LMSLiveClass):
 						"ics_url": ics_url,
 					},
 					header=[_("Invito lezione dal vivo"), "green"],
-					attachments=ics_attachment,
 				)
 				sent += 1
 				_lc_log(f"[send_invitation_email] {self.name} -> {participant} queued OK")
