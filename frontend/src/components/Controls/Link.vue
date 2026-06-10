@@ -102,7 +102,7 @@ const props = withDefaults(
 		inlineCreatePlaceholder?: string
 		onCreate?: CreateHandler
 	}>(),
-	{ inlineCreatePlaceholder: 'Enter...' }
+	{ inlineCreatePlaceholder: 'Enter...' },
 )
 
 const emit = defineEmits<{
@@ -123,7 +123,7 @@ const newItemName = ref<string>('')
 let loaded = false
 
 const value = computed<string>(() =>
-	valuePropPassed.value ? (attrs.value as string) : props.modelValue
+	valuePropPassed.value ? (attrs.value as string) : props.modelValue,
 )
 
 const options = createResource({
@@ -181,7 +181,7 @@ watchDebounced(
 	(isOpen, wasOpen) => {
 		if (wasOpen && !isOpen && loaded) reload('')
 	},
-	{ debounce: 200 }
+	{ debounce: 200 },
 )
 
 function onSelect(val: string | null): void {
