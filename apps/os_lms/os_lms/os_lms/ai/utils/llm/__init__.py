@@ -168,7 +168,6 @@ def _load_settings():
         chunk_overlap=getattr(doc, "chunk_overlap", 0) or 200,
         top_k=getattr(doc, "top_k", 0) or 6,
         llm_model=getattr(doc, "llm_model", "") or "gpt-4o-mini",
-        system_prompt=getattr(doc, "system_prompt", "") or "",
         # openai_key remains a Data field for backward compatibility with the
         # legacy RAG tutor — see SET-1.1 note in PROGRESS.md.
         openai_key=getattr(doc, "openai_key", "") or "",

@@ -4,7 +4,7 @@ Generate a pre-filled payload for ``LMSA Simulation Scenario`` or
 ``LMSA Evaluation Schema`` by combining:
 
 - a configurable prompt template (``LMSA Prompt Template`` doctype, with
-  hardcoded fallback in :mod:`prompts.template_loader`)
+  hardcoded fallback in :mod:`os_lms.os_lms.ai.utils.template_loader`)
 - an optional RAG context retrieved from the course / lesson the
   instructor selected (same path used by ``AuthoringEvaluationRunner``)
 - a free-text instructor hint
@@ -21,7 +21,7 @@ import json
 import frappe
 from frappe import _
 
-from os_lms.os_lms.ai.simulations.prompts.template_loader import (
+from os_lms.os_lms.ai.utils.template_loader import (
 	PURPOSE_EVALUATION_SCHEMA_GENERATOR_AI,
 	PURPOSE_SCENARIO_GENERATOR_AI,
 	load_prompt_template,

@@ -48,7 +48,7 @@ class ScenarioVariant:
 # fallback in `template_loader.DEFAULTS`. Kept as a thin wrapper for
 # external modules that may import it.
 def _current_system_prompt() -> str:
-    from .template_loader import (
+    from os_lms.os_lms.ai.utils.template_loader import (
         PURPOSE_SCENARIO_VARIANT_GENERATOR,
         load_prompt_template,
     )
@@ -147,7 +147,7 @@ def build_scenario_generator_messages(
     by ``render_situation_template`` — the LLM does not see the seed
     variations and is not asked to pick values.
     """
-    from .template_loader import (
+    from os_lms.os_lms.ai.utils.template_loader import (
         PURPOSE_SCENARIO_VARIANT_GENERATOR,
         load_prompt_template,
         render_template,

@@ -16,7 +16,7 @@ both — best-effort: missing site → hardcoded default).
 from __future__ import annotations
 
 from .scenario_generator import PersonaVariant
-from .template_loader import (
+from os_lms.os_lms.ai.utils.template_loader import (
 	PURPOSE_ROLE_PLAY,
 	load_prompt_template,
 	render_template,

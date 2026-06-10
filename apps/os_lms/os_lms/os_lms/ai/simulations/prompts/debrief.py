@@ -61,7 +61,7 @@ class DebriefResult:
 # Template` (purpose `debrief`) with a hardcoded fallback in
 # `template_loader.DEFAULTS`.
 def _current_system_prompt() -> str:
-    from .template_loader import PURPOSE_DEBRIEF, load_prompt_template
+    from os_lms.os_lms.ai.utils.template_loader import PURPOSE_DEBRIEF, load_prompt_template
 
     return load_prompt_template(PURPOSE_DEBRIEF)["system_template"]
 
@@ -170,7 +170,7 @@ def build_debrief_messages(
         so the LLM can weigh evidence consistently with the scenario design.
     transcript: list of dicts {role, text} ordered by turn_index.
     """
-    from .template_loader import (
+    from os_lms.os_lms.ai.utils.template_loader import (
         PURPOSE_DEBRIEF,
         load_prompt_template,
         render_template,

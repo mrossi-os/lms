@@ -179,7 +179,7 @@ class TestQuota(UnitTestCase):
 
         s = OsLmsSettings(
             enabled=False, embedding_model="", chunk_size=0, chunk_overlap=0,
-            top_k=0, llm_model="", system_prompt="", openai_key="",
+            top_k=0, llm_model="", openai_key="",
         )
         s.simulation_daily_quota_per_user = quota  # type: ignore[attr-defined]
         return s

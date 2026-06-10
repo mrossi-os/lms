@@ -12,7 +12,6 @@
 		"chunk_overlap",
 		"top_k",
 		"llm_model",
-		"system_prompt",
 		"section_keys",
 		"openai_key",
 		"openai_base_url",
@@ -79,11 +78,6 @@
 			"fieldname": "llm_model",
 			"fieldtype": "Data",
 			"label": "LLM Model"
-		},
-		{
-			"fieldname": "system_prompt",
-			"fieldtype": "Small Text",
-			"label": "System Prompt"
 		},
 		{
 			"fieldname": "section_keys",

@@ -170,7 +170,7 @@ def seed_prompt_templates():
     with `{{var}}` placeholders). Pipeline code reads from here at runtime
     and falls back to the in-module defaults when a record is absent.
     """
-    from os_lms.os_lms.ai.simulations.prompts.template_loader import DEFAULTS
+    from os_lms.os_lms.ai.utils.template_loader import DEFAULTS
 
     created = 0
     for purpose, data in DEFAULTS.items():

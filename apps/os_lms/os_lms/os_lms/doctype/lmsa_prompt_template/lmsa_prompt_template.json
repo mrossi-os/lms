@@ -30,7 +30,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Purpose",
-   "options": "llm_student\nrole_play\nscenario_variant_generator\ndebrief\nscenario_generator_ai\nevaluation_schema_generator_ai",
+   "options": "llm_student\nrole_play\nscenario_variant_generator\ndebrief\nscenario_generator_ai\nevaluation_schema_generator_ai\ntutor",
    "reqd": 1,
    "unique": 1,
    "description": "Stable identifier looked up by the runtime. One record per purpose."
