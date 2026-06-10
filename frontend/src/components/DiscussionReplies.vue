@@ -157,24 +157,29 @@ const replies = createResource({
 })
 
 const fetchMentionUsers = () => {
+	// Always render the editor so the user can post. The mention list is a
+	// best-effort enhancement: students don't get it, and for other roles a
+	// failed fetch (e.g. a 403 on get_all_users) must not block posting.
+	renderEditor.value = true
 	if (user.data?.is_student) {
-		renderEditor.value = true
-	} else {
-		allUsers.reload(
-			{},
-			{
-				onSuccess(data) {
-					mentionUsers.value = Object.values(data).map((user) => {
-						return {
-							value: user.name,
-							label: user.full_name,
-						}
-					})
-					renderEditor.value = true
-				},
-			},
-		)
+		return
 	}
+	allUsers.reload(
+		{},
+		{
+			onSuccess(data) {
+				mentionUsers.value = Object.values(data).map((user) => {
+					return {
+						value: user.name,
+						label: user.full_name,
+					}
+				})
+			},
+			onError() {
+				// Keep the editor usable without mention autocomplete.
+			},
+		},
+	)
 }
 
 const postReply = () => {

@@ -148,7 +148,17 @@ const title = ref('')
 const certification = ref(false)
 const filters = ref({})
 const is_student = computed(() => user.data?.is_student)
-const currentTab = ref(is_student.value ? 'enrolled' : 'upcoming')
+// Managers default to the "Upcoming" tab; students to "Enrolled". Other roles
+// (e.g. a scoped Valutatore) don't get those tabs, so they default to "All".
+const isListManager = computed(
+	() =>
+		user.data?.is_moderator ||
+		user.data?.is_instructor ||
+		user.data?.is_evaluator,
+)
+const currentTab = ref(
+	is_student.value ? 'enrolled' : isListManager.value ? 'upcoming' : 'all',
+)
 const orderBy = ref('start_date')
 const readOnlyMode = window.read_only_mode
 const router = useRouter()

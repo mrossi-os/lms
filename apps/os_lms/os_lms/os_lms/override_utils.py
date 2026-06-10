@@ -7,7 +7,9 @@ from lms.lms.utils import get_course_outline as _original_get_course_outline
 from lms.lms.utils import get_lesson_details as _original_get_lesson_details
 from lms.lms.utils import get_batch_details as _original_get_batch_details
 from lms.lms.utils import get_courses as _orginal_get_courses
+from lms.lms.utils import get_batches as _original_get_batches
 from lms.lms.utils import get_progress
+from os_lms.os_lms.valutatore import _only_scoped_valutatore, get_valutatore_batches
 from os_lms.os_lms.api import (
     _find_adjacent_video_lessons,
     evaluate_lesson_access,
@@ -211,9 +213,55 @@ def custom_get_lesson_details(chapter: dict, progress: bool = False):
         lessons.append(lesson_details)
     return lessons
 
+# ---------------------------------------------------------------------------
+# Valutatore visibility scoping for the Courses / Batches list views.
+#
+# A scoped "Valutatore" must only see the records they are assigned to plus the
+# public (published) ones — for both batches ("classi") and the courses linked to
+# those batches. The base list methods use ``frappe.get_all`` (which ignores user
+# permissions), so the scoping is enforced here, regardless of the filters the
+# frontend tabs send.
+# ---------------------------------------------------------------------------
+def _valutatore_course_names() -> list:
+    batches = get_valutatore_batches()
+    if not batches:
+        return []
+    return frappe.get_all(
+        "Batch Course",
+        {"parent": ["in", batches], "parenttype": "LMS Batch"},
+        pluck="course",
+    )
+
+
+def _scope_filters_for_valutatore(filters: dict, doctype: str, get_own_names) -> dict:
+    """Narrow the ``name`` filter to "published OR assigned to the valutatore"."""
+    if not _only_scoped_valutatore(frappe.session.user):
+        return filters
+
+    filters = dict(filters or {})
+    published = set(frappe.get_all(doctype, {"published": 1}, pluck="name"))
+    allowed = published | set(get_own_names())
+
+    # The union already encodes "published OR mine"; a published filter coming
+    # from the frontend tabs would otherwise hide the valutatore's own drafts.
+    filters.pop("published", None)
+
+    existing = filters.get("name")
+    if (
+        isinstance(existing, (list, tuple))
+        and len(existing) == 2
+        and str(existing[0]).lower() == "in"
+    ):
+        allowed &= set(existing[1])
+
+    filters["name"] = ["in", list(allowed) or [""]]
+    return filters
+
+
 @frappe.whitelist(allow_guest=True)
 @rate_limit(limit=500, seconds=60 * 60)
 def get_courses(filters: dict = None, start: int = 0) -> list:
+    filters = _scope_filters_for_valutatore(filters, "LMS Course", _valutatore_course_names)
     courses = _orginal_get_courses(filters, start)
 
     if courses:
@@ -223,6 +271,13 @@ def get_courses(filters: dict = None, start: int = 0) -> list:
             course.total_minutes = duration_map.get(course.name, 0)
 
     return courses
+
+
+@frappe.whitelist(allow_guest=True)
+@rate_limit(limit=500, seconds=60 * 60)
+def get_batches(filters: dict = None, start: int = 0, order_by: str = "start_date") -> list:
+    filters = _scope_filters_for_valutatore(filters, "LMS Batch", get_valutatore_batches)
+    return _original_get_batches(filters, start, order_by)
 
 
 @frappe.whitelist(allow_guest=True)

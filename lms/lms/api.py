@@ -1950,6 +1950,15 @@ def get_my_live_classes():
 		pluck="batch",
 	)
 
+	# A "Valutatore" is not enrolled as a student but still needs to see (and join)
+	# the live classes of the batches they evaluate.
+	valutatore_batches = frappe.get_all(
+		"LMS Batch Valutatore",
+		{"parenttype": "LMS Batch", "valutatore": frappe.session.user},
+		pluck="parent",
+	)
+	batches = list(set(batches) | set(valutatore_batches))
+
 	live_class_details = frappe.get_all(
 		"LMS Live Class",
 		filters={
@@ -1966,6 +1975,7 @@ def get_my_live_classes():
 			"attendees",
 			"start_url",
 			"join_url",
+			"started_at",
 			"owner",
 		],
 		limit=2,
@@ -2066,6 +2076,7 @@ def get_admin_live_classes():
 			LMSLiveClass.attendees,
 			LMSLiveClass.start_url,
 			LMSLiveClass.join_url,
+			LMSLiveClass.started_at,
 			LMSLiveClass.owner,
 		)
 		.where(CourseInstructor.instructor == frappe.session.user)

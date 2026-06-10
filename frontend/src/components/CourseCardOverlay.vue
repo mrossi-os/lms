@@ -170,6 +170,7 @@ import { Badge, Button, call, createResource, toast } from 'frappe-ui'
 import { useRouter } from 'vue-router'
 import CertificationLinks from '@/components/CertificationLinks.vue'
 import CourseOutline from '@/components/CourseOutline.vue'
+import { getVideoEmbedURL } from '@/utils/'
 import { useTelemetry } from 'frappe-ui/frappe'
 import type {
 	CourseDetails,
@@ -195,7 +196,8 @@ const props = withDefaults(
 
 const video_link = computed<string | undefined>(() => {
 	const link = props.course.data?.video_link
-	return link ? 'https://www.youtube.com/embed/' + link : undefined
+	// Supports YouTube and Vimeo (and legacy bare YouTube ids).
+	return link ? getVideoEmbedURL(link) : undefined
 })
 
 function enrollStudent() {
