@@ -63,6 +63,24 @@ def get_lms_settings():
 
 
 @frappe.whitelist()
+def get_all_users():
+    # Broaden the role gate of the base method so the custom instructor/evaluator
+    # roles can also fetch the user list (used for @mentions in discussions, etc.).
+    # The base method only allows Moderator / Course Creator / Batch Evaluator,
+    # which made a scoped "Valutatore" (and a "Docente") hit a 403 when opening a
+    # discussion thread.
+    frappe.only_for(
+        ["Moderator", "Course Creator", "Batch Evaluator", "Docente", "Valutatore"]
+    )
+    users = frappe.get_all(
+        "User",
+        {"enabled": 1},
+        ["name", "full_name", "user_image"],
+    )
+    return {user.name: user for user in users}
+
+
+@frappe.whitelist()
 def get_user_info():
     result = _original_get_user_info()
     if result and frappe.session.user != "Guest":
