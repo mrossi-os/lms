@@ -44,6 +44,7 @@ from lms.lms.utils import (
 	has_evaluator_role,
 	has_lms_role,
 	has_moderator_role,
+	is_course_valutatore,
 )
 
 
@@ -1763,7 +1764,8 @@ def track_new_watch_time(lesson: str, video: dict):
 
 @frappe.whitelist()
 def get_course_progress_distribution(course: str):
-	if not can_modify_course(course):
+	# A valutatore of a batch containing this course may read its dashboard data.
+	if not can_modify_course(course) and not is_course_valutatore(course):
 		frappe.throw(
 			_("You do not have permission to access this course's progress data."), frappe.PermissionError
 		)
@@ -2219,7 +2221,11 @@ def delete_programming_exercise(exercise: str):
 @frappe.whitelist()
 def get_lesson_completion_stats(course: str):
 	roles = frappe.get_roles()
-	if "Course Creator" not in roles and "Moderator" not in roles:
+	if (
+		"Course Creator" not in roles
+		and "Moderator" not in roles
+		and not is_course_valutatore(course)
+	):
 		frappe.throw(_("You do not have permission to access lesson completion stats."))
 
 	CourseProgress = frappe.qb.DocType("LMS Course Progress")
@@ -2258,7 +2264,8 @@ def get_lesson_completion_stats(course: str):
 
 @frappe.whitelist()
 def get_course_assessment_progress(course: str, member: str):
-	if not can_modify_course(course):
+	# A valutatore of a batch containing this course may read its dashboard data.
+	if not can_modify_course(course) and not is_course_valutatore(course):
 		frappe.throw(
 			_("You do not have permission to access this course's assessment data."), frappe.PermissionError
 		)

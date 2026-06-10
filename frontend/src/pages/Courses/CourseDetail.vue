@@ -99,7 +99,7 @@
 			</template>
 		</LayoutHeader>
 
-		<div v-if="!isAdmin" class="flex-1">
+		<div v-if="!showTabs" class="flex-1">
 			<CourseOverview :course="course" />
 		</div>
 		<div v-else class="relative flex flex-1 flex-col">
@@ -324,6 +324,8 @@ const course = createResource({
 }) as Resource<CourseDetails | null>
 
 const tabs = computed<TabDef[]>(() => {
+	// Overview ("anteprima") + Dashboard are available to a course valutatore too
+	// (read-only). The editor / settings / simulations tabs stay admin-only.
 	const t: TabDef[] = [
 		{
 			id: 'overview',
@@ -337,26 +339,28 @@ const tabs = computed<TabDef[]>(() => {
 			component: markRaw(CourseDashboard),
 			icon: markRaw(TrendingUp),
 		},
-		{
+	]
+	if (isAdmin.value) {
+		t.push({
 			id: 'editor',
 			label: __('Course editor'),
 			component: markRaw(CourseEditor),
 			icon: markRaw(BookOpen),
-		},
-		{
+		})
+		t.push({
 			id: 'settings',
 			label: __('Settings'),
 			component: markRaw(CourseForm),
 			icon: markRaw(Settings2),
-		},
-	]
-	if (simulationsEnabledGlobal.value) {
-		t.push({
-			id: 'simulations',
-			label: __('Simulations'),
-			component: markRaw(CourseSimulations),
-			icon: markRaw(Bot),
 		})
+		if (simulationsEnabledGlobal.value) {
+			t.push({
+				id: 'simulations',
+				label: __('Simulations'),
+				component: markRaw(CourseSimulations),
+				icon: markRaw(Bot),
+			})
+		}
 	}
 	return t
 })
@@ -396,6 +400,12 @@ const isInstructor = (): boolean => {
 const isAdmin = computed<boolean>(() => {
 	return Boolean(user.data?.is_moderator) || isInstructor()
 })
+
+// A valutatore of a batch containing this course gets a read-only tabbed view
+// (Overview + Dashboard), but not the admin editor/settings tabs.
+const isValutatore = computed<boolean>(() => Boolean(course.data?.is_valutatore))
+
+const showTabs = computed<boolean>(() => isAdmin.value || isValutatore.value)
 
 const breadcrumbs = computed(() => {
 	const crumbs: {

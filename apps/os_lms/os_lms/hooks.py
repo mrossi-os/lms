@@ -64,6 +64,9 @@ permission_query_conditions = {
     "LMS Live Class": "os_lms.os_lms.valutatore.live_class_query_conditions",
     "LMS Quiz Submission": "os_lms.os_lms.valutatore.quiz_submission_query_conditions",
     "LMS Assignment Submission": "os_lms.os_lms.valutatore.assignment_submission_query_conditions",
+    # Scope the read-only course dashboard data to the valutatore's courses.
+    "LMS Enrollment": "os_lms.os_lms.valutatore.enrollment_query_conditions",
+    "LMS Course Progress": "os_lms.os_lms.valutatore.course_progress_query_conditions",
 }
 has_permission = {
     "LMSA Simulation Scenario": (
@@ -81,6 +84,9 @@ has_permission = {
     # Veto by-name access to submissions outside the valutatore's batches.
     "LMS Quiz Submission": "os_lms.os_lms.valutatore.submission_has_permission",
     "LMS Assignment Submission": "os_lms.os_lms.valutatore.submission_has_permission",
+    # Veto by-name access to course-scoped rows outside the valutatore's courses.
+    "LMS Enrollment": "os_lms.os_lms.valutatore.course_scoped_has_permission",
+    "LMS Course Progress": "os_lms.os_lms.valutatore.course_scoped_has_permission",
 }
 # override sqlite search to add custom doctypes
 sqlite_search = ["os_lms.overrides.sqlite.CustomLearningSearch"]

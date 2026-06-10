@@ -84,6 +84,19 @@ def get_valutatore_member_emails(user: str | None = None) -> list[str]:
 	return list(set(members))
 
 
+def get_valutatore_course_names(user: str | None = None) -> list[str]:
+	"""Courses linked (via the Batch Course child table) to the batches the user
+	evaluates. Used to scope the read-only course dashboard data."""
+	batches = get_valutatore_batches(user)
+	if not batches:
+		return []
+	return frappe.get_all(
+		"Batch Course",
+		filters={"parent": ["in", batches], "parenttype": "LMS Batch"},
+		pluck="course",
+	)
+
+
 def _only_scoped_valutatore(user: str) -> bool:
 	"""True when the user is a valutatore and has no broader access role."""
 	roles = set(frappe.get_roles(user))
@@ -138,6 +151,30 @@ def assignment_submission_query_conditions(user: str | None = None) -> str:
 	return f"`tabLMS Assignment Submission`.member IN ({_in_clause(members)})"
 
 
+def enrollment_query_conditions(user: str | None = None) -> str:
+	"""Scope the course-enrolment list (read-only dashboard) to the valutatore's
+	courses."""
+	user = user or frappe.session.user
+	if not _only_scoped_valutatore(user):
+		return ""
+	courses = get_valutatore_course_names(user)
+	if not courses:
+		return "1=0"
+	return f"`tabLMS Enrollment`.course IN ({_in_clause(courses)})"
+
+
+def course_progress_query_conditions(user: str | None = None) -> str:
+	"""Scope the per-lesson progress list (student drilldown) to the valutatore's
+	courses."""
+	user = user or frappe.session.user
+	if not _only_scoped_valutatore(user):
+		return ""
+	courses = get_valutatore_course_names(user)
+	if not courses:
+		return "1=0"
+	return f"`tabLMS Course Progress`.course IN ({_in_clause(courses)})"
+
+
 # ---------------------------------------------------------------------------
 # Row-level veto (has_permission)
 # ---------------------------------------------------------------------------
@@ -152,6 +189,19 @@ def submission_has_permission(doc, ptype: str = "read", user: str | None = None)
 		return None
 	member = doc.get("member")
 	if member and member in get_valutatore_member_emails(user):
+		return None
+	return False
+
+
+def course_scoped_has_permission(doc, ptype: str = "read", user: str | None = None):
+	"""Veto by-name access to a course-scoped row (LMS Enrollment / LMS Course
+	Progress) outside the valutatore's courses. The list views are already
+	narrowed by the query-conditions; this guards direct (by-name) reads."""
+	user = user or frappe.session.user
+	if not _only_scoped_valutatore(user):
+		return None
+	course = doc.get("course")
+	if course and course in get_valutatore_course_names(user):
 		return None
 	return False
 

@@ -10,7 +10,11 @@ from lms.lms.utils import get_courses as _orginal_get_courses
 from lms.lms.utils import get_batches as _original_get_batches
 from lms.lms.utils import get_progress
 from lms.lms.utils import is_course_valutatore
-from os_lms.os_lms.valutatore import _only_scoped_valutatore, get_valutatore_batches
+from os_lms.os_lms.valutatore import (
+    _only_scoped_valutatore,
+    get_valutatore_batches,
+    get_valutatore_course_names,
+)
 from os_lms.os_lms.api import (
     _find_adjacent_video_lessons,
     evaluate_lesson_access,
@@ -231,17 +235,6 @@ def custom_get_lesson_details(chapter: dict, progress: bool = False):
 # permissions), so the scoping is enforced here, regardless of the filters the
 # frontend tabs send.
 # ---------------------------------------------------------------------------
-def _valutatore_course_names() -> list:
-    batches = get_valutatore_batches()
-    if not batches:
-        return []
-    return frappe.get_all(
-        "Batch Course",
-        {"parent": ["in", batches], "parenttype": "LMS Batch"},
-        pluck="course",
-    )
-
-
 def _scope_filters_for_valutatore(filters: dict, doctype: str, get_own_names) -> dict:
     """Narrow the ``name`` filter to "published OR assigned to the valutatore"."""
     if not _only_scoped_valutatore(frappe.session.user):
@@ -270,7 +263,7 @@ def _scope_filters_for_valutatore(filters: dict, doctype: str, get_own_names) ->
 @frappe.whitelist(allow_guest=True)
 @rate_limit(limit=500, seconds=60 * 60)
 def get_courses(filters: dict = None, start: int = 0) -> list:
-    filters = _scope_filters_for_valutatore(filters, "LMS Course", _valutatore_course_names)
+    filters = _scope_filters_for_valutatore(filters, "LMS Course", get_valutatore_course_names)
     courses = _orginal_get_courses(filters, start)
 
     if courses:

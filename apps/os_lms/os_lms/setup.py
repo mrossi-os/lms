@@ -87,6 +87,10 @@ VALUTATORE_DOCPERMS = {
     "LMS Live Class": {"read": 1},
     "LMS Quiz Submission": {"read": 1},
     "LMS Assignment Submission": {"read": 1, "write": 1},
+    # Read-only course dashboard data (scoped to the valutatore's courses by the
+    # query-conditions / has_permission veto in os_lms.os_lms.valutatore).
+    "LMS Enrollment": {"read": 1},
+    "LMS Course Progress": {"read": 1},
 }
 
 
