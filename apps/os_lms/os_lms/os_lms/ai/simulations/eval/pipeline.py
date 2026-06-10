@@ -35,8 +35,8 @@ from os_lms.os_lms.ai.simulations.eval.types import (
 	DimensionScore,
 	ScenarioRef,
 )
-from os_lms.os_lms.ai.simulations.prompts.judge_loader import load_judge_prompt
 from os_lms.os_lms.ai.utils.llm.provider import ChatMessage, JsonSchema, LLMProvider
+from os_lms.os_lms.ai.utils.template_loader import load_prompt_template
 
 
 def _run_judge(
@@ -47,13 +47,13 @@ def _run_judge(
 	build_kwargs: dict,
 	model: str | None = None,
 ) -> DimensionScore:
-	config = load_judge_prompt(f"judge_{dimension}")
+	config = load_prompt_template(f"judge_{dimension}")
 	response = None
 	try:
 		user_text = judge_module.build_user_message(**build_kwargs)
 		response = provider.chat(
 			[ChatMessage(role="user", content=user_text)],
-			system=config["system_prompt"],
+			system=config["system_template"],
 			model=model,
 			temperature=config["temperature"],
 			max_tokens=config["max_tokens"],

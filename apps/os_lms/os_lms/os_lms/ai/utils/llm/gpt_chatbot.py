@@ -26,7 +26,6 @@ class GptChatbot(Chatbot):
     _model: str = "gpt-4o-mini"
 
     def set_settings(self, settings: OsLmsSettings) -> None:
-        self._system_prompt = settings.system_prompt or DEFAULT_SYSTEM_PROMPT
         self._api_key = settings.openai_key or ""
         self._model = settings.llm_model or "gpt-4o-mini"
 

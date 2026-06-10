@@ -35,7 +35,11 @@ def run_synthetic_llm_student(
 	scenario_brief: str = "",
 ) -> list[dict]:
 	"""Generate a full synthetic session: 1 variant call + alternating
-	student/role-player turns up to scenario.max_turns.
+	role-player/student turns up to scenario.max_turns.
+
+	The role-player opens the conversation (turn_index=0), mirroring the
+	production flow where `SessionOrchestrator.start_session` persists the
+	first assistant turn before the human student replies.
 
 	``lesson_context`` is an optional pre-built blob of RAG chunks injected
 	into every student turn — it represents what the simulated student has
@@ -59,6 +63,27 @@ def run_synthetic_llm_student(
 	transcript: list[dict] = []
 	for turn_index in range(scenario.max_turns):
 		if turn_index % 2 == 0:
+			# Role-player turn — same code path as production. Even indices
+			# (starting with turn 0) so the AI opens just like the live flow.
+			history_msgs = [
+				ChatMessage(role=t["role"], content=t.get("text", ""))
+				for t in transcript
+				if t["role"] in ("user", "assistant")
+			]
+			response = role_player.ask(
+				persona=variant.persona,
+				situation=variant.situation,
+				difficulty=scenario.difficulty,
+				history=history_msgs,
+			)
+			transcript.append(
+				{
+					"turn_index": turn_index,
+					"role": "assistant",
+					"text": response.text.strip(),
+				}
+			)
+		else:
 			# Student turn — eval-specific (the orchestrator's caller is a human)
 			params = build_student_messages(
 				scenario=scenario,
@@ -78,26 +103,6 @@ def run_synthetic_llm_student(
 				{
 					"turn_index": turn_index,
 					"role": "user",
-					"text": response.text.strip(),
-				}
-			)
-		else:
-			# Role-player turn — same code path as production
-			history_msgs = [
-				ChatMessage(role=t["role"], content=t.get("text", ""))
-				for t in transcript
-				if t["role"] in ("user", "assistant")
-			]
-			response = role_player.ask(
-				persona=variant.persona,
-				situation=variant.situation,
-				difficulty=scenario.difficulty,
-				history=history_msgs,
-			)
-			transcript.append(
-				{
-					"turn_index": turn_index,
-					"role": "assistant",
 					"text": response.text.strip(),
 				}
 			)

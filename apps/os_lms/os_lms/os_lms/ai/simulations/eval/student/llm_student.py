@@ -16,7 +16,7 @@ from dataclasses import dataclass
 
 from os_lms.os_lms.ai.simulations.eval.student.profiles import get_profile
 from os_lms.os_lms.ai.simulations.eval.types import ScenarioRef
-from os_lms.os_lms.ai.simulations.prompts.template_loader import (
+from os_lms.os_lms.ai.utils.template_loader import (
 	PURPOSE_LLM_STUDENT,
 	load_prompt_template,
 	render_template,

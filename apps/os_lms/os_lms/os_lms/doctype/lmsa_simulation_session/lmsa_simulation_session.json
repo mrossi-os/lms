@@ -134,7 +134,7 @@
    "read_only": 1
   },
   {
-   "description": "Persona variant as JSON (name, role, company, mood, key_objection, hidden_motivation).",
+   "description": "Persona variant as JSON (name, role, context, mood, key_objection, hidden_motivation).",
    "fieldname": "generated_persona",
    "fieldtype": "Long Text",
    "label": "Generated Persona",

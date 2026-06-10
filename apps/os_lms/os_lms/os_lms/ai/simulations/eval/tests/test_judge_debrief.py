@@ -9,6 +9,7 @@ from os_lms.os_lms.ai.simulations.eval.judges import debrief as judge
 from os_lms.os_lms.ai.simulations.eval.types import (
 	DIMENSION_DEBRIEF, ScenarioRef,
 )
+from os_lms.os_lms.ai.utils.default_prompt import judge_debrief as judge_default
 
 
 _DEBRIEF_PAYLOAD = {
@@ -74,4 +75,4 @@ class TestDebriefJudge(UnitTestCase):
 		self.assertIn("debrief_missing", skipped.warnings)
 
 	def test_judge_version(self):
-		self.assertEqual(judge.JUDGE_VERSION, "debrief.v1")
+		self.assertEqual(judge_default.VERSION, "debrief.v1")

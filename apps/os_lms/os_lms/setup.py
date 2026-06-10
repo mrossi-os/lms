@@ -166,11 +166,13 @@ def rebuild_search_index():
 def seed_prompt_templates():
     """Insert one LMSA Prompt Template record per template purpose if missing.
 
-    Mirrors `seed_judge_prompts` for parametric templates (system + user
-    with `{{var}}` placeholders). Pipeline code reads from here at runtime
-    and falls back to the in-module defaults when a record is absent.
+    Covers all three families now merged into a single doctype:
+    parametric runtime templates, AI authoring prompts, and evaluation
+    judges. The pipeline reads from here at runtime and falls back to the
+    in-module defaults under ``ai/utils/default_prompt/`` when a record is
+    absent.
     """
-    from os_lms.os_lms.ai.simulations.prompts.template_loader import DEFAULTS
+    from os_lms.os_lms.ai.utils.template_loader import DEFAULTS
 
     created = 0
     for purpose, data in DEFAULTS.items():
@@ -185,6 +187,10 @@ def seed_prompt_templates():
         doc.temperature = data["temperature"]
         doc.max_tokens = data["max_tokens"]
         doc.available_placeholders = data["available_placeholders"]
+        if data.get("output_schema") is not None:
+            doc.output_schema = json.dumps(
+                data["output_schema"], indent=2, ensure_ascii=False
+            )
         doc.enabled = 1
         doc.insert(ignore_permissions=True)
         created += 1
@@ -195,34 +201,60 @@ def seed_prompt_templates():
         print("LMSA Prompt Template: all records already present, nothing to seed")
 
 
-def seed_judge_prompts():
-    """Insert one LMSA Judge Prompt record per judge purpose if missing.
+def migrate_judge_prompts_to_template():
+    """One-shot migration: port any ``LMSA Judge Prompt`` records into
+    ``LMSA Prompt Template`` and drop the old doctype.
 
-    The pipeline reads judge configuration (system_prompt, output_schema,
-    temperature, max_tokens) from this doctype and falls back to the
-    hardcoded defaults in the judge modules when a record is missing. This
-    seeder makes the defaults editable from the Desk on first install /
-    after every migration, without touching existing customised records.
+    Idempotent — once the old doctype is gone (after the first successful
+    migrate), this is a noop. Runs in ``after_migrate`` *before*
+    ``seed_prompt_templates`` so operator-customised judge prompts win
+    over the freshly-seeded defaults.
     """
-    from os_lms.os_lms.ai.simulations.prompts.judge_loader import DEFAULTS
+    if not frappe.db.exists("DocType", "LMSA Judge Prompt"):
+        return
 
-    created = 0
-    for purpose, data in DEFAULTS.items():
-        if frappe.db.exists("LMSA Judge Prompt", purpose):
-            continue
-        doc = frappe.new_doc("LMSA Judge Prompt")
-        doc.purpose = purpose
-        doc.label = data["label"]
-        doc.version = data["version"]
-        doc.system_prompt = data["system_prompt"]
-        doc.output_schema = json.dumps(data["output_schema"], indent=2, ensure_ascii=False)
-        doc.temperature = data["temperature"]
-        doc.max_tokens = data["max_tokens"]
-        doc.enabled = 1
-        doc.insert(ignore_permissions=True)
-        created += 1
-        print(f"Seeded LMSA Judge Prompt: {purpose}")
-    if created:
-        frappe.db.commit()
-    else:
-        print("LMSA Judge Prompt: all records already present, nothing to seed")
+    rows = frappe.get_all("LMSA Judge Prompt", fields=["name"])
+    migrated = 0
+    for row in rows:
+        old = frappe.get_doc("LMSA Judge Prompt", row.name)
+        purpose = old.purpose
+        if not frappe.db.exists("LMSA Prompt Template", purpose):
+            new = frappe.new_doc("LMSA Prompt Template")
+            new.purpose = purpose
+            new.label = old.label
+            new.version = old.version
+            # Field rename: judges' `system_prompt` becomes `system_template`
+            # in the merged doctype. user_template stays empty (judges build
+            # the user message in code).
+            new.system_template = old.system_prompt or ""
+            new.user_template = ""
+            new.output_schema = old.output_schema or ""
+            new.temperature = old.temperature
+            new.max_tokens = old.max_tokens
+            new.enabled = old.enabled
+            new.insert(ignore_permissions=True)
+            migrated += 1
+            print(f"Migrated LMSA Judge Prompt -> LMSA Prompt Template: {purpose}")
+        else:
+            print(
+                f"LMSA Prompt Template already exists for {purpose}, "
+                "skipping migration of old judge record"
+            )
+
+    for row in rows:
+        frappe.delete_doc(
+            "LMSA Judge Prompt", row.name, force=1, ignore_permissions=True
+        )
+
+    frappe.delete_doc(
+        "DocType",
+        "LMSA Judge Prompt",
+        force=1,
+        ignore_missing=True,
+        ignore_permissions=True,
+    )
+    frappe.db.commit()
+    print(
+        f"Deprecated LMSA Judge Prompt doctype removed "
+        f"(records migrated: {migrated}, total processed: {len(rows)})"
+    )

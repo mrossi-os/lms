@@ -15,65 +15,6 @@ from os_lms.os_lms.ai.simulations.eval.types import (
 	DimensionScore, DIMENSION_DEBRIEF, ScenarioRef,
 )
 
-JUDGE_VERSION = "debrief.v1"
-
-OUTPUT_SCHEMA: dict = {
-	"type": "object",
-	"additionalProperties": False,
-	"required": [
-		"score",
-		"summary",
-		"evidence_quotes",
-		"warnings",
-		"hallucinated_quotes",
-		"score_inconsistencies",
-		"overall_consistency_delta",
-	],
-	"properties": {
-		"score": {"type": "number"},
-		"summary": {"type": "string"},
-		"evidence_quotes": {
-			"type": "array",
-			"items": {
-				"type": "object",
-				"additionalProperties": False,
-				"required": ["turn_index", "quote", "comment"],
-				"properties": {
-					"turn_index": {"type": "integer"},
-					"quote": {"type": "string"},
-					"comment": {"type": "string"},
-				},
-			},
-		},
-		"warnings": {"type": "array", "items": {"type": "string"}},
-		"hallucinated_quotes": {"type": "array", "items": {"type": "string"}},
-		"score_inconsistencies": {
-			"type": "array",
-			"items": {
-				"type": "object",
-				"additionalProperties": False,
-				"required": ["criterion", "issue"],
-				"properties": {
-					"criterion": {"type": "string"},
-					"issue": {"type": "string"},
-				},
-			},
-		},
-		"overall_consistency_delta": {"type": ["number", "null"]},
-	},
-}
-
-SYSTEM_PROMPT = (
-	"Sei un valutatore del prompt di debrief.\n"
-	"Verifichi: (1) ogni evidence_quote citata nel debrief è effettivamente "
-	"presente nella trascrizione (no allucinazioni); (2) i criterion_scores "
-	"sono coerenti con il tono delle evidenze citate; (3) overall_score è "
-	"coerente con la media pesata dei criterion_scores; (4) gli improvements "
-	"sono specifici alla trascrizione, non generici.\n\n"
-	"Rispondi ESCLUSIVAMENTE con JSON valido."
-)
-
-
 def build_user_message(
 	*,
 	transcript: list[dict],
@@ -81,8 +22,11 @@ def build_user_message(
 	trace_kind: str,
 	debrief_payload: dict | None,
 ) -> str:
-	"""Return the user-side message for this judge. The system prompt is
-	supplied separately by the pipeline via the judge_loader (DB-driven)."""
+	"""Return the user-side message for this judge. The system prompt and
+	output schema are loaded by the pipeline via
+	``load_prompt_template('judge_debrief')`` — DB record if present, else
+	the hardcoded default in
+	``os_lms.os_lms.ai.utils.default_prompt.judge_debrief``."""
 	transcript_block = "\n".join(
 		f"[{t.get('turn_index', i)}] {t['role'].upper()}: {t.get('text', '')}"
 		for i, t in enumerate(transcript)

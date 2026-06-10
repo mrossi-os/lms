@@ -8,6 +8,11 @@ from os_lms.os_lms.ai.ingestion import IngestionService
 from os_lms.os_lms.ai.utils.course_context import format_course_context
 from os_lms.os_lms.ai.utils.llm import ChatMessage, load_settings, resolve_provider
 from os_lms.os_lms.ai.utils.oslms_settings import OsLmsSettings
+from os_lms.os_lms.ai.utils.template_loader import (
+	PURPOSE_TUTOR,
+	load_prompt_template,
+	render_template,
+)
 
 
 class TutorAi:
@@ -86,13 +91,15 @@ class TutorAi:
 		current_lesson_content = "\n\n---\n\n".join(
 			c.get("content", "") for c in chunks if c.get("lesson") == self.lesson
 		)
-		course_context = format_course_context(self.course, include_title=False)
-		prompt = self.settings.system_prompt or ""
-		prompt = (
-			prompt.replace("{{COURSE_TITLE}}", course.get("title") or "")
-			.replace("{{COURSE_DESCRIPTION}}", course_context)
-			.replace("{{LESSONS_CONTENT}}", lessons_content)
-			.replace("{{CURRENT_LESSON_CONTENT}}", current_lesson_content)
+		course_context = format_course_context(self.course_details, include_title=True)
+		template = load_prompt_template(PURPOSE_TUTOR)["system_template"]
+		prompt = render_template(
+			template,
+			{
+				"course_details": course_context,
+				"lessons_content": lessons_content,
+				"current_lesson_content": current_lesson_content,
+			},
 		)
 		return prompt, lessons_content
 

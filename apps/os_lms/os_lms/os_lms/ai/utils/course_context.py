@@ -55,7 +55,7 @@ def format_course_context(course: Any, *, include_title: bool = True) -> str:
 
 	``include_title`` defaults to True. Set it to False when the prompt
 	template already exposes the course title through a separate
-	placeholder (e.g. tutor's ``{{COURSE_TITLE}}``) to avoid duplication.
+	placeholder (e.g. tutor's ``{{course_title}}``) to avoid duplication.
 	"""
 	doc = _resolve_course(course)
 	if doc is None:

@@ -10,7 +10,6 @@ class OsLmsSettings:
     chunk_overlap: int
     top_k: int
     llm_model: str
-    system_prompt: str
     openai_key: str
 
     # Simulation-era fields (additive, all defaulted so existing call sites keep working)

@@ -42,7 +42,7 @@ def _valid_variant_json() -> str:
 	return json.dumps({
 		"situation": "Personaggio del settore manifatturiero.",
 		"persona": {
-			"name": "Mario", "role": "CTO", "company": "AcmeCo",
+			"name": "Mario", "role": "CTO", "context": "AcmeCo",
 			"mood": "scettico", "key_objection": "prezzo",
 			"hidden_motivation": "vuole sconto",
 		},
@@ -98,7 +98,7 @@ class TestScenarioVariantGenerator(UnitTestCase):
 
 def _persona() -> PersonaVariant:
 	return PersonaVariant(
-		name="Anna", role="CFO", company="Foo Srl",
+		name="Anna", role="CFO", context="Foo Srl",
 		mood="diffidente", key_objection="costo",
 		hidden_motivation="convincere il CEO",
 	)

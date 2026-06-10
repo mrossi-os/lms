@@ -789,13 +789,6 @@ const tabsStructure = computed(() => {
 												'Enable AI features for your learning system.',
 											),
 										},
-										{
-											label: __('LLM System Prompt'),
-											name: 'system_prompt',
-											type: 'textarea',
-											rows: 25,
-											description: __('System prompt use with chatbot.'),
-										},
 									],
 								},
 								{
