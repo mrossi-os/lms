@@ -369,7 +369,14 @@ watch(
 )
 
 watch(course, () => {
-	if (!isAdmin.value && !course.data?.published && !course.data?.upcoming) {
+	// A valutatore of a batch containing this course may view it read-only even
+	// when unpublished (course.data.is_valutatore is set by get_course_details).
+	if (
+		!isAdmin.value &&
+		!course.data?.is_valutatore &&
+		!course.data?.published &&
+		!course.data?.upcoming
+	) {
 		router.push({
 			name: 'Courses',
 		})

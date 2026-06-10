@@ -9,6 +9,7 @@ from lms.lms.utils import get_batch_details as _original_get_batch_details
 from lms.lms.utils import get_courses as _orginal_get_courses
 from lms.lms.utils import get_batches as _original_get_batches
 from lms.lms.utils import get_progress
+from lms.lms.utils import is_course_valutatore
 from os_lms.os_lms.valutatore import _only_scoped_valutatore, get_valutatore_batches
 from os_lms.os_lms.api import (
     _find_adjacent_video_lessons,
@@ -43,6 +44,10 @@ def get_course_details(course: str):
         "media_type": hero.get("hero_media_type") or "Video",
         "media_url": hero.get("hero_media_url") or "",
     }
+
+    # Read-only access flag for a "Valutatore" of a batch containing this course:
+    # the SPA uses it to skip the "unpublished → redirect to Courses" guard.
+    course_detail.is_valutatore = is_course_valutatore(course)
 
     return course_detail
 
@@ -85,9 +90,13 @@ def get_lesson(course: str, chapter: int, lesson: int) -> dict:
         is_guest = not user or user == "Guest"
         roles = set(frappe.get_roles(user)) if not is_guest else set()
         instructors = lesson_details.get("instructors") or []
-        is_admin = bool(
-            roles & {"Moderator", "Course Creator", "LMS Instructor"}
-        ) or user in instructors
+        is_admin = (
+            bool(roles & {"Moderator", "Course Creator", "LMS Instructor"})
+            or user in instructors
+            # A valutatore of a batch containing this course reviews it read-only,
+            # so it should reach every lesson regardless of enrolment / order.
+            or is_course_valutatore(course)
+        )
 
         if is_guest or is_admin:
             lesson_details["lesson_access"] = {"allowed": True}

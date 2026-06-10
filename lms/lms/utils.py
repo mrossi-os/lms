@@ -938,7 +938,9 @@ def get_course_details(course: str):
 
 	if not membership and not is_course_published and not can_modify_course(course):
 		membership = enroll_via_batch_if_eligible(course, frappe.session.user)
-		if not membership:
+		# A "Valutatore" of a batch containing this course gets read-only access
+		# to it even when unpublished (no enrolment).
+		if not membership and not is_course_valutatore(course):
 			return {}
 
 	fields = get_course_fields()
@@ -1205,7 +1207,12 @@ def get_lesson(course: str, chapter: int, lesson: int) -> dict:
 		as_dict=1,
 	)
 
-	if not lesson_details.include_in_preview and not membership and not can_modify_course(course):
+	if (
+		not lesson_details.include_in_preview
+		and not membership
+		and not can_modify_course(course)
+		and not is_course_valutatore(course)
+	):
 		return {
 			"no_preview": 1,
 			"title": lesson_details.title,
@@ -2594,6 +2601,39 @@ def is_batch_valutatore(batch: str, user: str = None) -> bool:
 		frappe.db.exists(
 			"LMS Batch Valutatore",
 			{"parent": batch, "parenttype": "LMS Batch", "valutatore": user},
+		)
+	)
+
+
+def is_course_valutatore(course: str, user: str = None) -> bool:
+	"""True if the user is a "Valutatore" of a batch that contains this course.
+
+	Gives the valutatore read-only access to the course detail and its lessons
+	(even when the course is unpublished), mirroring is_batch_valutatore. It does
+	NOT grant edit/publish rights (kept separate from can_modify_course).
+	"""
+	if not course:
+		return False
+	user = user or frappe.session.user
+	# Cheap short-circuit on the hot lesson/course path for the vast majority of
+	# users who are not valutatori at all.
+	if "Valutatore" not in frappe.get_roles(user):
+		return False
+	valutatore_batches = frappe.get_all(
+		"LMS Batch Valutatore",
+		{"parenttype": "LMS Batch", "valutatore": user},
+		pluck="parent",
+	)
+	if not valutatore_batches:
+		return False
+	return bool(
+		frappe.db.exists(
+			"Batch Course",
+			{
+				"parent": ["in", valutatore_batches],
+				"parenttype": "LMS Batch",
+				"course": course,
+			},
 		)
 	)
 
