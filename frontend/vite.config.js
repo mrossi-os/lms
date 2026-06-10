@@ -77,6 +77,16 @@ export default defineConfig(async ({ mode }) => {
 						'node_modules/frappe-ui/src/components/FileUploader/FileUploader.vue'
 					),
 				},
+				// Same pattern as Switch: the TextEditor override re-imports the
+				// ORIGINAL component to wrap it and add the `os-editor-wrapper`
+				// marker class without forking the (large) component file.
+				{
+					find: 'frappe-ui-texteditor-original',
+					replacement: path.resolve(
+						__dirname,
+						'node_modules/frappe-ui/src/components/TextEditor/TextEditor.vue'
+					),
+				},
 				{
 					find: /^@\/utils$/,
 					replacement: path.resolve(__dirname, 'src/oslms/utils/index.js'),

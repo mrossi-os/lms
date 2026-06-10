@@ -80,6 +80,12 @@ textarea {
 }
 
 /* PROSE EDITOR */
+/* TextEditor fixed-menu toolbar (.rounded-t-lg) — match the editor content surface.
+   Targets the toolbar semantically, so editors without a fixed menu are untouched. */
+.os-editor-wrapper .rounded-t-lg {
+	background-color: var(--surface-gray-2) !important;
+}
+
 .ProseMirror {
 	border-radius: 0.5rem;
 	padding: 0.7rem;
