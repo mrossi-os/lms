@@ -1,7 +1,7 @@
 """Persona consistency judge.
 
 Verifies the AI role-player stays in character throughout the chat:
-name, role, company, mood, key_objection, hidden_motivation. Penalises
+name, role, context, mood, key_objection, hidden_motivation. Penalises
 character breaks (assistant offering help, revealing meta), premature
 hidden_motivation reveals, and out-of-character replies to off-topic input.
 """
@@ -15,52 +15,17 @@ from os_lms.os_lms.ai.simulations.eval.types import (
 	ScenarioRef,
 )
 
-JUDGE_VERSION = "persona.v1"
-
-SYSTEM_PROMPT = (
-	"Sei un valutatore esperto di scenari di role-play didattici.\n"
-	"Analizzi la trascrizione e decidi se il personaggio interpretato "
-	"dall'AI (cliente, esaminatore, paziente, ecc.) resta in personaggio "
-	"per tutta la conversazione.\n\n"
-	"Devi penalizzare: rotture di personaggio (es. 'come AI ti aiuto'), "
-	"rivelazioni della motivazione nascosta, risposte meta a domande "
-	"off-topic invece di restare nel ruolo.\n\n"
-	"Rispondi ESCLUSIVAMENTE con JSON valido conforme allo schema."
-)
-
-OUTPUT_SCHEMA: dict = {
-	"type": "object",
-	"additionalProperties": False,
-	"required": ["score", "summary", "evidence_quotes", "warnings"],
-	"properties": {
-		"score": {"type": "number"},
-		"summary": {"type": "string"},
-		"evidence_quotes": {
-			"type": "array",
-			"items": {
-				"type": "object",
-				"additionalProperties": False,
-				"required": ["turn_index", "quote", "comment"],
-				"properties": {
-					"turn_index": {"type": "integer"},
-					"quote": {"type": "string"},
-					"comment": {"type": "string"},
-				},
-			},
-		},
-		"warnings": {"type": "array", "items": {"type": "string"}},
-	},
-}
-
-
 def build_user_message(
 	*,
 	transcript: list[dict],
 	scenario: ScenarioRef,
 	trace_kind: str,
 ) -> str:
-	"""Return the user-side message for this judge. The system prompt is
-	supplied separately by the pipeline via the judge_loader (DB-driven)."""
+	"""Return the user-side message for this judge. The system prompt and
+	output schema are loaded by the pipeline via
+	``load_prompt_template('judge_persona')`` — DB record if present, else
+	the hardcoded default in
+	``os_lms.os_lms.ai.utils.default_prompt.judge_persona``."""
 	transcript_block = "\n".join(
 		f"[{t.get('turn_index', i)}] {t['role'].upper()}: {t.get('text', '')}"
 		for i, t in enumerate(transcript)

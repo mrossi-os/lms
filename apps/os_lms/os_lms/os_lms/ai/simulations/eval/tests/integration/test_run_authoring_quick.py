@@ -35,7 +35,7 @@ def _variant_ok():
 	return json.dumps({
 		"situation": "Cliente competitor.",
 		"persona": {
-			"name": "Mario", "role": "CTO", "company": "AcmeCo",
+			"name": "Mario", "role": "CTO", "context": "AcmeCo",
 			"mood": "scettico", "key_objection": "prezzo",
 			"hidden_motivation": "vuole sconto",
 		},

@@ -10,6 +10,7 @@ from os_lms.os_lms.ai.simulations.eval.types import (
 	DIMENSION_COVERAGE,
 	ScenarioRef,
 )
+from os_lms.os_lms.ai.utils.default_prompt import judge_coverage as coverage_default
 
 
 def _scenario():
@@ -55,4 +56,4 @@ class TestCoverageJudge(UnitTestCase):
 		self.assertEqual(result.extras.get("by_objective", []), [])
 
 	def test_judge_version(self):
-		self.assertEqual(coverage.JUDGE_VERSION, "coverage.v1")
+		self.assertEqual(coverage_default.VERSION, "coverage.v1")

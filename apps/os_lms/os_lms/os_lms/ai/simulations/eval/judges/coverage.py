@@ -12,63 +12,14 @@ from os_lms.os_lms.ai.simulations.eval.types import (
 	DimensionScore, DIMENSION_COVERAGE, ScenarioRef,
 )
 
-JUDGE_VERSION = "coverage.v1"
-
-OUTPUT_SCHEMA: dict = {
-	"type": "object",
-	"additionalProperties": False,
-	"required": ["score", "summary", "evidence_quotes", "warnings", "by_objective"],
-	"properties": {
-		"score": {"type": "number"},
-		"summary": {"type": "string"},
-		"evidence_quotes": {
-			"type": "array",
-			"items": {
-				"type": "object",
-				"additionalProperties": False,
-				"required": ["turn_index", "quote", "comment"],
-				"properties": {
-					"turn_index": {"type": "integer"},
-					"quote": {"type": "string"},
-					"comment": {"type": "string"},
-				},
-			},
-		},
-		"warnings": {"type": "array", "items": {"type": "string"}},
-		"by_objective": {
-			"type": "array",
-			"items": {
-				"type": "object",
-				"additionalProperties": False,
-				"required": ["objective", "covered", "reason", "score"],
-				"properties": {
-					"objective": {"type": "string"},
-					"covered": {"type": "boolean"},
-					"reason": {"type": "string"},
-					"score": {"type": "number"},
-				},
-			},
-		},
-	},
-}
-
-SYSTEM_PROMPT = (
-	"Sei un valutatore di scenari didattici.\n"
-	"Per ogni obiettivo formativo elencato decidi se la conversazione ha "
-	"dato allo studente l'opportunità di esercitarlo, e con quale qualità "
-	"l'opportunità è stata creata.\n\n"
-	"Distinguere: 'covered=false, reason=\"non emerso\"' (responsabilità "
-	"dello scenario) da 'covered=true, score basso' (responsabilità dello "
-	"studente — non penalizza la qualità dello scenario).\n\n"
-	"Rispondi ESCLUSIVAMENTE con JSON valido."
-)
-
-
 def build_user_message(
 	*, transcript: list[dict], scenario: ScenarioRef, trace_kind: str,
 ) -> str:
-	"""Return the user-side message for this judge. The system prompt is
-	supplied separately by the pipeline via the judge_loader (DB-driven)."""
+	"""Return the user-side message for this judge. The system prompt and
+	output schema are loaded by the pipeline via
+	``load_prompt_template('judge_coverage')`` — DB record if present, else
+	the hardcoded default in
+	``os_lms.os_lms.ai.utils.default_prompt.judge_coverage``."""
 	transcript_block = "\n".join(
 		f"[{t.get('turn_index', i)}] {t['role'].upper()}: {t.get('text', '')}"
 		for i, t in enumerate(transcript)

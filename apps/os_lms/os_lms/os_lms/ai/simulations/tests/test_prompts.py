@@ -19,7 +19,7 @@ from os_lms.os_lms.ai.simulations.prompts import (
 SAMPLE_PERSONA = PersonaVariant(
     name="Anna",
     role="Head Buyer",
-    company="Acme",
+    context="Acme",
     mood="diffidente",
     key_objection="prezzo troppo alto",
     hidden_motivation="budget tagliato dal CFO",
@@ -91,17 +91,17 @@ class TestScenarioGenerator(UnitTestCase):
 
     def test_parser_happy_path(self):
         payload = (
-            '{"situation":"S","persona":{"name":"A","role":"R","company":"C",'
+            '{"situation":"S","persona":{"name":"A","role":"R","context":"C",'
             '"mood":"M","key_objection":"K","hidden_motivation":"H"}}'
         )
         variant = parse_scenario_generator_output(payload)
         self.assertEqual(variant.persona.name, "A")
-        self.assertEqual(variant.persona.company, "C")
+        self.assertEqual(variant.persona.context, "C")
 
     def test_parser_handles_fenced_output(self):
         payload = (
             '```json\n{"situation":"S","persona":{"name":"A","role":"R",'
-            '"company":"C","mood":"M","key_objection":"K","hidden_motivation":"H"}}\n```'
+            '"context":"C","mood":"M","key_objection":"K","hidden_motivation":"H"}}\n```'
         )
         self.assertEqual(parse_scenario_generator_output(payload).persona.name, "A")
 

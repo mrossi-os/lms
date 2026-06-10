@@ -4,7 +4,7 @@
  "autoname": "field:purpose",
  "creation": "2026-06-09 12:00:00.000000",
  "doctype": "DocType",
- "description": "Editable parametric prompt template (system + user) for one runtime purpose. The caller substitutes {{var}} placeholders at runtime from a context dict; if the record is missing or disabled the hardcoded default in the module is used.",
+ "description": "Editable prompt configuration for one runtime purpose. Covers parametric templates (system + user with {{var}} placeholders), authoring AI prompts, and evaluation judges (which add an output_schema). The runtime substitutes {{var}} from a context dict; if the record is missing or disabled the hardcoded default under default_prompt/<purpose>.py is used.",
  "engine": "InnoDB",
  "field_order": [
   "purpose",
@@ -18,6 +18,8 @@
   "system_template",
   "section_user",
   "user_template",
+  "section_schema",
+  "output_schema",
   "section_help",
   "available_placeholders",
   "description_field",
@@ -30,7 +32,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Purpose",
-   "options": "llm_student\nrole_play\nscenario_variant_generator\ndebrief\nscenario_generator_ai\nevaluation_schema_generator_ai\ntutor",
+   "options": "llm_student\nrole_play\nscenario_variant_generator\ndebrief\nscenario_generator_ai\nevaluation_schema_generator_ai\ntutor\njudge_persona\njudge_coverage\njudge_debrief\njudge_difficulty",
    "reqd": 1,
    "unique": 1,
    "description": "Stable identifier looked up by the runtime. One record per purpose."
@@ -96,7 +98,19 @@
    "fieldname": "user_template",
    "fieldtype": "Long Text",
    "label": "User Template",
-   "description": "Sent as the user message after placeholder substitution. Use {{var}} for substitutions. Optional: prompts that only need a system message (e.g. role_play) leave this empty."
+   "description": "Sent as the user message after placeholder substitution. Use {{var}} for substitutions. Optional: prompts that only need a system message (e.g. role_play, judges) leave this empty."
+  },
+  {
+   "fieldname": "section_schema",
+   "fieldtype": "Section Break",
+   "label": "Output Schema (Judges)"
+  },
+  {
+   "fieldname": "output_schema",
+   "fieldtype": "Code",
+   "label": "Output Schema (JSON)",
+   "options": "JSON",
+   "description": "Optional JSON Schema enforced via response_format. Required only for evaluation judges (judge_persona/coverage/debrief/difficulty). Must remain compatible with the judge module's parse_output(): the LLM still has to produce score, summary, evidence_quotes, warnings, plus the dimension-specific extras the parser reads. Leave empty for runtime templates and authoring prompts."
   },
   {
    "fieldname": "section_help",

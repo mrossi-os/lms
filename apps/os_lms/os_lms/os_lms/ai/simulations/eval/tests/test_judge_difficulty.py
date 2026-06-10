@@ -9,6 +9,7 @@ from os_lms.os_lms.ai.simulations.eval.judges import difficulty as judge
 from os_lms.os_lms.ai.simulations.eval.types import (
 	DIMENSION_DIFFICULTY, ScenarioRef,
 )
+from os_lms.os_lms.ai.utils.default_prompt import judge_difficulty as judge_default
 
 
 def _scenario(diff="medium"):
@@ -55,4 +56,4 @@ class TestDifficultyJudge(UnitTestCase):
 		self.assertEqual(result.extras["perceived_difficulty"], "medium-hard")
 
 	def test_judge_version(self):
-		self.assertEqual(judge.JUDGE_VERSION, "difficulty.v1")
+		self.assertEqual(judge_default.VERSION, "difficulty.v1")

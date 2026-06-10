@@ -449,7 +449,7 @@ def _persona_to_dict(persona: PersonaVariant) -> dict:
 	return {
 		"name": persona.name,
 		"role": persona.role,
-		"company": persona.company,
+		"context": persona.context,
 		"mood": persona.mood,
 		"key_objection": persona.key_objection,
 		"hidden_motivation": persona.hidden_motivation,
@@ -462,7 +462,7 @@ def _persona_from_session(session) -> PersonaVariant:
 	return PersonaVariant(
 		name=data.get("name", ""),
 		role=data.get("role", ""),
-		company=data.get("company", ""),
+		context=data.get("context", ""),
 		mood=data.get("mood", ""),
 		key_objection=data.get("key_objection", ""),
 		hidden_motivation=data.get("hidden_motivation", ""),
@@ -493,7 +493,7 @@ def _first_roleplay_line(variant: ScenarioVariant) -> str:
 	Kept short and neutral so the student decides the opening tactic.
 	"""
 	persona = variant.persona
-	return f"Buongiorno, sono {persona.name}, {persona.role} di {persona.company}. Mi dica."
+	return f"Buongiorno, sono {persona.name}, {persona.role} ({persona.context})."
 
 
 def _new_seed() -> str:

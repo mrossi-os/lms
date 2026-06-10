@@ -30,7 +30,10 @@ after_migrate = [
     "os_lms.setup.setup_valutatore_role_and_permissions",
     "os_lms.setup.create_redis_index",
     "os_lms.setup.rebuild_search_index",
-    "os_lms.setup.seed_judge_prompts",
+    # Migration must run BEFORE seed_prompt_templates so operator-customised
+    # judge prompts ported from the deprecated LMSA Judge Prompt doctype
+    # take precedence over the freshly-seeded defaults.
+    "os_lms.setup.migrate_judge_prompts_to_template",
     "os_lms.setup.seed_prompt_templates",
 ]
 

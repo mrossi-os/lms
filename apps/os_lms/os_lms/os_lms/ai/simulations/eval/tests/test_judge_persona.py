@@ -11,6 +11,7 @@ from os_lms.os_lms.ai.simulations.eval.types import (
 	DIMENSION_PERSONA,
 	ScenarioRef,
 )
+from os_lms.os_lms.ai.utils.default_prompt import judge_persona as persona_default
 
 
 def _scenario():
@@ -40,9 +41,9 @@ class TestPersonaJudge(UnitTestCase):
 		self.assertIn("Buongiorno", content)
 
 	def test_default_system_prompt_non_empty(self):
-		# SYSTEM_PROMPT lives in the module as a default; the runtime config
-		# comes from judge_loader, which falls back to this value.
-		self.assertTrue(persona.SYSTEM_PROMPT.strip())
+		# SYSTEM_TEMPLATE lives under default_prompt/ as the hardcoded
+		# fallback for the merged LMSA Prompt Template doctype.
+		self.assertTrue(persona_default.SYSTEM_TEMPLATE.strip())
 
 	def test_parse_output_valid(self):
 		text = json.dumps({
@@ -69,4 +70,4 @@ class TestPersonaJudge(UnitTestCase):
 			persona.parse_output("not json")
 
 	def test_judge_version(self):
-		self.assertEqual(persona.JUDGE_VERSION, "persona.v1")
+		self.assertEqual(persona_default.VERSION, "persona.v1")

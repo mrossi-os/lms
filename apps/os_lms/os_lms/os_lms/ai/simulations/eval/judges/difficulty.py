@@ -13,54 +13,6 @@ from os_lms.os_lms.ai.simulations.eval.types import (
 	DimensionScore, DIMENSION_DIFFICULTY, ScenarioRef,
 )
 
-JUDGE_VERSION = "difficulty.v1"
-
-OUTPUT_SCHEMA: dict = {
-	"type": "object",
-	"additionalProperties": False,
-	"required": [
-		"score",
-		"summary",
-		"evidence_quotes",
-		"warnings",
-		"expected_difficulty",
-		"perceived_difficulty",
-		"calibration_offset",
-	],
-	"properties": {
-		"score": {"type": "number"},
-		"summary": {"type": "string"},
-		"evidence_quotes": {
-			"type": "array",
-			"items": {
-				"type": "object",
-				"additionalProperties": False,
-				"required": ["turn_index", "quote", "comment"],
-				"properties": {
-					"turn_index": {"type": "integer"},
-					"quote": {"type": "string"},
-					"comment": {"type": "string"},
-				},
-			},
-		},
-		"warnings": {"type": "array", "items": {"type": "string"}},
-		"expected_difficulty": {"type": "string"},
-		"perceived_difficulty": {"type": "string"},
-		"calibration_offset": {"type": "number"},
-	},
-}
-
-SYSTEM_PROMPT = (
-	"Sei un valutatore di calibrazione difficoltà di scenari didattici.\n"
-	"Confronti la difficoltà dichiarata dello scenario (easy/medium/hard) "
-	"con quella effettivamente percepita guardando la conversazione e — se "
-	"fornito — il punteggio finale del debrief.\n\n"
-	"Restituisci calibration_offset in [-2, +2]: positivo = scenario più "
-	"duro dell'etichetta, negativo = più facile.\n\n"
-	"Rispondi ESCLUSIVAMENTE con JSON valido."
-)
-
-
 def build_user_message(
 	*,
 	transcript: list[dict],
@@ -68,8 +20,11 @@ def build_user_message(
 	trace_kind: str,
 	runtime_overall_score: float | int | None = None,
 ) -> str:
-	"""Return the user-side message for this judge. The system prompt is
-	supplied separately by the pipeline via the judge_loader (DB-driven)."""
+	"""Return the user-side message for this judge. The system prompt and
+	output schema are loaded by the pipeline via
+	``load_prompt_template('judge_difficulty')`` — DB record if present,
+	else the hardcoded default in
+	``os_lms.os_lms.ai.utils.default_prompt.judge_difficulty``."""
 	transcript_block = "\n".join(
 		f"[{t.get('turn_index', i)}] {t['role'].upper()}: {t.get('text', '')}"
 		for i, t in enumerate(transcript)

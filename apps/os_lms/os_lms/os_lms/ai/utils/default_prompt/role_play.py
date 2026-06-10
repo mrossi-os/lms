@@ -11,7 +11,7 @@ TEMPERATURE = 0.7
 MAX_TOKENS = 400
 
 SYSTEM_TEMPLATE = (
-	"Tu sei {{persona_name}}, {{persona_role}} di {{persona_company}}.\n\n"
+	"Tu sei {{persona_name}}, {{persona_role}} ({{persona_context}}).\n\n"
 	"CONTESTO\n{{generated_situation}}\n\n"
 	"MOOD INIZIALE: {{persona_mood}}\n"
 	"RESISTENZA CHIAVE: {{persona_key_objection}}\n"
@@ -41,7 +41,7 @@ SYSTEM_TEMPLATE = (
 USER_TEMPLATE = ""
 
 PLACEHOLDERS = (
-	"{{persona_name}}, {{persona_role}}, {{persona_company}}, "
+	"{{persona_name}}, {{persona_role}}, {{persona_context}}, "
 	"{{persona_mood}}, {{persona_key_objection}}, "
 	"{{persona_hidden_motivation}}, {{generated_situation}}, {{difficulty}}"
 )

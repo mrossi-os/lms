@@ -57,7 +57,7 @@ def build_role_play_system_prompt(
 	ctx = {
 		"persona_name": persona.name,
 		"persona_role": persona.role,
-		"persona_company": persona.company,
+		"persona_context": persona.context,
 		"persona_mood": persona.mood,
 		"persona_key_objection": persona.key_objection,
 		"persona_hidden_motivation": persona.hidden_motivation,
