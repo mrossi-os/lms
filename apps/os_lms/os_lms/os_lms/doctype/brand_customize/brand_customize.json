@@ -10,6 +10,10 @@
 		"company_primary",
 		"column_break_brand",
 		"company_secondary",
+		"section_app",
+		"app_main_color",
+		"column_break_app",
+		"app_secondary_color",
 		"section_surfaces",
 		"surface_white",
 		"surface_menu_bar",
@@ -78,6 +82,27 @@
 			"fieldtype": "Color",
 			"label": "Company Secondary",
 			"description": "CSS: --color-company-secondary"
+		},
+		{
+			"fieldname": "section_app",
+			"fieldtype": "Section Break",
+			"label": "App"
+		},
+		{
+			"fieldname": "app_main_color",
+			"fieldtype": "Color",
+			"label": "App Main Color",
+			"description": "Primary color returned to the mobile app via get_instance_info"
+		},
+		{
+			"fieldname": "column_break_app",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "app_secondary_color",
+			"fieldtype": "Color",
+			"label": "App Secondary Color",
+			"description": "Secondary color returned to the mobile app via get_instance_info"
 		},
 		{
 			"fieldname": "section_surfaces",
@@ -267,7 +292,7 @@
 	"index_web_pages_for_search": 1,
 	"issingle": 1,
 	"links": [],
-	"modified": "2026-06-05 14:45:00.000000",
+	"modified": "2026-06-11 12:00:00.000000",
 	"modified_by": "Administrator",
 	"module": "OS LMS",
 	"name": "Brand Customize",
