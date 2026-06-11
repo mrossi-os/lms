@@ -59,6 +59,7 @@
 						:description="
 							__('Issue a free certificate when learners complete the course.')
 						"
+						:disabled="!!doc?.trueskills_certificate_enabled"
 						@change="markDirty()"
 					/>
 				</template>
@@ -72,6 +73,7 @@
 						:description="
 							__('Issue a free certificate when learners complete the course.')
 						"
+						:disabled="!!doc?.trueskills_certificate_enabled"
 						@change="markDirty()"
 					/>
 					<Switch
@@ -122,6 +124,48 @@
 						/>
 					</template>
 				</template>
+
+				<div class="border-t -mx-5" />
+				<Switch
+					size="sm"
+					v-model="doc.trueskills_certificate_enabled"
+					:label="__('Emetti certificato TrueSkill')"
+					:description="
+						__(
+							'Usa TrueSkill come emettitore del certificato per questo corso. Sostituisce il certificato interno LMS.'
+						)
+					"
+					@change="markDirty()"
+				/>
+				<template v-if="doc?.trueskills_certificate_enabled">
+					<div class="text-sm text-ink-gray-7 bg-surface-gray-2 rounded-md p-3">
+						{{
+							__(
+								'Quando attivo, il certificato interno LMS non verrà emesso per questo corso: l\'emissione passa a TrueSkill.'
+							)
+						}}
+					</div>
+					<FormControl
+						v-model="trueskillsTemplateModel"
+						type="select"
+						:label="__('Template certificato TrueSkill')"
+						:options="trueskillTemplateOptions"
+						:disabled="trueskillTemplatesResource.loading"
+					/>
+					<div
+						v-if="trueskillTemplatesError"
+						class="text-sm text-ink-red-5 bg-surface-red-1 rounded-md p-2"
+					>
+						{{ trueskillTemplatesError }}
+					</div>
+					<button
+						type="button"
+						class="text-sm text-ink-gray-7 underline hover:text-ink-gray-9 self-start"
+						@click="openTrueskillTemplateCreator"
+					>
+						{{ __('+ Crea nuovo template') }}
+					</button>
+				</template>
 			</div>
 		</CollapsibleSection>
 	</div>
@@ -131,15 +175,20 @@
 		:defaultRoles="['batch_evaluator']"
 		@created="onEvaluatorCreated"
 	/>
+	<TrueSkillsTemplateModal
+		v-model="showTrueskillTemplateModal"
+		@created="onTrueskillTemplateCreated"
+	/>
 </template>
 
 <script setup lang="ts">
-import { FormControl, createResource } from 'frappe-ui'
+import { FormControl, createResource, toast } from 'frappe-ui'
 import Switch from '@/components/Controls/Switch.vue'
-import { computed, inject, ref } from 'vue'
+import { computed, inject, ref, watch } from 'vue'
 import CollapsibleSection from '@/components/CollapsibleSection.vue'
 import Link from '@/components/Controls/Link.vue'
 import NewMemberModal from '@/components/Modals/NewMemberModal.vue'
+import TrueSkillsTemplateModal from '@/oslms/components/trueskills/TrueSkillsTemplateModal.vue'
 import type { CourseFormContext, Resource } from '@/types/api'
 
 const { resource, markDirty } = inject<CourseFormContext>('courseForm')!
@@ -198,5 +247,106 @@ function onEvaluatorCreated(created: { name: string }) {
 	resource.doc.evaluator = created.name
 	evaluatorLinkRef.value?.reload()
 	markDirty()
+}
+
+// --- TrueSkills certificate emission -----------------------------------------
+interface TrueSkillsTemplate {
+	id?: string | number
+	value?: string | number
+	name?: string
+	title?: string
+	label?: string
+}
+
+interface TrueSkillsTemplatesData {
+	ok: boolean
+	templates?: TrueSkillsTemplate[]
+	error?: string
+}
+
+const trueskillTemplatesResource = createResource({
+	url: 'os_lms.os_lms.trueskills.api.list_templates',
+	auto: false,
+	onError(err: { messages?: string[]; message?: string }) {
+		toast.error(
+			err.messages?.[0] || err.message || __('Failed to load templates')
+		)
+	},
+}) as Resource<TrueSkillsTemplatesData | null>
+
+const trueskillTemplateOptions = computed<{ label: string; value: string }[]>(
+	() => {
+		const placeholder = {
+			label: trueskillTemplatesResource.loading
+				? __('Caricamento template...')
+				: __('Seleziona un template...'),
+			value: '',
+		}
+		const data = trueskillTemplatesResource.data
+		if (!data?.ok) return [placeholder]
+		const templates = Array.isArray(data.templates) ? data.templates : []
+		return [
+			placeholder,
+			...templates.map((t) => {
+				const rawValue = t.id ?? t.value ?? t.name ?? ''
+				return {
+					label: t.name || t.title || t.label || String(rawValue),
+					// Coerce to string so the native <select> can match against
+					// whatever shape (number/string) the backend stores.
+					value: String(rawValue),
+				}
+			}),
+		]
+	}
+)
+
+const trueskillTemplatesError = computed<string | null>(() => {
+	const data = trueskillTemplatesResource.data
+	if (!data || data.ok) return null
+	return data.error || __('Impossibile caricare i template TrueSkill.')
+})
+
+// Proxy that keeps the select value as a string while letting the doc field
+// hold whatever type the backend returns (Frappe may coerce numeric strings
+// to int on read).
+const trueskillsTemplateModel = computed<string>({
+	get: () => {
+		const v = resource.doc?.trueskills_template_id
+		return v === null || v === undefined ? '' : String(v)
+	},
+	set: (val: string) => {
+		if (!resource.doc) return
+		resource.doc.trueskills_template_id = val
+		markDirty()
+	},
+})
+
+watch(
+	() => resource.doc?.trueskills_certificate_enabled,
+	(enabled) => {
+		if (
+			enabled &&
+			!trueskillTemplatesResource.loading &&
+			!trueskillTemplatesResource.data
+		) {
+			trueskillTemplatesResource.fetch()
+		}
+	},
+	{ immediate: true }
+)
+
+const showTrueskillTemplateModal = ref<boolean>(false)
+
+function openTrueskillTemplateCreator() {
+	showTrueskillTemplateModal.value = true
+}
+
+function onTrueskillTemplateCreated(template: { id?: string; uid?: string }) {
+	const newId = template?.id ?? template?.uid
+	if (newId != null && resource.doc) {
+		resource.doc.trueskills_template_id = newId
+		markDirty()
+	}
+	trueskillTemplatesResource.fetch()
 }
 </script>
