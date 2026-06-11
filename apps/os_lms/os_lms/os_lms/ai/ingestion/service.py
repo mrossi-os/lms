@@ -2,6 +2,7 @@ import hashlib
 import logging
 
 import frappe
+from frappe import _
 from frappe.utils import now_datetime
 
 from os_lms.os_lms.ai.utils.lesson_parser import LessonContentParser
@@ -36,7 +37,7 @@ class IngestionService:
 
 	def add_lesson_to_ingest_queue(self, lesson):
 		if not self.settings.enabled:
-			frappe.throw("LMSA is not enabled")
+			frappe.throw(_("LMSA is not enabled"))
 		if lesson.index_status == "processing":
 			return
 		lesson.index_status = "pending"
@@ -66,7 +67,7 @@ class IngestionService:
 	def ingest_lesson(self, lesson):
 		"""Main ingestion function for a lesson."""
 		if not self.settings.enabled:
-			frappe.throw("LMSA is not enabled")
+			frappe.throw(_("LMSA is not enabled"))
 
 		if lesson.index_status == "processing":
 			self.logger.info("Lesson %s already processing, skipping", lesson.name)
@@ -81,7 +82,7 @@ class IngestionService:
 			text = self._normalize_lesson_text(lesson)
 
 			if not text:
-				frappe.throw("No content found in lesson")
+				frappe.throw(_("No content found in lesson"))
 
 			self.rag_db.ingest_data(lesson.course, lesson.name, text)
 
@@ -152,7 +153,7 @@ class IngestionService:
 	def search_chunks_by_lessons(self, course: str, lessons: list[str], question: str) -> list[dict]:
 		"""Retrieve relevant chunks restricted to the given lessons."""
 		if not self.settings.enabled:
-			frappe.throw("LMSA is not enabled")
+			frappe.throw(_("LMSA is not enabled"))
 		if not lessons:
 			return []
 		return self.rag_db.search(course, lessons, question)
