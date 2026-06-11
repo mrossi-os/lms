@@ -17,7 +17,7 @@
 		<template #body-content>
 			<div class="space-y-4 text-base">
 				<FormControl
-					label="Title"
+					:label="__('Title')"
 					v-model="chapter.title"
 					:required="true"
 					autocomplete="off"

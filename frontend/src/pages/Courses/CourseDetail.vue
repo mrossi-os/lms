@@ -403,7 +403,9 @@ const isAdmin = computed<boolean>(() => {
 
 // A valutatore of a batch containing this course gets a read-only tabbed view
 // (Overview + Dashboard), but not the admin editor/settings tabs.
-const isValutatore = computed<boolean>(() => Boolean(course.data?.is_valutatore))
+const isValutatore = computed<boolean>(() =>
+	Boolean(course.data?.is_valutatore),
+)
 
 const showTabs = computed<boolean>(() => isAdmin.value || isValutatore.value)
 

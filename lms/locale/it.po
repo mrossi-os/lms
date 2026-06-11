@@ -2685,7 +2685,7 @@ msgstr "Rispetta Ordine Corsi"
 #: frontend/src/pages/Courses/CourseDashboard.vue:38
 #: frontend/src/pages/Courses/CourseEnrollmentModal.vue:47
 msgid "Enroll"
-msgstr "Iscriviti"
+msgstr "Iscrivi"
 
 #: frontend/src/pages/Programs/ProgramForm.vue:177
 msgid "Enroll Member to Program"

@@ -47,7 +47,12 @@ import { createResource, toast } from 'frappe-ui'
 import { reactive, onMounted, inject, ref, onBeforeUnmount } from 'vue'
 import EditorJS from '@editorjs/editorjs'
 import { ChevronRight } from 'lucide-vue-next'
-import { getEditorTools, enablePlyr, sanitizeEditorJs } from '@/utils'
+import {
+	getEditorTools,
+	getEditorI18n,
+	enablePlyr,
+	sanitizeEditorJs,
+} from '@/utils'
 import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
 import { useAiContext } from '@/stores/aiContext'
 import OsLessonForm from '@/oslms/pages/OsLessonForm.vue'
@@ -103,9 +108,7 @@ const renderEditor = (holder) => {
 		holder: holder,
 		tools: getEditorTools(true),
 		defaultBlock: 'markdown',
-		i18n: {
-			direction: document.documentElement.dir === 'rtl' ? 'rtl' : 'ltr',
-		},
+		i18n: getEditorI18n(),
 		onChange: async (api, event) => {
 			enablePlyr()
 			markDirty()
@@ -164,7 +167,7 @@ const addInstructorNotes = (data) => {
 	instructorEditor.value.isReady.then(() => {
 		if (data.lesson.instructor_content) {
 			instructorEditor.value.render(
-				sanitizeEditorJs(JSON.parse(data.lesson.instructor_content))
+				sanitizeEditorJs(JSON.parse(data.lesson.instructor_content)),
 			)
 		} else if (data.lesson.instructor_notes) {
 			let blocks = convertToJSON(data.lesson)
@@ -414,13 +417,13 @@ const createNewLesson = () => {
 							isDirty.value = false
 							lessonDetails.reload()
 						},
-					}
+					},
 				)
 			},
 			onError(err) {
 				toast.error(err.messages?.[0] || err)
 			},
-		}
+		},
 	)
 }
 
@@ -442,7 +445,7 @@ const editCurrentLesson = () => {
 			onError(err) {
 				toast.error(err.message)
 			},
-		}
+		},
 	)
 }
 

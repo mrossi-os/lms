@@ -317,6 +317,102 @@ export function getEditorTools() {
 	}
 }
 
+// EditorJS only renders its block menu, inline toolbar and block tunes in
+// English unless given an i18n dictionary. We route every label through __()
+// so the editor follows the user's language (translations live in the app
+// translation files, e.g. lms/translations/it.csv). Keys must match the exact
+// English strings EditorJS and its tools look up; namespaces mirror the tool
+// registration names in getEditorTools (header, list, table, image, embed).
+export function getEditorI18n() {
+	return {
+		direction: document.documentElement.dir === 'rtl' ? 'rtl' : 'ltr',
+		messages: {
+			ui: {
+				blockTunes: {
+					toggler: {
+						'Click to tune': __('Click to tune'),
+						'or drag to move': __('or drag to move'),
+					},
+				},
+				inlineToolbar: {
+					converter: {
+						'Convert to': __('Convert to'),
+					},
+				},
+				toolbar: {
+					toolbox: {
+						Add: __('Add'),
+					},
+				},
+				popover: {
+					Filter: __('Filter'),
+					'Nothing found': __('Nothing found'),
+				},
+			},
+			toolNames: {
+				Text: __('Text'),
+				Heading: __('Heading'),
+				List: __('List'),
+				Table: __('Table'),
+				Image: __('Image'),
+				Upload: __('Upload'),
+				CodeBox: __('CodeBox'),
+				Bold: __('Bold'),
+				Italic: __('Italic'),
+				Link: __('Link'),
+				Color: __('Color'),
+			},
+			tools: {
+				header: {
+					'Heading 1': __('Heading 1'),
+					'Heading 2': __('Heading 2'),
+					'Heading 3': __('Heading 3'),
+					'Heading 4': __('Heading 4'),
+					'Heading 5': __('Heading 5'),
+					'Heading 6': __('Heading 6'),
+				},
+				list: {
+					Ordered: __('Ordered'),
+					Unordered: __('Unordered'),
+				},
+				table: {
+					Heading: __('Heading'),
+					'With headings': __('With headings'),
+					'Without headings': __('Without headings'),
+					Stretch: __('Stretch'),
+					Collapse: __('Collapse'),
+					'Add column to left': __('Add column to left'),
+					'Add column to right': __('Add column to right'),
+					'Delete column': __('Delete column'),
+					'Add row above': __('Add row above'),
+					'Add row below': __('Add row below'),
+					'Delete row': __('Delete row'),
+				},
+				image: {
+					'Add Border': __('Add Border'),
+					'Stretch Image': __('Stretch Image'),
+					'Add Background': __('Add Background'),
+				},
+				embed: {
+					'Enter a caption': __('Enter a caption'),
+				},
+			},
+			blockTunes: {
+				delete: {
+					Delete: __('Delete'),
+					'Click to delete': __('Click to delete'),
+				},
+				moveUp: {
+					'Move up': __('Move up'),
+				},
+				moveDown: {
+					'Move down': __('Move down'),
+				},
+			},
+		},
+	}
+}
+
 export function getTimezones() {
 	return [
 		'Pacific/Midway',

@@ -328,6 +328,7 @@ import {
 } from 'lucide-vue-next'
 import {
 	getEditorTools,
+	getEditorI18n,
 	enablePlyr,
 	highlightText,
 	sanitizeEditorJs,
@@ -515,9 +516,7 @@ const renderEditor = (holder, content) => {
 		data: sanitizeEditorJs(JSON.parse(content)),
 		readOnly: true,
 		defaultBlock: 'embed',
-		i18n: {
-			direction: document.documentElement.dir === 'rtl' ? 'rtl' : 'ltr',
-		},
+		i18n: getEditorI18n(),
 	})
 }
 

@@ -96,6 +96,10 @@ textarea {
 .ProseMirror #editor ::selection {
 	background-color: var(--surface-gray-3) !important;
 }
+.ce-conversion-tool__icon {
+	background-color: var(--surface-gray-2) !important;
+}
+
 .ce-block--selected .ce-block__content {
 	background-color: var(--surface-gray-3) !important;
 }
