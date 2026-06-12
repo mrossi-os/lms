@@ -10,7 +10,7 @@
 			<div
 				v-for="certificate in certificates.data"
 				:key="certificate.name"
-				class="flex flex-col bg-surface-white border rounded-lg p-3 cursor-pointer hover:bg-surface-menu-bar"
+				class="flex flex-col bg-surface-white border rounded-lg card cursor-pointer hover:bg-surface-menu-bar"
 				@click="openCertificate(certificate)"
 			>
 				<div class="font-medium leading-5 mb-2 text-ink-gray-9">
