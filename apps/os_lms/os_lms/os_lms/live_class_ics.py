@@ -6,6 +6,7 @@ with whichever calendar app (Apple Calendar, Outlook, etc.) they use.
 """
 
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlencode
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import frappe
@@ -116,6 +117,62 @@ def get_ics_url(name: str) -> str:
 	"""
 	signed = get_signed_params({"name": name})
 	return frappe.utils.get_url() + "/api/method/os_lms.os_lms.live_class_ics.download?" + signed
+
+
+def get_calendar_links(doc) -> dict:
+	"""Return "add to calendar" URLs for the given LMS Live Class doc.
+
+	  - ``google_url`` / ``outlook_url``: prefilled web "add event" deep links for
+	    Google Calendar and Outlook.com.
+	  - ``ics_url``: the signed ``.ics`` download (Apple Calendar, Thunderbird,
+	    desktop Outlook and any other client that handles ``.ics``).
+
+	Built here, not in Jinja, so timezone conversion and URL-encoding stay correct
+	and consistent with the ``.ics`` the download endpoint serves. Pass the result
+	into email ``args`` so any template — file-based or per-client desk Email
+	Template — can render ``{{ google_url }}``, ``{{ outlook_url }}``, ``{{ ics_url }}``.
+	"""
+	local_dt = get_datetime(f"{doc.date} {doc.time}")
+	start_utc = _to_utc(local_dt, doc.get("timezone"))
+	duration_minutes = cint(doc.get("duration")) or 60
+	end_utc = start_utc + timedelta(minutes=duration_minutes)
+
+	title = doc.get("title") or _("Lezione dal vivo")
+	location = doc.get("join_url") or ""
+	details_parts = []
+	if doc.get("description"):
+		details_parts.append(doc.description)
+	if doc.get("join_url"):
+		details_parts.append(_("Partecipa: {0}").format(doc.join_url))
+	details = "\n\n".join(details_parts)
+
+	# UTC with a trailing "Z" is unambiguous; each provider renders it in the
+	# recipient's own timezone.
+	google_url = "https://calendar.google.com/calendar/render?" + urlencode(
+		{
+			"action": "TEMPLATE",
+			"text": title,
+			"dates": f"{start_utc.strftime('%Y%m%dT%H%M%SZ')}/{end_utc.strftime('%Y%m%dT%H%M%SZ')}",
+			"details": details,
+			"location": location,
+		}
+	)
+	outlook_url = "https://outlook.live.com/calendar/0/deeplink/compose?" + urlencode(
+		{
+			"path": "/calendar/action/compose",
+			"rru": "addevent",
+			"subject": title,
+			"startdt": start_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+			"enddt": end_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+			"body": details,
+			"location": location,
+		}
+	)
+	return {
+		"google_url": google_url,
+		"outlook_url": outlook_url,
+		"ics_url": get_ics_url(doc.name),
+	}
 
 
 def _user_can_access(doc) -> bool:

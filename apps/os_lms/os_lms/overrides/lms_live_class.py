@@ -9,7 +9,7 @@ from lms.lms.doctype.lms_live_class.lms_live_class import LMSLiveClass
 from lms.lms.utils import get_lms_route
 
 from os_lms.os_lms.email_utils import send_templated_email
-from os_lms.os_lms.live_class_ics import get_ics_url
+from os_lms.os_lms.live_class_ics import get_calendar_links
 
 
 def _lc_log(msg):
@@ -161,15 +161,13 @@ class CustomLMSLiveClass(LMSLiveClass):
 			f"participants={participants} instructors={instructors} "
 			f"join_url={self.join_url} start_url={self.start_url} title={self.title!r}"
 		)
-		# No .ics attachment: an attached calendar file makes Gmail/Outlook render
-		# their own native "Add to Google Calendar" card, which adds the event to one
-		# calendar automatically without letting the user choose. We rely solely on the
-		# "Add to calendar" button below, which downloads the raw .ics so the
-		# recipient's OS lets them pick the calendar app.
-		#
-		# Signed, guest-accessible link for that button. Exposed in `args` so any
-		# template (file-based or per-client desk Email Template) can render `{{ ics_url }}`.
-		ics_url = get_ics_url(self.name)
+		# "Add to calendar" deep links (Google, Outlook) plus the raw .ics download
+		# (Apple/desktop clients) — one button each, so the recipient picks their own
+		# calendar. No .ics *attachment*: an attached calendar file makes Gmail/Outlook
+		# render their own native card that adds the event to one calendar automatically
+		# without letting the user choose. Exposed in `args` so any template (file-based
+		# or per-client desk Email Template) can render the buttons.
+		cal_links = get_calendar_links(self)
 		sent = 0
 		failed = 0
 		for participant in participants:
@@ -194,7 +192,9 @@ class CustomLMSLiveClass(LMSLiveClass):
 						"description": self.description,
 						"batch_name": self.batch_name,
 						"live_class_name": self.name,
-						"ics_url": ics_url,
+						"google_url": cal_links["google_url"],
+						"outlook_url": cal_links["outlook_url"],
+						"ics_url": cal_links["ics_url"],
 					},
 					header=[_("Invito lezione dal vivo"), "green"],
 				)
