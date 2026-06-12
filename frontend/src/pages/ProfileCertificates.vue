@@ -47,7 +47,7 @@
 </template>
 <script setup>
 import { createListResource, createResource } from 'frappe-ui'
-import { inject, onMounted, ref } from 'vue'
+import { inject, onMounted, ref, watch } from 'vue'
 
 const dayjs = inject('$dayjs')
 const props = defineProps({
@@ -72,9 +72,6 @@ const certificates = createListResource({
 	},
 	fields: ['name', 'course_title', 'batch_title', 'issue_date', 'template'],
 	cache: ['certificates', props.profile.data?.name],
-	onSuccess(data) {
-		loadTrueskillsStatus(data)
-	},
 })
 
 const trueskillsStatusResource = createResource({
@@ -96,6 +93,19 @@ const loadTrueskillsStatus = (data) => {
 		lms_certificates: data.map((c) => c.name),
 	})
 }
+
+// Load the TrueSkills status whenever the certificate list is available.
+// This is bound to the current component instance instead of the resource's
+// onSuccess, because createListResource returns the cached resource (ignoring
+// new options) when the tab is re-mounted, which would otherwise leave the
+// freshly mounted component without its TrueSkills status.
+watch(
+	() => certificates.data,
+	(data) => {
+		loadTrueskillsStatus(data)
+	},
+	{ immediate: true },
+)
 
 const openCertificate = (certificate) => {
 	window.open(
