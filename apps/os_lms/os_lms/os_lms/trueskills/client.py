@@ -77,16 +77,23 @@ class TrueSkillsClient:
 	# ---- URL ------------------------------------------------------------
 
 	@property
-	def base_url(self) -> str:
+	def host(self) -> str:
+		"""TrueSkills host, without the certificates base path.
+
+		The endpoint setting is meant to hold the host only, but operators
+		routinely paste the full base URL. Stripping a duplicated suffix here
+		prevents a doubled path from slipping through — the server answers a
+		doubled path with a 200 SPA fallback (not an error), which is invisible
+		to health/test_connection and silently breaks every call.
+		"""
 		host = self.settings.endpoint.rstrip("/")
-		# The endpoint setting is meant to hold the host only, but operators
-		# routinely paste the full base URL. Strip a duplicated suffix so a
-		# doubled path can't slip through — the server answers a doubled path
-		# with a 200 SPA fallback (not an error), which is invisible to
-		# health/test_connection and silently breaks every call.
 		if host.endswith(CERTIFICATES_BASE_PATH):
 			host = host[: -len(CERTIFICATES_BASE_PATH)].rstrip("/")
-		return f"{host}{CERTIFICATES_BASE_PATH}"
+		return host
+
+	@property
+	def base_url(self) -> str:
+		return f"{self.host}{CERTIFICATES_BASE_PATH}"
 
 	def _build_url(self, path: str) -> str:
 		suffix = path.lstrip("/")
