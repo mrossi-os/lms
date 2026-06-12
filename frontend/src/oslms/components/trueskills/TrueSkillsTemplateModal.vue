@@ -48,53 +48,23 @@
 					:required="true"
 				/>
 				<div class="space-y-2">
-					<span class="block text-xs text-ink-gray-5">
-						{{ __('Immagine del badge') }}
-					</span>
+					<FilePicker
+						v-model="imageFile"
+						:label="__('Immagine del badge')"
+						:allowedExtensions="['png', 'jpg', 'jpeg', 'webp', 'gif']"
+						:placeholder="__('Scegli un\'immagine dalla libreria…')"
+						@update:fileUrl="onImagePicked"
+					/>
 					<p class="text-p-sm text-ink-gray-5">
 						{{
 							__(
-								'Usata per generare il PNG dell\'OpenBadge. PNG, JPG, WebP o GIF (no SVG). Senza immagine sarà scaricabile solo il JSON-LD.',
+								'Scegli un\'immagine già caricata nella LMS. Serve per generare il PNG dell\'OpenBadge; senza immagine sarà scaricabile solo il JSON-LD.',
 							)
 						}}
 					</p>
-					<div class="flex items-center gap-3">
-						<Button
-							:loading="imageBusy"
-							:label="
-								form.imageBase64
-									? __('Sostituisci immagine')
-									: __('Carica immagine')
-							"
-							@click="() => imageInput?.click()"
-						/>
-						<div
-							v-if="form.imageBase64"
-							class="flex items-center gap-2 text-sm text-ink-gray-6"
-						>
-							<span class="truncate max-w-[180px]">{{ imageName }}</span>
-							<button
-								type="button"
-								class="text-ink-red-5"
-								@click="removeImage"
-							>
-								{{ __('Rimuovi') }}
-							</button>
-						</div>
-					</div>
-					<FormControl
-						v-if="!form.imageBase64"
-						v-model="form.imageUrl"
-						:label="__('oppure path immagine già su TrueSkill (opzionale)')"
-						placeholder="4/2/template_xxxxxxxx.png"
-					/>
-					<input
-						ref="imageInput"
-						type="file"
-						accept="image/png,image/jpeg,image/webp,image/gif"
-						class="hidden"
-						@change="onImageSelected"
-					/>
+					<p v-if="imageBusy" class="text-p-sm text-ink-gray-5">
+						{{ __('Conversione immagine…') }}
+					</p>
 				</div>
 				<div class="grid grid-cols-2 gap-3">
 					<Switch
@@ -125,18 +95,17 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
-import { Dialog, FormControl, Button, createResource, toast } from 'frappe-ui'
+import { Dialog, FormControl, createResource, toast } from 'frappe-ui'
 import Switch from '@/components/Controls/Switch.vue'
+import FilePicker from '@/components/Controls/FilePicker.vue'
 
 const show = defineModel({ type: Boolean, default: false })
 const emit = defineEmits(['created'])
 
 const errorMessage = ref(null)
-const imageInput = ref(null)
+const imageFile = ref('')
 const imageBusy = ref(false)
-const imageName = ref('')
 
-const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
 const MAX_IMAGE_BYTES = 25 * 1024 * 1024 // base64 grows ~33%; stays under the ~30 MB body limit
 
 const blankForm = () => ({
@@ -146,7 +115,6 @@ const blankForm = () => ({
 	isEnabled: false,
 	isVisible: false,
 	badgeUrl: '',
-	imageUrl: '',
 	imageBase64: '',
 	imageFileName: '',
 })
@@ -162,44 +130,52 @@ watch(show, (open) => {
 	if (open) {
 		Object.assign(form, blankForm())
 		errorMessage.value = null
-		imageName.value = ''
+		imageFile.value = ''
 		imageBusy.value = false
 	}
 })
 
-const onImageSelected = (event) => {
-	const file = event.target.files?.[0]
-	event.target.value = '' // allow re-selecting the same file
-	if (!file) return
-	errorMessage.value = null
-	if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-		errorMessage.value = __('Formato non supportato. Usa PNG, JPG, WebP o GIF (no SVG).')
-		return
+// Clearing the FilePicker drops the image too.
+watch(imageFile, (val) => {
+	if (!val) {
+		form.imageBase64 = ''
+		form.imageFileName = ''
 	}
-	if (file.size > MAX_IMAGE_BYTES) {
-		errorMessage.value = __('Immagine troppo grande (max ~25 MB).')
-		return
-	}
-	imageBusy.value = true
-	const reader = new FileReader()
-	reader.onload = () => {
-		// data-URI (data:image/...;base64,...): TrueSkill accepts it directly.
-		form.imageBase64 = reader.result
-		form.imageFileName = file.name
-		imageName.value = file.name
-		imageBusy.value = false
-	}
-	reader.onerror = () => {
-		errorMessage.value = __('Lettura del file fallita.')
-		imageBusy.value = false
-	}
-	reader.readAsDataURL(file)
-}
+})
 
-const removeImage = () => {
-	form.imageBase64 = ''
-	form.imageFileName = ''
-	imageName.value = ''
+const blobToDataUri = (blob) =>
+	new Promise((resolve, reject) => {
+		const reader = new FileReader()
+		reader.onload = () => resolve(reader.result)
+		reader.onerror = reject
+		reader.readAsDataURL(blob)
+	})
+
+// FilePicker selects a file already stored in the LMS; TrueSkill can't read our
+// URLs, so fetch the bytes and send them inline as base64 (data-URI).
+const onImagePicked = async (fileUrl) => {
+	if (!fileUrl) return
+	errorMessage.value = null
+	imageBusy.value = true
+	try {
+		const res = await fetch(fileUrl)
+		if (!res.ok) throw new Error('HTTP ' + res.status)
+		const blob = await res.blob()
+		if (blob.size > MAX_IMAGE_BYTES) {
+			errorMessage.value = __('Immagine troppo grande (max ~25 MB).')
+			form.imageBase64 = ''
+			form.imageFileName = ''
+			return
+		}
+		form.imageBase64 = await blobToDataUri(blob)
+		form.imageFileName = fileUrl.split('/').pop()
+	} catch (err) {
+		errorMessage.value = __('Lettura immagine fallita: ') + String(err)
+		form.imageBase64 = ''
+		form.imageFileName = ''
+	} finally {
+		imageBusy.value = false
+	}
 }
 
 const buildPayload = () => {
@@ -210,12 +186,9 @@ const buildPayload = () => {
 		isEnabled: !!form.isEnabled,
 		isVisible: !!form.isVisible,
 	}
-	// imageBase64 takes precedence over imageUrl (server-side rule).
 	if (form.imageBase64) {
 		payload.imageBase64 = form.imageBase64
 		if (form.imageFileName) payload.imageFileName = form.imageFileName
-	} else if (form.imageUrl?.trim()) {
-		payload.imageUrl = form.imageUrl.trim()
 	}
 	if (form.type === 'Openbadge') {
 		payload.badge = {
