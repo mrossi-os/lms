@@ -9,19 +9,18 @@
 			<div class="flex items-center gap-x-2">
 				<Button
 					v-if="scenarioName"
-					variant="ghost"
 					:title="__('Test simulazione (scegli profilo e n. conversazioni)')"
 					:disabled="!!runningEvalId"
 					@click="simTestDialogOpen = true"
 				>
 					{{ __('Test simulazione') }}
 				</Button>
-				<Button variant="ghost" :title="__('Esporta scenario in JSON')" @click="onExportScenario">
+				<Button  :title="__('Esporta scenario in JSON')" @click="onExportScenario">
 					<template #icon>
 						<Download class="size-4 stroke-1.5" />
 					</template>
 				</Button>
-				<Button variant="ghost" :title="__('Importa scenario da JSON')" @click="onImportScenarioClick">
+				<Button  :title="__('Importa scenario da JSON')" @click="onImportScenarioClick">
 					<template #icon>
 						<Upload class="size-4 stroke-1.5" />
 					</template>
@@ -34,7 +33,7 @@
 					@change="onImportScenarioFileSelected"
 				/>
 				<Button
-					variant="ghost"
+
 					:title="__('Compila i campi dello scenario con AI, usando il materiale del corso/lezione selezionato')"
 					:disabled="!model.lms_course || aiGenerating"
 					@click="aiDialogOpen = true"
@@ -44,7 +43,7 @@
 					</template>
 					{{ __('Compila con IA') }}
 				</Button>
-				<Button v-if="scenarioName" variant="ghost" @click="onTestRun" :loading="testing">
+				<Button v-if="scenarioName" @click="onTestRun" :loading="testing">
 					{{ __('Prova come studente') }}
 				</Button>
 				<Button variant="solid" :loading="saving" @click="onSave">
@@ -70,7 +69,11 @@
 						<FormControl v-model="model.difficulty" type="select" class="lms-select "
 							:label="__('Difficoltà')" :options="['easy', 'medium', 'hard']" required />
 						<FormControl v-model="model.modality" type="select" class="lms-select " :label="__('Modalità')"
-							:options="['chat', 'voice', 'both']" required />
+							:options="[
+								{ label: __('Chat'), value: 'chat' },
+								{ label: __('Voce'), value: 'voice' },
+								{ label: __('Entrambi'), value: 'both' },
+							]" required />
 					</div>
 
 					<!-- Evaluation schema link -->
@@ -84,7 +87,7 @@
 							+ {{ __('Nuovo') }}
 						</Button>
 						
-								<Button variant=" ghost" @click="openSchemaManagement">
+						<Button  @click="openSchemaManagement">
 							{{ __('Gestisci') }}
 						</Button>
 
@@ -116,16 +119,16 @@
 					<!-- Learning objectives -->
 					<section>
 						<div class="flex items-center justify-between mb-2">
-							<div class="text-sm font-medium text-ink-gray-9">
+							<div class="text-md font-medium text-ink-gray-9">
 								{{ __('Obiettivi formativi') }}
 							</div>
-							<Button size="sm" variant="ghost" @click="addObjective">
+							<Button size="sm" @click="addObjective">
 								+ {{ __('Aggiungi') }}
 							</Button>
 						</div>
 						<div class="space-y-2">
 							<div v-for="(row, i) in model.learning_objectives" :key="`obj-${i}`"
-								class="flex gap-2 items-start border border-outline-gray-2 rounded-md p-2">
+								class="flex gap-2 items-start border border-outline-gray-2 rounded-md card p-2">
 								<FormControl
 									v-model="row.objective_text"
 									type="textarea"
@@ -142,7 +145,7 @@
 									class="w-20"
 									:placeholder="__('Peso')"
 								/>
-								<Button variant="ghost" size="sm" @click="removeObjective(i)">
+								<Button variant="outline" size="sm" @click="removeObjective(i)">
 									<template #icon>
 										<Trash2 class="size-4 stroke-1.5" />
 									</template>
@@ -154,16 +157,16 @@
 					<!-- Seed variations -->
 					<section>
 						<div class="flex items-center justify-between mb-2">
-							<div class="text-sm font-medium text-ink-gray-9">
+							<div class="text-md font-medium text-ink-gray-9">
 								{{ __('Variabili scenario') }}
 							</div>
-							<Button size="sm" variant="ghost" @click="addVariation">
+							<Button size="sm" @click="addVariation">
 								+ {{ __('Aggiungi') }}
 							</Button>
 						</div>
 						<div class="space-y-2">
 							<div v-for="(row, i) in model.seed_variations" :key="`seed-${i}`"
-								class="border border-outline-gray-2 rounded-md">
+								class="border border-outline-gray-2 rounded-md card !p-2">
 								<!-- Accordion header: always visible -->
 								<div
 									class="flex items-center gap-2 p-3 cursor-pointer hover:bg-surface-gray-1 rounded-md"
@@ -173,11 +176,11 @@
 										class="size-4 stroke-1.5 text-ink-gray-5 transition-transform"
 										:class="{ '-rotate-90': !expandedVariations[i] }"
 									/>
-									<div class="flex-1 text-sm font-medium text-ink-gray-9 truncate">
+									<div class="flex-1 text-sm font-semibold text-ink-gray-9 truncate">
 										{{ row.variable_name || __('Nuova variabile') }}
 									</div>
 									<Button
-										variant="ghost"
+										variant="outline"
 										size="sm"
 										@click.stop="removeVariation(i)"
 									>

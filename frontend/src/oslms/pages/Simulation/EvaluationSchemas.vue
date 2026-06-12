@@ -12,7 +12,7 @@
 
 	<div class="p-5 pb-10 space-y-3">
 		<div class="border rounded-md overflow-hidden">
-			<table class="w-full text-sm">
+			<table class="w-full text-sm os-table-view">
 				<thead class="bg-surface-gray-2 text-xs text-ink-gray-7">
 					<tr>
 						<th class="text-left px-3 py-2">{{ __('Nome') }}</th>
@@ -34,8 +34,8 @@
 						<td class="px-3 py-2">
 							<Badge v-if="r.is_shared" :label="__('Sì')" theme="green" />
 						</td>
-						<td class="px-3 py-2 text-right ">
-							<Button size="sm" variant="ghost" @click="editSchema(r.name)">
+						<td class="px-3 py-2 text-right">
+							<Button size="sm" variant="outline" @click="editSchema(r.name)">
 								{{ __('Modifica') }}
 							</Button>
 						</td>

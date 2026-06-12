@@ -48,49 +48,23 @@
 					:required="true"
 				/>
 				<div class="space-y-2">
-					<span class="block text-xs text-ink-gray-5">
-						{{ __('Immagine del badge') }}
-					</span>
+					<FilePicker
+						v-model="imageFile"
+						:label="__('Immagine del badge')"
+						:allowedExtensions="['png', 'jpg', 'jpeg', 'webp', 'gif']"
+						:placeholder="__('Scegli un\'immagine dalla libreria…')"
+						@update:fileUrl="onImagePicked"
+					/>
 					<p class="text-p-sm text-ink-gray-5">
 						{{
 							__(
-								"Caricata su TrueSkill e usata per generare il PNG dell'OpenBadge. Senza immagine sarà scaricabile solo il JSON-LD.",
+								'Scegli un\'immagine già caricata nella LMS. Serve per generare il PNG dell\'OpenBadge; senza immagine sarà scaricabile solo il JSON-LD.',
 							)
 						}}
 					</p>
-					<div class="flex items-center gap-3">
-						<Button
-							:loading="imageUploading"
-							:label="
-								form.imageUrl
-									? __('Sostituisci immagine')
-									: __('Carica immagine')
-							"
-							@click="() => imageInput?.click()"
-						/>
-						<div
-							v-if="form.imageUrl"
-							class="flex items-center gap-2 text-sm text-ink-gray-6"
-						>
-							<span class="truncate max-w-[180px]">
-								{{ imageName || form.imageUrl }}
-							</span>
-							<button
-								type="button"
-								class="text-ink-red-5"
-								@click="removeImage"
-							>
-								{{ __('Rimuovi') }}
-							</button>
-						</div>
-					</div>
-					<input
-						ref="imageInput"
-						type="file"
-						accept="image/*"
-						class="hidden"
-						@change="onImageSelected"
-					/>
+					<p v-if="imageBusy" class="text-p-sm text-ink-gray-5">
+						{{ __('Conversione immagine…') }}
+					</p>
 				</div>
 				<div class="grid grid-cols-2 gap-3">
 					<Switch
@@ -121,16 +95,18 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
-import { Dialog, FormControl, Button, createResource, toast } from 'frappe-ui'
+import { Dialog, FormControl, createResource, toast } from 'frappe-ui'
 import Switch from '@/components/Controls/Switch.vue'
+import FilePicker from '@/components/Controls/FilePicker.vue'
 
 const show = defineModel({ type: Boolean, default: false })
 const emit = defineEmits(['created'])
 
 const errorMessage = ref(null)
-const imageInput = ref(null)
-const imageUploading = ref(false)
-const imageName = ref('')
+const imageFile = ref('')
+const imageBusy = ref(false)
+
+const MAX_IMAGE_BYTES = 25 * 1024 * 1024 // base64 grows ~33%; stays under the ~30 MB body limit
 
 const blankForm = () => ({
 	name: '',
@@ -139,7 +115,8 @@ const blankForm = () => ({
 	isEnabled: false,
 	isVisible: false,
 	badgeUrl: '',
-	imageUrl: '',
+	imageBase64: '',
+	imageFileName: '',
 })
 
 const form = reactive(blankForm())
@@ -153,49 +130,52 @@ watch(show, (open) => {
 	if (open) {
 		Object.assign(form, blankForm())
 		errorMessage.value = null
-		imageName.value = ''
-		imageUploading.value = false
+		imageFile.value = ''
+		imageBusy.value = false
 	}
 })
 
-const onImageSelected = async (event) => {
-	const file = event.target.files?.[0]
-	event.target.value = '' // allow re-selecting the same file
-	if (!file) return
-	if (!file.type?.startsWith('image/')) {
-		errorMessage.value = __('Seleziona un file immagine.')
-		return
+// Clearing the FilePicker drops the image too.
+watch(imageFile, (val) => {
+	if (!val) {
+		form.imageBase64 = ''
+		form.imageFileName = ''
 	}
-	imageUploading.value = true
+})
+
+const blobToDataUri = (blob) =>
+	new Promise((resolve, reject) => {
+		const reader = new FileReader()
+		reader.onload = () => resolve(reader.result)
+		reader.onerror = reject
+		reader.readAsDataURL(blob)
+	})
+
+// FilePicker selects a file already stored in the LMS; TrueSkill can't read our
+// URLs, so fetch the bytes and send them inline as base64 (data-URI).
+const onImagePicked = async (fileUrl) => {
+	if (!fileUrl) return
 	errorMessage.value = null
+	imageBusy.value = true
 	try {
-		const body = new FormData()
-		body.append('file', file)
-		const res = await fetch(
-			'/api/method/os_lms.os_lms.trueskills.api.upload_template_image',
-			{
-				method: 'POST',
-				headers: { 'X-Frappe-CSRF-Token': window.csrf_token },
-				body,
-			},
-		)
-		const result = (await res.json())?.message || {}
-		if (!result.ok) {
-			errorMessage.value = result.error || __('Caricamento immagine fallito.')
+		const res = await fetch(fileUrl)
+		if (!res.ok) throw new Error('HTTP ' + res.status)
+		const blob = await res.blob()
+		if (blob.size > MAX_IMAGE_BYTES) {
+			errorMessage.value = __('Immagine troppo grande (max ~25 MB).')
+			form.imageBase64 = ''
+			form.imageFileName = ''
 			return
 		}
-		form.imageUrl = result.url
-		imageName.value = file.name
+		form.imageBase64 = await blobToDataUri(blob)
+		form.imageFileName = fileUrl.split('/').pop()
 	} catch (err) {
-		errorMessage.value = String(err)
+		errorMessage.value = __('Lettura immagine fallita: ') + String(err)
+		form.imageBase64 = ''
+		form.imageFileName = ''
 	} finally {
-		imageUploading.value = false
+		imageBusy.value = false
 	}
-}
-
-const removeImage = () => {
-	form.imageUrl = ''
-	imageName.value = ''
 }
 
 const buildPayload = () => {
@@ -205,7 +185,10 @@ const buildPayload = () => {
 		type: form.type,
 		isEnabled: !!form.isEnabled,
 		isVisible: !!form.isVisible,
-		imageUrl: form.imageUrl || undefined,
+	}
+	if (form.imageBase64) {
+		payload.imageBase64 = form.imageBase64
+		if (form.imageFileName) payload.imageFileName = form.imageFileName
 	}
 	if (form.type === 'Openbadge') {
 		payload.badge = {

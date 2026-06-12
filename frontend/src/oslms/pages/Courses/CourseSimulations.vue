@@ -6,7 +6,7 @@
 				<h2 class="text-lg font-semibold text-ink-gray-9">
 					{{ __('Simulazioni AI') }}
 				</h2>
-				<p class="text-sm ">
+				<p class="text-sm">
 					{{ __('Gestisci gli scenari di simulazione per questo corso.') }}
 				</p>
 			</div>
@@ -33,9 +33,9 @@
 			<div
 				v-for="card in kpiCards"
 				:key="card.label"
-				class="border rounded-md p-4 bg-surface-menu-bar"
+				class="border rounded-md card"
 			>
-				<div class="text-xs ">{{ card.label }}</div>
+				<div class="text-xs text-ink-gray-7">{{ card.label }}</div>
 				<div class="text-2xl font-semibold text-ink-gray-9 mt-1">
 					{{ card.value }}
 				</div>
@@ -47,7 +47,7 @@
 			{{ __('Scenari') }}
 		</div>
 		<div class="border rounded-md overflow-hidden">
-			<table class="w-full text-sm">
+			<table class="w-full text-sm os-table-view">
 				<thead class="bg-surface-gray-2 text-xs text-ink-gray-7">
 					<tr>
 						<th class="text-left px-3 py-2">{{ __('Nome') }}</th>
@@ -62,29 +62,35 @@
 					<tr
 						v-for="s in scenarios"
 						:key="s.name"
-						class="border-t hover:bg-surface-gray-1"
+						class="border-t hover:bg-surface-gray-1 sur"
 					>
-						<td class="px-3 py-2 ">{{ s.scenario_name }}</td>
-						<td class="px-3 py-2 ">
+						<td class="px-3 py-2">{{ s.scenario_name }}</td>
+						<td class="px-3 py-2">
 							{{ s.course_lesson || '—' }}
 						</td>
 						<td class="px-3 py-2">
 							<Badge
-								:label="s.difficulty"
+								:label="difficultyLabel(s.difficulty)"
 								:theme="difficultyTheme(s.difficulty)"
 							/>
 						</td>
-						<td class="px-3 py-2 capitalize ">{{ s.modality }}</td>
+						<td class="px-3 py-2 capitalize">
+							{{ modalityLabel(s.modality) }}
+						</td>
 						<td class="px-3 py-2">
-							<Badge :label="s.status" :theme="statusTheme(s.status)" />
+							<Badge
+								:label="statusLabel(s.status)"
+								:theme="statusTheme(s.status)"
+							/>
 						</td>
 						<td class="px-3 py-2 text-right whitespace-nowrap">
-							<Button size="sm" variant="ghost" @click="openEdit(s.name)">
+							<Button size="sm" variant="outline" @click="openEdit(s.name)">
 								{{ __('Modifica') }}
 							</Button>
 							<Button
 								size="sm"
 								variant="ghost"
+								class="text-ink-red-5"
 								@click="confirmDelete(s)"
 								:disabled="s.status === 'Published'"
 							>
@@ -93,10 +99,7 @@
 						</td>
 					</tr>
 					<tr v-if="!scenarios.length">
-						<td
-							colspan="6"
-							class="px-3 py-8 text-center "
-						>
+						<td colspan="6" class="px-3 py-8 text-center">
 							{{ __('Nessuno scenario configurato per questo corso.') }}
 						</td>
 					</tr>
@@ -121,7 +124,7 @@
 			/>
 		</div>
 		<div class="border rounded-md overflow-hidden">
-			<table class="w-full text-sm">
+			<table class="w-full text-sm os-table-view">
 				<thead class="bg-surface-gray-2 text-xs text-ink-gray-7">
 					<tr>
 						<th class="text-left px-3 py-2">{{ __('Studente') }}</th>
@@ -138,38 +141,30 @@
 						:key="s.name"
 						class="border-t hover:bg-surface-gray-1"
 					>
-						<td class="px-3 py-2 ">{{ s.student }}</td>
-						<td class="px-3 py-2 ">{{ s.scenario }}</td>
-						<td class="px-3 py-2 ">
+						<td class="px-3 py-2">{{ s.student }}</td>
+						<td class="px-3 py-2">{{ s.scenario }}</td>
+						<td class="px-3 py-2">
 							{{ formatDate(s.started_at) }}
 						</td>
 						<td class="px-3 py-2">
-							<Badge
-								:label="s.status"
-								:theme="sessionStatusTheme(s.status)"
-							/>
+							<Badge :label="s.status" :theme="sessionStatusTheme(s.status)" />
 						</td>
-						<td class="px-3 py-2 text-right ">
-							<span v-if="s.overall_score !== null && s.overall_score !== undefined">
+						<td class="px-3 py-2 text-right">
+							<span
+								v-if="s.overall_score !== null && s.overall_score !== undefined"
+							>
 								{{ Math.round(s.overall_score) }}
 							</span>
 							<span v-else class="">—</span>
 						</td>
 						<td class="px-3 py-2 text-right whitespace-nowrap">
-							<Button
-								size="sm"
-								variant="ghost"
-								@click="openTranscript(s.name)"
-							>
+							<Button size="sm" variant="ghost" @click="openTranscript(s.name)">
 								{{ __('Apri') }}
 							</Button>
 						</td>
 					</tr>
 					<tr v-if="!sessions.length">
-						<td
-							colspan="6"
-							class="px-3 py-8 text-center "
-						>
+						<td colspan="6" class="px-3 py-8 text-center">
 							{{ __('Nessuna sessione nel periodo selezionato.') }}
 						</td>
 					</tr>
@@ -255,10 +250,28 @@ function difficultyTheme(d) {
 	return { easy: 'green', medium: 'blue', hard: 'orange' }[d] || 'gray'
 }
 
-function statusTheme(s) {
+function difficultyLabel(d) {
 	return (
-		{ Draft: 'gray', Published: 'green', Archived: 'orange' }[s] || 'gray'
+		{ easy: __('Facile'), medium: __('Media'), hard: __('Difficile') }[d] || d
 	)
+}
+
+function statusTheme(s) {
+	return { Draft: 'gray', Published: 'green', Archived: 'orange' }[s] || 'gray'
+}
+
+function statusLabel(s) {
+	return (
+		{
+			Draft: __('Bozza'),
+			Published: __('Pubblicato'),
+			Archived: __('Archiviato'),
+		}[s] || s
+	)
+}
+
+function modalityLabel(m) {
+	return { chat: __('Chat'), voice: __('Voce'), both: __('Entrambi') }[m] || m
 }
 
 // ---- Sessions report ----

@@ -8,8 +8,6 @@ from .safelog import get_logger
 from .settings import TrueSkillsSettings
 
 CERTIFICATES_BASE_PATH = "/api/v1/service/certificates"
-# Media upload lives at the host root, NOT under the certificates base path.
-MEDIA_ADD_PATH = "/api/v1/media/add"
 
 # Exponential backoff (seconds) for retryable requests. Length determines max attempts.
 RETRY_BACKOFF_SECONDS = (1.0, 2.0, 4.0)
@@ -219,28 +217,6 @@ class TrueSkillsClient:
 		self._raise_for_status(response, "GET", path)
 		content_type = response.headers.get("Content-Type", "application/octet-stream")
 		return content_type, response.content
-
-	def upload_media(self, *, content: bytes, filename: str, content_type: str) -> Any:
-		"""``POST /api/v1/media/add`` — upload a binary asset (multipart).
-
-		The media endpoint lives at the host root, not under the certificates
-		base path. The session already carries ``X-Api-Key``; ``requests`` sets
-		the multipart ``Content-Type`` (with boundary) from ``files``. NOT
-		idempotent — never auto-retried.
-
-		Returns the parsed JSON (expects ``{url, mimeType}``).
-		"""
-		url = f"{self.host}{MEDIA_ADD_PATH}"
-		try:
-			response = self._session.post(
-				url,
-				files={"files": (filename, content, content_type)},
-				timeout=self.timeout,
-			)
-		except requests.RequestException as exc:
-			raise TrueSkillsNetworkError(f"TrueSkills request failed: {exc}") from exc
-		self._raise_for_status(response, "POST", MEDIA_ADD_PATH)
-		return self._json_or_empty(response)
 
 	def health(self) -> dict:
 		"""Smoke test: ``GET /health`` → ``{status, organizationId}``."""

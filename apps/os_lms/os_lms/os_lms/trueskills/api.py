@@ -105,37 +105,6 @@ def get_template(template_id: int) -> dict:
 
 
 @frappe.whitelist()
-def upload_template_image() -> dict:
-	"""Proxy an image upload to TrueSkills media storage.
-
-	Reads the multipart ``file`` from the request and forwards it to
-	``POST /api/v1/media/add``. Returns ``{ok, url}`` where ``url`` is the
-	stored media path to pass as ``imageUrl`` when creating a template.
-	The API key never leaves the backend, so the upload must be proxied here
-	rather than performed from the browser.
-	"""
-	_require_admin()
-	file = frappe.request.files.get("file") if frappe.request else None
-	if file is None:
-		return {"ok": False, "error": "No file provided."}
-	content_type = file.content_type or "application/octet-stream"
-	if not content_type.startswith("image/"):
-		return {"ok": False, "error": "Only image files are allowed."}
-	content = file.stream.read()
-	if not content:
-		return {"ok": False, "error": "Empty file."}
-	try:
-		url = TrueSkillsService().upload_media(
-			content=content,
-			filename=file.filename or "image",
-			content_type=content_type,
-		)
-	except TrueSkillsError as exc:
-		return _error_payload(exc)
-	return {"ok": True, "url": url}
-
-
-@frappe.whitelist()
 def create_template(payload: dict) -> dict:
 	"""Create a new certificate template via the TrueSkills API."""
 	_require_admin()

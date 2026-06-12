@@ -5,12 +5,12 @@
 		</template>
 		<template #right-header>
 			<div class="flex gap-2">
-				<Button
-					@click="router.push({ name: 'EvaluationSchemas' })"
-				>
+				<Button @click="router.push({ name: 'EvaluationSchemas' })">
 					{{ __('Schemi di valutazione') }}
 				</Button>
-				<Button variant="solid" @click="newScenario">+ {{ __('Scenario') }}</Button>
+				<Button variant="solid" @click="newScenario"
+					>+ {{ __('Scenario') }}</Button
+				>
 			</div>
 		</template>
 	</LayoutHeader>
@@ -61,7 +61,7 @@
 					</div>
 
 					<!-- Distribution -->
-					<div v-if="distribution.length" class="border rounded-md p-4">
+					<div v-if="distribution.length" class="border rounded-md card">
 						<div class="text-sm font-medium text-ink-gray-9 mb-3">
 							{{ __('Distribuzione punteggi') }}
 						</div>
@@ -100,7 +100,7 @@
 
 					<!-- Sessions table -->
 					<div class="border rounded-md overflow-hidden">
-						<table class="w-full text-sm">
+						<table class="w-full text-sm os-table-view">
 							<thead class="bg-surface-gray-2 text-xs text-ink-gray-7">
 								<tr>
 									<th class="text-left px-3 py-2">{{ __('Studente') }}</th>
@@ -132,7 +132,11 @@
 										<span v-else class="text-ink-gray-5">—</span>
 									</td>
 									<td class="px-3 py-2">
-										<Button size="sm" variant="ghost" @click="openTranscript(s.name)">
+										<Button
+											size="sm"
+											variant="ghost"
+											@click="openTranscript(s.name)"
+										>
 											{{ __('Apri') }}
 										</Button>
 									</td>
@@ -156,10 +160,12 @@
 							:options="courseFilterOptions"
 							:label="__('Corso')"
 						/>
-						<Button variant="solid" @click="newScenario">+ {{ __('Nuovo scenario') }}</Button>
+						<Button variant="solid" @click="newScenario"
+							>+ {{ __('Nuovo scenario') }}</Button
+						>
 					</div>
 					<div class="border rounded-md overflow-hidden">
-						<table class="w-full text-sm">
+						<table class="w-full text-sm os-table-view">
 							<thead class="bg-surface-gray-2 text-xs text-ink-gray-7">
 								<tr>
 									<th class="text-left px-3 py-2">{{ __('Nome') }}</th>
@@ -178,13 +184,23 @@
 									<td class="px-3 py-2">{{ s.scenario_name }}</td>
 									<td class="px-3 py-2 text-ink-gray-5">{{ s.lms_course }}</td>
 									<td class="px-3 py-2">
-										<Badge :label="s.difficulty" :theme="difficultyTheme(s.difficulty)" />
+										<Badge
+											:label="s.difficulty"
+											:theme="difficultyTheme(s.difficulty)"
+										/>
 									</td>
 									<td class="px-3 py-2">
-										<Badge :label="s.status" :theme="scenarioStatusTheme(s.status)" />
+										<Badge
+											:label="s.status"
+											:theme="scenarioStatusTheme(s.status)"
+										/>
 									</td>
 									<td class="px-3 py-2 text-right">
-										<Button size="sm" variant="ghost" @click="editScenario(s.name)">
+										<Button
+											size="sm"
+											variant="outline"
+											@click="editScenario(s.name)"
+										>
 											{{ __('Modifica') }}
 										</Button>
 									</td>
@@ -198,7 +214,6 @@
 						</table>
 					</div>
 				</div>
-
 			</template>
 		</Tabs>
 
@@ -256,12 +271,19 @@ const coursesRes = createResource({
 	url: 'frappe.client.get_list',
 	auto: true,
 	makeParams() {
-		return { doctype: 'LMS Course', fields: ['name', 'title'], limit_page_length: 500 }
+		return {
+			doctype: 'LMS Course',
+			fields: ['name', 'title'],
+			limit_page_length: 500,
+		}
 	},
 })
 const courseFilterOptions = computed(() => [
 	{ label: __('Tutti'), value: '' },
-	...(coursesRes.data || []).map((c) => ({ label: c.title || c.name, value: c.name })),
+	...(coursesRes.data || []).map((c) => ({
+		label: c.title || c.name,
+		value: c.name,
+	})),
 ])
 
 // ---- REPORT ----
@@ -287,20 +309,27 @@ const kpiCards = computed(() => {
 		{ label: __('Completate'), value: k.completed_sessions ?? 0 },
 		{
 			label: __('Punteggio medio'),
-			value: k.avg_score !== null && k.avg_score !== undefined ? k.avg_score : '—',
+			value:
+				k.avg_score !== null && k.avg_score !== undefined ? k.avg_score : '—',
 		},
 		{
 			label: __('Pass rate'),
 			value:
-				k.pass_rate !== null && k.pass_rate !== undefined ? `${k.pass_rate}%` : '—',
+				k.pass_rate !== null && k.pass_rate !== undefined
+					? `${k.pass_rate}%`
+					: '—',
 		},
 	]
 })
 const distribution = computed(() => report.data?.score_distribution || [])
-const topImprovements = computed(() => report.data?.top_improvement_titles || [])
+const topImprovements = computed(
+	() => report.data?.top_improvement_titles || [],
+)
 const sessions = computed(() => report.data?.sessions || [])
 
-const distributionMax = computed(() => Math.max(1, ...distribution.value.map((b) => b.count)))
+const distributionMax = computed(() =>
+	Math.max(1, ...distribution.value.map((b) => b.count)),
+)
 
 function distributionHeight(bucket) {
 	return Math.max(2, (bucket.count / distributionMax.value) * 100)
