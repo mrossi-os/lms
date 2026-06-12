@@ -24,6 +24,13 @@ body {
 	border-bottom-right-radius: 0.5rem !important;
 }
 
+.os-table-view tbody {
+	background-color: var(--color-company-primary);
+}
+.os-table-view tbody tr {
+	color: var(--ink-gray-9);
+}
+
 /* Inputs */
 input[type='text'],
 input[type='email'],

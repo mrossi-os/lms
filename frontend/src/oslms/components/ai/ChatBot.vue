@@ -74,7 +74,7 @@
 			<textarea
 				v-model="chat.question"
 				:placeholder="__('Ask a question about this lesson...')"
-				class="flex-1 resize-none rounded-md border border-outline-gray-2 px-3 py-2 text-sm focus:border-outline-gray-3 focus:outline-none"
+				class="flex-1 resize-none rounded-md border border-outline-gray-2 px-3 py-2 text-sm text-ink-gray-8 focus:border-outline-gray-3 focus:outline-none"
 				rows="2"
 				@keydown.enter.exact.prevent="sendQuestion"
 				:disabled="chat.isLoading"
