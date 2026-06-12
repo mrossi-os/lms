@@ -62,6 +62,7 @@
 				:key="cls.name"
 				:cls="cls"
 				:isAdmin="isAdmin()"
+				:observer="Boolean(batch.data?.is_valutatore)"
 				:clickable="isAdmin() && cls.attendees > 0"
 				@card-click="openAttendanceModal(cls)"
 				@started="liveClasses.reload()"

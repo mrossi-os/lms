@@ -1978,15 +1978,19 @@ def get_my_live_classes():
 			"start_url",
 			"join_url",
 			"started_at",
+			"batch_name",
 			"owner",
 		],
 		limit=2,
 		order_by="date",
 	)
 
+	valutatore_batch_set = set(valutatore_batches)
 	if len(live_class_details):
 		for live_class in live_class_details:
 			live_class.course_title = frappe.db.get_value("LMS Course", live_class.course, "title")
+			# Lets the SPA show a Join button to a valutatore (observer) of the batch.
+			live_class.is_valutatore = live_class.batch_name in valutatore_batch_set
 
 			my_live_classes.append(live_class)
 

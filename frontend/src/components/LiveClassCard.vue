@@ -43,6 +43,20 @@
 				</button>
 			</div>
 			<div
+				v-else-if="canObserverJoin(cls)"
+				class="flex items-center gap-x-2 text-ink-gray-9 mt-auto"
+			>
+				<a
+					:href="cls.join_url"
+					target="_blank"
+					@click.stop
+					class="w-full cursor-pointer inline-flex items-center justify-center gap-2 transition-colors focus:outline-none text-ink-gray-8 bg-surface-gray-2 hover:bg-surface-gray-3 active:bg-surface-gray-4 focus-visible:ring focus-visible:ring-outline-gray-3 h-7 text-base px-2 rounded"
+				>
+					<Video class="h-4 w-4 stroke-1.5" />
+					{{ __('Join') }}
+				</a>
+			</div>
+			<div
 				v-else-if="canStudentJoin(cls)"
 				class="flex items-center gap-x-2 text-ink-gray-9 mt-auto"
 			>
@@ -111,6 +125,14 @@ const props = defineProps({
 		type: Boolean,
 		default: false,
 	},
+	// Whether the current user joins as an observer (e.g. a batch valutatore):
+	// they get the Join button while the class is on (today, not ended) without
+	// waiting for the host to press "Start" in the LMS (started_at is unreliable
+	// when the host opens the meeting directly on Zoom/Meet).
+	observer: {
+		type: Boolean,
+		default: false,
+	},
 })
 
 const emit = defineEmits(['card-click', 'started'])
@@ -144,6 +166,11 @@ const hasHostStarted = (cls) => Boolean(cls.started_at)
 
 const canStudentJoin = (cls) =>
 	isWithinJoinWindow(cls) && hasHostStarted(cls) && Boolean(cls.join_url)
+
+// An observer (valutatore) can join while the class is on today, regardless of
+// the host having pressed "Start" in the LMS.
+const canObserverJoin = (cls) =>
+	props.observer && canModeratorAccessClass(cls) && Boolean(cls.join_url)
 
 const showStudentJoinDisabled = (cls) =>
 	isWithinJoinWindow(cls) &&

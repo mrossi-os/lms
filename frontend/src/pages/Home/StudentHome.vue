@@ -13,6 +13,7 @@
 						:key="cls.name"
 						:cls="cls"
 						:isAdmin="user.data?.is_moderator || user.data?.is_evaluator"
+						:observer="Boolean(cls.is_valutatore)"
 						@started="myLiveClasses.reload()"
 					/>
 				</div>
