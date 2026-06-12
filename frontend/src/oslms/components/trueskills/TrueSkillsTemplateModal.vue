@@ -54,27 +54,25 @@
 					<p class="text-p-sm text-ink-gray-5">
 						{{
 							__(
-								"Caricata su TrueSkill e usata per generare il PNG dell'OpenBadge. Senza immagine sarà scaricabile solo il JSON-LD.",
+								'Usata per generare il PNG dell\'OpenBadge. PNG, JPG, WebP o GIF (no SVG). Senza immagine sarà scaricabile solo il JSON-LD.',
 							)
 						}}
 					</p>
 					<div class="flex items-center gap-3">
 						<Button
-							:loading="imageUploading"
+							:loading="imageBusy"
 							:label="
-								form.imageUrl
+								form.imageBase64
 									? __('Sostituisci immagine')
 									: __('Carica immagine')
 							"
 							@click="() => imageInput?.click()"
 						/>
 						<div
-							v-if="form.imageUrl"
+							v-if="form.imageBase64"
 							class="flex items-center gap-2 text-sm text-ink-gray-6"
 						>
-							<span class="truncate max-w-[180px]">
-								{{ imageName || form.imageUrl }}
-							</span>
+							<span class="truncate max-w-[180px]">{{ imageName }}</span>
 							<button
 								type="button"
 								class="text-ink-red-5"
@@ -84,10 +82,16 @@
 							</button>
 						</div>
 					</div>
+					<FormControl
+						v-if="!form.imageBase64"
+						v-model="form.imageUrl"
+						:label="__('oppure path immagine già su TrueSkill (opzionale)')"
+						placeholder="4/2/template_xxxxxxxx.png"
+					/>
 					<input
 						ref="imageInput"
 						type="file"
-						accept="image/*"
+						accept="image/png,image/jpeg,image/webp,image/gif"
 						class="hidden"
 						@change="onImageSelected"
 					/>
@@ -129,8 +133,11 @@ const emit = defineEmits(['created'])
 
 const errorMessage = ref(null)
 const imageInput = ref(null)
-const imageUploading = ref(false)
+const imageBusy = ref(false)
 const imageName = ref('')
+
+const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
+const MAX_IMAGE_BYTES = 25 * 1024 * 1024 // base64 grows ~33%; stays under the ~30 MB body limit
 
 const blankForm = () => ({
 	name: '',
@@ -140,6 +147,8 @@ const blankForm = () => ({
 	isVisible: false,
 	badgeUrl: '',
 	imageUrl: '',
+	imageBase64: '',
+	imageFileName: '',
 })
 
 const form = reactive(blankForm())
@@ -154,47 +163,42 @@ watch(show, (open) => {
 		Object.assign(form, blankForm())
 		errorMessage.value = null
 		imageName.value = ''
-		imageUploading.value = false
+		imageBusy.value = false
 	}
 })
 
-const onImageSelected = async (event) => {
+const onImageSelected = (event) => {
 	const file = event.target.files?.[0]
 	event.target.value = '' // allow re-selecting the same file
 	if (!file) return
-	if (!file.type?.startsWith('image/')) {
-		errorMessage.value = __('Seleziona un file immagine.')
+	errorMessage.value = null
+	if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+		errorMessage.value = __('Formato non supportato. Usa PNG, JPG, WebP o GIF (no SVG).')
 		return
 	}
-	imageUploading.value = true
-	errorMessage.value = null
-	try {
-		const body = new FormData()
-		body.append('file', file)
-		const res = await fetch(
-			'/api/method/os_lms.os_lms.trueskills.api.upload_template_image',
-			{
-				method: 'POST',
-				headers: { 'X-Frappe-CSRF-Token': window.csrf_token },
-				body,
-			},
-		)
-		const result = (await res.json())?.message || {}
-		if (!result.ok) {
-			errorMessage.value = result.error || __('Caricamento immagine fallito.')
-			return
-		}
-		form.imageUrl = result.url
-		imageName.value = file.name
-	} catch (err) {
-		errorMessage.value = String(err)
-	} finally {
-		imageUploading.value = false
+	if (file.size > MAX_IMAGE_BYTES) {
+		errorMessage.value = __('Immagine troppo grande (max ~25 MB).')
+		return
 	}
+	imageBusy.value = true
+	const reader = new FileReader()
+	reader.onload = () => {
+		// data-URI (data:image/...;base64,...): TrueSkill accepts it directly.
+		form.imageBase64 = reader.result
+		form.imageFileName = file.name
+		imageName.value = file.name
+		imageBusy.value = false
+	}
+	reader.onerror = () => {
+		errorMessage.value = __('Lettura del file fallita.')
+		imageBusy.value = false
+	}
+	reader.readAsDataURL(file)
 }
 
 const removeImage = () => {
-	form.imageUrl = ''
+	form.imageBase64 = ''
+	form.imageFileName = ''
 	imageName.value = ''
 }
 
@@ -205,7 +209,13 @@ const buildPayload = () => {
 		type: form.type,
 		isEnabled: !!form.isEnabled,
 		isVisible: !!form.isVisible,
-		imageUrl: form.imageUrl || undefined,
+	}
+	// imageBase64 takes precedence over imageUrl (server-side rule).
+	if (form.imageBase64) {
+		payload.imageBase64 = form.imageBase64
+		if (form.imageFileName) payload.imageFileName = form.imageFileName
+	} else if (form.imageUrl?.trim()) {
+		payload.imageUrl = form.imageUrl.trim()
 	}
 	if (form.type === 'Openbadge') {
 		payload.badge = {
