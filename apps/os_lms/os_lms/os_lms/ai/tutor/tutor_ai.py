@@ -55,19 +55,18 @@ class TutorAi:
 		messages = self._build_messages(question, history or [])
 
 		answer = ""
-		context = ""
 		status = "Failed"
 		try:
-			system_prompt, context = self._system_prompt(question)
+			system_prompt = self._system_prompt(question)
 			provider = resolve_provider("chat")
 			response = provider.chat(messages=messages, system=system_prompt)
 			answer = response.text
 			status = "Answered"
 			return answer
 		finally:
-			self._log_query(question=question, answer=answer, context=context, status=status)
+			self._log_query(question=question, answer=answer, context=system_prompt, status=status)
 
-	def _system_prompt(self, question: str) -> tuple[str, str]:
+	def _system_prompt(self, question: str) -> str:
 		"""Build the system prompt and return it together with the labeled
 		chunks string used as context — so `ask` can log both."""
 		course = self.course_details
@@ -101,7 +100,7 @@ class TutorAi:
 				"current_lesson_content": current_lesson_content,
 			},
 		)
-		return prompt, lessons_content
+		return prompt
 
 	def _log_query(self, *, question: str, answer: str, context: str, status: str) -> None:
 		"""Persist the Q&A interaction to LMSA Query Log (best-effort).
