@@ -1,4 +1,3 @@
-import hashlib
 import logging
 
 import frappe
@@ -40,8 +39,9 @@ class IngestionService:
 			frappe.throw(_("LMSA is not enabled"))
 		if lesson.index_status == "processing":
 			return
-		lesson.index_status = "pending"
-		lesson.save()
+		# db_set skips check_if_latest so a concurrent edit of the lesson
+		# (e.g. the form open in another tab) cannot raise TimestampMismatchError.
+		lesson.db_set("index_status", "pending", update_modified=False)
 
 	def reindex_lesson_content(self):
 		"""Re-index all lessons with pending or null index_status."""
@@ -74,8 +74,13 @@ class IngestionService:
 			return
 
 		self.logger.info("Starting ingestion for lesson %s", lesson.name)
-		lesson.index_status = "processing"
-		lesson.save()
+		# Bookkeeping fields (index_status / indexed_at) are written via db_set
+		# with update_modified=False so the long embedding call between the
+		# two writes cannot race against a concurrent save of the lesson
+		# (which would otherwise raise TimestampMismatchError on the final
+		# save and leave index_status stuck on "processing"). Same pattern as
+		# the enrollment race fix in course_lesson.save_progress.
+		lesson.db_set("index_status", "processing", update_modified=False)
 		frappe.db.commit()
 
 		try:
@@ -86,51 +91,17 @@ class IngestionService:
 
 			self.rag_db.ingest_data(lesson.course, lesson.name, text)
 
-			lesson.index_status = "indexed"
-			lesson.indexed_at = now_datetime()
+			lesson.db_set(
+				{"index_status": "indexed", "indexed_at": now_datetime()},
+				update_modified=False,
+			)
 			self.logger.info("Lesson %s indexed successfully", lesson.name)
 		except Exception as e:
-			lesson.index_status = "failed"
+			lesson.db_set("index_status", "failed", update_modified=False)
 			self.logger.error("Ingestion failed for lesson %s: %s", lesson.name, e)
 			raise
 		finally:
-			lesson.save()
 			frappe.db.commit()
-
-		"""Return the ingestion status for a lesson.
-
-		Reads the LMSA Material record (if any) and compares the stored
-		source_hash with the hash of the lesson's current text content,
-		so the caller can tell whether a re-ingestion is needed.
-		"""
-		material = frappe.db.get_value(
-			"LMSA Material",
-			{"lesson": lesson.name},
-			["name", "status", "chunk_count", "last_ingested_on", "source_hash"],
-			as_dict=True,
-		)
-
-		if not material:
-			return {
-				"status": "not_ingested",
-				"chunk_count": 0,
-				"last_ingested_on": None,
-				"needs_update": True,
-			}
-
-		current_text = self._normalize_lesson_text(lesson)
-		current_hash = self._material_hash(current_text) if current_text else ""
-		needs_update = material.source_hash != current_hash
-		if material.status and material.status.lower() == "failed":
-			needs_update = True
-
-		return {
-			"status": material.status.lower(),
-			"chunk_count": material.chunk_count or 0,
-			"last_ingested_on": (str(material.last_ingested_on) if material.last_ingested_on else None),
-			"needs_update": needs_update,
-			"material": material.name,
-		}
 
 	def remove_lesson(self, course: str, lesson: str) -> None:
 		"""Delete a lesson's vectors from the RAG index.
@@ -161,8 +132,3 @@ class IngestionService:
 	def _normalize_lesson_text(self, lesson) -> str:
 		"""Extract plain text from a lesson via LessonContentParser."""
 		return LessonContentParser(lesson).extract_text()
-
-	@staticmethod
-	def _material_hash(text: str) -> str:
-		"""SHA256 hash of text content (used to detect content changes)."""
-		return hashlib.sha256(text.encode("utf-8")).hexdigest()

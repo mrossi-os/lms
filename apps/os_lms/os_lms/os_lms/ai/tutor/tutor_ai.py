@@ -87,9 +87,11 @@ class TutorAi:
 
 		labeled_chunks = self._label_chunks(chunks)
 		lessons_content = "\n\n---\n\n".join(labeled_chunks)
-		current_lesson_content = "\n\n---\n\n".join(
-			c.get("content", "") for c in chunks if c.get("lesson") == self.lesson
-		)
+
+		current_lesson_content = ""
+		if self.lesson:
+			lesson_chunks = service.search_chunks_by_lessons(self.course, [self.lesson], question)
+			current_lesson_content = "\n\n---\n\n".join(c.get("content", "") for c in lesson_chunks)
 		course_context = format_course_context(self.course_details, include_title=True)
 		template = load_prompt_template(PURPOSE_TUTOR)["system_template"]
 		prompt = render_template(
