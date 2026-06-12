@@ -2537,6 +2537,11 @@ def validate_course_access(lesson: str):
 		return
 
 	course = frappe.db.get_value("Course Lesson", lesson, "course")
+	# A "Valutatore" of a batch containing this course can take part in the
+	# lesson discussion (read-only elsewhere, but may post here).
+	if is_course_valutatore(course):
+		return
+
 	enrollment_exists = frappe.db.exists("LMS Enrollment", {"member": frappe.session.user, "course": course})
 	if not enrollment_exists:
 		frappe.throw(_("You do not have access to this course."))
@@ -2550,6 +2555,11 @@ def validate_batch_access(batch: str):
 		return
 
 	if has_evaluator_role():
+		return
+
+	# A "Valutatore" of this batch can take part in its discussion (read-only on
+	# the rest of the batch admin surface, but may post here).
+	if is_batch_valutatore(batch):
 		return
 
 	enrollment_exists = frappe.db.exists(
