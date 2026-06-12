@@ -47,6 +47,51 @@
 					"
 					:required="true"
 				/>
+				<div class="space-y-2">
+					<span class="block text-xs text-ink-gray-5">
+						{{ __('Immagine del badge') }}
+					</span>
+					<p class="text-p-sm text-ink-gray-5">
+						{{
+							__(
+								"Caricata su TrueSkill e usata per generare il PNG dell'OpenBadge. Senza immagine sarà scaricabile solo il JSON-LD.",
+							)
+						}}
+					</p>
+					<div class="flex items-center gap-3">
+						<Button
+							:loading="imageUploading"
+							:label="
+								form.imageUrl
+									? __('Sostituisci immagine')
+									: __('Carica immagine')
+							"
+							@click="() => imageInput?.click()"
+						/>
+						<div
+							v-if="form.imageUrl"
+							class="flex items-center gap-2 text-sm text-ink-gray-6"
+						>
+							<span class="truncate max-w-[180px]">
+								{{ imageName || form.imageUrl }}
+							</span>
+							<button
+								type="button"
+								class="text-ink-red-5"
+								@click="removeImage"
+							>
+								{{ __('Rimuovi') }}
+							</button>
+						</div>
+					</div>
+					<input
+						ref="imageInput"
+						type="file"
+						accept="image/*"
+						class="hidden"
+						@change="onImageSelected"
+					/>
+				</div>
 				<div class="grid grid-cols-2 gap-3">
 					<Switch
 						size="sm"
@@ -76,13 +121,16 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
-import { Dialog, FormControl, createResource, toast } from 'frappe-ui'
+import { Dialog, FormControl, Button, createResource, toast } from 'frappe-ui'
 import Switch from '@/components/Controls/Switch.vue'
 
 const show = defineModel({ type: Boolean, default: false })
 const emit = defineEmits(['created'])
 
 const errorMessage = ref(null)
+const imageInput = ref(null)
+const imageUploading = ref(false)
+const imageName = ref('')
 
 const blankForm = () => ({
 	name: '',
@@ -91,6 +139,7 @@ const blankForm = () => ({
 	isEnabled: false,
 	isVisible: false,
 	badgeUrl: '',
+	imageUrl: '',
 })
 
 const form = reactive(blankForm())
@@ -104,8 +153,50 @@ watch(show, (open) => {
 	if (open) {
 		Object.assign(form, blankForm())
 		errorMessage.value = null
+		imageName.value = ''
+		imageUploading.value = false
 	}
 })
+
+const onImageSelected = async (event) => {
+	const file = event.target.files?.[0]
+	event.target.value = '' // allow re-selecting the same file
+	if (!file) return
+	if (!file.type?.startsWith('image/')) {
+		errorMessage.value = __('Seleziona un file immagine.')
+		return
+	}
+	imageUploading.value = true
+	errorMessage.value = null
+	try {
+		const body = new FormData()
+		body.append('file', file)
+		const res = await fetch(
+			'/api/method/os_lms.os_lms.trueskills.api.upload_template_image',
+			{
+				method: 'POST',
+				headers: { 'X-Frappe-CSRF-Token': window.csrf_token },
+				body,
+			},
+		)
+		const result = (await res.json())?.message || {}
+		if (!result.ok) {
+			errorMessage.value = result.error || __('Caricamento immagine fallito.')
+			return
+		}
+		form.imageUrl = result.url
+		imageName.value = file.name
+	} catch (err) {
+		errorMessage.value = String(err)
+	} finally {
+		imageUploading.value = false
+	}
+}
+
+const removeImage = () => {
+	form.imageUrl = ''
+	imageName.value = ''
+}
 
 const buildPayload = () => {
 	const payload = {
@@ -114,6 +205,7 @@ const buildPayload = () => {
 		type: form.type,
 		isEnabled: !!form.isEnabled,
 		isVisible: !!form.isVisible,
+		imageUrl: form.imageUrl || undefined,
 	}
 	if (form.type === 'Openbadge') {
 		payload.badge = {

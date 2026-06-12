@@ -168,6 +168,23 @@ class TrueSkillsService:
 		)
 		return response
 
+	def upload_media(self, *, content: bytes, filename: str, content_type: str) -> str:
+		"""Upload an image to TrueSkills media storage; return its stored path.
+
+		The returned path (e.g. ``00/15/img.png``) is what must be passed as
+		``imageUrl`` when creating a template so that ``GET /download/{id}/image``
+		can bake the image into the Openbadge PNG. TrueSkills resolves it as a
+		physical file in the organization storage — an external URL will not do.
+		"""
+		response = self.client.upload_media(
+			content=content, filename=filename, content_type=content_type
+		)
+		url = response.get("url") if isinstance(response, dict) else None
+		if not url:
+			raise TrueSkillsError("TrueSkills media upload did not return a url.")
+		self.logger.info(f"Uploaded TrueSkills media '{filename}' -> {url}")
+		return url
+
 	def create_template(self, payload: dict) -> dict:
 		"""``POST /templates`` — create a new certificate template.
 
