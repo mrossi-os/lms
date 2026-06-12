@@ -47,9 +47,37 @@
 						:key="cls.name"
 						:cls="cls"
 						:isAdmin="user.data?.is_moderator || user.data?.is_evaluator"
+						:observer="Boolean(cls.is_valutatore)"
 						@started="liveClasses?.reload?.()"
 					/>
 				</div>
+			</div>
+		</div>
+
+		<div
+			v-if="user.data?.is_valutatore && evaluationBatches.data?.length"
+			class="mt-10"
+		>
+			<div class="flex items-center justify-between mb-3">
+				<span class="font-semibold text-lg text-ink-gray-9">
+					{{ __('Batches you evaluate') }}
+				</span>
+				<router-link :to="{ name: 'Batches' }">
+					<span class="flex items-center gap-x-1 text-ink-gray-5 text-xs">
+						<span>
+							{{ __('See all') }}
+						</span>
+						<MoveRight class="size-3 stroke-1.5 rtl:rotate-180" />
+					</span>
+				</router-link>
+			</div>
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+				<router-link
+					v-for="batch in evaluationBatches.data"
+					:to="{ name: 'BatchDetail', params: { batchName: batch.name } }"
+				>
+					<BatchCard :batch="batch" />
+				</router-link>
 			</div>
 		</div>
 
@@ -110,7 +138,11 @@
 		</div>
 
 		<div
-			v-if="!createdCourses.data?.length && !createdBatches.data?.length"
+			v-if="
+				!createdCourses.data?.length &&
+				!createdBatches.data?.length &&
+				!user.data?.is_valutatore
+			"
 			class="flex flex-col items-center justify-center mt-60"
 		>
 			<GraduationCap class="size-10 mx-auto stroke-1 text-ink-gray-5" />
@@ -173,6 +205,13 @@ const createdCourses = createResource({
 const createdBatches = createResource({
 	url: 'lms.lms.api.get_created_batches',
 	auto: true,
+})
+
+// Batches the current user evaluates — shown only to a "Valutatore" so their
+// (otherwise instructor-centric) admin home is not empty.
+const evaluationBatches = createResource({
+	url: 'os_lms.os_lms.api.get_evaluation_batches',
+	auto: user.data?.is_valutatore ? true : false,
 })
 
 const redirectToProfile = () => {

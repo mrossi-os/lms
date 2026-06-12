@@ -583,6 +583,20 @@ def delete_live_class(name: str, notify_students: int = 0) -> dict:
 	}
 
 
+@frappe.whitelist()
+def get_evaluation_batches() -> list:
+	"""Batch cards for the batches the current user evaluates (Valutatore home)."""
+	from lms.lms.utils import get_batch_details
+	from os_lms.os_lms.valutatore import get_valutatore_batches
+
+	out = []
+	for name in get_valutatore_batches():
+		details = get_batch_details(name)
+		if details:
+			out.append(details)
+	return out
+
+
 def _notify_students_class_cancelled(live_class) -> None:
 	from frappe.desk.doctype.notification_log.notification_log import (
 		make_notification_logs,
