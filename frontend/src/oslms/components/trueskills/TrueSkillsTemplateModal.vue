@@ -48,20 +48,43 @@
 					:required="true"
 				/>
 				<div class="space-y-2">
-					<FilePicker
-						v-model="imageFile"
-						:label="__('Immagine del badge')"
-						:allowedExtensions="['png', 'jpg', 'jpeg', 'webp', 'gif']"
-						:placeholder="__('Scegli un\'immagine dalla libreria…')"
-						@update:fileUrl="onImagePicked"
+					<FormControl
+						v-if="course"
+						type="checkbox"
+						v-model="useCourseCertificate"
+						:label="__('Usa il certificato del corso come immagine')"
 					/>
-					<p class="text-p-sm text-ink-gray-5">
-						{{
-							__(
-								'Scegli un\'immagine già caricata nella LMS. Serve per generare il PNG dell\'OpenBadge; senza immagine sarà scaricabile solo il JSON-LD.',
-							)
-						}}
-					</p>
+					<div v-if="useCourseCertificate" class="space-y-2">
+						<p class="text-p-sm text-ink-gray-5">
+							{{
+								__(
+									'Il certificato di completamento del corso viene reso in PNG e usato come immagine del badge.',
+								)
+							}}
+						</p>
+						<img
+							v-if="form.imageBase64"
+							:src="form.imageBase64"
+							alt=""
+							class="max-h-40 rounded border border-outline-gray-2"
+						/>
+					</div>
+					<template v-else>
+						<FilePicker
+							v-model="imageFile"
+							:label="__('Immagine del badge')"
+							:allowedExtensions="['png', 'jpg', 'jpeg', 'webp', 'gif']"
+							:placeholder="__('Scegli un\'immagine dalla libreria…')"
+							@update:fileUrl="onImagePicked"
+						/>
+						<p class="text-p-sm text-ink-gray-5">
+							{{
+								__(
+									'Scegli un\'immagine già caricata nella LMS. Serve per generare il PNG dell\'OpenBadge; senza immagine sarà scaricabile solo il JSON-LD.',
+								)
+							}}
+						</p>
+					</template>
 					<p v-if="imageBusy" class="text-p-sm text-ink-gray-5">
 						{{ __('Conversione immagine…') }}
 					</p>
@@ -101,10 +124,18 @@ import FilePicker from '@/components/Controls/FilePicker.vue'
 
 const show = defineModel({ type: Boolean, default: false })
 const emit = defineEmits(['created'])
+const props = defineProps({
+	course: { type: String, default: '' },
+})
 
 const errorMessage = ref(null)
 const imageFile = ref('')
 const imageBusy = ref(false)
+const useCourseCertificate = ref(false)
+
+const certificateImageResource = createResource({
+	url: 'os_lms.os_lms.trueskills.api.render_certificate_image',
+})
 
 const MAX_IMAGE_BYTES = 25 * 1024 * 1024 // base64 grows ~33%; stays under the ~30 MB body limit
 
@@ -131,15 +162,48 @@ watch(show, (open) => {
 		Object.assign(form, blankForm())
 		errorMessage.value = null
 		imageFile.value = ''
+		useCourseCertificate.value = false
 		imageBusy.value = false
 	}
 })
 
-// Clearing the FilePicker drops the image too.
+// Clearing the FilePicker drops the image too (unless the certificate is used).
 watch(imageFile, (val) => {
+	if (!val && !useCourseCertificate.value) {
+		form.imageBase64 = ''
+		form.imageFileName = ''
+	}
+})
+
+// "Use the course certificate": render the completion certificate to a PNG on
+// the backend and use it as the badge image; clear back to the FilePicker when
+// unchecked.
+watch(useCourseCertificate, async (val) => {
 	if (!val) {
 		form.imageBase64 = ''
 		form.imageFileName = ''
+		return
+	}
+	imageFile.value = ''
+	errorMessage.value = null
+	imageBusy.value = true
+	try {
+		const data = await certificateImageResource.submit({ course: props.course })
+		if (!data?.ok) {
+			errorMessage.value =
+				data?.error || __('Generazione immagine certificato fallita.')
+			form.imageBase64 = ''
+			form.imageFileName = ''
+			return
+		}
+		form.imageBase64 = data.image_base64
+		form.imageFileName = data.filename || 'certificate.png'
+	} catch (err) {
+		errorMessage.value = err?.messages?.[0] || err?.message || String(err)
+		form.imageBase64 = ''
+		form.imageFileName = ''
+	} finally {
+		imageBusy.value = false
 	}
 })
 
@@ -151,14 +215,14 @@ const blobToDataUri = (blob) =>
 		reader.readAsDataURL(blob)
 	})
 
-// FilePicker selects a file already stored in the LMS; TrueSkill can't read our
-// URLs, so fetch the bytes and send them inline as base64 (data-URI).
-const onImagePicked = async (fileUrl) => {
-	if (!fileUrl) return
+// TrueSkill can't read our URLs, so fetch the bytes and send them inline as
+// base64 (data-URI). Shared by the FilePicker and the course image.
+const fetchImageToBase64 = async (url) => {
+	if (!url) return
 	errorMessage.value = null
 	imageBusy.value = true
 	try {
-		const res = await fetch(fileUrl)
+		const res = await fetch(url)
 		if (!res.ok) throw new Error('HTTP ' + res.status)
 		const blob = await res.blob()
 		if (blob.size > MAX_IMAGE_BYTES) {
@@ -168,7 +232,7 @@ const onImagePicked = async (fileUrl) => {
 			return
 		}
 		form.imageBase64 = await blobToDataUri(blob)
-		form.imageFileName = fileUrl.split('/').pop()
+		form.imageFileName = url.split('/').pop()?.split('?')[0] || 'image'
 	} catch (err) {
 		errorMessage.value = __('Lettura immagine fallita: ') + String(err)
 		form.imageBase64 = ''
@@ -177,6 +241,8 @@ const onImagePicked = async (fileUrl) => {
 		imageBusy.value = false
 	}
 }
+
+const onImagePicked = (fileUrl) => fetchImageToBase64(fileUrl)
 
 const buildPayload = () => {
 	const payload = {

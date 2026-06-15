@@ -132,11 +132,22 @@
 					:label="__('Emetti certificato TrueSkill')"
 					:description="
 						__(
-							'Usa TrueSkill come emettitore del certificato per questo corso. Sostituisce il certificato interno LMS.'
+							'Usa TrueSkill come emettitore del certificato per questo corso. Richiede il certificato di completamento attivo.'
 						)
 					"
+					:disabled="!doc?.enable_certification"
 					@change="markDirty()"
 				/>
+				<div
+					v-if="!doc?.enable_certification"
+					class="text-sm text-ink-gray-5"
+				>
+					{{
+						__(
+							'Attiva il "Certificato di completamento" per poter abilitare l\'emissione TrueSkill.'
+						)
+					}}
+				</div>
 				<template v-if="doc?.trueskills_certificate_enabled">
 					<div class="text-sm text-ink-gray-7 bg-surface-gray-2 rounded-md p-3">
 						{{
@@ -177,6 +188,7 @@
 	/>
 	<TrueSkillsTemplateModal
 		v-model="showTrueskillTemplateModal"
+		:course="doc?.name"
 		@created="onTrueskillTemplateCreated"
 	/>
 </template>
@@ -333,6 +345,19 @@ watch(
 		}
 	},
 	{ immediate: true }
+)
+
+// TrueSkill emission triggers on LMS Certificate creation, which only happens
+// when completion certification is on. Keep them consistent: turning the
+// completion certificate off also turns TrueSkill emission off.
+watch(
+	() => resource.doc?.enable_certification,
+	(enabled) => {
+		if (!enabled && resource.doc?.trueskills_certificate_enabled) {
+			resource.doc.trueskills_certificate_enabled = 0
+			markDirty()
+		}
+	}
 )
 
 const showTrueskillTemplateModal = ref<boolean>(false)

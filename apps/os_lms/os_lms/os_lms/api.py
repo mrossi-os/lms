@@ -938,3 +938,144 @@ def _adjacent_lesson_info(pos: dict) -> dict | None:
 		"lesson_idx": pos["lesson_idx"],
 		"title": lesson_doc.title,
 	}
+
+
+# ----- Student course-progress reset (desk admin tool) -----
+
+# Roles allowed to wipe a student's course progress / re-issue a certificate.
+RESET_PROGRESS_ROLES = ["Moderator", "System Manager"]
+
+
+@frappe.whitelist()
+def get_member_courses(member: str) -> list[dict]:
+	"""Courses the given member is enrolled in, for the reset dialog picker.
+
+	Restricted to admins; reads enrollments ignoring the per-doctype query
+	conditions so the full list is returned regardless of the caller's scope.
+	"""
+	frappe.only_for(RESET_PROGRESS_ROLES)
+	if not member:
+		frappe.throw("member is required", frappe.ValidationError)
+
+	enrollments = frappe.get_all(
+		"LMS Enrollment",
+		filters={"member": member},
+		fields=["course", "progress"],
+		ignore_permissions=True,
+		order_by="creation desc",
+	)
+	out = []
+	for row in enrollments:
+		out.append(
+			{
+				"course": row.course,
+				"course_title": frappe.db.get_value("LMS Course", row.course, "title") or row.course,
+				"progress": row.progress or 0,
+			}
+		)
+	return out
+
+
+@frappe.whitelist()
+def reset_course_progress(member: str, course: str, dry_run: bool | int | str = False) -> dict:
+	"""Wipe a student's progress for a course so it can be retaken from scratch.
+
+	Deletes lesson progress, quiz submissions, assignment submissions, the
+	issued certificate and its TrueSkills Issue Log rows, then zeroes the
+	enrollment (progress / current_lesson / certificate) WITHOUT un-enrolling
+	the student. Re-issuing a certificate afterwards re-triggers the TrueSkills
+	emission via the LMS Certificate ``after_insert`` hook.
+
+	Certificate Evaluations / Requests are intentionally left untouched.
+
+	With ``dry_run`` truthy, nothing is deleted — only the counts that would be
+	affected are returned, so the desk dialog can show a confirmation preview.
+	"""
+	frappe.only_for(RESET_PROGRESS_ROLES)
+
+	if not member or not course:
+		frappe.throw("member and course are required", frappe.ValidationError)
+	if not frappe.db.exists("User", member):
+		frappe.throw(f"User {member} not found", frappe.DoesNotExistError)
+	if not frappe.db.exists("LMS Course", course):
+		frappe.throw(f"Course {course} not found", frappe.DoesNotExistError)
+
+	is_dry_run = str(dry_run).lower() not in ("0", "false", "no", "")
+
+	certificates = frappe.get_all(
+		"LMS Certificate",
+		filters={"member": member, "course": course},
+		pluck="name",
+	)
+	issue_logs = (
+		frappe.get_all(
+			"TrueSkills Issue Log",
+			filters={"lms_certificate": ["in", certificates]},
+			pluck="name",
+		)
+		if certificates
+		else []
+	)
+	course_progress = frappe.get_all(
+		"LMS Course Progress",
+		filters={"member": member, "course": course},
+		pluck="name",
+	)
+	quiz_submissions = frappe.get_all(
+		"LMS Quiz Submission",
+		filters={"member": member, "course": course},
+		pluck="name",
+	)
+	assignment_submissions = frappe.get_all(
+		"LMS Assignment Submission",
+		filters={"member": member, "course": course},
+		pluck="name",
+	)
+	enrollment = frappe.db.get_value("LMS Enrollment", {"member": member, "course": course}, "name")
+
+	summary = {
+		"member": member,
+		"course": course,
+		"course_title": frappe.db.get_value("LMS Course", course, "title") or course,
+		"dry_run": is_dry_run,
+		"enrollment_reset": bool(enrollment),
+		"deleted": {
+			"course_progress": len(course_progress),
+			"quiz_submissions": len(quiz_submissions),
+			"assignment_submissions": len(assignment_submissions),
+			"certificates": len(certificates),
+			"trueskills_issue_logs": len(issue_logs),
+		},
+	}
+
+	if is_dry_run:
+		return summary
+
+	# Delete in dependency order: Issue Logs link to the certificate, and the
+	# enrollment.certificate link is cleared before the certificate is removed.
+	for name in issue_logs:
+		frappe.delete_doc("TrueSkills Issue Log", name, force=True, ignore_permissions=True)
+
+	if enrollment:
+		frappe.db.set_value("LMS Enrollment", enrollment, "certificate", None)
+
+	for name in certificates:
+		frappe.delete_doc("LMS Certificate", name, force=True, ignore_permissions=True)
+
+	# delete_doc cascades child tables (e.g. LMS Quiz Result on quiz submissions).
+	for name in course_progress:
+		frappe.delete_doc("LMS Course Progress", name, force=True, ignore_permissions=True)
+	for name in quiz_submissions:
+		frappe.delete_doc("LMS Quiz Submission", name, force=True, ignore_permissions=True)
+	for name in assignment_submissions:
+		frappe.delete_doc("LMS Assignment Submission", name, force=True, ignore_permissions=True)
+
+	if enrollment:
+		frappe.db.set_value(
+			"LMS Enrollment",
+			enrollment,
+			{"progress": 0, "current_lesson": None, "certificate": None},
+		)
+
+	frappe.db.commit()
+	return summary
