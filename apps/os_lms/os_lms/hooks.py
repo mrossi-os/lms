@@ -124,9 +124,11 @@ standard_email_override = {
 # Desk client scripts attached to LMS doctypes.
 # - Role: Export/Import-with-permissions buttons.
 # - LMS Certificate: TrueSkills Issue Log quick link.
+# - User: "Reset progressi corso" button (admins) to retake a course from scratch.
 doctype_js = {
     "Role": "public/js/role.js",
     "LMS Certificate": "public/js/lms_certificate.js",
+    "User": "public/js/user.js",
 }
 doctype_list_js = {"Role": "public/js/role_list.js"}
 
