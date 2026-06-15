@@ -59,7 +59,15 @@ def build_certificate_png_data_uri(course: str, dpi: int = 150) -> str:
 		style = (rendered or {}).get("style") or ""
 		if not html.strip():
 			raise TrueSkillsError("Certificate render produced empty HTML.")
-		pdf_bytes = get_pdf(f"<style>{style}</style>\n{html}")
+		# The certificate Print Format is landscape; force it so the design is
+		# not squeezed onto a portrait page (which crops the right edge and
+		# leaves the lower half blank).
+		full_html = (
+			"<!DOCTYPE html><html><head><meta charset='utf-8'>"
+			"<meta name='pdfkit-orientation' content='Landscape'>"
+			f"<style>{style}</style></head><body>{html}</body></html>"
+		)
+		pdf_bytes = get_pdf(full_html, options={"orientation": "Landscape"})
 	except TrueSkillsError:
 		raise
 	except Exception as exc:
