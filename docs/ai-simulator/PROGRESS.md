@@ -1,5 +1,12 @@
 # Simulazioni AI — Progress tracker
 
+> **Nota (2026-06-09)**: questo file riflette la pianificazione storica della Fase 1. Alcune feature pianificate qui sono state poi rinominate o rimosse post-MVP. Per la **descrizione operativa attuale del modulo** vedi [`../ai/SIMULATIONS.md`](../ai/SIMULATIONS.md). Modifiche significative dopo l'MVP:
+>
+> - **Rename**: `customer_persona` → `roleplay_persona`, `CustomerTurnService` → `RolePlayerTurnService`, file `customer.py` → `role_player.py`. Il personaggio AI non è più "customer-only" ma agnostico al dominio (cliente / esaminatore / paziente / ecc.).
+> - **Rimosso**: feature `LMSA Scenario Golden Run` + `run_golden_regression` (mai adottata in produzione). Patch `v0_0_4.drop_golden_runs` ripulisce il DB.
+> - **Aggiunto**: `LMSA Prompt Template` (unico doctype, dopo la fusione di `LMSA Judge Prompt` con campo opzionale `output_schema`) per rendere tutti i prompt LLM editabili dal Desk senza redeploy. Loader con fallback ai default hardcoded sotto `ai/utils/default_prompt/`.
+> - **Aggiunto**: bottone "Compila con IA" su `ScenarioEditor` e `EvaluationSchemaEditor` (`authoring_ai.py` + endpoint `ai_generate_scenario` / `ai_generate_evaluation_schema`).
+
 Documento operativo che traccia lo sviluppo reale della feature definita in [`PLAN-os_lms.md`](PLAN-os_lms.md). Va aggiornato a ogni step (PR mergiata, sprint chiuso, decisione presa).
 
 > **Convenzione stato**: `⬜` da fare · `🚧` in corso · `✅` fatto · `⏸` bloccato · `❌` scartato.

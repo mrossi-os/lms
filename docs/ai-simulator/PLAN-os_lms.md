@@ -4,6 +4,13 @@
 
 Versione 1.0 — riferimento per l'implementazione interna nel modulo `apps/os_lms`.
 
+> **Nota (2026-06-09)**: questo file è il piano di implementazione storico (Fase 1 MVP). Alcune feature qui descritte sono state successivamente rinominate o rimosse dopo l'MVP. Per la **descrizione operativa attuale** vedi [`../ai/SIMULATIONS.md`](../ai/SIMULATIONS.md). Cambi notabili dopo l'MVP:
+>
+> - Il personaggio AI non è più "customer" ma `roleplay_persona` (agnostico: cliente, esaminatore, paziente, ecc.). `CustomerTurnService` → `RolePlayerTurnService`, file `customer.py` → `role_player.py`.
+> - Feature golden runs (`LMSA Scenario Golden Run`, `run_golden_regression`) rimossa: mai adottata in produzione. Patch `v0_0_4.drop_golden_runs`.
+> - Prompt LLM ora editabili dal Desk via `LMSA Prompt Template` (unico doctype: 4 judge con `output_schema`, template parametrici `{{var}}`, AI authoring).
+> - Aggiunto authoring AI: bottone "Compila con IA" su scenario e schema (`authoring_ai.py`).
+
 > Documento di lavoro: rimanda a `PLAN.md` per la specifica funzionale e didattica completa (executive summary, prompt engineering, GDPR, roadmap). Qui si descrive **come** la feature viene calata nella struttura attuale del progetto.
 
 ---

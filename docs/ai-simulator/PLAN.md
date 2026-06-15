@@ -4,6 +4,8 @@
 
 Versione 1.0 — Documento di riferimento per integrazione su Frappe LMS
 
+> **Nota (2026-06-09)**: questo file è la specifica originale focalizzata sul caso d'uso vendita. Dopo l'MVP il sistema è stato reso **agnostico al dominio** (cliente / esaminatore / paziente / intervistatore) tramite il rename `customer_persona` → `roleplay_persona`. Per la descrizione del modulo come è oggi vedi [`../ai/SIMULATIONS.md`](../ai/SIMULATIONS.md).
+
 # 1. Executive Summary
 Le Simulazioni AI sono un modulo formativo che permette agli studenti di un corso di vendita di mettere in pratica le competenze apprese attraverso conversazioni realistiche con un cliente simulato da un Large Language Model. Al termine di ogni sessione la piattaforma genera un debrief automatico con punteggi su una rubrica didattica, suggerimenti personalizzati e link ai contenuti del corso da rivedere.
 

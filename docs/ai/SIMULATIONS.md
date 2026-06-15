@@ -81,8 +81,10 @@ Il personaggio interpretato dall'AI è **agnostico al dominio**: può essere un 
                  │                                            │
                  │  prompts/                                  │
                  │    role_play.py, scenario_generator.py,   │
-                 │    debrief.py, defense.py,                │
-                 │    judge_loader.py, template_loader.py    │
+                 │    debrief.py, defense.py                  │
+                 │                                            │
+                 │  utils/template_loader.py                  │
+                 │  utils/default_prompt/<purpose>.py         │
                  │                                            │
                  │  eval/  (parallel quality pipeline)        │
                  │    authoring_runner.AuthoringEvaluation…  │
@@ -195,46 +197,37 @@ POST `run_simulation_test(scenario, student_profile, num_variants, student_scena
 
 ## Prompt configurabili dal Desk
 
-Tutti i prompt LLM del sottosistema simulazioni sono configurabili dal Desk senza redeploy. Due doctype distinti per separare i prompt statici dai template parametrici:
+Tutti i prompt LLM del sottosistema simulazioni vivono in un unico doctype, `LMSA Prompt Template`, editabile dal Desk senza redeploy. Un record per `purpose`. Tre famiglie di prompt coesistono nello stesso doctype:
 
-### `LMSA Judge Prompt` — i 4 judge della valutazione
+- **Template runtime parametrici** (`llm_student`, `role_play`, `scenario_variant_generator`, `debrief`, `tutor`): system + user con placeholder `{{var}}` sostituiti runtime via `template_loader.render_template(template, ctx)` (str.replace; placeholder non trovati restano letterali, non vanno in errore).
+- **AI authoring** (`scenario_generator_ai`, `evaluation_schema_generator_ai`): prompt per i bottoni "Compila con IA" lato instructor.
+- **Evaluation judges** (`judge_persona`, `judge_coverage`, `judge_debrief`, `judge_difficulty`): system prompt + `output_schema` (JSON Schema enforced via `response_format=JsonSchema(...)` strict). Il user message lo costruisce il modulo Python — niente placeholder.
 
-Doctype editabile dal Desk (System Manager + Moderator), un record per ogni judge:
+| `purpose` | Famiglia | Usato da | Note |
+|---|---|---|---|
+| `llm_student` | Runtime | `eval/student/llm_student.py:build_student_messages` | `{{scenario_brief}}`, `{{profile_addendum}}`, `{{scenario_name}}`, `{{difficulty}}`, `{{roleplay_persona}}`, `{{learning_objectives}}`, `{{lesson_block}}`, `{{transcript}}` |
+| `role_play` | Runtime | `prompts/role_play.py:build_role_play_system_prompt` | System-only; persona + situation + difficoltà |
+| `scenario_variant_generator` | Runtime | `prompts/scenario_generator.py:build_scenario_generator_messages` | Generazione variante a seed dato |
+| `debrief` | Runtime | `prompts/debrief.py:build_debrief_messages` | JSON debrief post-sessione |
+| `tutor` | Runtime | `tutor/tutor_ai.py:_system_prompt` | RAG tutor; `{{course_details}}`, `{{lessons_content}}`, `{{current_lesson_content}}` |
+| `scenario_generator_ai` | Authoring | `authoring_ai.generate_scenario_payload` | `{{course_name}}`, `{{lesson_title}}`, `{{lesson_context_block}}`, `{{hint}}` |
+| `evaluation_schema_generator_ai` | Authoring | `authoring_ai.generate_evaluation_schema_payload` | `{{course_block}}`, `{{hint}}` |
+| `judge_persona` | Judge | `eval/pipeline._run_judge('persona')` | Personaggio AI in carattere |
+| `judge_coverage` | Judge | `eval/pipeline._run_judge('coverage')` | Copertura obiettivi formativi |
+| `judge_debrief` | Judge | `eval/pipeline._run_judge('debrief')` | Accuratezza debrief vs trascrizione |
+| `judge_difficulty` | Judge | `eval/pipeline._run_judge('difficulty')` | Calibrazione difficoltà dichiarata |
 
-| `purpose` | Cosa valuta |
-|---|---|
-| `judge_persona` | Il personaggio AI resta in carattere durante tutta la conversazione |
-| `judge_coverage` | La conversazione ha coperto gli obiettivi formativi (per-obiettivo + score complessivo) |
-| `judge_debrief` | Il debrief generato è accurato (no allucinazioni, coerenza score↔evidenze) |
-| `judge_difficulty` | Difficoltà percepita matcha quella dichiarata (calibration_offset) |
+Campi per record: `system_template` (Long Text, required), `user_template` (Long Text, opzionale — vuoto per judge e role_play), `output_schema` (Code JSON, opzionale — popolato solo per i 4 judge), `temperature`, `max_tokens`, `available_placeholders` (read-only), `version`, `enabled`, `notes`.
 
-Campi per record: `system_prompt` (Long Text), `output_schema` (Code JSON), `temperature`, `max_tokens`, `version`, `enabled`, `notes`.
+`utils/template_loader.py` espone `load_prompt_template(purpose)`: legge dal DB se il record esiste ed è `enabled=1`, altrimenti ritorna il default hardcoded importato da `ai/utils/default_prompt/<purpose>.py`. `output_schema` viene parsato come JSON nel loader; in caso di JSON malformato si fa fallback al default in-module (mai un crash mid-eval). Nessuna cache — il cost di un PK-lookup è irrilevante rispetto alla LLM call che ne consuma il risultato.
 
-`prompts/judge_loader.py` espone `load_judge_prompt(purpose)`: legge dal DB (se `enabled=1`), altrimenti ritorna il default hardcoded importato dai 4 judge module. Nessuna cache — il cost di un PK-lookup è irrilevante rispetto alla LLM call che ne consuma il risultato.
-
-`pipeline._run_judge` chiama `load_judge_prompt(f"judge_{dimension}")` per ottenere system_prompt + output_schema + sampling params, e usa lo schema come `response_format=JsonSchema(...)` strict mode.
-
-### `LMSA Prompt Template` — template parametrici
-
-Doctype editabile dal Desk, un record per ogni template parametrizzato. I template usano sintassi `{{var}}` per i placeholder sostituiti runtime via `template_loader.render_template(template, ctx)` (str.replace; placeholder non trovati restano letterali, non vanno in errore).
-
-Purposes attualmente seeded:
-
-| `purpose` | Usato da | Placeholder disponibili |
-|---|---|---|
-| `llm_student` | `eval/student/llm_student.py:build_student_messages` | `{{scenario_brief}}`, `{{profile_addendum}}`, `{{scenario_name}}`, `{{difficulty}}`, `{{roleplay_persona}}`, `{{learning_objectives}}`, `{{lesson_block}}`, `{{transcript}}` |
-| `scenario_generator_ai` | `authoring_ai.generate_scenario_payload` (bottone "Compila con IA") | `{{course_name}}`, `{{lesson_title}}`, `{{lesson_context_block}}`, `{{hint}}` |
-| `evaluation_schema_generator_ai` | `authoring_ai.generate_evaluation_schema_payload` (bottone "Compila con IA") | `{{course_block}}`, `{{hint}}` |
-
-Campi per record: `system_template`, `user_template`, `temperature`, `max_tokens`, `available_placeholders` (doc read-only), `version`, `enabled`.
-
-`prompts/template_loader.py` espone `load_prompt_template(purpose)` con stesso pattern del judge_loader: DB → fallback hardcoded → mai un crash. Le DEFAULTS sono single-source-of-truth: a `bench migrate`, `setup.seed_prompt_templates()` crea i record dal DEFAULTS se mancanti (idempotente).
+`pipeline._run_judge` chiama `load_prompt_template(f"judge_{dimension}")` per ottenere `system_template` + `output_schema` + sampling params, e usa lo schema come `response_format=JsonSchema(...)` strict mode.
 
 ### Workflow per modificare un prompt
-1. Desk → `LMSA Judge Prompt` o `LMSA Prompt Template` → record → modificare
+1. Desk → `LMSA Prompt Template` → record → modificare
 2. Save: la modifica è immediatamente effettiva al prossimo call (no cache, no restart)
 3. Bumpare il `version` per tracciare la modifica nel `judge_versions_json` dei trace (audit)
-4. Per resettare al default hardcoded: `enabled=0` (soft) o cancellare il record (al prossimo migrate viene ri-seedato dal DEFAULTS)
+4. Per resettare al default hardcoded: `enabled=0` (soft) o cancellare il record (al prossimo migrate viene ri-seedato da DEFAULTS)
 
 ## L'`AuthoringEvaluationRunner` in dettaglio
 
@@ -325,8 +318,7 @@ Vedi `runner.py` per il loop di alternanza studente/personaggio, `role_player.py
 | `LMSA Simulation Debrief` | Debrief AI post-sessione. Child tables: criterion_scores, strengths, improvements, recommended_content |
 | `LMSA Evaluation Schema` (+ `LMSA Schema Criterion` child) | Rubrica riusabile di criteri di valutazione |
 | `LMSA Quality Evaluation` (+ `LMSA Evaluation Trace` child) | Run di valutazione (run_mode: `simulation_test` / `production` / `quick` / `deep`). Ogni trace è un transcript_json + dimension_scores_json + judge_versions_json |
-| `LMSA Judge Prompt` | Prompt + output schema dei 4 judge, editabile dal Desk |
-| `LMSA Prompt Template` | Template prompt parametrici (`{{var}}`) per `llm_student`, `scenario_generator_ai`, `evaluation_schema_generator_ai` |
+| `LMSA Prompt Template` | Unico doctype editabile dal Desk per tutti i prompt LLM (runtime parametrici, AI authoring, evaluation judges + relativo `output_schema`) |
 
 ## Configurazione
 
@@ -361,17 +353,17 @@ Da `setup.py` (chiamati in `hooks.after_migrate`):
 
 | Funzione | Cosa fa |
 |---|---|
-| `seed_judge_prompts` | Crea i 4 record `LMSA Judge Prompt` dai default in `prompts/judge_loader.DEFAULTS` (idempotente: skip se già presente) |
-| `seed_prompt_templates` | Crea i record `LMSA Prompt Template` dai default in `prompts/template_loader.DEFAULTS` (idempotente) |
+| `migrate_judge_prompts_to_template` | One-shot idempotente: porta i record del vecchio doctype `LMSA Judge Prompt` (deprecato) dentro `LMSA Prompt Template` preservando eventuale customizzazione, poi droppa il vecchio doctype. Gira prima di `seed_prompt_templates` così il record migrato batte il default fresh. Noop dopo la prima esecuzione. |
+| `seed_prompt_templates` | Crea i record `LMSA Prompt Template` mancanti dai default in `utils/template_loader.DEFAULTS` (idempotente). Copre tutte le famiglie: runtime, authoring, judges (incluso `output_schema`). |
 
-I default hardcoded restano in modo che la app funzioni anche senza i record DB (fallback ricorsivo a ogni `load_judge_prompt` / `load_prompt_template`).
+I default hardcoded sotto `ai/utils/default_prompt/` restano in modo che la app funzioni anche senza i record DB (fallback ricorsivo a ogni `load_prompt_template`).
 
 ## Note operative
 
 - **Real-time eventi**: `SessionOrchestrator` pubblica `simulation:turn_start` / `simulation:turn_complete` / `simulation:error` su `frappe.publish_realtime`, scoped allo studente. Eval runner pubblica `simulation:eval_complete`. Il frontend subscriva per UI progressiva.
 - **Quota**: `validate_quota` (hook `before_insert` su `LMSA Simulation Session`) blocca lo studente che ha esaurito la quota giornaliera.
 - **Injection defense**: ogni `user_text` in `send_message` passa per `detect_injection` (`prompts/defense.py`); attacchi rilevati ricevono una risposta canned **in carattere** (`in_character_refusal(persona.name)`) e il turn user viene flaggato (`injection_attempt_detected = 1`) per audit. Il pattern matcher copre anche "personaggio" oltre a "cliente" per coprire scenari non-vendita.
-- **Prompt versioning**: ogni sessione persiste `prompt_version = "{SCENARIO_GEN_VERSION}+{ROLE_PLAY_VERSION}"` (es. `gen.v1+rp.v1`). I judge versions vengono persistiti in `judge_versions_json` su ogni trace per audit. Bumpare il `version` di un `LMSA Judge Prompt` o `LMSA Prompt Template` traccia automaticamente la modifica nei trace successivi.
+- **Prompt versioning**: ogni sessione persiste `prompt_version = "{SCENARIO_GEN_VERSION}+{ROLE_PLAY_VERSION}"` (es. `gen.v1+rp.v1`). I judge versions vengono persistiti in `judge_versions_json` su ogni trace per audit. Bumpare il `version` di un record `LMSA Prompt Template` traccia automaticamente la modifica nei trace successivi.
 - **Pseudonymizzazione**: `SessionOrchestrator.pseudonymize_session_id(user)` ritorna SHA-256 dello user — usato quando si inviano payload a provider esterni per evitare di esporre email.
 - **LLM call logging (debug)**: `eval/authoring_runner.py` wrappa il provider con `LoggingProvider` se `utils/llm/logger.ENABLED = True`. Tutti i call dell'eval finiscono in `{site}/private/files/llm_logs/{eval_id}.jsonl`. Disabilitato di default. Inoltre `pipeline._log_judge_failure` registra ogni judge fallito (parse_error o provider_error) sul `Error Log` Desk con `response.text` raw — chiave per debuggare modelli che non rispettano lo strict response_format.
 - **Asimmetria student/role-player nell'eval**: il role-player turn passa per `RolePlayerTurnService` (stesso codepath della produzione), lo student turn è inline nel runner (non c'è analogo lato prod perché lì lo studente è umano). Il role-player è quindi cover-tested anche dall'eval; lo student turn no.
@@ -390,7 +382,8 @@ I default hardcoded restano in modo che la app funzioni anche senza i record DB 
 | Pure services | `simulations/role_player.py` (ScenarioVariantGenerator, RolePlayerTurnService) |
 | AI authoring | `simulations/authoring_ai.py` (generate_scenario_payload, generate_evaluation_schema_payload) |
 | Prompts statici | `simulations/prompts/scenario_generator.py`, `role_play.py`, `debrief.py`, `defense.py` |
-| Prompt loaders | `simulations/prompts/judge_loader.py`, `simulations/prompts/template_loader.py` |
+| Default prompt configs | `ai/utils/default_prompt/<purpose>.py` (uno per `purpose`, contiene LABEL/VERSION/SYSTEM_TEMPLATE/USER_TEMPLATE/TEMPERATURE/MAX_TOKENS/PLACEHOLDERS e — per i judge — OUTPUT_SCHEMA) |
+| Prompt loader | `ai/utils/template_loader.py` (`load_prompt_template`, `render_template`, `DEFAULTS`) |
 | Debrief job | `simulations/tasks.py:generate_debrief` |
 | Eval orchestration | `simulations/eval/authoring_runner.py`, `eval/jobs.py` |
 | Eval transcript gen | `simulations/eval/runner.py` (run_synthetic_llm_student) |
@@ -399,5 +392,5 @@ I default hardcoded restano in modo che la app funzioni anche senza i record DB 
 | Eval pipeline | `simulations/eval/pipeline.py` (`_run_judge` + `_log_judge_failure`) |
 | LLM call logger (debug) | `apps/os_lms/os_lms/os_lms/ai/utils/llm/logger.py` |
 | Permessi | `simulations/eval/permissions.py` |
-| Setup seed | `apps/os_lms/os_lms/setup.py` (`seed_judge_prompts`, `seed_prompt_templates`) |
+| Setup seed | `apps/os_lms/os_lms/setup.py` (`migrate_judge_prompts_to_template`, `seed_prompt_templates`) |
 | Patches DB | `apps/os_lms/os_lms/patches/v0_0_3/rename_simulation_scenario_roleplay_persona.py`, `v0_0_4/drop_golden_runs.py` |
