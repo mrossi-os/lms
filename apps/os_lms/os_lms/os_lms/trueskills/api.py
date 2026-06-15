@@ -1,5 +1,6 @@
 import frappe
 
+from .certificate_image import build_certificate_png_data_uri
 from .client import TrueSkillsClientError, TrueSkillsError
 from .service import TrueSkillsService
 
@@ -102,6 +103,24 @@ def get_template(template_id: int) -> dict:
 	except TrueSkillsError as exc:
 		return _error_payload(exc)
 	return {"ok": True, "template": template}
+
+
+@frappe.whitelist()
+def render_certificate_image(course: str) -> dict:
+	"""Render the course completion certificate to a PNG data-URI.
+
+	Lets the template modal reuse the certificate design as the Openbadge image.
+	Returns ``{ok, image_base64, filename}`` where ``image_base64`` is a
+	``data:image/png;base64,...`` string.
+	"""
+	_require_admin()
+	if not course:
+		return {"ok": False, "error": "Course is required."}
+	try:
+		data_uri = build_certificate_png_data_uri(course)
+	except TrueSkillsError as exc:
+		return {"ok": False, "error": str(exc)}
+	return {"ok": True, "image_base64": data_uri, "filename": "certificate.png"}
 
 
 @frappe.whitelist()
