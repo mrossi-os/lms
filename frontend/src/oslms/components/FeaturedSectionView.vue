@@ -40,9 +40,8 @@
 							<div
 								v-if="item.description"
 								class="text-xs text-ink-gray-6 leading-4 mt-0.5 break-words"
-							>
-								{{ item.description }}
-							</div>
+								v-html="linkify(item.description)"
+							></div>
 						</div>
 						<!-- Download -->
 						<a
@@ -225,5 +224,35 @@ const getFileName = (fileName?: string) => {
 const getIconComponent = (iconName: string) => {
 	if (!iconName) return null
 	return (LucideIcons as any)[iconName] ?? null
+}
+
+// Escape HTML before injecting via v-html (XSS-safe).
+const escapeHtml = (text: string) =>
+	text
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#39;')
+
+// Detect http(s):// and www. URLs in plain text.
+const URL_REGEX = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi
+
+// Turn URLs found inside the description text into clickable links.
+// Note: leave ';' out of the trailing-punctuation strip so escaped
+// entities (&amp; &#39; ...) are not truncated.
+const linkify = (text?: string) => {
+	if (!text) return ''
+	return escapeHtml(text).replace(URL_REGEX, (match) => {
+		let url = match
+		let trailing = ''
+		const punctuation = url.match(/[.,!?)\]]+$/)
+		if (punctuation) {
+			trailing = punctuation[0]
+			url = url.slice(0, -trailing.length)
+		}
+		const href = url.startsWith('http') ? url : `https://${url}`
+		return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="text-ink-blue-3 underline hover:text-ink-blue-2 break-all">${url}</a>${trailing}`
+	})
 }
 </script>
