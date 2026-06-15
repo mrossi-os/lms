@@ -375,9 +375,12 @@ watch(
 watch(course, () => {
 	// A valutatore of a batch containing this course may view it read-only even
 	// when unpublished (course.data.is_valutatore is set by get_course_details).
+	// An enrolled student (course.data.membership set by get_course_details) may
+	// access the course even when it is not published (e.g. private enrolment).
 	if (
 		!isAdmin.value &&
 		!course.data?.is_valutatore &&
+		!course.data?.membership &&
 		!course.data?.published &&
 		!course.data?.upcoming
 	) {
