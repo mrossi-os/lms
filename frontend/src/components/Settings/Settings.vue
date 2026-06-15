@@ -31,7 +31,7 @@
 				<div
 					v-if="activeTab && data.doc"
 					:key="activeTab.key"
-					class="flex flex-1 flex-col p-8 bg-surface-modal overflow-x-auto"
+					class="flex flex-1 flex-col p-8 bg-surface-modal overflow-x-auto overflow-y-auto"
 				>
 					<component
 						v-if="activeTab.template"
@@ -39,7 +39,9 @@
 						v-bind="{
 							label: activeTab.label,
 							description: activeTab.description,
-							...(activeTab.key == 'Branding' || activeTab.key == 'AI'
+							...(activeTab.key == 'Branding' ||
+							activeTab.key == 'AI' ||
+							activeTab.key == 'TrueSkills API'
 								? { sections: activeTab.sections }
 								: {}),
 							...(activeTab.key == 'Evaluators' ||
@@ -72,14 +74,12 @@ import Evaluators from '@/components/Settings/Evaluators.vue'
 import Categories from '@/components/Settings/Categories.vue'
 import EmailTemplates from '@/components/Settings/EmailTemplates.vue'
 import BrandSettings from '@/components/Settings/BrandSettings.vue'
-import PaymentGateways from '@/components/Settings/PaymentGateways.vue'
-import Coupons from '@/components/Settings/Coupons/Coupons.vue'
-import Transactions from '@/components/Settings/Transactions/Transactions.vue'
 import ZoomSettings from '@/components/Settings/ZoomSettings.vue'
 import GoogleMeetSettings from '@/components/Settings/GoogleMeetSettings.vue'
 import GoogleCalendarSettings from '@/components/Settings/GoogleCalendarSettings.vue'
 import Badges from '@/components/Settings/Badges.vue'
 import AISettings from '@/oslms/components/ai/Settings/AISettings.vue'
+import TrueSkillsSettings from '@/oslms/components/trueskills/TrueSkillsSettings.vue'
 
 const GOOGLE_CALENDAR_ROLES = ['System Manager', 'Gestore']
 const ADMIN_ONLY_ROLES = ['System Manager', 'Administrator']
@@ -109,6 +109,12 @@ const data = createDocumentResource({
 	cache: doctype.value,
 	auto: true,
 })
+const aiProviders = [
+	{ label: 'OpenAI', value: 'openai' },
+	{ label: 'Google Gemini', value: 'gemini' },
+	{ label: 'Anthropic', value: 'anthropic' },
+	{ label: 'DeepSeek', value: 'deepseek' },
+]
 
 const tabsStructure = computed(() => {
 	return [
@@ -168,6 +174,7 @@ const tabsStructure = computed(() => {
 								},
 							],
 						},
+						
 						{
 							label: __('Notifications'),
 							columns: [
@@ -298,6 +305,64 @@ const tabsStructure = computed(() => {
 						},
 					],
 				},
+					{
+					label: __('Course Progress'),
+					icon: 'Activity',
+					description:
+						__('Control how lessons are marked complete: dwell time and enforcement toggles for video, quiz, and assignment.'),
+					sections: [
+						{
+							label: __('Dwell Time'),
+							columns: [
+								{
+									fields: [
+										{
+											label: __('Lesson dwell time (seconds)'),
+											name: 'lesson_dwell_time',
+											type: 'number',
+											description:
+												__('Seconds a learner must stay on a lesson before it auto-marks complete.'),
+										},
+									],
+								},
+							],
+						},
+						{
+							label: __('Enforcement'),
+							columns: [
+								{
+									fields: [
+										{
+											label: __('Enforce video completion'),
+											name: 'enforce_video_completion',
+											type: 'checkbox',
+											description:
+												__('When enabled, lessons that contain a video can only be marked complete by playing the video to the end. If the video fails to load, the dwell timer is used as a fallback.'),
+										},
+										{
+											label: __('Enforce assignment completion'),
+											name: 'enforce_assignment_completion',
+											type: 'checkbox',
+											description:
+												__('When enabled, lessons with an assignment cannot be marked complete until the assignment is submitted.'),
+										},
+									],
+								},
+								{
+									fields: [
+										{
+											label: __('Enforce quiz completion'),
+											name: 'enforce_quiz_completion',
+											type: 'checkbox',
+											description:
+												__('When enabled, lessons with a quiz cannot be marked complete until the quiz is submitted.'),
+										},
+									],
+								},
+							],
+						},
+					],
+				},
 				{
 					key: 'Badges',
 					label: __('Badges'),
@@ -324,6 +389,51 @@ const tabsStructure = computed(() => {
 					icon: 'MailPlus',
 					template: markRaw(EmailTemplates),
 					condition: isAdministrator,
+				},
+				{
+					key: 'TrueSkills API',
+					label: __('TrueSkills API'),
+					icon: 'KeyRound',
+					description: __(
+						'Configure the TrueSkills API integration for your learning system',
+					),
+					condition: isAdministrator,
+					template: markRaw(TrueSkillsSettings),
+					sections: [
+						{
+							label: __('TrueSkills API'),
+							columns: [
+								{
+									fields: [
+										{
+											label: __('Enable TrueSkills API'),
+											name: 'trueskills_api_enabled',
+											type: 'checkbox',
+											description: __(
+												'If enabled, the TrueSkills API integration will be active.',
+											),
+										},
+										{
+											label: __('API Key'),
+											name: 'trueskills_api_key',
+											type: 'password',
+											description: __(
+												'The API key used to authenticate requests to the TrueSkills API.',
+											),
+										},
+										{
+											label: __('API Endpoint'),
+											name: 'trueskills_api_endpoint',
+											type: 'text',
+											description: __(
+												'Base URL of the TrueSkills API (e.g. https://api.trueskills.example/v1).',
+											),
+										},
+									],
+								},
+							],
+						},
+					],
 				},
 			],
 		},
@@ -352,121 +462,6 @@ const tabsStructure = computed(() => {
 				},
 			],
 		},
-		// {
-		// 	key: 'Payment',
-		// 	label: __('Payment'),
-		// 	hideLabel: false,
-		// 	items: [
-		// 		{
-		// 			key: 'Configuration',
-		// 			label: __('Configuration'),
-		// 			icon: 'CreditCard',
-		// 			description: __(
-		// 				'Manage all your payment related settings and defaults',
-		// 			),
-		// 			sections: [
-		// 				{
-		// 					columns: [
-		// 						{
-		// 							fields: [
-		// 								{
-		// 									label: __('Default Currency'),
-		// 									name: 'default_currency',
-		// 									type: 'Link',
-		// 									doctype: 'Currency',
-		// 								},
-		// 								{
-		// 									label: __('Show USD equivalent amount'),
-		// 									name: 'show_usd_equivalent',
-		// 									type: 'checkbox',
-		// 									description: __(
-		// 										'If enabled, it shows the USD equivalent amount for all transactions based on the current exchange rate.',
-		// 									),
-		// 								},
-		// 								{
-		// 									label: __('Apply rounding on equivalent'),
-		// 									name: 'apply_rounding',
-		// 									type: 'checkbox',
-		// 									description: __(
-		// 										'If enabled, it applies rounding on the USD equivalent amount.',
-		// 									),
-		// 								},
-		// 							],
-		// 						},
-		// 						{
-		// 							fields: [
-		// 								{
-		// 									label: __('Payment Gateway'),
-		// 									name: 'payment_gateway',
-		// 									type: 'Link',
-		// 									doctype: 'Payment Gateway',
-		// 								},
-		// 								{
-		// 									label: __('Apply GST for India'),
-		// 									name: 'apply_gst',
-		// 									type: 'checkbox',
-		// 									description: __(
-		// 										'If enabled, GST will be applied to the price for students from India.',
-		// 									),
-		// 								},
-		// 							],
-		// 						},
-		// 					],
-		// 				},
-		// 				{
-		// 					label: __('Payment Reminders'),
-		// 					columns: [
-		// 						{
-		// 							fields: [
-		// 								{
-		// 									label: __('Send payment reminders for batch'),
-		// 									name: 'send_payment_reminders_for_batch',
-		// 									type: 'checkbox',
-		// 									description: __(
-		// 										'If enabled, it sends payment reminders to students who left the payment incomplete for a batch.',
-		// 									),
-		// 								},
-		// 							],
-		// 						},
-		// 						{
-		// 							fields: [
-		// 								{
-		// 									label: __('Send payment reminders for course'),
-		// 									name: 'send_payment_reminders_for_course',
-		// 									type: 'checkbox',
-		// 									description: __(
-		// 										'If enabled, it sends payment reminders to students who left the payment incomplete for a course.',
-		// 									),
-		// 								},
-		// 							],
-		// 						},
-		// 					],
-		// 				},
-		// 			],
-		// 		},
-		// 		{
-		// 			key: 'Gateways',
-		// 			label: __('Gateways'),
-		// 			icon: 'DollarSign',
-		// 			template: markRaw(PaymentGateways),
-		// 			description: __('Add and manage all your payment gateways'),
-		// 		},
-		// 		{
-		// 			key: 'Transactions',
-		// 			label: __('Transactions'),
-		// 			icon: 'Landmark',
-		// 			template: markRaw(Transactions),
-		// 			description: __('View all your payment transactions'),
-		// 		},
-		// 		{
-		// 			key: 'Coupons',
-		// 			label: __('Coupons'),
-		// 			icon: 'Ticket',
-		// 			template: markRaw(Coupons),
-		// 			description: __('Manage discount coupons for courses and batches'),
-		// 		},
-		// 	],
-		// },
 		{
 			key: 'Conferencing',
 			label: __('Conferencing'),
@@ -830,7 +825,7 @@ const tabsStructure = computed(() => {
 					condition: isAdministrator,
 					sections: [
 						{
-							label: __('Configuration'),
+							label: __('Rag Tutor'),
 							columns: [
 								{
 									fields: [
@@ -842,15 +837,11 @@ const tabsStructure = computed(() => {
 												'Enable AI features for your learning system.',
 											),
 										},
-										{
-											label: __('Embedding Model'),
-											name: 'embedding_model',
-											type: 'text',
-											description: __(
-												'The model used to generate embeddings for content indexing.',
-											),
-										},
-										{
+									],
+								},
+								{
+									fields: [
+											{
 											label: __('Embedding Model'),
 											name: 'embedding_model',
 											type: 'text',
@@ -864,22 +855,6 @@ const tabsStructure = computed(() => {
 											type: 'text',
 											description: __('The model used to chatbot.'),
 										},
-										{
-											label: __('LLM System Prompt'),
-											name: 'system_prompt',
-											type: 'textarea',
-											description: __('System prompt use with chatbot.'),
-										},
-										{
-											label: __('Open AI Key'),
-											name: 'openai_key',
-											type: 'text',
-											description: __('OpenAI key.'),
-										},
-									],
-								},
-								{
-									fields: [
 										{
 											label: __('Chunk Size'),
 											name: 'chunk_size',
@@ -904,16 +879,109 @@ const tabsStructure = computed(() => {
 												'Number of relevant chunks to retrieve for context.',
 											),
 										},
+										
+									],
+								},
+							],
+						},
+						{
+							label: __('Api Keys'),
+							columns: [
+								{
+									fields: [
+										{
+											label: __('OpenAI Key'),
+											name: 'openai_key',
+											type: 'text',
+										},
+										{
+											label: __('OpenAI Base URL'),
+											name: 'openai_base_url',
+											type: 'text',
+											description: __('Optional override for OpenAI-compatible endpoints (Ollama, vLLM, LM Studio, ...).'),
+										},
+
+										{
+											label: __('Google Gemini API Key'),
+											name: 'gemini_key',
+											type: 'text',
+										},
+										
+										
+									],
+								},
+								{
+									fields: [
 										{
 											label: __('Vimeo Api Key'),
 											name: 'vimeo_api_key',
 											type: 'text',
 											description: __('Api vimeo for transcript.'),
 										},
+										{
+											label: __('DeepSeek API Key'),
+											name: 'deepseek_key',
+											type: 'text',
+										},
+										{
+											label: __('Anthropic API Key'),
+											name: 'anthropic_key',
+											type: 'text',
+										},
+									
 									],
-								},
+								}
 							],
 						},
+						{
+							label: __('AI Simulation'),
+							columns:[
+								{
+									fields:[
+										{
+											label: __('Enabled'),
+											name: 'simulations_enabled',
+											type: 'checkbox',
+											description: __(
+												'Enable AI Simulations for your learning system.',
+											),
+										},
+										{
+											label: __('Chat LLM Provider'),
+											name: 'simulation_chat_provider',
+											type: 'select',
+											options: aiProviders,
+										},
+										{
+											label: __('Chat Model'),
+											name: 'simulation_chat_model',
+											type: 'text',
+										},
+									]
+								},
+								{
+									fields:[
+										{
+											label: __('Default LLM Provider'),
+											name: 'simulation_provider_default',
+											type: 'select',
+											options: aiProviders,
+										},
+										{
+											label: __('Debrief LLM Provider'),
+											name: 'simulation_debrief_provider',
+											type: 'select',
+											options: aiProviders,
+										},
+										{
+											label: __('Debrief Model'),
+											name: 'simulation_debrief_model',
+											type: 'text',
+										},
+									]
+								}
+							]
+						}
 					],
 				},
 			],

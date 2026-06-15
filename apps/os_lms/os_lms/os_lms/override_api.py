@@ -54,8 +54,30 @@ def get_sidebar_settings():
 def get_lms_settings():
     result = _original_get_lms_settings()
     if isinstance(result, dict):
-         result["ai_enabled"] = frappe.get_single("LMSA Settings").get("enabled")
+         lmsa = frappe.get_single("LMSA Settings")
+         result["ai_enabled"] = lmsa.get("enabled")
+         result["simulations_enabled"] = bool(lmsa.get("simulations_enabled"))
+         brand = frappe.get_cached_doc("Brand Customize")
+         result["theme"] = brand.get("theme") or "light"
     return result
+
+
+@frappe.whitelist()
+def get_all_users():
+    # Broaden the role gate of the base method so the custom instructor/evaluator
+    # roles can also fetch the user list (used for @mentions in discussions, etc.).
+    # The base method only allows Moderator / Course Creator / Batch Evaluator,
+    # which made a scoped "Valutatore" (and a "Docente") hit a 403 when opening a
+    # discussion thread.
+    frappe.only_for(
+        ["Moderator", "Course Creator", "Batch Evaluator", "Docente", "Valutatore"]
+    )
+    users = frappe.get_all(
+        "User",
+        {"enabled": 1},
+        ["name", "full_name", "user_image"],
+    )
+    return {user.name: user for user in users}
 
 
 @frappe.whitelist()
@@ -72,6 +94,13 @@ def get_user_info():
         result["is_docente"] = is_docente
         if is_docente:
             result["is_instructor"] = True
+            result["is_student"] = False
+        # A "Valutatore" is scoped to specific batches (see the `valutatori` field
+        # on LMS Batch). This flag only lets the SPA open the global submission
+        # list pages; the actual data is scoped per-batch in os_lms.os_lms.valutatore.
+        is_valutatore = "Valutatore" in result.get("roles", [])
+        result["is_valutatore"] = is_valutatore
+        if is_valutatore:
             result["is_student"] = False
     return result
 
@@ -222,12 +251,19 @@ def get_announcements(batch: str, start: int = 0, page_length: int = 10):
     Restituisce {data, total} per supportare la paginazione lato client.
     """
     from frappe import _
+    from lms.lms.utils import is_batch_valutatore
 
     roles = frappe.get_roles()
     is_batch_student = frappe.db.exists(
         "LMS Batch Enrollment", {"batch": batch, "member": frappe.session.user}
     )
-    is_admin = "Moderator" in roles or "Batch Evaluator" in roles
+    # A valutatore of this batch sees all its announcements (read-only, like an
+    # admin); sending announcements stays restricted to Moderator/Batch Evaluator.
+    is_admin = (
+        "Moderator" in roles
+        or "Batch Evaluator" in roles
+        or is_batch_valutatore(batch)
+    )
 
     if not (is_batch_student or is_admin):
         frappe.throw(

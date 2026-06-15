@@ -28,6 +28,12 @@ const routes = [
 		props: true,
 	},
 	{
+		path: '/courses/:courseName/learn/:chapterNumber-:lessonNumber/edit',
+		name: 'LessonForm',
+		component: () => import('@/pages/LessonForm.vue'),
+		props: true,
+	},
+	{
 		path: '/courses/:courseName/certification',
 		name: 'CourseCertification',
 		component: () => import('@/pages/Courses/CourseCertification.vue'),
@@ -115,12 +121,6 @@ const routes = [
 		path: '/job-openings/:job/applications',
 		name: 'JobApplications',
 		component: () => import('@/pages/JobApplications.vue'),
-		props: true,
-	},
-	{
-		path: '/courses/:courseName/learn/:chapterNumber-:lessonNumber/edit',
-		name: 'LessonForm',
-		component: () => import('@/pages/LessonForm.vue'),
 		props: true,
 	},
 	{
@@ -249,6 +249,40 @@ const routes = [
 		path: '/data-import/:importName',
 		name: 'DataImport',
 		component: () => import('@/pages/DataImport.vue'),
+		props: true,
+	},
+	{
+		path: '/simulations/admin',
+		name: 'InstructorReports',
+		component: () => import('@/oslms/pages/Simulation/InstructorReports.vue'),
+	},
+	{
+		path: '/simulations/scenarios/new',
+		name: 'ScenarioCreate',
+		component: () => import('@/oslms/pages/Simulation/ScenarioEdit.vue'),
+	},
+	{
+		path: '/simulations/scenarios/:name/edit',
+		name: 'ScenarioEdit',
+		component: () => import('@/oslms/pages/Simulation/ScenarioEdit.vue'),
+		props: true,
+	},
+	{
+		path: '/simulations/valutations-schema',
+		name: 'EvaluationSchemas',
+		component: () =>
+			import('@/oslms/pages/Simulation/EvaluationSchemas.vue'),
+	},
+	{
+		path: '/simulations/:sessionId',
+		name: 'SimulationPlay',
+		component: () => import('@/oslms/pages/Simulation/SimulationPlay.vue'),
+		props: true,
+	},
+	{
+		path: '/simulations/:sessionId/debrief',
+		name: 'SimulationDebrief',
+		component: () => import('@/oslms/pages/Simulation/SimulationDebrief.vue'),
 		props: true,
 	},
 ]

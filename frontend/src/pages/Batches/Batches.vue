@@ -45,7 +45,7 @@
 			</Dropdown>
 		</template>
 	</LayoutHeader>
-	<div class="p-5 pb-10">
+	<div class="flex min-h-0 flex-1 flex-col p-5 pb-10">
 		<div
 			class="mb-5 flex flex-col justify-between space-y-4 lg:flex-row lg:items-center lg:space-y-0"
 		>
@@ -53,7 +53,7 @@
 				{{ __('All Batches') }}
 			</div>
 			<div
-				class="flex flex-col space-y-3 lg:space-y-0 lg:flex-row lg:items-center lg:gap-x-4"
+				class="flex flex-col space-y-3 lg:flex-row lg:items-center lg:gap-x-4 lg:space-y-0"
 			>
 				<TabButtons
 					v-if="user.data && !is_student"
@@ -66,7 +66,7 @@
 						v-model="title"
 						:placeholder="__('Search by Title')"
 						type="text"
-						class="min-w-40 lg:min-w-0 lg:w-32 xl:w-40 small-form"
+						class="min-w-40"
 						@input="updateBatches()"
 					/>
 					<Select
@@ -122,12 +122,12 @@ import {
 	createListResource,
 	Dropdown,
 	FormControl,
-	Select,
 	Tooltip,
 	TabButtons,
 	usePageMeta,
 	Checkbox,
 } from 'frappe-ui'
+import Select from '@/components/Controls/Select.vue'
 import { computed, inject, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ChevronDown, Plus } from 'lucide-vue-next'
@@ -148,7 +148,17 @@ const title = ref('')
 const certification = ref(false)
 const filters = ref({})
 const is_student = computed(() => user.data?.is_student)
-const currentTab = ref(is_student.value ? 'enrolled' : 'upcoming')
+// Managers default to the "Upcoming" tab; students to "Enrolled". Other roles
+// (e.g. a scoped Valutatore) don't get those tabs, so they default to "All".
+const isListManager = computed(
+	() =>
+		user.data?.is_moderator ||
+		user.data?.is_instructor ||
+		user.data?.is_evaluator,
+)
+const currentTab = ref(
+	is_student.value ? 'enrolled' : isListManager.value ? 'upcoming' : 'all',
+)
 const orderBy = ref('start_date')
 const readOnlyMode = window.read_only_mode
 const router = useRouter()

@@ -55,6 +55,38 @@ export default defineConfig(async ({ mode }) => {
 		},
 		resolve: {
 			alias: [
+				// Direct path to the ORIGINAL frappe-ui Switch component, imported by its
+				// override at src/overrides/frappe-ui/src/components/Switch/Switch.vue.
+				// Importing `from 'frappe-ui'` there would make the osOverrideTheme plugin
+				// re-route the import back onto the override itself -> infinite recursion.
+				// This alias bypasses both the plugin and frappe-ui's package `exports`.
+				{
+					find: 'frappe-ui-switch-original',
+					replacement: path.resolve(
+						__dirname,
+						'node_modules/frappe-ui/src/components/Switch/Switch.vue'
+					),
+				},
+				// Same pattern as Switch: the FileUploader override re-imports
+				// the ORIGINAL component to extend its components map (to register
+				// `Button`, which the original imports but forgets to declare).
+				{
+					find: 'frappe-ui-fileuploader-original',
+					replacement: path.resolve(
+						__dirname,
+						'node_modules/frappe-ui/src/components/FileUploader/FileUploader.vue'
+					),
+				},
+				// Same pattern as Switch: the TextEditor override re-imports the
+				// ORIGINAL component to wrap it and add the `os-editor-wrapper`
+				// marker class without forking the (large) component file.
+				{
+					find: 'frappe-ui-texteditor-original',
+					replacement: path.resolve(
+						__dirname,
+						'node_modules/frappe-ui/src/components/TextEditor/TextEditor.vue'
+					),
+				},
 				{
 					find: /^@\/utils$/,
 					replacement: path.resolve(__dirname, 'src/oslms/utils/index.js'),
@@ -121,17 +153,61 @@ async function importConfigSite(isDev) {
 // The plugin runs with `enforce: 'pre'` so it takes priority over other
 // resolve plugins (including Vite's default resolver).
 function osOverrideTheme() {
+	const srcDir = resolve(__dirname, 'src')
+	const overridesDir = resolve(__dirname, 'src/overrides')
+	const nodeModulesDir = resolve(__dirname, 'node_modules')
+
 	return {
 		name: 'os-override-theme',
 		enforce: 'pre',
 		resolveId(source, importer) {
-			if (!importer) return null
-			if (!source.startsWith('.') || !source.endsWith('.vue')) return null
-			const absoluteSource = resolve(path.dirname(importer), source)
-			const srcDir = resolve(__dirname, 'node_modules')
-			if (!absoluteSource.startsWith(srcDir)) return null
-			const relativeToSrc = absoluteSource.slice(srcDir.length)
-			const overridePath = path.join(__dirname, 'src/overrides', relativeToSrc)
+			if (!importer || !source.endsWith('.vue')) return null
+
+			// Imports made *by* an override file must never be re-overridden. A
+			// wrap-style override imports the original component it replaces — either
+			// directly or via an escape-hatch alias (e.g. `frappe-ui-switch-original`)
+			// that `resolve.alias` rewrites to the original's absolute path before this
+			// hook runs. Without this guard that import resolves back onto the override
+			// itself -> infinite render recursion. (The `absoluteSource` guard below
+			// only catches targets already inside src/overrides; it does not cover an
+			// override importing its original from node_modules/src.)
+			const importerPath = importer.split('?')[0]
+			if (importerPath.startsWith(overridesDir)) return null
+
+			// Resolve the import to an absolute path. Vite applies `resolve.alias`
+			// before this hook, so `@/` imports usually arrive already rewritten to
+			// an absolute path; we still handle the `@/` and relative forms for the
+			// cases that reach us un-rewritten (e.g. node_modules deps like frappe-ui).
+			let absoluteSource
+			if (path.isAbsolute(source)) {
+				absoluteSource = source
+			} else if (source.startsWith('@/')) {
+				absoluteSource = resolve(srcDir, source.slice(2))
+			} else if (source.startsWith('.')) {
+				absoluteSource = resolve(path.dirname(importer), source)
+			} else {
+				return null
+			}
+
+			// Never re-intercept files already inside src/overrides, otherwise an
+			// override importing the original would loop back onto itself.
+			if (absoluteSource.startsWith(overridesDir)) return null
+
+			// Mirror both node_modules/* and src/* under src/overrides/ and use the
+			// override when a file exists at the same relative path. Note: the two
+			// namespaces share src/overrides/, which is safe because node_modules
+			// paths start with a package name (e.g. frappe-ui/) while src paths
+			// start with pages/, components/, oslms/, etc.
+			let relativeToRoot
+			if (absoluteSource.startsWith(nodeModulesDir)) {
+				relativeToRoot = absoluteSource.slice(nodeModulesDir.length)
+			} else if (absoluteSource.startsWith(srcDir)) {
+				relativeToRoot = absoluteSource.slice(srcDir.length)
+			} else {
+				return null
+			}
+
+			const overridePath = path.join(overridesDir, relativeToRoot)
 			if (existsSync(overridePath)) {
 				console.log(`[os-override-theme] Override found: ${overridePath}`)
 				return overridePath

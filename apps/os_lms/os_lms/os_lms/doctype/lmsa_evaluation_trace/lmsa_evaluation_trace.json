@@ -1,0 +1,75 @@
+{
+	"actions": [],
+	"creation": "2026-06-05 12:00:00.000000",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"istable": 1,
+	"field_order": [
+		"trace_kind",
+		"student_profile",
+		"source_session",
+		"trace_status",
+		"trace_error",
+		"transcript_json",
+		"dimension_scores_json",
+		"judge_versions_json"
+	],
+	"fields": [
+		{
+			"fieldname": "trace_kind",
+			"fieldtype": "Select",
+			"options": "llm_student\nproduction_session",
+			"label": "Trace Kind",
+			"reqd": 1,
+			"in_list_view": 1
+		},
+		{
+			"fieldname": "student_profile",
+			"fieldtype": "Data",
+			"label": "Student Profile",
+			"in_list_view": 1
+		},
+		{
+			"fieldname": "source_session",
+			"fieldtype": "Link",
+			"options": "LMSA Simulation Session",
+			"label": "Source Session"
+		},
+		{
+			"fieldname": "trace_status",
+			"fieldtype": "Select",
+			"options": "complete\nfailed",
+			"label": "Trace Status",
+			"default": "complete",
+			"in_list_view": 1
+		},
+		{
+			"fieldname": "trace_error",
+			"fieldtype": "Long Text",
+			"label": "Trace Error"
+		},
+		{
+			"fieldname": "transcript_json",
+			"fieldtype": "Long Text",
+			"label": "Transcript JSON"
+		},
+		{
+			"fieldname": "dimension_scores_json",
+			"fieldtype": "Long Text",
+			"label": "Dimension Scores JSON"
+		},
+		{
+			"fieldname": "judge_versions_json",
+			"fieldtype": "Long Text",
+			"label": "Judge Versions JSON"
+		}
+	],
+	"modified": "2026-06-09 12:00:00.000000",
+	"modified_by": "Administrator",
+	"module": "OS LMS",
+	"name": "LMSA Evaluation Trace",
+	"owner": "Administrator",
+	"permissions": [],
+	"sort_field": "modified",
+	"sort_order": "DESC"
+}

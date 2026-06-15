@@ -58,14 +58,11 @@
 			class="!w-auto px-2 sm:px-5 os-list-view"
 		>
 			<ListHeader
-				class="mb-2 grid items-center rounded bg-surface-white border-b p-2 text-xs sm:text-sm"
+				class="mb-2 grid items-center rounded-none border-b bg-surface-white p-2"
 			>
 				<ListHeaderItem :item="item" v-for="item in assignmentColumns">
 					<template #prefix="{ item }">
-						<FeatherIcon
-							:name="item.icon?.toString()"
-							class="hidden sm:block h-4 w-4"
-						/>
+						<FeatherIcon :name="item.icon?.toString()" class="h-4 w-4" />
 					</template>
 				</ListHeaderItem>
 			</ListHeader>
@@ -73,7 +70,7 @@
 				<ListRow
 					v-for="row in assignments.data"
 					:row="row"
-					class="hover:bg-surface-gray-2 text-xs sm:text-sm"
+					class="hover:bg-surface-gray-2"
 				>
 					<template #default="{ column, item }">
 						<ListRowItem :item="row[column.key]" :align="column.align">
@@ -82,7 +79,7 @@
 							</div>
 							<div
 								v-else-if="column.key == 'modified'"
-								class="text-xs sm:text-sm text-ink-gray-5"
+								class="text-sm text-ink-gray-5"
 							>
 								{{ row[column.key] }}
 							</div>
@@ -106,7 +103,7 @@
 				</template>
 			</ListSelectBanner>
 		</ListView>
-		<div v-else class="h-[53vh]">
+		<div v-else class="flex-1">
 			<EmptyStateLayout name="Assignments" />
 		</div>
 		<ListFooter
@@ -146,7 +143,6 @@ import {
 	Button,
 	createListResource,
 	createResource,
-	Select,
 	ListView,
 	ListHeader,
 	ListHeaderItem,
@@ -161,6 +157,7 @@ import {
 	FormControl,
 	Checkbox,
 } from 'frappe-ui'
+import Select from '@/components/Controls/Select.vue'
 import { computed, inject, onMounted, ref, watch } from 'vue'
 import { Plus } from 'lucide-vue-next'
 import { useRouter, useRoute } from 'vue-router'

@@ -19,7 +19,7 @@
 				<FormControl
 					v-model="member.email"
 					:label="__('Email')"
-					placeholder="jane@doe.com"
+					:placeholder="__('jane@doe.com')"
 					type="email"
 					:required="true"
 					@keyup.enter="addMember()"
@@ -28,14 +28,14 @@
 					<FormControl
 						v-model="member.first_name"
 						:label="__('First Name')"
-						placeholder="Jane"
+						:placeholder="__('Jane')"
 						type="text"
 						class="w-full"
 					/>
 					<FormControl
 						v-model="member.last_name"
 						:label="__('Last Name')"
-						placeholder="Doe"
+						:placeholder="__('Doe')"
 						type="text"
 						class="w-full"
 					/>
@@ -74,7 +74,7 @@
 
 <script setup lang="ts">
 import { call, Dialog, FormControl, toast } from 'frappe-ui'
-import Switch from '@/oslms/components/Form/Switch.vue'
+import Switch from '@/components/Controls/Switch.vue'
 import { reactive, ref, watch } from 'vue'
 import { cleanError } from '@/utils'
 

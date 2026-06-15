@@ -32,7 +32,7 @@ export function useLessonIngestion(lesson, { onSuccess } = {}) {
 	const lessonId = computed(() => lesson.value?.name || null)
 
 	const ingestionTrigger = createResource({
-		url: 'os_lms.os_lms.ai.api.start_lesson_ingestion',
+		url: 'os_lms.os_lms.ai.ingestion.api.start_lesson_ingestion',
 		makeParams() {
 			return { lesson_id: lessonId.value }
 		},

@@ -35,7 +35,7 @@
 			class="px-2 sm:px-5 os-list-view !w-auto md:w-max"
 		>
 			<ListHeader
-				class="grid items-center space-x-4 rounded-none rounded-t bg-surface-gray-2 p-2"
+				class="mb-2 grid items-center rounded-none border-b bg-surface-white p-2"
 			>
 				<ListHeaderItem :item="item" v-for="item in quizColumns">
 					<template v-if="!isMobile" #prefix="{ item }">
@@ -53,11 +53,15 @@
 						},
 					}"
 				>
-					<ListRow :row="row" class="rounded-none">
+					<ListRow :row="row" class="hover:bg-surface-gray-2">
 						<template #default="{ column, item }">
 							<ListRowItem :item="row[column.key]" :align="column.align">
 								<div v-if="column.key == 'show_answers'">
-									<Checkbox v-model="row[column.key]" :disabled="true" />
+									<FeatherIcon
+										v-if="row[column.key]"
+										name="check"
+										class="h-4 w-4 text-ink-green-3"
+									/>
 								</div>
 								<div
 									v-else-if="column.key == 'modified'"
@@ -160,7 +164,6 @@ import {
 	ListSelectBanner,
 	toast,
 	usePageMeta,
-	Checkbox,
 } from 'frappe-ui'
 import { useRouter, useRoute } from 'vue-router'
 import { computed, inject, onMounted, ref, watch } from 'vue'

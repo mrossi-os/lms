@@ -29,19 +29,31 @@
       </div>
       {% endif %}
       {% set batch_url = frappe.utils.get_url() + "/lms/batches/" + batch_name %}
-      {% set ics_url = frappe.utils.get_url() + "/api/method/os_lms.os_lms.live_class_ics.download?name=" + (live_class_name or "")|urlencode %}
       <div style="text-align:center;margin:0 0 12px;">
         <a href="{{ batch_url }}" style="display:inline-block;background:#123456;color:#fff;padding:12px 28px;border-radius:4px;font-size:14px;font-weight:600;text-decoration:none;">
           Vai alla classe
         </a>
       </div>
-      {% if live_class_name %}
+      <p style="font-size:13px;line-height:1.7;color:#444;margin:0 0 8px;text-align:center;">
+        Aggiungi al tuo calendario:
+      </p>
       <div style="text-align:center;margin:0 0 24px;">
-        <a href="{{ ics_url }}" style="display:inline-block;background:#256AB0;color:#fff;padding:12px 28px;border-radius:4px;font-size:14px;font-weight:600;text-decoration:none;">
-          Aggiungi al tuo calendario
+        {% if google_url %}
+        <a href="{{ google_url }}" target="_blank" style="display:inline-block;background:#256AB0;color:#fff;padding:10px 20px;border-radius:4px;font-size:13px;font-weight:600;text-decoration:none;margin:4px;">
+          Google Calendar
         </a>
+        {% endif %}
+        {% if outlook_url %}
+        <a href="{{ outlook_url }}" target="_blank" style="display:inline-block;background:#256AB0;color:#fff;padding:10px 20px;border-radius:4px;font-size:13px;font-weight:600;text-decoration:none;margin:4px;">
+          Outlook
+        </a>
+        {% endif %}
+        {% if ics_url %}
+        <a href="{{ ics_url }}" style="display:inline-block;background:#256AB0;color:#fff;padding:10px 20px;border-radius:4px;font-size:13px;font-weight:600;text-decoration:none;margin:4px;">
+          Scarica .ics
+        </a>
+        {% endif %}
       </div>
-      {% endif %}
       <p style="font-size:14px;line-height:1.7;color:#444;margin:0;">
         Un saluto,<br>
         <strong style="color:#123456;">Il Team Salescience</strong>

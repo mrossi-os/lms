@@ -8,7 +8,7 @@
 						ref="inputRef"
 						type="text"
 						:placeholder="__('Search')"
-						class="w-full border-none bg-transparent py-3 !pl-2 pr-4.5 text-base text-ink-gray-7 placeholder-ink-gray-4 focus:ring-0"
+						class="w-full border-none bg-transparent py-3 !ps-2 pe-4.5 text-base text-ink-gray-7 placeholder-ink-gray-4 focus:ring-0"
 						@input="onInput"
 						v-model="query"
 						autocomplete="off"

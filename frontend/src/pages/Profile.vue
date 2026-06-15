@@ -2,7 +2,7 @@
 	<NoPermission v-if="!$user.data" />
 	<div v-else-if="profile.data">
 		<header
-			class="sticky group top-0 z-10 flex flex-col md:flex-row md:items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5"
+			class="sticky group top-0 z-10 flex flex-col md:flex-row md:items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
 		>
 			<Breadcrumbs class="h-7" :items="breadcrumbs" />
 			<Button v-if="isSessionUser()" class="invisible group-hover:visible">
@@ -54,11 +54,11 @@
 						<img
 							v-if="profile.data.user_image"
 							:src="profile.data.user_image"
-							class="object-cover h-[100px] w-[100px] rounded-full border-4 border-outline-gray-modals object-cover"
+							class="object-cover h-[100px] w-[100px] rounded-full border-4 border-white object-cover"
 						/>
 						<div
 							v-else
-							class="flex items-center justify-center h-[100px] w-[100px] rounded-full border-4 border-outline-gray-modals bg-surface-gray-2 text-3xl font-semibold text-ink-gray-7"
+							class="flex items-center justify-center h-[100px] w-[100px] rounded-full border-4 border-white bg-surface-gray-2 text-3xl font-semibold text-ink-gray-7"
 						>
 							{{ profile.data.full_name.charAt(0).toUpperCase() }}
 						</div>
@@ -249,7 +249,7 @@ const editProfile = () => {
 }
 
 const isSessionUser = () => {
-	return $user.data?.email === profile.data?.name
+	return $user.data?.name === profile.data?.name
 }
 
 const currentUserHasHigherAccess = () => {

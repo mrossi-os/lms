@@ -1,5 +1,5 @@
 <template>
-	<div class="mt-7 mb-12">
+	<div class="mt-7">
 		<h2 class="mb-3 text-lg font-semibold text-ink-gray-9">
 			{{ __('Settings') }}
 		</h2>
@@ -62,7 +62,7 @@
 </template>
 <script setup>
 import { call, createResource, toast } from 'frappe-ui'
-import Switch from '@/oslms/components/Form/Switch.vue'
+import Switch from '@/components/Controls/Switch.vue'
 import { ref, watch } from 'vue'
 import { convertToTitleCase } from '@/utils'
 import { CircleAlert } from 'lucide-vue-next'

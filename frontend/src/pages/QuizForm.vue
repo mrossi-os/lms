@@ -1,9 +1,9 @@
 <template>
 	<header
-		class="sticky top-0 z-10 flex items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5"
+		class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
 	>
 		<Breadcrumbs :items="breadcrumbs" />
-		<div v-if="!readOnlyMode" class="hidden md:flex items-center space-x-2">
+		<div v-if="!readOnlyMode" class="flex items-center gap-x-2">
 			<Badge v-if="quizDetails.isDirty" theme="orange">
 				{{ __('Not Saved') }}
 			</Badge>
@@ -60,11 +60,11 @@
 		</div>
 	</header>
 	<div v-if="quizDetails.doc" class="py-5">
-		<div class="px-4 lg:px-20 pb-5 space-y-5 border-b mb-5">
+		<div class="px-20 pb-5 space-y-5 border-b mb-5">
 			<div class="text-lg text-ink-gray-9 font-semibold mb-4">
 				{{ __('Details') }}
 			</div>
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+			<div class="grid grid-cols-2 gap-5">
 				<div class="space-y-5">
 					<FormControl
 						v-model="quizDetails.doc.title"
@@ -96,7 +96,7 @@
 				</div>
 			</div>
 		</div>
-		<div class="px-4 lg:px-20 pb-5 space-y-5 border-b mb-5">
+		<div class="px-20 pb-5 space-y-5 border-b mb-5">
 			<div class="text-lg text-ink-gray-9 font-semibold mb-4">
 				{{ __('Settings') }}
 			</div>
@@ -150,7 +150,7 @@
 			</div>
 		</div>
 
-		<div class="px-4 lg:px-20 pb-5 space-y-5 mb-5">
+		<div class="px-20 pb-5 space-y-5 mb-5">
 			<div class="flex items-center justify-between mb-4">
 				<div class="text-lg font-semibold text-ink-gray-9">
 					{{ __('Questions') }}
@@ -172,7 +172,7 @@
 				}"
 				class="os-list-view"
 			>
-				<ListHeader class="grid items-center rounded bg-surface-gray-2 p-2">
+				<ListHeader class="mb-2 grid items-center gap-x-4 rounded bg-surface-gray-2 p-2">
 					<ListHeaderItem :item="item" v-for="item in questionColumns" />
 				</ListHeader>
 				<ListRows>
@@ -240,7 +240,7 @@ import {
 	createDocumentResource,
 	Badge,
 } from 'frappe-ui'
-import Switch from '@/oslms/components/Form/Switch.vue'
+
 import {
 	computed,
 	reactive,
@@ -250,11 +250,18 @@ import {
 	onBeforeUnmount,
 } from 'vue'
 import { sessionStore } from '../stores/session'
-import { ClipboardList, ListChecks, MoreVertical, Plus, Trash2 } from 'lucide-vue-next'
+import {
+	ClipboardList,
+	ListChecks,
+	MoreVertical,
+	Plus,
+	Trash2,
+} from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { sanitizeHTML } from '@/utils'
 import { useScreenSize } from '@/utils/composables'
 import Question from '@/components/Modals/Question.vue'
+import Switch from '@/components/Controls/Switch.vue'
 
 const { brand } = sessionStore()
 const showQuestionModal = ref(false)
@@ -274,18 +281,20 @@ const mobileHeaderMenu = computed(() => {
 		options.push({
 			label: __('Test Quiz'),
 			icon: ListChecks,
-			onClick: () => router.push({
-				name: 'QuizPage',
-				params: { quizID: quizDetails.doc.name },
-			}),
+			onClick: () =>
+				router.push({
+					name: 'QuizPage',
+					params: { quizID: quizDetails.doc.name },
+				}),
 		})
 		options.push({
 			label: __('Check Submissions'),
 			icon: ClipboardList,
-			onClick: () => router.push({
-				name: 'QuizSubmissionList',
-				params: { quizID: quizDetails.doc.name },
-			}),
+			onClick: () =>
+				router.push({
+					name: 'QuizSubmissionList',
+					params: { quizID: quizDetails.doc.name },
+				}),
 		})
 	}
 	return options

@@ -1,0 +1,135 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:schema_name",
+ "creation": "2026-05-18 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "schema_name",
+  "scoring_scale",
+  "passing_threshold",
+  "is_shared",
+  "column_break_1",
+  "description",
+  "section_criteria",
+  "criteria"
+ ],
+ "fields": [
+  {
+   "fieldname": "schema_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Schema Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "0-10",
+   "fieldname": "scoring_scale",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Scoring Scale",
+   "options": "0-3\n0-5\n0-10",
+   "reqd": 1
+  },
+  {
+   "default": "70",
+   "description": "Percent of overall score required to consider the simulation passed.",
+   "fieldname": "passing_threshold",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Passing Threshold"
+  },
+  {
+   "default": "0",
+   "description": "If checked, this evaluation schema is reusable across courses and shown in selectors for any instructor.",
+   "fieldname": "is_shared",
+   "fieldtype": "Check",
+   "label": "Shared"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "section_criteria",
+   "fieldtype": "Section Break",
+   "label": "Criteria"
+  },
+  {
+   "description": "At least one criterion is required. Weights must sum to 1.0.",
+   "fieldname": "criteria",
+   "fieldtype": "Table",
+   "label": "Criteria",
+   "options": "LMSA Schema Criterion",
+   "reqd": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-05-19 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "OS LMS",
+ "name": "LMSA Evaluation Schema",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Moderator",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Course Creator",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "LMS Student",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

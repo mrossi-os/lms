@@ -65,7 +65,7 @@
 					</div>
 					<div
 						v-if="question.type == 'Choices'"
-						class="grid md:grid-cols-2 gap-x-8 gap-y-4"
+						class="grid grid-cols-2 gap-x-8 gap-y-4"
 					>
 						<div v-for="n in 4" class="space-y-4 py-2">
 							<FormControl
@@ -87,7 +87,7 @@
 					</div>
 					<div
 						v-else-if="question.type == 'User Input'"
-						class="grid md:grid-cols-2 gap-x-8 gap-y-4 py-2"
+						class="grid grid-cols-2 gap-x-8 gap-y-4 py-2"
 					>
 						<div v-for="n in 4">
 							<FormControl
@@ -125,10 +125,10 @@ import {
 	FormControl,
 	TextEditor,
 	createResource,
-	Switch,
 	Button,
 	toast,
 } from 'frappe-ui'
+import Switch from '@/components/Controls/Switch.vue'
 import { watch, reactive, ref, inject } from 'vue'
 import Link from '@/components/Controls/Link.vue'
 import { useOnboarding } from 'frappe-ui/frappe'

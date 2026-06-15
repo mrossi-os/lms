@@ -44,6 +44,7 @@ from lms.lms.utils import (
 	has_evaluator_role,
 	has_lms_role,
 	has_moderator_role,
+	is_course_valutatore,
 )
 
 
@@ -231,6 +232,31 @@ def get_job_details(job: str):
 	)
 
 
+@frappe.whitelist()
+def get_application_users(user_names: list | str):
+	# temp function workaround:reverting once upstream restores dotted-field JOINs in `frappe.client.get_list`
+	if isinstance(user_names, str):
+		user_names = json.loads(user_names)
+	if not user_names:
+		return []
+
+	visible = frappe.get_list(
+		"LMS Job Application",
+		filters={"user": ["in", user_names]},
+		fields=["user"],
+		pluck="user",
+	)
+	visible_user_names = list(set(visible))
+	if not visible_user_names:
+		return []
+
+	return frappe.get_all(
+		"User",
+		filters={"name": ["in", visible_user_names]},
+		fields=["name", "user_image", "full_name", "email"],
+	)
+
+
 def sanitize_job_filters(filters, or_filters):
 	ALLOWED_FILTERS = ("status", "type", "work_mode", "country")
 	ALLOWED_OR_FILTERS = ("job_title", "company_name", "location")
@@ -392,6 +418,7 @@ def get_certified_participants(
 	for participant in participants:
 		details = get_certified_participant_details(participant.member)
 		participant.update(details)
+		participant.pop("member", None)
 
 	return participants
 
@@ -1397,6 +1424,10 @@ def get_lms_settings():
 		"allow_job_posting",
 		"demo_data_present",
 		"enable_live_classes",
+		"lesson_dwell_time",
+		"enforce_video_completion",
+		"enforce_quiz_completion",
+		"enforce_assignment_completion",
 	]
 
 	settings = frappe._dict()
@@ -1733,7 +1764,8 @@ def track_new_watch_time(lesson: str, video: dict):
 
 @frappe.whitelist()
 def get_course_progress_distribution(course: str):
-	if not can_modify_course(course):
+	# A valutatore of a batch containing this course may read its dashboard data.
+	if not can_modify_course(course) and not is_course_valutatore(course):
 		frappe.throw(
 			_("You do not have permission to access this course's progress data."), frappe.PermissionError
 		)
@@ -1920,6 +1952,15 @@ def get_my_live_classes():
 		pluck="batch",
 	)
 
+	# A "Valutatore" is not enrolled as a student but still needs to see (and join)
+	# the live classes of the batches they evaluate.
+	valutatore_batches = frappe.get_all(
+		"LMS Batch Valutatore",
+		{"parenttype": "LMS Batch", "valutatore": frappe.session.user},
+		pluck="parent",
+	)
+	batches = list(set(batches) | set(valutatore_batches))
+
 	live_class_details = frappe.get_all(
 		"LMS Live Class",
 		filters={
@@ -1936,15 +1977,20 @@ def get_my_live_classes():
 			"attendees",
 			"start_url",
 			"join_url",
+			"started_at",
+			"batch_name",
 			"owner",
 		],
 		limit=2,
 		order_by="date",
 	)
 
+	valutatore_batch_set = set(valutatore_batches)
 	if len(live_class_details):
 		for live_class in live_class_details:
 			live_class.course_title = frappe.db.get_value("LMS Course", live_class.course, "title")
+			# Lets the SPA show a Join button to a valutatore (observer) of the batch.
+			live_class.is_valutatore = live_class.batch_name in valutatore_batch_set
 
 			my_live_classes.append(live_class)
 
@@ -2036,6 +2082,7 @@ def get_admin_live_classes():
 			LMSLiveClass.attendees,
 			LMSLiveClass.start_url,
 			LMSLiveClass.join_url,
+			LMSLiveClass.started_at,
 			LMSLiveClass.owner,
 		)
 		.where(CourseInstructor.instructor == frappe.session.user)
@@ -2178,7 +2225,11 @@ def delete_programming_exercise(exercise: str):
 @frappe.whitelist()
 def get_lesson_completion_stats(course: str):
 	roles = frappe.get_roles()
-	if "Course Creator" not in roles and "Moderator" not in roles:
+	if (
+		"Course Creator" not in roles
+		and "Moderator" not in roles
+		and not is_course_valutatore(course)
+	):
 		frappe.throw(_("You do not have permission to access lesson completion stats."))
 
 	CourseProgress = frappe.qb.DocType("LMS Course Progress")
@@ -2217,7 +2268,8 @@ def get_lesson_completion_stats(course: str):
 
 @frappe.whitelist()
 def get_course_assessment_progress(course: str, member: str):
-	if not can_modify_course(course):
+	# A valutatore of a batch containing this course may read its dashboard data.
+	if not can_modify_course(course) and not is_course_valutatore(course):
 		frappe.throw(
 			_("You do not have permission to access this course's assessment data."), frappe.PermissionError
 		)
@@ -2372,14 +2424,22 @@ def clear_demo_data():
 
 
 @frappe.whitelist()
-def search_users_by_role(txt: str = "", roles: str | list | None = None, page_length: int = 10):
-	"""Returns users with `roles` in search_link format"""
+def search_users_by_role(
+	txt: str = "",
+	roles: str | list | None = None,
+	page_length: int = 10,
+	names: str | list | None = None,
+):
+	"""Returns users with `roles` in search_link format. `names` skips the txt match and returns those users directly."""
 	frappe.only_for(["Moderator", "Course Creator", "Batch Evaluator"])
 	if not roles:
 		return []
 
 	if isinstance(roles, str):
 		roles = json.loads(roles)
+
+	if isinstance(names, str):
+		names = json.loads(names)
 
 	invalid_roles = set(roles) - set(LMS_ROLES)
 	if invalid_roles:
@@ -2395,24 +2455,38 @@ def search_users_by_role(txt: str = "", roles: str | list | None = None, page_le
 	if not users_with_roles:
 		return []
 
-	results = frappe.get_all(
-		"User",
-		filters=[
-			["name", "in", users_with_roles],
-			["name", "not in", ["Administrator", "Guest"]],
-			["enabled", "=", 1],
-		],
-		or_filters=[
+	filters = [
+		["name", "in", users_with_roles],
+		["name", "not in", ["Administrator", "Guest"]],
+		["enabled", "=", 1],
+	]
+	or_filters = None
+	limit = cint(page_length)
+	if names:
+		filters.append(["name", "in", names])
+		limit = len(names)
+	else:
+		or_filters = [
 			["full_name", "like", f"%{txt}%"],
 			["name", "like", f"%{txt}%"],
-		],
-		fields=["name", "full_name"],
-		limit_page_length=cint(page_length),
+		]
+
+	results = frappe.get_all(
+		"User",
+		filters=filters,
+		or_filters=or_filters,
+		fields=["name", "full_name", "user_image"],
+		limit_page_length=limit,
 		order_by="full_name asc",
 	)
 
 	return [
-		{"value": r.name, "description": r.full_name or r.name, "label": r.full_name or r.name}
+		{
+			"value": r.name,
+			"description": r.full_name or r.name,
+			"label": r.full_name or r.name,
+			"user_image": r.user_image,
+		}
 		for r in results
 	]
 

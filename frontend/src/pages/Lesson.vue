@@ -1,60 +1,40 @@
 <template>
 	<div v-if="lesson.data" class="">
 		<header
-			class="sticky top-0 z-10 flex items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5"
+			v-if="!embedded"
+			class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
 		>
 			<Breadcrumbs class="h-7" :items="breadcrumbs" />
-			<div
-				class="fixed hidden md:flexs top-3 z-11 items-center right-3 space-x-2"
-			>
+			<div class="flex items-center gap-x-2">
 				<Tooltip v-if="canGoZen()" :text="__('Zen Mode')">
-					<Button size="sm" @click="goFullScreen()">
+					<Button @click="goFullScreen()">
 						<template #icon>
-							<Focus class="w-3.5 h-3.5 stroke-2" />
+							<Focus class="w-4 h-4 stroke-2" />
 						</template>
 					</Button>
 				</Tooltip>
-				<Button size="sm" v-if="isAdmin" @click="showVideoStats()">
+				<Button v-if="isAdmin" @click="showVideoStats()">
 					<template #icon>
-						<TrendingUp class="size-3.5 stroke-1.5" />
+						<TrendingUp class="size-4 stroke-1.5" />
 					</template>
 				</Button>
 				<CertificationLinks :courseName="courseName" />
-				<Button size="sm" v-if="lesson.data.prev" @click="switchLesson('prev')">
+				<Button v-if="lesson.data.prev" @click="switchLesson('prev')">
 					<template #prefix>
-						<ChevronLeft class="w-3.5 h-3.5 stroke-1" />
+						<ChevronLeft class="w-4 h-4 stroke-1" />
 					</template>
-					<span class="text-xs sm:text-sm">
+					<span>
 						{{ __('Previous') }}
 					</span>
 				</Button>
 
-				<router-link
-					v-if="allowEdit()"
-					:to="{
-						name: 'LessonForm',
-						params: {
-							courseName: courseName,
-							chapterNumber: props.chapterNumber,
-							lessonNumber: props.lessonNumber,
-						},
-					}"
-				>
-					<Button size="sm">
-						<span class="text-xs sm:text-sm">{{ __('Edit') }}</span>
-					</Button>
-				</router-link>
-
-				<Button
-					size="sm"
-					v-if="lesson.data.next"
-					@click="switchLesson('next')"
-					:disabled="lessonBlocked"
-				>
+				<Button v-if="lesson.data.next" @click="switchLesson('next')">
 					<template #suffix>
-						<ChevronRight class="w-3.5 h-3.5 stroke-1" />
+						<ChevronRight class="w-4 h-4 stroke-1" />
 					</template>
-					<span class="text-xs sm:text-sm">{{ __('Next') }}</span>
+					<span>
+						{{ __('Next') }}
+					</span>
 				</Button>
 
 				<router-link
@@ -64,41 +44,20 @@
 						params: { courseName: courseName },
 					}"
 				>
-					<Button size="sm">
-						<span class="text-xs sm:text-sm">{{ __('Back to Course') }}</span>
+					<Button>
+						{{ __('Back to Course') }}
 					</Button>
 				</router-link>
 			</div>
-			<div class="fixed top-15 right-3 flex md:hidden items-center space-x-2">
-				<CertificationLinks :courseName="courseName" />
-				<Dropdown :options="mobileHeaderMenu" side="left">
-					<Button size="sm">
-						<template #icon>
-							<MoreVertical class="w-4 h-4 stroke-1.5" />
-						</template>
-					</Button>
-				</Dropdown>
-			</div>
 		</header>
-		<Tooltip
-			v-if="canShowAIJumpButton"
-			:text="
-				showingChat ? __('Torna alla lezione') : __('Chiedi all\'AI Tutor')
+		<div
+			:class="
+				embedded
+					? 'grid grid-cols-1 h-full'
+					: 'grid md:grid-cols-[70%,30%] h-[94vh]'
 			"
 		>
-			<Button
-				size="sm"
-				class="md:hidden fixed top-24 right-3 z-10 shadow-md"
-				@click="toggleAIView"
-			>
-				<template #icon>
-					<BookOpen v-if="showingChat" class="w-4 h-4 stroke-1.5" />
-					<Bot v-else class="w-4 h-4 stroke-1.5" />
-				</template>
-			</Button>
-		</Tooltip>
-		<div class="grid md:grid-cols-[70%,30%] md:h-[100vh]">
-			<div v-if="lesson.data.no_preview" class="border-r">
+			<div v-if="lesson.data.no_preview" class="border-e">
 				<div class="shadow rounded-md w-3/4 mt-10 mx-auto text-center p-4">
 					<div class="flex items-center justify-center mt-4 gap-x-2">
 						<LockKeyholeIcon class="size-4 stroke-2 text-ink-gray-5" />
@@ -139,7 +98,7 @@
 			<div
 				v-else
 				ref="lessonContainer"
-				class="bg-surface-white overflow-y-auto"
+				class="bg-surface-white"
 				:class="{
 					'overflow-y-auto': zenModeEnabled,
 				}"
@@ -151,7 +110,6 @@
 					}"
 				>
 					<div class="px-5">
-						<!-- Titolo e instructors sempre visibili -->
 						<div
 							class="flex flex-col space-y-3 md:space-y-0 md:flex-row md:items-center justify-between"
 						>
@@ -159,12 +117,6 @@
 								<div class="text-3xl font-semibold text-ink-gray-9">
 									{{ lesson.data.title }}
 								</div>
-								<CourseTagBadges
-									v-if="lesson.data.tags"
-									:tags="lesson.data.tags"
-									size="xs"
-									class="mt-2"
-								/>
 
 								<div
 									v-if="zenModeEnabled"
@@ -176,7 +128,7 @@
 									</span>
 									<Info class="size-3" />
 									<div
-										class="hidden group-hover:block rounded bg-surface-menu-bar px-2 py-1 text-xs text-ink-gray-9 shadow-xl absolute start-0 top-full mt-2"
+										class="hidden group-hover:block rounded bg-gray-900 px-2 py-1 text-xs text-white shadow-xl absolute start-0 top-full mt-2"
 									>
 										{{ Math.ceil(lesson.data.membership.progress) }}%
 										{{ __('completed') }}
@@ -202,27 +154,7 @@
 									</span>
 								</Button>
 
-								<router-link
-									v-if="allowEdit()"
-									:to="{
-										name: 'LessonForm',
-										params: {
-											courseName: courseName,
-											chapterNumber: props.chapterNumber,
-											lessonNumber: props.lessonNumber,
-										},
-									}"
-								>
-									<Button>
-										{{ __('Edit') }}
-									</Button>
-								</router-link>
-
-								<Button
-									v-if="lesson.data.next"
-									@click="switchLesson('next')"
-									:disabled="lessonBlocked"
-								>
+								<Button v-if="lesson.data.next" @click="switchLesson('next')">
 									<template #suffix>
 										<ChevronRight class="w-4 h-4 stroke-1" />
 									</template>
@@ -245,13 +177,7 @@
 							</div>
 						</div>
 
-						<div
-							v-if="
-								!zenModeEnabled &&
-								(user.data?.is_moderator || user.data?.is_instructor)
-							"
-							class="flex items-center mt-4 md:mt-2"
-						>
+						<div v-if="!zenModeEnabled" class="flex items-center mt-4 md:mt-2">
 							<span
 								class="h-6 me-1"
 								:class="{
@@ -269,117 +195,66 @@
 							/>
 						</div>
 
-						<!-- STATO BLOCCATO LEZIONE -->
 						<div
-							v-if="lessonBlocked"
-							class="flex flex-col items-center justify-center mt-16 text-center"
+							v-if="
+								lesson.data.instructor_content &&
+								JSON.parse(lesson.data.instructor_content)?.blocks?.length >
+									1 &&
+								allowInstructorContent()
+							"
+							class="bg-surface-gray-2 p-3 rounded-md mt-6"
 						>
-							<LockKeyholeIcon class="size-12 stroke-1 text-ink-gray-4 mb-4" />
-							<div class="text-lg font-semibold text-ink-gray-7 mb-2">
-								{{ __('Lezione bloccata') }}
+							<div class="text-ink-gray-5 font-medium">
+								{{ __('Instructor Notes') }}
 							</div>
-							<div class="text-base text-ink-gray-5 max-w-sm leading-6">
-								{{ blockedReason }}
-							</div>
+							<div
+								id="instructor-content"
+								class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal"
+							></div>
 						</div>
-
-						<!-- CONTENUTO NORMALE: visibile solo se lezione non bloccata -->
-						<template v-else>
-							<div
-								v-if="
-									lesson.data.instructor_content &&
-									JSON.parse(lesson.data.instructor_content)?.blocks?.length >
-										1 &&
-									allowInstructorContent()
-								"
-								class="bg-surface-gray-2 p-3 rounded-md mt-6"
-							>
-								<div class="text-ink-gray-5 font-medium">
-									{{ __('Instructor Notes') }}
-								</div>
-								<div
-									id="instructor-content"
-									class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal"
-								></div>
-							</div>
-							<div
-								v-else-if="lesson.data.instructor_notes"
-								class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
-							>
-								<LessonContent :content="lesson.data.instructor_notes" />
-							</div>
-
-							<!-- Contenuto EditorJS: può contenere quiz -->
-							<div
-								v-if="lesson.data.content"
-								@mouseup="toggleInlineMenu"
-								class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
-							>
-								<!-- Se il contenuto ha un quiz e il quiz è bloccato, mostra il blocco -->
-								<div
-									v-if="quizBlocked && contentHasQuiz"
-									class="flex flex-col items-center justify-center mt-8 mb-8 text-center"
-								>
-									<LockKeyholeIcon
-										class="size-12 stroke-1 text-ink-gray-4 mb-4"
-									/>
-									<div class="text-lg font-semibold text-ink-gray-7 mb-2">
-										{{ __('Quiz bloccato') }}
-									</div>
-									<div class="text-base text-ink-gray-5 max-w-sm leading-6">
-										{{ quizBlockedReason }}
-									</div>
-								</div>
-								<!-- Altrimenti mostra il contenuto normale -->
-								<div v-else id="editor"></div>
-							</div>
-
-							<!-- Contenuto body (markdown/LessonContent) -->
-							<div
-								v-else
-								class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
-							>
-								<div
-									v-if="quizBlocked && lesson.data?.quiz_id"
-									class="flex flex-col items-center justify-center mt-8 mb-8 text-center"
-								>
-									<LockKeyholeIcon
-										class="size-12 stroke-1 text-ink-gray-4 mb-4"
-									/>
-									<div class="text-lg font-semibold text-ink-gray-7 mb-2">
-										{{ __('Quiz bloccato') }}
-									</div>
-									<div class="text-base text-ink-gray-5 max-w-sm leading-6">
-										{{ quizBlockedReason }}
-									</div>
-								</div>
-								<LessonContent
-									v-else-if="lesson.data?.body"
-									:content="lesson.data.body"
-									:youtube="lesson.data.youtube"
-									:quizId="lesson.data.quiz_id"
-								/>
-							</div>
-						</template>
+						<div
+							v-else-if="lesson.data.instructor_notes"
+							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
+						>
+							<LessonContent :content="lesson.data.instructor_notes" />
+						</div>
+						<div
+							v-if="lesson.data.content"
+							@mouseup="toggleInlineMenu"
+							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
+						>
+							<div id="editor"></div>
+						</div>
+						<div
+							v-else
+							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
+						>
+							<LessonContent
+								v-if="lesson.data?.body"
+								:content="lesson.data.body"
+								:youtube="lesson.data.youtube"
+								:quizId="lesson.data.quiz_id"
+							/>
+						</div>
 					</div>
-
-					<!-- Discussioni: nascoste se bloccato -->
 					<div
-						v-if="
-							!lessonBlocked &&
-							lesson.data &&
-							(allowDiscussions || tabs.length > 1)
-						"
+						v-if="lesson.data && (allowDiscussions || tabs.length > 1)"
 						class="mt-10 pb-20 pt-5 border-t px-5"
 						ref="discussionsContainer"
 					>
+						<TabButtons
+							v-if="tabs.length > 1"
+							:buttons="tabs"
+							v-model="currentTab"
+							class="w-fit mb-10"
+						/>
 						<Notes
 							v-if="currentTab === 'Notes'"
 							:lesson="lesson.data?.name"
 							v-model:notes="notes"
 							@updateNotes="updateNotes"
 						/>
-						<!-- <Discussions
+						<Discussions
 							v-else-if="allowDiscussions"
 							:title="'Questions'"
 							:doctype="'Course Lesson'"
@@ -388,49 +263,29 @@
 							:emptyStateText="
 								__('Ask a question to get help from the community.')
 							"
-						/> -->
+						/>
 					</div>
 				</div>
 			</div>
-			<div class="sticky top-10">
-				<div
-					v-if="lesson.data?.name && !hasQuiz"
-					ref="chatBotContainer"
-					:data-ai-tutor="true"
-					class="p-3"
-				>
-					<ChatBot
-						:courseId="lesson.data?.course"
-						:lessonId="lesson.data?.name"
-					/>
-				</div>
-				<div class="bg-surface-menu-bar p-5 border-b m-3 rounded-md">
-					<div class="text-lg font-semibold text-ink-gray-9">
-						{{ lesson.data.course_title }}
-					</div>
-					<div
-						v-if="user && lesson.data.membership"
-						class="text-sm mt-4 mb-2 text-ink-gray-5"
-					>
-						{{ Math.ceil(lessonProgress) }}% {{ __('completed') }}
-					</div>
-
-					<ProgressBar
-						v-if="user && lesson.data.membership"
-						:progress="lessonProgress"
-					/>
-				</div>
-				<div class="m-3">
-					<CourseOutline
-						:courseName="courseName"
-						:key="chapterNumber"
-						:getProgress="lesson.data.membership ? true : false"
-					/>
-				</div>
+			<div v-if="!embedded" class="sticky top-10 h-[94vh]">
+				<StudentLessonSidebar
+					:courseName="courseName"
+					:courseTitle="lesson.data.course_title"
+					:progress="lessonProgress"
+					:selectedLessonNumber="`${chapterNumber}-${lessonNumber}`"
+					:completedLesson="completedLesson"
+					:withProgress="lesson.data.membership ? true : false"
+				/>
 			</div>
 		</div>
 	</div>
-
+	<InlineLessonMenu
+		v-if="lesson.data?.name"
+		v-model="showInlineMenu"
+		:lesson="lesson.data?.name"
+		v-model:notes="notes"
+		@updateNotes="updateNotes"
+	/>
 	<VideoStatistics
 		v-if="isAdmin"
 		v-model="showStatsDialog"
@@ -446,7 +301,7 @@ import {
 	call,
 	createListResource,
 	createResource,
-	Dropdown,
+	TabButtons,
 	Tooltip,
 	usePageMeta,
 	toast,
@@ -455,7 +310,6 @@ import {
 	computed,
 	watch,
 	inject,
-	provide,
 	ref,
 	onMounted,
 	onBeforeUnmount,
@@ -470,21 +324,25 @@ import {
 	Focus,
 	Info,
 	MessageCircleQuestion,
-	MoreVertical,
-	Pencil,
-	ArrowLeft,
 	TrendingUp,
-	Bot,
-	BookOpen,
 } from 'lucide-vue-next'
 import {
 	getEditorTools,
+	getEditorI18n,
 	enablePlyr,
 	highlightText,
 	sanitizeEditorJs,
 } from '@/utils'
 import { sessionStore } from '@/stores/session'
 import { useSidebar } from '@/stores/sidebar'
+import { useSettings } from '@/stores/settings'
+import { useAiContext } from '@/stores/aiContext'
+import {
+	resolveDwellSeconds,
+	isVideoComplete,
+	shouldStartDwellTimer,
+	shouldAttachVideoFallback,
+} from '@/utils/lessonProgress'
 import EditorJS from '@editorjs/editorjs'
 import LessonContent from '@/components/LessonContent.vue'
 import CourseInstructors from '@/components/CourseInstructors.vue'
@@ -493,11 +351,11 @@ import Discussions from '@/components/Discussions.vue'
 import CertificationLinks from '@/components/CertificationLinks.vue'
 import VideoStatistics from '@/components/Modals/VideoStatistics.vue'
 import CourseOutline from '@/components/CourseOutline.vue'
+import StudentLessonSidebar from '@/components/StudentLessonSidebar.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import Notes from '@/components/Notes/Notes.vue'
+import InlineLessonMenu from '@/components/Notes/InlineLessonMenu.vue'
 import { getLmsRoute } from '@/utils/basePath'
-import ChatBot from '@/oslms/components/ai/ChatBot.vue'
-import CourseTagBadges from '@/oslms/components/CourseTagBadges.vue'
 
 const user = inject('$user')
 const socket = inject('$socket')
@@ -508,46 +366,22 @@ const editor = ref(null)
 const instructorEditor = ref(null)
 const lessonProgress = ref(0)
 const lessonContainer = ref(null)
-const chatBotContainer = ref(null)
-const showingChat = ref(false)
-let aiVisibilityObserver = null
 const zenModeEnabled = ref(false)
 const showStatsDialog = ref(false)
 const hasQuiz = ref(false)
 const discussionsContainer = ref(null)
+const timer = ref(0)
 const { brand } = sessionStore()
 const sidebarStore = useSidebar()
 const plyrSources = ref([])
 const showInlineMenu = ref(false)
 const currentTab = ref(null)
-const quizBlocked = ref(false)
-const quizBlockedReason = ref('')
 const completedLesson = ref(null)
+const settingsStore = useSettings()
+const aiContext = useAiContext()
 let timerInterval = null
 
-// Blocco lezioni sequenziali
-const lessonBlocked = ref(false)
-const blockedReason = ref('')
-
 const tabs = ref([])
-
-const tagResource = createResource({
-	url: 'frappe.client.get_list',
-	method: 'POST',
-	params: {
-		doctype: 'LMS OS Tag',
-		fields: ['tag_name', 'color'],
-		limit_page_length: 0,
-	},
-	auto: true,
-})
-
-const tagColorMap = computed(() => {
-	if (!tagResource.data) return new Map()
-	return new Map(tagResource.data.map((t) => [t.tag_name, t.color]))
-})
-
-provide('tagColorMap', tagColorMap)
 
 const props = defineProps({
 	courseName: {
@@ -562,23 +396,37 @@ const props = defineProps({
 		type: String,
 		required: true,
 	},
+	embedded: {
+		type: Boolean,
+		default: false,
+	},
 })
 
-const applyAccessFromLesson = (data) => {
-	const lessonAccess = data?.lesson_access || { allowed: true }
-	const quizAccess = data?.quiz_access || { allowed: true }
-	lessonBlocked.value = !lessonAccess.allowed
-	blockedReason.value = lessonAccess.reason || ''
-	quizBlocked.value = !quizAccess.allowed
-	quizBlockedReason.value = quizAccess.reason || ''
-}
+const emit = defineEmits([
+	'select-lesson',
+	'lesson-completed',
+	'progress-updated',
+])
+
+// Exposed for the parent so the CourseEditor preview can render the same
+// Prev / Next / Zen-mode controls as the student header but place them in
+// the page-level LayoutHeader instead of inside the lesson body.
+defineExpose({
+	switchLesson: (direction) => switchLesson(direction),
+	goFullScreen: () => goFullScreen(),
+	canGoZen: () => canGoZen(),
+	hasPrev: computed(() => Boolean(lesson.data?.prev)),
+	hasNext: computed(() => Boolean(lesson.data?.next)),
+})
 
 onMounted(() => {
-	sidebarStore.isSidebarCollapsed = true
+	startTimer()
+	if (!props.embedded) sidebarStore.isSidebarCollapsed = true
 	document.addEventListener('fullscreenchange', attachFullscreenEvent)
 	socket.on('update_lesson_progress', (data) => {
 		if (data.course === props.courseName) {
 			lessonProgress.value = data.progress
+			emit('progress-updated', data.progress)
 		}
 	})
 })
@@ -597,44 +445,8 @@ const attachFullscreenEvent = () => {
 
 onBeforeUnmount(() => {
 	document.removeEventListener('fullscreenchange', attachFullscreenEvent)
-	sidebarStore.isSidebarCollapsed = false
+	if (!props.embedded) sidebarStore.isSidebarCollapsed = false
 	trackVideoWatchDuration()
-	if (aiVisibilityObserver) {
-		aiVisibilityObserver.disconnect()
-		aiVisibilityObserver = null
-	}
-})
-
-const canShowAIJumpButton = computed(
-	() => !!lesson.data?.name && !hasQuiz.value,
-)
-
-const toggleAIView = () => {
-	const target = showingChat.value
-		? lessonContainer.value
-		: chatBotContainer.value
-	target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-}
-
-watch(chatBotContainer, (el) => {
-	if (aiVisibilityObserver) {
-		aiVisibilityObserver.disconnect()
-		aiVisibilityObserver = null
-	}
-	if (!el) {
-		showingChat.value = false
-		return
-	}
-	aiVisibilityObserver = new IntersectionObserver(
-		(entries) => {
-			for (const entry of entries) {
-				showingChat.value =
-					entry.isIntersecting && entry.intersectionRatio >= 0.3
-			}
-		},
-		{ threshold: [0, 0.3, 0.6] },
-	)
-	aiVisibilityObserver.observe(el)
 })
 
 const lesson = createResource({
@@ -666,6 +478,7 @@ const setupLesson = (data) => {
 			},
 		})
 	}
+	if (data.name) aiContext.setLesson(data.name)
 	lessonProgress.value = data.membership?.progress
 	if (data.content) editor.value = renderEditor('editor', data.content)
 	if (
@@ -676,10 +489,8 @@ const setupLesson = (data) => {
 			'instructor-content',
 			data.instructor_content,
 		)
-	editor.value?.isReady.then(async () => {
+	editor.value?.isReady.then(() => {
 		checkIfDiscussionsAllowed()
-		await nextTick()
-		attachVideoEndedListeners()
 	})
 	checkQuiz()
 }
@@ -705,23 +516,41 @@ const renderEditor = (holder, content) => {
 		data: sanitizeEditorJs(JSON.parse(content)),
 		readOnly: true,
 		defaultBlock: 'embed',
-		i18n: {
-			direction: document.documentElement.dir === 'rtl' ? 'rtl' : 'ltr',
-		},
+		i18n: getEditorI18n(),
 	})
 }
 
+// Video-ended fires markProgress + trackVideoWatchDuration in parallel,
+// and trackVideoWatchDuration's getPlyrSourceDetails calls markProgress
+// again. Without an in-flight guard the two save_progress requests race
+// and the second one fails with TimestampMismatchError on LMS Enrollment.
+let progressSubmitting = false
 const markProgress = () => {
-	if (user.data && lesson.data && !lesson.data.progress) {
-		progress.submit(
-			{},
-			{
-				onError(err) {
-					console.error(err)
-				},
+	if (progressSubmitting) return
+	// Only enrolled students record progress; a moderator previewing has no
+	// membership row so save_progress would no-op server-side but still
+	// flip the in-memory `completedLesson` and show a green tick that
+	// vanishes on refresh.
+	if (
+		!user.data ||
+		!lesson.data ||
+		!lesson.data.membership ||
+		lesson.data.progress
+	)
+		return
+	progressSubmitting = true
+	progress.submit(
+		{},
+		{
+			onSuccess() {
+				progressSubmitting = false
 			},
-		)
-	}
+			onError(err) {
+				progressSubmitting = false
+				console.error(err)
+			},
+		},
+	)
 }
 
 const progress = createResource({
@@ -734,7 +563,13 @@ const progress = createResource({
 	},
 	onSuccess(data) {
 		lessonProgress.value = data
-		completedLesson.value = lesson.data?.name
+		const name = lesson.data?.name
+		completedLesson.value = name
+		// Tell the parent (CourseEditor preview) so it can flip the
+		// sidebar's green tick and update the percentage without waiting
+		// for a refresh of the course resource.
+		if (name) emit('lesson-completed', name)
+		emit('progress-updated', data)
 	},
 })
 
@@ -753,66 +588,6 @@ const notes = createListResource({
 			}, 500)
 		})
 	},
-})
-
-const mobileHeaderMenu = computed(() => {
-	const options = []
-	if (canGoZen()) {
-		options.push({
-			label: __('Zen Mode'),
-			icon: Focus,
-			onClick: () => goFullScreen(),
-		})
-	}
-	if (isAdmin.value) {
-		options.push({
-			label: __('Statistiche'),
-			icon: TrendingUp,
-			onClick: () => showVideoStats(),
-		})
-	}
-	if (lesson.data?.prev) {
-		options.push({
-			label: __('Previous'),
-			icon: ChevronLeft,
-			onClick: () => switchLesson('prev'),
-		})
-	}
-	if (allowEdit()) {
-		options.push({
-			label: __('Edit'),
-			icon: Pencil,
-			onClick: () =>
-				router.push({
-					name: 'LessonForm',
-					params: {
-						courseName: props.courseName,
-						chapterNumber: props.chapterNumber,
-						lessonNumber: props.lessonNumber,
-					},
-				}),
-		})
-	}
-	if (lesson.data?.next) {
-		options.push({
-			label: __('Next'),
-			icon: ChevronRight,
-			onClick: () => {
-				if (!lessonBlocked.value) switchLesson('next')
-			},
-		})
-	} else {
-		options.push({
-			label: __('Back to Course'),
-			icon: ArrowLeft,
-			onClick: () =>
-				router.push({
-					name: 'CourseDetail',
-					params: { courseName: props.courseName },
-				}),
-		})
-	}
-	return options
 })
 
 const breadcrumbs = computed(() => {
@@ -842,25 +617,32 @@ const switchLesson = (direction) => {
 			? lesson.data.prev.split('.')
 			: lesson.data.next.split('.')
 
+	const [chapterNumber, lessonNumber] = lessonIndex
+	// In the embedded editor preview, navigate the parent's selection so the
+	// pane swaps in place instead of routing away to /lesson/...
+	if (props.embedded) {
+		emit('select-lesson', { chapterNumber, lessonNumber })
+		return
+	}
+
 	router.push({
 		name: 'Lesson',
 		params: {
 			courseName: props.courseName,
-			chapterNumber: lessonIndex[0],
-			lessonNumber: lessonIndex[1],
+			chapterNumber,
+			lessonNumber,
 		},
 	})
 }
 
 watch(
 	[() => route.params.chapterNumber, () => route.params.lessonNumber],
-	async ([newChapterNumber, newLessonNumber]) => {
+	async (
+		[newChapterNumber, newLessonNumber],
+		[oldChapterNumber, oldLessonNumber],
+	) => {
 		if (newChapterNumber || newLessonNumber) {
 			plyrSources.value = []
-			lessonBlocked.value = false
-			blockedReason.value = ''
-			quizBlocked.value = false
-			quizBlockedReason.value = ''
 			await nextTick()
 			resetLessonState(newChapterNumber, newLessonNumber)
 			updateNotes()
@@ -878,10 +660,14 @@ const resetLessonState = (newChapterNumber, newLessonNumber) => {
 		chapter: newChapterNumber,
 		lesson: newLessonNumber,
 	})
+	videoFallbackArmed = false
+	fallbackGeneration++
+	clearInterval(timerInterval)
+	timer.value = 0
 }
 
 const trackVideoWatchDuration = () => {
-	if (!lesson.data.membership) return
+	if (!lesson.data?.membership) return
 	let videoDetails = getVideoDetails()
 	videoDetails = videoDetails.concat(getPlyrSourceDetails())
 	call('lms.lms.api.track_video_watch_duration', {
@@ -890,22 +676,12 @@ const trackVideoWatchDuration = () => {
 	})
 }
 
-const contentHasQuiz = computed(() => {
-	if (!lesson.data?.content) return false
-	try {
-		const parsed = JSON.parse(lesson.data.content)
-		return parsed?.blocks?.some((block) => block.type === 'quiz')
-	} catch {
-		return false
-	}
-})
-
 const getVideoDetails = () => {
 	let details = []
 	const videos = document.querySelectorAll('video')
 	if (videos.length > 0) {
 		videos.forEach((video) => {
-			if (video.currentTime == video.duration) markProgress()
+			if (isVideoComplete(video.currentTime, video.duration)) markProgress()
 			details.push({
 				source: video.src,
 				watch_time: video.currentTime,
@@ -918,7 +694,7 @@ const getVideoDetails = () => {
 const getPlyrSourceDetails = () => {
 	let details = []
 	plyrSources.value.forEach((source) => {
-		if (source.currentTime == source.duration) markProgress()
+		if (isVideoComplete(source.currentTime, source.duration)) markProgress()
 		let src = cleanYouTubeUrl(source.source)
 		details.push({
 			source: src,
@@ -939,10 +715,48 @@ watch(
 	() => lesson.data,
 	async (data) => {
 		setupLesson(data)
+		// Settings drive dwell + enforcement; if they haven't resolved yet
+		// the timer reads undefined and falls back to 30s. Await the
+		// resource so the admin-configured dwell time wins from the first
+		// lesson load.
+		if (settingsStore.settings?.promise) {
+			try {
+				await settingsStore.settings.promise
+			} catch {}
+		}
+		startTimer()
 		await getPlyrSource()
 		updateNotes()
-		markProgressIfNoVideo()
-		applyAccessFromLesson(data)
+		const hasVideoListener =
+			plyrSources.value.length > 0 || !!document.querySelector('video')
+		const enforceVideo = Number(
+			settingsStore.settings?.data?.enforce_video_completion ?? 0,
+		)
+		// When the lesson has video AND enforcement is on, suppress dwell so
+		// completion is gated on play-to-end. When enforcement is off, dwell
+		// runs for every lesson type — including YouTube/Plyr — so admins can
+		// set a short dwell to mark video lessons complete without a full
+		// playthrough.
+		if (!shouldStartDwellTimer({ hasVideo: hasVideoListener, enforceVideo })) {
+			clearInterval(timerInterval)
+		}
+		if (
+			shouldAttachVideoFallback({ hasVideo: hasVideoListener, enforceVideo })
+		) {
+			document.querySelectorAll('video').forEach((video) => {
+				if (video._lmsErrorAttached) return
+				video._lmsErrorAttached = true
+				const gen = fallbackGeneration
+				video.addEventListener(
+					'error',
+					() => {
+						if (gen !== fallbackGeneration) return
+						fallbackToDwellTimer('html5-video-error')
+					},
+					{ once: true },
+				)
+			})
+		}
 	},
 )
 
@@ -950,17 +764,36 @@ const getPlyrSource = async () => {
 	await nextTick()
 	if (plyrSources.value.length == 0) {
 		plyrSources.value = await enablePlyr()
+		const enforceVideo = Number(
+			settingsStore.settings?.data?.enforce_video_completion ?? 0,
+		)
+		if (
+			shouldAttachVideoFallback({
+				hasVideo: plyrSources.value.length > 0,
+				enforceVideo,
+			})
+		) {
+			plyrSources.value.forEach((player) => {
+				let readyFired = false
+				const gen = fallbackGeneration
+				player.on('ready', () => {
+					readyFired = true
+				})
+				player.on('error', (event) => {
+					if (gen !== fallbackGeneration) return
+					fallbackToDwellTimer(
+						'plyr-error: ' + (event?.detail?.message || 'unknown'),
+					)
+				})
+				setTimeout(() => {
+					if (!readyFired && gen === fallbackGeneration) {
+						fallbackToDwellTimer('plyr-no-ready-15s')
+					}
+				}, 15000)
+			})
+		}
 	}
 	updateVideoWatchDuration()
-}
-
-const markProgressIfNoVideo = () => {
-	if (!lesson.data?.membership) return
-	const hasDomVideo = document.querySelectorAll('video').length > 0
-	const hasPlyr = plyrSources.value.length > 0
-	if (!hasDomVideo && !hasPlyr) {
-		markProgress()
-	}
 }
 
 const updateVideoWatchDuration = () => {
@@ -1002,6 +835,9 @@ const attachVideoEndedListeners = () => {
 
 const updatePlyrVideoTime = (video) => {
 	plyrSources.value.forEach((plyrSource) => {
+		let lastWatchedTime = 0
+		let isSeeking = false
+
 		plyrSource.on('ready', () => {
 			if (plyrSource.source === video.source) {
 				plyrSource.embed.seekTo(video.watch_time, true)
@@ -1029,6 +865,39 @@ const updateVideoTime = (video) => {
 		})
 	}
 }
+
+let videoFallbackArmed = false
+let fallbackGeneration = 0
+const fallbackToDwellTimer = (reason) => {
+	if (videoFallbackArmed) return
+	videoFallbackArmed = true
+	console.warn('[Lesson] video fallback engaged:', reason)
+	toast.warning(
+		__('Video failed to load — you can still mark this lesson as viewed.'),
+	)
+	clearInterval(timerInterval)
+	timer.value = 0
+	startTimer()
+}
+
+const startTimer = () => {
+	if (!lesson.data?.membership) return
+	const dwell = resolveDwellSeconds(
+		settingsStore.settings?.data?.lesson_dwell_time,
+	)
+	if (dwell === null) return
+	timerInterval = setInterval(() => {
+		timer.value++
+		if (timer.value >= dwell) {
+			clearInterval(timerInterval)
+			markProgress()
+		}
+	}, 1000)
+}
+
+onBeforeUnmount(() => {
+	clearInterval(timerInterval)
+})
 
 const checkIfDiscussionsAllowed = () => {
 	hasQuiz.value = false
@@ -1059,13 +928,8 @@ const checkIfDiscussionsAllowed = () => {
 
 const isAdmin = computed(() => {
 	let isInstructor = lesson.data?.instructors?.includes(user.data?.name)
-	return user.data?.is_moderator || user.data?.is_docente || isInstructor
+	return user.data?.is_moderator || isInstructor
 })
-
-const allowEdit = () => {
-	if (window.read_only_mode) return false
-	return isAdmin.value
-}
 
 const allowInstructorContent = () => {
 	if (window.read_only_mode) return false
@@ -1102,7 +966,6 @@ const enrollStudent = () => {
 
 const toggleInlineMenu = async () => {
 	showInlineMenu.value = false
-	return
 	await nextTick()
 	let selection = window.getSelection()
 	if (selection.toString()) {
@@ -1264,8 +1127,7 @@ usePageMeta(() => {
 	max-width: unset;
 }
 
-#editor .codex-editor__redactor,
-#instructor-content .codex-editor__redactor {
+.codex-editor__redactor {
 	padding-bottom: 0px !important;
 }
 

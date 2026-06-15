@@ -1,6 +1,6 @@
 <template>
 	<div class="p-5">
-		<div class="grid grid-cols-2 md:grid-cols-4 gap-5 mb-5 text-ink-gray-9">
+		<div class="grid grid-cols-4 gap-5 mb-5 text-ink-gray-9">
 			<NumberChartGraph
 				:title="__('Enrolled')"
 				:value="formatAmount(course.data?.enrollments)"
@@ -14,12 +14,12 @@
 				:value="course.data?.rating || 0"
 			>
 				<template #prefix>
-					<Star class="size-5 text-transparent fill-ink-amber-2" />
+					<Star class="size-5 text-transparent fill-amber-500" />
 				</template>
 			</NumberChartGraph>
 			<NumberChartGraph :title="__('Lessons')" :value="course.data?.lessons" />
 		</div>
-		<div class="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-5 items-start">
+		<div class="grid grid-cols-[2fr_1fr] gap-5 items-start">
 			<div class="border rounded-lg py-3 px-4 card">
 				<div class="flex items-center justify-between mb-3">
 					<div class="text-lg text-ink-gray-9 font-semibold">
@@ -27,16 +27,19 @@
 					</div>
 					<div class="flex items-center gap-x-2">
 						<FormControl
-							class="small-form"
 							v-model="searchFilter"
+							class="small-form"
 							:placeholder="__('Search by name')"
 							type="text"
 						/>
-						<Button @click="showEnrollmentModal = true">
+						<Button
+							v-if="!course.data?.is_valutatore"
+							@click="showEnrollmentModal = true"
+						>
 							<template #prefix>
 								<Plus class="size-4 stroke-1.5" />
 							</template>
-							{{ __('Iscrivi') }}
+							{{ __('Enroll') }}
 						</Button>
 					</div>
 				</div>
@@ -49,12 +52,12 @@
 						:rows="progressList.data"
 						rowKey="name"
 						:options="{
-							selectable: true,
+							selectable: false,
 							showTooltip: false,
 						}"
 					>
 						<ListHeader
-							class="mb-2 grid items-center md:space-x-4 rounded bg-surface-white border-b rounded-none p-2"
+							class="mb-2 grid items-center md:space-x-4 rounded-sm bg-surface-white-2 border-b p-2"
 						>
 							<ListHeaderItem
 								:item="item"
@@ -81,7 +84,7 @@
 										class="w-full"
 									>
 										<template #prefix>
-											<div v-if="column.key == 'member_name' && !isMobile">
+											<div v-if="column.key == 'member_name'">
 												<Avatar
 													class="flex items-center"
 													:image="row['member_image']"
@@ -95,10 +98,7 @@
 												class="!mx-0 !me-4"
 											/>
 										</template>
-										<div
-											v-if="column.key == 'creation'"
-											:class="isMobile ? 'text-xs' : ''"
-										>
+										<div v-if="column.key == 'creation'">
 											{{ dayjs(row[column.key]).format('DD MMM YYYY') }}
 										</div>
 										<div
@@ -107,12 +107,6 @@
 										>
 											{{ Math.ceil(row[column.key]) }}%
 										</div>
-										<div
-											v-else-if="column.key == 'member_name'"
-											:class="isMobile ? 'text-xs' : ''"
-										>
-											{{ row[column.key].toString() }}
-										</div>
 										<div v-else>
 											{{ row[column.key].toString() }}
 										</div>
@@ -120,18 +114,6 @@
 								</template>
 							</ListRow>
 						</ListRows>
-						<ListSelectBanner>
-							<template #actions="{ unselectAll, selections }">
-								<div class="flex gap-2">
-									<Button
-										variant="ghost"
-										@click="unenrollStudents(selections, unselectAll)"
-									>
-										<Trash2 class="h-4 w-4 stroke-1.5" />
-									</Button>
-								</div>
-							</template>
-						</ListSelectBanner>
 					</ListView>
 					<div
 						v-if="progressList.data && progressList.hasNextPage"
@@ -246,7 +228,7 @@
 									{{ progress.title }}
 								</span>
 							</div>
-							<Tooltip :text="progress.completion_count">
+							<Tooltip :text="String(progress.completion_count)">
 								<div>
 									{{
 										Math.ceil(
@@ -291,35 +273,33 @@ import {
 	ListRows,
 	ListRow,
 	ListRowItem,
-	ListSelectBanner,
-	Select,
 	Tooltip,
-	toast,
 } from 'frappe-ui'
+import Select from '@/components/Controls/Select.vue'
 import { computed, inject, ref, watch } from 'vue'
 import type dayjsType from 'dayjs'
-import { Plus, Star, Trash2 } from 'lucide-vue-next'
+import { Plus, Star } from 'lucide-vue-next'
 import { formatAmount } from '@/utils'
-import { useScreenSize } from '@/utils/composables'
 import colors from '@/utils/frappe-ui-colors.json'
 import CourseEnrollmentModal from '@/pages/Courses/CourseEnrollmentModal.vue'
 import NumberChartGraph from '@/components/NumberChartGraph.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
 import StudentCourseProgress from '@/pages/Courses/StudentCourseProgress.vue'
 
+import type { CourseDetails, Resource } from '@/types/api'
+
 const props = defineProps<{
-	course: any
+	course: Resource<CourseDetails | null>
 }>()
 
 const dayjs = inject<typeof dayjsType>('$dayjs')!
-const showEnrollmentModal = ref(false)
+const showEnrollmentModal = ref<boolean>(false)
 const searchFilter = ref<string | null>(null)
-const showProgressModal = ref(false)
-const currentStudent = ref<any>(null)
+const showProgressModal = ref<boolean>(false)
+const currentStudent = ref<Record<string, unknown> | null>(null)
 const theme = ref<'darkMode' | 'lightMode'>(
 	localStorage.getItem('theme') == 'dark' ? 'darkMode' : 'lightMode',
 )
-const { isMobile } = useScreenSize()
 type Filters = {
 	course: string | undefined
 	member_name?: string[]
@@ -329,14 +309,22 @@ const chartDetails = createResource({
 	url: 'lms.lms.api.get_course_progress_distribution',
 	makeParams() {
 		return {
-			course: __(props.course.data?.name),
+			course: props.course.data?.name,
 		}
 	},
 	auto: true,
-	onSuccess(data) {
-		console.log('data', data)
-		data?.progress_distribution?.forEach((item) => {
-			item.name = __(item.name)
+	onSuccess(data: any) {
+		// Italian labels for the progress-distribution legend. The backend returns
+		// English ("Just Started (0-30%)", ...); the "(range%)" suffix is kept so
+		// the tooltip (row.name.split('(')[1]) still shows the percentage range.
+		const labels: Record<string, string> = {
+			'Just Started (0-30%)': 'Appena iniziato (0-30%)',
+			'In Progress (30-60%)': 'In corso (30-60%)',
+			'Advanced (60-99%)': 'Avanzato (60-99%)',
+			'Completed (100%)': 'Completato (100%)',
+		}
+		data?.progress_distribution?.forEach((item: { name: string }) => {
+			item.name = labels[item.name] || item.name
 		})
 	},
 })
@@ -416,12 +404,12 @@ const progressColumns = computed(() => {
 		{
 			label: __('Name'),
 			key: 'member_name',
-			width: isMobile.value ? '30%' : '40%',
+			width: '40%',
 		},
 		{
 			label: __('Progress'),
 			key: 'progress',
-			width: isMobile.value ? '30%' : '30%',
+			width: '30%',
 		},
 		{
 			label: __('Enrolled On'),
@@ -430,21 +418,6 @@ const progressColumns = computed(() => {
 		},
 	]
 })
-
-const unenrollStudents = async (
-	selections: Set<string>,
-	unselectAll: Function,
-) => {
-	const names = Array.from(selections)
-	for (const name of names) {
-		await progressList.delete.submit(name)
-	}
-	unselectAll()
-	progressList.reload()
-	props.course.reload()
-	chartDetails.reload()
-	toast.success(__('Students removed successfully'))
-}
 
 const lessonProgressSortingOptions = [
 	{

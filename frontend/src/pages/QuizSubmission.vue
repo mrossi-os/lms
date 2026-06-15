@@ -1,6 +1,6 @@
 <template>
 	<header
-		class="sticky top-0 z-10 flex items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5"
+		class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
 	>
 		<Breadcrumbs v-if="submissionDetails.doc" :items="breadcrumbs" />
 		<div class="flex gap-2 items-center">
@@ -17,7 +17,7 @@
 	</header>
 	<div
 		v-if="submissionDetails.doc"
-		class="w-2/3 border-x mx-auto py-5 bg-[--surface-gray-2]"
+		class="w-2/3 border-x mx-auto py-5"
 	>
 		<div class="text-xl px-10 font-semibold text-ink-gray-9 mb-5">
 			{{ submissionDetails.doc.member_name }}

@@ -1,3 +1,26 @@
 @import 'frappe-ui/style.css';
 @import './styles/codemirror.css';
 @import './styles/theme/elite/main.css';
+
+/*
+ * Pin a Combobox/MultiSelect footer to the bottom of its dropdown so footer
+ * actions stay reachable while options scroll. Opt-in via [data-popover-footer-sticky]
+ * on the slot's inner element so frappe-ui's `[data-slot="footer"]` wrapper picks it up.
+ * Unscoped because frappe-ui popovers portal to <body>.
+ */
+[data-slot='content-body']
+	[data-slot='footer']:has(> [data-popover-footer-sticky]) {
+	position: sticky;
+	bottom: -0.25rem;
+	z-index: 1;
+}
+
+/*
+ * Radix Vue popper wrappers (used by frappe-ui Dropdown, Select, Tooltip,
+ * Popover) are teleported to <body> without an explicit z-index. Local
+ * fixed elements (FABs, modals at z-50) end up covering them. Lift the
+ * wrapper above the highest local stacking level.
+ */
+[data-radix-popper-content-wrapper] {
+	z-index: 200 !important;
+}

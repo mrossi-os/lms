@@ -2685,7 +2685,7 @@ msgstr "Rispetta Ordine Corsi"
 #: frontend/src/pages/Courses/CourseDashboard.vue:38
 #: frontend/src/pages/Courses/CourseEnrollmentModal.vue:47
 msgid "Enroll"
-msgstr "Iscriviti"
+msgstr "Iscrivi"
 
 #: frontend/src/pages/Programs/ProgramForm.vue:177
 msgid "Enroll Member to Program"
@@ -3617,7 +3617,7 @@ msgstr "Importa"
 
 #: frontend/src/pages/Batches/Batches.vue:17
 msgid "Import Batch"
-msgstr "Importa Gruppo"
+msgstr "Importa Classe"
 
 #: frontend/src/pages/Courses/CourseImportModal.vue:5
 msgid "Import Course from ZIP"
@@ -12617,7 +12617,7 @@ msgid "Add Members"
 msgstr "Aggiungi Membri"
 
 msgid "Add Members from Batch"
-msgstr "Aggiungi Membri dal Gruppo"
+msgstr "Aggiungi Membri dalla Classe"
 
 msgid "All possible workflow states and roles of the workflow. Docstatus options: 0 is \"Saved\", 1 is \"Submitted\" and 2 is \"Cancelled\""
 msgstr "Tutti i possibili stati del flusso di lavoro e i ruoli del flusso di lavoro. Opzioni Stato del Documento: 0 corrisponde a \"Salvato\", 1 a \"Inviato\" e 2 \"Annullato\""
@@ -12692,7 +12692,7 @@ msgid "No Programs Enrolled"
 msgstr "Non sei iscritto a nessun programma"
 
 msgid "No members found in this batch"
-msgstr "Nessun membro trovato in questo gruppo"
+msgstr "Nessun membro trovato in questa classe"
 
 msgid "Open AI Key"
 msgstr "Chiave Open AI"

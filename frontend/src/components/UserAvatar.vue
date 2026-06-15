@@ -16,36 +16,32 @@
 		</template>
 		<template v-else-if="user.open_to === 'Hiring'" #indicator>
 			<Tooltip :text="__('Hiring')" placement="right">
-				<div class="rounded-full bg-surface-pink-1 w-fit">
+				<div class="rounded-full bg-purple-500 w-fit">
 					<BadgeCheckIcon :class="'text-ink-white ' + checkSize" />
 				</div>
 			</Tooltip>
 		</template>
 	</Avatar>
 </template>
-<script setup>
+<script setup lang="ts">
 import { Avatar, Tooltip } from 'frappe-ui'
 import { BadgeCheckIcon } from 'lucide-vue-next'
 import { computed } from 'vue'
+import type { UserInfo } from '@/types/api'
 
-const props = defineProps({
-	user: {
-		type: Object,
-		default: null,
-	},
-	size: {
-		type: String,
-	},
-})
+const props = defineProps<{
+	user?: UserInfo | null
+	size?: string
+}>()
 
-const checkSize = computed(() => {
-	let sizeMap = {
+const checkSize = computed<string>(() => {
+	const sizeMap: Record<string, string> = {
 		sm: 'size-1',
 		md: 'size-2',
 		lg: 'size-3',
 		xl: 'size-3',
 		'2xl': 'size-3',
 	}
-	return sizeMap[props.size] || 'size-3'
+	return (props.size && sizeMap[props.size]) || 'size-3'
 })
 </script>

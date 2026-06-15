@@ -16,7 +16,7 @@
 			</Button>
 		</div>
 		<div v-if="announcements.length">
-			<div v-for="comm in announcements">
+			<div v-for="(comm, idx) in announcements" :key="idx">
 				<div class="mb-8">
 					<div class="flex items-center justify-between mb-2">
 						<div class="flex items-center">
@@ -33,10 +33,14 @@
 					<div class="ml-3 font-bold text-ink-gray-9 prose">
 						{{ comm.subject }}
 					</div>
+					<!-- Rich email/template HTML mirrors the email in an isolated
+					     iframe; a plain notification keeps the app's themed card. -->
 					<div
+						v-if="isPlainNotification(comm.content)"
 						class="prose prose-sm bg-surface-menu-bar !min-w-full px-4 py-2 rounded-md"
 						v-html="comm.content"
 					></div>
+					<AnnouncementContent v-else :content="comm.content" />
 				</div>
 			</div>
 			<div
@@ -79,6 +83,7 @@ import { Plus, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { computed, inject, ref, watch } from 'vue'
 import { timeAgo } from '@/utils'
 import AnnouncementModal from '@/pages/Batches/components/AnnouncementModal.vue'
+import AnnouncementContent from '@/pages/Batches/components/AnnouncementContent.vue'
 
 const user = inject('$user')
 const readOnlyMode = window.read_only_mode
@@ -98,6 +103,23 @@ const canMakeAnnouncement = computed(() => {
 	if (!props.batch.data?.students?.length) return false
 	return user.data?.is_moderator || user.data?.is_evaluator
 })
+
+/*
+ * Plain notification announcements (written in the editor, no email template)
+ * have no document/layout/background markup, so they render on the app's themed
+ * card. Richer email-template HTML is detected here and rendered in the isolated
+ * iframe instead, mirroring the email the recipient receives.
+ */
+const isPlainNotification = (html) => {
+	const s = String(html || '').trim()
+	if (!s) return true
+	if (
+		/<(?:!doctype|html|head|body|style|table|center|tbody|td|tr)[\s>]/i.test(s)
+	)
+		return false
+	if (/(?:background(?:-color)?|max-width|width)\s*:/i.test(s)) return false
+	return true
+}
 
 const communications = createResource({
 	url: 'lms.lms.api.get_announcements',
@@ -134,5 +156,23 @@ const totalPages = computed(() =>
 <style>
 .prose-sm p {
 	margin: 0 0 0.5rem;
+}
+
+/*
+ * Plain notification card sits on the dark theme, so map the editor's named
+ * colors to the dark-mode shades (lighter) for readable contrast on the dark
+ * background. Covers content stored as `color: var(--prose-color-<name>)`.
+ */
+.announcement-card {
+	--prose-color-red: #e43838;
+	--prose-color-blue: #3294e3;
+	--prose-color-green: #1ba964;
+	--prose-color-yellow: #c69c12;
+	--prose-color-orange: #c45a0e;
+	--prose-color-purple: #984bd8;
+	--prose-color-pink: #cb4394;
+	--prose-color-gray: #717171;
+	--prose-color-teal: #219c8f;
+	--prose-color-cyan: #2b8dab;
 }
 </style>

@@ -1,0 +1,109 @@
+"""Synthetic session generators for authoring mode.
+
+`run_synthetic_llm_student` mirrors the orchestrator's runtime flow by
+delegating scenario-variant generation and role-player-turn generation to
+the same pure services (`ScenarioVariantGenerator`, `RolePlayerTurnService`)
+the orchestrator uses. The eval-specific bit is the LLM-student that
+generates the user-side turns.
+
+Sharing the services kills drift: a change to structured output, retry
+policy, or the role-play prompt automatically applies to both prod and eval.
+"""
+
+from __future__ import annotations
+
+import time
+
+from os_lms.os_lms.ai.simulations.eval.student.llm_student import (
+	build_student_messages,
+)
+from os_lms.os_lms.ai.simulations.eval.types import ScenarioRef
+from os_lms.os_lms.ai.simulations.role_player import (
+	RolePlayerTurnService,
+	ScenarioVariantGenerator,
+)
+from os_lms.os_lms.ai.utils.llm.provider import ChatMessage, LLMProvider
+
+
+def run_synthetic_llm_student(
+	*,
+	scenario: ScenarioRef,
+	profile_name: str,
+	provider: LLMProvider,
+	model: str | None = None,
+	lesson_context: str = "",
+	scenario_brief: str = "",
+) -> list[dict]:
+	"""Generate a full synthetic session: 1 variant call + alternating
+	role-player/student turns up to scenario.max_turns.
+
+	The role-player opens the conversation (turn_index=0), mirroring the
+	production flow where `SessionOrchestrator.start_session` persists the
+	first assistant turn before the human student replies.
+
+	``lesson_context`` is an optional pre-built blob of RAG chunks injected
+	into every student turn — it represents what the simulated student has
+	studied. Empty string disables the injection.
+
+	``scenario_brief`` is an optional instructor-written opening that
+	replaces the generic default at the top of the LLM-student system
+	prompt. The fixed response-format rules are always appended.
+	"""
+	variant_gen = ScenarioVariantGenerator(provider=provider, model=model)
+	variant = variant_gen.generate(
+		scenario,
+		seed=f"eval-{int(time.time() * 1000)}",
+	)
+
+	def _chat_fn(*, messages, system, **kwargs):
+		return provider.chat(messages=messages, system=system, model=model, **kwargs)
+
+	role_player = RolePlayerTurnService(chat_fn=_chat_fn)
+
+	transcript: list[dict] = []
+	for turn_index in range(scenario.max_turns):
+		if turn_index % 2 == 0:
+			# Role-player turn — same code path as production. Even indices
+			# (starting with turn 0) so the AI opens just like the live flow.
+			history_msgs = [
+				ChatMessage(role=t["role"], content=t.get("text", ""))
+				for t in transcript
+				if t["role"] in ("user", "assistant")
+			]
+			response = role_player.ask(
+				persona=variant.persona,
+				situation=variant.situation,
+				difficulty=scenario.difficulty,
+				history=history_msgs,
+			)
+			transcript.append(
+				{
+					"turn_index": turn_index,
+					"role": "assistant",
+					"text": response.text.strip(),
+				}
+			)
+		else:
+			# Student turn — eval-specific (the orchestrator's caller is a human)
+			params = build_student_messages(
+				scenario=scenario,
+				history=transcript,
+				profile_name=profile_name,
+				lesson_context=lesson_context,
+				scenario_brief=scenario_brief,
+			)
+			response = provider.chat(
+				[ChatMessage(role=m["role"], content=m["content"]) for m in params.messages],
+				system=params.system,
+				model=model,
+				temperature=params.temperature,
+				max_tokens=params.max_tokens,
+			)
+			transcript.append(
+				{
+					"turn_index": turn_index,
+					"role": "user",
+					"text": response.text.strip(),
+				}
+			)
+	return transcript

@@ -10,7 +10,7 @@ from os_lms.os_lms.doctype.lms_live_class_reminder.lms_live_class_reminder impor
 	offset_to_minutes,
 )
 from os_lms.os_lms.email_utils import send_templated_email
-from os_lms.os_lms.live_class_ics import build_ics
+from os_lms.os_lms.live_class_ics import build_ics, get_ics_url
 
 
 def send_live_class_reminders():
@@ -101,6 +101,7 @@ def _send_reminder_mail(live_class, student, ics_attachment=None) -> None:
 			"time": live_class.time,
 			"batch_name": live_class.batch_name,
 			"live_class_name": live_class.name,
+			"ics_url": get_ics_url(live_class.name),
 		},
 		header=[header_text, "orange"],
 		attachments=ics_attachment,

@@ -11,7 +11,7 @@
 			id="messagesContainer"
 			class="flex-1 overflow-y-auto space-y-4 mb-4 min-h-[200px] max-h-[400px]"
 		>
-			<div v-if="messages.length === 0" class="text-ink-gray-5 text-sm">
+			<div v-if="chat.messages.length === 0" class="text-ink-gray-5 text-sm">
 				{{
 					__(
 						'Ask a question about this lesson to get help from the AI assistant.',
@@ -19,7 +19,7 @@
 				}}
 			</div>
 			<div
-				v-for="(message, index) in messages"
+				v-for="(message, index) in chat.messages"
 				:key="index"
 				:class="[
 					'p-3 rounded-lg',
@@ -57,7 +57,7 @@
 					</div>
 				</div>
 			</div>
-			<div v-if="isLoading" class="flex items-center space-x-2 p-3">
+			<div v-if="chat.isLoading" class="flex items-center space-x-2 p-3">
 				<div class="animate-pulse flex space-x-1">
 					<div class="w-2 h-2 bg-ink-gray-4 rounded-full"></div>
 					<div
@@ -72,17 +72,17 @@
 		</div>
 		<div class="flex items-end space-x-2">
 			<textarea
-				v-model="question"
+				v-model="chat.question"
 				:placeholder="__('Ask a question about this lesson...')"
-				class="flex-1 resize-none rounded-md border border-outline-gray-2 px-3 py-2 text-sm focus:border-outline-gray-3 focus:outline-none"
+				class="flex-1 resize-none rounded-md border border-outline-gray-2 px-3 py-2 text-sm text-ink-gray-8 focus:border-outline-gray-3 focus:outline-none"
 				rows="2"
 				@keydown.enter.exact.prevent="sendQuestion"
-				:disabled="isLoading"
+				:disabled="chat.isLoading"
 			></textarea>
 			<Button
 				variant="solid"
 				@click="sendQuestion"
-				:disabled="!question.trim() || isLoading"
+				:disabled="!chat.question.trim() || chat.isLoading"
 			>
 				<template #icon>
 					<Send class="w-4 h-4" />
@@ -93,10 +93,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
+import { nextTick, onMounted, ref, watch } from 'vue'
 import { Button, call, toast } from 'frappe-ui'
 import { Send } from 'lucide-vue-next'
 import { useSettings } from '@/stores/settings'
+import { useAiChat } from '@/stores/aiChat'
 import MarkdownIt from 'markdown-it'
 
 const md = new MarkdownIt({
@@ -108,6 +109,7 @@ const md = new MarkdownIt({
 const renderMarkdown = (text: string): string => md.render(text || '')
 
 const settingsStore = useSettings()
+const chat = useAiChat()
 
 interface Message {
 	role: 'user' | 'assistant'
@@ -120,9 +122,6 @@ const props = defineProps<{
 	lessonId: string
 }>()
 
-const messages = ref<Message[]>([])
-const question = ref('')
-const isLoading = ref(false)
 const messagesContainer = ref<HTMLElement | null>(null)
 
 const scrollToBottom = () => {
@@ -133,25 +132,38 @@ const scrollToBottom = () => {
 	})
 }
 
-const sendQuestion = async () => {
-	const trimmedQuestion = question.value.trim()
-	if (!trimmedQuestion || isLoading.value) return
+// Restore scroll position when the component remounts (e.g., the chat panel
+// was closed and reopened — store state survives, but the DOM is new).
+onMounted(scrollToBottom)
+watch(() => chat.messages.length, scrollToBottom)
 
-	messages.value.push({
+const sendQuestion = async () => {
+	const trimmedQuestion = chat.question.trim()
+	if (!trimmedQuestion || chat.isLoading) return
+
+	// Snapshot the prior conversation before appending the current question,
+	// so the backend receives `question` separately from `history`.
+	const history = chat.messages.map((m) => ({
+		from: m.role,
+		message: m.content,
+	}))
+
+	chat.addMessage({
 		role: 'user',
 		content: trimmedQuestion,
 	})
-	question.value = ''
-	isLoading.value = true
-	scrollToBottom()
+	chat.question = ''
+	chat.isLoading = true
 
 	try {
-		const response = await call('os_lms.os_lms.ai.api.ask_lmsa_chat', {
-			lesson_id: props.lessonId,
+		const response = await call('os_lms.os_lms.ai.tutor.api.ask', {
+			course: props.courseId,
+			lesson: props.lessonId,
 			question: trimmedQuestion,
+			history,
 		})
 
-		messages.value.push({
+		chat.addMessage({
 			role: 'assistant',
 			content: response.answer || __('Sorry, I could not find an answer.'),
 			sources: [],
@@ -159,14 +171,13 @@ const sendQuestion = async () => {
 	} catch (error: any) {
 		const errorMessage =
 			error?.message || error?.exc || __('Failed to get response')
-		messages.value.push({
+		chat.addMessage({
 			role: 'assistant',
 			content: __('Error: ') + errorMessage,
 		})
 		toast.error(errorMessage)
 	} finally {
-		isLoading.value = false
-		scrollToBottom()
+		chat.isLoading = false
 	}
 }
 </script>

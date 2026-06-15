@@ -5,15 +5,25 @@
 				{{ section.label }}
 			</div>
 			<div
-				:class="{
-					'flex justify-between gap-x-8 w-full': section.columns.length > 1,
-				}"
+				:class="
+					section.columns.length > 1
+						? 'grid grid-cols-2 gap-x-8 gap-y-5 w-full items-start'
+						: 'w-full space-y-5'
+				"
 			>
-				<div
-					v-for="(column, index) in section.columns"
-					class="w-full space-y-5"
+				<template
+					v-for="(column, columnIndex) in section.columns"
+					:key="columnIndex"
 				>
-					<div v-for="field in column.fields">
+					<div
+						v-for="(field, fieldIndex) in column.fields"
+						:key="`${columnIndex}-${fieldIndex}`"
+						:style="
+							section.columns.length > 1
+								? { gridColumn: columnIndex + 1, gridRow: fieldIndex + 1 }
+								: {}
+						"
+					>
 						<Link
 							v-if="field.type == 'Link'"
 							v-model="data[field.name]"
@@ -88,7 +98,7 @@
 									</div>
 									<div class="flex flex-col flex-wrap">
 										<span class="break-all text-ink-gray-9">
-											{{ data[field.name].split('/').pop() }}
+											{{ (data[field.name]?.file_url || data[field.name]).split('/').pop() }}
 										</span>
 									</div>
 									<X
@@ -181,15 +191,15 @@
 							placeholder=""
 						/>
 					</div>
-				</div>
+				</template>
 			</div>
 		</div>
 	</div>
 </template>
 <script setup>
 import { FormControl, FileUploader, Button } from 'frappe-ui'
-import Switch from '@/oslms/components/Form/Switch.vue'
-import { onMounted, reactive, watch } from 'vue'
+import Switch from '@/components/Controls/Switch.vue'
+import { onMounted, watch, reactive } from 'vue'
 import { getFileSize, validateFile } from '@/utils'
 import { X } from 'lucide-vue-next'
 import Link from '@/components/Controls/Link.vue'
@@ -210,15 +220,21 @@ const props = defineProps({
 	},
 })
 
+const resolveInitialValue = (field, dataValue) => {
+	if (dataValue !== null && dataValue !== undefined && dataValue !== '') {
+		return field.type === 'checkbox' ? !!dataValue : dataValue
+	}
+	if (field.default !== undefined) {
+		return field.type === 'checkbox' ? !!field.default : field.default
+	}
+	return field.type === 'checkbox' ? false : ''
+}
+
 onMounted(() => {
 	props.sections.forEach((section) => {
 		section.columns.forEach((column) => {
 			column.fields.forEach((field) => {
-				if (field.type == 'checkbox') {
-					field.value = props.data[field.name] ? true : false
-				} else {
-					field.value = props.data[field.name]
-				}
+				field.value = resolveInitialValue(field, props.data[field.name])
 			})
 		})
 	})
@@ -231,10 +247,14 @@ const isVideoField = (field) => {
 watch(
 	props.sections,
 	(newSections) => {
-		// Makes the form dirty on change
+		// Only checkboxes v-model on field.value; sync them to data so the
+		// document resource sees the change. Non-checkbox fields v-model
+		// directly against data and must NOT be touched here — otherwise the
+		// stale field.value clobbers user input whenever any checkbox toggles.
 		newSections.forEach((section) => {
 			section.columns.forEach((column) => {
 				column.fields.forEach((field) => {
+					if (field.type !== 'checkbox') return
 					if (props.data[field.name] != field.value) {
 						props.data[field.name] = field.value
 					}

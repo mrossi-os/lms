@@ -1,0 +1,178 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "field:purpose",
+ "creation": "2026-06-09 12:00:00.000000",
+ "doctype": "DocType",
+ "description": "Editable prompt configuration for one runtime purpose. Covers parametric templates (system + user with {{var}} placeholders), authoring AI prompts, and evaluation judges (which add an output_schema). The runtime substitutes {{var}} from a context dict; if the record is missing or disabled the hardcoded default under default_prompt/<purpose>.py is used.",
+ "engine": "InnoDB",
+ "field_order": [
+  "purpose",
+  "label",
+  "version",
+  "column_break_meta",
+  "enabled",
+  "temperature",
+  "max_tokens",
+  "section_system",
+  "system_template",
+  "section_user",
+  "user_template",
+  "section_schema",
+  "output_schema",
+  "section_help",
+  "available_placeholders",
+  "description_field",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "purpose",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Purpose",
+   "options": "llm_student\nrole_play\nscenario_variant_generator\ndebrief\nscenario_generator_ai\nevaluation_schema_generator_ai\ntutor\njudge_persona\njudge_coverage\njudge_debrief\njudge_difficulty",
+   "reqd": 1,
+   "unique": 1,
+   "description": "Stable identifier looked up by the runtime. One record per purpose."
+  },
+  {
+   "fieldname": "label",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Label",
+   "reqd": 1
+  },
+  {
+   "fieldname": "version",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Version",
+   "reqd": 1,
+   "description": "Free-text version tag. Bump on meaningful prompt changes for audit."
+  },
+  {
+   "fieldname": "column_break_meta",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Enabled",
+   "description": "Uncheck to fall back to the hardcoded default."
+  },
+  {
+   "default": "0.8",
+   "fieldname": "temperature",
+   "fieldtype": "Float",
+   "label": "Temperature",
+   "precision": "2"
+  },
+  {
+   "default": "400",
+   "fieldname": "max_tokens",
+   "fieldtype": "Int",
+   "label": "Max Tokens"
+  },
+  {
+   "fieldname": "section_system",
+   "fieldtype": "Section Break",
+   "label": "System Template"
+  },
+  {
+   "fieldname": "system_template",
+   "fieldtype": "Long Text",
+   "label": "System Template",
+   "reqd": 1,
+   "description": "Sent as the LLM `system` parameter after placeholder substitution. Use {{var}} for substitutions."
+  },
+  {
+   "fieldname": "section_user",
+   "fieldtype": "Section Break",
+   "label": "User Template"
+  },
+  {
+   "fieldname": "user_template",
+   "fieldtype": "Long Text",
+   "label": "User Template",
+   "description": "Sent as the user message after placeholder substitution. Use {{var}} for substitutions. Optional: prompts that only need a system message (e.g. role_play, judges) leave this empty."
+  },
+  {
+   "fieldname": "section_schema",
+   "fieldtype": "Section Break",
+   "label": "Output Schema (Judges)"
+  },
+  {
+   "fieldname": "output_schema",
+   "fieldtype": "Code",
+   "label": "Output Schema (JSON)",
+   "options": "JSON",
+   "description": "Optional JSON Schema enforced via response_format. Required only for evaluation judges (judge_persona/coverage/debrief/difficulty). Must remain compatible with the judge module's parse_output(): the LLM still has to produce score, summary, evidence_quotes, warnings, plus the dimension-specific extras the parser reads. Leave empty for runtime templates and authoring prompts."
+  },
+  {
+   "fieldname": "section_help",
+   "fieldtype": "Section Break",
+   "label": "Documentation"
+  },
+  {
+   "fieldname": "available_placeholders",
+   "fieldtype": "Small Text",
+   "label": "Available Placeholders",
+   "read_only": 1,
+   "description": "List of {{var}} names the caller substitutes at runtime. Placeholders not listed here are left as literal text in the rendered prompt."
+  },
+  {
+   "fieldname": "description_field",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Long Text",
+   "label": "Notes",
+   "description": "Free-text notes (e.g. change log, calibration runs)."
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-06-09 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "OS LMS",
+ "name": "LMSA Prompt Template",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Moderator",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "purpose",
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 1
+}

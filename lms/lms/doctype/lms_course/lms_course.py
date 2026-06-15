@@ -33,7 +33,9 @@ class LMSCourse(Document):
 		self.validate_card_gradient()
 
 	def validate_published(self):
-		if self.published and not self.published_on:
+		if not self.published:
+			return
+		if self.is_new() or self.has_value_changed("published") or not self.published_on:
 			self.published_on = today()
 
 	def validate_instructors(self):
@@ -49,10 +51,21 @@ class LMSCourse(Document):
 			).save(ignore_permissions=True)
 
 	def validate_video_link(self):
-		if self.video_link and "watch?v=" in self.video_link:
-			self.video_link = self.video_link.split("watch?v=")[-1]
-		elif self.video_link and "/" in self.video_link:
-			self.video_link = self.video_link.split("/")[-1]
+		if not self.video_link:
+			return
+
+		link = self.video_link.strip()
+		if "watch?v=" in link:
+			# YouTube watch URL -> store the bare video id (legacy behaviour).
+			self.video_link = link.split("watch?v=")[-1].split("&")[0]
+		elif "youtu.be/" in link:
+			# YouTube short URL -> store the bare video id.
+			self.video_link = link.split("youtu.be/")[-1].split("?")[0]
+		else:
+			# Vimeo and other providers: keep the full URL so the frontend can
+			# build the correct embed. (The old code blindly took the last path
+			# segment, which mangled Vimeo links like vimeo.com/<id>/<hash>.)
+			self.video_link = link
 
 	def validate_status(self):
 		if self.published:

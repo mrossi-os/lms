@@ -9,12 +9,12 @@
 				</div>
 				<div>
 					<div
-						v-if="!isAdmin"
+						v-if="!useAdminHome"
 						@click="showStreakModal = true"
 						class="bg-surface-amber-2 px-2 py-1 rounded-md cursor-pointer"
 					>
 						<span> 🔥 </span>
-						<span class="text-ink-gray-10">
+						<span class="text-ink-gray-9">
 							{{ streakInfo.data?.current_streak }}
 						</span>
 					</div>
@@ -27,8 +27,8 @@
 		</div>
 
 		<AdminHome
-			v-if="isAdmin && currentTab === 'instructor'"
-			:liveClasses="adminLiveClasses"
+			v-if="useAdminHome && currentTab === 'instructor'"
+			:liveClasses="isAdmin ? adminLiveClasses : myLiveClasses"
 			:evals="adminEvals"
 		/>
 		<StudentHome
@@ -81,6 +81,12 @@ const isAdmin = computed(() => {
 	)
 })
 
+// A "Valutatore" is not a student: it gets the admin-style home (no student
+// progress / evaluation widgets), limited to what it can actually do — its own
+// joinable live classes, and no course-creation calls to action.
+const isValutatore = computed(() => Boolean(user.data?.is_valutatore))
+const useAdminHome = computed(() => isAdmin.value || isValutatore.value)
+
 const isPersonaCaptured = async () => {
 	let persona = await call('frappe.client.get_single_value', {
 		doctype: 'LMS Settings',
@@ -107,7 +113,7 @@ const identifyUserPersona = async () => {
 
 onMounted(() => {
 	identifyUserPersona()
-	if (isAdmin.value) {
+	if (useAdminHome.value) {
 		currentTab.value = 'instructor'
 	} else {
 		currentTab.value = 'student'

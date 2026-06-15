@@ -44,7 +44,9 @@
 					v-model="account.member"
 					:label="__('Member')"
 					doctype="Course Evaluator"
-					:onCreate="(value: string, close: () => void) => openSettings('Members', close)"
+					:onCreate="
+						(value: string, close: () => void) => openSettings('Members', close)
+					"
 					:required="true"
 				/>
 				<FormControl
@@ -71,7 +73,7 @@
 </template>
 <script setup lang="ts">
 import { call, Dialog, FormControl, toast } from 'frappe-ui'
-import Switch from '@/oslms/components/Form/Switch.vue'
+import Switch from '@/components/Controls/Switch.vue'
 import { inject, reactive, watch } from 'vue'
 import { User } from '@/components/Settings/types'
 import { openSettings, cleanError } from '@/utils'
@@ -95,13 +97,13 @@ interface ZoomAccounts {
 	insert: {
 		submit: (
 			data: ZoomAccount,
-			options: { onSuccess: () => void; onError: (err: any) => void }
+			options: { onSuccess: () => void; onError: (err: any) => void },
 		) => void
 	}
 	setValue: {
 		submit: (
 			data: ZoomAccount,
-			options: { onSuccess: () => void; onError: (err: any) => void }
+			options: { onSuccess: () => void; onError: (err: any) => void },
 		) => void
 	}
 }
@@ -149,7 +151,7 @@ watch(
 			}
 		}
 	},
-	{ immediate: true }
+	{ immediate: true },
 )
 
 const saveAccount = (close: () => void) => {
@@ -176,10 +178,10 @@ const createAccount = (close: () => void) => {
 			onError(err) {
 				close()
 				toast.error(
-					cleanError(err.messages[0]) || __('Error creating Zoom Account')
+					cleanError(err.messages[0]) || __('Error creating Zoom Account'),
 				)
 			},
-		}
+		},
 	)
 }
 
@@ -214,10 +216,10 @@ const setValue = (close: () => void) => {
 			onError(err: any) {
 				close()
 				toast.error(
-					cleanError(err.messages[0]) || __('Error updating Zoom Account')
+					cleanError(err.messages[0]) || __('Error updating Zoom Account'),
 				)
 			},
-		}
+		},
 	)
 }
 </script>

@@ -1,11 +1,11 @@
 <template>
 	<div
 		v-if="course.title"
-		class="flex flex-col h-full rounded-md overflow-auto text-ink-gray-9 card"
+		class="flex flex-col h-full rounded-md overflow-auto text-ink-gray-9 bg-surface-cards"
 		style="min-height: 350px"
 	>
 		<div
-			class="w-[100%] h-[168px] bg-cover bg-center bg-no-repeat rounded-t-md"
+			class="w-[100%] h-[168px] bg-cover bg-center bg-no-repeat border-t border-x rounded-t-md"
 			:style="
 				course.image
 					? { backgroundImage: `url('${encodeURI(course.image)}')` }
@@ -17,7 +17,7 @@
 		>
 			<div
 				v-if="!course.image"
-				class="flex items-center justify-center text-ink-gray-9 flex-1 font-extrabold my-auto px-5 text-center leading-6 h-full"
+				class="flex items-center justify-center text-white flex-1 font-extrabold my-auto px-5 text-center leading-6 h-full"
 				:class="
 					course.title.length > 32
 						? 'text-lg'
@@ -29,12 +29,12 @@
 				{{ course.title }}
 			</div>
 		</div>
-		<div class="flex flex-col flex-auto p-4 rounded-b-md">
-			<div class="flex items-center justify-start mb-2 gap-4">
+		<div class="flex flex-col flex-auto p-4 border-x-2 border-b-2 rounded-b-md">
+			<div class="flex items-center justify-between mb-2">
 				<div v-if="course.lessons">
 					<Tooltip :text="__('Lessons')">
 						<span class="flex items-center">
-							<BookOpen class="h-4 w-4 stroke-2 mr-1" />
+							<BookOpen class="h-4 w-4 stroke-1.5 me-1" />
 							{{ course.lessons }}
 						</span>
 					</Tooltip>
@@ -43,7 +43,7 @@
 				<div v-if="formattedDuration">
 					<Tooltip :text="__('Duration')">
 						<span class="flex items-center">
-							<Clock class="h-4 w-4 stroke-2 mr-1" />
+							<Clock class="h-4 w-4 stroke-1.5 me-1" />
 							{{ formattedDuration }}
 						</span>
 					</Tooltip>
@@ -52,7 +52,7 @@
 				<div v-if="course.enable_certification">
 					<Tooltip :text="__('Certification available')">
 						<span class="flex items-center">
-							<Award class="h-4 w-4 stroke-2" />
+							<Award class="h-4 w-4 stroke-1.5 me-1" />
 						</span>
 					</Tooltip>
 				</div>
@@ -88,6 +88,7 @@
 import { BookOpen, Clock, Award } from 'lucide-vue-next'
 import { sessionStore } from '@/stores/session'
 import { Tooltip } from 'frappe-ui'
+import { formatAmount, formatRating } from '@/utils'
 import { theme } from '@/utils/theme'
 import { computed } from 'vue'
 import ProgressBar from '@/components/ProgressBar.vue'

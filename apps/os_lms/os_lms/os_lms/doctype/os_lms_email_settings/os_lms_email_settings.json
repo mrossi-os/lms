@@ -10,6 +10,7 @@
 		"live_class_invitation_template",
 		"live_class_reminder_template",
 		"live_class_cancelled_template",
+		"live_class_ics_html",
 		"section_auth",
 		"login_with_email_link_template"
 	],
@@ -30,14 +31,14 @@
 			"label": "Live Class"
 		},
 		{
-			"description": "Email di invito inviata ai partecipanti alla creazione/aggiornamento della lezione. Variabili: student_name, title, date, time, join_url, description, batch_name.",
+			"description": "Email di invito inviata ai partecipanti alla creazione/aggiornamento della lezione. Variabili: student_name, title, date, time, join_url, description, batch_name, google_url, outlook_url, ics_url (i tre link \"Aggiungi al calendario\": Google Calendar, Outlook.com e download .ics firmato; vedi guida sotto). Nessun .ics allegato all'email.",
 			"fieldname": "live_class_invitation_template",
 			"fieldtype": "Link",
 			"label": "Live Class Invitation",
 			"options": "Email Template"
 		},
 		{
-			"description": "Email di promemoria inviata prima dell'inizio della lezione. Variabili: student_name, title, date, time, batch_name.",
+			"description": "Email di promemoria inviata prima dell'inizio della lezione. Variabili: student_name, title, date, time, batch_name, ics_url (link .ics firmato per il bottone \"Aggiungi al calendario\", vedi guida sotto).",
 			"fieldname": "live_class_reminder_template",
 			"fieldtype": "Link",
 			"label": "Live Class Reminder",
@@ -49,6 +50,12 @@
 			"fieldtype": "Link",
 			"label": "Live Class Cancelled",
 			"options": "Email Template"
+		},
+		{
+			"fieldname": "live_class_ics_html",
+			"fieldtype": "HTML",
+			"label": "Guida: bottone Aggiungi al calendario",
+			"options": "<div class=\"text-muted\" style=\"font-size: var(--text-sm); line-height: 1.5;\"><p><b>Bottoni &quot;Aggiungi al calendario&quot;</b> &mdash; incolla questo snippet nel template di <b>invito</b> dove vuoi mostrare i pulsanti. <code>{{ google_url }}</code> e <code>{{ outlook_url }}</code> aprono Google Calendar e Outlook.com con l'evento gi&agrave; compilato; <code>{{ ics_url }}</code> &egrave; il link <code>.ics</code> firmato (Apple Calendar, Outlook desktop, Thunderbird&hellip;) e funziona anche se il destinatario non &egrave; loggato all'LMS. Nel <b>promemoria</b> &egrave; disponibile solo <code>{{ ics_url }}</code>. Nessun <code>.ics</code> &egrave; allegato all'email di invito.</p><pre style=\"background:#f5f5f5;border:1px solid #e5e5e5;border-radius:4px;padding:12px;white-space:pre-wrap;font-size:12px;line-height:1.4;\">&lt;div style=&quot;text-align:center;margin:0 0 24px;&quot;&gt;\n  {% if google_url %}&lt;a href=&quot;{{ google_url }}&quot; target=&quot;_blank&quot;\n     style=&quot;display:inline-block;background:#256AB0;color:#fff;padding:10px 20px;border-radius:4px;font-size:13px;font-weight:600;text-decoration:none;margin:4px;&quot;&gt;Google Calendar&lt;/a&gt;{% endif %}\n  {% if outlook_url %}&lt;a href=&quot;{{ outlook_url }}&quot; target=&quot;_blank&quot;\n     style=&quot;display:inline-block;background:#256AB0;color:#fff;padding:10px 20px;border-radius:4px;font-size:13px;font-weight:600;text-decoration:none;margin:4px;&quot;&gt;Outlook&lt;/a&gt;{% endif %}\n  {% if ics_url %}&lt;a href=&quot;{{ ics_url }}&quot;\n     style=&quot;display:inline-block;background:#256AB0;color:#fff;padding:10px 20px;border-radius:4px;font-size:13px;font-weight:600;text-decoration:none;margin:4px;&quot;&gt;Scarica .ics&lt;/a&gt;{% endif %}\n&lt;/div&gt;</pre></div>"
 		},
 		{
 			"fieldname": "section_auth",

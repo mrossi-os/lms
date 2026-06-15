@@ -268,7 +268,7 @@ def get_instructors(doctype: str, docname: str):
 		frappe.qb.from_(CourseInstructor)
 		.join(User)
 		.on(User.name == CourseInstructor.instructor)
-		.select(User.name, User.username, User.full_name, User.user_image, User.first_name)
+		.select(User.name, User.username, User.full_name, User.user_image, User.first_name, User.bio)
 		.where(CourseInstructor.parent == docname)
 		.where(CourseInstructor.parenttype == doctype)
 		.orderby(CourseInstructor.idx)
@@ -877,6 +877,27 @@ def get_featured_courses(filters: dict, or_filters: dict, fields: list) -> list:
 	return featured_courses
 
 
+def get_course_content_stats(course: str) -> dict:
+	"""Counts quiz blocks across a course's lessons."""
+	quiz_count = 0
+
+	for chapter in get_chapters(course):
+		lesson_rows = frappe.get_all("Lesson Reference", {"parent": chapter.name}, ["lesson"])
+		for row in lesson_rows:
+			content = frappe.db.get_value("Course Lesson", row.lesson, "content")
+			if not content:
+				continue
+			try:
+				blocks = (json.loads(content) or {}).get("blocks") or []
+			except (ValueError, TypeError):
+				continue
+			for block in blocks:
+				if block.get("type") == "quiz":
+					quiz_count += 1
+
+	return {"quiz_count": quiz_count}
+
+
 def get_course_fields():
 	return [
 		"name",
@@ -917,7 +938,9 @@ def get_course_details(course: str):
 
 	if not membership and not is_course_published and not can_modify_course(course):
 		membership = enroll_via_batch_if_eligible(course, frappe.session.user)
-		if not membership:
+		# A "Valutatore" of a batch containing this course gets read-only access
+		# to it even when unpublished (no enrolment).
+		if not membership and not is_course_valutatore(course):
 			return {}
 
 	fields = get_course_fields()
@@ -930,6 +953,8 @@ def get_course_details(course: str):
 
 	course_details.instructors = get_instructors("LMS Course", course_details.name)
 	course_details.membership = membership
+	course_details.rating_count = frappe.db.count("LMS Course Review", {"course": course})
+	course_details.update(get_course_content_stats(course))
 	# course_details.is_instructor = is_instructor(course_details.name)
 	if course_details.paid_course or course_details.paid_certificate:
 		"""course_details.course_price, course_details.currency = check_multicurrency(
@@ -1182,7 +1207,12 @@ def get_lesson(course: str, chapter: int, lesson: int) -> dict:
 		as_dict=1,
 	)
 
-	if not lesson_details.include_in_preview and not membership and not can_modify_course(course):
+	if (
+		not lesson_details.include_in_preview
+		and not membership
+		and not can_modify_course(course)
+		and not is_course_valutatore(course)
+	):
 		return {
 			"no_preview": 1,
 			"title": lesson_details.title,
@@ -1257,10 +1287,13 @@ def get_batch_details(batch: str):
 
 	batch_students = frappe.get_all("LMS Batch Enrollment", {"batch": batch}, pluck="member")
 	is_batch_admin = can_modify_batch(batch)
+	is_valutatore_of_batch = is_batch_valutatore(batch)
 	is_batch_published = frappe.db.get_value("LMS Batch", batch, "published")
 	is_student_enrolled = frappe.session.user in batch_students
 
-	if not (is_batch_published or is_batch_admin or is_student_enrolled):
+	if not (
+		is_batch_published or is_batch_admin or is_student_enrolled or is_valutatore_of_batch
+	):
 		return {}
 
 	batch_details = frappe.db.get_value(
@@ -1313,7 +1346,9 @@ def get_batch_details(batch: str):
 		"LMS Assessment", {"parent": batch}, ["assessment_name", "assessment_type"]
 	)
 
-	if can_modify_batch(batch):
+	batch_details.is_valutatore = is_valutatore_of_batch
+
+	if is_batch_admin or is_valutatore_of_batch:
 		batch_details.students = batch_students
 	elif is_student_enrolled:
 		batch_details.students = [frappe.session.user]
@@ -1374,17 +1409,38 @@ def get_country_code():
 
 
 @frappe.whitelist()
-def get_question_details(question: str) -> dict:
+def get_quiz_with_questions(quiz: str) -> dict:
+	"""Return the quiz doc plus every question's details in a single round trip."""
+	from lms.lms.doctype.lms_question.lms_question import (
+		QUESTION_EXPLANATION_FIELDS,
+		QUESTION_OPTION_FIELDS,
+	)
+
 	if not has_lms_role():
-		frappe.throw(_("You are not authorized to view the question details."))
+		frappe.throw(_("You are not authorized to view this quiz."))
 
-	fields = ["question", "type", "multiple"]
-	for i in range(1, 5):
-		fields.append(f"option_{i}")
-		fields.append(f"explanation_{i}")
+	quiz_doc = frappe.get_doc("LMS Quiz", quiz).as_dict()
 
-	question_details = frappe.db.get_value("LMS Question", question, fields, as_dict=1)
-	return question_details
+	question_names = [row.get("question") for row in quiz_doc.get("questions") or [] if row.get("question")]
+	questions_by_name = {}
+	if question_names:
+		fields = [
+			"name",
+			"question",
+			"type",
+			"multiple",
+			*QUESTION_OPTION_FIELDS,
+			*QUESTION_EXPLANATION_FIELDS,
+		]
+		rows = frappe.get_all(
+			"LMS Question",
+			filters=[["name", "in", question_names]],
+			fields=fields,
+			ignore_permissions=True,
+		)
+		questions_by_name = {row["name"]: row for row in rows}
+
+	return {"quiz": quiz_doc, "questions_by_name": questions_by_name}
 
 
 @frappe.whitelist(allow_guest=True)
@@ -1566,7 +1622,7 @@ def get_exercise_details(assessment: dict, member: str) -> dict:
 
 @frappe.whitelist()
 def get_batch_student_progress(member: str, batch: str) -> dict:
-	if not can_modify_batch(batch):
+	if not (can_modify_batch(batch) or is_batch_valutatore(batch)):
 		frappe.throw(_("You are not authorized to view the students of this batch."))
 
 	details = get_batch_student_details(member)
@@ -1657,7 +1713,7 @@ def get_quiz_pass_stats(batch: str) -> list:
 @frappe.whitelist()
 def get_batch_chart_data(batch: str) -> list:
 	"""Get completion counts per course and assessment"""
-	if not can_modify_batch(batch):
+	if not (can_modify_batch(batch) or is_batch_valutatore(batch)):
 		frappe.throw(_("You are not authorized to view the chart data of this batch."))
 	if not frappe.db.exists("LMS Batch", batch):
 		frappe.throw(_("The specified batch does not exist."))
@@ -1813,7 +1869,7 @@ def can_access_topic(doctype: str, docname: str) -> bool:
 		is_student = frappe.db.exists(
 			"LMS Batch Enrollment", {"batch": docname, "member": frappe.session.user}
 		)
-		if not is_student and not can_modify_batch(docname):
+		if not is_student and not can_modify_batch(docname) and not is_batch_valutatore(docname):
 			return False
 	return True
 
@@ -2481,6 +2537,11 @@ def validate_course_access(lesson: str):
 		return
 
 	course = frappe.db.get_value("Course Lesson", lesson, "course")
+	# A "Valutatore" of a batch containing this course can take part in the
+	# lesson discussion (read-only elsewhere, but may post here).
+	if is_course_valutatore(course):
+		return
+
 	enrollment_exists = frappe.db.exists("LMS Enrollment", {"member": frappe.session.user, "course": course})
 	if not enrollment_exists:
 		frappe.throw(_("You do not have access to this course."))
@@ -2494,6 +2555,11 @@ def validate_batch_access(batch: str):
 		return
 
 	if has_evaluator_role():
+		return
+
+	# A "Valutatore" of this batch can take part in its discussion (read-only on
+	# the rest of the batch admin surface, but may post here).
+	if is_batch_valutatore(batch):
 		return
 
 	enrollment_exists = frappe.db.exists(
@@ -2529,6 +2595,57 @@ def can_modify_batch(batch: str) -> bool:
 	if not (has_moderator_role() or is_instructor or "Docente" in frappe.get_roles()):
 		return False
 	return True
+
+
+def is_batch_valutatore(batch: str, user: str = None) -> bool:
+	"""True if the user is a custom "Valutatore" of this specific batch.
+
+	A valutatore gets read access to the batch dashboard, live classes and
+	announcements, but NOT edit/publish rights (so it is intentionally separate
+	from can_modify_batch). Per-batch scoping lives in os_lms.os_lms.valutatore.
+	"""
+	user = user or frappe.session.user
+	if not batch:
+		return False
+	return bool(
+		frappe.db.exists(
+			"LMS Batch Valutatore",
+			{"parent": batch, "parenttype": "LMS Batch", "valutatore": user},
+		)
+	)
+
+
+def is_course_valutatore(course: str, user: str = None) -> bool:
+	"""True if the user is a "Valutatore" of a batch that contains this course.
+
+	Gives the valutatore read-only access to the course detail and its lessons
+	(even when the course is unpublished), mirroring is_batch_valutatore. It does
+	NOT grant edit/publish rights (kept separate from can_modify_course).
+	"""
+	if not course:
+		return False
+	user = user or frappe.session.user
+	# Cheap short-circuit on the hot lesson/course path for the vast majority of
+	# users who are not valutatori at all.
+	if "Valutatore" not in frappe.get_roles(user):
+		return False
+	valutatore_batches = frappe.get_all(
+		"LMS Batch Valutatore",
+		{"parenttype": "LMS Batch", "valutatore": user},
+		pluck="parent",
+	)
+	if not valutatore_batches:
+		return False
+	return bool(
+		frappe.db.exists(
+			"Batch Course",
+			{
+				"parent": ["in", valutatore_batches],
+				"parenttype": "LMS Batch",
+				"course": course,
+			},
+		)
+	)
 
 
 def has_lms_role():

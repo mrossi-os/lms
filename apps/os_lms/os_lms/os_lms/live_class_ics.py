@@ -6,11 +6,13 @@ with whichever calendar app (Apple Calendar, Outlook, etc.) they use.
 """
 
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlencode
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import frappe
 from frappe import _
 from frappe.utils import cint, get_datetime
+from frappe.utils.verified_command import get_signed_params, verify_request
 
 
 def _escape(text: str | None) -> str:
@@ -104,6 +106,75 @@ def build_ics(doc) -> str:
 	return "\r\n".join(_fold_line(line) for line in lines) + "\r\n"
 
 
+def get_ics_url(name: str) -> str:
+	"""Return a signed, guest-accessible URL to download the live class `.ics`.
+
+	The signature lets the `download` endpoint authorize the request without a
+	logged-in session, so the "Add to calendar" button works straight from the
+	email (any calendar app), even for recipients who are not logged into the LMS.
+	Pass the result into email `args` as `ics_url` so any template — including the
+	per-client desk-managed Email Templates — can render `{{ ics_url }}`.
+	"""
+	signed = get_signed_params({"name": name})
+	return frappe.utils.get_url() + "/api/method/os_lms.os_lms.live_class_ics.download?" + signed
+
+
+def get_calendar_links(doc) -> dict:
+	"""Return "add to calendar" URLs for the given LMS Live Class doc.
+
+	  - ``google_url`` / ``outlook_url``: prefilled web "add event" deep links for
+	    Google Calendar and Outlook.com.
+	  - ``ics_url``: the signed ``.ics`` download (Apple Calendar, Thunderbird,
+	    desktop Outlook and any other client that handles ``.ics``).
+
+	Built here, not in Jinja, so timezone conversion and URL-encoding stay correct
+	and consistent with the ``.ics`` the download endpoint serves. Pass the result
+	into email ``args`` so any template — file-based or per-client desk Email
+	Template — can render ``{{ google_url }}``, ``{{ outlook_url }}``, ``{{ ics_url }}``.
+	"""
+	local_dt = get_datetime(f"{doc.date} {doc.time}")
+	start_utc = _to_utc(local_dt, doc.get("timezone"))
+	duration_minutes = cint(doc.get("duration")) or 60
+	end_utc = start_utc + timedelta(minutes=duration_minutes)
+
+	title = doc.get("title") or _("Lezione dal vivo")
+	location = doc.get("join_url") or ""
+	details_parts = []
+	if doc.get("description"):
+		details_parts.append(doc.description)
+	if doc.get("join_url"):
+		details_parts.append(_("Partecipa: {0}").format(doc.join_url))
+	details = "\n\n".join(details_parts)
+
+	# UTC with a trailing "Z" is unambiguous; each provider renders it in the
+	# recipient's own timezone.
+	google_url = "https://calendar.google.com/calendar/render?" + urlencode(
+		{
+			"action": "TEMPLATE",
+			"text": title,
+			"dates": f"{start_utc.strftime('%Y%m%dT%H%M%SZ')}/{end_utc.strftime('%Y%m%dT%H%M%SZ')}",
+			"details": details,
+			"location": location,
+		}
+	)
+	outlook_url = "https://outlook.live.com/calendar/0/deeplink/compose?" + urlencode(
+		{
+			"path": "/calendar/action/compose",
+			"rru": "addevent",
+			"subject": title,
+			"startdt": start_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+			"enddt": end_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+			"body": details,
+			"location": location,
+		}
+	)
+	return {
+		"google_url": google_url,
+		"outlook_url": outlook_url,
+		"ics_url": get_ics_url(doc.name),
+	}
+
+
 def _user_can_access(doc) -> bool:
 	user = frappe.session.user
 	if user in ("Administrator",):
@@ -126,26 +197,37 @@ def _user_can_access(doc) -> bool:
 	return False
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def download(name: str) -> None:
-	"""Serve the live class as an `.ics` attachment for the calling user."""
+	"""Serve the live class as an `.ics` attachment.
+
+	Authorized in either of two ways:
+	  1. A logged-in user with access to the batch (covers in-app use and any
+	     older, unsigned links).
+	  2. A valid signed link (see `get_ics_url`) — this lets the "Add to calendar"
+	     button work from the email without requiring the recipient to log in.
+	"""
 	if not name:
 		frappe.throw(_("Live class non specificata."), frappe.PermissionError)
 
 	doc = frappe.get_doc("LMS Live Class", name)
-	if not _user_can_access(doc):
-		frappe.throw(
-			_("Non sei autorizzato a scaricare questo evento."),
-			frappe.PermissionError,
-		)
+
+	if frappe.session.user != "Guest" and _user_can_access(doc):
+		pass
+	elif not verify_request():
+		# `verify_request` has already rendered an "Invalid Link" web page.
+		return
 
 	ics = build_ics(doc)
 	frappe.local.response.update(
 		{
-			"type": "raw",
+			# Frappe maps the "download" response type to `as_raw`, which streams
+			# `filecontent` with the given `content_type` and Content-Disposition.
+			"type": "download",
 			"filename": f"live-class-{doc.name}.ics",
 			"filecontent": ics.encode("utf-8"),
-			"content_type": "text/calendar; charset=utf-8",
+			# Werkzeug appends "; charset=utf-8" to text/* mimetypes itself.
+			"content_type": "text/calendar",
 			"display_content_as": "attachment",
 		}
 	)

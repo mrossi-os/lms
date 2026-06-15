@@ -1,7 +1,7 @@
 <template>
 	<div class="">
 		<header
-			class="sticky top-0 z-10 flex items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5"
+			class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
 		>
 			<Breadcrumbs
 				class="h-7"
@@ -71,7 +71,7 @@
 								@keydown.enter="applyCouponCode"
 								placeholder="COUPON2025"
 								autocomplete="off"
-								class="flex-1 [&_input]:bg-surface-white"
+								class="flex-1 [&_input]:bg-white"
 							/>
 							<Button
 								v-if="!orderSummary.data.discount_amount"

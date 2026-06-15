@@ -7,7 +7,7 @@
 		<Combobox v-model="selectedValue" nullable v-slot="{ open }">
 			<div class="relative w-full">
 				<div
-					class="values-container flex flex-wrap items-center gap-1.5 w-full rounded border border-[--surface-gray-2] bg-surface-gray-2 px-2 py-1.5 cursor-text transition-colors focus-within:bg-surface-white focus-within:border-outline-gray-4 focus-within:shadow-sm focus-within:ring-0 focus-within:ring-2 focus-within:ring-outline-gray-3"
+					class="flex flex-wrap items-center gap-1.5 w-full rounded-lg border border-[--surface-gray-2] bg-surface-gray-2 px-2 py-1.5 cursor-text transition-colors focus-within:bg-surface-white focus-within:border-outline-gray-4 focus-within:shadow-sm focus-within:ring-0 focus-within:ring-2 focus-within:ring-outline-gray-3"
 					@click="focusInput"
 				>
 					<button
@@ -99,7 +99,7 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import {
 	Combobox,
 	ComboboxButton,
@@ -111,30 +111,44 @@ import { createResource, Button, toast } from 'frappe-ui'
 import { ref, computed, useAttrs, watch } from 'vue'
 import { watchDebounced } from '@vueuse/core'
 import { X, Plus } from 'lucide-vue-next'
+import type { Resource } from '@/types/api'
 
-const props = defineProps({
-	label: String,
-	size: { type: String, default: 'sm' },
-	doctype: { type: String, required: true },
-	filters: { type: [Object, Array], default: () => ({}) },
-	url: { type: String, default: 'frappe.desk.search.search_link' },
-	searchParams: { type: Object, default: () => ({}) },
-	validate: Function,
-	errorMessage: {
-		type: Function,
-		default: (value) => `${value} is an Invalid value`,
-	},
-	required: Boolean,
-	exclude: { type: Array, default: () => [] },
-})
+interface SelectOption {
+	label: string
+	value: string
+	description?: string
+}
 
-const values = defineModel({ default: () => [] })
+const props = withDefaults(
+	defineProps<{
+		label?: string
+		size?: string
+		doctype: string
+		filters?: Record<string, unknown> | unknown[]
+		url?: string
+		searchParams?: Record<string, unknown>
+		validate?: (value: string) => boolean
+		errorMessage?: (value: string) => string
+		required?: boolean
+		exclude?: string[]
+	}>(),
+	{
+		filters: () => ({}),
+		url: 'frappe.desk.search.search_link',
+		searchParams: () => ({}),
+		errorMessage: (value: string) => `${value} is an Invalid value`,
+	}
+)
+
+const values = defineModel<string[]>({ default: () => [] })
 const attrs = useAttrs()
-const trigger = ref(null)
-const query = ref('')
-const text = ref('')
-const selectedValue = ref(null)
-const cachedOptions = ref([])
+const trigger = ref<{ $el: HTMLElement } | null>(null)
+const query = ref<string>('')
+const text = ref<string>('')
+const selectedValue = ref<SelectOption | null>(null)
+// Cache of options the user has actually selected, so the parent can resolve
+// labels/descriptions for chosen values (used by ProgramForm.addCourses).
+const cachedOptions = ref<SelectOption[]>([])
 
 watch(selectedValue, (val) => {
 	if (!val?.value) return
@@ -151,15 +165,14 @@ defineExpose({ cachedOptions })
 watchDebounced(
 	query,
 	(val) => {
-		val = val || ''
-		if (text.value === val) return
-		text.value = val
-		reload(val)
+		const v = val || ''
+		if (text.value === v) return
+		text.value = v
+		reload(v)
 	},
 	{ debounce: 300, immediate: true }
 )
 
-// Refetch when filters or searchParams change
 watch(
 	() => [props.filters, props.searchParams],
 	() => {
@@ -168,7 +181,7 @@ watch(
 	{ deep: true }
 )
 
-function getParams(txt) {
+function getParams(txt: string) {
 	return {
 		txt,
 		doctype: props.doctype,
@@ -180,9 +193,9 @@ function getParams(txt) {
 const filterOptions = createResource({
 	url: props.url,
 	method: 'POST',
-})
+}) as Resource<SelectOption[] | null>
 
-const options = computed(() => {
+const options = computed<SelectOption[]>(() => {
 	const allOptions = filterOptions.data || []
 	const excluded = new Set(props.exclude || [])
 	return allOptions.filter(
@@ -191,7 +204,7 @@ const options = computed(() => {
 	)
 })
 
-function reload(val) {
+function reload(val: string) {
 	filterOptions.update({
 		params: getParams(val),
 	})
@@ -205,15 +218,14 @@ function onFocus() {
 	trigger.value?.$el.click()
 }
 
-function addValue(value) {
+function addValue(value: string) {
 	if (!value) return
 
 	const splitValues = value.split(',')
-	let newValues = [...(values.value || [])]
+	const newValues = [...(values.value || [])]
 
-	splitValues.forEach((val) => {
-		val = val.trim()
-
+	splitValues.forEach((raw) => {
+		const val = raw.trim()
 		if (!val) return
 		if (newValues.includes(val)) return
 
@@ -228,12 +240,12 @@ function addValue(value) {
 	values.value = newValues
 }
 
-function removeValue(value) {
-	values.value = values.value.filter((v) => v !== value)
+function removeValue(value: string) {
+	values.value = (values.value || []).filter((v) => v !== value)
 }
 
-const labelClasses = computed(() => [
-	{ sm: 'text-xs', md: 'text-base' }[props.size || 'sm'],
-	'text-ink-gray-5',
-])
+const labelClasses = computed<(string | undefined)[]>(() => {
+	const sizeMap: Record<string, string> = { sm: 'text-xs', md: 'text-base' }
+	return [sizeMap[props.size || 'sm'], 'text-ink-gray-5']
+})
 </script>

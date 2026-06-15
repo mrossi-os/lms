@@ -78,7 +78,7 @@
 <script setup lang="ts">
 import { Badge, Button, call, Dialog, FormControl, toast } from 'frappe-ui'
 import { Check, CircleAlert } from 'lucide-vue-next'
-import Switch from '@/oslms/components/Form/Switch.vue'
+import Switch from '@/components/Controls/Switch.vue'
 import { inject, reactive, watch } from 'vue'
 import { User } from '@/components/Settings/types'
 import { cleanError } from '@/utils'
@@ -150,9 +150,8 @@ watch(
 // successful OAuth callback (postMessage handled in GoogleCalendarSettings).
 watch(
 	() =>
-		googleCalendars.value?.data?.find(
-			(c) => c.name === props.calendarID,
-		)?.authorization_code,
+		googleCalendars.value?.data?.find((c) => c.name === props.calendarID)
+			?.authorization_code,
 	(newCode) => {
 		if (props.calendarID && props.calendarID !== 'new') {
 			calendar.authorization_code = newCode || ''

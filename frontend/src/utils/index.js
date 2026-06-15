@@ -113,6 +113,12 @@ export function formatAmount(amount) {
 	return amount
 }
 
+export function formatRating(value) {
+	const n = Number(value)
+	if (!isFinite(n)) return ''
+	return (Math.round(n * 10) / 10).toString()
+}
+
 export function convertToTitleCase(str) {
 	if (!str) {
 		return ''
@@ -305,6 +311,102 @@ export function getEditorTools() {
 							'https://codesandbox.io/embed/<%= remote_id %>?view=editor+%2B+preview&module=%2Findex.html',
 						html: "<iframe style='width: 100%; height: 500px; border: 0; border-radius: 4px; overflow: hidden;' sandbox='allow-modals allow-forms allow-popups allow-scripts allow-same-origin' frameborder='0' allowfullscreen='true'></iframe>",
 					},
+				},
+			},
+		},
+	}
+}
+
+// EditorJS only renders its block menu, inline toolbar and block tunes in
+// English unless given an i18n dictionary. We route every label through __()
+// so the editor follows the user's language (translations live in the app
+// translation files, e.g. lms/translations/it.csv). Keys must match the exact
+// English strings EditorJS and its tools look up; namespaces mirror the tool
+// registration names in getEditorTools (header, list, table, image, embed).
+export function getEditorI18n() {
+	return {
+		direction: document.documentElement.dir === 'rtl' ? 'rtl' : 'ltr',
+		messages: {
+			ui: {
+				blockTunes: {
+					toggler: {
+						'Click to tune': __('Click to tune'),
+						'or drag to move': __('or drag to move'),
+					},
+				},
+				inlineToolbar: {
+					converter: {
+						'Convert to': __('Convert to'),
+					},
+				},
+				toolbar: {
+					toolbox: {
+						Add: __('Add'),
+					},
+				},
+				popover: {
+					Filter: __('Filter'),
+					'Nothing found': __('Nothing found'),
+				},
+			},
+			toolNames: {
+				Text: __('Text'),
+				Heading: __('Heading'),
+				List: __('List'),
+				Table: __('Table'),
+				Image: __('Image'),
+				Upload: __('Upload'),
+				CodeBox: __('CodeBox'),
+				Bold: __('Bold'),
+				Italic: __('Italic'),
+				Link: __('Link'),
+				Color: __('Color'),
+			},
+			tools: {
+				header: {
+					'Heading 1': __('Heading 1'),
+					'Heading 2': __('Heading 2'),
+					'Heading 3': __('Heading 3'),
+					'Heading 4': __('Heading 4'),
+					'Heading 5': __('Heading 5'),
+					'Heading 6': __('Heading 6'),
+				},
+				list: {
+					Ordered: __('Ordered'),
+					Unordered: __('Unordered'),
+				},
+				table: {
+					Heading: __('Heading'),
+					'With headings': __('With headings'),
+					'Without headings': __('Without headings'),
+					Stretch: __('Stretch'),
+					Collapse: __('Collapse'),
+					'Add column to left': __('Add column to left'),
+					'Add column to right': __('Add column to right'),
+					'Delete column': __('Delete column'),
+					'Add row above': __('Add row above'),
+					'Add row below': __('Add row below'),
+					'Delete row': __('Delete row'),
+				},
+				image: {
+					'Add Border': __('Add Border'),
+					'Stretch Image': __('Stretch Image'),
+					'Add Background': __('Add Background'),
+				},
+				embed: {
+					'Enter a caption': __('Enter a caption'),
+				},
+			},
+			blockTunes: {
+				delete: {
+					Delete: __('Delete'),
+					'Click to delete': __('Click to delete'),
+				},
+				moveUp: {
+					'Move up': __('Move up'),
+				},
+				moveDown: {
+					'Move down': __('Move down'),
 				},
 			},
 		},
@@ -526,12 +628,7 @@ const getSidebarItems = (forMobile = false) => {
 					label: 'Courses',
 					icon: 'BookOpen',
 					to: 'Courses',
-					activeFor: [
-						'Courses',
-						'CourseDetail',
-						'Lesson',
-						'LessonForm',
-					],
+					activeFor: ['Courses', 'CourseDetail', 'Lesson'],
 				},
 				{
 					label: 'Programs',
@@ -969,6 +1066,41 @@ const extractYouTubeId = (url) => {
 	} catch {
 		return url.split('/').pop()
 	}
+}
+
+const YOUTUBE_WATCH =
+	/^(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?(?:.*&)?v=([\w-]{11})/i
+const YOUTUBE_SHORT = /^(?:https?:\/\/)?youtu\.be\/([\w-]{11})/i
+const YOUTUBE_EMBED =
+	/^(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([\w-]{11})/i
+const VIMEO_URL =
+	/^(?:https?:\/\/)?(?:www\.)?vimeo\.com\/(\d+)(?:\/([a-zA-Z0-9]+))?/i
+const VIMEO_PLAYER = /^(?:https?:\/\/)?player\.vimeo\.com\/video\/(\d+)/i
+
+// Build an embeddable iframe URL from a course "Preview Video" value.
+// Handles full YouTube and Vimeo URLs as well as legacy bare YouTube ids
+// that the old backend normalization used to store.
+export const getVideoEmbedURL = (value) => {
+	if (!value) return ''
+	const url = value.trim()
+
+	if (YOUTUBE_EMBED.test(url)) return url
+	let m = url.match(YOUTUBE_WATCH) || url.match(YOUTUBE_SHORT)
+	if (m) return `https://www.youtube.com/embed/${m[1]}`
+
+	if (VIMEO_PLAYER.test(url)) return url
+	m = url.match(VIMEO_URL)
+	if (m) {
+		return m[2]
+			? `https://player.vimeo.com/video/${m[1]}?h=${m[2]}`
+			: `https://player.vimeo.com/video/${m[1]}`
+	}
+
+	// Legacy: a bare YouTube video id stored by the old normalization.
+	if (/^[\w-]{11}$/.test(url)) return `https://www.youtube.com/embed/${url}`
+
+	// Fallback: assume the value is already an embeddable URL.
+	return url
 }
 
 export const createLMSCategory = (name) => {

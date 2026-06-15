@@ -1,118 +1,316 @@
 <template>
-	<div v-if="course.data">
-		<header
-			class="sticky top-0 z-10 flex items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5"
-		>
-			<Breadcrumbs class="h-7" :items="breadcrumbs" />
-			<div v-if="tabIndex == 2 && isAdmin" class="flex items-center gap-x-2">
-				<Badge v-if="childRef?.isDirty" theme="orange">
-					{{ __('Not Saved') }}
+	<div class="flex h-full flex-col">
+		<LayoutHeader :isLoading="!course.data">
+			<template #left-header>
+				<Breadcrumbs class="h-7" :items="breadcrumbs" />
+				<Badge v-if="course.data?.published" theme="green">
+					{{ __('Published') }}
 				</Badge>
-				<Dropdown :options="courseMenu" side="left">
-					<template v-slot="{ open }">
-						<Button>
-							<template #icon>
-								<Ellipsis class="w-4 h-4 stroke-1.5" />
+			</template>
+			<template #right-header>
+				<template v-if="tabIndex === 3 && courseFormRef">
+					<Badge v-if="courseFormRef.isDirty" theme="orange">
+						{{ __('Not Saved') }}
+					</Badge>
+					<Dropdown
+						:options="courseFormRef.courseMenu"
+						:button="{ icon: 'more-horizontal', variant: 'ghost' }"
+						side="bottom"
+						align="end"
+					/>
+					<Tooltip
+						:text="courseFormRef.isDirty ? '' : __('No changes to save')"
+						:hoverDelay="0.1"
+					>
+						<Button
+							variant="solid"
+							:disabled="!courseFormRef.isDirty"
+							@click="courseFormRef.submitCourse()"
+						>
+							{{ __('Save') }}
+						</Button>
+					</Tooltip>
+				</template>
+				<template v-if="tabIndex === 2 && editorSelected">
+					<template v-if="editorMode === 'edit'">
+						<Badge v-if="courseEditorRef?.isDirty" theme="orange">
+							{{ __('Not Saved') }}
+						</Badge>
+						<Tooltip
+							:text="courseEditorRef?.isDirty ? '' : __('No changes to save')"
+							:hoverDelay="0.1"
+						>
+							<Button
+								variant="solid"
+								:disabled="!courseEditorRef?.isDirty"
+								@click="courseEditorRef?.saveSelectedLesson()"
+							>
+								{{ __('Save') }}
+							</Button>
+						</Tooltip>
+					</template>
+					<template v-else-if="editorMode === 'preview'">
+						<Tooltip v-if="courseEditorRef?.canGoZen" :text="__('Zen Mode')">
+							<Button @click="courseEditorRef?.previewZen()">
+								<template #icon>
+									<Focus class="size-4 stroke-2" />
+								</template>
+							</Button>
+						</Tooltip>
+						<Button
+							v-if="courseEditorRef?.hasPrev"
+							@click="courseEditorRef?.previewPrev()"
+						>
+							<template #prefix>
+								<ChevronLeft class="size-4 stroke-1.5" />
 							</template>
+							{{ __('Previous') }}
+						</Button>
+						<Button
+							v-if="courseEditorRef?.hasNext"
+							@click="courseEditorRef?.previewNext()"
+						>
+							<template #suffix>
+								<ChevronRight class="size-4 stroke-1.5" />
+							</template>
+							{{ __('Next') }}
 						</Button>
 					</template>
-				</Dropdown>
-				<Button variant="solid" @click="childRef.submitCourse()">
-					{{ __('Save') }}
+					<Button
+						variant="outline"
+						@click="editorMode = editorMode === 'preview' ? 'edit' : 'preview'"
+					>
+						<template #prefix>
+							<X v-if="editorMode === 'preview'" class="size-4 stroke-1.5" />
+							<Eye v-else class="size-4 stroke-1.5" />
+						</template>
+						{{ editorMode === 'preview' ? __('Close preview') : __('Preview') }}
+					</Button>
+				</template>
+				<Button
+					v-if="user.data?.is_moderator"
+					:variant="course.data?.published ? 'subtle' : 'solid'"
+					:theme="course.data?.published ? 'red' : 'gray'"
+					:loading="publishToggle.loading"
+					@click="togglePublishCourse"
+				>
+					{{ course.data?.published ? __('Unpublish') : __('Publish') }}
 				</Button>
-			</div>
-		</header>
-		<CourseOverview v-if="!isAdmin" :course="course" />
-		<div v-else>
+			</template>
+		</LayoutHeader>
+
+		<div v-if="!showTabs" class="flex-1">
+			<CourseOverview :course="course" />
+		</div>
+		<div v-else class="relative flex flex-1 flex-col">
 			<Tabs :tabs="tabs" v-model="tabIndex">
 				<template #tab-panel="{ tab }">
-					<component :is="tab.component" :course="course" ref="childRef" />
+					<template v-if="course.data">
+						<CourseEditor
+							v-if="tab.component === CourseEditor"
+							ref="courseEditorRef"
+							:course="course"
+							v-model:selected="editorSelected"
+							v-model:mode="editorMode"
+						/>
+						<CourseForm
+							v-else-if="tab.component === CourseForm"
+							ref="courseFormRef"
+							:course="course"
+						/>
+						<component v-else :is="tab.component" :course="course" />
+					</template>
 				</template>
 			</Tabs>
+			<div
+				v-if="tabIndex === 2 && course.data && editorMode === 'edit'"
+				class="pointer-events-none absolute inset-x-0 top-0 z-10 hidden md:flex"
+			>
+				<div class="w-[70%]" />
+				<div
+					class="pointer-events-auto flex w-[30%] items-center justify-between gap-x-2 border-s border-b bg-surface-white p-1 px-5"
+				>
+					<div class="py-2.5 font-medium text-base text-ink-gray-9">
+						{{ __('Chapters') }}
+					</div>
+					<Button size="sm" @click="courseEditorRef?.openAddChapter()">
+						<template #prefix>
+							<Plus class="size-4 stroke-1.5" />
+						</template>
+						{{ __('Add') }}
+					</Button>
+				</div>
+			</div>
 		</div>
 	</div>
 </template>
-<script setup>
+<script setup lang="ts">
+import { computed, inject, markRaw, onMounted, ref, watch } from 'vue'
+import type { Component, ComputedRef, Ref } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import type { RouteLocationNormalizedLoadedGeneric, Router } from 'vue-router'
 import {
 	Badge,
 	Breadcrumbs,
 	Button,
-	call,
 	createResource,
 	Dropdown,
 	Tabs,
+	Tooltip,
 	toast,
 	usePageMeta,
 } from 'frappe-ui'
-import { computed, inject, markRaw, onMounted, provide, ref, watch } from 'vue'
-import { sessionStore } from '@/stores/session'
-import { useRouter, useRoute } from 'vue-router'
 import {
-	Download,
+	BookOpen,
+	ChevronLeft,
+	ChevronRight,
+	Eye,
+	Focus,
 	Ellipsis,
+	Download,
+	Bot,
 	List,
+	Plus,
 	Settings2,
-	Trash2,
 	TrendingUp,
+	X,
 } from 'lucide-vue-next'
+import { sessionStore } from '@/stores/session'
+import { useSettings } from '@/stores/settings'
+import LayoutHeader from '@/components/Layouts/LayoutHeader.vue'
 import CourseOverview from '@/pages/Courses/CourseOverview.vue'
 import CourseDashboard from '@/pages/Courses/CourseDashboard.vue'
+import CourseEditor from '@/pages/Courses/CourseEditor.vue'
 import CourseForm from '@/pages/Courses/CourseForm.vue'
+import type {
+	CourseDetails,
+	CourseInstructorInfo,
+	Resource,
+	SessionUser,
+} from '@/types/api'
+import CourseSimulations from '@/oslms/pages/Courses/CourseSimulations.vue'
 
-const { brand } = sessionStore()
+const { settings: lmsSettingsResource } = useSettings()
+const simulationsEnabledGlobal = computed(
+	() => !!lmsSettingsResource?.data?.simulations_enabled,
+)
 
-const tagResource = createResource({
-	url: 'frappe.client.get_list',
-	method: 'POST',
-	params: {
-		doctype: 'LMS OS Tag',
-		fields: ['tag_name', 'color'],
-		limit_page_length: 0,
+type Brand = { name?: string; logo?: string; favicon?: string }
+interface TabDef {
+	id: string
+	label: string
+	component: ReturnType<typeof markRaw>
+	icon: Component
+}
+
+const { brand } = sessionStore() as { brand: Brand }
+const router: Router = useRouter()
+const route: RouteLocationNormalizedLoadedGeneric = useRoute()
+const user = inject<SessionUser>('$user')!
+const tabIndex: Ref<number> = ref(0)
+
+interface EditorSelection {
+	chapterNumber: string
+	lessonNumber: string
+	number: string
+	title?: string
+}
+
+const editorSelected = ref<EditorSelection | null>(null)
+const editorMode = ref<'edit' | 'preview'>('edit')
+
+// Settings tab (CourseForm) exposes the API the LayoutHeader actions need.
+type CourseMenuItem = {
+	label: string
+	icon: string
+	theme?: string
+	onClick: () => void
+}
+// `isDirty` is exposed as a Ref (defineExpose doesn't unwrap); `courseMenu`
+// is a ComputedRef. Templates auto-unwrap both, but script-side access needs
+// the wrapped types so callers don't accidentally truth-check a Ref object.
+type CourseFormApi = {
+	isDirty: Ref<boolean>
+	submitCourse: () => void
+	trashCourse: () => void
+	courseMenu: ComputedRef<CourseMenuItem[]>
+}
+const courseFormRef = ref<CourseFormApi | null>(null)
+
+type CourseEditorApi = {
+	saveSelectedLesson: () => void
+	isDirty: ComputedRef<boolean>
+	hasPrev: ComputedRef<boolean>
+	hasNext: ComputedRef<boolean>
+	canGoZen: ComputedRef<boolean>
+	previewPrev: () => void
+	previewNext: () => void
+	previewZen: () => void
+	openAddChapter: () => void
+}
+const courseEditorRef = ref<CourseEditorApi | null>(null)
+
+const publishToggle = createResource({
+	url: 'frappe.client.set_value',
+	makeParams() {
+		return {
+			doctype: 'LMS Course',
+			name: course.data?.name,
+			fieldname: 'published',
+			value: course.data?.published ? 0 : 1,
+		}
 	},
-	auto: true,
-})
-
-const tagColorMap = computed(() => {
-	if (!tagResource.data) return new Map()
-	return new Map(tagResource.data.map((t) => [t.tag_name, t.color]))
-})
-
-provide('tagColorMap', tagColorMap)
-
-const router = useRouter()
-const route = useRoute()
-const user = inject('$user')
-const tabIndex = ref(0)
-const childRef = ref(null)
-
-const props = defineProps({
-	courseName: {
-		type: String,
-		required: true,
+	onSuccess() {
+		toast.success(
+			course.data?.published
+				? __('Course unpublished')
+				: __('Course published'),
+		)
+		course.reload()
 	},
-})
+	onError(err: { messages?: string[] } | string) {
+		const msg =
+			typeof err === 'string'
+				? err
+				: (err.messages?.[0] ?? __('Could not update publish status'))
+		toast.error(msg)
+	},
+}) as Resource<unknown>
+
+function togglePublishCourse() {
+	publishToggle.submit()
+}
+
+const props = defineProps<{
+	courseName: string
+}>()
 
 onMounted(() => {
 	updateTabIndex()
 })
 
 const updateTabIndex = () => {
-	const hash = route.hash
-	if (hash) {
-		tabs.value.forEach((tab, index) => {
-			if (tab.label?.toLowerCase() === hash.replace('#', '')) {
-				tabIndex.value = index
-			}
-		})
-	}
+	// Match against the stable `id` (not the translated `label`) so deep
+	// links like `#simulations` keep working in every locale.
+	const wanted = route.hash.replace('#', '').toLowerCase()
+	if (!wanted) return
+	tabs.value.forEach((tab, index) => {
+		if (tab.id?.toLowerCase() === wanted) {
+			tabIndex.value = index
+		}
+	})
 }
 
 watch(tabIndex, () => {
 	const tab = tabs.value[tabIndex.value]
-	if (tab.label != route.hash.replace('#', '')) {
-		router.push({ ...route, hash: `#${tab.label.toLowerCase()}` })
+	const targetHash = `#${tab.id.toLowerCase()}`
+	if (route.hash !== targetHash) {
+		router.push({ ...route, hash: targetHash })
 	}
 })
+
+// Switch tabs when the hash is changed programmatically (e.g. deep-links).
+watch(() => route.hash, updateTabIndex)
 
 const course = createResource({
 	url: 'lms.lms.utils.get_course_details',
@@ -123,25 +321,49 @@ const course = createResource({
 		}
 	},
 	auto: true,
-})
+}) as Resource<CourseDetails | null>
 
-const tabs = ref([
-	{
-		label: __('Overview'),
-		component: markRaw(CourseOverview),
-		icon: List,
-	},
-	{
-		label: __('Dashboard'),
-		component: markRaw(CourseDashboard),
-		icon: TrendingUp,
-	},
-	{
-		label: __('Settings'),
-		component: markRaw(CourseForm),
-		icon: Settings2,
-	},
-])
+const tabs = computed<TabDef[]>(() => {
+	// Overview ("anteprima") + Dashboard are available to a course valutatore too
+	// (read-only). The editor / settings / simulations tabs stay admin-only.
+	const t: TabDef[] = [
+		{
+			id: 'overview',
+			label: __('Overview'),
+			component: markRaw(CourseOverview),
+			icon: markRaw(List),
+		},
+		{
+			id: 'dashboard',
+			label: __('Dashboard'),
+			component: markRaw(CourseDashboard),
+			icon: markRaw(TrendingUp),
+		},
+	]
+	if (isAdmin.value) {
+		t.push({
+			id: 'editor',
+			label: __('Course editor'),
+			component: markRaw(CourseEditor),
+			icon: markRaw(BookOpen),
+		})
+		t.push({
+			id: 'settings',
+			label: __('Settings'),
+			component: markRaw(CourseForm),
+			icon: markRaw(Settings2),
+		})
+		if (simulationsEnabledGlobal.value) {
+			t.push({
+				id: 'simulations',
+				label: __('Simulations'),
+				component: markRaw(CourseSimulations),
+				icon: markRaw(Bot),
+			})
+		}
+	}
+	return t
+})
 
 watch(
 	() => props.courseName,
@@ -151,16 +373,23 @@ watch(
 )
 
 watch(course, () => {
-	if (!isAdmin.value && !course.data?.published && !course.data?.upcoming && !course.data?.membership) {
+	// A valutatore of a batch containing this course may view it read-only even
+	// when unpublished (course.data.is_valutatore is set by get_course_details).
+	if (
+		!isAdmin.value &&
+		!course.data?.is_valutatore &&
+		!course.data?.published &&
+		!course.data?.upcoming
+	) {
 		router.push({
 			name: 'Courses',
 		})
 	}
 })
 
-const isInstructor = () => {
+const isInstructor = (): boolean => {
 	let user_is_instructor = false
-	course.data?.instructors.forEach((instructor) => {
+	course.data?.instructors.forEach((instructor: CourseInstructorInfo) => {
 		if (!user_is_instructor && instructor.name == user.data?.name) {
 			user_is_instructor = true
 		}
@@ -168,100 +397,54 @@ const isInstructor = () => {
 	return user_is_instructor
 }
 
-const isAdmin = computed(() => {
-	return user.data?.is_moderator || user.data?.is_docente || isInstructor()
+const isAdmin = computed<boolean>(() => {
+	return Boolean(user.data?.is_moderator) || isInstructor()
 })
 
-const exportCourse = async () => {
-	try {
-		const response = await fetch(
-			'/api/method/lms.lms.api.export_course_as_zip?course_name=' +
-				course.data.name,
-			{
-				method: 'GET',
-				credentials: 'include',
-			}
-		)
+// A valutatore of a batch containing this course gets a read-only tabbed view
+// (Overview + Dashboard), but not the admin editor/settings tabs.
+const isValutatore = computed<boolean>(() =>
+	Boolean(course.data?.is_valutatore),
+)
 
-		if (!response.ok) {
-			const errorText = await response.text()
-			console.error('Error response:', errorText)
-			throw new Error('Download failed')
-		}
-
-		const blob = await response.blob()
-		const disposition = response.headers.get('Content-Disposition')
-		let filename = 'course.zip'
-		if (disposition && disposition.includes('filename=')) {
-			filename = disposition.split('filename=')[1].replace(/"/g, '')
-		}
-
-		const url = window.URL.createObjectURL(blob)
-
-		const a = document.createElement('a')
-		a.href = url
-		a.download = filename
-		document.body.appendChild(a)
-		a.click()
-
-		a.remove()
-		window.URL.revokeObjectURL(url)
-	} catch (err) {
-		console.error(err)
-		toast.error('Export failed')
-	}
-}
-
-const download_course_zip = (data) => {
-	const a = document.createElement('a')
-	a.href = data.export_url
-	a.download = data.name
-	a.click()
-}
-
-const courseMenu = computed(() => {
-	let options = [
-		{
-			label: __('Export'),
-			onClick() {
-				exportCourse()
-			},
-			icon: Download,
-		},
-		{
-			label: __('Delete'),
-			onClick() {
-				childRef.value.trashCourse()
-			},
-			icon: Trash2,
-		},
-	]
-	return options
-})
+const showTabs = computed<boolean>(() => isAdmin.value || isValutatore.value)
 
 const breadcrumbs = computed(() => {
-	let crumbs = [{ label: __('Courses'), route: { name: 'Courses' } }]
-	crumbs.push({
-		label: course?.data?.title,
-		route: { name: 'CourseDetail', params: { courseName: course?.data?.name } },
-	})
+	const crumbs: {
+		label: string
+		route: { name: string; params?: Record<string, string> }
+	}[] = [{ label: __('Courses'), route: { name: 'Courses' } }]
+	if (course.data) {
+		crumbs.push({
+			label: course.data.title,
+			route: { name: 'CourseDetail', params: { courseName: course.data.name } },
+		})
+	}
 	return crumbs
 })
 
 usePageMeta(() => {
 	return {
-		title: course?.data?.title,
+		title: course.data?.title,
 		icon: brand.favicon,
 	}
 })
 </script>
-<style>
-.avatar-group {
-	display: inline-flex;
-	align-items: center;
+
+<style scoped>
+/* frappe-ui Tabs: TabsContent has no flex-1, so when the active panel's
+   content is intrinsically tall (Course editor with many lessons), the
+   flex-col layout shrinks the TabsList strip. Pin it so the strip keeps
+   its content height. */
+:deep([role='tablist']) {
+	flex-shrink: 0;
 }
 
-.avatar-group .avatar {
-	transition: margin 0.1s ease-in-out;
+/* frappe-ui TabsContent is `flex flex-col` with no flex-1, so the active
+   panel collapses to its content height and the editor's `flex-1 min-h-0`
+   grid has no space to fill. Stretch the active panel to fill TabsRoot. */
+:deep([role='tabpanel'][data-state='active']) {
+	flex: 1 1 0%;
+	min-height: 0;
 }
 </style>

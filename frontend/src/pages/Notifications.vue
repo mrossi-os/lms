@@ -65,7 +65,7 @@
 				<div
 					v-if="isMentionOrComment(log)"
 					v-html="log.email_content"
-					class="bg-surface-gray-2 text-ink-gray-9 rounded-md px-3 py-2 line-clamp-3 overflow-hidden"
+					class="bg-surface-gray-2 rounded-md px-3 py-2 line-clamp-3 overflow-hidden"
 				></div>
 				<div
 					v-else-if="showDetails(log) && log.document_type === 'LMS Live Class'"
@@ -121,14 +121,14 @@
 				</div>
 				<div
 					v-else-if="showDetails(log)"
-					class="flex flex-col sm:flex-row sm:items-stretch border border-outline-gray-2 sm:space-x-2 rounded-md card"
+					class="flex items-stretch border border-outline-gray-2 gap-x-2 rounded-md card"
 				>
 					<iframe
 						v-if="
 							log.document_type == 'LMS Course' &&
 							log.document_details.video_link
 						"
-						:src="`https://www.youtube.com/embed/${log.document_details.video_link}`"
+						:src="getVideoEmbedURL(log.document_details.video_link)"
 						class="rounded-s-md w-72"
 					/>
 					<video
@@ -157,7 +157,7 @@
 						</div>
 						<div
 							v-if="log.document_details.start_date"
-							class="flex items-center gap-x-2 text-sm mt-5 text-white"
+							class="flex items-center gap-x-2 text-sm mt-5"
 						>
 							<Calendar class="size-3 stroke-1.5" />
 							<span>
@@ -233,7 +233,7 @@ import { sessionStore } from '../stores/session'
 import { computed, inject, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Bell, Calendar, Clock, X } from 'lucide-vue-next'
-import { formatTime } from '@/utils/'
+import { formatTime, getVideoEmbedURL } from '@/utils/'
 import LayoutHeader from '@/components/Layouts/LayoutHeader.vue'
 
 const { brand } = sessionStore()

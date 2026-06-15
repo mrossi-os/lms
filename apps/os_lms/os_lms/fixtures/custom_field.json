@@ -134,6 +134,17 @@
     },
     {
         "doctype": "Custom Field",
+        "name": "LMS Course-simulations_enabled",
+        "dt": "LMS Course",
+        "label": "AI Simulations Enabled",
+        "fieldname": "simulations_enabled",
+        "fieldtype": "Check",
+        "default": "0",
+        "description": "When enabled, published Simulation Scenarios linked to this course are exposed to enrolled students.",
+        "insert_after": "enforce_quiz_on_completion"
+    },
+    {
+        "doctype": "Custom Field",
         "name": "LMS Course-hero_enabled",
         "dt": "LMS Course",
         "label": "Hero Enabled",
@@ -163,6 +174,54 @@
         "fieldtype": "Data",
         "insert_after": "hero_media_type",
         "depends_on": "eval:doc.hero_enabled"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Course-trueskills_certificate_enabled",
+        "dt": "LMS Course",
+        "label": "TrueSkills Certificate",
+        "fieldname": "trueskills_certificate_enabled",
+        "fieldtype": "Check",
+        "default": "0",
+        "insert_after": "enable_certification"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Course-trueskills_template_id",
+        "dt": "LMS Course",
+        "label": "TrueSkills Template",
+        "fieldname": "trueskills_template_id",
+        "fieldtype": "Data",
+        "insert_after": "trueskills_certificate_enabled",
+        "depends_on": "eval:doc.trueskills_certificate_enabled"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Settings-trueskills_api_enabled",
+        "dt": "LMS Settings",
+        "label": "Enable TrueSkills API",
+        "fieldname": "trueskills_api_enabled",
+        "fieldtype": "Check",
+        "default": "0",
+        "insert_after": "livecode_url"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Settings-trueskills_api_key",
+        "dt": "LMS Settings",
+        "label": "TrueSkills API Key",
+        "fieldname": "trueskills_api_key",
+        "fieldtype": "Password",
+        "insert_after": "trueskills_api_enabled"
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Settings-trueskills_api_endpoint",
+        "dt": "LMS Settings",
+        "label": "TrueSkills API Endpoint",
+        "fieldname": "trueskills_api_endpoint",
+        "fieldtype": "Data",
+        "insert_after": "trueskills_api_key"
     },
     {
         "doctype": "Custom Field",

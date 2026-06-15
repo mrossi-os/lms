@@ -1,7 +1,7 @@
 <template>
 	<div class="relative flex h-screen flex-col">
 		<div
-			class="flex flex-1 flex-col overflow-hidden pb-10"
+			class="flex flex-1 flex-col overflow-y-auto pb-10"
 			id="scrollContainer"
 		>
 			<slot />
@@ -10,14 +10,14 @@
 		<div class="relative z-20">
 			<!-- Dropdown menu -->
 			<div
-				class="fixed bottom-16 end-2 w-[80%] rounded-md bg-surface-white text-base p-5 space-y-4 shadow-md"
+				class="fixed bottom-16 end-2 w-[80%] space-y-4 rounded-md bg-surface-white p-5 text-base shadow-md"
 				v-if="showMenu"
 				ref="menu"
 			>
 				<div
 					v-for="link in otherLinks"
 					:key="link.label"
-					class="flex items-center gap-x-2 cursor-pointer"
+					class="flex cursor-pointer items-center gap-x-2"
 					@click="handleClick(link)"
 				>
 					<component
@@ -31,7 +31,7 @@
 			<!-- Fixed menu -->
 			<div
 				v-if="sidebarSettings.data"
-				class="fixed bottom-0 start-0 w-full flex items-center justify-around border-t border-outline-gray-2 bg-surface-white standalone:pb-4 z-10"
+				class="standalone:pb-4 fixed bottom-0 start-0 z-10 flex w-full items-center justify-around border-t border-outline-gray-2 bg-surface-white"
 			>
 				<button
 					v-for="tab in sidebarLinks"

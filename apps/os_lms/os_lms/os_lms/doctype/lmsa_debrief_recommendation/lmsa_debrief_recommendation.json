@@ -1,0 +1,54 @@
+{
+ "actions": [],
+ "creation": "2026-05-18 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "lesson",
+  "title",
+  "why",
+  "relevance_score"
+ ],
+ "fields": [
+  {
+   "fieldname": "lesson",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Lesson",
+   "options": "Course Lesson"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title"
+  },
+  {
+   "fieldname": "why",
+   "fieldtype": "Small Text",
+   "label": "Why"
+  },
+  {
+   "description": "Cosine similarity from the RAG search (0..1). Empty when the recommendation comes purely from the LLM.",
+   "fieldname": "relevance_score",
+   "fieldtype": "Float",
+   "label": "Relevance",
+   "precision": "3"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-18 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "OS LMS",
+ "name": "LMSA Debrief Recommendation",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0
+}

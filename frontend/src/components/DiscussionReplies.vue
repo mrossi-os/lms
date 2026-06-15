@@ -13,11 +13,11 @@
 
 		<div v-for="(reply, index) in replies.data">
 			<div
-				class="py-3 flex flex-col"
+				class="py-3"
 				:class="{ 'border-b': index + 1 != replies.data.length }"
 			>
 				<div
-					class="flex items-center justify-between mb-2 flex-shrink max-w-[65ch]"
+					class="flex items-center justify-between mb-2"
 				>
 					<div class="flex items-center text-ink-gray-5">
 						<UserAvatar :user="reply.user" class="me-2" />
@@ -49,7 +49,7 @@
 					>
 						<template v-slot="{ open }">
 							<MoreHorizontal
-								class="w-4 h-4 stroke-2 text-ink-gray-9 cursor-pointer"
+								class="w-4 h-4 stroke-1.5 cursor-pointer"
 							/>
 						</template>
 					</Dropdown>
@@ -157,24 +157,29 @@ const replies = createResource({
 })
 
 const fetchMentionUsers = () => {
+	// Always render the editor so the user can post. The mention list is a
+	// best-effort enhancement: students don't get it, and for other roles a
+	// failed fetch (e.g. a 403 on get_all_users) must not block posting.
+	renderEditor.value = true
 	if (user.data?.is_student) {
-		renderEditor.value = true
-	} else {
-		allUsers.reload(
-			{},
-			{
-				onSuccess(data) {
-					mentionUsers.value = Object.values(data).map((user) => {
-						return {
-							value: user.name,
-							label: user.full_name,
-						}
-					})
-					renderEditor.value = true
-				},
-			},
-		)
+		return
 	}
+	allUsers.reload(
+		{},
+		{
+			onSuccess(data) {
+				mentionUsers.value = Object.values(data).map((user) => {
+					return {
+						value: user.name,
+						label: user.full_name,
+					}
+				})
+			},
+			onError() {
+				// Keep the editor usable without mention autocomplete.
+			},
+		},
+	)
 }
 
 const postReply = () => {
