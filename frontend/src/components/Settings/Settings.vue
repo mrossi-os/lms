@@ -666,13 +666,40 @@ const tabsStructure = computed(() => {
 				},
 				{
 					key: 'Welcome Video',
-					label: __('Welcome Video'),
+					label: __('Welcome'),
 					icon: 'PlayCircle',
 					description: __(
-						'Configura il video di benvenuto mostrato agli studenti al primo login',
+						'Configura la notifica e il video di benvenuto mostrati agli studenti al primo login. I due possono essere attivati indipendentemente.',
 					),
 					sections: [
 						{
+							label: __('Welcome Notification'),
+							columns: [
+								{
+									fields: [
+										{
+											label: __('Enable Welcome Notification'),
+											name: 'welcome_notification_enabled',
+											type: 'checkbox',
+											description: __(
+												'Se attivo, invia una notifica di benvenuto al primo accesso dello studente.',
+											),
+										},
+										{
+											label: __('Welcome Notification Message'),
+											name: 'welcome_notification_message',
+											type: 'textarea',
+											rows: 4,
+											description: __(
+												'Testo della notifica di benvenuto. Indipendente dal video.',
+											),
+										},
+									],
+								},
+							],
+						},
+						{
+							label: __('Welcome Video'),
 							columns: [
 								{
 									fields: [

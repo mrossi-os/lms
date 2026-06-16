@@ -1,6 +1,10 @@
 import frappe
-from frappe import _
 from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
+
+# Fallback used when the welcome notification is enabled but no message is set.
+DEFAULT_WELCOME_NOTIFICATION_MESSAGE = (
+	"Benvenuto/a nella piattaforma! Siamo felici di averti con noi."
+)
 
 
 def mark_first_login(doc, method=None):
@@ -22,13 +26,14 @@ def on_session_creation(login_manager):
 		return
 
 	settings = frappe.get_single("LMS Settings")
-	if not settings.get("welcome_video_enabled"):
+	if not settings.get("welcome_notification_enabled"):
 		frappe.db.set_value("User", user, "first_login", 0)
 		frappe.db.commit()
 		return
 
 	try:
-		_create_welcome_notification(user)
+		message = settings.get("welcome_notification_message") or DEFAULT_WELCOME_NOTIFICATION_MESSAGE
+		_create_welcome_notification(user, message)
 	except Exception:
 		logger.exception(f"Failed to create welcome notification for {user}")
 	finally:
@@ -36,17 +41,10 @@ def on_session_creation(login_manager):
 		frappe.db.commit()
 
 
-def _create_welcome_notification(user: str):
-	replay_link = "/api/method/os_lms.os_lms.api.replay_welcome_video"
-	anchor_style = (
-		"color: var(--ink-blue-3, #2563eb); text-decoration: underline; font-weight: 500;"
-	)
-	subject = _(
-		"Benvenuto/a nella piattaforma SaleScience!<br><br>"
-		"Per iniziare al meglio, ti invitiamo a guardare il video di presentazione della piattaforma, "
-		"in cui troverai una breve introduzione alle principali funzionalità e alle modalità di utilizzo.<br><br>"
-		'Guarda il video di presentazione qui quando vuoi: <a href="{0}" style="{1}">apri il video</a>.'
-	).format(replay_link, anchor_style)
+def _create_welcome_notification(user: str, message: str):
+	# Admin-authored plain text: escape HTML and keep line breaks. The notification
+	# content is intentionally independent from the welcome video.
+	subject = frappe.utils.escape_html(message).replace("\n", "<br>")
 
 	notification = frappe._dict(
 		{

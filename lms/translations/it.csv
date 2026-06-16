@@ -5219,3 +5219,8 @@ restrict_ip
 "Indexing failed","Indicizzazione non riuscita"
 "LMSA is not enabled","LMSA non è abilitato"
 "No content found in lesson","Nessun contenuto trovato nella lezione"
+"Welcome","Benvenuto"
+"Welcome Notification","Notifica di benvenuto"
+"Enable Welcome Notification","Abilita notifica di benvenuto"
+"Welcome Notification Message","Messaggio della notifica di benvenuto"
+"Welcome Video","Video di benvenuto"
