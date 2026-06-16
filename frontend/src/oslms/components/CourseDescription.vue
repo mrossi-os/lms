@@ -1,6 +1,7 @@
 <template>
 	<div class="card p-3">
 		<div
+			ref="contentRef"
 			v-html="unescapedDescription"
 			class="prose prose-sm max-w-none !whitespace-normal prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 overflow-hidden transition-all duration-300"
 			:style="
@@ -26,22 +27,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { Button } from 'frappe-ui'
 import { ChevronDown } from 'lucide-vue-next'
 
 const props = withDefaults(
 	defineProps<{
 		description?: string
-		// Plain-text length above which the "show more" toggle appears.
-		charLimit?: number
 		// Collapsed height (px) when the toggle is shown.
 		collapsedHeight?: number
 	}>(),
-	{ description: '', charLimit: 400, collapsedHeight: 156 },
+	{ description: '', collapsedHeight: 156 },
 )
 
 const isExpanded = ref(false)
+const contentRef = ref<HTMLElement | null>(null)
+// Whether the rendered content actually overflows the collapsed height.
+const showToggle = ref(false)
 
 // The description is stored as HTML; decode any escaped entities (e.g. &lt;p&gt;)
 // so the markup renders correctly when bound with v-html.
@@ -53,9 +55,39 @@ const unescapedDescription = computed(() => {
 	return textarea.value
 })
 
-// Show the toggle only when the plain-text content exceeds the limit.
-const showToggle = computed(() => {
-	const text = (props.description || '').replace(/<[^>]*>/g, '')
-	return text.length > props.charLimit
+// Show the toggle only when the rendered content is taller than the collapsed
+// height. scrollHeight reports the full content height even while the
+// max-height clamp is applied, so it's safe to read directly.
+const updateToggle = () => {
+	const el = contentRef.value
+	if (!el) {
+		showToggle.value = false
+		return
+	}
+	showToggle.value = el.scrollHeight > props.collapsedHeight + 1
+}
+
+let resizeObserver: ResizeObserver | null = null
+
+onMounted(() => {
+	updateToggle()
+	if (typeof ResizeObserver !== 'undefined') {
+		// Re-measure on layout changes (responsive reflow, async image loads).
+		resizeObserver = new ResizeObserver(() => updateToggle())
+		if (contentRef.value) resizeObserver.observe(contentRef.value)
+	}
 })
+
+onBeforeUnmount(() => {
+	resizeObserver?.disconnect()
+})
+
+// Re-measure when the description changes.
+watch(
+	() => props.description,
+	async () => {
+		await nextTick()
+		updateToggle()
+	},
+)
 </script>
