@@ -4,10 +4,19 @@ import frappe
 from frappe import _
 from frappe.utils import now_datetime
 
+from apps.os_lms.os_lms.os_lms.utils import (
+	get_course_feature_sections,
+	save_course_feature_sections,
+)
+from os_lms.os_lms.ai.utils.file_parser import FrappeFileParser
 from os_lms.os_lms.ai.utils.lesson_parser import LessonContentParser
 from os_lms.os_lms.ai.utils.llm import load_settings
 from os_lms.os_lms.ai.utils.oslms_settings import OsLmsSettings
 from os_lms.os_lms.ai.utils.rag_db import RagDB
+
+# Sentinel lesson identifier used when indexing course-level content
+# (e.g. feature sections) that is not tied to a specific Course Lesson.
+COURSE_FEATURES_LESSON_ID = "__course_features__"
 
 
 class IngestionService:
@@ -103,6 +112,46 @@ class IngestionService:
 		finally:
 			frappe.db.commit()
 
+	def ingest_course_features(self, course_name: str) -> None:
+		"""Main ingestion function for a course's feature sections.
+
+		Iterates the course's feature sections, extracts the text from
+		each item's attached file via :class:`FrappeFileParser`, merges
+		the non-empty contents into a single text and pushes it through
+		the RAG pipeline. Items whose file produced text are stamped
+		with ``ingestion_date`` and the updated feature_sections are
+		written back to the course.
+		"""
+		self.logger.info("Starting feature ingestion for course %s", course_name)
+		feature_sections = get_course_feature_sections(course_name)
+
+		merged_parts: list[str] = []
+		have_file = False
+		now_iso = now_datetime().isoformat(timespec="seconds")
+
+		for section in feature_sections:
+			for item in section.get("items", []):
+				file_name = item.get("file")
+				if not file_name:
+					continue
+				item["ingestion_date"] = now_iso
+				have_file = True
+				text = FrappeFileParser(file_name).extract_text()
+				self.logger.info(
+					"Feature ingestion: extracted %d chars from file %s",
+					len(text),
+					file_name,
+				)
+				if text:
+					merged_parts.append(text)
+
+		merged_text = "\n\n".join(merged_parts)
+		if merged_text:
+			self.rag_db.ingest_data(course_name, COURSE_FEATURES_LESSON_ID, merged_text)
+
+		if have_file:
+			save_course_feature_sections(course_name, feature_sections)
+
 	def remove_lesson(self, course: str, lesson: str) -> None:
 		"""Delete a lesson's vectors from the RAG index.
 
@@ -116,6 +165,10 @@ class IngestionService:
 			self.rag_db.delete_lesson(course, lesson)
 		except Exception as e:
 			self.logger.error("RAG cleanup failed for lesson %s: %s", lesson, e)
+
+	def search_chunks_in_feature_course(self, course: str, question: str) -> list[dict]:
+		"""Retrieve relevant chunks from a course's feature sections."""
+		return self.rag_db.search(course, [COURSE_FEATURES_LESSON_ID], question)
 
 	def search_chunks_by_course(self, course: str, question: str) -> list[dict]:
 		"""Retrieve relevant chunks across all lessons of a course."""

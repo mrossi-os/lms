@@ -24,6 +24,35 @@ def start_lesson_ingestion(lesson_id):
 
 
 @frappe.whitelist()
+def start_course_feature_ingestion(course_name):
+	"""
+	Start ingestion of a course's feature sections. Teacher-only endpoint.
+
+	Enqueues the actual work as a background job and returns immediately.
+
+	Args:
+	        course_name: The LMS Course name/ID
+
+	Returns:
+	        dict with success flag
+	"""
+	_load_course(course_name)
+
+	"""
+	service = IngestionService()
+	service.ingest_course_features(course_name)
+	"""
+	frappe.enqueue(
+		"os_lms.os_lms.ai.ingestion.task.run_course_feature_ingestion",
+		queue="long",
+		timeout=600,
+		enqueue_after_commit=True,
+		course_name=course_name,
+	)
+	return {"success": True}
+
+
+@frappe.whitelist()
 def get_lesson_ingestion_status(lesson_id):
 	"""
 	Get ingestion status for a lesson.
@@ -57,3 +86,14 @@ def _load_lesson(lesson_id):
 		return lesson
 
 	frappe.throw(_("You don't have permission to access this lesson"), frappe.PermissionError)
+
+
+def _load_course(course_name):
+	if not frappe.db.exists("LMS Course", course_name):
+		frappe.throw(_("Course not found"), frappe.DoesNotExistError)
+	course = frappe.get_doc("LMS Course", course_name)
+	if has_moderator_role():
+		return course
+	if has_course_instructor_role() and is_instructor(course.name):
+		return course
+	frappe.throw(_("You don't have permission to access this course"), frappe.PermissionError)

@@ -21,7 +21,7 @@
                 </template>
             </div>
         </div>
-        <FeatureSectionEditor :modelValue="doc" @dirty="markDirty()" />
+        <FeatureSectionEditor :modelValue="doc" :courseName="doc?.name" @dirty="markDirty()" />
     </section>
 </template>
 
