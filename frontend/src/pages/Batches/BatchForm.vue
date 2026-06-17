@@ -59,7 +59,7 @@
 								:options="timezoneOptions"
 								:placeholder="__('Select timezone')"
 								variant="outline"
-								class="w-full"
+								class="w-full os-input"
 							/>
 						</div>
 
@@ -151,13 +151,14 @@
 							:required="true"
 							variant="outline"
 							:onCreate="() => (showMemberModal = true)"
+							class="os-input"
 						/>
 						<Select
 							v-model="batchDetail.doc.medium"
 							:label="__('Medium')"
 							:options="mediumOptions"
 							variant="outline"
-							class="w-full"
+							class="w-full os-input"
 						/>
 						<Link
 							ref="emailTemplateLinkRef"
@@ -200,12 +201,12 @@
 							:editable="true"
 							:fixedMenu="true"
 							editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem] max-h-[16rem] overflow-y-scroll mb-4"
-					<Uploader
-						v-model="batchDetail.doc.video_link"
-						:label="__('Preview Video')"
-						type="video"
-						:required="false"
-					/>
+						/>
+						<Uploader
+							v-model="batchDetail.doc.video_link"
+							:label="__('Preview Video')"
+							type="video"
+							:required="false"
 						/>
 					</div>
 					<div>
@@ -256,7 +257,7 @@
 							:options="conferencingOptions"
 							:label="__('Conferencing Provider')"
 							variant="outline"
-							class="w-full"
+							class="w-full os-input"
 						/>
 						<Link
 							v-if="batchDetail.doc.conferencing_provider === 'Zoom'"
@@ -470,7 +471,7 @@ watch(
 		updateBatchData()
 		getMetaInfo('batches', batchDetail.doc?.name, meta)
 	},
-	{ deep: true }
+	{ deep: true },
 )
 
 // The instructors/valutatori pickers use standalone refs (not batchDetail.doc),
@@ -555,7 +556,7 @@ const updateBatch = () => {
 				toast.error(err.messages?.[0] || err)
 				console.error(err)
 			},
-		}
+		},
 	)
 }
 
@@ -563,7 +564,7 @@ const deleteBatch = () => {
 	$dialog({
 		title: __('Confirm your action to delete'),
 		message: __(
-			'Deleting this batch will also delete all its data including enrolled students, linked courses, assessments, feedback and discussions. Are you sure you want to continue?'
+			'Deleting this batch will also delete all its data including enrolled students, linked courses, assessments, feedback and discussions. Are you sure you want to continue?',
 		),
 		actions: [
 			{
@@ -615,7 +616,7 @@ const timezoneResource = createResource({
 })
 
 const timezoneOptions = computed(() =>
-	(timezoneResource.data || []).map((tz) => ({ label: tz, value: tz }))
+	(timezoneResource.data || []).map((tz) => ({ label: tz, value: tz })),
 )
 
 const mediumOptions = computed(() => {

@@ -42,16 +42,22 @@
 					/>
 				</button>
 			</template>
-			<template v-if="$slots['item-prefix']" #item-prefix="slotProps">
-				<slot name="item-prefix" v-bind="slotProps" />
-			</template>
-			<template v-if="$slots['item-label']" #item-label="slotProps">
-				<slot name="item-label" v-bind="slotProps" />
-			</template>
-			<template #footer="{ clearAll }">
-				<slot name="footer" :close="closePopover">
-					<div
-						class="flex items-center justify-between gap-2 border-t border-outline-gray-1 px-2 py-1.5 mt-1"
+			<template #body>
+				<div
+					class="rounded-lg border border-outline-gray-1 bg-surface-modal shadow-xl"
+				>
+					<!--
+						`ignore-filter` disables reka's built-in client filtering: search
+						is server-side via `reload(txt)`. `open` is hardcoded since the list
+						is already mounted inside the (conditionally rendered) popover body.
+					-->
+					<ComboboxRoot
+						v-model="value"
+						multiple
+						:open="true"
+						:ignore-filter="true"
+						class="p-2 pb-0"
+						@update:modelValue="onChange"
 					>
 						<div
 							class="flex w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 ring-2 ring-outline-gray-2 transition-colors hover:bg-surface-gray-3"
