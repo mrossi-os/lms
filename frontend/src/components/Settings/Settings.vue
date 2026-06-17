@@ -70,7 +70,6 @@ import { useSettings } from '@/stores/settings'
 import SettingDetails from '@/components/Settings/SettingDetails.vue'
 import SidebarLink from '@/components/Sidebar/SidebarLink.vue'
 import Members from '@/components/Settings/Members.vue'
-import Evaluators from '@/components/Settings/Evaluators.vue'
 import Categories from '@/components/Settings/Categories.vue'
 import EmailTemplates from '@/components/Settings/EmailTemplates.vue'
 import BrandSettings from '@/components/Settings/BrandSettings.vue'
@@ -185,6 +184,8 @@ const tabsStructure = computed(() => {
 											name: 'send_notification_for_published_courses',
 											type: 'select',
 											options: [' ', 'Email', 'In-app'],
+											description:
+												'Notify members when a new course is published.',
 										},
 									],
 								},
@@ -195,6 +196,8 @@ const tabsStructure = computed(() => {
 											name: 'send_notification_for_published_batches',
 											type: 'select',
 											options: [' ', 'Email', 'In-app'],
+											description:
+												'Notify members when a new batch is published.',
 										},
 									],
 								},
@@ -210,6 +213,8 @@ const tabsStructure = computed(() => {
 											name: 'batch_confirmation_template',
 											doctype: 'Email Template',
 											type: 'Link',
+											description:
+												'Email template sent to students upon batch enrollment confirmation.',
 										},
 									],
 								},
@@ -220,6 +225,8 @@ const tabsStructure = computed(() => {
 											name: 'certification_template',
 											doctype: 'Email Template',
 											type: 'Link',
+											description:
+												'Email template sent to students when they earn a certification.',
 										},
 									],
 								},
@@ -275,7 +282,7 @@ const tabsStructure = computed(() => {
 							],
 						},
 						{
-							label: '',
+							label: 'Integrations',
 							columns: [
 								{
 									fields: [
@@ -561,11 +568,13 @@ const tabsStructure = computed(() => {
 											label: __('Courses'),
 											name: 'courses',
 											type: 'checkbox',
+											description: 'Show the Courses link in the sidebar.',
 										},
 										{
 											label: __('Batches'),
 											name: 'batches',
 											type: 'checkbox',
+											description: 'Show the Batches link in the sidebar.',
 										},
 										{
 											label: __('Programs'),
@@ -576,11 +585,15 @@ const tabsStructure = computed(() => {
 											label: __('Programming Exercises'),
 											name: 'programming_exercises',
 											type: 'checkbox',
+											description:
+												'Show the Programming Exercises link in the sidebar.',
 										},
 										{
 											label: __('Certifications'),
 											name: 'certifications',
 											type: 'checkbox',
+											description:
+												'Show the Certifications link in the sidebar.',
 										},
 									],
 								},
@@ -605,16 +618,20 @@ const tabsStructure = computed(() => {
 											label: __('Jobs'),
 											name: 'jobs',
 											type: 'checkbox',
+											description: 'Show the Jobs link in the sidebar.',
 										},
 										{
 											label: __('Statistics'),
 											name: 'statistics',
 											type: 'checkbox',
+											description: 'Show the Statistics link in the sidebar.',
 										},
 										{
 											label: __('Notifications'),
 											name: 'notifications',
 											type: 'checkbox',
+											description:
+												'Show the Notifications link in the sidebar.',
 										},
 									],
 								},
@@ -657,6 +674,8 @@ const tabsStructure = computed(() => {
 											type: 'Code',
 											mode: 'htmlmixed',
 											rows: 10,
+											description:
+												'Custom HTML shown on the signup page, e.g. for consent notices or terms of service.',
 										},
 									],
 								},
@@ -785,6 +804,8 @@ const tabsStructure = computed(() => {
 											name: 'meta_image',
 											type: 'Upload',
 											size: 'lg',
+											description:
+												'Default social-share image used when pages lack their own meta image.',
 										},
 									],
 								},

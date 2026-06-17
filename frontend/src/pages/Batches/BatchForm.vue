@@ -12,6 +12,7 @@
 							v-model="batchDetail.doc.title"
 							:label="__('Title')"
 							:required="true"
+							variant="outline"
 							class="w-full"
 						/>
 						<Link
@@ -19,6 +20,7 @@
 							doctype="LMS Category"
 							:label="__('Category')"
 							:inlineCreate="true"
+							variant="outline"
 							:onCreate="createCategory"
 						/>
 						<FormControl
@@ -26,12 +28,14 @@
 							:label="__('Batch Start Date')"
 							type="date"
 							:required="true"
+							variant="outline"
 						/>
 						<FormControl
 							v-model="batchDetail.doc.end_date"
 							:label="__('Batch End Date')"
 							type="date"
 							:required="true"
+							variant="outline"
 						/>
 
 						<FormControl
@@ -39,22 +43,22 @@
 							:label="__('Session Start Time')"
 							type="time"
 							:required="true"
+							variant="outline"
 						/>
 						<FormControl
 							v-model="batchDetail.doc.end_time"
 							:label="__('Session End Time')"
 							type="time"
 							:required="true"
+							variant="outline"
 						/>
-						<div>
-							<label class="block text-sm text-ink-gray-5 mb-1.5">
-								{{ __('Timezone') }}
-								<span class="text-ink-red-3">*</span>
-							</label>
+						<div class="space-y-1.5">
+							<FormLabel :label="__('Timezone')" :required="true" />
 							<Combobox
 								v-model="batchDetail.doc.timezone"
 								:options="timezoneOptions"
 								:placeholder="__('Select timezone')"
+								variant="outline"
 								class="w-full"
 							/>
 						</div>
@@ -63,6 +67,7 @@
 							v-model="batchDetail.doc.seat_count"
 							:label="__('Seat Count')"
 							type="number"
+							variant="outline"
 							:placeholder="__('Number of seats available')"
 						/>
 					</div>
@@ -102,12 +107,14 @@
 									v-model="batchDetail.doc.amount"
 									:label="__('Amount')"
 									type="number"
+									variant="outline"
 								/>
 								<Link
 									doctype="Currency"
 									v-model="batchDetail.doc.currency"
 									:filters="{ enabled: 1 }"
 									:label="__('Currency')"
+									variant="outline"
 								/>
 							</div>
 						</div>
@@ -123,21 +130,47 @@
 								v-model="batchDetail.doc.evaluation_end_date"
 								:label="__('Evaluation End Date')"
 								type="date"
+								variant="outline"
 							/>
 						</div>
 					</div>
 				</div>
 
 				<div class="px-5 pb-5 space-y-5 border-b mb-5">
-					<div class="grid grid-cols-2 gap-5">
-						<MultiSelect
+					<div class="text-base font-semibold text-ink-gray-9">
+						{{ __('Batch overview') }}
+					</div>
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+						<MultiLink
 							v-model="instructors"
 							doctype="User"
-							:label="__('Instructors')"
-							:required="true"
-							:onCreate="() => (showMemberModal = true)"
 							url="lms.lms.api.search_users_by_role"
 							:searchParams="{ roles: JSON.stringify(['Batch Evaluator']) }"
+							:label="__('Instructors')"
+							:placeholder="__('Select instructors')"
+							:required="true"
+							variant="outline"
+							:onCreate="() => (showMemberModal = true)"
+						/>
+						<Select
+							v-model="batchDetail.doc.medium"
+							:label="__('Medium')"
+							:options="mediumOptions"
+							variant="outline"
+							class="w-full"
+						/>
+						<Link
+							ref="emailTemplateLinkRef"
+							doctype="Email Template"
+							:label="__('Enrollment Confirmation Email Template')"
+							v-model="batchDetail.doc.confirmation_email_template"
+							variant="outline"
+							:onCreate="
+								(value, close) => {
+									if (close) close()
+									showEmailTemplateModal = true
+								}
+							"
 						/>
 						<FormControl
 							v-model="batchDetail.doc.description"
@@ -146,6 +179,8 @@
 							:rows="4"
 							:placeholder="__('Short description of the batch')"
 							:required="true"
+							variant="outline"
+							class="md:col-span-2"
 						/>
 					</div>
 					<MultiSelect
@@ -165,6 +200,12 @@
 							:editable="true"
 							:fixedMenu="true"
 							editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem] max-h-[16rem] overflow-y-scroll mb-4"
+					<Uploader
+						v-model="batchDetail.doc.video_link"
+						:label="__('Preview Video')"
+						type="video"
+						:required="false"
+					/>
 						/>
 					</div>
 					<div>
@@ -202,17 +243,11 @@
 								"
 							/>
 						</div>
-						<Uploader
-							v-model="batchDetail.doc.video_link"
-							:label="__('Preview Video')"
-							type="video"
-							:required="false"
-						/>
 					</div>
 				</div>
 
 				<div class="px-5 pb-5 space-y-5 border-b mb-5">
-					<div class="text-lg text-ink-gray-9 font-semibold mb-4">
+					<div class="text-base font-semibold text-ink-gray-9">
 						{{ __('Conferencing') }}
 					</div>
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -220,6 +255,7 @@
 							v-model="batchDetail.doc.conferencing_provider"
 							:options="conferencingOptions"
 							:label="__('Conferencing Provider')"
+							variant="outline"
 							class="w-full"
 						/>
 						<Link
@@ -227,6 +263,7 @@
 							doctype="LMS Zoom Settings"
 							:label="__('Zoom Account')"
 							v-model="batchDetail.doc.zoom_account"
+							variant="outline"
 							:onCreate="
 								(value, close) => {
 									openSettings('Zoom Accounts', close)
@@ -238,6 +275,7 @@
 							doctype="LMS Google Meet Settings"
 							:label="__('Google Meet Account')"
 							v-model="batchDetail.doc.google_meet_account"
+							variant="outline"
 							:onCreate="
 								(value, close) => {
 									openSettings('Google Meet Accounts', close)
@@ -257,6 +295,7 @@
 							:label="__('Meta Description')"
 							type="textarea"
 							:rows="4"
+							variant="outline"
 						/>
 						<FormControl
 							v-model="meta.keywords"
@@ -264,6 +303,7 @@
 							type="textarea"
 							:rows="4"
 							:placeholder="__('Comma separated keywords')"
+							variant="outline"
 						/>
 						<Uploader
 							v-model="batchDetail.doc.meta_image"
@@ -308,10 +348,12 @@ import {
 	toRaw,
 	watch,
 	nextTick,
+	useId,
 } from 'vue'
 import {
 	Combobox,
 	FormControl,
+	FormLabel,
 	TextEditor,
 	createDocumentResource,
 	createResource,
@@ -329,7 +371,7 @@ import {
 import { useRouter } from 'vue-router'
 import { useTelemetry } from 'frappe-ui/frappe'
 import Uploader from '@/components/Controls/Uploader.vue'
-import MultiSelect from '@/components/Controls/MultiSelect.vue'
+import MultiLink from '@/components/Controls/MultiLink.vue'
 import Link from '@/components/Controls/Link.vue'
 import Select from '@/components/Controls/Select.vue'
 import BatchCourses from '@/pages/Batches/components/BatchCourses.vue'
@@ -347,6 +389,7 @@ const { capture } = useTelemetry()
 const { $dialog } = app.appContext.config.globalProperties
 const isDirty = ref(false)
 const originalDoc = ref(null)
+const batchDetailsId = useId()
 const showMemberModal = ref(false)
 const showEmailTemplateModal = ref(false)
 const emailTemplateLinkRef = ref(null)
