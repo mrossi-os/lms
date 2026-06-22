@@ -44,8 +44,7 @@
 							activeTab.key == 'TrueSkills API'
 								? { sections: activeTab.sections }
 								: {}),
-							...(activeTab.key == 'Evaluators' ||
-							activeTab.key == 'Members' ||
+							...(activeTab.key == 'Members' ||
 							activeTab.key == 'Transactions'
 								? { 'onUpdate:show': (val) => (show = val), show }
 								: {}),
@@ -457,15 +456,6 @@ const tabsStructure = computed(() => {
 					),
 					icon: 'User',
 					template: markRaw(Members),
-				},
-				{
-					key: 'Evaluators',
-					label: __('Evaluators'),
-					icon: 'UserCircle2',
-					description: __(
-						'Add new evaluators or check the slots of existing evaluators',
-					),
-					template: markRaw(Evaluators),
 				},
 			],
 		},
