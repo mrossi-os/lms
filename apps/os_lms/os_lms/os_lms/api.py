@@ -289,14 +289,36 @@ def send_batch_announcement(
 
 	from frappe.core.doctype.communication.email import make
 
+	sender = frappe.session.user
+	sender_full_name = frappe.utils.get_fullname(sender)
+
+	# Single Communication record drives the announcements tab and audit trail.
+	# Emails are sent individually below, so this record never sends mail itself.
 	make(
 		recipients=", ".join(recipients),
+		sender=sender,
+		sender_full_name=sender_full_name,
 		subject=rendered_subject,
 		content=rendered_content,
 		doctype="LMS Batch",
 		name=batch,
-		send_email=1 if send_email_flag else 0,
+		send_email=0,
 	)
+
+	# One email per recipient: each student gets a private message (no shared To),
+	# the From is the announcement author, and replies go back to the author via
+	# Reply-To so they land in the author's mailbox (e.g. when replying from Gmail).
+	if send_email_flag:
+		for recipient in recipients:
+			frappe.sendmail(
+				recipients=[recipient],
+				sender=sender,
+				reply_to=sender,
+				subject=rendered_subject,
+				message=rendered_content,
+				reference_doctype="LMS Batch",
+				reference_name=batch,
+			)
 
 	from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
 
