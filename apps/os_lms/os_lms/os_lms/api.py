@@ -289,8 +289,12 @@ def send_batch_announcement(
 
 	from frappe.core.doctype.communication.email import make
 
-	sender = frappe.session.user
-	sender_full_name = frappe.utils.get_fullname(sender)
+	# Resolve the sender to the actor's actual email address. frappe.session.user is
+	# the login name, which equals the email for regular users but not for the
+	# Administrator account — and frappe.sendmail silently drops a sender that is not
+	# a valid email, which would queue zero emails.
+	sender = frappe.db.get_value("User", frappe.session.user, "email") or frappe.session.user
+	sender_full_name = frappe.utils.get_fullname(frappe.session.user)
 
 	# Single Communication record drives the announcements tab and audit trail.
 	# Emails are sent individually below, so this record never sends mail itself.
