@@ -10,14 +10,25 @@
 						<Sparkles class="size-4 stroke-1.5" />
 						{{ __('AI Assistant') }}
 					</div>
-					<button
-						type="button"
-						class="text-ink-gray-5 hover:text-ink-gray-9 transition"
-						:aria-label="__('Close')"
-						@click="close"
-					>
-						<X class="size-4 stroke-1.5" />
-					</button>
+					<div class="flex items-center gap-2">
+						<button
+							type="button"
+							class="text-ink-gray-5 hover:text-ink-red-3 transition disabled:opacity-40 disabled:cursor-not-allowed"
+							:aria-label="__('Clear chat')"
+							:disabled="!chat.messages.length"
+							@click="clearChat"
+						>
+							<Trash2 class="size-4 stroke-1.5" />
+						</button>
+						<button
+							type="button"
+							class="text-ink-gray-5 hover:text-ink-gray-9 transition"
+							:aria-label="__('Close')"
+							@click="close"
+						>
+							<X class="size-4 stroke-1.5" />
+						</button>
+					</div>
 				</div>
 				<div class="flex-1 min-h-0 overflow-y-auto">
 					<ChatBot
@@ -47,12 +58,18 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Sparkles, X } from 'lucide-vue-next'
+import { Sparkles, Trash2, X } from 'lucide-vue-next'
 import ChatBot from '@/oslms/components/ai/ChatBot.vue'
 import { useAiContext } from '@/stores/aiContext'
+import { useAiChat } from '@/stores/aiChat'
 
 const aiContext = useAiContext()
+const chat = useAiChat()
 const isOpen = ref<boolean>(false)
+
+function clearChat(): void {
+	chat.clear()
+}
 
 function toggle(): void {
 	isOpen.value = !isOpen.value

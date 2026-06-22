@@ -93,6 +93,11 @@ class TutorAi:
 			lesson_chunks = service.search_chunks_by_lessons(self.course, [self.lesson], question)
 			current_lesson_content = "\n\n---\n\n".join(c.get("content", "") for c in lesson_chunks)
 		course_context = format_course_context(self.course_details, include_title=True)
+
+		features_chunks = service.search_chunks_in_feature_course(self.course, question)
+		if features_chunks:
+			course_context += "\n\n".join(c.get("content", "") for c in features_chunks)
+
 		template = load_prompt_template(PURPOSE_TUTOR)["system_template"]
 		prompt = render_template(
 			template,

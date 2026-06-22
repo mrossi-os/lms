@@ -35,6 +35,8 @@ from typing import Any
 
 import frappe
 
+from apps.os_lms.os_lms.os_lms.utils import get_course_feature_sections
+
 # Soft caps to keep the rendered block bounded; descriptions on the Frappe
 # LMS doctype can run several thousand characters when an instructor pastes
 # in marketing copy.
@@ -82,7 +84,7 @@ def format_course_context(course: Any, *, include_title: bool = True) -> str:
 		if normalized:
 			blocks.append(f"Tag: {normalized}")
 
-	feature_sections = _format_feature_sections(_get(doc, "feature_sections"))
+	feature_sections = _format_feature_sections(get_course_feature_sections(doc.name))
 	if feature_sections:
 		blocks.append(f"Caratteristiche del corso:\n{feature_sections}")
 
@@ -147,24 +149,13 @@ def _strip_html(text: Any) -> str:
 	return "\n".join(out_lines).strip()
 
 
-def _format_feature_sections(raw: Any) -> str:
+def _format_feature_sections(sections: Any) -> str:
 	"""Render the ``feature_sections`` custom field JSON as readable text.
 
 	The field stores an array of ``{title, items: [{title, description}, ...]}``
 	objects. Returns an empty string on any parse/shape failure so prompts
 	stay robust against malformed values.
 	"""
-	if not raw:
-		return ""
-	if isinstance(raw, str):
-		try:
-			sections = json.loads(raw)
-		except (json.JSONDecodeError, TypeError):
-			return ""
-	elif isinstance(raw, list):
-		sections = raw
-	else:
-		return ""
 	if not isinstance(sections, list):
 		return ""
 
