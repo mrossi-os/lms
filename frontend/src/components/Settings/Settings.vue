@@ -1,7 +1,7 @@
 <template>
 	<Dialog v-model="show" :options="{ size: '5xl' }">
 		<template #body>
-			<div class="flex h-[calc(100vh_-_8rem)] card" id="settings-modal">
+			<div class="flex h-[calc(100vh_-_8rem)]" id="settings-modal">
 				<div
 					class="flex w-52 shrink-0 flex-col bg-surface-gray-2 p-2 overflow-y-auto"
 				>
@@ -44,8 +44,7 @@
 							activeTab.key == 'TrueSkills API'
 								? { sections: activeTab.sections }
 								: {}),
-							...(activeTab.key == 'Members' ||
-							activeTab.key == 'Transactions'
+							...(activeTab.key == 'Members' || activeTab.key == 'Transactions'
 								? { 'onUpdate:show': (val) => (show = val), show }
 								: {}),
 						}"
@@ -114,6 +113,9 @@ const aiProviders = [
 	{ label: 'DeepSeek', value: 'deepseek' },
 ]
 
+// Audio (STT/TTS) is OpenAI-only for now; Gemini will be added later.
+const audioProviders = [{ label: 'OpenAI', value: 'openai' }]
+
 const tabsStructure = computed(() => {
 	return [
 		{
@@ -172,7 +174,7 @@ const tabsStructure = computed(() => {
 								},
 							],
 						},
-						
+
 						{
 							label: __('Notifications'),
 							columns: [
@@ -311,11 +313,12 @@ const tabsStructure = computed(() => {
 						},
 					],
 				},
-					{
+				{
 					label: __('Course Progress'),
 					icon: 'Activity',
-					description:
-						__('Control how lessons are marked complete: dwell time and enforcement toggles for video, quiz, and assignment.'),
+					description: __(
+						'Control how lessons are marked complete: dwell time and enforcement toggles for video, quiz, and assignment.',
+					),
 					sections: [
 						{
 							label: __('Dwell Time'),
@@ -326,8 +329,9 @@ const tabsStructure = computed(() => {
 											label: __('Lesson dwell time (seconds)'),
 											name: 'lesson_dwell_time',
 											type: 'number',
-											description:
-												__('Seconds a learner must stay on a lesson before it auto-marks complete.'),
+											description: __(
+												'Seconds a learner must stay on a lesson before it auto-marks complete.',
+											),
 										},
 									],
 								},
@@ -342,15 +346,17 @@ const tabsStructure = computed(() => {
 											label: __('Enforce video completion'),
 											name: 'enforce_video_completion',
 											type: 'checkbox',
-											description:
-												__('When enabled, lessons that contain a video can only be marked complete by playing the video to the end. If the video fails to load, the dwell timer is used as a fallback.'),
+											description: __(
+												'When enabled, lessons that contain a video can only be marked complete by playing the video to the end. If the video fails to load, the dwell timer is used as a fallback.',
+											),
 										},
 										{
 											label: __('Enforce assignment completion'),
 											name: 'enforce_assignment_completion',
 											type: 'checkbox',
-											description:
-												__('When enabled, lessons with an assignment cannot be marked complete until the assignment is submitted.'),
+											description: __(
+												'When enabled, lessons with an assignment cannot be marked complete until the assignment is submitted.',
+											),
 										},
 									],
 								},
@@ -360,8 +366,9 @@ const tabsStructure = computed(() => {
 											label: __('Enforce quiz completion'),
 											name: 'enforce_quiz_completion',
 											type: 'checkbox',
-											description:
-												__('When enabled, lessons with a quiz cannot be marked complete until the quiz is submitted.'),
+											description: __(
+												'When enabled, lessons with a quiz cannot be marked complete until the quiz is submitted.',
+											),
 										},
 									],
 								},
@@ -879,7 +886,7 @@ const tabsStructure = computed(() => {
 								},
 								{
 									fields: [
-											{
+										{
 											label: __('Embedding Model'),
 											name: 'embedding_model',
 											type: 'text',
@@ -917,7 +924,6 @@ const tabsStructure = computed(() => {
 												'Number of relevant chunks to retrieve for context.',
 											),
 										},
-										
 									],
 								},
 							],
@@ -936,7 +942,9 @@ const tabsStructure = computed(() => {
 											label: __('OpenAI Base URL'),
 											name: 'openai_base_url',
 											type: 'text',
-											description: __('Optional override for OpenAI-compatible endpoints (Ollama, vLLM, LM Studio, ...).'),
+											description: __(
+												'Optional override for OpenAI-compatible endpoints (Ollama, vLLM, LM Studio, ...).',
+											),
 										},
 
 										{
@@ -944,8 +952,6 @@ const tabsStructure = computed(() => {
 											name: 'gemini_key',
 											type: 'text',
 										},
-										
-										
 									],
 								},
 								{
@@ -966,16 +972,15 @@ const tabsStructure = computed(() => {
 											name: 'anthropic_key',
 											type: 'text',
 										},
-									
 									],
-								}
+								},
 							],
 						},
 						{
 							label: __('AI Simulation'),
-							columns:[
+							columns: [
 								{
-									fields:[
+									fields: [
 										{
 											label: __('Enabled'),
 											name: 'simulations_enabled',
@@ -995,10 +1000,10 @@ const tabsStructure = computed(() => {
 											name: 'simulation_chat_model',
 											type: 'text',
 										},
-									]
+									],
 								},
 								{
-									fields:[
+									fields: [
 										{
 											label: __('Default LLM Provider'),
 											name: 'simulation_provider_default',
@@ -1016,10 +1021,86 @@ const tabsStructure = computed(() => {
 											name: 'simulation_debrief_model',
 											type: 'text',
 										},
-									]
-								}
-							]
-						}
+									],
+								},
+							],
+						},
+						{
+							label: __('Audio (TTS / STT)'),
+							columns: [
+								{
+									fields: [
+										{
+											label: __('Enable Speech-to-Text'),
+											name: 'stt_enabled',
+											type: 'checkbox',
+											description: __(
+												'Enable microphone input (speech-to-text) in the AI tutor chat.',
+											),
+										},
+										{
+											label: __('STT Provider'),
+											name: 'stt_provider',
+											type: 'select',
+											options: audioProviders,
+										},
+										{
+											label: __('STT Model'),
+											name: 'stt_model',
+											type: 'text',
+											placeholder: 'gpt-4o-mini-transcribe',
+											description: __(
+												'Transcription model. Leave empty to use the default (gpt-4o-mini-transcribe). Alternative: whisper-1.',
+											),
+										},
+									],
+								},
+								{
+									fields: [
+										{
+											label: __('Enable Text-to-Speech'),
+											name: 'tts_enabled',
+											type: 'checkbox',
+											description: __(
+												'Enable reading AI answers aloud (text-to-speech).',
+											),
+										},
+										{
+											label: __('TTS Provider'),
+											name: 'tts_provider',
+											type: 'select',
+											options: audioProviders,
+										},
+										{
+											label: __('TTS Model'),
+											name: 'tts_model',
+											type: 'text',
+											placeholder: 'gpt-4o-mini-tts',
+											description: __(
+												'Speech synthesis model. Leave empty to use the default (gpt-4o-mini-tts). Alternatives: tts-1, tts-1-hd.',
+											),
+										},
+										{
+											label: __('TTS Voice'),
+											name: 'tts_voice',
+											type: 'text',
+											placeholder: 'alloy',
+											description: __(
+												'Synthesis voice. Leave empty to use the default (alloy). Others: echo, fable, onyx, nova, shimmer.',
+											),
+										},
+										{
+											label: __('Auto-play answer after voice input'),
+											name: 'tts_autoplay_on_stt',
+											type: 'checkbox',
+											description: __(
+												'When enabled, the AI answer is read aloud automatically if the question was asked by voice. Requires Speech-to-Text and Text-to-Speech to be enabled.',
+											),
+										},
+									],
+								},
+							],
+						},
 					],
 				},
 			],

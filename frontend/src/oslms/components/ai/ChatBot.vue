@@ -30,9 +30,19 @@
 				</div>
 				<div
 					v-if="message.role === 'assistant'"
-					class="text-sm text-ink-gray-9 prose prose-sm max-w-none chatbot-markdown"
-					v-html="renderMarkdown(message.content)"
-				></div>
+					class="flex items-start gap-1.5"
+				>
+					<div
+						class="flex-1 text-sm text-ink-gray-9 prose prose-sm max-w-none chatbot-markdown"
+						v-html="renderMarkdown(message.content)"
+					></div>
+					<SpeakButton
+						v-if="ttsEnabled"
+						:text="message.content"
+						:id="index"
+						class="shrink-0 -mt-1"
+					/>
+				</div>
 				<div v-else class="text-sm text-ink-gray-9 whitespace-pre-wrap">
 					{{ message.content }}
 				</div>
@@ -74,8 +84,14 @@
 				class="flex-1 resize-none rounded-md border border-outline-gray-2 px-3 py-2 text-sm text-ink-gray-8 focus:border-outline-gray-3 focus:outline-none"
 				rows="2"
 				@keydown.enter.exact.prevent="sendQuestion"
+				@input="pendingVoice = false"
 				:disabled="chat.isLoading"
 			></textarea>
+			<MicButton
+				v-if="sttEnabled"
+				:disabled="chat.isLoading"
+				@transcript="onTranscript"
+			/>
 			<Button
 				variant="solid"
 				@click="sendQuestion"
@@ -90,11 +106,14 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { Button, call, toast } from 'frappe-ui'
 import { Send } from 'lucide-vue-next'
 import { useSettings } from '@/stores/settings'
 import { useAiChat } from '@/stores/aiChat'
+import MicButton from '@/oslms/components/ai/MicButton.vue'
+import SpeakButton from '@/oslms/components/ai/SpeakButton.vue'
+import { useTextToSpeech } from '@/oslms/composables/useTextToSpeech'
 import MarkdownIt from 'markdown-it'
 
 const md = new MarkdownIt({
@@ -107,6 +126,28 @@ const renderMarkdown = (text: string): string => md.render(text || '')
 
 const settingsStore = useSettings()
 const chat = useAiChat()
+
+const sttEnabled = computed(() =>
+	Boolean(settingsStore.settings?.data?.stt_enabled),
+)
+const ttsEnabled = computed(() =>
+	Boolean(settingsStore.settings?.data?.tts_enabled),
+)
+const ttsAutoplayOnStt = computed(() =>
+	Boolean(settingsStore.settings?.data?.tts_autoplay_on_stt),
+)
+
+const { play } = useTextToSpeech()
+
+// True while the pending question text was produced by voice (STT) and not
+// edited by hand — drives the optional "auto-read the answer aloud" behavior.
+const pendingVoice = ref(false)
+
+const onTranscript = (text: string) => {
+	if (!text) return
+	chat.question = text
+	pendingVoice.value = true
+}
 
 interface Message {
 	role: 'user' | 'assistant'
@@ -138,6 +179,11 @@ const sendQuestion = async () => {
 	const trimmedQuestion = chat.question.trim()
 	if (!trimmedQuestion || chat.isLoading) return
 
+	// Capture (and reset) the voice flag for this turn so a later auto-play
+	// fires only when this specific question came from speech-to-text.
+	const viaVoice = pendingVoice.value
+	pendingVoice.value = false
+
 	// Snapshot the prior conversation before appending the current question,
 	// so the backend receives `question` separately from `history`.
 	const history = chat.messages.map((m) => ({
@@ -160,11 +206,19 @@ const sendQuestion = async () => {
 			history,
 		})
 
+		const answer =
+			response.answer || __('Sorry, I could not find an answer.')
 		chat.addMessage({
 			role: 'assistant',
-			content: response.answer || __('Sorry, I could not find an answer.'),
+			content: answer,
 			sources: [],
 		})
+
+		// Optional: read the answer aloud automatically when the question was
+		// asked by voice (requires TTS and the auto-play setting enabled).
+		if (ttsEnabled.value && ttsAutoplayOnStt.value && viaVoice) {
+			play(answer, chat.messages.length - 1)
+		}
 	} catch (error: any) {
 		const errorMessage =
 			error?.message || error?.exc || __('Failed to get response')

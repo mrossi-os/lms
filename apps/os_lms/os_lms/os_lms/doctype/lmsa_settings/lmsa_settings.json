@@ -31,7 +31,17 @@
 		"simulation_chat_model",
 		"column_break_sim_chat",
 		"simulation_debrief_provider",
-		"simulation_debrief_model"
+		"simulation_debrief_model",
+		"section_audio",
+		"stt_enabled",
+		"stt_provider",
+		"stt_model",
+		"column_break_audio",
+		"tts_enabled",
+		"tts_provider",
+		"tts_model",
+		"tts_voice",
+		"tts_autoplay_on_stt"
 	],
 	"fields": [
 		{
@@ -189,13 +199,80 @@
 			"fieldname": "simulation_debrief_model",
 			"fieldtype": "Data",
 			"label": "Debrief Model"
+		},
+		{
+			"fieldname": "section_audio",
+			"fieldtype": "Section Break",
+			"label": "Audio (TTS / STT)"
+		},
+		{
+			"default": "0",
+			"description": "Master switch for Speech-to-Text (microphone input in the AI tutor chat).",
+			"fieldname": "stt_enabled",
+			"fieldtype": "Check",
+			"label": "Speech-to-Text Enabled"
+		},
+		{
+			"default": "openai",
+			"description": "Provider used for transcription. Only OpenAI is supported for now.",
+			"fieldname": "stt_provider",
+			"fieldtype": "Select",
+			"label": "STT Provider",
+			"options": "openai"
+		},
+		{
+			"default": "gpt-4o-mini-transcribe",
+			"description": "Transcription model. Alternative: whisper-1.",
+			"fieldname": "stt_model",
+			"fieldtype": "Data",
+			"label": "STT Model"
+		},
+		{
+			"fieldname": "column_break_audio",
+			"fieldtype": "Column Break"
+		},
+		{
+			"default": "0",
+			"description": "Master switch for Text-to-Speech (read AI answers aloud).",
+			"fieldname": "tts_enabled",
+			"fieldtype": "Check",
+			"label": "Text-to-Speech Enabled"
+		},
+		{
+			"default": "openai",
+			"description": "Provider used for speech synthesis. Only OpenAI is supported for now.",
+			"fieldname": "tts_provider",
+			"fieldtype": "Select",
+			"label": "TTS Provider",
+			"options": "openai"
+		},
+		{
+			"default": "gpt-4o-mini-tts",
+			"description": "Speech synthesis model. Alternatives: tts-1, tts-1-hd.",
+			"fieldname": "tts_model",
+			"fieldtype": "Data",
+			"label": "TTS Model"
+		},
+		{
+			"default": "alloy",
+			"description": "Synthesis voice (e.g. alloy, echo, fable, onyx, nova, shimmer).",
+			"fieldname": "tts_voice",
+			"fieldtype": "Data",
+			"label": "TTS Voice"
+		},
+		{
+			"default": "0",
+			"description": "When enabled, the AI answer is read aloud automatically if the question was asked by voice. Requires STT and TTS enabled.",
+			"fieldname": "tts_autoplay_on_stt",
+			"fieldtype": "Check",
+			"label": "Auto-play answer after voice input"
 		}
 	],
 	"grid_page_length": 50,
 	"index_web_pages_for_search": 1,
 	"issingle": 1,
 	"links": [],
-	"modified": "2026-06-05 13:00:00.000000",
+	"modified": "2026-06-23 12:00:00.000000",
 	"modified_by": "Administrator",
 	"module": "OS LMS",
 	"name": "LMSA Settings",

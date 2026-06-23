@@ -184,6 +184,15 @@ def _load_settings():
         gemini_key=_password("gemini_key"),
         deepseek_key=_password("deepseek_key"),
         anthropic_key=_password("anthropic_key"),
+        # audio (TTS / STT) — additive
+        stt_enabled=bool(getattr(doc, "stt_enabled", 0)),
+        stt_provider=getattr(doc, "stt_provider", "") or "openai",
+        stt_model=getattr(doc, "stt_model", "") or "gpt-4o-mini-transcribe",
+        tts_enabled=bool(getattr(doc, "tts_enabled", 0)),
+        tts_provider=getattr(doc, "tts_provider", "") or "openai",
+        tts_model=getattr(doc, "tts_model", "") or "gpt-4o-mini-tts",
+        tts_voice=getattr(doc, "tts_voice", "") or "alloy",
+        tts_autoplay_on_stt=bool(getattr(doc, "tts_autoplay_on_stt", 0)),
     )
 
 
