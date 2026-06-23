@@ -32,8 +32,24 @@ body {
 }
 
 /* Inputs */
+.link-component div[dir='ltr'] div {
+	background-color: var(--surface-gray-2);
+}
+button.os-input {
+	background-color: var(--surface-gray-2);
+}
+.os-input div[dir='ltr'] div {
+	background-color: var(--surface-gray-2);
+}
+.os-input div button {
+	background-color: var(--surface-gray-2);
+}
+
 input[type='text'],
 input[type='email'],
+input[type='date'],
+input[type='time'],
+input[type='number'],
 input[type='password'] {
 	background-color: var(--surface-gray-2);
 }

@@ -1,203 +1,158 @@
 <template>
-	<div class="mb-5 divide-y divide-outline-gray-modals overflow-y-auto">
-		<div v-for="(section, index) in sections" class="py-5">
-			<div v-if="section.label" class="font-semibold text-ink-gray-9 mb-4">
+	<div class="overflow-y-auto">
+		<template v-for="(section, index) in sections" :key="index">
+			<!-- Divider only between topics (sections), never between fields -->
+			<div v-if="index > 0" class="h-px border-t border-outline-gray-modals" />
+			<div
+				v-if="section.label"
+				class="text-p-md font-semibold text-ink-gray-9 mb-1"
+				:class="{ 'mt-5': index > 0 }"
+			>
 				{{ section.label }}
 			</div>
-			<div
-				:class="
-					section.columns.length > 1
-						? 'grid grid-cols-2 gap-x-8 gap-y-5 w-full items-start'
-						: 'w-full space-y-5'
-				"
+			<template
+				v-for="(column, columnIndex) in section.columns"
+				:key="columnIndex"
 			>
 				<template
-					v-for="(column, columnIndex) in section.columns"
-					:key="columnIndex"
+					v-for="(field, fieldIndex) in column.fields"
+					:key="`${columnIndex}-${fieldIndex}`"
 				>
-					<div
-						v-for="(field, fieldIndex) in column.fields"
-						:key="`${columnIndex}-${fieldIndex}`"
-						:style="
-							section.columns.length > 1
-								? { gridColumn: columnIndex + 1, gridRow: fieldIndex + 1 }
-								: {}
-						"
-					>
-						<Link
-							v-if="field.type == 'Link'"
-							v-model="data[field.name]"
-							:doctype="field.doctype"
-							:label="__(field.label)"
-							:description="__(field.description)"
-							:required="field.reqd"
-						/>
-
-						<div v-else-if="field.type == 'Code'">
-							<CodeEditor
-								:label="__(field.label)"
-								type="HTML"
-								description="The HTML you add here will be shown on your sign up page."
-								v-model="data[field.name]"
-								height="250px"
-								class="shrink-0"
-								:showLineNumbers="true"
-							>
-							</CodeEditor>
-						</div>
-
-						<div v-else-if="field.type == 'Upload'">
-							<div class="space-y-1 mb-2">
-								<div class="text-sm text-ink-gray-9 font-medium">
-									{{ __(field.label) }}
-								</div>
-								<div class="text-sm text-ink-gray-5 leading-5">
-									{{ __(field.description) }}
-								</div>
+					<!-- Upload: full-width block (label/description sit above) -->
+					<div v-if="field.type == 'Upload'" class="py-3">
+						<div class="space-y-1 mb-2">
+							<div class="text-p-base font-medium text-ink-gray-7">
+								{{ __(field.label) }}
 							</div>
-							<FileUploader
-								v-if="!data[field.name]"
-								:fileTypes="field.fileTypes || ['image/*']"
-								:validateFile="validateFile"
-								@success="(file) => (data[field.name] = file.file_url)"
+							<div class="text-p-sm text-ink-gray-5">
+								{{ __(field.description) }}
+							</div>
+						</div>
+						<FileUploader
+							v-if="!data[field.name]"
+							:fileTypes="['image/*']"
+							:validateFile="validateFile"
+							@success="(file) => (data[field.name] = file.file_url)"
+						>
+							<template
+								v-slot="{ file, progress, uploading, openFileSelector }"
 							>
-								<template
-									v-slot="{ file, progress, uploading, openFileSelector }"
+								<div class="">
+									<Button @click="openFileSelector" :loading="uploading">
+										{{
+											uploading ? `Uploading ${progress}%` : 'Upload an image'
+										}}
+									</Button>
+								</div>
+							</template>
+						</FileUploader>
+						<div v-else>
+							<div class="flex items-center text-sm gap-x-2">
+								<div
+									class="flex items-center justify-center rounded border border-outline-gray-modals bg-surface-gray-2"
+									:class="field.size == 'lg' ? 'px-5 py-5' : 'px-20 py-8'"
 								>
-									<div class="">
-										<Button @click="openFileSelector" :loading="uploading">
-											{{
-												uploading
-													? __('Uploading {0}%').format(progress)
-													: __('Upload an image')
-											}}
-										</Button>
-									</div>
-								</template>
-							</FileUploader>
-							<div v-else>
-								<div class="flex items-center text-sm gap-x-2">
-									<div
-										class="flex items-center justify-center rounded border border-outline-gray-modals bg-surface-gray-2"
-										:class="field.size == 'lg' ? 'px-5 py-5' : 'px-20 py-8'"
-									>
-										<video
-											v-if="isVideoField(field)"
-											:src="data[field.name]?.file_url || data[field.name]"
-											class="rounded"
-											:class="field.size == 'lg' ? 'w-36' : 'size-6'"
-											muted
-											playsinline
-										/>
-										<img
-											v-else
-											:src="data[field.name]?.file_url || data[field.name]"
-											class="rounded"
-											:class="field.size == 'lg' ? 'w-36' : 'size-6'"
-										/>
-									</div>
-									<div class="flex flex-col flex-wrap">
-										<span class="break-all text-ink-gray-9">
-											{{ (data[field.name]?.file_url || data[field.name]).split('/').pop() }}
-										</span>
-									</div>
-									<X
-										@click="data[field.name] = null"
-										class="border text-ink-gray-7 border-outline-gray-modals rounded-md cursor-pointer stroke-1.5 w-5 h-5 p-1 ms-4"
+									<img
+										:src="data[field.name]"
+										class="rounded"
+										:class="field.size == 'lg' ? 'w-36' : 'size-6'"
 									/>
 								</div>
-							</div>
-						</div>
-						<div v-else-if="field.type == 'FilePicker'" class="min-w-0">
-							<div class="space-y-1 mb-2">
-								<div class="text-sm text-ink-gray-9 font-medium">
-									{{ __(field.label) }}
+								<div class="flex flex-col flex-wrap">
+									<span class="break-all text-ink-gray-9">
+										{{ data[field.name].split('/').pop() }}
+									</span>
 								</div>
-								<div
-									v-if="field.description"
-									class="text-sm text-ink-gray-5 leading-5"
-								>
-									{{ __(field.description) }}
-								</div>
-							</div>
-							<FilePicker
-								v-model="filePickerNames[field.name]"
-								:placeholder="
-									__(field.placeholder || 'Cerca o scegli un file...')
-								"
-								:allowedExtensions="field.allowedExtensions"
-								@update:fileUrl="(url) => (data[field.name] = url || '')"
-							/>
-							<div
-								v-if="data[field.name]"
-								class="mt-2 flex items-center gap-2 rounded border border-outline-gray-2 bg-surface-gray-1 px-2.5 py-1.5 min-w-0"
-							>
-								<span
-									class="flex-1 min-w-0 truncate text-sm text-ink-gray-7"
-									:title="data[field.name]"
-								>
-									{{ data[field.name] }}
-								</span>
 								<X
-									@click="
-										() => {
-											data[field.name] = ''
-											filePickerNames[field.name] = ''
-										}
-									"
-									class="shrink-0 size-4 cursor-pointer text-ink-gray-6 hover:text-ink-gray-8"
+									@click="data[field.name] = null"
+									class="border text-ink-gray-7 border-outline-gray-modals rounded-md cursor-pointer stroke-1.5 w-5 h-5 p-1 ms-4"
 								/>
 							</div>
 						</div>
-						<div v-else-if="field.type == 'VideoSourceInput'" class="min-w-0">
-							<div class="space-y-1 mb-2">
-								<div class="text-sm text-ink-gray-9 font-medium">
-									{{ __(field.label) }}
-								</div>
-								<div
-									v-if="field.description"
-									class="text-sm text-ink-gray-5 leading-5"
-								>
-									{{ __(field.description) }}
-								</div>
-							</div>
-							<VideoSourceInput
-								v-model="data[field.name]"
-								:placeholder="field.placeholder"
-								:allowedExtensions="field.allowedExtensions"
-							/>
-						</div>
-						<Switch
-							v-else-if="field.type == 'checkbox'"
-							size="sm"
-							:label="__(field.label)"
-							:description="__(field.description)"
-							v-model="field.value"
-						/>
-						<!-- <div v-else>
-							{{ data[field.name] }}
+					</div>
 
-						</div> -->
-						<FormControl
-							v-else
-							:key="field.name"
-							v-model="data[field.name]"
+					<!-- Code/HTML: full-width block -->
+					<div v-else-if="field.type == 'Code'" class="py-3">
+						<CodeEditor
 							:label="__(field.label)"
-							:type="field.type"
-							:rows="field.rows"
-							:options="field.options"
-							:description="field.description"
+							type="HTML"
+							description="The HTML you add here will be shown on your sign up page."
+							v-model="data[field.name]"
+							height="250px"
+							class="shrink-0"
+							:showLineNumbers="true"
+						>
+						</CodeEditor>
+					</div>
+
+					<!-- Textarea: full-width block (label/description above, like CRM) -->
+					<div v-else-if="field.type == 'textarea'" class="py-3">
+						<div class="space-y-1 mb-2">
+							<div class="text-p-base font-medium text-ink-gray-7">
+								{{ __(field.label) }}
+							</div>
+							<div v-if="field.description" class="text-p-sm text-ink-gray-5">
+								{{ __(field.description) }}
+							</div>
+						</div>
+						<FormControl
+							type="textarea"
+							:rows="field.rows || 3"
+							v-model="data[field.name]"
 							:required="field.reqd"
-							placeholder=""
+							:placeholder="field.placeholder || __(field.label)"
 						/>
 					</div>
+
+					<!-- Normal field: label + description on the left, control on the right (CRM layout) -->
+					<div v-else class="flex items-center justify-between gap-4 py-3">
+						<div class="flex flex-col">
+							<div class="text-p-base font-medium text-ink-gray-7">
+								{{ __(field.label) }}
+							</div>
+							<div v-if="field.description" class="text-p-sm text-ink-gray-5">
+								{{ __(field.description) }}
+							</div>
+						</div>
+						<div class="shrink-0">
+							<Switch
+								v-if="field.type == 'checkbox'"
+								size="sm"
+								v-model="field.value"
+							/>
+							<Link
+								v-else-if="field.type == 'Link'"
+								v-model="data[field.name]"
+								:doctype="field.doctype"
+								:required="field.reqd"
+								class="w-48"
+							/>
+							<Select
+								v-else-if="field.type == 'select'"
+								v-model="data[field.name]"
+								:options="field.options"
+								class="w-48"
+							/>
+							<FormControl
+								v-else
+								:key="field.name"
+								v-model="data[field.name]"
+								:type="field.type"
+								:rows="field.rows"
+								:options="field.options"
+								:required="field.reqd"
+								class="w-48"
+								:placeholder="field.placeholder || __(field.label)"
+							/>
+						</div>
+					</div>
 				</template>
-			</div>
-		</div>
+			</template>
+		</template>
 	</div>
 </template>
 <script setup>
-import { FormControl, FileUploader, Button } from 'frappe-ui'
+import { FormControl, FileUploader, Button, Select } from 'frappe-ui'
 import Switch from '@/components/Controls/Switch.vue'
 import { onMounted, watch, reactive } from 'vue'
 import { getFileSize, validateFile } from '@/utils'
