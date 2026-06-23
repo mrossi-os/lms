@@ -113,8 +113,11 @@ const aiProviders = [
 	{ label: 'DeepSeek', value: 'deepseek' },
 ]
 
-// Audio (STT/TTS) is OpenAI-only for now; Gemini will be added later.
-const audioProviders = [{ label: 'OpenAI', value: 'openai' }]
+// Audio (STT/TTS) providers. DeepSeek and Anthropic have no audio API.
+const audioProviders = [
+	{ label: 'OpenAI', value: 'openai' },
+	{ label: 'Gemini', value: 'gemini' },
+]
 
 const tabsStructure = computed(() => {
 	return [
@@ -1050,7 +1053,7 @@ const tabsStructure = computed(() => {
 											type: 'text',
 											placeholder: 'gpt-4o-mini-transcribe',
 											description: __(
-												'Transcription model. Leave empty to use the default (gpt-4o-mini-transcribe). Alternative: whisper-1.',
+												'Transcription model; must match the selected provider. OpenAI: leave empty for gpt-4o-mini-transcribe (or whisper-1). Gemini: leave empty for gemini-2.5-flash.',
 											),
 										},
 									],
@@ -1077,7 +1080,7 @@ const tabsStructure = computed(() => {
 											type: 'text',
 											placeholder: 'gpt-4o-mini-tts',
 											description: __(
-												'Speech synthesis model. Leave empty to use the default (gpt-4o-mini-tts). Alternatives: tts-1, tts-1-hd.',
+												'Speech synthesis model; must match the selected provider. OpenAI: gpt-4o-mini-tts, tts-1, tts-1-hd. Gemini: leave empty for gemini-2.5-flash-preview-tts.',
 											),
 										},
 										{
@@ -1086,7 +1089,7 @@ const tabsStructure = computed(() => {
 											type: 'text',
 											placeholder: 'alloy',
 											description: __(
-												'Synthesis voice. Leave empty to use the default (alloy). Others: echo, fable, onyx, nova, shimmer.',
+												'Synthesis voice; must match the selected provider. OpenAI: alloy, echo, fable, onyx, nova, shimmer. Gemini: Kore, Puck, Charon, Zephyr, ... (unknown values fall back to the provider default).',
 											),
 										},
 										{

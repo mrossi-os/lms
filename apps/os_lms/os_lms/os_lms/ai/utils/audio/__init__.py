@@ -5,8 +5,8 @@ adapter modules. resolve_audio_provider() reads the shared OsLmsSettings (same
 loader as the LLM layer) and returns a configured AudioProvider for a given
 capability ("stt" / "tts").
 
-Only OpenAI is wired today. DeepSeek and Anthropic have no audio API, so they
-are intentionally absent from the registry; Gemini (native API) comes later.
+OpenAI and Gemini are wired. DeepSeek and Anthropic have no audio API, so they
+are intentionally absent from the registry.
 """
 from __future__ import annotations
 
@@ -85,6 +85,19 @@ def build_audio_config(name: str, settings) -> AudioProviderConfig:
             tts_model=settings.tts_model or "gpt-4o-mini-tts",
             tts_voice=settings.tts_voice or "alloy",
             base_url=settings.openai_base_url or None,
+        )
+
+    if name == "gemini":
+        # Gemini speaks its own native endpoint (the OpenAI base URL override
+        # does not apply). The shared stt_model / tts_model / tts_voice settings
+        # are passed through as-is; the adapter sanitizes any value left over
+        # from another provider (see GeminiAudioProvider._gemini_model_or / _voice).
+        return AudioProviderConfig(
+            name="gemini",
+            api_key=settings.gemini_key or "",
+            stt_model=settings.stt_model or "",
+            tts_model=settings.tts_model or "",
+            tts_voice=settings.tts_voice or "",
         )
 
     raise ValueError(f"No audio provider config wiring for {name!r}")

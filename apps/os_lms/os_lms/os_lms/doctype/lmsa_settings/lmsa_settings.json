@@ -214,15 +214,15 @@
 		},
 		{
 			"default": "openai",
-			"description": "Provider used for transcription. Only OpenAI is supported for now.",
+			"description": "Provider used for transcription. OpenAI or Gemini.",
 			"fieldname": "stt_provider",
 			"fieldtype": "Select",
 			"label": "STT Provider",
-			"options": "openai"
+			"options": "openai\ngemini"
 		},
 		{
 			"default": "gpt-4o-mini-transcribe",
-			"description": "Transcription model. Alternative: whisper-1.",
+			"description": "Transcription model; must match the selected provider. OpenAI: gpt-4o-mini-transcribe or whisper-1. Gemini: leave empty for gemini-2.5-flash.",
 			"fieldname": "stt_model",
 			"fieldtype": "Data",
 			"label": "STT Model"
@@ -240,22 +240,22 @@
 		},
 		{
 			"default": "openai",
-			"description": "Provider used for speech synthesis. Only OpenAI is supported for now.",
+			"description": "Provider used for speech synthesis. OpenAI or Gemini.",
 			"fieldname": "tts_provider",
 			"fieldtype": "Select",
 			"label": "TTS Provider",
-			"options": "openai"
+			"options": "openai\ngemini"
 		},
 		{
 			"default": "gpt-4o-mini-tts",
-			"description": "Speech synthesis model. Alternatives: tts-1, tts-1-hd.",
+			"description": "Speech synthesis model; must match the selected provider. OpenAI: gpt-4o-mini-tts, tts-1, tts-1-hd. Gemini: leave empty for gemini-2.5-flash-preview-tts.",
 			"fieldname": "tts_model",
 			"fieldtype": "Data",
 			"label": "TTS Model"
 		},
 		{
 			"default": "alloy",
-			"description": "Synthesis voice (e.g. alloy, echo, fable, onyx, nova, shimmer).",
+			"description": "Synthesis voice; must match the selected provider. OpenAI: alloy, echo, fable, onyx, nova, shimmer. Gemini: Kore, Puck, Charon, Zephyr, ... (unknown values fall back to the provider default).",
 			"fieldname": "tts_voice",
 			"fieldtype": "Data",
 			"label": "TTS Voice"
@@ -272,7 +272,7 @@
 	"index_web_pages_for_search": 1,
 	"issingle": 1,
 	"links": [],
-	"modified": "2026-06-23 12:00:00.000000",
+	"modified": "2026-06-23 15:00:00.000000",
 	"modified_by": "Administrator",
 	"module": "OS LMS",
 	"name": "LMSA Settings",

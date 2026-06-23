@@ -12,7 +12,7 @@ Permettere allo studente di:
 ## Decisioni di base
 
 - **Abstraction audio separata** da quella della chat, ma **gemella** nei pattern (ABC + registry + config + `resolve_*`).
-- **Solo OpenAI** ora. Gemini in seguito. DeepSeek e Anthropic **esclusi**: non offrono TTS/STT.
+- **OpenAI + Gemini**. DeepSeek e Anthropic **esclusi**: non offrono TTS/STT.
 - **TTS** server-side OpenAI, **on-demand** (click "play"), con **cache lato client** (la cache server-side è una fase successiva).
 - **STT** OpenAI (`/audio/transcriptions`); la trascrizione **riempie l'input** (l'utente rilegge e invia).
 - Provider audio **indipendente** dal provider della chat, configurato in `LMSA Settings`.
@@ -193,8 +193,21 @@ result["tts_enabled"] = bool(lmsa.get("tts_enabled"))
 - [x] Test backend abstraction (`ai/utils/audio/tests/test_audio.py`)
 - [x] Test backend endpoint (`ai/audio/tests/test_api.py`)
 
+### Fase 6 — Adapter Gemini ✅
+- [x] `providers/gemini.py` (API nativa `generateContent`, SDK-free)
+  - STT: audio come `inlineData` (base64 + mime) + prompt "transcribe" → testo da `candidates[].content.parts[].text`
+  - TTS: modello dedicato `*-tts`, `responseModalities:["AUDIO"]` + `speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName`; output **PCM L16 24kHz** incapsulato in **WAV** lato server
+  - Auth header `x-goog-api-key`; base url nativa `…/v1beta` (non l'OpenAI-compat)
+  - Sanitizzazione campi condivisi: modello non-`gemini-*` → default Gemini; voce sconosciuta (es. `alloy`) → `Kore`
+- [x] Wiring `build_audio_config("gemini")` (usa `gemini_key`)
+- [x] Registrazione in `providers/__init__.py`
+- [x] `gemini` nelle Select `stt_provider`/`tts_provider` + description provider-aware (doctype, `Settings.vue`, `it.csv`)
+- [x] Test `TestGeminiAdapterShaping` (base_url, sanitizzazione modello/voce, rate→WAV, parsing text/audio)
+- ⚠️ **Limite STT**: Gemini accetta wav/mp3/aac/ogg/flac/aiff, **non webm**; Chrome registra webm/opus → l'errore del provider viene mostrato all'admin. Transcodifica lato server = TODO.
+
 ### Fasi successive (fuori ambito ora)
-- [ ] Adapter **Gemini** (API nativa `generateContent` + fallback)
+- [ ] **Fallback multi-provider** audio (OpenAI ↔ Gemini su rate-limit/5xx), hook già predisposto in `resolve_audio_provider`
+- [ ] STT Gemini con input **webm**: transcodifica server-side o registrazione client in formato compatibile
 - [ ] Cache TTS **server-side** (File privato per hash)
 - [ ] Estensione a **simulazioni** ([ChatSession.vue](../../../../../../frontend/src/oslms/components/simulations/ChatSession.vue) + composable)
 - [x] Sezione "Audio (TTS / STT)" nel pannello SPA `Settings.vue` (tab AI → campi su `LMSA Settings`, con default come placeholder)
