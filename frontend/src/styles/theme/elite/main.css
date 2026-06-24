@@ -177,3 +177,13 @@ textarea {
 .os-multilink div button {
 	background-color: var(--surface-gray-2) !important;
 }
+
+.text-ink-green-7 {
+	color: var(--ink-green-3);
+}
+.text-ink-red-7 {
+	color: var(--ink-red-3);
+}
+.text-ink-orange-5 {
+	color: var(--ink-orange-2, #ea8259);
+}
