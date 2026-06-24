@@ -401,9 +401,21 @@ def search_non_student_users(txt: str = "", page_length: int = 20, names=None) -
 
 
 @frappe.whitelist()
-def get_batch_certified_count(batch: str) -> int:
-	"""Number of certificates issued for a batch. Available to batch admins and
-	to the batch's valutatori (scoped read for the admin dashboard counter)."""
+def get_batch_certified_count(batch: str) -> dict:
+	"""Summary stats for the admin batch dashboard, fetched in a single call:
+
+	- ``certified_count``: number of certificates issued for the batch.
+	- ``students_progress``: ``{member: average_progress}`` mapping, the average
+	  course progress per enrolled student across every course of the batch (a
+	  missing enrollment counts as 0, matching ``calculate_course_progress`` in
+	  lms.lms.utils).
+
+	Available to batch admins and to the batch's valutatori (scoped read).
+	"""
+	from pypika import functions as fn
+
+	from frappe.utils import flt
+
 	from lms.lms.utils import can_modify_batch, is_batch_valutatore
 
 	if not (can_modify_batch(batch) or is_batch_valutatore(batch)):
@@ -411,7 +423,29 @@ def get_batch_certified_count(batch: str) -> int:
 			frappe._("You are not authorized to view this batch."),
 			frappe.PermissionError,
 		)
-	return frappe.db.count("LMS Certificate", {"batch_name": batch})
+
+	BatchCourse = frappe.qb.DocType("Batch Course")
+	BatchEnrollment = frappe.qb.DocType("LMS Batch Enrollment")
+	Enrollment = frappe.qb.DocType("LMS Enrollment")
+
+	rows = (
+		frappe.qb.from_(BatchEnrollment)
+		.left_join(BatchCourse)
+		.on(BatchCourse.parent == BatchEnrollment.batch)
+		.left_join(Enrollment)
+		.on((Enrollment.course == BatchCourse.course) & (Enrollment.member == BatchEnrollment.member))
+		.where(BatchEnrollment.batch == batch)
+		.groupby(BatchEnrollment.member)
+		.select(
+			BatchEnrollment.member,
+			fn.Avg(fn.Coalesce(Enrollment.progress, 0)).as_("progress"),
+		)
+	).run(as_dict=True)
+
+	return {
+		"certified_count": frappe.db.count("LMS Certificate", {"batch_name": batch}),
+		"students_progress": {row.member: flt(row.progress, 2) for row in rows},
+	}
 
 
 BATCH_TAB_SECTIONS = ("classes", "announcements", "discussions")
