@@ -178,6 +178,7 @@ textarea {
 	background-color: var(--surface-gray-2) !important;
 }
 
+/* Text Colors */
 .text-ink-green-7 {
 	color: var(--ink-green-3);
 }

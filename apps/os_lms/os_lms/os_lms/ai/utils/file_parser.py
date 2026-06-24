@@ -29,6 +29,17 @@ class FrappeFileParser:
 			self._file_doc = frappe.get_doc("File", self.file_name)
 		return self._file_doc
 
+	@property
+	def display_name(self) -> str:
+		"""Human-readable file name (e.g. ``slides.pdf``), for labeling chunks.
+
+		Falls back to the File docname when the record has no ``file_name``.
+		"""
+		doc = self.file_doc
+		if not doc:
+			return ""
+		return getattr(doc, "file_name", "") or self.file_name
+
 	# ------------------------------------------------------------------
 	# Public API
 	# ------------------------------------------------------------------
