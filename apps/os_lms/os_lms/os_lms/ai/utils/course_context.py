@@ -35,7 +35,7 @@ from typing import Any
 
 import frappe
 
-from apps.os_lms.os_lms.os_lms.utils import get_course_feature_sections
+from os_lms.os_lms.utils import get_course_feature_sections
 
 # Soft caps to keep the rendered block bounded; descriptions on the Frappe
 # LMS doctype can run several thousand characters when an instructor pastes
