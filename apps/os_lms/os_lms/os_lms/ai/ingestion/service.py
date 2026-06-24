@@ -4,7 +4,7 @@ import frappe
 from frappe import _
 from frappe.utils import now_datetime
 
-from apps.os_lms.os_lms.os_lms.utils import (
+from os_lms.os_lms.utils import (
 	get_course_feature_sections,
 	save_course_feature_sections,
 )
