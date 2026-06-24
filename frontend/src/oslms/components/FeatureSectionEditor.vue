@@ -91,16 +91,12 @@
 				</div>
 
 				<!-- Aggiungi badge -->
-				<Button v-if="section.items.length < 9" variant="outline" @click="addItem(sIndex)">
+				<Button variant="outline" @click="addItem(sIndex)">
 					<template #prefix>
 						<Plus class="w-3.5 h-3.5" />
 					</template>
 					{{ __('Aggiungi Badge') }}
 				</Button>
-				<div v-else class="text-xs text-ink-gray-4 flex items-center gap-1">
-					<Info class="w-3 h-3" />
-					{{ __('Massimo 9 badge per sezione') }}
-				</div>
 			</div>
 		</div>
 
@@ -130,7 +126,7 @@
 <script setup>
 import { ref, watch, nextTick } from 'vue'
 import { FormControl, Button, createResource, toast } from 'frappe-ui'
-import { X, Plus, Info, LayoutGrid, CheckCircle, Trash2, Sparkles } from 'lucide-vue-next'
+import { X, Plus, LayoutGrid, CheckCircle, Trash2, Sparkles } from 'lucide-vue-next'
 import * as LucideIcons from 'lucide-vue-next'
 import IconPicker from '@/oslms/components/IconPicker.vue'
 import FilePicker from '@/components/Controls/FilePicker.vue'
@@ -251,7 +247,6 @@ const removeSection = (sIndex) => {
 // ─── Badge ────────────────────────────────────────────────────────────────────
 
 const addItem = (sIndex) => {
-	if (sections.value[sIndex].items.length >= 9) return
 	sections.value[sIndex].items.push({
 		id: generateId(),
 		title: '',
