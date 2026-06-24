@@ -181,28 +181,46 @@ def course_progress_query_conditions(user: str | None = None) -> str:
 def submission_has_permission(doc, ptype: str = "read", user: str | None = None):
 	"""Veto by-name access to a submission outside the valutatore's batches.
 
-	Returns ``False`` to deny, ``None`` to stay neutral (so the role DocPerms and
-	other users are not affected).
+	Return ``True`` to stay neutral (so the role DocPerms and other users are not
+	affected), ``False`` only to deny. IMPORTANT: Frappe's
+	``has_controller_permissions`` treats a *falsy* return (including ``None``) as
+	a DENY (``if not controller_permission: return bool(...)``). The neutral case
+	must therefore return ``True``, never ``None`` — otherwise every ptype checked
+	with a ``doc`` (e.g. create via ``frappe.client.insert``) is denied for all
+	users, not just scoped valutatori.
 	"""
 	user = user or frappe.session.user
 	if not _only_scoped_valutatore(user):
-		return None
+		return True
 	member = doc.get("member")
 	if member and member in get_valutatore_member_emails(user):
-		return None
+		return True
 	return False
 
 
 def course_scoped_has_permission(doc, ptype: str = "read", user: str | None = None):
 	"""Veto by-name access to a course-scoped row (LMS Enrollment / LMS Course
 	Progress) outside the valutatore's courses. The list views are already
-	narrowed by the query-conditions; this guards direct (by-name) reads."""
+	narrowed by the query-conditions; this guards direct (by-name) reads.
+
+	This narrows *visibility* only and must never block create/write/delete:
+	``has_permission`` runs for every ptype, so vetoing those would strip a
+	permission the user legitimately holds via another role (e.g. an enroller who
+	is both Gestore and Valutatore). Those ptypes are governed by DocPerms.
+
+	Return ``True`` for the neutral/allow cases, ``False`` only to veto. Frappe's
+	``has_controller_permissions`` treats any falsy return (including ``None``) as
+	a DENY, so neutral MUST be ``True`` — returning ``None`` here denies create for
+	*everyone* once a ``doc`` is passed.
+	"""
 	user = user or frappe.session.user
+	if ptype not in ("read", "select"):
+		return True
 	if not _only_scoped_valutatore(user):
-		return None
+		return True
 	course = doc.get("course")
 	if course and course in get_valutatore_course_names(user):
-		return None
+		return True
 	return False
 
 
