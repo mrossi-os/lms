@@ -102,6 +102,17 @@ def get_user_info():
         result["is_valutatore"] = is_valutatore
         if is_valutatore:
             result["is_student"] = False
+        # Course counters shown on the mobile profile page:
+        # "Corsi attivi" = enrollments still in progress, "Completati" = enrollments
+        # with full progress. progress is a Float (0-100) on LMS Enrollment.
+        result["enrollment_count"] = frappe.db.count(
+            "LMS Enrollment",
+            {"member": frappe.session.user, "progress": ["<", 100]},
+        )
+        result["course_count"] = frappe.db.count(
+            "LMS Enrollment",
+            {"member": frappe.session.user, "progress": [">=", 100]},
+        )
     return result
 
 
