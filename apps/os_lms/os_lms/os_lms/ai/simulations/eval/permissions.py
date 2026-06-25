@@ -18,7 +18,7 @@ def require_scenario_access(scenario_name: str) -> None:
 		return
 	if not frappe.db.exists("LMSA Simulation Scenario", scenario_name):
 		frappe.throw(
-			f"Scenario {scenario_name} not found",
+			frappe._("Scenario {0} not found").format(scenario_name),
 			exc=frappe.DoesNotExistError,
 		)
 	owner = frappe.db.get_value(
@@ -32,7 +32,9 @@ def require_scenario_access(scenario_name: str) -> None:
 	if course and is_instructor(course):
 		return
 	raise frappe.PermissionError(
-		f"User {user} is not allowed to access scenario {scenario_name}"
+		frappe._("User {0} is not allowed to access scenario {1}").format(
+			user, scenario_name
+		)
 	)
 
 
@@ -43,7 +45,7 @@ def require_session_access(session_name: str) -> None:
 		return
 	if not frappe.db.exists("LMSA Simulation Session", session_name):
 		frappe.throw(
-			f"Session {session_name} not found",
+			frappe._("Session {0} not found").format(session_name),
 			exc=frappe.DoesNotExistError,
 		)
 	scenario = frappe.db.get_value(
