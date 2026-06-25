@@ -8,10 +8,21 @@
 			<span v-else>{{ __('Caricamento sessione…') }}</span>
 		</div>
 		<template v-else>
-			<!-- Concluded session opened read-only (e.g. via the debrief's
-			"Trascrizione" link): offer a way back to the debrief. -->
-			<div v-if="isTerminal" class="px-4 pt-3">
+			<div class="px-4 pt-3 flex items-center justify-between gap-3">
+				<!-- Always offer a way back to the course the simulation
+				belongs to (simulations are course-scoped). -->
 				<router-link
+					v-if="courseName"
+					:to="{ name: 'CourseDetail', params: { courseName } }"
+					class="text-sm text-ink-gray-5 hover:underline"
+				>
+					← {{ __('Torna al corso') }}
+				</router-link>
+				<span v-else />
+				<!-- Concluded session opened read-only (e.g. via the debrief's
+				"Trascrizione" link): offer a way back to the debrief. -->
+				<router-link
+					v-if="isTerminal"
 					:to="{ name: 'SimulationDebrief', params: { sessionId } }"
 					class="text-sm text-ink-gray-5 hover:underline"
 				>
@@ -47,6 +58,7 @@ const { session, turns, sending, ending, isTerminal, error, send, end } =
 	useSimulationSession(sessionId)
 
 const scenarioName = computed(() => session.value?.scenario || '')
+const courseName = computed(() => session.value?.course || '')
 const persona = computed(() => {
 	const raw = session.value?.generated_persona
 	if (!raw) return null

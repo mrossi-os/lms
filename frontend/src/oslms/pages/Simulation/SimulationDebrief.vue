@@ -2,12 +2,21 @@
 	<div class="max-w-3xl mx-auto p-6">
 		<!-- Header -->
 		<div class="mb-6">
-			<router-link
-				:to="{ name: 'SimulationPlay', params: { sessionId } }"
-				class="text-sm text-ink-gray-5 hover:underline"
-			>
-				← {{ __('Trascrizione') }}
-			</router-link>
+			<div class="flex items-center gap-4">
+				<router-link
+					:to="{ name: 'SimulationPlay', params: { sessionId } }"
+					class="text-sm text-ink-gray-5 hover:underline"
+				>
+					← {{ __('Trascrizione') }}
+				</router-link>
+				<router-link
+					v-if="courseName"
+					:to="{ name: 'CourseDetail', params: { courseName } }"
+					class="text-sm text-ink-gray-5 hover:underline"
+				>
+					← {{ __('Torna al corso') }}
+				</router-link>
+			</div>
 			<h1 class="text-2xl font-semibold text-ink-gray-9 mt-2">
 				{{ __('Debrief della simulazione') }}
 			</h1>
@@ -227,6 +236,8 @@ const route = useRoute()
 const sessionId = computed(() => route.params.sessionId)
 
 const { debrief, status, timedOut } = useSimulationDebrief(sessionId)
+
+const courseName = computed(() => debrief.value?.course || '')
 
 function lessonRoute(lessonName) {
 	if (!lessonName) return { name: 'Courses' }
