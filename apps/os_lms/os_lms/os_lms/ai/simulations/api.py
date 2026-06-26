@@ -197,12 +197,12 @@ def get_debrief(session_id: str) -> dict:
     """
     session = load_session(session_id)
     if session.status == "In Progress":
-        return {"status": "not_started", "session": session.name}
+        return {"status": "not_started", "session": session.name, "course": session.course}
 
     name = frappe.db.get_value("LMSA Simulation Debrief", {"session": session.name}, "name")
     if not name:
         # Job has been enqueued but the Debrief row hasn't been created yet.
-        return {"status": "pending", "session": session.name}
+        return {"status": "pending", "session": session.name, "course": session.course}
 
     debrief = frappe.get_doc("LMSA Simulation Debrief", name)
     return _serialize_debrief(debrief)
@@ -235,6 +235,7 @@ def _serialize_debrief(debrief) -> dict:
         "status": debrief.status.lower().replace(" ", "_"),
         "session": debrief.session,
         "name": debrief.name,
+        "course": debrief.course,
         "overall_score": debrief.overall_score,
         "passed": bool(debrief.passed),
         "behavioral_analysis": debrief.behavioral_analysis,

@@ -96,7 +96,17 @@ class TutorAi:
 
 		features_chunks = service.search_chunks_in_feature_course(self.course, question)
 		if features_chunks:
-			course_context += "\n\n".join(c.get("content", "") for c in features_chunks)
+			features_text = "\n\n---\n\n".join(
+				c.get("content", "") for c in features_chunks
+			)
+			course_context += (
+				"\n\n## Materiali allegati ai badge del corso\n"
+				"I testi seguenti provengono dai file allegati ai badge del corso "
+				"(materiale di approfondimento, non lezioni). Ogni blocco riporta tra "
+				"parentesi quadre il badge e il file di origine: se li usi, cita allo "
+				"studente il nome del file e che fa parte degli allegati del corso.\n\n"
+				+ features_text
+			)
 
 		template = load_prompt_template(PURPOSE_TUTOR)["system_template"]
 		prompt = render_template(

@@ -4,7 +4,7 @@ import frappe
 from frappe import _
 from frappe.utils import now_datetime
 
-from apps.os_lms.os_lms.os_lms.utils import (
+from os_lms.os_lms.utils import (
 	get_course_feature_sections,
 	save_course_feature_sections,
 )
@@ -126,7 +126,7 @@ class IngestionService:
 		feature_sections = get_course_feature_sections(course_name)
 
 		merged_parts: list[str] = []
-		have_file = False
+		changed = False
 		now_iso = now_datetime().isoformat(timespec="seconds")
 
 		for section in feature_sections:
@@ -134,23 +134,52 @@ class IngestionService:
 				file_name = item.get("file")
 				if not file_name:
 					continue
-				item["ingestion_date"] = now_iso
-				have_file = True
-				text = FrappeFileParser(file_name).extract_text()
+				parser = FrappeFileParser(file_name)
+				text = parser.extract_text()
 				self.logger.info(
 					"Feature ingestion: extracted %d chars from file %s",
 					len(text),
 					file_name,
 				)
-				if text:
-					merged_parts.append(text)
+				if not text:
+					# Extraction yielded nothing (unsupported type, scanned PDF,
+					# missing file): do NOT stamp ingestion_date, so the editor
+					# badge only shows the ✨ date when content is actually indexed.
+					# Also clear a stale date left by an earlier (buggy) run.
+					if item.pop("ingestion_date", None) is not None:
+						changed = True
+					continue
+				item["ingestion_date"] = now_iso
+				changed = True
+				# Prefix the extracted text with a source label so the retrieved
+				# chunk carries its origin (badge + file name) into the prompt.
+				# Note: with multi-chunk files only the first chunk keeps the
+				# label inline; the prompt header below states the overall origin.
+				merged_parts.append(self._label_feature_text(item, parser, text))
 
 		merged_text = "\n\n".join(merged_parts)
 		if merged_text:
 			self.rag_db.ingest_data(course_name, COURSE_FEATURES_LESSON_ID, merged_text)
 
-		if have_file:
+		if changed:
 			save_course_feature_sections(course_name, feature_sections)
+
+	@staticmethod
+	def _label_feature_text(item: dict, parser: "FrappeFileParser", text: str) -> str:
+		"""Prefix a feature file's text with its origin (badge + file name).
+
+		Mirrors the lesson labeling (``[Lezione: "..."]``) so the model can
+		attribute the content and tell the learner which course-badge
+		attachment it came from.
+		"""
+		header = "Allegato del corso"
+		badge_title = (item.get("title") or "").strip()
+		if badge_title:
+			header += f' — badge "{badge_title}"'
+		display_name = parser.display_name
+		if display_name:
+			header += f' — file "{display_name}"'
+		return f"[{header}]\n{text}"
 
 	def remove_lesson(self, course: str, lesson: str) -> None:
 		"""Delete a lesson's vectors from the RAG index.

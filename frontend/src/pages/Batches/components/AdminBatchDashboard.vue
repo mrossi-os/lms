@@ -8,7 +8,7 @@
 
 			<NumberChartGraph
 				:title="__('Certified')"
-				:value="certificationCount.data || 0"
+				:value="batchStats.data?.certified_count || 0"
 			/>
 
 			<NumberChartGraph
@@ -95,20 +95,20 @@
 													size="sm"
 												/>
 											</div>
-											<!-- <ProgressBar
+											<ProgressBar
 												v-else-if="column.key == 'progress'"
-												:progress="Math.ceil(row[column.key])"
+												:progress="getStudentProgress(row.member)"
 												class="!mx-0 !me-4"
-											/> -->
+											/>
 										</template>
 										<div v-if="column.key == 'creation'">
 											{{ dayjs(row[column.key]).format('DD MMM YYYY') }}
 										</div>
 										<div
 											v-else-if="column.key == 'progress'"
-											class="text-xs !mx-0 w-5"
+											class="text-xs !mx-0 w-9 text-right"
 										>
-											{{ Math.ceil(row[column.key]) }}%
+											{{ getStudentProgress(row.member) }}%
 										</div>
 										<div v-else>
 											{{ row[column.key].toString() }}
@@ -211,6 +211,7 @@ import { useRouter } from 'vue-router'
 import BatchFeedback from '@/pages/Batches/components/BatchFeedback.vue'
 import BatchStudentProgress from '@/pages/Batches/components/BatchStudentProgress.vue'
 import NumberChartGraph from '@/components/NumberChartGraph.vue'
+import ProgressBar from '@/components/ProgressBar.vue'
 import StudentModal from '@/components/Modals/StudentModal.vue'
 
 const dayjs = inject<typeof dayjsType>('$dayjs')!
@@ -247,9 +248,11 @@ const chartData = createResource({
 	auto: true,
 })
 
-const certificationCount = createResource({
+// Single call for the dashboard summary: certified count + per-student average
+// course progress. Keeps one network round-trip on page load.
+const batchStats = createResource({
 	url: 'os_lms.os_lms.api.get_batch_certified_count',
-	cache: ['batch_certificate_count', props.batch?.data?.name],
+	cache: ['batch_stats', props.batch?.data?.name],
 	params: {
 		batch: props.batch?.data?.name,
 	},
@@ -272,6 +275,9 @@ const students = createListResource({
 	orderBy: 'creation desc',
 	auto: true,
 })
+
+const getStudentProgress = (member: string) =>
+	Math.ceil(batchStats.data?.students_progress?.[member] || 0)
 
 const seriesName = computed(() => __('Value'))
 
@@ -306,6 +312,11 @@ const studentColumns = computed(() => {
 			label: __('Name'),
 			key: 'member_name',
 			width: '40%',
+		},
+		{
+			label: __('Progress'),
+			key: 'progress',
+			width: '30%',
 		},
 		{
 			label: __('Enrolled On'),
