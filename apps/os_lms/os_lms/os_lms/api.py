@@ -1,3 +1,4 @@
+import hashlib
 import json
 import re
 
@@ -525,6 +526,82 @@ def mark_batch_tab_notifications_read(batch: str, section: str) -> dict:
 		{"user": user, "link": f"%{batch}#{section}%"},
 	)
 	frappe.publish_realtime("publish_lms_notifications", user=user)
+	return {"ok": True}
+
+
+# ----- Push notifications: device token registration -----
+
+
+def _token_hash(token: str) -> str:
+	return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+@frappe.whitelist()
+def register_push_token(token: str, platform: str = None, device_id: str = None) -> dict:
+	"""Register (or refresh) the calling user's FCM device token.
+
+	Upserts a "Push Device Token" record keyed by the token hash. When a
+	``device_id`` is supplied, any other token previously stored for that same
+	device is removed first, so a device keeps exactly one active token even
+	after FCM rotates it.
+	"""
+	user = frappe.session.user
+	if user == "Guest":
+		frappe.throw(frappe._("Authentication required"), frappe.PermissionError)
+	if not token:
+		frappe.throw(frappe._("token is required"))
+
+	token_hash = _token_hash(token)
+
+	# Drop stale tokens for the same physical device.
+	if device_id:
+		for stale in frappe.get_all(
+			"Push Device Token",
+			filters={"user": user, "device_id": device_id, "token_hash": ["!=", token_hash]},
+			pluck="name",
+		):
+			frappe.delete_doc("Push Device Token", stale, ignore_permissions=True, force=True)
+
+	existing = frappe.db.get_value("Push Device Token", {"token_hash": token_hash}, "name")
+	if existing:
+		doc = frappe.get_doc("Push Device Token", existing)
+		doc.user = user
+		if platform:
+			doc.platform = platform
+		if device_id:
+			doc.device_id = device_id
+		doc.enabled = 1
+		doc.last_active = frappe.utils.now_datetime()
+		doc.save(ignore_permissions=True)
+	else:
+		doc = frappe.get_doc(
+			{
+				"doctype": "Push Device Token",
+				"user": user,
+				"token": token,
+				"token_hash": token_hash,
+				"platform": platform,
+				"device_id": device_id,
+				"enabled": 1,
+				"last_active": frappe.utils.now_datetime(),
+			}
+		)
+		doc.insert(ignore_permissions=True)
+
+	frappe.db.commit()
+	return {"ok": True}
+
+
+@frappe.whitelist()
+def unregister_push_token(token: str) -> dict:
+	"""Remove a device token (e.g. on logout). Idempotent."""
+	if not token:
+		return {"ok": True}
+
+	name = frappe.db.get_value("Push Device Token", {"token_hash": _token_hash(token)}, "name")
+	if name:
+		frappe.delete_doc("Push Device Token", name, ignore_permissions=True, force=True)
+		frappe.db.commit()
 	return {"ok": True}
 
 
