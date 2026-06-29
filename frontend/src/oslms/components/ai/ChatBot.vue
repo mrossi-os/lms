@@ -30,7 +30,7 @@
 				</div>
 				<div
 					v-if="message.role === 'assistant'"
-					class="flex items-start gap-1.5"
+					class="flex items-end gap-1.5"
 				>
 					<div
 						class="flex-1 text-sm text-ink-gray-9 prose prose-sm max-w-none chatbot-markdown"
@@ -40,7 +40,7 @@
 						v-if="ttsEnabled"
 						:text="message.content"
 						:id="index"
-						class="shrink-0 -mt-1"
+						class="shrink-0 -mb-1"
 					/>
 				</div>
 				<div v-else class="text-sm text-ink-gray-9 whitespace-pre-wrap">
@@ -137,7 +137,7 @@ const ttsAutoplayOnStt = computed(() =>
 	Boolean(settingsStore.settings?.data?.tts_autoplay_on_stt),
 )
 
-const { play } = useTextToSpeech()
+const { play, prefetch } = useTextToSpeech()
 
 // True while the pending question text was produced by voice (STT) and not
 // edited by hand — drives the optional "auto-read the answer aloud" behavior.
@@ -214,10 +214,16 @@ const sendQuestion = async () => {
 			sources: [],
 		})
 
-		// Optional: read the answer aloud automatically when the question was
-		// asked by voice (requires TTS and the auto-play setting enabled).
-		if (ttsEnabled.value && ttsAutoplayOnStt.value && viaVoice) {
-			play(answer, chat.messages.length - 1)
+		if (ttsEnabled.value) {
+			if (ttsAutoplayOnStt.value && viaVoice) {
+				// Read the answer aloud automatically when the question was asked
+				// by voice (play() also warms the cache for any later replay).
+				play(answer, chat.messages.length - 1)
+			} else {
+				// Otherwise download the audio in the background as the message
+				// arrives, so clicking the speak button plays it back instantly.
+				prefetch(answer)
+			}
 		}
 	} catch (error: any) {
 		const errorMessage =

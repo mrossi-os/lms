@@ -7,6 +7,11 @@
 		:aria-label="label"
 		:title="label"
 		@click="toggle"
+		:class="
+			isRecording
+				? ''
+				: '!bg-surface-gray-3 hover:!bg-surface-gray-3 active:!bg-surface-gray-3'
+		"
 	>
 		<template #icon>
 			<LoadingIndicator v-if="isTranscribing" class="w-4 h-4" />

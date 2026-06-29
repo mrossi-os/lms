@@ -5,6 +5,7 @@
 		:aria-label="label"
 		:title="label"
 		@click="onClick"
+		class="!bg-surface-gray-3 hover:!bg-surface-gray-3 active:!bg-surface-gray-3"
 	>
 		<template #icon>
 			<LoadingIndicator v-if="loading" class="w-4 h-4" />

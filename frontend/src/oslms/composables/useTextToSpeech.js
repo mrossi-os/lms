@@ -11,6 +11,7 @@ import { synthesizeSpeech } from '@/oslms/utils/audioApi'
 
 const audioEl = typeof Audio !== 'undefined' ? new Audio() : null
 const urlCache = new Map() // text -> object URL
+const pending = new Map() // text -> Promise<object URL> (in-flight synthesis)
 const playingId = ref(null)
 const isSynthesizing = ref(false)
 let synthesizingId = null
@@ -18,6 +19,32 @@ let synthesizingId = null
 if (audioEl) {
 	audioEl.addEventListener('ended', () => (playingId.value = null))
 	audioEl.addEventListener('error', () => (playingId.value = null))
+}
+
+/**
+ * Resolve the object URL for a piece of text, hitting the backend at most once.
+ * Already-synthesized clips come straight from the cache; concurrent callers
+ * (e.g. a background prefetch and a click) share the same in-flight request.
+ */
+function synthesize(clean, { voice } = {}) {
+	const cached = urlCache.get(clean)
+	if (cached) return Promise.resolve(cached)
+
+	const inFlight = pending.get(clean)
+	if (inFlight) return inFlight
+
+	const request = synthesizeSpeech(clean, { voice })
+		.then((url) => {
+			urlCache.set(clean, url)
+			pending.delete(clean)
+			return url
+		})
+		.catch((e) => {
+			pending.delete(clean)
+			throw e
+		})
+	pending.set(clean, request)
+	return request
 }
 
 export function useTextToSpeech() {
@@ -37,8 +64,7 @@ export function useTextToSpeech() {
 			isSynthesizing.value = true
 			synthesizingId = id
 			try {
-				url = await synthesizeSpeech(clean, { voice })
-				urlCache.set(clean, url)
+				url = await synthesize(clean, { voice })
 			} catch (e) {
 				toast.error(e?.message || __('Could not read the answer aloud.'))
 				return
@@ -67,5 +93,14 @@ export function useTextToSpeech() {
 		return isSynthesizing.value && synthesizingId === id
 	}
 
-	return { playingId, isSynthesizing, play, stop, isLoading }
+	// Warm the cache in the background so a later click plays instantly. Errors
+	// are swallowed: a failed prefetch must not surface a toast, and the click
+	// path will retry and report the error then.
+	function prefetch(text, { voice } = {}) {
+		const clean = (text || '').trim()
+		if (!clean || !audioEl) return
+		synthesize(clean, { voice }).catch(() => {})
+	}
+
+	return { playingId, isSynthesizing, play, stop, isLoading, prefetch }
 }
