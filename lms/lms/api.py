@@ -591,7 +591,27 @@ def delete_lesson(lesson: str, chapter: str):
 	update_index(lessons, chapter)
 
 	frappe.db.delete("LMS Course Progress", {"lesson": lesson})
+	frappe.db.delete("LMS Video Watch Duration", {"lesson": lesson})
 	frappe.delete_doc("Course Lesson", lesson)
+
+
+@frappe.whitelist()
+def create_lesson(chapter: str) -> str:
+	"""Create a draft "Untitled lesson" appended to the chapter, atomically.
+
+	Delegates to add_lesson(), which inserts the Course Lesson and its Lesson
+	Reference in this single request — if the reference insert fails the whole
+	request rolls back, so no lesson is orphaned without a chapter pointing at
+	it. Returns the new lesson's docname.
+	"""
+	course = frappe.db.get_value("Course Chapter", chapter, "course")
+	if not course:
+		frappe.throw(_("Invalid chapter."))
+	if not can_modify_course(course):
+		frappe.throw(_("You do not have permission to add a lesson."), frappe.PermissionError)
+
+	idx = frappe.db.count("Lesson Reference", {"parent": chapter}) + 1
+	return add_lesson(_("Untitled lesson"), chapter, course, idx)
 
 
 @frappe.whitelist()
@@ -680,10 +700,26 @@ def update_chapter_index(chapter: str, course: str, idx: int):
 
 
 @frappe.whitelist()
-def get_members(start: int = 0, search: str = None):
+def get_members(start: int = 0, search: str = None, role: str = "All"):
 	frappe.only_for(["Moderator"])
-	filters = {"enabled": 1, "name": ["not in", ["Administrator", "Guest"]]}
+
+	lms_roles = ["Moderator", "Course Creator", "Batch Evaluator", "LMS Student"]
+	if not isinstance(role, str) or role not in (["All"] + lms_roles):
+		frappe.throw(_("Invalid role filter."), frappe.ValidationError)
+	if search is not None and not isinstance(search, str):
+		frappe.throw(_("Invalid search query."), frappe.ValidationError)
+
+	filters = [
+		["enabled", "=", 1],
+		["name", "not in", ["Administrator", "Guest"]],
+	]
 	or_filters = {}
+
+	if role != "All":
+		role_users = frappe.get_all("Has Role", {"role": role, "parenttype": "User"}, pluck="parent")
+		if not role_users:
+			return []
+		filters.append(["name", "in", role_users])
 
 	if search:
 		or_filters["full_name"] = ["like", f"%{search}%"]
@@ -698,7 +734,6 @@ def get_members(start: int = 0, search: str = None):
 		start=start,
 	)
 
-	lms_roles = ["Moderator", "Course Creator", "Batch Evaluator", "LMS Student"]
 	for member in members:
 		roles = frappe.get_all(
 			"Has Role",
@@ -1057,15 +1092,17 @@ def upsert_chapter(
 	values = frappe._dict({"title": title, "course": course, "is_scorm_package": is_scorm_package})
 
 	if is_scorm_package:
-		scorm_package = frappe._dict(scorm_package)
+		scorm_package = frappe._dict(scorm_package or {})
+		if not scorm_package.get("name"):
+			frappe.throw(_("Please attach a SCORM package before saving this chapter."))
 		extract_path = extract_package(course, title, scorm_package)
 
 		values.update(
 			{
 				"scorm_package": scorm_package.name,
-				"scorm_package_path": extract_path.split("public")[1],
-				"manifest_file": get_manifest_file(extract_path).split("public")[1],
-				"launch_file": get_launch_file(extract_path).split("public")[1],
+				"scorm_package_path": _scorm_url(extract_path),
+				"manifest_file": _scorm_url(get_manifest_file(extract_path)),
+				"launch_file": _scorm_url(get_launch_file(extract_path)),
 			}
 		)
 
@@ -1093,14 +1130,28 @@ def upsert_chapter(
 	return chapter
 
 
+def _scorm_url(abs_path: str) -> str:
+	"""Map an extracted SCORM disk path under <site>/private/scorm/... to the
+	location-independent "/scorm/<course>/<title>/..." URL stored on Course Chapter.
+	Keeps the same URL shape legacy (public) chapters already have, so no DB change."""
+	rel = os.path.relpath(abs_path, frappe.get_site_path("private"))
+	return "/" + rel.replace(os.sep, "/")
+
+
 def extract_package(course: str, title: str, scorm_package: dict):
 	package = frappe.get_doc("File", scorm_package.name)
 	zip_path = package.get_full_path()
-	scorm_root = os.path.realpath(frappe.get_site_path("public", "scorm"))
-	extract_path = frappe.get_site_path("public", "scorm", course, title)
+	scorm_root = os.path.realpath(frappe.get_site_path("private", "scorm"))
+	extract_path = frappe.get_site_path("private", "scorm", course, title)
 
 	if not os.path.realpath(extract_path).startswith(scorm_root + os.sep):
 		frappe.throw(_("Invalid course or chapter name"))
+
+	# Clear any previously extracted package so a re-uploaded package does not
+	# leave stale files behind (the old manifest/launch file would otherwise
+	# still be served). extract_path is confirmed to live under scorm_root above.
+	if os.path.exists(extract_path):
+		shutil.rmtree(extract_path)
 
 	with zipfile.ZipFile(zip_path, "r") as zf:
 		dest = os.path.realpath(extract_path)
@@ -1193,6 +1244,8 @@ def add_lesson(title: str, chapter: str, course: str, idx: int):
 		}
 	)
 	lesson_reference.insert()
+
+	return lesson.name
 
 
 @frappe.whitelist()
@@ -1359,83 +1412,35 @@ def get_week_difference(start_date: str, current_date: str) -> int:
 @frappe.whitelist()
 def get_notifications(filters: dict = None):
 	filters = frappe._dict(filters or {})
-	filters.for_user = frappe.session.user
+	# Always scoped to the session user — no IDOR surface. Only an optional
+	# read flag from the client is honoured.
+	query_filters = {"for_user": frappe.session.user}
+	if "read" in filters:
+		query_filters["read"] = 1 if filters.read else 0
+
 	notifications = frappe.get_all(
 		"Notification Log",
-		filters,
-		[
-			"subject",
-			"from_user",
-			"link",
-			"read",
-			"name",
-			"creation",
-			"document_type",
-			"document_name",
-			"type",
-			"email_content",
-		],
+		filters=query_filters,
+		fields=["name", "subject", "from_user", "link", "read", "creation", "type"],
 		order_by="creation desc",
+		limit_page_length=50,
 	)
 
+	# Batch-fetch sender details in a single query instead of one per row.
+	sender_names = list({n.from_user for n in notifications if n.from_user})
+	senders = {}
+	if sender_names:
+		for sender in frappe.get_all(
+			"User",
+			filters={"name": ["in", sender_names]},
+			fields=["name", "full_name", "user_image"],
+		):
+			senders[sender.name] = sender
+
 	for notification in notifications:
-		notification = update_document_details(notification)
-		notification = update_user_details(notification)
+		notification["from_user_details"] = senders.get(notification.from_user, {})
 
 	return notifications
-
-
-def update_user_details(notification: dict) -> dict:
-	if (
-		notification.document_details
-		and len(notification.document_details.get("instructors", []))
-		and not is_mention(notification)
-	):
-		from_user_details = notification.document_details["instructors"][0]
-	else:
-		from_user_details = frappe.db.get_value(
-			"User", notification.from_user, ["full_name", "user_image"], as_dict=1
-		)
-	notification["from_user_details"] = from_user_details
-	return notification
-
-
-def is_mention(notification: dict) -> bool:
-	if notification.type == "Mention":
-		return True
-	if "mentioned you" in notification.subject.lower():
-		return True
-	return False
-
-
-def update_document_details(notification: dict) -> dict:
-	if notification.document_type == "LMS Course":
-		details = frappe.db.get_value(
-			"LMS Course", notification.document_name, ["title", "video_link", "short_introduction"], as_dict=1
-		)
-		instructors = get_instructors("LMS Course", notification.document_name)
-		details["instructors"] = instructors
-		notification["document_details"] = details
-
-	elif notification.document_type == "LMS Batch":
-		details = frappe.db.get_value(
-			"LMS Batch",
-			notification.document_name,
-			[
-				"title",
-				"description as short_introduction",
-				"video_link",
-				"start_date",
-				"end_date",
-				"start_time",
-				"timezone",
-			],
-			as_dict=1,
-		)
-		instructors = get_instructors("LMS Batch", notification.document_name)
-		details["instructors"] = instructors
-		notification["document_details"] = details
-	return notification
 
 
 @frappe.whitelist(allow_guest=True)
@@ -1459,6 +1464,8 @@ def get_lms_settings():
 	settings = frappe._dict()
 	for field in allowed_fields:
 		settings[field] = frappe.get_cached_value("LMS Settings", None, field)
+
+	settings["is_payments_app_installed"] = "payments" in frappe.get_installed_apps()
 
 	return settings
 
@@ -1568,7 +1575,14 @@ def save_evaluator_role(user: str, value: int):
 		if not frappe.db.exists("Course Evaluator", {"evaluator": user}):
 			doc = frappe.new_doc("Course Evaluator")
 			doc.evaluator = user
-			doc.save(ignore_permissions=True)
+			frappe.db.savepoint("save_evaluator")
+			try:
+				doc.save(ignore_permissions=True)
+			except frappe.DuplicateEntryError:
+				# A concurrent request already created this evaluator. The
+				# primary key (autoname field:evaluator) guarantees uniqueness,
+				# so the row we wanted exists — nothing more to do.
+				frappe.db.rollback(save_point="save_evaluator")
 	else:
 		frappe.db.delete("Has Role", {"parent": user, "role": "Batch Evaluator"})
 		if frappe.db.exists("Course Evaluator", {"evaluator": user}):

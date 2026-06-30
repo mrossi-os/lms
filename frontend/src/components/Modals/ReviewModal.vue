@@ -13,7 +13,7 @@
 			],
 		}"
 	>
-		<template #body-content>
+		<template #default>
 			<div class="flex flex-col gap-4">
 				<Rating v-model="review.rating" :label="__('Rating')" />
 				<FormControl

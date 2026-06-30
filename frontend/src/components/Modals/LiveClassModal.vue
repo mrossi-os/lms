@@ -13,7 +13,7 @@
 			],
 		}"
 	>
-		<template #body-content>
+		<template #default>
 			<div class="flex flex-col gap-4">
 				<div
 					v-if="isEdit"
@@ -69,16 +69,17 @@
 						</Tooltip>
 
 						<div class="space-y-1.5">
-							<label class="block text-ink-gray-5 text-xs" for="batchTimezone">
+							<label
+								class="block text-p-sm-medium text-ink-gray-7"
+								for="batchTimezone"
+							>
 								{{ __('Timezone') }}
-								<span class="text-ink-red-3">*</span>
+								<span class="text-ink-red-6">*</span>
 							</label>
-							<Autocomplete
-								@update:modelValue="(opt) => (liveClass.timezone = opt.value)"
+							<Combobox
 								:modelValue="liveClass.timezone"
 								:options="getTimezoneOptions()"
-								:required="true"
-								:disabled="isEdit"
+								@update:modelValue="(opt) => (liveClass.timezone = opt.value)"
 							/>
 						</div>
 						<FormControl
@@ -166,17 +167,15 @@
 </template>
 <script setup>
 import {
+	Combobox,
 	Dialog,
 	createResource,
 	Tooltip,
 	FormControl,
-	Button,
 	toast,
 } from 'frappe-ui'
-import { Plus, Trash2, AlertCircle } from 'lucide-vue-next'
-import { reactive, computed, inject, onMounted } from 'vue'
+import { reactive, inject, onMounted } from 'vue'
 import { getTimezones, getUserTimezone } from '@/utils/'
-import Autocomplete from '@/components/Controls/Autocomplete.vue'
 
 const liveClasses = defineModel('reloadLiveClasses')
 const show = defineModel()

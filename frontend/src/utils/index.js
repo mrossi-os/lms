@@ -1,5 +1,4 @@
 import { call, toast } from 'frappe-ui'
-import { useTimeAgo } from '@vueuse/core'
 import colorsJSON from '@/utils/frappe-ui-colors.json'
 import { Quiz } from '@/utils/quiz'
 import { Program } from '@/utils/program'
@@ -13,6 +12,14 @@ import Paragraph from '@editorjs/paragraph'
 import { CodeBox } from '@/utils/code'
 import NestedList from '@editorjs/nested-list'
 import InlineCode from '@editorjs/inline-code'
+import { Underline } from '@/utils/inline/Underline'
+import { Strikethrough } from '@/utils/inline/Strikethrough'
+import { AlignLeft, AlignCenter, AlignRight } from '@/utils/inline/TextAlign'
+import { Color } from '@/utils/inline/Color'
+import {
+	clipboardTunes,
+	clipboardTuneNames,
+} from '@/utils/blockTunes/clipboardTunes'
 import dayjs from '@/utils/dayjs'
 import Embed from '@editorjs/embed'
 import SimpleImage from '@editorjs/simple-image'
@@ -65,9 +72,16 @@ import DOMPurify from 'dompurify'
 
 const readOnlyMode = window.read_only_mode
 
-export function timeAgo(date) {
-	return useTimeAgo(date).value
-}
+// Pure formatting helpers live in a leaf module to avoid a barrel import cycle
+// (index.js -> editor tools -> components -> '@/utils'). Re-exported here so
+// existing '@/utils' consumers keep working; cycle-prone consumers import them
+// from '@/utils/format' directly.
+export {
+	timeAgo,
+	formatSeconds,
+	escapeHTML,
+	formatTimestamp,
+} from '@/utils/format'
 
 export function formatTime(timeString) {
 	if (!timeString) return ''
@@ -79,12 +93,6 @@ export function formatTime(timeString) {
 		hour12: true,
 	}).format(dummyDate)
 	return formattedTime
-}
-
-export const formatSeconds = (time) => {
-	const minutes = Math.floor(time / 60)
-	const seconds = Math.floor(time % 60)
-	return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`
 }
 
 export function formatNumber(number) {
@@ -159,7 +167,22 @@ export function htmlToText(html) {
 	return div.textContent || div.innerText || ''
 }
 
-export function getEditorTools() {
+// Visual order of the inline toolbar (automad layout). References registered
+// inline-tool names: EditorJS built-ins (bold/italic/link) + our custom tools.
+const INLINE_TOOLBAR_ORDER = [
+	'alignLeft',
+	'alignCenter',
+	'alignRight',
+	'bold',
+	'italic',
+	'link',
+	'inlineCode',
+	'underline',
+	'strikeThrough',
+	'color',
+]
+
+export function getEditorTools(isInstructorEditor = false, uploadContext = {}) {
 	return {
 		header: {
 			class: Header,
@@ -169,27 +192,30 @@ export function getEditorTools() {
 		},
 		list: {
 			class: NestedList,
-			inlineToolbar: true,
+			inlineToolbar: INLINE_TOOLBAR_ORDER,
 			config: {
 				defaultStyle: 'ordered',
 			},
 		},
-		upload: Upload,
+		upload: {
+			class: Upload,
+			config: uploadContext,
+		},
 		table: {
 			class: Table,
-			inlineToolbar: true,
+			inlineToolbar: INLINE_TOOLBAR_ORDER,
 		},
 		quiz: Quiz,
 		assignment: Assignment,
 		program: Program,
 		markdown: {
 			class: Markdown,
-			inlineToolbar: true,
+			inlineToolbar: INLINE_TOOLBAR_ORDER,
 		},
 		image: SimpleImage,
 		paragraph: {
 			class: Paragraph,
-			inlineToolbar: true,
+			inlineToolbar: INLINE_TOOLBAR_ORDER,
 			config: {
 				preserveBlank: true,
 			},
@@ -204,6 +230,15 @@ export function getEditorTools() {
 			class: InlineCode,
 			shortcut: 'CMD+SHIFT+M',
 		},
+		underline: Underline,
+		strikeThrough: Strikethrough,
+		alignLeft: AlignLeft,
+		alignCenter: AlignCenter,
+		alignRight: AlignRight,
+		color: Color,
+		copyBlock: clipboardTunes.copyBlock,
+		cutBlock: clipboardTunes.cutBlock,
+		pasteBlock: clipboardTunes.pasteBlock,
 		ColorPicker: {
 			class: ColorPickerInline,
 			config: {
@@ -413,6 +448,12 @@ export function getEditorI18n() {
 	}
 }
 
+// Block tunes added to every block's settings menu (alongside the native
+// Move up/down + Delete). Pass to EditorJS's global `tunes` config.
+export function getEditorTunes() {
+	return [...clipboardTuneNames]
+}
+
 export function getTimezones() {
 	return [
 		'Pacific/Midway',
@@ -605,7 +646,8 @@ const getSidebarItems = (forMobile = false) => {
 				{
 					label: 'Search',
 					icon: 'Search',
-					to: 'Search',
+					action: 'commandPalette',
+					shortcut: 'Mod+K',
 					condition: () => {
 						return !forMobile && userResource?.data
 					},
@@ -613,7 +655,7 @@ const getSidebarItems = (forMobile = false) => {
 				{
 					label: 'Notifications',
 					icon: 'Bell',
-					to: 'Notifications',
+					panel: 'notifications',
 					condition: () => {
 						return !forMobile && userResource?.data
 					},
@@ -979,6 +1021,9 @@ export const sanitizeHTML = (text) => {
 	return sanitized
 }
 
+// Re-exported from a lean module so it stays testable without index.js's heavy
+// frappe-ui/EditorJS import chain (same pattern as ./plyr below).
+export { sanitizeRichHTML } from './sanitizeRichHTML'
 
 export const canCreateCourse = () => {
 	const { userResource } = usersStore()
@@ -988,8 +1033,10 @@ export const canCreateCourse = () => {
 	)
 }
 
-export const enablePlyr = async () => {
-	await wait(500)
+// Plyr setup lives in ./plyr (a lean module that only pulls in Plyr + the
+// settings store) so it stays importable/testable without index.js's heavy
+// EditorJS/frappe-ui import chain. Re-exported here for existing callers.
+export { enablePlyr } from './plyr'
 
 	const players = []
 	const videoElements = document.getElementsByClassName('video-player')
@@ -1178,14 +1225,6 @@ export const updateMetaInfo = (type, route, meta) => {
 		toast.error(__('Failed to update meta tags {0}').format(error))
 		console.error(error)
 	})
-}
-
-export const formatTimestamp = (seconds) => {
-	const date = new Date(seconds * 1000)
-	const hours = String(date.getUTCHours()).padStart(2, '0')
-	const minutes = String(date.getUTCMinutes()).padStart(2, '0')
-	const secs = String(date.getUTCSeconds()).padStart(2, '0')
-	return hours > 0 ? `${hours}:${minutes}:${secs}` : `${minutes}:${secs}`
 }
 
 const getRootNode = (selector = '#editor') => {

@@ -3,7 +3,7 @@
 		<div class="grid grid-cols-1 lg:grid-cols-[3fr,2fr]">
 			<div v-if="batchDetail.doc" class="py-5 lg:h-[88vh] lg:overflow-y-auto">
 				<div class="px-5 pb-5 space-y-5 border-b mb-5">
-					<div class="text-base font-semibold text-ink-gray-9">
+					<div class="text-base-semibold text-ink-gray-9">
 						{{ __('Details') }}
 					</div>
 
@@ -38,21 +38,26 @@
 							variant="outline"
 						/>
 
-						<FormControl
-							v-model="batchDetail.doc.start_time"
-							:label="__('Session Start Time')"
-							type="time"
-							:required="true"
-							variant="outline"
-						/>
-						<FormControl
-							v-model="batchDetail.doc.end_time"
-							:label="__('Session End Time')"
-							type="time"
-							:required="true"
-							variant="outline"
-						/>
+						<!-- beta.7's TimePicker (FormControl type="time") ignores the
+						     `label` prop, so render FormLabel explicitly like Timezone
+						     below — otherwise these fields show only the placeholder. -->
 						<div class="space-y-1.5">
+							<FormLabel :label="__('Session Start Time')" :required="true" />
+							<FormControl
+								v-model="batchDetail.doc.start_time"
+								type="time"
+								variant="outline"
+							/>
+						</div>
+						<div class="space-y-1.5">
+							<FormLabel :label="__('Session End Time')" :required="true" />
+							<FormControl
+								v-model="batchDetail.doc.end_time"
+								type="time"
+								variant="outline"
+							/>
+						</div>
+						<div class="flex flex-col gap-1.5">
 							<FormLabel :label="__('Timezone')" :required="true" />
 							<Combobox
 								v-model="batchDetail.doc.timezone"
@@ -74,11 +79,11 @@
 				</div>
 
 				<div class="px-5 pb-5 space-y-5 border-b mb-5">
-					<div class="text-base font-semibold text-ink-gray-9">
+					<div class="text-base-semibold text-ink-gray-9">
 						{{ __('Enrollment & Certification') }}
 					</div>
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
-						<Switch
+						<BooleanSwitch
 							size="sm"
 							v-model="batchDetail.doc.allow_self_enrollment"
 							:label="__('Allow Self Enrollment')"
@@ -86,14 +91,14 @@
 								__('Allow users to enroll in this batch on their own.')
 							"
 						/>
-						<Switch
+						<BooleanSwitch
 							size="sm"
 							v-model="batchDetail.doc.certification"
 							:label="__('Certification')"
 							:description="__('Issue certificates to batch participants.')"
 						/>
 						<div class="space-y-4">
-							<Switch
+							<BooleanSwitch
 								size="sm"
 								v-model="batchDetail.doc.paid_batch"
 								:label="__('Paid Batch')"
@@ -119,7 +124,7 @@
 							</div>
 						</div>
 						<div class="space-y-4">
-							<Switch
+							<BooleanSwitch
 								size="sm"
 								v-model="batchDetail.doc.evaluation"
 								:label="__('Evaluation')"
@@ -137,7 +142,7 @@
 				</div>
 
 				<div class="px-5 pb-5 space-y-5 border-b mb-5">
-					<div class="text-base font-semibold text-ink-gray-9">
+					<div class="text-base-semibold text-ink-gray-9">
 						{{ __('Batch overview') }}
 					</div>
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -184,11 +189,9 @@
 							class="md:col-span-2"
 						/>
 					</div>
-					<MultiSelect
-						v-model="valutatori"
-						doctype="User"
-						:label="__('Valutatori')"
-						url="os_lms.os_lms.api.search_non_student_users"
+					<VideoPreviewField
+						v-model="batchDetail.doc.video_link"
+						:label="__('Preview Video')"
 					/>
 					<div>
 						<label class="block text-sm text-ink-gray-5 mb-2">
@@ -202,53 +205,23 @@
 							:fixedMenu="true"
 							editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem] max-h-[16rem] overflow-y-scroll mb-4"
 						/>
-						<Uploader
-							v-model="batchDetail.doc.video_link"
-							:label="__('Preview Video')"
-							type="video"
-							:required="false"
-						/>
-					</div>
-					<div>
-						<FeatureSectionEditor
-							v-model="batchDetail.doc"
-							fieldName="custom_feature_sections"
-							@dirty="isDirty = true"
-						/>
-					</div>
-				</div>
-
-				<div class="px-5 pb-5 space-y-5 border-b mb-5">
-					<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-						<div class="space-y-5">
-							<div>
-								<label class="block text-sm text-ink-gray-5 mb-2">
-									{{ __('Medium') }}
-								</label>
-								<Select
-									v-model="batchDetail.doc.medium"
-									:options="mediumOptions"
-									class="w-full"
-								/>
-							</div>
-							<Link
-								ref="emailTemplateLinkRef"
-								doctype="Email Template"
-								:label="__('Enrollment Confirmation Email Template')"
-								v-model="batchDetail.doc.confirmation_email_template"
-								:onCreate="
-									(value, close) => {
-										if (close) close()
-										showEmailTemplateModal = true
-									}
-								"
+						<div
+							class="rounded-t-lg rounded-b-md outline-none transition-[box-shadow] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]"
+						>
+							<TextEditor
+								:id="batchDetailsId"
+								:content="batchDetail.doc.batch_details"
+								@change="(val: string) => updateBatchDetails(val)"
+								:editable="true"
+								:fixedMenu="true"
+								editorClass="prose-sm max-w-none border-b border-x border-outline-gray-2 hover:border-outline-gray-3 hover:shadow-sm focus-within:border-outline-gray-4 focus-within:shadow-sm rounded-b-md py-1 px-2 min-h-[7rem] max-h-[16rem] overflow-y-scroll transition-colors"
 							/>
 						</div>
 					</div>
 				</div>
 
 				<div class="px-5 pb-5 space-y-5 border-b mb-5">
-					<div class="text-base font-semibold text-ink-gray-9">
+					<div class="text-base-semibold text-ink-gray-9">
 						{{ __('Conferencing') }}
 					</div>
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -287,7 +260,7 @@
 				</div>
 
 				<div class="px-5 pb-5 space-y-5">
-					<div class="text-base font-semibold text-ink-gray-9">
+					<div class="text-base-semibold text-ink-gray-9">
 						{{ __('Meta Tags') }}
 					</div>
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -337,13 +310,12 @@
 		@created="onEmailTemplateCreated"
 	/>
 </template>
-<script setup>
+<script setup lang="ts">
 import {
 	computed,
 	getCurrentInstance,
 	inject,
 	onMounted,
-	onBeforeUnmount,
 	reactive,
 	ref,
 	toRaw,
@@ -362,16 +334,22 @@ import {
 	call,
 	createListResource,
 } from 'frappe-ui'
-import Switch from '@/components/Controls/Switch.vue'
+import { useDebounceFn } from '@vueuse/core'
+import BooleanSwitch from '@/components/Controls/BooleanSwitch.vue'
 import {
 	createLMSCategory,
 	getMetaInfo,
 	openSettings,
 	updateMetaInfo,
 } from '@/utils'
+import { validateBatch } from '@/utils/batchForm'
+import {
+	useKeyboardShortcuts,
+	saveShortcut,
+} from '@/composables/useKeyboardShortcuts'
 import { useRouter } from 'vue-router'
-import { useTelemetry } from 'frappe-ui/frappe'
 import Uploader from '@/components/Controls/Uploader.vue'
+import VideoPreviewField from '@/components/Controls/VideoPreviewField.vue'
 import MultiLink from '@/components/Controls/MultiLink.vue'
 import Link from '@/components/Controls/Link.vue'
 import Select from '@/components/Controls/Select.vue'
@@ -379,21 +357,45 @@ import BatchCourses from '@/pages/Batches/components/BatchCourses.vue'
 import Assessments from '@/pages/Batches/components/Assessments.vue'
 import NewMemberModal from '@/components/Modals/NewMemberModal.vue'
 import EmailTemplateModal from '@/components/Modals/EmailTemplateModal.vue'
-import FeatureSectionEditor from '@/oslms/components/FeatureSectionEditor.vue'
+import type { LMSBatch } from '@/types/lms/LMSBatch'
+import type { CourseInstructor } from '@/types/lms/CourseInstructor'
+import type { Resource, BatchDetails, SessionUser } from '@/types/api'
+
+interface DialogAction {
+	label: string
+	theme?: string
+	variant?: string
+	onClick: (ctx: { close: () => void }) => void
+}
+type DialogFn = (opts: {
+	title: string
+	message: string
+	actions: DialogAction[]
+}) => void
+
+const props = defineProps<{
+	batch: Resource<BatchDetails | null>
+}>()
 
 const router = useRouter()
-const user = inject('$user')
-const instructors = ref([])
-const valutatori = ref([])
-const app = getCurrentInstance()
-const { capture } = useTelemetry()
-const { $dialog } = app.appContext.config.globalProperties
-const isDirty = ref(false)
-const originalDoc = ref(null)
+const user = inject<SessionUser>('$user')!
+const instructors = ref<string[]>([])
+const app = getCurrentInstance()!
+const { $dialog } = app.appContext.config.globalProperties as {
+	$dialog: DialogFn
+}
+const isDirty = ref<boolean>(false)
+const originalDoc = ref<LMSBatch | null>(null)
 const batchDetailsId = useId()
-const showMemberModal = ref(false)
-const showEmailTemplateModal = ref(false)
-const emailTemplateLinkRef = ref(null)
+const showMemberModal = ref<boolean>(false)
+const showEmailTemplateModal = ref<boolean>(false)
+const emailTemplateLinkRef = ref<{ reload: () => void } | null>(null)
+
+const batchDetail = createDocumentResource({
+	doctype: 'LMS Batch',
+	name: props.batch.data?.name,
+	auto: true,
+}) as Resource<LMSBatch | null>
 
 const emailTemplates = createListResource({
 	doctype: 'Email Template',
@@ -403,60 +405,65 @@ const emailTemplates = createListResource({
 	cache: 'email-templates',
 })
 
-const onEmailTemplateCreated = (name) => {
-	batchDetail.doc.confirmation_email_template = name
+const onEmailTemplateCreated = (name: string): void => {
+	if (batchDetail.doc) batchDetail.doc.confirmation_email_template = name
 	emailTemplateLinkRef.value?.reload()
 }
 
-const createCategory = (name, done) => {
-	createLMSCategory(name).then((categoryName) => {
+const updateBatchDetails = (value: string): void => {
+	if (batchDetail.doc) batchDetail.doc.batch_details = value
+}
+
+const createCategory = (name: string, done: () => void): void => {
+	createLMSCategory(name).then((categoryName: string | null) => {
 		if (!categoryName) return
-		batchDetail.doc.category = categoryName
+		if (batchDetail.doc) batchDetail.doc.category = categoryName
 		done()
 	})
 }
 
-const onInstructorCreated = (user) => {
-	instructors.value = [...instructors.value, user.name]
+const onInstructorCreated = (createdUser: { name: string }): void => {
+	instructors.value = [...instructors.value, createdUser.name]
 }
 
-const meta = reactive({
+const meta = reactive<{ description: string; keywords: string }>({
 	description: '',
 	keywords: '',
 })
 
-const props = defineProps({
-	batch: {
-		type: Object,
-		required: true,
-	},
-})
+const validateForm = (): string | null =>
+	validateBatch({
+		doc: batchDetail.doc ?? null,
+		instructors: instructors.value,
+	})
+
+// Tracks the last validation error surfaced to the user so a repeated autosave
+// attempt with the same unmet requirement doesn't re-toast on every keystroke.
+let lastAutoSaveError: string | null = null
+
+// Debounced so a burst of edits collapses into a single save shortly after the
+// user pauses (mirrors CourseForm). When a mandatory field is empty or the
+// amount is invalid, the autosave can't succeed — surface the reason once and
+// keep the "Not Saved" badge (isDirty stays true) so the change isn't lost.
+const autoSave = useDebounceFn((): void => {
+	if (!isDirty.value) return
+	const error = validateForm()
+	if (error) {
+		if (error !== lastAutoSaveError) {
+			toast.error(error)
+			lastAutoSaveError = error
+		}
+		return
+	}
+	lastAutoSaveError = null
+	updateBatch({ silent: true })
+}, 1000)
 
 onMounted(() => {
 	if (!user.data) window.location.href = '/login'
-	window.addEventListener('keydown', keyboardShortcut)
 })
 
-const keyboardShortcut = (e) => {
-	if (
-		e.key === 's' &&
-		(e.ctrlKey || e.metaKey) &&
-		!e.target.classList.contains('ProseMirror')
-	) {
-		submitBatch()
-		e.preventDefault()
-	}
-}
-
-onBeforeUnmount(() => {
-	window.removeEventListener('keydown', keyboardShortcut)
-})
-
-const batchDetail = createDocumentResource({
-	doctype: 'LMS Batch',
-	name: props.batch.data?.name,
-	auto: true,
-})
+useKeyboardShortcuts({ shortcuts: [saveShortcut(() => submitBatch())] })
 
 watch(
 	() => batchDetail.doc,
@@ -466,6 +473,7 @@ watch(
 		if (originalDoc.value) {
 			isDirty.value =
 				JSON.stringify(batchDetail.doc) !== JSON.stringify(originalDoc.value)
+			if (isDirty.value) autoSave()
 		}
 
 		updateBatchData()
@@ -474,65 +482,51 @@ watch(
 	{ deep: true },
 )
 
-// The instructors/valutatori pickers use standalone refs (not batchDetail.doc),
-// so the deep doc watcher above never sees their edits. Mark the form dirty when
-// they diverge from the values currently loaded in the doc.
-const pluckSorted = (rows, field) =>
-	JSON.stringify((rows || []).map((row) => row[field]).sort())
-
-watch([instructors, valutatori], () => {
-	if (!batchDetail.doc) return
-	if (
-		JSON.stringify([...instructors.value].sort()) !==
-			pluckSorted(batchDetail.doc.instructors, 'instructor') ||
-		JSON.stringify([...valutatori.value].sort()) !==
-			pluckSorted(batchDetail.doc.valutatori, 'valutatore')
-	) {
-		isDirty.value = true
-	}
-})
-
-const updateBatchData = () => {
-	Object.keys(batchDetail.doc).forEach((key) => {
+const updateBatchData = (): void => {
+	const doc = batchDetail.doc
+	if (!doc) return
+	Object.keys(doc).forEach((key) => {
 		if (key == 'instructors') {
 			instructors.value = []
-			batchDetail.doc.instructors.forEach((instructor) => {
-				instructors.value.push(instructor.instructor)
+			doc.instructors?.forEach((instructor: CourseInstructor) => {
+				if (instructor.instructor) instructors.value.push(instructor.instructor)
 			})
-		} else if (key == 'valutatori') {
-			valutatori.value = []
-			batchDetail.doc.valutatori?.forEach((row) => {
-				if (row.valutatore) valutatori.value.push(row.valutatore)
-			})
-		} else if (['start_time', 'end_time'].includes(key)) {
-			batchDetail.doc[key] = formatTime(batchDetail.doc[key])
+		} else if (key === 'start_time' || key === 'end_time') {
+			doc[key] = formatTime(doc[key])
 		}
 	})
-	let checkboxes = [
+	const checkboxes: (keyof LMSBatch)[] = [
 		'published',
 		'paid_batch',
 		'allow_self_enrollment',
 		'certification',
 		'evaluation',
 	]
-	for (let idx in checkboxes) {
-		let key = checkboxes[idx]
-		batchDetail.doc[key] = batchDetail.doc[key] ? true : false
+	for (const key of checkboxes) {
+		;(doc as Record<string, unknown>)[key] = doc[key] ? true : false
 	}
-	originalDoc.value = structuredClone(toRaw(batchDetail.doc))
+	originalDoc.value = structuredClone(toRaw(doc))
 }
 
-const formatTime = (timeStr) => {
-	let [hours, minutes, seconds] = timeStr.split(':')
-	hours = hours.length == 1 ? '0' + hours : hours
-	return `${hours}:${minutes}`
+const formatTime = (timeStr: string): string => {
+	const [hours, minutes] = timeStr.split(':')
+	const paddedHours = hours.length == 1 ? '0' + hours : hours
+	return `${paddedHours}:${minutes}`
 }
 
-const submitBatch = () => {
+const submitBatch = (): void => {
+	const error = validateForm()
+	if (error) {
+		toast.error(error)
+		lastAutoSaveError = error
+		return
+	}
+	lastAutoSaveError = null
 	updateBatch()
 }
 
-const updateBatch = () => {
+const updateBatch = (opts: { silent?: boolean } = {}): void => {
+	if (!batchDetail.doc) return
 	batchDetail.setValue.submit(
 		{
 			...batchDetail.doc,
@@ -544,23 +538,31 @@ const updateBatch = () => {
 			})),
 		},
 		{
-			onSuccess(data) {
+			onSuccess(data: LMSBatch) {
 				updateMetaInfo('batches', data.name, meta)
-				toast.success(__('Batch updated successfully'))
+				if (!opts.silent) toast.success(__('Batch updated successfully'))
 				nextTick(() => {
 					originalDoc.value = structuredClone(data)
 					isDirty.value = false
 				})
+				// Refresh the shared batch resource so the Overview tab (which reads
+				// title/description/batch_details from this same resource) reflects
+				// the saved changes without a page reload (mirrors CourseForm).
+				props.batch.reload()
 			},
-			onError(err) {
-				toast.error(err.messages?.[0] || err)
+			onError(err: { messages?: string[] } | string) {
+				const msg =
+					typeof err === 'string' ? err : err.messages?.[0] ?? __('Error')
+				// Autosave failures stay quiet; the orange "Not Saved" badge remains
+				// (isDirty is untouched) so the change isn't silently lost.
+				if (!opts.silent) toast.error(msg)
 				console.error(err)
 			},
 		},
 	)
 }
 
-const deleteBatch = () => {
+const deleteBatch = (): void => {
 	$dialog({
 		title: __('Confirm your action to delete'),
 		message: __(
@@ -580,9 +582,9 @@ const deleteBatch = () => {
 	})
 }
 
-const trashBatch = (close) => {
+const trashBatch = (close: () => void): void => {
 	call('lms.lms.api.delete_batch', {
-		batch: props.batch.data.name,
+		batch: props.batch.data?.name,
 	}).then(() => {
 		toast.success(__('Batch deleted successfully'))
 		close()
@@ -612,11 +614,11 @@ const conferencingOptions = computed(() => {
 const timezoneResource = createResource({
 	url: 'frappe.geo.country_info.get_country_timezone_info',
 	auto: true,
-	transform: (data) => data.all_timezones,
-})
+	transform: (data: { all_timezones: string[] }) => data.all_timezones,
+}) as Resource<string[]>
 
 const timezoneOptions = computed(() =>
-	(timezoneResource.data || []).map((tz) => ({ label: tz, value: tz })),
+	(timezoneResource.data || []).map((tz: string) => ({ label: tz, value: tz }))
 )
 
 const mediumOptions = computed(() => {

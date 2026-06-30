@@ -3,6 +3,8 @@
 		<Layout class="isolate text-p-base">
 			<router-view />
 		</Layout>
+		<NotificationPanel />
+		<InstallPrompt v-if="isMobile && !settings.data?.disable_pwa" />
 		<Dialogs />
 	</FrappeUIProvider>
 </template>
@@ -18,6 +20,8 @@ import { useRouter } from 'vue-router'
 import DesktopLayout from './components/Layouts/DesktopLayout.vue'
 import MobileLayout from './components/Layouts/MobileLayout.vue'
 import NoSidebarLayout from './components/Layouts/NoSidebarLayout.vue'
+import InstallPrompt from './components/InstallPrompt.vue'
+import NotificationPanel from '@/components/Notifications/NotificationPanel.vue'
 
 const { isMobile } = useScreenSize()
 const router = useRouter()

@@ -1,19 +1,7 @@
 <template>
 	<div class="w-[90%] lg:w-[75%] mx-auto mt-5">
-		<div class="flex items-center justify-between mb-5">
-			<div class="text-ink-gray-9 font-semibold text-lg">
-				{{ __('Announcements') }}
-			</div>
-			<Button
-				v-if="canMakeAnnouncement"
-				variant="solid"
-				@click="showAnnouncementModal = true"
-			>
-				<template #prefix>
-					<Plus class="w-4 h-4" />
-				</template>
-				{{ __('Make an Announcement') }}
-			</Button>
+		<div class="text-ink-gray-9 text-xl-semibold mb-5">
+			{{ __('Announcements') }}
 		</div>
 		<div v-if="announcements.length">
 			<div v-for="(comm, idx) in announcements" :key="idx">
@@ -36,9 +24,8 @@
 					<!-- Rich email/template HTML mirrors the email in an isolated
 					     iframe; a plain notification keeps the app's themed card. -->
 					<div
-						v-if="isPlainNotification(comm.content)"
-						class="prose prose-sm bg-surface-menu-bar !min-w-full px-4 py-2 rounded-md"
-						v-html="comm.content"
+						class="prose prose-sm bg-surface-sidebar !min-w-full px-4 py-2 rounded-md"
+						v-html="sanitizeRichHTML(comm.content)"
 					></div>
 					<AnnouncementContent v-else :content="comm.content" />
 				</div>
@@ -78,9 +65,8 @@
 	</div>
 </template>
 <script setup>
-import { createResource, Avatar, Button } from 'frappe-ui'
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-vue-next'
-import { computed, inject, ref, watch } from 'vue'
+import { sanitizeRichHTML } from '@/utils/sanitizeRichHTML'
+import { createResource, Avatar } from 'frappe-ui'
 import { timeAgo } from '@/utils'
 import AnnouncementModal from '@/pages/Batches/components/AnnouncementModal.vue'
 import AnnouncementContent from '@/pages/Batches/components/AnnouncementContent.vue'

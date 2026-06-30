@@ -32,7 +32,7 @@
 					>
 						<Button variant="solid" size="md" class="w-full">
 							<template #prefix>
-								<BookText class="size-4 stroke-1.5" />
+								<span class="lucide-book-text size-4" />
 							</template>
 							<span>
 								{{ __('Continue Learning') }}
@@ -53,7 +53,7 @@
 				>
 					<Button variant="solid" size="md" class="w-full mb-8">
 						<template #prefix>
-							<CreditCard class="size-4 stroke-1.5" />
+							<span class="lucide-credit-card size-4" />
 						</template>
 						<span>
 							{{ __('Buy this course') }}
@@ -76,7 +76,7 @@
 					size="md"
 				>
 					<template #prefix>
-						<BookText class="size-4 stroke-1.5" />
+						<span class="lucide-book-text size-4" />
 					</template>
 					<span>
 						{{ __('Enroll Now') }}
@@ -90,7 +90,7 @@
 					size="md"
 				>
 					<template #prefix>
-						<GraduationCap class="size-4 stroke-1.5" />
+						<span class="lucide-graduation-cap size-4" />
 					</template>
 					{{ __('Get Certificate') }}
 				</Button>
@@ -115,21 +115,21 @@
 					v-if="enrolledLabel"
 					class="flex items-center gap-3 text-ink-gray-8"
 				>
-					<Users class="size-4 stroke-1.5 shrink-0 text-ink-gray-7" />
+					<span class="lucide-users size-4 shrink-0 text-ink-gray-7" />
 					<span>{{ enrolledLabel }} {{ __('enrolled') }}</span>
 				</div>
 				<div
 					v-if="course.data?.video_link"
 					class="flex items-center gap-3 text-ink-gray-8"
 				>
-					<MonitorPlay class="size-4 stroke-1.5 shrink-0 text-ink-gray-7" />
+					<span class="lucide-monitor-play size-4 shrink-0 text-ink-gray-7" />
 					<span>{{ __('On demand course video') }}</span>
 				</div>
 				<div
 					v-if="course.data?.lessons"
 					class="flex items-center gap-3 text-ink-gray-8"
 				>
-					<BookOpen class="size-4 stroke-1.5 shrink-0 text-ink-gray-7" />
+					<span class="lucide-book-open size-4 shrink-0 text-ink-gray-7" />
 					<span>
 						{{ course.data?.lessons }}
 						{{ course.data?.lessons === 1 ? __('Lesson') : __('Lessons') }}
@@ -139,7 +139,7 @@
 					v-if="(course.data?.quiz_count || 0) > 0"
 					class="flex items-center gap-3 text-ink-gray-8"
 				>
-					<HelpCircle class="size-4 stroke-1.5 shrink-0 text-ink-gray-7" />
+					<span class="lucide-help-circle size-4 shrink-0 text-ink-gray-7" />
 					<span>
 						{{ course.data?.quiz_count }}
 						{{
@@ -153,7 +153,7 @@
 					v-if="course.data?.enable_certification"
 					class="flex items-center gap-3 text-ink-gray-8"
 				>
-					<Award class="size-4 stroke-1.5 shrink-0 text-ink-gray-7" />
+					<span class="lucide-award size-4 shrink-0 text-ink-gray-7" />
 					<span>{{ __('Certificate of completion') }}</span>
 				</div>
 			</section>
