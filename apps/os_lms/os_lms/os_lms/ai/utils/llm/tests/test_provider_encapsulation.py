@@ -41,6 +41,8 @@ def _provider_dirs(app_root: Path) -> list[Path]:
         base / "llm" / "providers",
         base / "stt" / "providers",  # may not exist yet (fase 2)
         base / "tts" / "providers",  # may not exist yet (fase 2)
+        base / "audio" / "providers",
+        base / "realtime" / "providers",
     ]
 
 
