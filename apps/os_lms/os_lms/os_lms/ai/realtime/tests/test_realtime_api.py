@@ -90,3 +90,49 @@ class TestRealtimeApi(UnitTestCase):
 			"LMSA Simulation Turn", filters={"session": sid}, fields=["role", "text_content"]
 		)
 		self.assertEqual({t["role"] for t in turns}, {"user", "assistant"})
+
+	@patch.object(SessionOrchestrator, "_generate_variant", _stub_generate_variant)
+	def test_duration_exceeded_terminates_session(self):
+		out = rt_api.create_voice_session(scenario_id=self.scenario.name)
+		sid = out["session_id"]
+		# Backdate started_at well past the 300-second limit.
+		frappe.db.set_value(
+			"LMSA Simulation Session",
+			sid,
+			"started_at",
+			frappe.utils.add_to_date(frappe.utils.now_datetime(), seconds=-(300 + 60)),
+		)
+		frappe.db.commit()
+		with self.assertRaises(frappe.ValidationError):
+			rt_api.persist_transcript_turn(session_id=sid, role="user", text="late")
+		status = frappe.db.get_value("LMSA Simulation Session", sid, "status")
+		from os_lms.os_lms.doctype.lmsa_simulation_session.lmsa_simulation_session import TERMINAL_STATUSES
+		self.assertIn(status, TERMINAL_STATUSES)
+
+	@patch.object(SessionOrchestrator, "_generate_variant", _stub_generate_variant)
+	def test_non_owner_cannot_persist_turn(self):
+		out = rt_api.create_voice_session(scenario_id=self.scenario.name)
+		sid = out["session_id"]
+		# A second student (not enrolled, not moderator) must not relay turns.
+		second_student = _make_student("voice-student-2@example.com")
+		frappe.db.commit()
+		frappe.set_user(second_student)
+		try:
+			with self.assertRaises(frappe.PermissionError):
+				rt_api.persist_transcript_turn(session_id=sid, role="user", text="intruder")
+		finally:
+			frappe.set_user(self.student)
+
+	@patch.object(SessionOrchestrator, "_generate_variant", _stub_generate_variant)
+	def test_non_owner_cannot_end_session(self):
+		out = rt_api.create_voice_session(scenario_id=self.scenario.name)
+		sid = out["session_id"]
+		# A second student (not enrolled, not moderator) must not end the session.
+		second_student = _make_student("voice-student-3@example.com")
+		frappe.db.commit()
+		frappe.set_user(second_student)
+		try:
+			with self.assertRaises(frappe.PermissionError):
+				rt_api.end_voice_session(session_id=sid, reason="completed")
+		finally:
+			frappe.set_user(self.student)

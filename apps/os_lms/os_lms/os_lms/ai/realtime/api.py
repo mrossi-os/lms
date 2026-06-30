@@ -8,6 +8,8 @@ here — the client streams directly to the provider with the ephemeral token.
 """
 from __future__ import annotations
 
+from typing import NoReturn
+
 import frappe
 from frappe import _
 
@@ -28,6 +30,7 @@ from os_lms.os_lms.ai.utils.realtime import (
 	RealtimeUnsupported,
 	resolve_realtime_provider,
 )
+from lms.lms.utils import has_moderator_role
 from os_lms.os_lms.ai.utils.llm import load_settings
 
 
@@ -129,7 +132,7 @@ def end_voice_session(session_id: str, reason: str = "completed", seconds: int =
 	if reason not in ("completed", "abandoned"):
 		frappe.throw(_("Unsupported reason: {0}").format(reason))
 	session = load_session(session_id)
-	if session.student != frappe.session.user:
+	if session.student != frappe.session.user and not has_moderator_role():
 		frappe.throw(_("Only the session owner can end the session."), frappe.PermissionError)
 
 	if seconds:
@@ -139,6 +142,6 @@ def end_voice_session(session_id: str, reason: str = "completed", seconds: int =
 	return dict(_service().end_session(session_id=session.name, reason=reason))
 
 
-def _throw(reason: str) -> None:
+def _throw(reason: str) -> NoReturn:
 	frappe.log_error(title="LMSA realtime error")
 	frappe.throw(_("Realtime error: {0}.").format(reason))

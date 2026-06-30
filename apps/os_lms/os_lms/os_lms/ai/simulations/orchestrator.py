@@ -325,6 +325,7 @@ class SessionOrchestrator:
 			frappe.throw(_("Empty transcript turn"))
 
 		session = frappe.get_doc("LMSA Simulation Session", session_id)
+		self._enforce_max_duration(session)
 		if session.status in TERMINAL_STATUSES:
 			raise SessionTerminatedError(
 				f"Session {session_id} is in terminal state {session.status!r}"
@@ -454,6 +455,25 @@ class SessionOrchestrator:
 		except Exception as e:
 			# Realtime is best-effort: don't fail the turn over a websocket hiccup.
 			self.logger.warning("publish_realtime(%s) failed: %s", event, e)
+
+	def _enforce_max_duration(self, session) -> None:
+		"""Force-terminate a voice session past its max duration (spec §7).
+
+		The client also runs a timer, but the backend must not rely on it.
+		Called at the start of persist_voice_turn. Ends the session through the
+		normal terminal path (submit + debrief enqueue) and signals the caller.
+		"""
+		max_seconds = int(getattr(self.settings, "realtime_max_session_seconds", 0) or 0)
+		if not max_seconds or not session.started_at:
+			return
+		elapsed = (frappe.utils.now_datetime() - session.started_at).total_seconds()
+		if elapsed <= max_seconds:
+			return
+		if session.status not in TERMINAL_STATUSES:
+			self.end_session(session_id=session.name, reason="completed")
+		raise SessionTerminatedError(
+			f"Session {session.name} exceeded max duration of {max_seconds}s"
+		)
 
 	# ---------- privacy ----------
 
