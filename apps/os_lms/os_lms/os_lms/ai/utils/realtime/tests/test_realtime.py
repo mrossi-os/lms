@@ -6,6 +6,7 @@ mock adapter's create_session, and transcript-event parsing.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from unittest.mock import patch
 
 from frappe.tests import UnitTestCase
 
@@ -14,6 +15,11 @@ from os_lms.os_lms.ai.utils.realtime.provider import (
 	RealtimeProvider,
 	RealtimeSession,
 	RealtimeSessionConfig,
+)
+from os_lms.os_lms.ai.utils.realtime.providers.openai_realtime import (
+	OpenAIRealtimeProvider,
+	_parse_event,
+	_session_body,
 )
 
 
@@ -100,13 +106,6 @@ class TestConfigWiring(UnitTestCase):
 # ---------------------------------------------------------------------------
 # Task 2: OpenAI Realtime adapter
 # ---------------------------------------------------------------------------
-from unittest.mock import patch
-
-from os_lms.os_lms.ai.utils.realtime.providers.openai_realtime import (
-	OpenAIRealtimeProvider,
-	_parse_event,
-	_session_body,
-)
 
 
 class TestOpenAIParseEvent(UnitTestCase):
