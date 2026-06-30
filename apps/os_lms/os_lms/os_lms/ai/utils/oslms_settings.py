@@ -36,3 +36,11 @@ class OsLmsSettings:
     tts_model: str = "gpt-4o-mini-tts"
     tts_voice: str = "alloy"
     tts_autoplay_on_stt: bool = False
+
+    # Realtime / voice (speech-to-speech) — additive, all defaulted.
+    realtime_enabled: bool = False
+    realtime_provider: str = "openai"
+    realtime_model: str = ""
+    realtime_voice: str = ""
+    turn_detection: str = "server_vad"
+    realtime_max_session_seconds: int = 300

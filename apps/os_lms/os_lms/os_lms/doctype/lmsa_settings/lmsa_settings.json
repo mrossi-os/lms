@@ -41,7 +41,14 @@
 		"tts_provider",
 		"tts_model",
 		"tts_voice",
-		"tts_autoplay_on_stt"
+		"tts_autoplay_on_stt",
+		"realtime_section",
+		"realtime_enabled",
+		"realtime_provider",
+		"realtime_model",
+		"realtime_voice",
+		"turn_detection",
+		"realtime_max_session_seconds"
 	],
 	"fields": [
 		{
@@ -266,6 +273,54 @@
 			"fieldname": "tts_autoplay_on_stt",
 			"fieldtype": "Check",
 			"label": "Auto-play answer after voice input"
+		},
+		{
+			"fieldname": "realtime_section",
+			"fieldtype": "Section Break",
+			"label": "Realtime / Voice"
+		},
+		{
+			"default": "0",
+			"fieldname": "realtime_enabled",
+			"fieldtype": "Check",
+			"label": "Enable Realtime Voice"
+		},
+		{
+			"default": "openai",
+			"depends_on": "realtime_enabled",
+			"fieldname": "realtime_provider",
+			"fieldtype": "Select",
+			"label": "Realtime Provider",
+			"options": "openai\ngemini"
+		},
+		{
+			"depends_on": "realtime_enabled",
+			"description": "Blank = provider default (OpenAI: gpt-realtime-2)",
+			"fieldname": "realtime_model",
+			"fieldtype": "Data",
+			"label": "Realtime Model"
+		},
+		{
+			"depends_on": "realtime_enabled",
+			"description": "Blank = provider default (OpenAI: marin)",
+			"fieldname": "realtime_voice",
+			"fieldtype": "Data",
+			"label": "Realtime Voice"
+		},
+		{
+			"default": "server_vad",
+			"depends_on": "realtime_enabled",
+			"fieldname": "turn_detection",
+			"fieldtype": "Select",
+			"label": "Turn Detection",
+			"options": "server_vad\nsemantic_vad"
+		},
+		{
+			"default": "300",
+			"depends_on": "realtime_enabled",
+			"fieldname": "realtime_max_session_seconds",
+			"fieldtype": "Int",
+			"label": "Max Session Seconds"
 		}
 	],
 	"grid_page_length": 50,

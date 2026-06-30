@@ -193,6 +193,13 @@ def _load_settings():
         tts_model=getattr(doc, "tts_model", "") or "gpt-4o-mini-tts",
         tts_voice=getattr(doc, "tts_voice", "") or "alloy",
         tts_autoplay_on_stt=bool(getattr(doc, "tts_autoplay_on_stt", 0)),
+        # realtime / voice — additive
+        realtime_enabled=bool(getattr(doc, "realtime_enabled", 0)),
+        realtime_provider=getattr(doc, "realtime_provider", "") or "openai",
+        realtime_model=getattr(doc, "realtime_model", "") or "",
+        realtime_voice=getattr(doc, "realtime_voice", "") or "",
+        turn_detection=getattr(doc, "turn_detection", "") or "server_vad",
+        realtime_max_session_seconds=int(getattr(doc, "realtime_max_session_seconds", 0) or 300),
     )
 
 

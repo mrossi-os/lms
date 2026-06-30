@@ -224,3 +224,27 @@ class TestGeminiCreateSession(UnitTestCase):
 		self.assertEqual(session.extra["instructions"], "You are a recruiter.")
 		# Resumption handle slot present (empty initially).
 		self.assertIn("resumption_handle", session.extra)
+
+
+# ---------------------------------------------------------------------------
+# Task 5: OsLmsSettings realtime fields
+# ---------------------------------------------------------------------------
+
+
+class TestRealtimeSettingsDefaults(UnitTestCase):
+	def test_oslmssettings_has_realtime_fields_with_defaults(self):
+		from os_lms.os_lms.ai.utils.oslms_settings import OsLmsSettings
+
+		s = OsLmsSettings(
+			enabled=False,
+			embedding_model="x",
+			chunk_size=1,
+			chunk_overlap=1,
+			top_k=1,
+			llm_model="x",
+			openai_key="",
+		)
+		self.assertFalse(s.realtime_enabled)
+		self.assertEqual(s.realtime_provider, "openai")
+		self.assertEqual(s.turn_detection, "server_vad")
+		self.assertEqual(s.realtime_max_session_seconds, 300)
