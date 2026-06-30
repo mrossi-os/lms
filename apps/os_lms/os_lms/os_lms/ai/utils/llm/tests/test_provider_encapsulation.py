@@ -15,7 +15,6 @@ from pathlib import Path
 
 from frappe.tests import UnitTestCase
 
-
 # Top-level modules whose import must stay inside utils/{llm,stt,tts}/providers/.
 # Each entry is matched against an import's top-level package name only.
 FORBIDDEN_TOP_LEVEL_PACKAGES = {

@@ -3,6 +3,7 @@
 No network, no keys. Lets the feature layer and frontend be exercised with
 realtime_provider = "mock".
 """
+
 from __future__ import annotations
 
 from ..config import RealtimeProviderConfig

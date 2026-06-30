@@ -8,6 +8,7 @@ The abstraction is a CONTROL-PLANE contract only: create_session mints an
 ephemeral token; the audio stream itself is established client-side and never
 touches the backend.
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -66,9 +67,7 @@ class RealtimeProvider(ABC):
 	def create_session(self, cfg: RealtimeSessionConfig) -> RealtimeSession:
 		"""Mint an ephemeral client token server-side and return everything
 		the client needs to connect. The api key stays on the server."""
-		raise RealtimeUnsupported(
-			f"{self.name or 'provider'} does not support realtime sessions"
-		)
+		raise RealtimeUnsupported(f"{self.name or 'provider'} does not support realtime sessions")
 
 	@abstractmethod
 	def parse_transcript_event(self, event: dict) -> TranscriptEvent | None:

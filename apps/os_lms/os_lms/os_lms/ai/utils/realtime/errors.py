@@ -3,6 +3,7 @@
 Parallel to ai/utils/audio/errors: adapters translate provider-specific
 failures into these classes so the whitelisted API layer reacts uniformly.
 """
+
 from __future__ import annotations
 
 

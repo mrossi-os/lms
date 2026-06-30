@@ -155,6 +155,10 @@ Custom Vue 3 components and composables for the os_lms extension. Located in the
 - **`Form/Switch.vue`** — Custom switch input
 - **`IconPicker.vue`** — Icon selection component
 
+### Realtime Voice (Simulations)
+
+Provider-agnostic speech-to-speech voice modality for AI simulations. **OpenAI Realtime** is the default provider (WebRTC transport); **Gemini Live** is available via the `realtime_provider` setting (WebSocket transport). Config lives in `LMSA Settings → Realtime / Voice` (enable/disable, provider, model, voice, turn detection, max session seconds). **Audio never passes through Frappe** — Frappe is the control plane only: it mints ephemeral tokens (`ai.realtime.api.create_voice_session`), persists transcript turns relayed by the client (`persist_transcript_turn`), records session duration, and enqueues the post-session debrief. The client streams audio directly to the provider using the ephemeral token. Provider logic lives in `ai/utils/realtime/` (ABC + registry + per-provider adapters); control-plane endpoints in `ai/realtime/api.py`; frontend in `frontend/src/oslms/` (`composables/realtime/`, `composables/useRealtimeSession.js`, `components/simulations/VoiceSession.vue`).
+
 ## Hooks
 
 - **After Migrate**: setup language, custom fields, Redis index

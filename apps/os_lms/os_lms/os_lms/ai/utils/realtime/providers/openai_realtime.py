@@ -9,6 +9,7 @@ stream itself is WebRTC and is established by the client, never the backend.
   ephemeral token as Bearer.
 - parse_transcript_event maps the two final-transcript events to a Turn.
 """
+
 from __future__ import annotations
 
 import requests
@@ -53,9 +54,7 @@ class OpenAIRealtimeProvider(RealtimeProvider):
 			"Content-Type": "application/json",
 		}
 		try:
-			r = requests.post(
-				url, headers=headers, json=_session_body(cfg, self._config), timeout=30.0
-			)
+			r = requests.post(url, headers=headers, json=_session_body(cfg, self._config), timeout=30.0)
 		except requests.Timeout as e:
 			raise RealtimeTimeout(str(e), provider=self.name, cause=e) from e
 		except requests.RequestException as e:

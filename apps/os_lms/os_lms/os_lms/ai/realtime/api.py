@@ -6,6 +6,7 @@ Thin control-plane shell: validate, gate (permissions + quota), delegate to
 SessionOrchestrator, mint an ephemeral provider token. NO audio passes through
 here — the client streams directly to the provider with the ephemeral token.
 """
+
 from __future__ import annotations
 
 from typing import NoReturn
@@ -13,6 +14,7 @@ from typing import NoReturn
 import frappe
 from frappe import _
 
+from lms.lms.utils import has_moderator_role
 from os_lms.os_lms.ai.simulations.api import _resolve_published_scenario, load_session
 from os_lms.os_lms.ai.simulations.orchestrator import (
 	QuotaExceededError,
@@ -20,6 +22,7 @@ from os_lms.os_lms.ai.simulations.orchestrator import (
 	SessionTerminatedError,
 )
 from os_lms.os_lms.ai.simulations.prompts.role_play import build_role_play_system_prompt
+from os_lms.os_lms.ai.utils.llm import load_settings
 from os_lms.os_lms.ai.utils.realtime import (
 	RealtimeError,
 	RealtimeInvalidAuth,
@@ -30,8 +33,6 @@ from os_lms.os_lms.ai.utils.realtime import (
 	RealtimeUnsupported,
 	resolve_realtime_provider,
 )
-from lms.lms.utils import has_moderator_role
-from os_lms.os_lms.ai.utils.llm import load_settings
 
 
 def _service() -> SessionOrchestrator:
@@ -136,9 +137,7 @@ def end_voice_session(session_id: str, reason: str = "completed", seconds: int =
 		frappe.throw(_("Only the session owner can end the session."), frappe.PermissionError)
 
 	if seconds:
-		frappe.db.set_value(
-			"LMSA Simulation Session", session.name, "session_seconds", int(seconds)
-		)
+		frappe.db.set_value("LMSA Simulation Session", session.name, "session_seconds", int(seconds))
 	return dict(_service().end_session(session_id=session.name, reason=reason))
 
 

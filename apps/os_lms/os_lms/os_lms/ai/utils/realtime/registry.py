@@ -4,6 +4,7 @@ Parallel to ai/utils/audio/registry. Adapters in providers/ decorate their
 class with @register_realtime("name"); business code uses
 get_realtime_provider(config) and never imports adapter classes.
 """
+
 from __future__ import annotations
 
 from .config import RealtimeProviderConfig
@@ -28,9 +29,7 @@ def register_realtime(name: str):
 def get_realtime_provider(config: RealtimeProviderConfig) -> RealtimeProvider:
 	if config.name not in _REALTIME_PROVIDERS:
 		available = ", ".join(sorted(_REALTIME_PROVIDERS)) or "<none registered>"
-		raise ValueError(
-			f"Unknown realtime provider: {config.name!r}. Available: {available}"
-		)
+		raise ValueError(f"Unknown realtime provider: {config.name!r}. Available: {available}")
 	return _REALTIME_PROVIDERS[config.name](config)
 
 

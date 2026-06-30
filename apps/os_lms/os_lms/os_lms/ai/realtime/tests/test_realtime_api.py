@@ -4,6 +4,7 @@ Call the whitelisted Python entry points directly under the student identity,
 mirroring simulations/tests/test_api.py. realtime_provider="mock" so no
 network is involved; _generate_variant is stubbed to a canned persona.
 """
+
 from __future__ import annotations
 
 from unittest.mock import patch
@@ -83,9 +84,7 @@ class TestRealtimeApi(UnitTestCase):
 
 		ended = rt_api.end_voice_session(session_id=sid, reason="completed", seconds=42)
 		self.assertEqual(ended["status"], "Completed")
-		self.assertEqual(
-			frappe.db.get_value("LMSA Simulation Session", sid, "session_seconds"), 42
-		)
+		self.assertEqual(frappe.db.get_value("LMSA Simulation Session", sid, "session_seconds"), 42)
 		turns = frappe.get_all(
 			"LMSA Simulation Turn", filters={"session": sid}, fields=["role", "text_content"]
 		)
@@ -107,6 +106,7 @@ class TestRealtimeApi(UnitTestCase):
 			rt_api.persist_transcript_turn(session_id=sid, role="user", text="late")
 		status = frappe.db.get_value("LMSA Simulation Session", sid, "status")
 		from os_lms.os_lms.doctype.lmsa_simulation_session.lmsa_simulation_session import TERMINAL_STATUSES
+
 		self.assertIn(status, TERMINAL_STATUSES)
 
 	@patch.object(SessionOrchestrator, "_generate_variant", _stub_generate_variant)

@@ -8,6 +8,7 @@ the `resumption_handle` slot is provided so the client can persist/restore it.
 
 SDK-free, same encapsulation rule as the audio adapters.
 """
+
 from __future__ import annotations
 
 import requests

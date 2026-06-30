@@ -5,8 +5,11 @@ into adapter modules. resolve_realtime_provider() reads the shared
 OsLmsSettings (same loader as the LLM/audio layers) and returns a configured
 RealtimeProvider; build_realtime_config() is the single wiring point.
 """
+
 from __future__ import annotations
 
+# Side-effect: register all built-in adapters.
+from . import providers as _providers  # noqa: F401
 from .config import RealtimeProviderConfig
 from .errors import (
 	RealtimeError,
@@ -28,10 +31,6 @@ from .registry import (
 	list_realtime_providers,
 	register_realtime,
 )
-
-# Side-effect: register all built-in adapters.
-from . import providers as _providers  # noqa: F401
-
 
 __all__ = [
 	"RealtimeError",

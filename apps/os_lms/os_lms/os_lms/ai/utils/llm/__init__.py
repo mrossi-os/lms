@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import Literal
 
+# Side-effect: register all built-in adapters.
+from . import providers as _providers  # noqa: F401
 from .config import ProviderConfig
 from .errors import (
     LLMContextWindow,
@@ -30,9 +32,6 @@ from .provider import (
     Usage,
 )
 from .registry import get_provider, list_providers, register
-
-# Side-effect: register all built-in adapters.
-from . import providers as _providers  # noqa: F401
 
 Purpose = Literal["chat", "debrief"]
 
@@ -144,7 +143,6 @@ def _load_settings():
     """
     import frappe
     from frappe.utils.password import get_decrypted_password
-
     from os_lms.os_lms.ai.utils.oslms_settings import OsLmsSettings
 
     doc = frappe.get_single("LMSA Settings")

@@ -3,6 +3,7 @@
 Adapters never read frappe settings directly — they only see a
 RealtimeProviderConfig built by build_realtime_config() (in __init__.py).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

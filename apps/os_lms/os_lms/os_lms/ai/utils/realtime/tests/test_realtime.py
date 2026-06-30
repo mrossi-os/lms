@@ -3,27 +3,29 @@
 Pure tests — no DB, no network. Exercise the registry, config wiring, the
 mock adapter's create_session, and transcript-event parsing.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 from unittest.mock import patch
 
 from frappe.tests import UnitTestCase
-
 from os_lms.os_lms.ai.utils import realtime
 from os_lms.os_lms.ai.utils.realtime.provider import (
 	RealtimeProvider,
 	RealtimeSession,
 	RealtimeSessionConfig,
 )
+from os_lms.os_lms.ai.utils.realtime.providers.gemini_live import (
+	GeminiLiveProvider,
+)
+from os_lms.os_lms.ai.utils.realtime.providers.gemini_live import (
+	_parse_event as _gemini_parse_event,
+)
 from os_lms.os_lms.ai.utils.realtime.providers.openai_realtime import (
 	OpenAIRealtimeProvider,
 	_parse_event,
 	_session_body,
-)
-from os_lms.os_lms.ai.utils.realtime.providers.gemini_live import (
-	GeminiLiveProvider,
-	_parse_event as _gemini_parse_event,
 )
 
 
@@ -58,9 +60,7 @@ class TestRealtimeRegistry(UnitTestCase):
 
 	def test_unknown_provider_raises(self):
 		with self.assertRaises(ValueError):
-			realtime.get_realtime_provider(
-				realtime.RealtimeProviderConfig(name="nope")
-			)
+			realtime.get_realtime_provider(realtime.RealtimeProviderConfig(name="nope"))
 
 
 class TestMockProvider(UnitTestCase):
@@ -76,21 +76,13 @@ class TestMockProvider(UnitTestCase):
 		self.assertEqual(session.voice, "marin")
 
 	def test_parse_transcript_event_user(self):
-		provider = realtime.get_realtime_provider(
-			realtime.RealtimeProviderConfig(name="mock")
-		)
-		ev = provider.parse_transcript_event(
-			{"role": "user", "text": "Hello", "final": True}
-		)
+		provider = realtime.get_realtime_provider(realtime.RealtimeProviderConfig(name="mock"))
+		ev = provider.parse_transcript_event({"role": "user", "text": "Hello", "final": True})
 		self.assertEqual((ev.role, ev.text, ev.final), ("user", "Hello", True))
 
 	def test_parse_transcript_event_ignores_non_final(self):
-		provider = realtime.get_realtime_provider(
-			realtime.RealtimeProviderConfig(name="mock")
-		)
-		self.assertIsNone(
-			provider.parse_transcript_event({"role": "user", "text": "He", "final": False})
-		)
+		provider = realtime.get_realtime_provider(realtime.RealtimeProviderConfig(name="mock"))
+		self.assertIsNone(provider.parse_transcript_event({"role": "user", "text": "He", "final": False}))
 
 
 class TestConfigWiring(UnitTestCase):
@@ -114,25 +106,33 @@ class TestConfigWiring(UnitTestCase):
 
 class TestOpenAIParseEvent(UnitTestCase):
 	def test_user_transcript_completed(self):
-		ev = _parse_event({
-			"type": "conversation.item.input_audio_transcription.completed",
-			"transcript": "Buongiorno",
-		})
+		ev = _parse_event(
+			{
+				"type": "conversation.item.input_audio_transcription.completed",
+				"transcript": "Buongiorno",
+			}
+		)
 		self.assertEqual((ev.role, ev.text, ev.final), ("user", "Buongiorno", True))
 
 	def test_assistant_transcript_done(self):
-		ev = _parse_event({
-			"type": "response.output_audio_transcript.done",
-			"transcript": "Piacere di conoscerla",
-		})
+		ev = _parse_event(
+			{
+				"type": "response.output_audio_transcript.done",
+				"transcript": "Piacere di conoscerla",
+			}
+		)
 		self.assertEqual(ev.role, "assistant")
 		self.assertTrue(ev.final)
 
 	def test_delta_is_ignored(self):
-		self.assertIsNone(_parse_event({
-			"type": "response.output_audio_transcript.delta",
-			"delta": "Pia",
-		}))
+		self.assertIsNone(
+			_parse_event(
+				{
+					"type": "response.output_audio_transcript.delta",
+					"delta": "Pia",
+				}
+			)
+		)
 
 	def test_unrelated_event_is_ignored(self):
 		self.assertIsNone(_parse_event({"type": "response.created"}))
@@ -184,15 +184,11 @@ class TestOpenAICreateSession(UnitTestCase):
 
 class TestGeminiParseEvent(UnitTestCase):
 	def test_input_transcription(self):
-		ev = _gemini_parse_event({
-			"serverContent": {"inputTranscription": {"text": "Salve"}}
-		})
+		ev = _gemini_parse_event({"serverContent": {"inputTranscription": {"text": "Salve"}}})
 		self.assertEqual((ev.role, ev.text, ev.final), ("user", "Salve", True))
 
 	def test_output_transcription(self):
-		ev = _gemini_parse_event({
-			"serverContent": {"outputTranscription": {"text": "Benvenuto"}}
-		})
+		ev = _gemini_parse_event({"serverContent": {"outputTranscription": {"text": "Benvenuto"}}})
 		self.assertEqual(ev.role, "assistant")
 
 	def test_other_frame_ignored(self):
