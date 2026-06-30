@@ -95,3 +95,80 @@ class TestConfigWiring(UnitTestCase):
 	def test_unknown_config_raises(self):
 		with self.assertRaises(ValueError):
 			realtime.build_realtime_config("nope", _FakeSettings())
+
+
+# ---------------------------------------------------------------------------
+# Task 2: OpenAI Realtime adapter
+# ---------------------------------------------------------------------------
+from unittest.mock import patch
+
+from os_lms.os_lms.ai.utils.realtime.providers.openai_realtime import (
+	OpenAIRealtimeProvider,
+	_parse_event,
+	_session_body,
+)
+
+
+class TestOpenAIParseEvent(UnitTestCase):
+	def test_user_transcript_completed(self):
+		ev = _parse_event({
+			"type": "conversation.item.input_audio_transcription.completed",
+			"transcript": "Buongiorno",
+		})
+		self.assertEqual((ev.role, ev.text, ev.final), ("user", "Buongiorno", True))
+
+	def test_assistant_transcript_done(self):
+		ev = _parse_event({
+			"type": "response.output_audio_transcript.done",
+			"transcript": "Piacere di conoscerla",
+		})
+		self.assertEqual(ev.role, "assistant")
+		self.assertTrue(ev.final)
+
+	def test_delta_is_ignored(self):
+		self.assertIsNone(_parse_event({
+			"type": "response.output_audio_transcript.delta",
+			"delta": "Pia",
+		}))
+
+	def test_unrelated_event_is_ignored(self):
+		self.assertIsNone(_parse_event({"type": "response.created"}))
+
+
+class TestOpenAISessionBody(UnitTestCase):
+	def test_body_carries_persona_and_voice(self):
+		cfg = _cfg()
+		config = realtime.build_realtime_config("openai", _FakeSettings())
+		body = _session_body(cfg, config)
+		# instructions and voice must reach the provider; api key must not be here.
+		self.assertIn("session", body)
+		self.assertEqual(body["session"]["instructions"], "You are a recruiter.")
+		self.assertEqual(body["session"]["audio"]["output"]["voice"], "marin")
+
+
+class TestOpenAICreateSession(UnitTestCase):
+	def test_create_session_mints_ephemeral_token(self):
+		config = realtime.build_realtime_config("openai", _FakeSettings())
+		provider = OpenAIRealtimeProvider(config)
+
+		class _Resp:
+			status_code = 200
+
+			@staticmethod
+			def json():
+				return {"value": "ek_abc", "expires_at": 1234567890}
+
+		with patch(
+			"os_lms.os_lms.ai.utils.realtime.providers.openai_realtime.requests.post",
+			return_value=_Resp(),
+		) as mocked:
+			session = provider.create_session(_cfg())
+
+		self.assertEqual(session.transport, "webrtc")
+		self.assertEqual(session.client_secret, "ek_abc")
+		self.assertEqual(session.expires_at, 1234567890)
+		self.assertTrue(session.connect_url.endswith("/realtime/calls"))
+		# api key sent as Bearer header, never in the returned session.
+		_, kwargs = mocked.call_args
+		self.assertEqual(kwargs["headers"]["Authorization"], "Bearer sk-test")
+		self.assertNotIn("sk-test", session.client_secret)
