@@ -24,7 +24,11 @@
   "generated_persona",
   "section_audit",
   "chat_model_used",
-  "chat_provider_used"
+  "chat_provider_used",
+  "realtime_provider_used",
+  "realtime_model_used",
+  "voice_used",
+  "session_seconds"
  ],
  "fields": [
   {
@@ -156,6 +160,31 @@
    "fieldname": "chat_provider_used",
    "fieldtype": "Data",
    "label": "Chat Provider",
+   "read_only": 1
+  },
+  {
+   "fieldname": "realtime_provider_used",
+   "fieldtype": "Data",
+   "label": "Realtime Provider Used",
+   "read_only": 1
+  },
+  {
+   "fieldname": "realtime_model_used",
+   "fieldtype": "Data",
+   "label": "Realtime Model Used",
+   "read_only": 1
+  },
+  {
+   "fieldname": "voice_used",
+   "fieldtype": "Data",
+   "label": "Voice Used",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "session_seconds",
+   "fieldtype": "Int",
+   "label": "Session Seconds",
    "read_only": 1
   }
  ],
