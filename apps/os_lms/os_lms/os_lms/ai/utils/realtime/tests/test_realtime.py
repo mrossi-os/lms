@@ -21,6 +21,10 @@ from os_lms.os_lms.ai.utils.realtime.providers.openai_realtime import (
 	_parse_event,
 	_session_body,
 )
+from os_lms.os_lms.ai.utils.realtime.providers.gemini_live import (
+	GeminiLiveProvider,
+	_parse_event as _gemini_parse_event,
+)
 
 
 @dataclass
@@ -171,3 +175,52 @@ class TestOpenAICreateSession(UnitTestCase):
 		_, kwargs = mocked.call_args
 		self.assertEqual(kwargs["headers"]["Authorization"], "Bearer sk-test")
 		self.assertNotIn("sk-test", session.client_secret)
+
+
+# ---------------------------------------------------------------------------
+# Task 3: Gemini Live adapter
+# ---------------------------------------------------------------------------
+
+
+class TestGeminiParseEvent(UnitTestCase):
+	def test_input_transcription(self):
+		ev = _gemini_parse_event({
+			"serverContent": {"inputTranscription": {"text": "Salve"}}
+		})
+		self.assertEqual((ev.role, ev.text, ev.final), ("user", "Salve", True))
+
+	def test_output_transcription(self):
+		ev = _gemini_parse_event({
+			"serverContent": {"outputTranscription": {"text": "Benvenuto"}}
+		})
+		self.assertEqual(ev.role, "assistant")
+
+	def test_other_frame_ignored(self):
+		self.assertIsNone(_gemini_parse_event({"setupComplete": {}}))
+
+
+class TestGeminiCreateSession(UnitTestCase):
+	def test_create_session_returns_websocket_descriptor(self):
+		config = realtime.build_realtime_config("gemini", _FakeSettings())
+		provider = GeminiLiveProvider(config)
+
+		class _Resp:
+			status_code = 200
+
+			@staticmethod
+			def json():
+				return {"name": "auth_tokens/abc", "expireTime": "2026-01-01T00:00:00Z"}
+
+		with patch(
+			"os_lms.os_lms.ai.utils.realtime.providers.gemini_live.requests.post",
+			return_value=_Resp(),
+		):
+			session = provider.create_session(_cfg())
+
+		self.assertEqual(session.transport, "websocket")
+		self.assertTrue(session.client_secret)
+		self.assertTrue(session.connect_url.startswith("wss://"))
+		# Persona must be carried for the client's setup frame.
+		self.assertEqual(session.extra["instructions"], "You are a recruiter.")
+		# Resumption handle slot present (empty initially).
+		self.assertIn("resumption_handle", session.extra)
