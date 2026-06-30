@@ -203,7 +203,7 @@ The debrief runs **identically** on the text Turns. The soft-skill "delivery" ju
 `time_limit_minutes` / `max_turns` exist on the Scenario but are **not enforced**. For voice,
 where billing is per-minute, we need:
 
-- **`realtime_max_session_seconds`** (Settings, default e.g. 900s), with optional Scenario override.
+- **`realtime_max_session_seconds`** (Settings, default 300s / 5 min), with optional Scenario override.
 - Enforcement at **two levels**: a **client** timer (UX: countdown, clean close) plus a
   **server** guard in `persist_transcript_turn` / `end_voice_session` (if
   `now - started_at > max` ⇒ force termination). No long-lived process on Frappe.
