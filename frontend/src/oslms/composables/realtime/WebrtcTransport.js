@@ -48,6 +48,10 @@ export class WebrtcTransport extends RealtimeTransport {
 				'Content-Type': 'application/sdp',
 			},
 		})
+		if (!resp.ok) {
+			this._emitState('error')
+			throw new Error(`SDP exchange failed: ${resp.status}`)
+		}
 		const answer = { type: 'answer', sdp: await resp.text() }
 		await pc.setRemoteDescription(answer)
 	}
@@ -67,7 +71,10 @@ export class WebrtcTransport extends RealtimeTransport {
 
 	close() {
 		this._dc?.close()
-		this._pc?.close()
+		if (this._pc) {
+			this._pc.onconnectionstatechange = null
+			this._pc.close()
+		}
 		if (this._audioEl) this._audioEl.srcObject = null
 		this._emitState('closed')
 	}

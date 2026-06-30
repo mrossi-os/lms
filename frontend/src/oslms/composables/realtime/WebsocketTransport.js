@@ -47,7 +47,9 @@ export class WebsocketTransport extends RealtimeTransport {
 			this._emitState('connected')
 			this._startMicPump()
 		}
-		ws.onmessage = (e) => this._onFrame(e.data)
+		ws.onmessage = (e) => {
+			this._onFrame(e.data).catch(() => {})
+		}
 		ws.onerror = () => this._emitState('error')
 		ws.onclose = () => this._emitState('closed')
 	}
@@ -80,20 +82,26 @@ export class WebsocketTransport extends RealtimeTransport {
 	}
 
 	sendAudio(base64Pcm) {
-		this._ws?.send(
-			JSON.stringify({
-				realtimeInput: {
-					audio: {
-						data: base64Pcm,
-						mimeType: 'audio/pcm;rate=16000',
+		if (this._ws?.readyState === WebSocket.OPEN) {
+			this._ws.send(
+				JSON.stringify({
+					realtimeInput: {
+						audio: {
+							data: base64Pcm,
+							mimeType: 'audio/pcm;rate=16000',
+						},
 					},
-				},
-			}),
-		)
+				}),
+			)
+		}
 	}
 
 	close() {
-		this._ws?.close()
+		if (this._ws) {
+			this._ws.onclose = null
+			this._ws.onerror = null
+			this._ws.close()
+		}
 		this._emitState('closed')
 	}
 }
