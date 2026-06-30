@@ -36,25 +36,48 @@ export function useRealtimeSession() {
 	})
 
 	async function start(scenarioId) {
-		if (state.value !== 'idle') return
+		if (['connecting', 'connected'].includes(state.value)) return
 		state.value = 'connecting'
-		const res = await createSessionRes.submit({ scenario_id: scenarioId })
+		try {
+			const res = await createSessionRes.submit({
+				scenario_id: scenarioId,
+			})
 
-		sessionId.value = res.session_id
-		remainingSeconds.value = res.max_seconds
-		startedAt = Date.now()
+			sessionId.value = res.session_id
+			remainingSeconds.value = res.max_seconds
+			startedAt = Date.now()
 
-		mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true })
-		transport = createTransport(res)
-		transport.onState((s) => {
-			state.value = s
-		})
-		transport.onTranscript(({ role, text }) => {
-			transcript.value.push({ role, text })
-			relayTurn(role, text)
-		})
-		await transport.connect(mediaStream)
-		startTimer(res.max_seconds)
+			mediaStream = await navigator.mediaDevices.getUserMedia({
+				audio: true,
+			})
+			transport = createTransport(res)
+			transport.onState((s) => {
+				state.value = s
+			})
+			transport.onTranscript(({ role, text }) => {
+				transcript.value.push({ role, text })
+				relayTurn(role, text)
+			})
+			await transport.connect(mediaStream)
+			startTimer(res.max_seconds)
+		} catch {
+			state.value = 'error'
+			stopTimer()
+			if (transport) {
+				try {
+					transport.close()
+				} catch {
+					// transport may not be fully initialized; ignore
+				}
+				transport = null
+			}
+			if (mediaStream) {
+				mediaStream.getTracks().forEach((t) => t.stop())
+				mediaStream = null
+			}
+			sessionId.value = null
+			startedAt = 0
+		}
 	}
 
 	function relayTurn(role, text) {
