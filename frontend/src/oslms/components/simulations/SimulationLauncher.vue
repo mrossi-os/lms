@@ -1,4 +1,22 @@
 <template>
+	<!--
+		Voice-scenario path: rendered as a separate dialog overlay so the user
+		gets a full session UI without navigating away. The chat path below is
+		untouched.
+	-->
+	<Dialog
+		v-if="voiceScenarioId"
+		v-model="voiceDialogOpen"
+		:options="{
+			title: __('Simulazione vocale'),
+			size: 'lg',
+		}"
+	>
+		<template #body-content>
+			<VoiceSession :scenario-id="voiceScenarioId" @ended="onVoiceEnded" />
+		</template>
+	</Dialog>
+
 	<Dialog
 		v-model="visible"
 		:options="{
@@ -61,6 +79,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Badge, Button, Dialog, createResource, toast } from 'frappe-ui'
+import VoiceSession from './VoiceSession.vue'
 
 const props = defineProps({
 	modelValue: { type: Boolean, default: false },
@@ -73,6 +92,19 @@ const router = useRouter()
 const selected = ref(null)
 const starting = ref(false)
 const error = ref(null)
+
+// Voice-scenario branch: scenario name while a voice session dialog is open.
+const voiceScenarioId = ref(null)
+const voiceDialogOpen = computed({
+	get: () => Boolean(voiceScenarioId.value),
+	set: (v) => {
+		if (!v) voiceScenarioId.value = null
+	},
+})
+
+const selectedScenario = computed(() =>
+	props.scenarios?.find((sc) => sc.name === selected.value),
+)
 
 const visible = computed({
 	get: () => props.modelValue,
@@ -94,6 +126,14 @@ const startResource = createResource({
 
 async function onStart() {
 	if (!selected.value) return
+
+	// Branch: voice scenarios bypass start_session and open VoiceSession directly.
+	if (selectedScenario.value?.modality === 'voice') {
+		voiceScenarioId.value = selected.value
+		visible.value = false
+		return
+	}
+
 	starting.value = true
 	error.value = null
 	try {
@@ -114,6 +154,10 @@ async function onStart() {
 	} finally {
 		starting.value = false
 	}
+}
+
+function onVoiceEnded() {
+	voiceScenarioId.value = null
 }
 
 function difficultyTheme(diff) {
