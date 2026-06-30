@@ -38,6 +38,14 @@
 			>
 				{{ __('End session') }}
 			</Button>
+			<template v-else-if="state === 'error'">
+				<Button variant="solid" @click="onStart">
+					{{ __('Retry') }}
+				</Button>
+				<Button variant="subtle" @click="emit('ended')">
+					{{ __('Close') }}
+				</Button>
+			</template>
 		</div>
 	</div>
 </template>
@@ -64,18 +72,20 @@ const stateLabel = computed(
 			connected: __('Live'),
 			closed: __('Ended'),
 			error: __('Connection error'),
-		})[state.value] || state.value,
+		}[state.value] || state.value)
 )
 const stateClass = computed(() =>
 	state.value === 'error'
 		? 'text-red-600'
 		: state.value === 'connected'
-			? 'text-green-600'
-			: 'text-gray-500',
+		? 'text-green-600'
+		: 'text-gray-500'
 )
 const formattedRemaining = computed(() => {
 	const s = remainingSeconds.value
-	return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+	return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(
+		s % 60
+	).padStart(2, '0')}`
 })
 
 async function onStart() {
@@ -110,6 +120,6 @@ watch(
 	async () => {
 		await nextTick()
 		if (scroller.value) scroller.value.scrollTop = scroller.value.scrollHeight
-	},
+	}
 )
 </script>

@@ -11,6 +11,11 @@ from unittest.mock import patch
 
 from frappe.tests import UnitTestCase
 from os_lms.os_lms.ai.utils import realtime
+from os_lms.os_lms.ai.utils.realtime.errors import (
+	RealtimeInvalidAuth,
+	RealtimeRateLimit,
+	RealtimeServerError,
+)
 from os_lms.os_lms.ai.utils.realtime.provider import (
 	RealtimeProvider,
 	RealtimeSession,
@@ -220,6 +225,111 @@ class TestGeminiCreateSession(UnitTestCase):
 		self.assertEqual(session.extra["instructions"], "You are a recruiter.")
 		# Resumption handle slot present (empty initially).
 		self.assertIn("resumption_handle", session.extra)
+
+
+# ---------------------------------------------------------------------------
+# Fix 3: HTTP status → exception type (error-mapping)
+# ---------------------------------------------------------------------------
+
+
+class TestOpenAIStatusMapping(UnitTestCase):
+	"""create_session maps HTTP error status codes to typed Realtime exceptions."""
+
+	def _provider(self):
+		config = realtime.build_realtime_config("openai", _FakeSettings())
+		return OpenAIRealtimeProvider(config)
+
+	def _resp(self, status_code):
+		class _Resp:
+			def __init__(self):
+				self.status_code = status_code
+
+			def json(self):
+				return {"error": {"message": f"HTTP {self.status_code}"}}
+
+		return _Resp()
+
+	def test_401_raises_invalid_auth(self):
+		with patch(
+			"os_lms.os_lms.ai.utils.realtime.providers.openai_realtime.requests.post",
+			return_value=self._resp(401),
+		):
+			with self.assertRaises(RealtimeInvalidAuth):
+				self._provider().create_session(_cfg())
+
+	def test_403_raises_invalid_auth(self):
+		with patch(
+			"os_lms.os_lms.ai.utils.realtime.providers.openai_realtime.requests.post",
+			return_value=self._resp(403),
+		):
+			with self.assertRaises(RealtimeInvalidAuth):
+				self._provider().create_session(_cfg())
+
+	def test_429_raises_rate_limit(self):
+		with patch(
+			"os_lms.os_lms.ai.utils.realtime.providers.openai_realtime.requests.post",
+			return_value=self._resp(429),
+		):
+			with self.assertRaises(RealtimeRateLimit):
+				self._provider().create_session(_cfg())
+
+	def test_500_raises_server_error(self):
+		with patch(
+			"os_lms.os_lms.ai.utils.realtime.providers.openai_realtime.requests.post",
+			return_value=self._resp(500),
+		):
+			with self.assertRaises(RealtimeServerError):
+				self._provider().create_session(_cfg())
+
+
+class TestGeminiStatusMapping(UnitTestCase):
+	"""create_session maps HTTP error status codes to typed Realtime exceptions."""
+
+	def _provider(self):
+		config = realtime.build_realtime_config("gemini", _FakeSettings())
+		return GeminiLiveProvider(config)
+
+	def _resp(self, status_code):
+		class _Resp:
+			def __init__(self):
+				self.status_code = status_code
+
+			def json(self):
+				return {"error": {"message": f"HTTP {self.status_code}", "status": "ERROR"}}
+
+		return _Resp()
+
+	def test_401_raises_invalid_auth(self):
+		with patch(
+			"os_lms.os_lms.ai.utils.realtime.providers.gemini_live.requests.post",
+			return_value=self._resp(401),
+		):
+			with self.assertRaises(RealtimeInvalidAuth):
+				self._provider().create_session(_cfg())
+
+	def test_403_raises_invalid_auth(self):
+		with patch(
+			"os_lms.os_lms.ai.utils.realtime.providers.gemini_live.requests.post",
+			return_value=self._resp(403),
+		):
+			with self.assertRaises(RealtimeInvalidAuth):
+				self._provider().create_session(_cfg())
+
+	def test_429_raises_rate_limit(self):
+		with patch(
+			"os_lms.os_lms.ai.utils.realtime.providers.gemini_live.requests.post",
+			return_value=self._resp(429),
+		):
+			with self.assertRaises(RealtimeRateLimit):
+				self._provider().create_session(_cfg())
+
+	def test_500_raises_server_error(self):
+		with patch(
+			"os_lms.os_lms.ai.utils.realtime.providers.gemini_live.requests.post",
+			return_value=self._resp(500),
+		):
+			with self.assertRaises(RealtimeServerError):
+				self._provider().create_session(_cfg())
 
 
 # ---------------------------------------------------------------------------

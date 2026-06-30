@@ -136,3 +136,19 @@ class TestRealtimeApi(UnitTestCase):
 				rt_api.end_voice_session(session_id=sid, reason="completed")
 		finally:
 			frappe.set_user(self.student)
+
+	@patch.object(SessionOrchestrator, "_generate_variant", _stub_generate_variant)
+	def test_non_realtime_provider_override_falls_back(self):
+		"""Fix 1: a scenario with provider_override='anthropic' (non-realtime) must NOT
+		raise a ValueError / 500 — it falls back to the realtime settings default (mock)."""
+		original_override = self.scenario.provider_override
+		self.scenario.provider_override = "anthropic"
+		self.scenario.save(ignore_permissions=True)
+		frappe.db.commit()
+		try:
+			out = rt_api.create_voice_session(scenario_id=self.scenario.name)
+			self.assertEqual(out["transport"], "mock")
+		finally:
+			self.scenario.provider_override = original_override
+			self.scenario.save(ignore_permissions=True)
+			frappe.db.commit()

@@ -31,6 +31,7 @@ from os_lms.os_lms.ai.utils.realtime import (
 	RealtimeSessionConfig,
 	RealtimeTimeout,
 	RealtimeUnsupported,
+	list_realtime_providers,
 	resolve_realtime_provider,
 )
 
@@ -66,7 +67,8 @@ def create_voice_session(scenario_id: str) -> dict:
 	if voice_instructions:
 		instructions = f"{instructions}\n\n# Delivery\n{voice_instructions}"
 
-	override = scenario.provider_override if scenario.provider_override not in (None, "", "auto") else None
+	raw_override = (scenario.provider_override or "").strip()
+	override = raw_override if raw_override in list_realtime_providers() else None
 	provider = resolve_realtime_provider(override=override)
 	cfg = RealtimeSessionConfig(
 		instructions=instructions,

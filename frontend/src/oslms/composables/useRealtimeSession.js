@@ -75,6 +75,16 @@ export function useRealtimeSession() {
 				mediaStream.getTracks().forEach((t) => t.stop())
 				mediaStream = null
 			}
+			// Best-effort: end an orphaned server-side session to avoid burning daily quota.
+			if (sessionId.value) {
+				endSessionRes
+					.submit({
+						session_id: sessionId.value,
+						reason: 'abandoned',
+						seconds: 0,
+					})
+					.catch(() => {})
+			}
 			sessionId.value = null
 			startedAt = 0
 		}
