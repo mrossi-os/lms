@@ -270,6 +270,85 @@ class SessionOrchestrator:
 
 		return frappe._dict(session=session.name, status=status)
 
+	def start_voice_session(
+		self,
+		*,
+		scenario_id: str,
+		seed: str | None = None,
+	) -> frappe._dict:
+		"""Create a voice Session and generate the persona variant.
+
+		Unlike start_session (chat), this does NOT persist a first assistant
+		turn: the opening line is spoken live by the realtime model. Returns the
+		session name + the data the feature layer needs to build the realtime
+		instructions (persona/situation/difficulty).
+		"""
+		if not self.settings.simulations_enabled:
+			frappe.throw(_("AI Simulations are not enabled in LMSA Settings."))
+
+		scenario = frappe.get_doc("LMSA Simulation Scenario", scenario_id)
+		if scenario.status != "Published":
+			frappe.throw(
+				_("Scenario {0} is not Published (status: {1}).").format(scenario.name, scenario.status),
+				frappe.PermissionError,
+			)
+
+		seed = seed or _new_seed()
+		# Persona generation stays TEXTUAL (reuses the existing LLM layer).
+		text_provider = self._resolve_provider("chat", scenario)
+		variant = self._generate_variant(scenario, seed, text_provider)
+
+		session = frappe.new_doc("LMSA Simulation Session")
+		session.student = frappe.session.user
+		session.scenario = scenario.name
+		session.modality = "voice"
+		session.seed = seed
+		session.prompt_version = f"{SCENARIO_GEN_VERSION}+{ROLE_PLAY_VERSION}"
+		session.generated_situation = variant.situation
+		session.generated_persona = json.dumps(_persona_to_dict(variant.persona), ensure_ascii=False)
+		session.insert()
+		frappe.db.commit()
+
+		return frappe._dict(
+			session=session.name,
+			persona=variant.persona,
+			situation=variant.situation,
+			difficulty=_scenario_difficulty(scenario.name),
+		)
+
+	def persist_voice_turn(self, *, session_id: str, role: str, text: str) -> frappe._dict:
+		"""Append a transcript turn relayed by the client during a voice session."""
+		if role not in ("user", "assistant"):
+			frappe.throw(_("Invalid turn role: {0}").format(role))
+		clean = (text or "").strip()
+		if not clean:
+			frappe.throw(_("Empty transcript turn"))
+
+		session = frappe.get_doc("LMSA Simulation Session", session_id)
+		if session.status in TERMINAL_STATUSES:
+			raise SessionTerminatedError(
+				f"Session {session_id} is in terminal state {session.status!r}"
+			)
+
+		attack = detect_injection(clean) if role == "user" else False
+		turn = self._persist_turn(
+			session=session,
+			role=role,
+			text=clean,
+			provider_used=session.realtime_provider_used or "",
+			model_used=session.realtime_model_used or "",
+			injection_attempt=attack,
+		)
+		session.turn_count = (session.turn_count or 0) + 1
+		session.save()
+		frappe.db.commit()
+		self._publish(
+			EVENT_TURN_COMPLETE,
+			session,
+			{"turn_name": turn.name, "text": clean, "role": role, "injection_attempt": int(attack)},
+		)
+		return frappe._dict(turn=turn.name)
+
 	# ---------- internals ----------
 
 	def _resolve_provider(self, purpose: str, scenario) -> LLMProvider:

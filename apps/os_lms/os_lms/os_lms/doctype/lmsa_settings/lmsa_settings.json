@@ -291,7 +291,7 @@
 			"fieldname": "realtime_provider",
 			"fieldtype": "Select",
 			"label": "Realtime Provider",
-			"options": "openai\ngemini"
+			"options": "openai\ngemini\nmock"
 		},
 		{
 			"depends_on": "realtime_enabled",
