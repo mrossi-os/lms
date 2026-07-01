@@ -17,7 +17,7 @@
 			<div class="flex flex-col gap-4">
 				<div
 					v-if="isEdit"
-					class="flex items-start gap-2 bg-surface-amber-1 px-3 py-2 rounded-lg text-ink-amber-3 text-sm"
+					class="flex items-start gap-2 bg-surface-amber-1 px-3 py-2 rounded-lg text-ink-amber-6 text-sm"
 				>
 					<AlertCircle class="size-4 shrink-0 stroke-1.5 mt-0.5" />
 					<span>
@@ -79,6 +79,7 @@
 							<Combobox
 								:modelValue="liveClass.timezone"
 								:options="getTimezoneOptions()"
+								:disabled="isEdit"
 								@update:modelValue="(opt) => (liveClass.timezone = opt.value)"
 							/>
 						</div>
@@ -156,7 +157,7 @@
 						</div>
 						<Button @click="removeReminder(idx)" :variant="'ghost'">
 							<template #icon>
-								<Trash2 class="w-4 h-4 text-ink-red-3" />
+								<Trash2 class="w-4 h-4 text-ink-red-6" />
 							</template>
 						</Button>
 					</div>
@@ -175,6 +176,7 @@ import {
 	toast,
 } from 'frappe-ui'
 import { computed, reactive, inject, onMounted } from 'vue'
+import { Plus, Trash2, AlertCircle } from 'lucide-vue-next'
 import { getTimezones, getUserTimezone } from '@/utils/'
 
 const liveClasses = defineModel('reloadLiveClasses')

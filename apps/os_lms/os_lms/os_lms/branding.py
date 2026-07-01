@@ -11,29 +11,33 @@ import frappe
 mimetypes.add_type("text/css", ".css")
 
 # Map: Brand Customize fieldname -> CSS custom property name.
+# Both use frappe-ui's espresso "tokens-v2" names (frappe-ui 1.0-beta). The
+# doctype fieldnames were renamed to match the v2 tokens (surface_base,
+# surface_sidebar, surface_elevation_1/2/3, surface_gray_10, ink_base,
+# outline_elevation_2); the old card/cards fields were merged into
+# surface_elevation_1.
 FIELD_TO_CSS_VAR = {
 	"company_primary": "--color-company-primary",
 	"company_secondary": "--color-company-secondary",
-	"surface_white": "--surface-white",
-	"surface_menu_bar": "--surface-menu-bar",
-	"surface_selected": "--surface-selected",
-	"surface_modal": "--surface-modal",
+	"surface_base": "--surface-base",
+	"surface_sidebar": "--surface-sidebar",
+	"surface_elevation_3": "--surface-elevation-3",
+	"surface_elevation_2": "--surface-elevation-2",
 	"surface_gray_1": "--surface-gray-1",
 	"surface_gray_2": "--surface-gray-2",
 	"surface_gray_3": "--surface-gray-3",
-	"surface_gray_7": "--surface-gray-7",
+	"surface_gray_10": "--surface-gray-10",
 	"ink_gray_5": "--ink-gray-5",
 	"ink_gray_6": "--ink-gray-6",
 	"ink_gray_7": "--ink-gray-7",
 	"ink_gray_8": "--ink-gray-8",
 	"ink_gray_9": "--ink-gray-9",
 	"ink_gray_10": "--ink-gray-10",
-	"ink_white": "--ink-white",
+	"ink_base": "--ink-base",
 	"outline_gray_1": "--outline-gray-1",
-	"outline_gray_modals": "--outline-gray-modals",
+	"outline_elevation_2": "--outline-elevation-2",
 	"color_sidebar_menu": "--color-sidebar-menu",
-	"surface_card": "--surface-card",
-	"surface_cards": "--surface-cards",
+	"surface_elevation_1": "--surface-elevation-1",
 	"color_menu_bar": "--color-menu-bar",
 	"gradient_overlay_from": "--gradient-overlay-from",
 	"gradient_overlay_to": "--gradient-overlay-to",

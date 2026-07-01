@@ -8,7 +8,7 @@
 
 		<button
 			type="button"
-			class="flex h-12 w-12 items-center justify-center rounded-full bg-surface-gray-7 text-ink-white shadow-lg transition hover:bg-surface-gray-6 focus:outline-none focus:ring-2 focus:ring-offset-2"
+			class="flex h-12 w-12 items-center justify-center rounded-full bg-surface-gray-10 text-ink-base shadow-lg transition hover:bg-surface-gray-9 focus:outline-none focus:ring-2 focus:ring-offset-2"
 			:aria-label="__('Start a simulation')"
 			@click="open"
 		>
