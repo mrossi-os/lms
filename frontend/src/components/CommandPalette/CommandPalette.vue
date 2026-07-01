@@ -229,7 +229,7 @@ const jumpToOptions = ref([
 		title: __('Jump to'),
 		items: [
 			{
-				title: 'Courses',
+				title: __('Courses'),
 				icon: BookOpen,
 				route: {
 					name: 'Courses',
@@ -237,7 +237,7 @@ const jumpToOptions = ref([
 				isActive: true,
 			},
 			{
-				title: 'Batches',
+				title: __('Batches'),
 				icon: Users,
 				route: {
 					name: 'Batches',
@@ -245,7 +245,7 @@ const jumpToOptions = ref([
 				isActive: false,
 			},
 			{
-				title: 'Jobs',
+				title: __('Jobs'),
 				icon: Briefcase,
 				route: {
 					name: 'Jobs',
@@ -257,8 +257,10 @@ const jumpToOptions = ref([
 ])
 </script>
 <style>
+/* Highlighted search match: use theme tokens so it adapts to dark mode and the
+   text stays readable (the default <mark> renders black text). */
 mark {
-	background-color: theme('colors.amber.100');
+	@apply bg-surface-amber-1 text-ink-gray-9;
 	font-weight: 500;
 }
 </style>
