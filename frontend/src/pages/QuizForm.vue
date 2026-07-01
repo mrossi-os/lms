@@ -49,116 +49,21 @@
 				/>
 			</Tooltip>
 		</div>
-		<div v-if="!readOnlyMode" class="flex md:hidden items-center space-x-2">
-			<Badge v-if="quizDetails.isDirty" theme="orange">
-				{{ __('Not Saved') }}
-			</Badge>
-			<Button variant="solid" size="sm" @click="submitQuiz()">
-				{{ __('Save') }}
-			</Button>
-			<Dropdown :options="mobileHeaderMenu" side="left">
-				<Button size="sm">
-					<template #icon>
-						<MoreVertical class="w-4 h-4 stroke-1.5" />
-					</template>
-				</Button>
-			</Dropdown>
-		</div>
 	</header>
-	<div v-if="quizDetails.doc" class="py-5">
-		<div class="px-20 pb-5 space-y-5 border-b mb-5">
-			<div class="text-lg text-ink-gray-9 font-semibold mb-4">
-				{{ __('Details') }}
-			</div>
-			<div class="grid grid-cols-2 gap-5">
-				<div class="space-y-5">
-					<FormControl
-						v-model="quizDetails.doc.title"
-						:label="__('Title')"
-						:required="true"
-					/>
-					<FormControl
-						type="number"
-						v-model="quizDetails.doc.max_attempts"
-						:label="__('Maximum Attempts')"
-					/>
-					<FormControl
-						type="number"
-						v-model="quizDetails.doc.duration"
-						:label="__('Duration (in minutes)')"
-					/>
-				</div>
-				<div class="space-y-5">
-					<FormControl
-						v-model="quizDetails.doc.total_marks"
-						:label="__('Total Marks')"
-						disabled
-					/>
-					<FormControl
-						v-model="quizDetails.doc.passing_percentage"
-						:label="__('Passing Percentage')"
-						:required="true"
-					/>
-				</div>
-			</div>
-		</div>
-		<div class="px-20 pb-5 space-y-5 border-b mb-5">
-			<div class="text-lg text-ink-gray-9 font-semibold mb-4">
-				{{ __('Settings') }}
-			</div>
-			<div class="grid grid-cols-2 gap-5">
-				<Switch
-					v-model="quizDetails.doc.show_answers"
-					size="sm"
-					class="card p-4"
-					:label="__('Show Answers')"
-					:description="
-						__('Display correct answers after each question is attempted.')
-					"
-				/>
-				<Switch
-					v-model="quizDetails.doc.show_submission_history"
-					size="sm"
-					class="card p-4"
-					:label="__('Show Submission History')"
-					:description="__('Allow users to view their past quiz attempts.')"
-				/>
-
-				<Switch
-					v-model="quizDetails.doc.shuffle_questions"
-					size="sm"
-					class="card p-4"
-					:label="__('Shuffle Questions')"
-					:description="
-						__('Randomize the order of questions for each attempt.')
-					"
-				/>
-				<FormControl
-					v-if="quizDetails.doc.shuffle_questions"
-					v-model="quizDetails.doc.limit_questions_to"
-					:label="__('Limit Questions To')"
-				/>
-
-				<div class="flex flex-col space-y-5">
-					<Switch
-						v-model="quizDetails.doc.enable_negative_marking"
-						size="sm"
-						class="card p-4"
-						:label="__('Enable Negative Marking')"
-						:description="__('Deduct marks for incorrect answers.')"
-					/>
-					<FormControl
-						v-if="quizDetails.doc.enable_negative_marking"
-						v-model="quizDetails.doc.marks_to_cut"
-						:label="__('Marks to Deduct')"
-					/>
-				</div>
-			</div>
-		</div>
-
-		<div class="px-20 pb-5 space-y-5 mb-5">
-			<div class="flex items-center justify-between mb-4">
-				<div class="text-lg font-semibold text-ink-gray-9">
+	<div
+		v-if="quizDetails.loading && !quizDetails.doc"
+		class="flex items-center justify-center py-20"
+	>
+		<LoadingIndicator class="size-5 text-ink-gray-5" />
+	</div>
+	<div
+		v-else-if="quizDetails.doc"
+		class="grid min-h-0 flex-1 grid-cols-[7fr,3fr]"
+	>
+		<!-- LEFT: Questions -->
+		<div class="flex min-h-0 flex-col">
+			<div class="flex items-center justify-between px-5 pt-5 mb-4">
+				<div class="text-xl-semibold text-ink-gray-9">
 					{{ __('Questions') }}
 				</div>
 				<Button v-if="!readOnlyMode" @click="openQuestionModal()">
@@ -170,16 +75,17 @@
 			</div>
 			<ListView
 				v-if="questions.length"
-				class="flex-1 overflow-y-auto px-5"
+				class="flex-1 overflow-y-auto px-5 os-list-view"
 				:columns="questionColumns"
 				:rows="questions"
 				row-key="name"
 				:options="{
 					showTooltip: false,
 				}"
-				class="os-list-view"
 			>
-				<ListHeader class="mb-2 grid items-center gap-x-4 rounded bg-surface-gray-2 p-2">
+				<ListHeader
+					class="mb-2 grid items-center gap-x-4 rounded bg-surface-gray-2 p-2"
+				>
 					<ListHeaderItem :item="item" v-for="item in questionColumns" />
 				</ListHeader>
 				<ListRows>
@@ -348,7 +254,6 @@
 import {
 	Breadcrumbs,
 	createResource,
-	Dropdown,
 	FormControl,
 	ListView,
 	ListHeader,
@@ -366,7 +271,7 @@ import {
 	LoadingIndicator,
 	Tooltip,
 } from 'frappe-ui'
-
+import BooleanSwitch from '@/components/Controls/BooleanSwitch.vue'
 import {
 	computed,
 	reactive,
@@ -383,18 +288,12 @@ import {
 	saveShortcut,
 } from '@/composables/useKeyboardShortcuts'
 import { sessionStore } from '../stores/session'
-import {
-	ClipboardList,
-	ListChecks,
-	MoreVertical,
-	Plus,
-	Trash2,
-} from 'lucide-vue-next'
+
 import { useRouter } from 'vue-router'
 import { sanitizeHTML } from '@/utils'
-import { useScreenSize } from '@/utils/composables'
+import { sanitizeRichHTML } from '@/utils/sanitizeRichHTML'
 import Question from '@/components/Modals/Question.vue'
-import Switch from '@/components/Controls/Switch.vue'
+import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
 
 const { brand } = sessionStore()
 const pageLength = ref(20)
@@ -407,32 +306,35 @@ const currentQuestion = reactive({
 const user = inject('$user')
 const router = useRouter()
 const readOnlyMode = window.read_only_mode
-const { isMobile } = useScreenSize()
+const { $dialog } = getCurrentInstance().appContext.config.globalProperties
 
-const mobileHeaderMenu = computed(() => {
-	const options = []
-	if (quizDetails.doc?.name) {
-		options.push({
-			label: __('Test Quiz'),
-			icon: ListChecks,
-			onClick: () =>
-				router.push({
-					name: 'QuizPage',
-					params: { quizID: quizDetails.doc.name },
-				}),
-		})
-		options.push({
-			label: __('Check Submissions'),
-			icon: ClipboardList,
-			onClick: () =>
-				router.push({
-					name: 'QuizSubmissionList',
-					params: { quizID: quizDetails.doc.name },
-				}),
-		})
-	}
-	return options
-})
+const deleteQuiz = () => {
+	$dialog({
+		title: __('Delete this quiz?'),
+		message: __(
+			'Deleting this quiz permanently removes it and its submissions. This action cannot be undone. Are you sure you want to continue?'
+		),
+		actions: [
+			{
+				label: __('Delete'),
+				theme: 'red',
+				variant: 'solid',
+				onClick({ close }) {
+					quizDetails.delete
+						.submit()
+						.then(() => {
+							toast.success(__('Quiz deleted successfully'))
+							router.push({ name: 'Quizzes' })
+						})
+						.catch((err) => {
+							toast.error(err.messages?.[0] || __('Could not delete the quiz'))
+						})
+					close()
+				},
+			},
+		],
+	})
+}
 
 const props = defineProps({
 	quizID: {
@@ -493,10 +395,6 @@ const submitQuiz = (opts = {}) => {
 	// autosave watcher and the onBeforeUnmount flush can't throw or re-insert it.
 	if (!quizDetails.doc) return
 	validateTitle()
-	if (!quizDetails.doc.title) {
-		toast.warning(__('{0} is required').format(__('Title')))
-		return
-	}
 	quizDetails.setValue.submit(
 		{
 			...quizDetails.doc,
@@ -512,7 +410,7 @@ const submitQuiz = (opts = {}) => {
 				// so the change isn't silently lost.
 				if (!opts.silent) toast.error(err.messages?.[0] || err)
 			},
-		},
+		}
 	)
 }
 
@@ -537,17 +435,17 @@ const questionColumns = computed(() => {
 		{
 			label: __('ID'),
 			key: 'question',
-			width: isMobile.value ? '5rem' : '10rem',
+			width: '10rem',
 		},
 		{
 			label: __('Question'),
 			key: __('question_detail'),
-			width: isMobile.value ? '10rem' : '40rem',
+			width: '40rem',
 		},
 		{
 			label: __('Marks'),
 			key: 'marks',
-			width: isMobile.value ? '2.5rem' : '5rem',
+			width: '5rem',
 		},
 	]
 })
@@ -586,7 +484,7 @@ const deleteQuestions = (selections, unselectAll) => {
 				quizDetails.reload()
 				unselectAll()
 			},
-		},
+		}
 	)
 }
 

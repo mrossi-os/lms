@@ -493,16 +493,13 @@ msgid "Answer"
 msgstr "Risposta"
 
 #: frontend/src/components/Settings/Coupons/CouponDetails.vue:72
+#: frontend/src/components/Settings/Coupons/CouponDetails.vue:79
 msgid "Applicable For"
 msgstr "Applicabile a"
 
 #: frontend/src/components/Settings/BrandSettings.vue:97
 msgid "Appears next to the title in your browser tab. Recommended size is 32x32 px in PNG or ICO"
 msgstr ""
-
-#: frontend/src/components/Settings/Coupons/CouponDetails.vue:79
-msgid "Applicable For"
-msgstr "Applicabile Per"
 
 #. Label of the applicable_items (Table) field in DocType 'LMS Coupon'
 #: lms/lms/doctype/lms_coupon/lms_coupon.json
@@ -903,11 +900,6 @@ msgstr "Iscrizione al Gruppo"
 #: frontend/src/components/Modals/EmailTemplateModal.vue:25
 msgid "Batch Enrollment Confirmation"
 msgstr "Conferma Iscrizione al Gruppo"
-
-#. Label of a Workspace Sidebar Item
-#: lms/workspace_sidebar/learning.json
-msgid "Batch Enrollments"
-msgstr ""
 
 #. Label of a Workspace Sidebar Item
 #: lms/workspace_sidebar/learning.json

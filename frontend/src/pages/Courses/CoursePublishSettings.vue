@@ -132,7 +132,7 @@
 				</template>
 
 				<div class="border-t -mx-5" />
-				<Switch
+				<BooleanSwitch
 					size="sm"
 					v-model="doc.trueskills_certificate_enabled"
 					:label="__('Emetti certificato TrueSkill')"
@@ -245,12 +245,9 @@
 </template>
 
 <script setup lang="ts">
-import { FormControl, createResource, toast } from 'frappe-ui'
-import Switch from '@/components/Controls/Switch.vue'
-import { computed, inject, ref, watch } from 'vue'
-import { Dialog, FormControl, createResource } from 'frappe-ui'
+import { Dialog, FormControl, createResource, toast } from 'frappe-ui'
 import BooleanSwitch from '@/components/Controls/BooleanSwitch.vue'
-import { computed, inject, ref } from 'vue'
+import { computed, inject, ref, watch } from 'vue'
 import CollapsibleSection from '@/components/CollapsibleSection.vue'
 import Link from '@/components/Controls/Link.vue'
 import NewMemberModal from '@/components/Modals/NewMemberModal.vue'

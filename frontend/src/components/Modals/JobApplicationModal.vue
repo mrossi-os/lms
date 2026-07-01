@@ -2,16 +2,14 @@
 	<Dialog
 		v-model:open="show"
 		class="text-base"
-		:options="{
-			title: __('Apply for this job'),
-			size: 'lg',
-			actions: [
-				{
-					label: __('Submit'),
-					variant: 'solid',
-					onClick: (close) => {
-						submitResume(close)
-					},
+		:title="__('Apply for this job')"
+		size="lg"
+		:actions="[
+			{
+				label: __('Submit'),
+				variant: 'solid',
+				onClick: ({ close }) => {
+					submitResume(close)
 				},
 			},
 		]"
@@ -21,7 +19,7 @@
 				<p class="text-ink-gray-9">
 					{{
 						__(
-							'Submit your resume to proceed with your application for this position. Upon submission, it will be shared with the job poster.',
+							'Submit your resume to proceed with your application for this position. Upon submission, it will be shared with the job poster.'
 						)
 					}}
 				</p>
@@ -122,7 +120,7 @@ const submitResume = (close) => {
 			onError(err) {
 				toast.error(err.messages?.[0] || err)
 			},
-		},
+		}
 	)
 }
 </script>

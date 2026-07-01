@@ -1,16 +1,11 @@
 <template>
 	<div class="space-y-1.5">
 		<FormLabel v-if="label" :label="label" :required="required" />
-		<MultiSelect
-			v-model="value"
-			v-model:open="popoverOpen"
-			:options="mergedOptions"
-			:placeholder="placeholder"
-			:emptyText="emptyText"
-			:variant="variant"
-			@update:open="onOpen"
-			@update:query="onQuery"
-			@update:modelValue="onChange"
+		<Popover
+			:show="popoverOpen"
+			:matchTargetWidth="true"
+			placement="bottom-start"
+			@update:show="onPopoverToggle"
 		>
 			<template #target="{ togglePopover, isOpen }">
 				<button
@@ -41,9 +36,9 @@
 							</slot>
 						</span>
 					</span>
-					<span
-						class="lucide-chevron-down size-4 shrink-0 text-ink-gray-4 transition-transform duration-200"
-						:class="open && 'rotate-180'"
+					<ChevronDown
+						class="size-4 shrink-0 text-ink-gray-4 transition-transform duration-200"
+						:class="isOpen && 'rotate-180'"
 					/>
 				</button>
 			</template>
@@ -67,22 +62,73 @@
 						<div
 							class="flex w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 ring-2 ring-outline-gray-2 transition-colors hover:bg-surface-gray-3"
 						>
-							{{ __('Clear') }}
-						</Button>
-						<Button
-							v-if="props.onCreate"
-							variant="ghost"
-							size="sm"
-							:aria-label="__(createLabel)"
-							@click="handleCreate"
-						>
-							<template #prefix>
-								<span class="lucide-plus size-4" />
-							</template>
-							{{ __(createLabel) }}
-						</Button>
-					</div>
-				</slot>
+							<ComboboxInput
+								class="h-full w-full border-0 bg-transparent p-0 text-base text-ink-gray-8 placeholder:text-ink-gray-4 focus:border-0 focus:outline-0 focus:ring-0"
+								:placeholder="__('Search...')"
+								autocomplete="off"
+								@input="onInput"
+							/>
+							<LoadingIndicator
+								v-if="options.loading"
+								class="size-4 shrink-0 text-ink-gray-5"
+							/>
+						</div>
+						<ComboboxContent class="z-10 mt-2 overflow-hidden">
+							<ComboboxViewport class="max-h-60 overflow-auto pb-1.5">
+								<ComboboxEmpty
+									class="px-2.5 py-1.5 text-center text-base text-ink-gray-5"
+								>
+									{{ __('No results found') }}
+								</ComboboxEmpty>
+								<ComboboxItem
+									v-for="item in mergedOptions"
+									:key="item.value"
+									:value="item.value"
+									:disabled="(item.disabled as boolean) || false"
+									class="relative flex h-7 select-none items-center gap-2 rounded p-1.5 text-base leading-none text-ink-gray-7 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-surface-gray-3 data-[highlighted]:outline-none"
+								>
+									<slot name="item-prefix" :item="item" />
+									<span class="min-w-0 flex-1 pr-6">
+										<slot name="item-label" :item="item">
+											{{ item.label }}
+										</slot>
+									</span>
+									<ComboboxItemIndicator
+										class="absolute right-1.5 inline-flex items-center justify-center"
+									>
+										<Check class="size-4" />
+									</ComboboxItemIndicator>
+								</ComboboxItem>
+							</ComboboxViewport>
+							<slot name="footer" :close="closePopover">
+								<div
+									class="mt-1 flex items-center justify-between gap-2 border-t border-outline-gray-1 px-2 py-1.5"
+								>
+									<Button
+										variant="ghost"
+										size="sm"
+										:aria-label="__('Clear')"
+										@click="clearAll"
+									>
+										{{ __('Clear') }}
+									</Button>
+									<Button
+										v-if="props.onCreate"
+										variant="ghost"
+										size="sm"
+										:aria-label="__(createLabel)"
+										@click="handleCreate"
+									>
+										<template #prefix>
+											<Plus class="size-4 stroke-1.5" />
+										</template>
+										{{ __(createLabel) }}
+									</Button>
+								</div>
+							</slot>
+						</ComboboxContent>
+					</ComboboxRoot>
+				</div>
 			</template>
 		</Popover>
 	</div>
@@ -100,6 +146,7 @@ import {
 	ComboboxItemIndicator,
 } from 'reka-ui'
 import { useDebounceFn } from '@vueuse/core'
+import { ChevronDown, Plus, Check } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 import type { Resource } from '@/types/api'
 
@@ -126,7 +173,6 @@ const props = withDefaults(
 		variant?: 'subtle' | 'outline' | 'ghost'
 		onCreate?: (close: CloseFn) => void
 		createLabel?: string
-		emptyText?: string
 	}>(),
 	{
 		filters: () => ({}),
@@ -135,7 +181,6 @@ const props = withDefaults(
 		extraOptions: () => [],
 		variant: 'subtle',
 		createLabel: 'Create New',
-		emptyText: 'No results',
 	}
 )
 
@@ -145,16 +190,16 @@ const popoverOpen = ref<boolean>(false)
 let loaded = false
 
 const triggerBaseClasses =
-	'relative inline-flex items-center gap-2 text-left text-ink-gray-7 outline-none transition-[background-color,border-color,box-shadow] duration-150'
+	'relative inline-flex items-center gap-2 text-left text-ink-gray-7 outline-none transition-[background-color,border-color,box-shadow] duration-150 focus-visible:ring-2 data-[state=open]:ring-2 ring-outline-gray-3'
 
 const triggerVariantClasses: Record<
 	NonNullable<typeof props.variant>,
 	string
 > = {
 	subtle:
-		'border border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-elevation-2 hover:bg-surface-gray-3 focus-visible:bg-surface-base focus-visible:border-outline-gray-4 focus-visible:shadow-sm data-[state=open]:bg-surface-base data-[state=open]:border-outline-gray-4 data-[state=open]:shadow-sm',
+		'border border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3',
 	outline:
-		'border border-outline-gray-2 bg-surface-base hover:border-outline-gray-3 hover:shadow-sm focus-visible:border-outline-gray-4 focus-visible:shadow-sm data-[state=open]:border-outline-gray-4 data-[state=open]:shadow-sm',
+		'border border-outline-gray-2 bg-surface-white hover:border-outline-gray-3',
 	ghost:
 		'border border-transparent bg-transparent hover:bg-surface-gray-3 focus-within:bg-surface-gray-3',
 }

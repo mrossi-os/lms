@@ -155,7 +155,7 @@
 <script setup>
 import { FormControl, FileUploader, Button, Select } from 'frappe-ui'
 import BooleanSwitch from '@/components/Controls/BooleanSwitch.vue'
-import { onMounted, watch } from 'vue'
+import { onMounted, reactive, watch } from 'vue'
 import { validateFile } from '@/utils'
 import Link from '@/components/Controls/Link.vue'
 import CodeEditor from '@/components/Controls/CodeEditor.vue'

@@ -229,6 +229,7 @@ import NumberChartGraph from '@/components/NumberChartGraph.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
 import StudentModal from '@/components/Modals/StudentModal.vue'
 import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
+import { useRouter } from 'vue-router'
 
 const dayjs = inject<typeof dayjsType>('$dayjs')!
 const user = inject<{ data?: Record<string, any> }>('$user')

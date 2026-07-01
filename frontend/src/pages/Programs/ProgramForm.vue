@@ -209,8 +209,8 @@
 						variant: 'solid',
 						onClick: ({ close }: { close: () => void }) =>
 							currentForm == 'course'
-								? addCourse(close)
-								: addMember(close),
+								? addCourses(close)
+								: addMembers(close),
 					},
 				]"
 			>
@@ -376,8 +376,6 @@ import { computed, ref, watch, getCurrentInstance } from 'vue'
 import { Programs, Program } from './types'
 import { sanitizeHTML, openSettings } from '@/utils'
 import { Plus, Trash2, TrendingUp } from 'lucide-vue-next'
-import { Programs, Program } from '@/types/programs'
-import { sanitizeHTML } from '@/utils'
 import Link from '@/components/Controls/Link.vue'
 import Draggable from 'vuedraggable'
 import ProgramProgressSummary from '@/pages/Programs/ProgramProgressSummary.vue'

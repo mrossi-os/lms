@@ -104,7 +104,7 @@ import {
 	LoadingIndicator,
 	toast,
 } from 'frappe-ui'
-import Switch from '@/components/Controls/Switch.vue'
+import Switch from '@/components/Controls/BooleanSwitch.vue'
 import { UserRound } from 'lucide-vue-next'
 import { reactive, ref, watch } from 'vue'
 import { cleanError } from '@/utils'

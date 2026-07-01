@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-import Switch from '@/components/Controls/Switch.vue'
+import Switch from '@/components/Controls/BooleanSwitch.vue'
 import { computed, inject, } from 'vue'
 import CollapsibleSection from '@/components/CollapsibleSection.vue'
 import type { CourseFormContext, } from '@/types/api'
