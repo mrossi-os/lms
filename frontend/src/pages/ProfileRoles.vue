@@ -43,14 +43,14 @@
 				v-model="moderator"
 				@update:modelValue="saveRole('moderator')"
 			/>
-			<Switch
+			<BooleanSwitch
 				size="sm"
 				:label="__('Manager')"
 				:description="__('Manage users, batches, and operational settings')"
 				v-model="manager"
 				@update:modelValue="saveRole('manager')"
 			/>
-			<Switch
+			<BooleanSwitch
 				size="sm"
 				:label="__('Teacher')"
 				:description="__('Teach courses and manage assigned batches')"

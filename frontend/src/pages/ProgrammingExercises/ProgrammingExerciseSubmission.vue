@@ -106,10 +106,10 @@
 								{{ testCase.status }}
 							</span>
 							<!-- <span v-if="testCase.status === 'Passed'">
-								<Check class="size-4 text-ink-green-3" />
+								<LucideCheck class="size-4 text-ink-green-3" />
 							</span>
 							<span v-else>
-								<X class="size-4 text-ink-red-3" />
+								<LucideX class="size-4 text-ink-red-3" />
 							</span> -->
 						</div>
 						<div class="flex items-center justify-between w-[60%]">

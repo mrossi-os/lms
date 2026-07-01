@@ -59,6 +59,13 @@
 								)
 							"
 						>
+							<label
+								class="block text-p-sm-medium text-ink-gray-7"
+								for="batchTimezone"
+							>
+								{{ __('Time') }}
+								<span class="text-ink-red-6">*</span>
+							</label>
 							<FormControl
 								v-model="liveClass.time"
 								type="time"
@@ -108,9 +115,14 @@
 								{{ __('Minimum 15 minutes before the class.') }}
 							</span>
 						</div>
-						<Button @click="addReminder" :variant="'subtle'">
+						<Button
+							@click="addReminder"
+							theme="blue"
+							:variant="'solid'"
+							class="!text-white"
+						>
 							<template #prefix>
-								<Plus class="w-4 h-4" />
+								<Plus class="w-4 h-4 !text-white" />
 							</template>
 							{{ __('Add Reminder') }}
 						</Button>
@@ -168,6 +180,7 @@
 </template>
 <script setup>
 import {
+	Button,
 	Combobox,
 	Dialog,
 	createResource,

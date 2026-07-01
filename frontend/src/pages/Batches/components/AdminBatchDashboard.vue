@@ -40,7 +40,7 @@
 			v-else
 			class="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-5 items-start"
 		>
-			<div class="border rounded-lg py-3 px-4 order-2 lg:order-1">
+			<div class="border rounded-lg py-3 px-4 order-2 lg:order-1 card">
 				<div class="flex items-center justify-between gap-x-2 mb-3">
 					<div class="text-xl-semibold text-ink-gray-9">
 						{{ __('Students') }}
@@ -123,7 +123,7 @@
 										variant="ghost"
 										@click="removeStudents(selections, unselectAll)"
 									>
-										<Trash2 class="h-4 w-4 stroke-1.5" />
+										<LucideTrash2 class="h-4 w-4 stroke-1.5" />
 									</Button>
 								</div>
 							</template>
@@ -184,7 +184,7 @@
 					}"
 				/>
 
-				<div class="p-4 border rounded-lg">
+				<div class="card">
 					<BatchFeedback v-if="batch.data" :batch="batch.data.name" />
 				</div>
 			</div>
@@ -226,7 +226,6 @@ import { formatAmount } from '@/utils'
 import BatchFeedback from '@/pages/Batches/components/BatchFeedback.vue'
 import BatchStudentProgress from '@/pages/Batches/components/BatchStudentProgress.vue'
 import NumberChartGraph from '@/components/NumberChartGraph.vue'
-import ProgressBar from '@/components/ProgressBar.vue'
 import StudentModal from '@/components/Modals/StudentModal.vue'
 import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
 import { useRouter } from 'vue-router'
@@ -252,7 +251,7 @@ function openEnrollModal() {
 	showEnrollmentModal.value = true
 }
 
-defineExpose({ openEnrollModal })
+defineExpose({ openEnrollModal, goToImport })
 
 const props = defineProps<{
 	batch: { [key: string]: any } | null
@@ -369,6 +368,6 @@ const showProgressChart = computed(
 )
 
 const showStudentsEmptyState = computed(
-	() => !students.loading && !students.data?.length && !searchFilter.value
+	() => !students.loading && !students.data?.length && !searchFilter.value,
 )
 </script>

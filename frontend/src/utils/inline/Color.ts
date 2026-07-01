@@ -27,6 +27,24 @@ export class Color extends BaseInline {
 	private panel: HTMLElement | null = null
 	private textInput: HTMLInputElement | null = null
 	private backgroundInput: HTMLInputElement | null = null
+	// The wrapped element the color inputs write to. Captured when the panel
+	// opens so the color still applies after the native color dialog blurs the
+	// window and collapses the selection (which can close the inline toolbar).
+	private activeNode: HTMLElement | null = null
+
+	// Bound arrow fields: stable references, so re-registering is idempotent and
+	// they survive the inline toolbar's clear().
+	private applyTextColor = (): void => {
+		if (this.activeNode && this.textInput) {
+			this.activeNode.style.color = this.textInput.value
+		}
+	}
+
+	private applyBackgroundColor = (): void => {
+		if (this.activeNode && this.backgroundInput) {
+			this.activeNode.style.backgroundColor = this.backgroundInput.value
+		}
+	}
 
 	static get title(): string {
 		return __('Color')
@@ -49,8 +67,26 @@ export class Color extends BaseInline {
 		this.panel.classList.add('lms-inline-color__panel')
 		this.panel.hidden = true
 
+		// Keep the selection (and the inline toolbar) alive while the panel is
+		// clicked: a native <input type="color"> would otherwise move focus out of
+		// the contenteditable and collapse the selection. preventDefault on
+		// mousedown blocks that but still lets the click open the OS color dialog.
+		this.panel.addEventListener('mousedown', (event: MouseEvent): void => {
+			event.preventDefault()
+		})
+
 		this.textInput = this.createInput(__('Text color'))
 		this.backgroundInput = this.createInput(__('Highlight'))
+
+		// Attach the apply listeners ONCE, directly on the inputs. Opening the OS
+		// color dialog blurs the window and can close the inline toolbar — which
+		// calls clear() and would remove anything registered via BaseInline.listen
+		// — before the dialog commits. Persistent listeners writing to the captured
+		// activeNode apply the color regardless of the toolbar's state.
+		this.textInput.addEventListener('input', this.applyTextColor)
+		this.textInput.addEventListener('change', this.applyTextColor)
+		this.backgroundInput.addEventListener('input', this.applyBackgroundColor)
+		this.backgroundInput.addEventListener('change', this.applyBackgroundColor)
 
 		this.panel.append(this.textInput.parentElement as HTMLElement)
 		this.panel.append(this.backgroundInput.parentElement as HTMLElement)
@@ -62,21 +98,12 @@ export class Color extends BaseInline {
 		if (!this.panel || !this.textInput || !this.backgroundInput) {
 			return
 		}
+		this.activeNode = node
 		const { color, backgroundColor } = node.style
-		if (color) {
-			this.textInput.value = rgbToHex(color)
-		}
-		if (backgroundColor) {
-			this.backgroundInput.value = rgbToHex(backgroundColor)
-		}
-		this.listen(this.textInput, 'input change', (): void => {
-			node.style.color = (this.textInput as HTMLInputElement).value
-		})
-		this.listen(this.backgroundInput, 'input change', (): void => {
-			node.style.backgroundColor = (
-				this.backgroundInput as HTMLInputElement
-			).value
-		})
+		this.textInput.value = color ? rgbToHex(color) : '#000000'
+		this.backgroundInput.value = backgroundColor
+			? rgbToHex(backgroundColor)
+			: '#ffffff'
 		this.panel.hidden = false
 	}
 

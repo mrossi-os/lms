@@ -10,7 +10,7 @@
 				</Badge>
 			</div>
 			<div class="flex items-center gap-x-2">
-				<template v-if="activeTabKey === 'Settings' && isAdmin">
+				<template v-if="currentTabKey === 'Settings' && isAdmin">
 					<Badge v-if="childRef?.isDirty" theme="orange">
 						{{ __('Not Saved') }}
 					</Badge>
@@ -42,6 +42,16 @@
 				<Button
 					v-if="tabIndex === 1 && isAdmin"
 					variant="outline"
+					@click="childRef?.goToImport?.()"
+				>
+					<template #prefix>
+						<span class="lucide-import size-4" />
+					</template>
+					{{ __('Import') }}
+				</Button>
+				<Button
+					v-if="tabIndex === 1 && isAdmin"
+					variant="solid"
 					@click="childRef?.openEnrollModal?.()"
 				>
 					<template #prefix>
@@ -50,7 +60,7 @@
 					{{ __('Enroll') }}
 				</Button>
 				<Tooltip
-					v-if="currentTabLabel === 'Announcements' && isAdmin && !readOnlyMode"
+					v-if="currentTabKey === 'Announcements' && isAdmin && !readOnlyMode"
 					:text="
 						batch.data?.students?.length
 							? ''
@@ -58,7 +68,7 @@
 					"
 				>
 					<Button
-						variant="outline"
+						variant="solid"
 						:disabled="!batch.data?.students?.length"
 						@click="childRef?.openAnnouncementModal?.()"
 					>
@@ -70,7 +80,7 @@
 				</Tooltip>
 				<Button
 					v-if="isAdmin"
-					variant="outline"
+					variant="solid"
 					:theme="batch.data?.published ? 'red' : 'gray'"
 					:loading="publishToggle.loading"
 					@click="togglePublishBatch"
@@ -92,11 +102,7 @@
 						>
 							<component v-if="tab.icon" :is="tab.icon" class="size-4" />
 							{{ tab.label }}
-							<Badge
-								v-if="tabBadgeCount(tab.key)"
-								theme="red"
-								size="sm"
-							>
+							<Badge v-if="tabBadgeCount(tab.key)" theme="red" size="sm">
 								{{ tabBadgeCount(tab.key) }}
 							</Badge>
 						</button>
@@ -143,7 +149,15 @@ import {
 	Settings2,
 	TrendingUp,
 } from 'lucide-vue-next'
-import { computed, inject, markRaw, onMounted, onUnmounted, ref, watch } from 'vue'
+import {
+	computed,
+	inject,
+	markRaw,
+	onMounted,
+	onUnmounted,
+	ref,
+	watch,
+} from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import {
 	Badge,
@@ -316,7 +330,9 @@ const addToTabs = (key, label, component, icon) => {
 }
 
 const isAdmin = computed(() => {
-	return user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente
+	return (
+		user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente
+	)
 })
 
 // A "Valutatore" of this batch gets the admin Dashboard + the live class and
@@ -329,7 +345,9 @@ const isStudent = computed(() => {
 	return batch.data?.students?.includes(user.data?.name)
 })
 
-const currentTabLabel = computed(() => tabs.value[tabIndex.value]?.label)
+// Compare against the tab KEY (untranslated), not the label: the label is run
+// through __() so it becomes e.g. "Annunci" in Italian and would never match.
+const currentTabKey = computed(() => tabs.value[tabIndex.value]?.key)
 
 const publishToggle = createResource({
 	url: 'frappe.client.set_value',
@@ -343,7 +361,7 @@ const publishToggle = createResource({
 	},
 	onSuccess() {
 		toast.success(
-			batch.data?.published ? __('Batch unpublished') : __('Batch published')
+			batch.data?.published ? __('Batch unpublished') : __('Batch published'),
 		)
 		batch.reload()
 	},

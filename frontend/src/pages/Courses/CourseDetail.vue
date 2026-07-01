@@ -83,7 +83,7 @@
 				</Button>
 				<Button
 					v-if="user.data?.is_moderator"
-					:variant="course.data?.published ? 'outline' : 'solid'"
+					:variant="course.data?.published ? 'ghost' : 'solid'"
 					:theme="course.data?.published ? 'red' : 'gray'"
 					:loading="publishToggle.loading"
 					@click="togglePublishCourse"

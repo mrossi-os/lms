@@ -54,7 +54,7 @@
 							{{ formatReviewDate(review.creation) }}
 						</span>
 						<div class="flex mt-2 gap-x-1">
-							<Star
+							<LucideStar
 								v-for="index in 5"
 								class="size-4 text-transparent rounded-sm"
 								:class="
