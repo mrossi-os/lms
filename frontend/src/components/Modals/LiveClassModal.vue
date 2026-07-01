@@ -174,7 +174,7 @@ import {
 	FormControl,
 	toast,
 } from 'frappe-ui'
-import { reactive, inject, onMounted } from 'vue'
+import { computed, reactive, inject, onMounted } from 'vue'
 import { getTimezones, getUserTimezone } from '@/utils/'
 
 const liveClasses = defineModel('reloadLiveClasses')

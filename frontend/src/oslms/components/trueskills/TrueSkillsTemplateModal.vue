@@ -119,7 +119,7 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
 import { Dialog, FormControl, createResource, toast } from 'frappe-ui'
-import Switch from '@/components/Controls/Switch.vue'
+import Switch from '@/components/Controls/BooleanSwitch.vue'
 import FilePicker from '@/components/Controls/FilePicker.vue'
 
 const show = defineModel({ type: Boolean, default: false })

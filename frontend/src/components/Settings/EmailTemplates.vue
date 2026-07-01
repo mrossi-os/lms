@@ -97,6 +97,7 @@ import {
 	toast,
 } from 'frappe-ui'
 import { computed, ref } from 'vue'
+import { cleanError } from '@/utils'
 import EmailTemplateModal from '@/components/Modals/EmailTemplateModal.vue'
 import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
 import SettingsLayout from '@/components/Layouts/SettingsLayout.vue'

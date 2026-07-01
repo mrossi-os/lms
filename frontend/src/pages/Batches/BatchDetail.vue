@@ -60,7 +60,7 @@
 					<Button
 						variant="outline"
 						:disabled="!batch.data?.students?.length"
-						@click="openAnnouncementModal"
+						@click="childRef?.openAnnouncementModal?.()"
 					>
 						<template #prefix>
 							<span class="lucide-send size-4" />
@@ -330,10 +330,6 @@ const isStudent = computed(() => {
 })
 
 const currentTabLabel = computed(() => tabs.value[tabIndex.value]?.label)
-
-const openAnnouncementModal = () => {
-	showAnnouncementModal.value = true
-}
 
 const publishToggle = createResource({
 	url: 'frappe.client.set_value',

@@ -1,15 +1,27 @@
 <template>
-	<div class="py-5">
-		<OsLessonForm :lesson="lesson" @dirty="markDirty" />
-		<div class="mt-0">
-			<div class="w-5/6 mx-auto pt-4">
-				<div
-					class="flex justify-between cursor-pointer"
-					@click="
-						() => {
-							openInstructorEditor = !openInstructorEditor
-						}
-					"
+	<div class="py-10">
+		<div class="mx-10 space-y-6 px-20">
+			<!-- Inline-editable lesson title -->
+			<textarea
+				ref="titleRef"
+				v-model="lesson.title"
+				:placeholder="__('Lesson title')"
+				rows="1"
+				class="lesson-title w-full resize-none overflow-hidden border-0 bg-transparent p-0 text-3xl font-bold leading-tight text-ink-gray-9 placeholder:text-ink-gray-4 focus:outline-none focus:ring-0"
+				@input="onTitleInput"
+			/>
+
+			<!-- Custom os_lms settings panel: include_in_preview, duration,
+			     tags and AI ingestion controls. -->
+			<OsLessonForm :lesson="lesson" @dirty="markDirty" />
+
+			<!-- Instructor notes card (native disclosure) -->
+			<details
+				class="instructor-notes rounded-lg border border-outline-gray-2"
+				@toggle="onInstructorNotesToggle"
+			>
+				<summary
+					class="flex w-full cursor-pointer items-center gap-2 px-4 py-3 text-start"
 				>
 					<NotebookPen class="size-4 stroke-1.5 text-ink-gray-7" />
 					<span class="text-p-base font-medium text-ink-gray-8">
@@ -43,25 +55,65 @@
 	</div>
 </template>
 <script setup>
-import { createResource, toast } from 'frappe-ui'
-import { reactive, onMounted, inject, ref, onBeforeUnmount } from 'vue'
-import EditorJS from '@editorjs/editorjs'
-import { ChevronRight } from 'lucide-vue-next'
 import {
-	getEditorTools,
-	getEditorI18n,
-	enablePlyr,
-	sanitizeEditorJs,
-} from '@/utils'
+	Badge,
+	Button,
+	createResource,
+	toast,
+} from 'frappe-ui'
+import {
+	reactive,
+	computed,
+	onMounted,
+	inject,
+	ref,
+	nextTick,
+	onBeforeUnmount,
+} from 'vue'
+import { ChevronRight, NotebookPen } from 'lucide-vue-next'
+import { useDebounceFn } from '@vueuse/core'
+import { enablePlyr, sanitizeEditorJs } from '@/utils'
+import { hasEditorContent, shouldSkipLessonSave } from '@/utils/lessonForm'
+import { hasVideoContent } from '@/utils/video'
+import BlockEditor from '@/components/BlockEditor.vue'
 import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
+import {
+	useKeyboardShortcuts,
+	saveShortcut,
+} from '@/composables/useKeyboardShortcuts'
 import { useAiContext } from '@/stores/aiContext'
 import OsLessonForm from '@/oslms/pages/OsLessonForm.vue'
 
 const editor = ref(null)
 const instructorEditor = ref(null)
 const user = inject('$user')
-const openInstructorEditor = ref(false)
+const titleRef = ref(null)
 const aiContext = useAiContext()
+
+function onTitleInput() {
+	autoGrowTitle()
+	markDirty()
+}
+
+// Put the caret in the instructor-notes editor when the card is opened, so it's
+// ready to type. EditorJS can't focus while the <details> is collapsed
+// (display: none), so this has to wait for the open toggle.
+function onInstructorNotesToggle(event) {
+	if (event.target.open) instructorEditor.value?.focus()
+}
+
+function autoGrowTitle() {
+	const el = titleRef.value
+	if (!el) return
+	el.style.height = 'auto'
+	el.style.height = `${el.scrollHeight}px`
+}
+
+const contentUploadContext = { docname: null, fieldname: 'content' }
+const instructorUploadContext = {
+	docname: null,
+	fieldname: 'instructor_content',
+}
 const { capture } = useTelemetry()
 const { updateOnboardingStep } = useOnboarding('learning')
 
@@ -117,18 +169,17 @@ onMounted(() => {
 	enablePlyr()
 })
 
-const renderEditor = (holder) => {
-	return new EditorJS({
-		holder: holder,
-		tools: getEditorTools(true),
-		defaultBlock: 'markdown',
-		i18n: getEditorI18n(),
-		onChange: async (api, event) => {
-			enablePlyr()
-			markDirty()
+// ignoreTyping: false so Cmd/Ctrl+S saves from the title field, but the guard
+// keeps the rich-text editor's own behaviour intact (matches the prior handler).
+useKeyboardShortcuts({
+	ignoreTyping: false,
+	shortcuts: [
+		{
+			...saveShortcut(() => saveLesson()),
+			guard: (e) => !e.target?.classList?.contains('ProseMirror'),
 		},
-	})
-}
+	],
+})
 
 const lesson = reactive({
 	title: '',
@@ -157,11 +208,21 @@ const lessonDetails = createResource({
 				? true
 				: false
 			if (data.lesson.name) aiContext.setLesson(data.lesson.name)
-			addLessonContent(data)
-			addInstructorNotes(data)
-			enableAutoSave()
-			// Initial population isn't user input.
-			isDirty.value = false
+			contentUploadContext.docname = data.lesson.name
+			instructorUploadContext.docname = data.lesson.name
+			nextTick(autoGrowTitle)
+			Promise.all([addLessonContent(data), addInstructorNotes(data)]).then(
+				() => {
+					nextTick(() => {
+						// Initial population isn't user input; only arm autosave
+						// once the editors have rendered the loaded content.
+						isDirty.value = false
+						initialLoadComplete = true
+						// Blinking caret ready in the lesson body on open.
+						editor.value?.focus()
+					})
+				}
+			)
 		}
 	},
 })
@@ -186,8 +247,8 @@ const addLessonContent = (data) => {
 const addInstructorNotes = (data) => {
 	return instructorEditor.value.isReady().then(() => {
 		if (data.lesson.instructor_content) {
-			instructorEditor.value.render(
-				sanitizeEditorJs(JSON.parse(data.lesson.instructor_content)),
+			return instructorEditor.value.render(
+				sanitizeEditorJs(JSON.parse(data.lesson.instructor_content))
 			)
 		} else if (data.lesson.instructor_notes) {
 			let blocks = convertToJSON(data.lesson)
@@ -196,25 +257,6 @@ const addInstructorNotes = (data) => {
 			})
 		}
 	})
-}
-
-const enableAutoSave = () => {
-	autoSaveInterval = setInterval(() => {
-		// Only autosave when there are unsaved edits — otherwise we keep POSTing
-		// the whole document every 10s while the header shows "No changes to save".
-		if (isDirty.value) saveLesson({ showSuccessMessage: false })
-	}, 10000)
-}
-
-const keyboardShortcut = (e) => {
-	if (
-		e.key === 's' &&
-		(e.ctrlKey || e.metaKey) &&
-		!e.target.classList.contains('ProseMirror')
-	) {
-		saveLesson({ showSuccessMessage: true })
-		e.preventDefault()
-	}
 }
 
 onBeforeUnmount(() => {
@@ -452,13 +494,13 @@ const createNewLesson = () => {
 							emit('saved', { isNew: true })
 							lessonDetails.reload()
 						},
-					},
+					}
 				)
 			},
 			onError(err) {
 				toast.error(err.messages?.[0] || err)
 			},
-		},
+		}
 	)
 }
 
@@ -483,7 +525,7 @@ const editCurrentLesson = () => {
 			onError(err) {
 				toast.error(err.message)
 			},
-		},
+		}
 	)
 }
 

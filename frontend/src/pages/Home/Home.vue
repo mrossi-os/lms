@@ -33,8 +33,8 @@
 			<LoadingIndicator class="size-5 text-ink-gray-5" />
 		</div>
 		<AdminHome
-			v-else-if="isAdmin && currentTab === 'instructor'"
-			:liveClasses="adminLiveClasses"
+			v-else-if="useAdminHome && currentTab === 'instructor'"
+			:liveClasses="isAdmin ? adminLiveClasses : myLiveClasses"
 			:evals="adminEvals"
 		/>
 		<StudentHome
@@ -86,6 +86,12 @@ const isAdmin = computed(() => {
 		user.data?.is_evaluator
 	)
 })
+
+// A "Valutatore" is not a student: it gets the admin-style home (no student
+// progress / evaluation widgets), limited to what it can actually do — its own
+// joinable live classes, and no course-creation calls to action.
+const isValutatore = computed(() => Boolean(user.data?.is_valutatore))
+const useAdminHome = computed(() => isAdmin.value || isValutatore.value)
 
 const isHomeLoading = computed(() => {
 	if (isAdmin.value) {

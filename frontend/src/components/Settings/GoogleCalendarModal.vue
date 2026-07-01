@@ -78,7 +78,7 @@
 <script setup lang="ts">
 import { Badge, Button, call, Dialog, FormControl, toast } from 'frappe-ui'
 import { Check, CircleAlert } from 'lucide-vue-next'
-import Switch from '@/components/Controls/Switch.vue'
+import Switch from '@/components/Controls/BooleanSwitch.vue'
 import { inject, reactive, watch } from 'vue'
 import { User } from '@/components/Settings/types'
 import { cleanError } from '@/utils'

@@ -24,6 +24,7 @@
 					<!-- Rich email/template HTML mirrors the email in an isolated
 					     iframe; a plain notification keeps the app's themed card. -->
 					<div
+						v-if="isPlainNotification(comm.content)"
 						class="prose prose-sm bg-surface-sidebar !min-w-full px-4 py-2 rounded-md"
 						v-html="sanitizeRichHTML(comm.content)"
 					></div>
@@ -65,6 +66,7 @@
 	</div>
 </template>
 <script setup>
+import { computed, inject, ref, watch } from 'vue'
 import { sanitizeRichHTML } from '@/utils/sanitizeRichHTML'
 import { createResource, Avatar } from 'frappe-ui'
 import { timeAgo } from '@/utils'
@@ -138,6 +140,13 @@ const totalAnnouncements = computed(() => communications.data?.total || 0)
 const totalPages = computed(() =>
 	Math.max(1, Math.ceil(totalAnnouncements.value / pageSize)),
 )
+
+// Opened from the batch header's "Make Announcement" button via the tab's
+// childRef (see BatchDetail).
+const openAnnouncementModal = () => {
+	showAnnouncementModal.value = true
+}
+defineExpose({ openAnnouncementModal })
 </script>
 <style>
 .prose-sm p {

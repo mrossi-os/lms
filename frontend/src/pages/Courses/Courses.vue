@@ -125,7 +125,7 @@ import {
 	usePageMeta,
 } from 'frappe-ui'
 import ClearableCombobox from '@/components/Controls/ClearableCombobox.vue'
-import { computed, inject, onMounted, ref, watch } from 'vue'
+import { computed, inject, onMounted, provide, ref, watch } from 'vue'
 import { sessionStore } from '@/stores/session'
 import { canCreateCourse } from '@/utils'
 import { useLocalStorage } from '@/utils/composables'
@@ -203,15 +203,12 @@ const courses = createListResource({
 	start: start.value,
 })
 
-const setCategories = (data) => {
-	let allCategories = data.map((course) => course.category)
-	allCategories = allCategories.filter(
-		(category, index) => allCategories.indexOf(category) === index && category,
-	)
-	if (categories.value.length <= allCategories.length) {
-		updateCategories(data)
-	}
-}
+const categories = createListResource({
+	doctype: 'LMS Category',
+	url: 'lms.lms.utils.get_course_categories',
+	cache: ['course_categories'],
+	auto: true,
+})
 
 const getCourseCount = () => {
 	if (!user.data) return
