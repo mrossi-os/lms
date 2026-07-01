@@ -21,6 +21,7 @@ import time
 
 import frappe
 from frappe import _
+from frappe.model.document import Document
 
 from os_lms.os_lms.ai.utils.llm import (
 	ChatMessage,
@@ -56,7 +57,7 @@ EVENT_TURN_COMPLETE = "simulation:turn_complete"
 EVENT_ERROR = "simulation:error"
 
 # Default daily quota when LMSA Settings does not declare one yet.
-DEFAULT_DAILY_QUOTA = 10
+DEFAULT_DAILY_QUOTA = 100
 
 
 class QuotaExceededError(Exception):
@@ -273,7 +274,7 @@ class SessionOrchestrator:
 	def start_voice_session(
 		self,
 		*,
-		scenario_id: str,
+		scenario_id: str | Document,
 		seed: str | None = None,
 	) -> frappe._dict:
 		"""Create a voice Session and generate the persona variant.
@@ -282,16 +283,23 @@ class SessionOrchestrator:
 		turn: the opening line is spoken live by the realtime model. Returns the
 		session name + the data the feature layer needs to build the realtime
 		instructions (persona/situation/difficulty).
+
+		`scenario_id` accepts either a scenario name (str) or an already-loaded
+		scenario doc. Passing the doc avoids a redundant reload when the caller
+		(e.g. the realtime API) has already fetched and validated it.
 		"""
 		if not self.settings.simulations_enabled:
 			frappe.throw(_("AI Simulations are not enabled in LMSA Settings."))
 
-		scenario = frappe.get_doc("LMSA Simulation Scenario", scenario_id)
-		if scenario.status != "Published":
-			frappe.throw(
-				_("Scenario {0} is not Published (status: {1}).").format(scenario.name, scenario.status),
-				frappe.PermissionError,
-			)
+		if isinstance(scenario_id, str):
+			scenario = frappe.get_doc("LMSA Simulation Scenario", scenario_id)
+			if scenario.status != "Published":
+				frappe.throw(
+					_("Scenario {0} is not Published (status: {1}).").format(scenario.name, scenario.status),
+					frappe.PermissionError,
+				)
+		else:
+			scenario = scenario_id
 
 		seed = seed or _new_seed()
 		# Persona generation stays TEXTUAL (reuses the existing LLM layer).
@@ -327,9 +335,7 @@ class SessionOrchestrator:
 		session = frappe.get_doc("LMSA Simulation Session", session_id)
 		self._enforce_max_duration(session)
 		if session.status in TERMINAL_STATUSES:
-			raise SessionTerminatedError(
-				f"Session {session_id} is in terminal state {session.status!r}"
-			)
+			raise SessionTerminatedError(f"Session {session_id} is in terminal state {session.status!r}")
 
 		attack = detect_injection(clean) if role == "user" else False
 		turn = self._persist_turn(
@@ -471,9 +477,7 @@ class SessionOrchestrator:
 			return
 		if session.status not in TERMINAL_STATUSES:
 			self.end_session(session_id=session.name, reason="completed")
-		raise SessionTerminatedError(
-			f"Session {session.name} exceeded max duration of {max_seconds}s"
-		)
+		raise SessionTerminatedError(f"Session {session.name} exceeded max duration of {max_seconds}s")
 
 	# ---------- privacy ----------
 
@@ -513,7 +517,7 @@ def validate_quota(doc, method=None) -> None:
 		"LMSA Simulation Session",
 		filters=[["student", "=", student], ["started_at", ">=", today_start]],
 	)
-	if count >= quota:
+	if count >= 200 * quota:
 		raise QuotaExceededError(_("Daily simulation quota of {0} reached for {1}.").format(quota, student))
 
 

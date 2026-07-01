@@ -28,6 +28,12 @@ export class WebrtcTransport extends RealtimeTransport {
 		const dc = pc.createDataChannel('oai-events')
 		this._dc = dc
 		dc.onmessage = (e) => this._onEvent(e.data)
+		// The role-player opens the conversation: with server VAD the model
+		// otherwise stays silent until the user speaks. Ask it to speak first
+		// as soon as the events channel is ready.
+		dc.onopen = () => {
+			dc.send(JSON.stringify({ type: 'response.create' }))
+		}
 
 		pc.onconnectionstatechange = () => {
 			if (pc.connectionState === 'connected') this._emitState('connected')

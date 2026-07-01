@@ -24,6 +24,10 @@ export function useRealtimeSession() {
 	let mediaStream = null
 	let timer = null
 	let startedAt = 0
+	// Track the streaming transcript bubble currently being appended to, so
+	// consecutive chunks of one turn coalesce into a single message.
+	let activeRole = null
+	let activeIndex = -1
 
 	const createSessionRes = createResource({
 		url: 'os_lms.os_lms.ai.realtime.api.create_voice_session',
@@ -38,6 +42,9 @@ export function useRealtimeSession() {
 	async function start(scenarioId) {
 		if (['connecting', 'connected'].includes(state.value)) return
 		state.value = 'connecting'
+		transcript.value = []
+		activeRole = null
+		activeIndex = -1
 		try {
 			const res = await createSessionRes.submit({
 				scenario_id: scenarioId,
@@ -54,13 +61,28 @@ export function useRealtimeSession() {
 			transport.onState((s) => {
 				state.value = s
 			})
-			transport.onTranscript(({ role, text }) => {
-				transcript.value.push({ role, text })
-				relayTurn(role, text)
+			transport.onTranscript(({ role, text, final }) => {
+				// `text` is cumulative for the current turn. Update the active
+				// bubble in place while the turn streams; only push a new bubble
+				// when a different turn starts. Persist to the backend once, on
+				// the final update, so one turn = one Turn record.
+				if (activeRole === role && activeIndex >= 0) {
+					transcript.value[activeIndex] = { role, text }
+				} else {
+					transcript.value.push({ role, text })
+					activeRole = role
+					activeIndex = transcript.value.length - 1
+				}
+				if (final) {
+					relayTurn(role, text)
+					activeRole = null
+					activeIndex = -1
+				}
 			})
 			await transport.connect(mediaStream)
 			startTimer(res.max_seconds)
-		} catch {
+		} catch (err) {
+			console.error('Error starting realtime session:', err)
 			state.value = 'error'
 			stopTimer()
 			if (transport) {

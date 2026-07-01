@@ -30,9 +30,12 @@ from ..provider import (
 from ..registry import register_realtime
 
 _BASE = "https://generativelanguage.googleapis.com/v1alpha"
+# Ephemeral tokens (auth_tokens/ prefix) are only accepted by the *Constrained*
+# method: the plain BidiGenerateContent endpoint requires a full API key and
+# rejects ephemeral tokens with "Method doesn't allow unregistered callers".
 _WS_URL = (
 	"wss://generativelanguage.googleapis.com/ws/"
-	"google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent"
+	"google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContentConstrained"
 )
 
 
@@ -40,7 +43,11 @@ _WS_URL = (
 class GeminiLiveProvider(RealtimeProvider):
 	"""Gemini Live over WebSocket; ephemeral token minted over REST."""
 
-	DEFAULT_MODEL = "gemini-live-2.5-flash-native-audio"
+	# Developer API (generativelanguage.googleapis.com) Live model id. Note this
+	# differs from the Vertex AI naming (e.g. "gemini-live-2.5-flash-native-audio",
+	# which does NOT resolve on the Developer API). Override via LMSA Settings →
+	# Realtime Model when Google rotates the preview id.
+	DEFAULT_MODEL = "gemini-3.1-flash-live-preview"
 
 	def __init__(self, config: RealtimeProviderConfig):
 		self._config = config
@@ -73,11 +80,12 @@ class GeminiLiveProvider(RealtimeProvider):
 			connect_url=_WS_URL,
 			expires_at=0,  # Gemini returns RFC3339 expireTime; the client tracks it.
 			voice=cfg.voice or self._config.voice or "Puck",
+			# Persona, voice, model and transcription are locked into the token
+			# server-side (see _token_request). We deliberately do NOT ship the
+			# instructions/voice to the client: it only needs to open the stream
+			# and manage its session-resumption handle.
 			extra={
 				"model": model,
-				"instructions": cfg.instructions,
-				"voice": cfg.voice or self._config.voice or "Puck",
-				"input_language": cfg.input_language,
 				"resumption_handle": "",
 				"expire_time": payload.get("expireTime", ""),
 			},
@@ -103,11 +111,34 @@ class GeminiLiveProvider(RealtimeProvider):
 
 
 def _token_request(cfg: RealtimeSessionConfig, config: RealtimeProviderConfig) -> dict:
-	"""Build the ephemeral-token request. Keep all provider-format coupling here."""
+	"""Build the ephemeral-token request. Keep all provider-format coupling here.
+
+	Everything is LOCKED server-side: the client can only stream audio, it cannot
+	change the model, persona, voice, modalities or transcription. The REST body
+	maps directly to the AuthToken resource; `bidiGenerateContentSetup` pins the
+	LiveConnectConfig. (`liveConnectConstraints`/`lockAdditionalFields` are
+	SDK-only names the google-genai client rewrites before hitting REST; the raw
+	AuthToken resource only accepts `bidiGenerateContentSetup`.) Only the fields
+	present in the setup are locked, which are all the security-sensitive ones.
+	Any value the client sends for a locked field on connect is ignored by the
+	API. Session resumption is deliberately left unlocked so the client can
+	still manage its resumption handle.
+	"""
+	model = cfg.model or config.default_model or GeminiLiveProvider.DEFAULT_MODEL
+	voice = cfg.voice or config.voice or "Puck"
 	return {
 		"uses": 1,
-		"liveConnectConstraints": {
-			"model": cfg.model or config.default_model or GeminiLiveProvider.DEFAULT_MODEL,
+		"bidiGenerateContentSetup": {
+			"model": f"models/{model}",
+			"systemInstruction": {"parts": [{"text": cfg.instructions}]},
+			"generationConfig": {
+				"responseModalities": ["AUDIO"],
+				"speechConfig": {
+					"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": voice}},
+				},
+			},
+			"inputAudioTranscription": {},
+			"outputAudioTranscription": {},
 		},
 	}
 

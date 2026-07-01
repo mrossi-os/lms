@@ -215,15 +215,21 @@ class TestGeminiCreateSession(UnitTestCase):
 		with patch(
 			"os_lms.os_lms.ai.utils.realtime.providers.gemini_live.requests.post",
 			return_value=_Resp(),
-		):
+		) as mocked:
 			session = provider.create_session(_cfg())
 
 		self.assertEqual(session.transport, "websocket")
 		self.assertTrue(session.client_secret)
 		self.assertTrue(session.connect_url.startswith("wss://"))
-		# Persona must be carried for the client's setup frame.
-		self.assertEqual(session.extra["instructions"], "You are a recruiter.")
-		# Resumption handle slot present (empty initially).
+		# Everything is locked into the token server-side.
+		_, kwargs = mocked.call_args
+		setup = kwargs["json"]["bidiGenerateContentSetup"]
+		self.assertEqual(setup["systemInstruction"]["parts"][0]["text"], "You are a recruiter.")
+		self.assertEqual(setup["generationConfig"]["responseModalities"], ["AUDIO"])
+		# The persona must NOT leak to the client: it only gets what it needs
+		# to open the stream and manage its resumption handle.
+		self.assertNotIn("instructions", session.extra)
+		self.assertNotIn("voice", session.extra)
 		self.assertIn("resumption_handle", session.extra)
 
 

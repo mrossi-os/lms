@@ -36,6 +36,12 @@ from os_lms.os_lms.ai.utils.realtime import (
 )
 
 
+# Interaction language for realtime sessions, kept in one place so the model
+# directive and the transcription hint stay in sync. (BCP-47 base: it-IT)
+_LANGUAGE_CODE = "it"
+_LANGUAGE_NAME = "Italian"
+
+
 def _service() -> SessionOrchestrator:
 	return SessionOrchestrator()
 
@@ -53,7 +59,7 @@ def create_voice_session(scenario_id: str) -> dict:
 		frappe.throw(_("Scenario {0} is not voice-enabled.").format(scenario.name))
 
 	try:
-		started = _service().start_voice_session(scenario_id=scenario.name)
+		started = _service().start_voice_session(scenario_id=scenario)
 	except QuotaExceededError as e:
 		frappe.throw(str(e), frappe.ValidationError)
 
@@ -67,6 +73,20 @@ def create_voice_session(scenario_id: str) -> dict:
 	if voice_instructions:
 		instructions = f"{instructions}\n\n# Delivery\n{voice_instructions}"
 
+	# Force the interaction language. Native-audio realtime models do NOT support
+	# speechConfig.languageCode, so the system instruction is the ONLY lever — and
+	# Google's own best practice is this exact emphatic, capitalised phrasing.
+	# A softer wording lets the model drift into other languages/scripts
+	# (Cyrillic, Japanese, ...).
+	upper = _LANGUAGE_NAME.upper()
+	instructions = (
+		f"{instructions}\n\n# Language\n"
+		f"RESPOND IN {upper}. YOU MUST RESPOND UNMISTAKABLY IN {upper}. "
+		f"Understand and reply ONLY in {_LANGUAGE_NAME}, regardless of the "
+		f"language the user speaks. Never switch to another language or script, "
+		f"not even for a single word or the opening greeting."
+	)
+
 	raw_override = (scenario.provider_override or "").strip()
 	override = raw_override if raw_override in list_realtime_providers() else None
 	provider = resolve_realtime_provider(override=override)
@@ -75,7 +95,7 @@ def create_voice_session(scenario_id: str) -> dict:
 		voice=(scenario.get("voice") or settings.realtime_voice or ""),
 		model=settings.realtime_model or "",
 		turn_detection=settings.turn_detection or "server_vad",
-		input_language="it",
+		input_language=_LANGUAGE_CODE,
 		max_session_seconds=int(settings.realtime_max_session_seconds or 300),
 		session_label=SessionOrchestrator.pseudonymize_session_id(frappe.session.user)[:12],
 	)

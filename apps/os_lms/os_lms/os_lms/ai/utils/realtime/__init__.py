@@ -53,7 +53,7 @@ __all__ = [
 ]
 
 # Sensible defaults if a settings field is blank.
-_DEFAULT_MODEL = {"openai": "gpt-realtime-2", "gemini": "gemini-live-2.5-flash-native-audio"}
+_DEFAULT_MODEL = {"openai": "gpt-realtime-2", "gemini": "gemini-3.1-flash-live-preview"}
 _DEFAULT_VOICE = {"openai": "marin", "gemini": "Puck"}
 
 

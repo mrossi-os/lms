@@ -16,9 +16,13 @@ export class RealtimeTransport {
 		this._stateCbs.push(cb)
 	}
 
-	_emitTranscript(role, text) {
+	// `text` is the CUMULATIVE text of the current turn (not a delta), so the UI
+	// can simply replace the active bubble. `final` marks the turn's end: streamed
+	// transports (Gemini) emit many non-final updates then one final; one-shot
+	// transports (OpenAI) emit a single final per turn.
+	_emitTranscript(role, text, final = true) {
 		if (!text) return
-		for (const cb of this._transcriptCbs) cb({ role, text })
+		for (const cb of this._transcriptCbs) cb({ role, text, final })
 	}
 
 	_emitState(state) {
