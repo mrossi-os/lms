@@ -14,6 +14,8 @@ from frappe import _
 from frappe.utils import cint, get_datetime
 from frappe.utils.verified_command import get_signed_params, verify_request
 
+from os_lms.os_lms.live_class_join import get_join_gate_url
+
 
 def _escape(text: str | None) -> str:
 	if not text:
@@ -72,11 +74,15 @@ def build_ics(doc) -> str:
 	site = getattr(frappe.local, "site", "") or "lms"
 	uid = f"live-class-{doc.name}@{site}"
 
+	# Point at the join gate, not the raw meeting link, so a student can't enter
+	# the Zoom/Meet call before the host has started it.
+	join_link = get_join_gate_url(doc.name) if doc.get("join_url") else None
+
 	description_parts = []
 	if doc.get("description"):
 		description_parts.append(doc.description)
-	if doc.get("join_url"):
-		description_parts.append(_("Partecipa: {0}").format(doc.join_url))
+	if join_link:
+		description_parts.append(_("Partecipa: {0}").format(join_link))
 	description = "\n\n".join(description_parts)
 
 	lines = [
@@ -94,9 +100,9 @@ def build_ics(doc) -> str:
 	]
 	if description:
 		lines.append(f"DESCRIPTION:{_escape(description)}")
-	if doc.get("join_url"):
-		lines.append(f"LOCATION:{_escape(doc.join_url)}")
-		lines.append(f"URL:{_escape(doc.join_url)}")
+	if join_link:
+		lines.append(f"LOCATION:{_escape(join_link)}")
+		lines.append(f"URL:{_escape(join_link)}")
 	lines.extend([
 		"STATUS:CONFIRMED",
 		"END:VEVENT",
@@ -138,12 +144,15 @@ def get_calendar_links(doc) -> dict:
 	end_utc = start_utc + timedelta(minutes=duration_minutes)
 
 	title = doc.get("title") or _("Lezione dal vivo")
-	location = doc.get("join_url") or ""
+	# Point at the join gate, not the raw meeting link, so a student can't enter
+	# the Zoom/Meet call before the host has started it.
+	join_link = get_join_gate_url(doc.name) if doc.get("join_url") else ""
+	location = join_link
 	details_parts = []
 	if doc.get("description"):
 		details_parts.append(doc.description)
-	if doc.get("join_url"):
-		details_parts.append(_("Partecipa: {0}").format(doc.join_url))
+	if join_link:
+		details_parts.append(_("Partecipa: {0}").format(join_link))
 	details = "\n\n".join(details_parts)
 
 	# UTC with a trailing "Z" is unambiguous; each provider renders it in the
