@@ -41,7 +41,7 @@
 				</template>
 
 				<template #body="{ close }">
-					<div class="bg-surface-white border rounded-lg shadow-lg w-64 p-2">
+					<div class="bg-surface-base border rounded-lg shadow-lg w-64 p-2">
 						<FormControl
 							v-model="searchQuery"
 							:placeholder="__('Search tags...')"
@@ -98,8 +98,8 @@
 				</template>
 
 				<template #body>
-					<div class="bg-surface-white border rounded-lg shadow-lg w-fit p-3">
-						<div class="text-sm font-semibold text-ink-gray-8 mb-3">
+					<div class="bg-surface-base border rounded-lg shadow-lg w-fit p-3">
+						<div class="text-sm-semibold text-ink-gray-8 mb-3">
 							{{ __('Manage Tags') }}
 						</div>
 
@@ -163,7 +163,7 @@
 									</span>
 								</div>
 								<button
-									class="p-1 rounded hover:bg-surface-gray-3 text-ink-gray-4 hover:text-ink-red-3 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+									class="p-1 rounded hover:bg-surface-gray-3 text-ink-gray-4 hover:text-ink-red-6 opacity-0 group-hover:opacity-100 transition-all shrink-0"
 									@click="confirmDeleteTag(tag)"
 								>
 									<Trash2 class="w-3.5 h-3.5" />

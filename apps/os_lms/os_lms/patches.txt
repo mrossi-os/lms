@@ -4,3 +4,4 @@ os_lms.patches.v0_0_3.rename_simulation_scenario_roleplay_persona
 os_lms.patches.v0_0_4.drop_golden_runs
 
 [post_model_sync]
+os_lms.patches.v0_0_5.backfill_lesson_dwell_time

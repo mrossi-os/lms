@@ -2,30 +2,30 @@ body {
 }
 
 .card {
-	background-color: var(--surface-card);
+	background-color: var(--surface-elevation-1);
 	border: 1px solid var(--outline-gray-1);
 	border-radius: 0.5rem;
 	padding: 1rem;
 }
 .card-success {
 	background-color: var(--surface-green-2);
-	border: 1px solid var(--outline-green-2, #86e0a8);
+	border: 1px solid var(--outline-green-3, #86e0a8);
 	border-radius: 0.5rem;
 	padding: 1rem;
 }
 .card-success p,
 blockquote {
-	color: var(--ink-white);
+	color: var(--ink-base);
 }
 .card-failure {
 	background-color: var(--surface-red-1);
-	border: 1px solid var(--outline-red-2, #f7c08a);
+	border: 1px solid var(--outline-red-3, #f7c08a);
 	border-radius: 0.5rem;
 	padding: 1rem;
 }
 .card-failure p,
 blockquote {
-	color: var(--ink-white);
+	color: var(--ink-base);
 }
 
 /* List header */
@@ -109,7 +109,7 @@ textarea {
 
 /* hover */
 ::-webkit-scrollbar-thumb:hover {
-	background: var(--surface-gray-7);
+	background: var(--surface-gray-10);
 }
 
 /* IFRAME */
@@ -165,13 +165,13 @@ textarea {
 	:where(ol > li):not(
 		:where([class~='not-prose'], [class~='not-prose'] *)
 	)::marker {
-	color: var(--ink-white);
+	color: var(--ink-base);
 }
 .prose
 	:where(ul > li):not(
 		:where([class~='not-prose'], [class~='not-prose'] *)
 	)::marker {
-	color: var(--ink-white);
+	color: var(--ink-base);
 }
 /* Inputs */
 .os-multilink div button {
@@ -180,10 +180,10 @@ textarea {
 
 /* Text Colors */
 .text-ink-green-7 {
-	color: var(--ink-green-3);
+	color: var(--ink-green-6);
 }
 .text-ink-red-7 {
-	color: var(--ink-red-3);
+	color: var(--ink-red-6);
 }
 .text-ink-orange-5 {
 	color: var(--ink-orange-2, #ea8259);

@@ -5,7 +5,7 @@
 		<!-- Trigger button -->
 		<button
 			type="button"
-			class="flex items-center gap-2 w-full border border-outline-gray-2 rounded-md px-3 py-1.5 bg-surface-white hover:bg-surface-gray-1 transition-colors text-sm text-ink-gray-7"
+			class="flex items-center gap-2 w-full border border-outline-gray-2 rounded-md px-3 py-1.5 bg-surface-base hover:bg-surface-gray-1 transition-colors text-sm text-ink-gray-7"
 			@click="toggleDropdown"
 		>
 			<component
@@ -29,7 +29,7 @@
 		<Transition name="dropdown">
 			<div
 				v-if="isOpen"
-				class="absolute z-50 mt-1 w-72 bg-surface-white border border-outline-gray-2 rounded-lg shadow-lg overflow-hidden"
+				class="absolute z-50 mt-1 w-72 bg-surface-base border border-outline-gray-2 rounded-lg shadow-lg overflow-hidden"
 			>
 				<!-- Search -->
 				<div class="p-2 border-b border-outline-gray-1">
@@ -61,7 +61,7 @@
 				>
 					<button
 						type="button"
-						class="text-xs text-ink-gray-5 hover:text-ink-red-3 flex items-center gap-1 transition-colors"
+						class="text-xs text-ink-gray-5 hover:text-ink-red-6 flex items-center gap-1 transition-colors"
 						@click="clearSelection"
 					>
 						<X class="w-3 h-3" />

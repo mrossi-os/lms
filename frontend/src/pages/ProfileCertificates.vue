@@ -10,13 +10,13 @@
 			<div
 				v-for="certificate in certificates.data"
 				:key="certificate.name"
-				class="flex flex-col bg-surface-white border rounded-lg card cursor-pointer hover:bg-surface-menu-bar"
+				class="flex flex-col bg-surface-base border rounded-lg card cursor-pointer hover:bg-surface-sidebar"
 				@click="openCertificate(certificate)"
 			>
 				<div class="font-medium leading-5 mb-2 text-ink-gray-9">
 					{{ certificate.course_title || certificate.batch_title }}
 				</div>
-				<div class="text-sm text-ink-gray-7 font-medium">
+				<div class="text-sm-medium text-ink-gray-7">
 					<span> {{ __('Issued on') }}: </span>
 					{{ dayjs(certificate.issue_date).format('DD MMM YYYY') }}
 				</div>
@@ -26,13 +26,13 @@
 					@click.stop
 				>
 					<button
-						class="text-xs px-2 py-1 rounded border border-outline-gray-2 hover:bg-surface-gray-2 font-medium text-ink-gray-8"
+						class="text-xs-medium px-2 py-1 rounded border border-outline-gray-2 hover:bg-surface-gray-2 text-ink-gray-8"
 						@click.stop="downloadOpenbadge(certificate.name, 'image')"
 					>
 						{{ __('Download Openbadge') }}
 					</button>
 					<button
-						class="text-xs px-2 py-1 rounded border border-outline-gray-2 hover:bg-surface-gray-2 font-medium text-ink-gray-8"
+						class="text-xs-medium px-2 py-1 rounded border border-outline-gray-2 hover:bg-surface-gray-2 text-ink-gray-8"
 						@click.stop="downloadOpenbadge(certificate.name, 'jsonp')"
 					>
 						{{ __('JSON-LD') }}
