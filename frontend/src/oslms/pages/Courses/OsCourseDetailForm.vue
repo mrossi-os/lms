@@ -29,6 +29,7 @@
 import {
     FormControl,
 } from 'frappe-ui'
+import Switch from '@/components/Controls/BooleanSwitch.vue'
 import FilePicker from '@/components/Controls/FilePicker.vue'
 import FeatureSectionEditor from '@/oslms/components/FeatureSectionEditor.vue'
 import { computed, inject, ref } from 'vue'
@@ -55,8 +56,8 @@ const heroMediaFile = ref('')
 
 
 const onHeroMediaFileUrl = (url: string | null) => {
-    if (!url || !doc) return
-    doc.hero_media_url = url
+    if (!url || !doc.value) return
+    doc.value.hero_media_url = url
     markDirty()
 }
 </script>

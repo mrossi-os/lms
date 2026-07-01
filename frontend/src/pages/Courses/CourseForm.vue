@@ -165,7 +165,7 @@ watch(
 		nextTick(() => {
 			applyingServerData = false
 		})
-	}
+	},
 )
 
 const updateCourseData = (): void => {
@@ -233,13 +233,14 @@ const updateCourse = (opts: { silent?: boolean } = {}): void => {
 				props.course.reload()
 			},
 			onError(err: { messages?: string[] } | string) {
-				const msg = typeof err === 'string' ? err : err.messages?.[0] ?? 'Error'
+				const msg =
+					typeof err === 'string' ? err : (err.messages?.[0] ?? 'Error')
 				// Autosave failures stay quiet; the orange "unsaved" badge remains
 				// (isDirty is untouched) so the change isn't silently lost.
 				if (!opts.silent) toast.error(msg)
 				console.error(err)
 			},
-		}
+		},
 	)
 }
 
@@ -259,7 +260,7 @@ const trashCourse = (): void => {
 	$dialog({
 		title: __('Delete Course'),
 		message: __(
-			'Deleting the course will also delete all its chapters and lessons. Are you sure you want to delete this course?'
+			'Deleting the course will also delete all its chapters and lessons. Are you sure you want to delete this course?',
 		),
 		actions: [
 			{
@@ -279,7 +280,7 @@ const courseMenu = computed<CourseMenuItem[]>(() => [
 	{
 		label: __('Export'),
 		icon: 'download',
-		onClick: () => exportCourseAsZip(courseResource.doc?.name??""),
+		onClick: () => exportCourseAsZip(courseResource.doc?.name ?? ''),
 	},
 	{
 		label: __('Delete'),
@@ -292,7 +293,7 @@ const courseMenu = computed<CourseMenuItem[]>(() => [
 const checkPermission = (): void => {
 	if (user.data?.is_moderator) return
 	const isInstructor = instructors.value?.some(
-		(i: string) => i == user.data?.name
+		(i: string) => i == user.data?.name,
 	)
 	if (!isInstructor) router.push({ name: 'Courses' })
 }

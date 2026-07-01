@@ -7,7 +7,7 @@
 				v-model="lesson.title"
 				:placeholder="__('Lesson title')"
 				rows="1"
-				class="lesson-title w-full resize-none overflow-hidden border-0 bg-transparent p-0 text-3xl font-bold leading-tight text-ink-gray-9 placeholder:text-ink-gray-4 focus:outline-none focus:ring-0"
+				class="lesson-title w-full resize-none overflow-hidden border-0 !bg-transparent p-0 text-3xl font-bold leading-tight text-ink-gray-9 placeholder:text-ink-gray-4 focus:outline-none focus:ring-0"
 				@input="onTitleInput"
 			/>
 
@@ -39,7 +39,7 @@
 				</summary>
 				<BlockEditor
 					ref="instructorEditor"
-					class="instructor-notes-editor border-t border-outline-gray-2 py-3"
+					class="instructor-notes-editor border-t border-outline-gray-2 py-3 mb-2"
 					:uploadContext="instructorUploadContext"
 					@change="markDirty"
 				/>
@@ -55,12 +55,7 @@
 	</div>
 </template>
 <script setup>
-import {
-	Badge,
-	Button,
-	createResource,
-	toast,
-} from 'frappe-ui'
+import { Badge, Button, createResource, toast } from 'frappe-ui'
 import {
 	reactive,
 	computed,
@@ -221,7 +216,7 @@ const lessonDetails = createResource({
 						// Blinking caret ready in the lesson body on open.
 						editor.value?.focus()
 					})
-				}
+				},
 			)
 		}
 	},
@@ -233,7 +228,7 @@ const addLessonContent = (data) => {
 	return editor.value.isReady().then(() => {
 		if (data.lesson.content) {
 			return editor.value.render(
-				sanitizeEditorJs(JSON.parse(data.lesson.content))
+				sanitizeEditorJs(JSON.parse(data.lesson.content)),
 			)
 		} else if (data.lesson.body) {
 			let blocks = convertToJSON(data.lesson)
@@ -248,7 +243,7 @@ const addInstructorNotes = (data) => {
 	return instructorEditor.value.isReady().then(() => {
 		if (data.lesson.instructor_content) {
 			return instructorEditor.value.render(
-				sanitizeEditorJs(JSON.parse(data.lesson.instructor_content))
+				sanitizeEditorJs(JSON.parse(data.lesson.instructor_content)),
 			)
 		} else if (data.lesson.instructor_notes) {
 			let blocks = convertToJSON(data.lesson)
@@ -494,13 +489,13 @@ const createNewLesson = () => {
 							emit('saved', { isNew: true })
 							lessonDetails.reload()
 						},
-					}
+					},
 				)
 			},
 			onError(err) {
 				toast.error(err.messages?.[0] || err)
 			},
-		}
+		},
 	)
 }
 
@@ -525,7 +520,7 @@ const editCurrentLesson = () => {
 			onError(err) {
 				toast.error(err.message)
 			},
-		}
+		},
 	)
 }
 

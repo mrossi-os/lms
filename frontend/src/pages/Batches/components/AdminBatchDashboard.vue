@@ -369,6 +369,6 @@ const showProgressChart = computed(
 )
 
 const showStudentsEmptyState = computed(
-	() => !students.loading && !students.data?.length && !searchFilter.value
+	() => !students.loading && !students.data?.length && !searchFilter.value,
 )
 </script>

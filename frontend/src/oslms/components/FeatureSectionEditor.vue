@@ -1,6 +1,8 @@
 <template>
 	<div class="pr-5 md:pr-10 pb-5 mb-5 space-y-5 border-b os-feature-sections">
-		<div class="flex flex-col md:flex-row gap-2 md:gap-0 items-center justify-between">
+		<div
+			class="flex flex-col md:flex-row gap-2 md:gap-0 items-center justify-between"
+		>
 			<div>
 				<div class="text-lg font-semibold text-ink-gray-9">
 					{{ __('Sezioni Feature') }}
@@ -22,34 +24,60 @@
 		</div>
 
 		<!-- Sezioni -->
-		<div v-for="(section, sIndex) in sections" :key="section.id" :ref="(el) => (sectionRefs[section.id] = el)"
-			class="border border-outline-gray-7 rounded-lg overflow-hidden scroll-mt-4">
+		<div
+			v-for="(section, sIndex) in sections"
+			:key="section.id"
+			:ref="(el) => (sectionRefs[section.id] = el)"
+			class="border rounded-lg overflow-hidden scroll-mt-4"
+		>
 			<!-- Header sezione -->
-			<div class="flex items-center gap-3 px-4 py-3 bg-surface-gray-1 border-b border-outline-gray-7">
-				<FormControl v-model="section.title" :placeholder="__('Nome sezione...')"
-					class="flex-1 custom-selection" @input="onChanged" />
-				<button type="button" class="text-ink-gray-4 hover:text-ink-red-3 transition-colors shrink-0"
-					@click="removeSection(sIndex)">
+			<div class="flex items-center gap-3 px-4 py-3 bg-surface-gray-1 border-b">
+				<FormControl
+					v-model="section.title"
+					:placeholder="__('Nome sezione...')"
+					class="flex-1 custom-selection"
+					@input="onChanged"
+				/>
+				<button
+					type="button"
+					class="text-ink-gray-4 hover:text-ink-red-3 transition-colors shrink-0"
+					@click="removeSection(sIndex)"
+				>
 					<Trash2 class="w-4 h-4" />
 				</button>
 			</div>
 
 			<!-- Badge della sezione -->
 			<div class="p-4 space-y-4 bg-surface-gray-2">
-				<div v-if="section.items.length" class="grid grid-cols-1 md:grid-cols-3 gap-3">
-					<div v-for="(item, iIndex) in section.items" :key="item.id"
-						class="relative border border-outline-gray-2 rounded-lg bg-surface-gray-1 !p-3 space-y-2">
-						<button type="button"
+				<div
+					v-if="section.items.length"
+					class="grid grid-cols-1 md:grid-cols-3 gap-3"
+				>
+					<div
+						v-for="(item, iIndex) in section.items"
+						:key="item.id"
+						class="relative border border-outline-gray-2 rounded-lg bg-surface-gray-1 !p-3 space-y-2"
+					>
+						<button
+							type="button"
 							class="absolute top-2 right-2 text-ink-gray-4 hover:text-ink-red-3 transition-colors"
-							@click="removeItem(sIndex, iIndex)">
+							@click="removeItem(sIndex, iIndex)"
+						>
 							<X class="w-3.5 h-3.5" />
 						</button>
 
 						<!-- Anteprima -->
-						<div class="flex items-center gap-2 pb-2 border-b border-outline-gray-1">
-							<div class="w-7 h-7 rounded-md bg-surface-gray-2 flex items-center justify-center shrink-0">
-								<component v-if="item.icon && getIconComponent(item.icon)"
-									:is="getIconComponent(item.icon)" class="w-4 h-4 text-ink-gray-6" />
+						<div
+							class="flex items-center gap-2 pb-2 border-b border-outline-gray-1"
+						>
+							<div
+								class="w-7 h-7 rounded-md bg-surface-gray-2 flex items-center justify-center shrink-0"
+							>
+								<component
+									v-if="item.icon && getIconComponent(item.icon)"
+									:is="getIconComponent(item.icon)"
+									class="w-4 h-4 text-ink-gray-6"
+								/>
 								<CheckCircle v-else class="w-4 h-4 text-ink-gray-4" />
 							</div>
 							<span class="text-xs text-ink-gray-5 truncate">
@@ -57,26 +85,49 @@
 							</span>
 						</div>
 						<div class="pt-2">
-							<IconPicker v-model="item.icon" :label="__('Icona')" @update:modelValue="onChanged" />
+							<IconPicker
+								v-model="item.icon"
+								:label="__('Icona')"
+								@update:modelValue="onChanged"
+							/>
 						</div>
 						<div class="pt-2">
-							<FormControl v-model="item.title" :label="__('Titolo')" :required="true" class="flex-1"
-								@input="onChanged" />
+							<FormControl
+								v-model="item.title"
+								:label="__('Titolo')"
+								:required="true"
+								class="flex-1"
+								@input="onChanged"
+							/>
 						</div>
 						<div class="pt-2">
-							<FormControl v-model="item.visible_to_enrolled" type="checkbox"
-								:label="__('Visibile agli iscritti')" @change="onChanged" />
+							<FormControl
+								v-model="item.visible_to_enrolled"
+								type="checkbox"
+								:label="__('Visibile agli iscritti')"
+								@change="onChanged"
+							/>
 						</div>
 						<div class="pt-2">
-							<FormControl v-model="item.description" type="textarea" :rows="5" :label="__('Descrizione')"
-								@input="onChanged" />
+							<FormControl
+								v-model="item.description"
+								type="textarea"
+								:rows="5"
+								:label="__('Descrizione')"
+								@input="onChanged"
+							/>
 						</div>
 						<div class="pt-2">
-							<FilePicker v-model="item.file" :label="__('File allegato')"
-								@update:modelValue="onChanged" />
+							<FilePicker
+								v-model="item.file"
+								:label="__('File allegato')"
+								@update:modelValue="onChanged"
+							/>
 						</div>
-						<div v-if="item.ingestion_date"
-							class="flex items-center justify-end gap-1 pt-2 text-xs text-green-600">
+						<div
+							v-if="item.ingestion_date"
+							class="flex items-center justify-end gap-1 pt-2 text-xs text-green-600"
+						>
 							<Sparkles class="w-3 h-3" />
 							<span>{{ formatIngestionDate(item.ingestion_date) }}</span>
 						</div>
@@ -84,7 +135,10 @@
 				</div>
 
 				<!-- Empty state badge -->
-				<div v-else class="border border-dashed border-outline-gray-2 rounded-lg py-5 text-center">
+				<div
+					v-else
+					class="border border-dashed border-outline-gray-2 rounded-lg py-5 text-center"
+				>
 					<div class="text-xs text-ink-gray-4">
 						{{ __('Nessun badge in questa sezione') }}
 					</div>
@@ -101,7 +155,10 @@
 		</div>
 
 		<!-- Empty state sezioni -->
-		<div v-if="!sections.length" class="border border-dashed border-outline-gray-2 rounded-lg py-8 text-center">
+		<div
+			v-if="!sections.length"
+			class="border border-dashed border-outline-gray-2 rounded-lg py-8 text-center"
+		>
 			<LayoutGrid class="w-8 h-8 text-ink-gray-3 mx-auto mb-2" />
 			<div class="text-sm text-ink-gray-5">
 				{{ __('Nessuna sezione aggiunta') }}
@@ -113,7 +170,11 @@
 
 		<!-- Re-ingestion -->
 		<div v-if="sections.length && courseName" class="flex justify-end pt-2">
-			<Button variant="outline" :loading="ingestionTrigger.loading" @click="startIngestion">
+			<Button
+				variant="outline"
+				:loading="ingestionTrigger.loading"
+				@click="startIngestion"
+			>
 				<template #prefix>
 					<Sparkles class="w-3.5 h-3.5 text-green-600" />
 				</template>
@@ -126,7 +187,14 @@
 <script setup>
 import { ref, watch, nextTick } from 'vue'
 import { FormControl, Button, createResource, toast } from 'frappe-ui'
-import { X, Plus, LayoutGrid, CheckCircle, Trash2, Sparkles } from 'lucide-vue-next'
+import {
+	X,
+	Plus,
+	LayoutGrid,
+	CheckCircle,
+	Trash2,
+	Sparkles,
+} from 'lucide-vue-next'
 import * as LucideIcons from 'lucide-vue-next'
 import IconPicker from '@/oslms/components/IconPicker.vue'
 import FilePicker from '@/components/Controls/FilePicker.vue'
@@ -169,7 +237,7 @@ const ingestionTrigger = createResource({
 
 const startIngestion = () => {
 	if (!props.courseName || ingestionTrigger.loading) return
-	ingestionTrigger.submit().catch(() => { })
+	ingestionTrigger.submit().catch(() => {})
 }
 
 // ─── Stato locale ─────────────────────────────────────────────────────────────
@@ -267,10 +335,12 @@ const removeItem = (sIndex, iIndex) => {
 
 <style scoped>
 .os-feature-sections :deep(textarea) {
-	background-image: repeating-linear-gradient(135deg,
-			transparent 0 2px,
-			#ffffff 2px 3px,
-			transparent 3px 5px);
+	background-image: repeating-linear-gradient(
+		135deg,
+		transparent 0 2px,
+		#ffffff 2px 3px,
+		transparent 3px 5px
+	);
 	background-repeat: no-repeat;
 	background-position: bottom 2px right 2px;
 	background-size: 12px 12px;

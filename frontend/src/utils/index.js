@@ -185,6 +185,7 @@ export function getEditorTools(isInstructorEditor = false, uploadContext = {}) {
 	return {
 		header: {
 			class: Header,
+			inlineToolbar: INLINE_TOOLBAR_ORDER,
 			config: {
 				placeholder: 'Header',
 			},
@@ -905,7 +906,10 @@ const sanitizeJSON = (node) => {
 		typeof node === 'string' &&
 		(node.includes('<') || node.includes('>'))
 	) {
-		return DOMPurify.sanitize(node)
+		// Whitelist the Color inline tool's custom element; DOMPurify's default
+		// config drops unknown tags, which would strip the text/highlight colors
+		// (and the tag) every time content is loaded or rendered.
+		return DOMPurify.sanitize(node, { ADD_TAGS: ['lms-inline-color'] })
 	}
 	return node
 }
