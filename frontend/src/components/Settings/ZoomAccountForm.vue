@@ -9,7 +9,7 @@
 	>
 		<template #body-content>
 			<div class="mb-4">
-				<Switch
+				<BooleanSwitch
 					size="sm"
 					v-model="account.enabled"
 					:label="__('Enabled')"

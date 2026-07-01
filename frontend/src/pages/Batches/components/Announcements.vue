@@ -41,13 +41,13 @@
 				<div class="flex items-center space-x-2">
 					<Button :disabled="currentPage <= 1" @click="currentPage--">
 						<template #prefix>
-							<ChevronLeft class="w-4 h-4" />
+							<LucideChevronLeft class="w-4 h-4" />
 						</template>
 						{{ __('Previous') }}
 					</Button>
 					<Button :disabled="currentPage >= totalPages" @click="currentPage++">
 						<template #suffix>
-							<ChevronRight class="w-4 h-4" />
+							<LucideChevronRight class="w-4 h-4" />
 						</template>
 						{{ __('Next') }}
 					</Button>
@@ -68,7 +68,7 @@
 <script setup>
 import { computed, inject, ref, watch } from 'vue'
 import { sanitizeRichHTML } from '@/utils/sanitizeRichHTML'
-import { createResource, Avatar } from 'frappe-ui'
+import { Button, createResource, Avatar } from 'frappe-ui'
 import { timeAgo } from '@/utils'
 import AnnouncementModal from '@/pages/Batches/components/AnnouncementModal.vue'
 import AnnouncementContent from '@/pages/Batches/components/AnnouncementContent.vue'

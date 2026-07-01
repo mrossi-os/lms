@@ -84,7 +84,7 @@ textarea {
 .ProseMirror-wrapper div div:nth-child(1) {
 	background-color: var(--surface-gray-2) !important;
 }
-.OS-LinkWrapper div div div div {
+.os-link div div div div {
 	background-color: var(--surface-gray-2);
 }
 

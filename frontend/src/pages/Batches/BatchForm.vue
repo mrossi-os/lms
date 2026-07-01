@@ -158,6 +158,15 @@
 							:onCreate="() => (showMemberModal = true)"
 							class="os-input"
 						/>
+						<MultiLink
+							v-model="valutatori"
+							doctype="User"
+							url="os_lms.os_lms.api.search_non_student_users"
+							:label="__('Valutatori')"
+							:placeholder="__('Select valutatori')"
+							variant="outline"
+							class="os-input"
+						/>
 						<Select
 							v-model="batchDetail.doc.medium"
 							:label="__('Medium')"
@@ -351,7 +360,7 @@ import { useRouter } from 'vue-router'
 import Uploader from '@/components/Controls/Uploader.vue'
 import VideoPreviewField from '@/components/Controls/VideoPreviewField.vue'
 import MultiLink from '@/components/Controls/MultiLink.vue'
-import Link from '@/components/Controls/Link.vue'
+import Link from '@/oslms/components/Controls/Link.vue'
 import Select from '@/components/Controls/Select.vue'
 import BatchCourses from '@/pages/Batches/components/BatchCourses.vue'
 import Assessments from '@/pages/Batches/components/Assessments.vue'
@@ -380,6 +389,10 @@ const props = defineProps<{
 const router = useRouter()
 const user = inject<SessionUser>('$user')!
 const instructors = ref<string[]>([])
+// Per-batch "Valutatore" evaluators (custom os_lms feature). Backed by a
+// Table MultiSelect custom field on LMS Batch (child: LMS Batch Valutatore);
+// its rows carry a `valutatore` user link. Not in the generated LMSBatch type.
+const valutatori = ref<string[]>([])
 const app = getCurrentInstance()!
 const { $dialog } = app.appContext.config.globalProperties as {
 	$dialog: DialogFn
@@ -482,6 +495,29 @@ watch(
 	{ deep: true },
 )
 
+// The instructors/valutatori pickers use standalone refs (not batchDetail.doc),
+// so the deep doc watcher above never sees their edits. Mark the form dirty and
+// autosave when they diverge from the rows currently loaded in the doc.
+const pluckSorted = (rows: unknown, field: string): string =>
+	JSON.stringify(
+		((rows as { [k: string]: unknown }[]) || []).map((row) => row[field]).sort(),
+	)
+
+watch([instructors, valutatori], () => {
+	const doc = batchDetail.doc
+	if (!doc) return
+	const docValutatori = (doc as Record<string, unknown>).valutatori
+	if (
+		JSON.stringify([...instructors.value].sort()) !==
+			pluckSorted(doc.instructors, 'instructor') ||
+		JSON.stringify([...valutatori.value].sort()) !==
+			pluckSorted(docValutatori, 'valutatore')
+	) {
+		isDirty.value = true
+		autoSave()
+	}
+})
+
 const updateBatchData = (): void => {
 	const doc = batchDetail.doc
 	if (!doc) return
@@ -490,6 +526,14 @@ const updateBatchData = (): void => {
 			instructors.value = []
 			doc.instructors?.forEach((instructor: CourseInstructor) => {
 				if (instructor.instructor) instructors.value.push(instructor.instructor)
+			})
+		} else if (key == 'valutatori') {
+			valutatori.value = []
+			const rows = (doc as Record<string, unknown>).valutatori as
+				| { valutatore?: string }[]
+				| undefined
+			rows?.forEach((row) => {
+				if (row.valutatore) valutatori.value.push(row.valutatore)
 			})
 		} else if (key === 'start_time' || key === 'end_time') {
 			doc[key] = formatTime(doc[key])

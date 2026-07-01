@@ -70,7 +70,7 @@
 
 								<!-- <Tooltip v-if="course.rating" :text="__('Average Rating')">
                                     <span class="flex items-center gap-x-1">
-                                        <Star class="size-3 stroke-1.5" />
+                                        <LucideStar class="size-3 stroke-1.5" />
                                         <span>
                                             {{ course.rating }} {{ __("rating") }}
                                         </span>
