@@ -16,7 +16,7 @@
 					},
 				}"
 			>
-				<Button variant="outline">
+				<Button variant="solid">
 					<template #prefix>
 						<span class="lucide-list-checks size-4" />
 					</template>
@@ -32,7 +32,7 @@
 					},
 				}"
 			>
-				<Button variant="outline">
+				<Button variant="solid">
 					<template #prefix>
 						<span class="lucide-clipboard-list size-4" />
 					</template>
@@ -44,7 +44,7 @@
 					icon="lucide-trash-2"
 					:label="__('Delete quiz')"
 					theme="red"
-					variant="outline"
+					variant="ghost"
 					@click="deleteQuiz"
 				/>
 			</Tooltip>
@@ -75,7 +75,7 @@
 			</div>
 			<ListView
 				v-if="questions.length"
-				class="flex-1 overflow-y-auto px-5 os-list-view"
+				class="flex overflow-y-auto px-5 os-list-view"
 				:columns="questionColumns"
 				:rows="questions"
 				row-key="name"
@@ -312,7 +312,7 @@ const deleteQuiz = () => {
 	$dialog({
 		title: __('Delete this quiz?'),
 		message: __(
-			'Deleting this quiz permanently removes it and its submissions. This action cannot be undone. Are you sure you want to continue?'
+			'Deleting this quiz permanently removes it and its submissions. This action cannot be undone. Are you sure you want to continue?',
 		),
 		actions: [
 			{
@@ -387,7 +387,7 @@ watch(
 	() => quizDetails.isDirty,
 	(dirty) => {
 		if (dirty) autoSave()
-	}
+	},
 )
 
 const submitQuiz = (opts = {}) => {
@@ -410,7 +410,7 @@ const submitQuiz = (opts = {}) => {
 				// so the change isn't silently lost.
 				if (!opts.silent) toast.error(err.messages?.[0] || err)
 			},
-		}
+		},
 	)
 }
 
@@ -484,7 +484,7 @@ const deleteQuestions = (selections, unselectAll) => {
 				quizDetails.reload()
 				unselectAll()
 			},
-		}
+		},
 	)
 }
 

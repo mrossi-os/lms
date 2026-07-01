@@ -5316,3 +5316,4 @@ restrict_ip
 "Scenario {0} not found","Scenario {0} non trovato"
 "User {0} is not allowed to access scenario {1}","L'utente {0} non è autorizzato ad accedere allo scenario {1}"
 "Session {0} not found","Sessione {0} non trovata"
+"Student View","Vista Studente"
