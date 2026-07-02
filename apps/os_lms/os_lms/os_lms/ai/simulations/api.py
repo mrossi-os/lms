@@ -115,6 +115,44 @@ def start_session(scenario_id: str, modality: str = "chat") -> dict:
 
 
 @frappe.whitelist()
+def prepare_session(scenario_id: str, modality: str = "chat") -> dict:
+    """Phase 1: generate the variant and create a Ready session with a brief."""
+    if modality not in ("chat", "voice"):
+        frappe.throw(_("Unsupported modality: {0}").format(modality))
+
+    scenario = _resolve_published_scenario(scenario_id)
+    if modality == "chat" and scenario.modality not in ("chat", "both"):
+        frappe.throw(_("Scenario {0} is not chat-enabled.").format(scenario.name))
+    if modality == "voice" and scenario.modality not in ("voice", "both"):
+        frappe.throw(_("Scenario {0} is not voice-enabled.").format(scenario.name))
+
+    try:
+        result = _service().prepare_session(scenario_id=scenario.name, modality=modality)
+    except QuotaExceededError as e:
+        frappe.throw(str(e), frappe.ValidationError)
+    return {"session_id": result.session, "brief": result.brief, "modality": result.modality}
+
+
+@frappe.whitelist()
+def begin_session(session_id: str) -> dict:
+    """Phase 2 (chat): persist the first role-player turn for a prepared session."""
+    session = load_session(session_id)
+    if session.student != frappe.session.user:
+        frappe.throw(_("Only the session owner can begin the session"), frappe.PermissionError)
+    return dict(_service().begin_chat_session(session_id=session.name))
+
+
+@frappe.whitelist()
+def clone_session(session_id: str) -> dict:
+    """Restart a session: create a new Ready session reusing the same variant."""
+    session = load_session(session_id)
+    if session.student != frappe.session.user:
+        frappe.throw(_("Only the session owner can restart it"), frappe.PermissionError)
+    result = _service().clone_session(session_id=session.name)
+    return {"session_id": result.session, "brief": result.brief, "modality": result.modality}
+
+
+@frappe.whitelist()
 def send_message(session_id: str, text: str) -> dict:
     """Append a user turn and return the assistant's reply."""
     if not text or not text.strip():
@@ -181,6 +219,7 @@ def get_session(session_id: str) -> dict:
             "turn_count": session.turn_count,
             "generated_persona": session.generated_persona,
             "generated_situation": session.generated_situation,
+            "student_brief": session.student_brief,
             "chat_provider_used": session.chat_provider_used,
             "chat_model_used": session.chat_model_used,
         },
@@ -196,7 +235,7 @@ def get_debrief(session_id: str) -> dict:
     `ready`, `needs_review`, `failed`.
     """
     session = load_session(session_id)
-    if session.status == "In Progress":
+    if session.status in ("In Progress", "Ready"):
         return {"status": "not_started", "session": session.name, "course": session.course}
 
     name = frappe.db.get_value("LMSA Simulation Debrief", {"session": session.name}, "name")
@@ -334,6 +373,60 @@ def list_scenarios(course: str | None = None) -> list[dict]:
         fields=["name", "scenario_name", "lms_course", "course_lesson", "difficulty", "modality"],
         order_by="modified desc",
     )
+
+
+@frappe.whitelist()
+def list_my_sessions(course: str | None = None) -> list[dict]:
+    """List the current user's own simulation sessions (optionally by course),
+    enriched with the debrief score/status when available."""
+    filters: dict = {"student": frappe.session.user}
+    if course:
+        filters["course"] = course
+
+    sessions = frappe.get_all(
+        "LMSA Simulation Session",
+        filters=filters,
+        fields=[
+            "name",
+            "scenario",
+            "modality",
+            "status",
+            "started_at",
+            "ended_at",
+            "turn_count",
+        ],
+        order_by="started_at desc",
+    )
+    if not sessions:
+        return []
+
+    scenario_names = {s["scenario"] for s in sessions if s["scenario"]}
+    titles = {
+        r["name"]: r["scenario_name"]
+        for r in frappe.get_all(
+            "LMSA Simulation Scenario",
+            filters={"name": ["in", list(scenario_names)]},
+            fields=["name", "scenario_name"],
+        )
+    }
+    debriefs = {
+        d["session"]: d
+        for d in frappe.get_all(
+            "LMSA Simulation Debrief",
+            filters={"session": ["in", [s["name"] for s in sessions]]},
+            fields=["session", "overall_score", "passed", "status"],
+        )
+    }
+
+    for s in sessions:
+        s["scenario_name"] = titles.get(s["scenario"], s["scenario"])
+        s["started_at"] = str(s["started_at"]) if s["started_at"] else None
+        s["ended_at"] = str(s["ended_at"]) if s["ended_at"] else None
+        d = debriefs.get(s["name"])
+        s["overall_score"] = d["overall_score"] if d else None
+        s["passed"] = bool(d["passed"]) if d else None
+        s["debrief_status"] = d["status"] if d else None
+    return sessions
 
 
 # ============================================================================

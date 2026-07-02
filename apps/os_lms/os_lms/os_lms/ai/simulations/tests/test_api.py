@@ -12,9 +12,13 @@ from frappe.tests import UnitTestCase
 
 from os_lms.os_lms.ai.simulations import SessionOrchestrator
 from os_lms.os_lms.ai.simulations.api import (
+    begin_session,
+    clone_session,
     end_session,
     get_session,
+    list_my_sessions,
     list_scenarios,
+    prepare_session,
     send_message,
     start_session,
 )
@@ -201,3 +205,43 @@ class TestSimulationsAPI(UnitTestCase):
         start = start_session(scenario_id=self.scenario.name)
         with self.assertRaises(frappe.exceptions.ValidationError):
             end_session(session_id=start["session"], reason="bogus")
+
+    # ----- prepare_session / begin_session -----
+
+    def test_prepare_then_begin(self):
+        prepared = prepare_session(scenario_id=self.scenario.name)
+        self.assertIn("session_id", prepared)
+        self.assertTrue(prepared["brief"])
+        detail = get_session(session_id=prepared["session_id"])
+        self.assertEqual(detail["session"]["status"], "Ready")
+        self.assertEqual(len(detail["turns"]), 0)
+        self.assertEqual(
+            detail["session"]["student_brief"], prepared["brief"]
+        )
+
+        begun = begin_session(session_id=prepared["session_id"])
+        self.assertTrue(begun["first_turn"]["text"])
+        detail2 = get_session(session_id=prepared["session_id"])
+        self.assertEqual(detail2["session"]["status"], "In Progress")
+        self.assertEqual(len(detail2["turns"]), 1)
+
+    # ----- list_my_sessions -----
+
+    def test_list_my_sessions_returns_only_owner(self):
+        prepared = prepare_session(scenario_id=self.scenario.name)
+        rows = list_my_sessions(course=self.scenario.lms_course)
+        names = [r["name"] for r in rows]
+        self.assertIn(prepared["session_id"], names)
+        row = next(r for r in rows if r["name"] == prepared["session_id"])
+        self.assertEqual(row["scenario"], self.scenario.name)
+        self.assertEqual(row["status"], "Ready")
+
+    # ----- clone_session -----
+
+    def test_clone_session_endpoint(self):
+        start = start_session(scenario_id=self.scenario.name)
+        end_session(session_id=start["session"], reason="completed")
+        clone = clone_session(session_id=start["session"])
+        self.assertNotEqual(clone["session_id"], start["session"])
+        detail = get_session(session_id=clone["session_id"])
+        self.assertEqual(detail["session"]["status"], "Ready")
