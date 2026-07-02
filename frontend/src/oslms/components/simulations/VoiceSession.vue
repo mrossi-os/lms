@@ -56,7 +56,7 @@ import { useRouter } from 'vue-router'
 import { Button } from 'frappe-ui'
 import { useRealtimeSession } from '../../composables/useRealtimeSession'
 
-const props = defineProps({ scenarioId: { type: String, required: true } })
+const props = defineProps({ sessionId: { type: String, required: true } })
 const emit = defineEmits(['ended'])
 
 const router = useRouter()
@@ -89,7 +89,7 @@ const formattedRemaining = computed(() => {
 })
 
 async function onStart() {
-	await start(props.scenarioId)
+	await start(props.sessionId)
 }
 
 async function onStop() {

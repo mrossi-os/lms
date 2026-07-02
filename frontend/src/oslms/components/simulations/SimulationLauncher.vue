@@ -1,72 +1,73 @@
 <template>
-	<!--
-		Voice-scenario path: rendered as a separate dialog overlay so the user
-		gets a full session UI without navigating away. The chat path below is
-		untouched.
-	-->
+	<!-- Voice runtime overlay (phase 2, voice): mounted once a session is
+	     prepared and the student chose "Avvia voce". -->
 	<Dialog
-		v-if="voiceScenarioId"
+		v-if="voiceSessionId"
 		v-model="voiceDialogOpen"
-		:options="{
-			title: __('Simulazione vocale'),
-			size: 'lg',
-		}"
+		:options="{ title: __('Simulazione vocale'), size: 'lg' }"
 	>
 		<template #body-content>
-			<VoiceSession :scenario-id="voiceScenarioId" @ended="onVoiceEnded" />
+			<VoiceSession :session-id="voiceSessionId" @ended="onVoiceEnded" />
 		</template>
 	</Dialog>
 
 	<Dialog
 		v-model="visible"
 		:options="{
-			title: __('Avvia una simulazione'),
+			title: step === 'briefing' ? __('Preparati alla simulazione') : __('Avvia una simulazione'),
 			size: 'lg',
 		}"
 	>
 		<template #body-content>
-			<div v-if="!scenarios?.length" class="text-sm text-ink-gray-5 py-4">
-				{{ __('Nessuno scenario disponibile per questa lezione.') }}
-			</div>
-			<div v-else class="space-y-3">
-				<button
-					v-for="sc in scenarios"
-					:key="sc.name"
-					type="button"
-					:disabled="starting"
-					class="w-full text-left border border-outline-gray-2 rounded-md p-3 hover:bg-surface-gray-1 disabled:opacity-50"
-					:class="{
-						'ring-2 ring-outline-gray-3': sc.name === selected,
-					}"
-					@click="selected = sc.name"
-				>
-					<div class="font-medium text-ink-gray-9">
-						{{ sc.scenario_name }}
-					</div>
-					<div class="text-xs text-ink-gray-5 mt-1 flex gap-3">
-						<Badge
-							:label="sc.difficulty"
-							:theme="difficultyTheme(sc.difficulty)"
-						/>
-						<span class="capitalize">{{ sc.modality }}</span>
-						<span v-if="sc.time_limit_minutes">
-							{{ sc.time_limit_minutes }} {{ __('min') }}
-						</span>
-					</div>
-				</button>
-			</div>
-			<div v-if="error" class="text-sm text-ink-red-3 mt-3">
-				{{ error }}
-			</div>
+			<!-- Phase 1: scenario selection -->
+			<template v-if="step === 'select'">
+				<div v-if="!scenarios?.length" class="text-sm text-ink-gray-5 py-4">
+					{{ __('Nessuno scenario disponibile per questa lezione.') }}
+				</div>
+				<div v-else class="space-y-3">
+					<button
+						v-for="sc in scenarios"
+						:key="sc.name"
+						type="button"
+						:disabled="preparing"
+						class="w-full text-left border border-outline-gray-2 rounded-md p-3 hover:bg-surface-gray-1 disabled:opacity-50"
+						:class="{ 'ring-2 ring-outline-gray-3': sc.name === selected }"
+						@click="selected = sc.name"
+					>
+						<div class="font-medium text-ink-gray-9">
+							{{ sc.scenario_name }}
+						</div>
+						<div class="text-xs text-ink-gray-5 mt-1 flex gap-3">
+							<Badge :label="sc.difficulty" :theme="difficultyTheme(sc.difficulty)" />
+							<span class="capitalize">{{ sc.modality }}</span>
+						</div>
+					</button>
+				</div>
+			</template>
+
+			<!-- Phase 2: briefing -->
+			<SimulationBriefing
+				v-else
+				:brief="brief"
+				:modality="briefModality"
+				:starting="beginning"
+				@begin="onBegin"
+			/>
+
+			<div v-if="error" class="text-sm text-ink-red-3 mt-3">{{ error }}</div>
 		</template>
 		<template #actions>
 			<div class="flex gap-2 justify-end">
-				<Button @click="visible = false">{{ __('Annulla') }}</Button>
+				<Button v-if="step === 'briefing'" @click="backToSelect">
+					{{ __('Indietro') }}
+				</Button>
+				<Button v-else @click="visible = false">{{ __('Annulla') }}</Button>
 				<Button
+					v-if="step === 'select'"
 					variant="solid"
-					:loading="starting"
+					:loading="preparing"
 					:disabled="!selected"
-					@click="onStart"
+					@click="onPrepare"
 				>
 					{{ __('Avvia') }}
 				</Button>
@@ -77,9 +78,10 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
 import { Badge, Button, Dialog, createResource, toast } from 'frappe-ui'
 import VoiceSession from './VoiceSession.vue'
+import SimulationBriefing from './SimulationBriefing.vue'
+import { useSimulationBegin } from '../../composables/useSimulationBegin'
 
 const props = defineProps({
 	modelValue: { type: Boolean, default: false },
@@ -88,17 +90,20 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue', 'started'])
 
-const router = useRouter()
 const selected = ref(null)
-const starting = ref(false)
+const preparing = ref(false)
 const error = ref(null)
+const step = ref('select') // select | briefing
+const brief = ref('')
+const preparedSessionId = ref(null)
+const briefModality = ref('chat')
 
-// Voice-scenario branch: scenario name while a voice session dialog is open.
-const voiceScenarioId = ref(null)
+const { beginning, voiceSessionId, begin, clearVoice } = useSimulationBegin()
+
 const voiceDialogOpen = computed({
-	get: () => Boolean(voiceScenarioId.value),
+	get: () => Boolean(voiceSessionId.value),
 	set: (v) => {
-		if (!v) voiceScenarioId.value = null
+		if (!v) clearVoice()
 	},
 })
 
@@ -113,51 +118,58 @@ const visible = computed({
 
 watch(visible, (v) => {
 	if (v) {
-		// Default to the first scenario when the dialog opens.
 		selected.value = props.scenarios?.[0]?.name || null
 		error.value = null
+		step.value = 'select'
 	}
 })
 
-const startResource = createResource({
-	url: 'os_lms.os_lms.ai.simulations.api.start_session',
+const prepareRes = createResource({
+	url: 'os_lms.os_lms.ai.simulations.api.prepare_session',
 	method: 'POST',
 })
 
-async function onStart() {
+// A scenario declaring modality "both" is prepared as "voice" so the backend
+// gate passes; the briefing then offers both chat and voice buttons.
+function requestedModality(scMod) {
+	if (scMod === 'both') return 'voice'
+	return scMod || props.modality
+}
+
+async function onPrepare() {
 	if (!selected.value) return
-
-	// Branch: voice scenarios bypass start_session and open VoiceSession directly.
-	if (selectedScenario.value?.modality === 'voice') {
-		voiceScenarioId.value = selected.value
-		visible.value = false
-		return
-	}
-
-	starting.value = true
+	preparing.value = true
 	error.value = null
 	try {
-		const result = await startResource.submit({
+		const result = await prepareRes.submit({
 			scenario_id: selected.value,
-			modality: props.modality,
+			modality: requestedModality(selectedScenario.value?.modality),
 		})
-		if (!result?.session) throw new Error(__('Avvio fallito.'))
+		if (!result?.session_id) throw new Error(__('Preparazione fallita.'))
+		preparedSessionId.value = result.session_id
+		brief.value = result.brief
+		briefModality.value = selectedScenario.value?.modality || 'chat'
+		step.value = 'briefing'
 		emit('started', result)
-		visible.value = false
-		router.push({
-			name: 'SimulationPlay',
-			params: { sessionId: result.session },
-		})
 	} catch (e) {
 		error.value = e.messages?.[0] || e.message || String(e)
 		toast.error(error.value)
 	} finally {
-		starting.value = false
+		preparing.value = false
 	}
 }
 
+async function onBegin(mode) {
+	if (mode === 'voice') visible.value = false
+	await begin({ sessionId: preparedSessionId.value, mode })
+}
+
+function backToSelect() {
+	step.value = 'select'
+}
+
 function onVoiceEnded() {
-	voiceScenarioId.value = null
+	clearVoice()
 }
 
 function difficultyTheme(diff) {
