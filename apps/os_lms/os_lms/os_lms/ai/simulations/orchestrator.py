@@ -39,6 +39,7 @@ from os_lms.os_lms.doctype.lmsa_simulation_session.lmsa_simulation_session impor
 	STATUS_COMPLETED,
 	STATUS_ERROR,
 	STATUS_IN_PROGRESS,
+	STATUS_READY,
 	TERMINAL_STATUSES,
 )
 
@@ -92,60 +93,57 @@ class SessionOrchestrator:
 
 	# ---------- public lifecycle ----------
 
-	def start_session(
+	def prepare_session(
 		self,
 		*,
-		scenario_id: str,
+		scenario_id: str | Document,
 		modality: str = "chat",
 		seed: str | None = None,
 	) -> frappe._dict:
-		"""Create a Session, generate the variant, persist the first role-player turn.
+		"""Generate the variant and create a Ready session (no turns yet).
 
-		Returns a dict with keys: session, first_turn (turn name + text).
+		Returns keys: session (name), brief (student_brief), modality.
 		"""
 		if not self.settings.simulations_enabled:
 			frappe.throw(_("AI Simulations are not enabled in LMSA Settings."))
 
-		scenario = frappe.get_doc("LMSA Simulation Scenario", scenario_id)
-		if scenario.status != "Published":
-			frappe.throw(
-				_("Scenario {0} is not Published (status: {1}).").format(scenario.name, scenario.status),
-				frappe.PermissionError,
-			)
+		if isinstance(scenario_id, str):
+			scenario = frappe.get_doc("LMSA Simulation Scenario", scenario_id)
+			if scenario.status != "Published":
+				frappe.throw(
+					_("Scenario {0} is not Published (status: {1}).").format(
+						scenario.name, scenario.status
+					),
+					frappe.PermissionError,
+				)
+		else:
+			scenario = scenario_id
 
 		seed = seed or _new_seed()
 		provider = self._resolve_provider("chat", scenario)
-
 		variant = self._generate_variant(scenario, seed, provider)
 
 		session = frappe.new_doc("LMSA Simulation Session")
 		# Set student BEFORE insert(): the permission gate runs before
-		# before_insert(), so has_permission needs `doc.student` to be the
-		# current user already to grant create.
+		# before_insert(), so has_permission needs `doc.student` already set.
 		session.student = frappe.session.user
 		session.scenario = scenario.name
 		session.modality = modality
+		session.status = STATUS_READY
 		session.seed = seed
 		session.prompt_version = f"{SCENARIO_GEN_VERSION}+{ROLE_PLAY_VERSION}"
 		session.generated_situation = variant.situation
-		session.generated_persona = json.dumps(_persona_to_dict(variant.persona), ensure_ascii=False)
+		session.student_brief = variant.student_brief
+		session.generated_persona = json.dumps(
+			_persona_to_dict(variant.persona), ensure_ascii=False
+		)
 		session.chat_provider_used = provider.name
 		session.chat_model_used = _model_from_provider(provider)
 		session.insert()
-
-		first_turn = self._persist_turn(
-			session=session,
-			role="assistant",
-			text=_first_roleplay_line(variant),
-			provider_used=provider.name,
-			model_used=session.chat_model_used,
-		)
-		session.turn_count = 1
-		session.save()
 		frappe.db.commit()
 
 		self.logger.info(
-			"simulation start: session=%s scenario=%s seed=%s provider=%s",
+			"simulation prepare: session=%s scenario=%s seed=%s provider=%s",
 			session.name,
 			scenario.name,
 			seed,
@@ -153,8 +151,68 @@ class SessionOrchestrator:
 		)
 		return frappe._dict(
 			session=session.name,
+			brief=variant.student_brief,
+			modality=modality,
+		)
+
+	def begin_chat_session(self, *, session_id: str) -> frappe._dict:
+		"""Persist the first role-player turn for a prepared chat session.
+
+		Returns keys: session (name), first_turn ({name, text}).
+		"""
+		session = frappe.get_doc("LMSA Simulation Session", session_id)
+		if session.status == STATUS_IN_PROGRESS and (session.turn_count or 0) > 0:
+			# Idempotent: already begun. Return the existing first turn.
+			first = frappe.get_all(
+				"LMSA Simulation Turn",
+				filters={"session": session.name, "role": "assistant"},
+				fields=["name", "text_content"],
+				order_by="turn_index asc",
+				limit=1,
+			)
+			if first:
+				return frappe._dict(
+					session=session.name,
+					first_turn=frappe._dict(name=first[0].name, text=first[0].text_content),
+				)
+
+		variant = ScenarioVariant(
+			situation=session.generated_situation or "",
+			student_brief=session.student_brief or "",
+			persona=_persona_from_session(session),
+		)
+		first_turn = self._persist_turn(
+			session=session,
+			role="assistant",
+			text=_first_roleplay_line(variant),
+			provider_used=session.chat_provider_used,
+			model_used=session.chat_model_used,
+		)
+		session.status = STATUS_IN_PROGRESS
+		session.turn_count = 1
+		session.save()
+		frappe.db.commit()
+
+		self.logger.info("simulation begin: session=%s", session.name)
+		return frappe._dict(
+			session=session.name,
 			first_turn=frappe._dict(name=first_turn.name, text=first_turn.text_content),
 		)
+
+	def start_session(
+		self,
+		*,
+		scenario_id: str,
+		modality: str = "chat",
+		seed: str | None = None,
+	) -> frappe._dict:
+		"""Prepare + begin in one call (chat). Preserved for internal callers
+		(eval runner, instructor Test Run, tests)."""
+		prepared = self.prepare_session(
+			scenario_id=scenario_id, modality=modality, seed=seed
+		)
+		begun = self.begin_chat_session(session_id=prepared.session)
+		return frappe._dict(session=prepared.session, first_turn=begun.first_turn)
 
 	def send_message(self, *, session_id: str, user_text: str) -> frappe._dict:
 		"""Append a user turn, ask the role-player to reply, persist the assistant turn."""
@@ -271,57 +329,59 @@ class SessionOrchestrator:
 
 		return frappe._dict(session=session.name, status=status)
 
-	def start_voice_session(
-		self,
-		*,
-		scenario_id: str | Document,
-		seed: str | None = None,
-	) -> frappe._dict:
-		"""Create a voice Session and generate the persona variant.
+	def clone_session(self, *, session_id: str) -> frappe._dict:
+		"""Create a new Ready session copying the source variant (same
+		persona/situation/brief). Used to retry an identical challenge.
 
-		Unlike start_session (chat), this does NOT persist a first assistant
-		turn: the opening line is spoken live by the realtime model. Returns the
-		session name + the data the feature layer needs to build the realtime
-		instructions (persona/situation/difficulty).
+		Returns keys: session (name), brief, modality.
+		"""
+		src = frappe.get_doc("LMSA Simulation Session", session_id)
+		clone = frappe.new_doc("LMSA Simulation Session")
+		clone.student = frappe.session.user
+		clone.scenario = src.scenario
+		clone.modality = src.modality
+		clone.status = STATUS_READY
+		clone.seed = src.seed
+		clone.prompt_version = src.prompt_version
+		clone.generated_situation = src.generated_situation
+		clone.generated_persona = src.generated_persona
+		clone.student_brief = src.student_brief
+		clone.chat_provider_used = src.chat_provider_used
+		clone.chat_model_used = src.chat_model_used
+		clone.insert()
+		frappe.db.commit()
+		self.logger.info("simulation clone: src=%s new=%s", src.name, clone.name)
+		return frappe._dict(
+			session=clone.name,
+			brief=clone.student_brief,
+			modality=clone.modality,
+		)
 
-		`scenario_id` accepts either a scenario name (str) or an already-loaded
-		scenario doc. Passing the doc avoids a redundant reload when the caller
-		(e.g. the realtime API) has already fetched and validated it.
+	def start_voice_session(self, *, session_id: str) -> frappe._dict:
+		"""Activate a prepared voice Session for live realtime streaming.
+
+		Reuses the persona/situation generated at prepare time (no
+		regeneration). Marks the session In Progress. Returns the data the
+		realtime control-plane needs to build the model instructions.
 		"""
 		if not self.settings.simulations_enabled:
 			frappe.throw(_("AI Simulations are not enabled in LMSA Settings."))
 
-		if isinstance(scenario_id, str):
-			scenario = frappe.get_doc("LMSA Simulation Scenario", scenario_id)
-			if scenario.status != "Published":
-				frappe.throw(
-					_("Scenario {0} is not Published (status: {1}).").format(scenario.name, scenario.status),
-					frappe.PermissionError,
-				)
-		else:
-			scenario = scenario_id
-
-		seed = seed or _new_seed()
-		# Persona generation stays TEXTUAL (reuses the existing LLM layer).
-		text_provider = self._resolve_provider("chat", scenario)
-		variant = self._generate_variant(scenario, seed, text_provider)
-
-		session = frappe.new_doc("LMSA Simulation Session")
-		session.student = frappe.session.user
-		session.scenario = scenario.name
-		session.modality = "voice"
-		session.seed = seed
-		session.prompt_version = f"{SCENARIO_GEN_VERSION}+{ROLE_PLAY_VERSION}"
-		session.generated_situation = variant.situation
-		session.generated_persona = json.dumps(_persona_to_dict(variant.persona), ensure_ascii=False)
-		session.insert()
-		frappe.db.commit()
+		session = frappe.get_doc("LMSA Simulation Session", session_id)
+		if session.status in TERMINAL_STATUSES:
+			raise SessionTerminatedError(
+				f"Session {session_id} is in terminal state {session.status!r}"
+			)
+		if session.status != STATUS_IN_PROGRESS:
+			session.status = STATUS_IN_PROGRESS
+			session.save()
+			frappe.db.commit()
 
 		return frappe._dict(
 			session=session.name,
-			persona=variant.persona,
-			situation=variant.situation,
-			difficulty=_scenario_difficulty(scenario.name),
+			persona=_persona_from_session(session),
+			situation=session.generated_situation,
+			difficulty=_scenario_difficulty(session.scenario),
 		)
 
 	def persist_voice_turn(self, *, session_id: str, role: str, text: str) -> frappe._dict:
