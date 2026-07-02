@@ -7,7 +7,7 @@
  */
 import { ref } from 'vue'
 import { toast } from 'frappe-ui'
-import { synthesizeSpeech } from '@/oslms/utils/audioApi'
+import { synthesizeSpeech, base64ToObjectUrl } from '@/oslms/utils/audioApi'
 
 const audioEl = typeof Audio !== 'undefined' ? new Audio() : null
 const urlCache = new Map() // text -> object URL
@@ -102,5 +102,14 @@ export function useTextToSpeech() {
 		synthesize(clean, { voice }).catch(() => {})
 	}
 
-	return { playingId, isSynthesizing, play, stop, isLoading, prefetch }
+	// Insert a server-synthesized clip into the cache so a later play(text)/
+	// SpeakButton reuses it without calling synthesize again.
+	function prime(text, base64, mime) {
+		const clean = (text || '').trim()
+		if (!clean || !base64 || !audioEl) return
+		if (urlCache.has(clean)) return
+		urlCache.set(clean, base64ToObjectUrl(base64, mime))
+	}
+
+	return { playingId, isSynthesizing, play, stop, isLoading, prefetch, prime }
 }

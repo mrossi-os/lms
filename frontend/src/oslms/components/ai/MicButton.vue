@@ -30,12 +30,15 @@ import { useSpeechToText } from '@/oslms/composables/useSpeechToText'
 const props = defineProps({
 	disabled: { type: Boolean, default: false },
 	language: { type: String, default: 'it' },
+	raw: { type: Boolean, default: false },
 })
-const emit = defineEmits(['transcript'])
+const emit = defineEmits(['transcript', 'audio'])
 
 const { isRecording, isTranscribing, isSupported, toggle } = useSpeechToText({
 	language: props.language,
-	onTranscript: (text) => emit('transcript', text),
+	...(props.raw
+		? { onAudio: (blob) => emit('audio', blob) }
+		: { onTranscript: (text) => emit('transcript', text) }),
 })
 
 const label = computed(() =>

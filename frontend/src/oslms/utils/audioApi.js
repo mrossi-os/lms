@@ -47,3 +47,9 @@ function base64ToBytes(b64) {
 	for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
 	return bytes
 }
+
+/** Build a playable object URL from a base64 audio payload. */
+export function base64ToObjectUrl(base64, mime) {
+	const bytes = base64ToBytes(base64)
+	return URL.createObjectURL(new Blob([bytes], { type: mime || 'audio/mpeg' }))
+}

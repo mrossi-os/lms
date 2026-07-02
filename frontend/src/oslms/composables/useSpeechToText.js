@@ -20,7 +20,7 @@ function pickMimeType() {
 	return candidates.find((t) => MediaRecorder.isTypeSupported?.(t)) || ''
 }
 
-export function useSpeechToText({ language = 'it', onTranscript } = {}) {
+export function useSpeechToText({ language = 'it', onTranscript, onAudio } = {}) {
 	const isRecording = ref(false)
 	const isTranscribing = ref(false)
 	const isSupported = ref(
@@ -72,6 +72,12 @@ export function useSpeechToText({ language = 'it', onTranscript } = {}) {
 		recorder = null
 		chunks = []
 		if (!blob.size) return
+		// Raw mode: hand back the recorded clip and skip transcription — the
+		// caller sends the audio to a combined endpoint that does STT itself.
+		if (onAudio) {
+			onAudio(blob)
+			return
+		}
 		isTranscribing.value = true
 		try {
 			const text = await transcribeAudio(blob, { language })
