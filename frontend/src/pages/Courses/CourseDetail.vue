@@ -191,6 +191,7 @@ import type {
 	SessionUser,
 } from '@/types/api'
 import CourseSimulations from '@/oslms/pages/Courses/CourseSimulations.vue'
+import CourseStudentSimulations from '@/oslms/pages/Courses/CourseStudentSimulations.vue'
 
 const { settings: lmsSettingsResource } = useSettings()
 const simulationsEnabledGlobal = computed(
@@ -368,6 +369,14 @@ const tabs = computed<TabDef[]>(() => {
 			})
 		}
 	}
+	if (!isAdmin.value && isEnrolledStudent.value) {
+		t.push({
+			id: 'simulations',
+			label: __('Simulations'),
+			component: markRaw(CourseStudentSimulations),
+			icon: markRaw(Bot),
+		})
+	}
 	return t
 })
 
@@ -416,7 +425,19 @@ const isValutatore = computed<boolean>(() =>
 	Boolean(course.data?.is_valutatore),
 )
 
-const showTabs = computed<boolean>(() => isAdmin.value || isValutatore.value)
+// An enrolled student sees a lightweight tabbed view (Overview + Simulazioni)
+// when simulations are enabled globally.
+const isEnrolledStudent = computed<boolean>(
+	() =>
+		!isAdmin.value &&
+		!isValutatore.value &&
+		Boolean(course.data?.membership) &&
+		simulationsEnabledGlobal.value,
+)
+
+const showTabs = computed<boolean>(
+	() => isAdmin.value || isValutatore.value || isEnrolledStudent.value,
+)
 
 const breadcrumbs = computed(() => {
 	const crumbs: {
