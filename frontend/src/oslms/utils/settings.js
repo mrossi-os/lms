@@ -306,7 +306,7 @@ export function buildOslmsSettingsTabs({ isAdministrator } = {}) {
 								{
 									fields: [
 										{
-											label: __('Abilita Simulazioni vocali'),
+											label: __('Abilita Simulazioni vocali realtime'),
 											name: 'realtime_enabled',
 											type: 'checkbox'
 										},
@@ -351,7 +351,7 @@ export function buildOslmsSettingsTabs({ isAdministrator } = {}) {
 							],
 						},
 						{
-							label: __('Audio nel tutor'),
+							label: __('Audio (dettatura e lettura vocale)'),
 							columns: [
 								{
 									fields: [
