@@ -212,6 +212,7 @@ class TestSimulationsAPI(UnitTestCase):
         prepared = prepare_session(scenario_id=self.scenario.name)
         self.assertIn("session_id", prepared)
         self.assertTrue(prepared["brief"])
+        self.assertEqual(prepared["modality"], "chat")
         detail = get_session(session_id=prepared["session_id"])
         self.assertEqual(detail["session"]["status"], "Ready")
         self.assertEqual(len(detail["turns"]), 0)
@@ -225,6 +226,15 @@ class TestSimulationsAPI(UnitTestCase):
         self.assertEqual(detail2["session"]["status"], "In Progress")
         self.assertEqual(len(detail2["turns"]), 1)
 
+    def test_begin_session_is_idempotent(self):
+        prepared = prepare_session(scenario_id=self.scenario.name)
+        result1 = begin_session(session_id=prepared["session_id"])
+        result2 = begin_session(session_id=prepared["session_id"])
+        self.assertEqual(result1["first_turn"]["name"], result2["first_turn"]["name"])
+        payload = get_session(session_id=prepared["session_id"])
+        self.assertEqual(len(payload["turns"]), 1)
+        self.assertEqual(payload["session"]["status"], "In Progress")
+
     # ----- list_my_sessions -----
 
     def test_list_my_sessions_returns_only_owner(self):
@@ -236,6 +246,31 @@ class TestSimulationsAPI(UnitTestCase):
         self.assertEqual(row["scenario"], self.scenario.name)
         self.assertEqual(row["status"], "Ready")
 
+        # Create a session owned by a different user and verify it is not visible
+        # to the original student (isolation check). The session is inserted
+        # directly (as Administrator) to avoid the enrollment-eligibility gate
+        # on the unpublished test course.
+        other = "sim-test-isolation@elite.com"
+        _make_student(other)
+        frappe.set_user("Administrator")
+        other_session = frappe.new_doc("LMSA Simulation Session")
+        other_session.student = other
+        other_session.scenario = self.scenario.name
+        other_session.modality = "chat"
+        other_session.status = "Ready"
+        other_session.insert(ignore_permissions=True)
+        other_session_id = other_session.name
+        frappe.set_user(self.student_email)
+        try:
+            rows_after = list_my_sessions(course=self.scenario.lms_course)
+            names_after = [r["name"] for r in rows_after]
+            self.assertNotIn(other_session_id, names_after)
+        finally:
+            frappe.delete_doc(
+                "LMSA Simulation Session", other_session_id, force=True, ignore_permissions=True
+            )
+            frappe.delete_doc("User", other, force=True, ignore_permissions=True)
+
     # ----- clone_session -----
 
     def test_clone_session_endpoint(self):
@@ -243,5 +278,7 @@ class TestSimulationsAPI(UnitTestCase):
         end_session(session_id=start["session"], reason="completed")
         clone = clone_session(session_id=start["session"])
         self.assertNotEqual(clone["session_id"], start["session"])
+        self.assertTrue(clone["brief"])
+        self.assertIn("modality", clone)
         detail = get_session(session_id=clone["session_id"])
         self.assertEqual(detail["session"]["status"], "Ready")
