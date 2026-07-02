@@ -6,10 +6,12 @@ mock adapter, and the OpenAI adapter's request-shaping helpers.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from unittest.mock import patch
 
 from frappe.tests import UnitTestCase
 
 from os_lms.os_lms.ai.utils import audio
+from os_lms.os_lms.ai.utils.audio.errors import AudioError
 from os_lms.os_lms.ai.utils.audio.provider import AudioProvider
 from os_lms.os_lms.ai.utils.audio.providers.gemini import (
 	GeminiAudioProvider,
@@ -192,6 +194,23 @@ class TestGeminiAdapterShaping(UnitTestCase):
 		}
 		self.assertEqual(_extract_text(payload), "Ciao mondo")
 		self.assertEqual(_extract_text({}), "")
+
+	def test_transcribe_returns_text_when_present(self):
+		prov = self._provider(api_key="k")
+		payload = {"candidates": [{"content": {"parts": [{"text": "ciao mondo"}]}}]}
+		with patch.object(GeminiAudioProvider, "_post", return_value=payload):
+			out = prov.transcribe(b"0123456789", mime="audio/webm", language="it")
+		self.assertEqual(out.text, "ciao mondo")
+
+	def test_transcribe_raises_on_empty_transcript_with_reason(self):
+		# Gemini returned a text-less candidate (e.g. the browser's WebM/Opus is
+		# not understood): surface finishReason instead of a silent empty string.
+		prov = self._provider(api_key="k")
+		payload = {"candidates": [{"content": {"role": "model"}, "finishReason": "STOP"}]}
+		with patch.object(GeminiAudioProvider, "_post", return_value=payload):
+			with self.assertRaises(AudioError) as ctx:
+				prov.transcribe(b"0123456789", mime="audio/webm", language="it")
+		self.assertIn("finishReason=STOP", str(ctx.exception))
 
 	def test_extract_audio(self):
 		payload = {

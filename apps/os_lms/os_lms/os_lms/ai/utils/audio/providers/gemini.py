@@ -85,8 +85,16 @@ class GeminiAudioProvider(AudioProvider):
             "generationConfig": {"temperature": 0},
         }
         payload = self._post(used_model, body, timeout)
+        text = _extract_text(payload)
+        if not text:
+            # A text-less 200 response is a failure, not a valid empty transcript.
+            # The most common cause is that Gemini's audio understanding does not
+            # accept the browser's WebM/Opus recording (its documented STT inputs
+            # are wav, mp3, aac, ogg, flac, aiff). Surface the reason instead of
+            # silently returning "".
+            raise AudioError(_empty_transcript_message(payload), provider=self.name)
         return TranscriptionResult(
-            text=_extract_text(payload),
+            text=text,
             model=used_model,
             provider=self.name,
             raw=payload,
@@ -220,6 +228,32 @@ def _extract_text(payload: dict) -> str:
     parts = _first_candidate_parts(payload)
     chunks = [p.get("text", "") for p in parts if isinstance(p, dict) and p.get("text")]
     return "".join(chunks).strip()
+
+
+def _empty_reason(payload: dict) -> str:
+    """Best-effort explanation of why a Gemini response carried no text."""
+    bits = []
+    candidates = payload.get("candidates") or []
+    if candidates:
+        finish = candidates[0].get("finishReason")
+        if finish:
+            bits.append(f"finishReason={finish}")
+    else:
+        bits.append("no candidates")
+    feedback = payload.get("promptFeedback") or {}
+    block = feedback.get("blockReason")
+    if block:
+        bits.append(f"blockReason={block}")
+    return ", ".join(bits) or "empty response"
+
+
+def _empty_transcript_message(payload: dict) -> str:
+    return (
+        f"Gemini returned no transcript ({_empty_reason(payload)}). This usually "
+        "means the audio format is unsupported: Gemini STT does not accept the "
+        "browser's WebM/Opus recording — send a supported format (wav, mp3, aac, "
+        "ogg, flac) or use the OpenAI STT provider."
+    )
 
 
 def _extract_audio(payload: dict) -> tuple[str, str]:
