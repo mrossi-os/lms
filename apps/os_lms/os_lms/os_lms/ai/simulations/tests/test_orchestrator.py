@@ -206,6 +206,25 @@ class TestOrchestratorLifecycle(UnitTestCase):
         with self.assertRaises(SessionTerminatedError):
             SessionOrchestrator().start_voice_session(session_id=prepared.session)
 
+    def test_begin_chat_session_sets_modality_chat(self):
+        # Simulate 'both' scenario: frontend prepares with modality="voice" to pass
+        # the backend gate, but the student then starts a chat session.
+        prepared = SessionOrchestrator().prepare_session(
+            scenario_id=self.scenario.name, modality="voice"
+        )
+        SessionOrchestrator().begin_chat_session(session_id=prepared.session)
+        session = frappe.get_doc("LMSA Simulation Session", prepared.session)
+        self.assertEqual(session.modality, "chat")
+
+    def test_start_voice_session_sets_modality_voice(self):
+        # Prepare as chat, then activate via voice — modality must become "voice".
+        prepared = SessionOrchestrator().prepare_session(
+            scenario_id=self.scenario.name, modality="chat"
+        )
+        SessionOrchestrator().start_voice_session(session_id=prepared.session)
+        session = frappe.get_doc("LMSA Simulation Session", prepared.session)
+        self.assertEqual(session.modality, "voice")
+
 
 class TestPseudonymize(UnitTestCase):
     def test_stable_sha256(self):

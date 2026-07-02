@@ -193,6 +193,7 @@ class SessionOrchestrator:
 			model_used=session.chat_model_used,
 		)
 		session.status = STATUS_IN_PROGRESS
+		session.modality = "chat"
 		session.turn_count = 1
 		session.save()
 		frappe.db.commit()
@@ -376,10 +377,11 @@ class SessionOrchestrator:
 			raise SessionTerminatedError(
 				f"Session {session_id} is in terminal state {session.status!r}"
 			)
+		session.modality = "voice"
 		if session.status != STATUS_IN_PROGRESS:
 			session.status = STATUS_IN_PROGRESS
-			session.save()
-			frappe.db.commit()
+		session.save()
+		frappe.db.commit()
 
 		return frappe._dict(
 			session=session.name,
