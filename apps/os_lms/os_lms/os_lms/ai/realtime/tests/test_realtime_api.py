@@ -150,6 +150,19 @@ class TestRealtimeApi(UnitTestCase):
 			frappe.set_user(self.student)
 
 	@patch.object(SessionOrchestrator, "_generate_variant", _stub_generate_variant)
+	def test_non_owner_cannot_create_voice_session(self):
+		prepared = prepare_session(scenario_id=self.scenario.name, modality="voice")
+		# A second student (not enrolled, not moderator) must not activate the session.
+		second_student = _make_student("voice-student-4@example.com")
+		frappe.db.commit()
+		frappe.set_user(second_student)
+		try:
+			with self.assertRaises(frappe.PermissionError):
+				rt_api.create_voice_session(session_id=prepared["session_id"])
+		finally:
+			frappe.set_user(self.student)
+
+	@patch.object(SessionOrchestrator, "_generate_variant", _stub_generate_variant)
 	def test_non_realtime_provider_override_falls_back(self):
 		"""Fix 1: a scenario with provider_override='anthropic' (non-realtime) must NOT
 		raise a ValueError / 500 — it falls back to the realtime settings default (mock)."""
