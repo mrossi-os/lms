@@ -39,7 +39,7 @@ export function useRealtimeSession() {
 		method: 'POST',
 	})
 
-	async function start(sessionId) {
+	async function start(incomingSessionId) {
 		if (['connecting', 'connected'].includes(state.value)) return
 		state.value = 'connecting'
 		transcript.value = []
@@ -47,7 +47,7 @@ export function useRealtimeSession() {
 		activeIndex = -1
 		try {
 			const res = await createSessionRes.submit({
-				session_id: sessionId,
+				session_id: incomingSessionId,
 			})
 
 			sessionId.value = res.session_id

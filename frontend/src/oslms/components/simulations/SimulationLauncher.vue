@@ -166,6 +166,7 @@ async function onBegin(mode) {
 
 function backToSelect() {
 	step.value = 'select'
+	error.value = null
 }
 
 function onVoiceEnded() {
