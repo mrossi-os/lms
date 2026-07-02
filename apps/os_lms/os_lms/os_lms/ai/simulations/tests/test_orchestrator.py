@@ -13,7 +13,11 @@ from os_lms.os_lms.ai.simulations.orchestrator import (
     validate_quota,
     QuotaExceededError,
 )
-from os_lms.os_lms.doctype.lmsa_simulation_session.lmsa_simulation_session import STATUS_READY
+from os_lms.os_lms.doctype.lmsa_simulation_session.lmsa_simulation_session import (
+    STATUS_COMPLETED,
+    STATUS_IN_PROGRESS,
+    STATUS_READY,
+)
 
 from . import _fixtures as F
 
@@ -159,7 +163,7 @@ class TestOrchestratorLifecycle(UnitTestCase):
         prepared = SessionOrchestrator().prepare_session(scenario_id=self.scenario.name)
         result = SessionOrchestrator().begin_chat_session(session_id=prepared.session)
         session = frappe.get_doc("LMSA Simulation Session", prepared.session)
-        self.assertEqual(session.status, "In Progress")
+        self.assertEqual(session.status, STATUS_IN_PROGRESS)
         self.assertEqual(session.turn_count, 1)
         self.assertTrue(result.first_turn.text)
 
@@ -173,9 +177,34 @@ class TestOrchestratorLifecycle(UnitTestCase):
         self.assertEqual(dst.status, STATUS_READY)
         self.assertEqual(dst.generated_persona, src.generated_persona)
         self.assertEqual(dst.student_brief, src.student_brief)
+        self.assertEqual(dst.scenario, src.scenario)
+        self.assertEqual(dst.modality, src.modality)
+        self.assertEqual(dst.generated_situation, src.generated_situation)
         self.assertEqual(
             frappe.db.count("LMSA Simulation Turn", {"session": dst.name}), 0
         )
+
+
+    def test_start_voice_session_activates_ready_session(self):
+        prepared = SessionOrchestrator().prepare_session(
+            scenario_id=self.scenario.name, modality="voice"
+        )
+        result = SessionOrchestrator().start_voice_session(session_id=prepared.session)
+        session = frappe.get_doc("LMSA Simulation Session", prepared.session)
+        self.assertEqual(session.status, STATUS_IN_PROGRESS)
+        self.assertEqual(result.situation, F.CANNED_VARIANT.situation)
+        self.assertEqual(result.persona.name, F.CANNED_VARIANT.persona.name)
+        self.assertTrue(result.difficulty)
+
+    def test_start_voice_session_raises_for_terminal(self):
+        prepared = SessionOrchestrator().prepare_session(
+            scenario_id=self.scenario.name, modality="voice"
+        )
+        frappe.db.set_value(
+            "LMSA Simulation Session", prepared.session, "status", STATUS_COMPLETED
+        )
+        with self.assertRaises(SessionTerminatedError):
+            SessionOrchestrator().start_voice_session(session_id=prepared.session)
 
 
 class TestPseudonymize(UnitTestCase):

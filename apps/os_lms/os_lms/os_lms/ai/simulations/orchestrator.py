@@ -161,6 +161,10 @@ class SessionOrchestrator:
 		Returns keys: session (name), first_turn ({name, text}).
 		"""
 		session = frappe.get_doc("LMSA Simulation Session", session_id)
+		if session.status in TERMINAL_STATUSES:
+			raise SessionTerminatedError(
+				f"Session {session_id} is in terminal state {session.status!r}"
+			)
 		if session.status == STATUS_IN_PROGRESS and (session.turn_count or 0) > 0:
 			# Idempotent: already begun. Return the existing first turn.
 			first = frappe.get_all(
