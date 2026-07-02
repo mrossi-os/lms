@@ -215,6 +215,22 @@ class TestGeminiAdapterShaping(UnitTestCase):
 			out = prov.transcribe(b"0123456789", mime="audio/webm", language="it")
 		self.assertEqual(out.text, "ciao mondo")
 
+	def test_transcribe_disables_thinking(self):
+		# gemini-2.5-flash otherwise spends the whole output on "thoughts" and
+		# returns no transcript, so STT must disable thinking.
+		prov = self._provider(api_key="k")
+		captured = {}
+
+		def fake_post(self_, model, body, timeout):
+			captured["body"] = body
+			return {"candidates": [{"content": {"parts": [{"text": "ok"}]}}]}
+
+		with patch.object(GeminiAudioProvider, "_post", fake_post):
+			prov.transcribe(b"0123456789", mime="audio/webm", language="it")
+		self.assertEqual(
+			captured["body"]["generationConfig"]["thinkingConfig"]["thinkingBudget"], 0
+		)
+
 	def test_transcribe_raises_on_empty_transcript_with_reason(self):
 		# Gemini returned a text-less candidate (e.g. the browser's WebM/Opus is
 		# not understood): surface finishReason instead of a silent empty string.

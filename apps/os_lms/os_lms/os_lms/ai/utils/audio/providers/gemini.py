@@ -84,7 +84,11 @@ class GeminiAudioProvider(AudioProvider):
                     ]
                 }
             ],
-            "generationConfig": {"temperature": 0},
+            # Disable "thinking": gemini-2.5-flash otherwise spends the entire
+            # output budget on thought tokens and returns an EMPTY transcript
+            # (finishReason=STOP, no parts, thoughtsTokenCount>0). Transcription
+            # needs no reasoning, so force direct output.
+            "generationConfig": {"temperature": 0, "thinkingConfig": {"thinkingBudget": 0}},
         }
         payload = self._post(used_model, body, timeout)
         text = _extract_text(payload)
@@ -307,15 +311,18 @@ def _empty_reason(payload: dict) -> str:
     block = feedback.get("blockReason")
     if block:
         bits.append(f"blockReason={block}")
+    thoughts = (payload.get("usageMetadata") or {}).get("thoughtsTokenCount")
+    if thoughts:
+        bits.append(f"thoughtsTokenCount={thoughts}")
     return ", ".join(bits) or "empty response"
 
 
 def _empty_transcript_message(payload: dict) -> str:
     return (
-        f"Gemini returned no transcript ({_empty_reason(payload)}). This usually "
-        "means the audio format is unsupported: Gemini STT does not accept the "
-        "browser's WebM/Opus recording — send a supported format (wav, mp3, aac, "
-        "ogg, flac) or use the OpenAI STT provider."
+        f"Gemini returned no transcript ({_empty_reason(payload)}). If "
+        "thoughtsTokenCount is set, the model spent the output on reasoning and "
+        "returned no text (STT should disable thinking). Otherwise the audio may "
+        "have been rejected — check the logged response."
     )
 
 
