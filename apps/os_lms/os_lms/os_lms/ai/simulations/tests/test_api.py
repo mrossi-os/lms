@@ -5,11 +5,13 @@ HTTP shell does) under different identities to exercise the permission gates.
 """
 from __future__ import annotations
 
+import base64
 from unittest.mock import patch
 
 import frappe
 from frappe.tests import UnitTestCase
 
+from os_lms.os_lms.ai.audio import pipeline as audio_pipeline
 from os_lms.os_lms.ai.simulations import SessionOrchestrator
 from os_lms.os_lms.ai.simulations.api import (
     begin_session,
@@ -20,8 +22,10 @@ from os_lms.os_lms.ai.simulations.api import (
     list_scenarios,
     prepare_session,
     send_message,
+    send_message_audio,
     start_session,
 )
+from os_lms.os_lms.ai.utils.audio import build_audio_config, get_audio_provider
 
 from . import _fixtures as F
 
@@ -181,6 +185,55 @@ class TestSimulationsAPI(UnitTestCase):
             frappe.set_user(other)
             with self.assertRaises(frappe.PermissionError):
                 send_message(session_id=start["session"], text="hi")
+        finally:
+            frappe.set_user(self.student_email)
+            frappe.delete_doc("User", other, force=True, ignore_permissions=True)
+
+    # ----- send_message_audio (combined STT->LLM->TTS) -----
+
+    def _mock_audio(self):
+        # Point the pipeline's audio provider + settings at the mock provider.
+        self._orig_resolve = audio_pipeline.resolve_audio_provider
+        self._orig_load = audio_pipeline.load_settings
+        audio_pipeline.resolve_audio_provider = lambda cap: get_audio_provider(
+            build_audio_config("mock", None)
+        )
+
+        class _S:
+            stt_enabled = True
+            tts_enabled = True
+            tts_voice = "alloy"
+
+        audio_pipeline.load_settings = lambda: _S()
+
+    def _unmock_audio(self):
+        audio_pipeline.resolve_audio_provider = self._orig_resolve
+        audio_pipeline.load_settings = self._orig_load
+
+    def test_send_message_audio_text_persists_turns_and_returns_audio(self):
+        start = start_session(scenario_id=self.scenario.name)
+        self._mock_audio()
+        try:
+            out = send_message_audio(session_id=start["session"], text="ciao")
+        finally:
+            self._unmock_audio()
+        self.assertEqual(out["question_text"], "ciao")
+        self.assertTrue(out["answer_text"])
+        self.assertTrue(out["assistant_turn"])
+        self.assertTrue(out["user_turn"])
+        self.assertTrue(base64.b64decode(out["audio_base64"]).startswith(b"MOCK_AUDIO:"))
+        # Turns were persisted by the orchestrator (opening + user + assistant).
+        detail = get_session(session_id=start["session"])
+        self.assertGreaterEqual(len(detail["turns"]), 3)
+
+    def test_send_message_audio_owner_only(self):
+        start = start_session(scenario_id=self.scenario.name)
+        other = "sim-audio-stranger@elite.com"
+        _make_student(other)
+        try:
+            frappe.set_user(other)
+            with self.assertRaises(frappe.PermissionError):
+                send_message_audio(session_id=start["session"], text="ciao")
         finally:
             frappe.set_user(self.student_email)
             frappe.delete_doc("User", other, force=True, ignore_permissions=True)

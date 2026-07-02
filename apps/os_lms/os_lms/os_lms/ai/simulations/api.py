@@ -14,6 +14,7 @@ from frappe import _
 
 from lms.lms.utils import has_course_instructor_role, has_moderator_role, is_instructor
 
+from os_lms.os_lms.ai.audio.pipeline import run_audio_turn
 
 from .orchestrator import (
     QuotaExceededError,
@@ -171,6 +172,44 @@ def send_message(session_id: str, text: str) -> dict:
             _("This session is no longer accepting messages"), frappe.ValidationError
         )
     return dict(result)
+
+
+@frappe.whitelist()
+def send_message_audio(
+    session_id: str,
+    text: str | None = None,
+    audio: str | None = None,
+    mime: str = "audio/webm",
+    language: str = "it",
+    want_audio: bool = True,
+) -> dict:
+    """Single-call audio (or text) simulation turn: STT? -> role-player -> TTS?.
+
+    Reuses the orchestrator's send_message (persists both turns + fires the
+    realtime event). Returns question/answer text, answer audio, and the turn
+    names for client reconciliation.
+    """
+    session = load_session(session_id)
+    if session.student != frappe.session.user:
+        frappe.throw(_("Only the session owner can send messages"), frappe.PermissionError)
+
+    holder: dict = {}
+
+    def _produce(q: str) -> str:
+        r = _service().send_message(session_id=session.name, user_text=q)
+        holder["user_turn"] = r.user_turn.name
+        holder["assistant_turn"] = r.assistant_turn.name
+        holder["injection_attempt"] = bool(r.injection_attempt)
+        return r.assistant_turn.text
+
+    try:
+        result = run_audio_turn(
+            audio=audio, text=text, mime=mime, language=language,
+            want_audio=want_audio, produce_answer=_produce,
+        )
+    except SessionTerminatedError:
+        frappe.throw(_("This session is no longer accepting messages"), frappe.ValidationError)
+    return {**result, **holder}
 
 
 @frappe.whitelist()
