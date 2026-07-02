@@ -44,7 +44,14 @@
 					/>
 				</div>
 				<div v-else class="text-sm text-ink-gray-9 whitespace-pre-wrap">
-					{{ message.content }}
+					<span
+						v-if="message.audioPending"
+						class="flex items-center gap-2 text-ink-gray-5"
+					>
+						<Mic class="w-4 h-4" />
+						<span class="animate-pulse">…</span>
+					</span>
+					<template v-else>{{ message.content }}</template>
 				</div>
 				<div
 					v-if="message.sources && message.sources.length > 0"
@@ -84,13 +91,13 @@
 				class="flex-1 resize-none rounded-md border border-outline-gray-2 px-3 py-2 text-sm text-ink-gray-8 focus:border-outline-gray-3 focus:outline-none"
 				rows="2"
 				@keydown.enter.exact.prevent="sendQuestion"
-				@input="pendingVoice = false"
 				:disabled="chat.isLoading"
 			></textarea>
 			<MicButton
 				v-if="sttEnabled"
+				raw
 				:disabled="chat.isLoading"
-				@transcript="onTranscript"
+				@audio="onAudioMessage"
 			/>
 			<Button
 				variant="solid"
@@ -108,12 +115,13 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { Button, call, toast } from 'frappe-ui'
-import { Send } from 'lucide-vue-next'
+import { Send, Mic } from 'lucide-vue-next'
 import { useSettings } from '@/stores/settings'
 import { useAiChat } from '@/stores/aiChat'
 import MicButton from '@/oslms/components/ai/MicButton.vue'
 import SpeakButton from '@/oslms/components/ai/SpeakButton.vue'
 import { useTextToSpeech } from '@/oslms/composables/useTextToSpeech'
+import { blobToBase64 } from '@/oslms/utils/audioApi'
 import MarkdownIt from 'markdown-it'
 
 const md = new MarkdownIt({
@@ -137,22 +145,13 @@ const ttsAutoplayOnStt = computed(() =>
 	Boolean(settingsStore.settings?.data?.tts_autoplay_on_stt),
 )
 
-const { play, prefetch } = useTextToSpeech()
-
-// True while the pending question text was produced by voice (STT) and not
-// edited by hand — drives the optional "auto-read the answer aloud" behavior.
-const pendingVoice = ref(false)
-
-const onTranscript = (text: string) => {
-	if (!text) return
-	chat.question = text
-	pendingVoice.value = true
-}
+const { play, prime } = useTextToSpeech()
 
 interface Message {
 	role: 'user' | 'assistant'
 	content: string
 	sources?: string[]
+	audioPending?: boolean
 }
 
 const props = defineProps<{
@@ -175,14 +174,45 @@ const scrollToBottom = () => {
 onMounted(scrollToBottom)
 watch(() => chat.messages.length, scrollToBottom)
 
+// Voice message: record -> one combined call (STT -> LLM -> TTS) -> play.
+const onAudioMessage = async (blob: Blob) => {
+	if (chat.isLoading) return
+	const history = chat.messages.map((m) => ({ from: m.role, message: m.content }))
+	chat.addMessage({ role: 'user', content: '', audioPending: true })
+	const userIdx = chat.messages.length - 1
+	chat.isLoading = true
+	try {
+		const audio = await blobToBase64(blob)
+		const res = await call('os_lms.os_lms.ai.tutor.api.ask_audio', {
+			course: props.courseId,
+			lesson: props.lessonId,
+			audio,
+			mime: blob.type || 'audio/webm',
+			language: 'it',
+			history,
+			want_audio: ttsEnabled.value,
+		})
+		chat.messages[userIdx].content = res.question_text || ''
+		chat.messages[userIdx].audioPending = false
+		const answer = res.answer_text || __('Sorry, I could not find an answer.')
+		chat.addMessage({ role: 'assistant', content: answer, sources: [] })
+		if (res.audio_base64) {
+			prime(answer, res.audio_base64, res.mime)
+			if (ttsAutoplayOnStt.value) play(answer, chat.messages.length - 1)
+		}
+	} catch (error: any) {
+		chat.messages[userIdx].audioPending = false
+		const msg = error?.message || error?.exc || __('Failed to get response')
+		chat.addMessage({ role: 'assistant', content: __('Error: ') + msg })
+		toast.error(msg)
+	} finally {
+		chat.isLoading = false
+	}
+}
+
 const sendQuestion = async () => {
 	const trimmedQuestion = chat.question.trim()
 	if (!trimmedQuestion || chat.isLoading) return
-
-	// Capture (and reset) the voice flag for this turn so a later auto-play
-	// fires only when this specific question came from speech-to-text.
-	const viaVoice = pendingVoice.value
-	pendingVoice.value = false
 
 	// Snapshot the prior conversation before appending the current question,
 	// so the backend receives `question` separately from `history`.
@@ -199,31 +229,32 @@ const sendQuestion = async () => {
 	chat.isLoading = true
 
 	try {
-		const response = await call('os_lms.os_lms.ai.tutor.api.ask', {
-			course: props.courseId,
-			lesson: props.lessonId,
-			question: trimmedQuestion,
-			history,
-		})
+		// When TTS is on, use the combined endpoint so the reply audio comes
+		// back in the same call (typed messages don't autoplay — priming makes
+		// the read button instant).
+		const useAudio = ttsEnabled.value
+		const response = await call(
+			`os_lms.os_lms.ai.tutor.api.${useAudio ? 'ask_audio' : 'ask'}`,
+			{
+				course: props.courseId,
+				lesson: props.lessonId,
+				question: trimmedQuestion,
+				history,
+				...(useAudio ? { want_audio: true } : {}),
+			},
+		)
 
 		const answer =
-			response.answer || __('Sorry, I could not find an answer.')
+			(useAudio ? response.answer_text : response.answer) ||
+			__('Sorry, I could not find an answer.')
 		chat.addMessage({
 			role: 'assistant',
 			content: answer,
 			sources: [],
 		})
 
-		if (ttsEnabled.value) {
-			if (ttsAutoplayOnStt.value && viaVoice) {
-				// Read the answer aloud automatically when the question was asked
-				// by voice (play() also warms the cache for any later replay).
-				play(answer, chat.messages.length - 1)
-			} else {
-				// Otherwise download the audio in the background as the message
-				// arrives, so clicking the speak button plays it back instantly.
-				prefetch(answer)
-			}
+		if (useAudio && response.audio_base64) {
+			prime(answer, response.audio_base64, response.mime)
 		}
 	} catch (error: any) {
 		const errorMessage =
