@@ -188,8 +188,10 @@ const cloneRes = createResource({
 	method: 'POST',
 })
 const getSessionRes = createResource({
+	// POST (not GET) so .submit({session_id}) reliably transmits the param;
+	// get_session is an unrestricted @frappe.whitelist() that reads form_dict.
 	url: 'os_lms.os_lms.ai.simulations.api.get_session',
-	method: 'GET',
+	method: 'POST',
 })
 
 const TERMINAL = ['Completed', 'Abandoned', 'Error', 'Needs Review']
