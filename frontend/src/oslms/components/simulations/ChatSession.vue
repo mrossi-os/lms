@@ -48,7 +48,11 @@
 						>⚠️</span
 					>
 				</div>
-				<div>{{ turn.text_content }}</div>
+				<div v-if="turn._audioPending" class="flex items-center gap-2 text-ink-gray-5">
+					<Mic class="w-4 h-4" />
+					<span class="animate-pulse">…</span>
+				</div>
+				<div v-else>{{ turn.text_content }}</div>
 				<SpeakButton
 					v-if="ttsEnabled && turn.role !== 'user'"
 					:text="turn.text_content"
@@ -76,15 +80,15 @@
 					"
 					class="flex-1 resize-none rounded-md border border-outline-gray-2 px-3 py-2 text-sm focus:border-outline-gray-3 focus:outline-none text-white"
 					:disabled="sending"
-					@input="pendingVoice = false"
 					@keydown.meta.enter.prevent="onSend"
 					@keydown.ctrl.enter.prevent="onSend"
 				/>
 				<MicButton
 					v-if="sttEnabled"
+					raw
 					:disabled="sending"
 					class="shrink-0"
-					@transcript="onTranscript"
+					@audio="$emit('send-audio', $event)"
 				/>
 				<Button
 					variant="solid"
@@ -111,10 +115,10 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
 import { Badge, Button } from 'frappe-ui'
+import { Mic } from 'lucide-vue-next'
 import { useSettings } from '@/stores/settings'
 import MicButton from '@/oslms/components/ai/MicButton.vue'
 import SpeakButton from '@/oslms/components/ai/SpeakButton.vue'
-import { useTextToSpeech } from '@/oslms/composables/useTextToSpeech'
 
 const props = defineProps({
 	scenarioName: { type: String, default: '' },
@@ -126,63 +130,21 @@ const props = defineProps({
 	readOnly: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['send', 'end'])
+// 'send' carries typed text; 'send-audio' carries a recorded Blob. The parent
+// (useSimulationSession) decides which endpoint to call and drives playback.
+const emit = defineEmits(['send', 'send-audio', 'end'])
 
 const draft = ref('')
 const scroller = ref(null)
 
-// --- Audio (STT/TTS), mirroring the tutor (ChatBot.vue) ---
+// Audio control visibility (mirrors the tutor). Playback + autoplay are handled
+// upstream in useSimulationSession from the combined-endpoint response.
 const settingsStore = useSettings()
 const sttEnabled = computed(() =>
 	Boolean(settingsStore.settings?.data?.stt_enabled),
 )
 const ttsEnabled = computed(() =>
 	Boolean(settingsStore.settings?.data?.tts_enabled),
-)
-const ttsAutoplayOnStt = computed(() =>
-	Boolean(settingsStore.settings?.data?.tts_autoplay_on_stt),
-)
-const { play, prefetch } = useTextToSpeech()
-const pendingVoice = ref(false)
-
-function onTranscript(text) {
-	draft.value = text
-	pendingVoice.value = true
-}
-
-function lastAssistantTurn(turns) {
-	for (let i = turns.length - 1; i >= 0; i--) {
-		const t = turns[i]
-		if (t.role !== 'user' && t.role !== 'system') return t
-	}
-	return null
-}
-
-// Track the most recent assistant turn already handled so we only react to
-// genuinely new replies, not re-hydration of history. Seed from the turns
-// present at setup so the first live reply is treated as new.
-let seenAssistantId = (() => {
-	const t = lastAssistantTurn(props.turns || [])
-	return t ? t.name || t.turn_index : null
-})()
-
-// New assistant reply → autoplay when the student dictated the message
-// (mirrors the tutor's tts_autoplay_on_stt); otherwise warm the TTS cache.
-watch(
-	() => props.turns.length,
-	() => {
-		const t = lastAssistantTurn(props.turns || [])
-		if (!t) return
-		const id = t.name || t.turn_index
-		if (id === seenAssistantId) return
-		seenAssistantId = id
-		if (pendingVoice.value && ttsAutoplayOnStt.value) {
-			play(t.text_content, id)
-		} else if (ttsEnabled.value) {
-			prefetch(t.text_content)
-		}
-		pendingVoice.value = false
-	},
 )
 
 const personaSummary = computed(() => {

@@ -39,6 +39,7 @@
 					:sending="sending"
 					:ending="ending"
 					@send="onSend"
+					@send-audio="onSendAudio"
 					@end="onEnd"
 				/>
 				<aside
@@ -84,7 +85,11 @@ const persona = computed(() => {
 const studentBrief = computed(() => session.value?.student_brief || '')
 
 async function onSend(text) {
-	await send(text)
+	await send({ text })
+}
+
+async function onSendAudio(blob) {
+	await send({ audioBlob: blob })
 }
 
 async function onEnd(reason) {

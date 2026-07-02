@@ -14,6 +14,9 @@
  */
 import { computed, inject, onUnmounted, ref, watch } from 'vue'
 import { createResource, toast } from 'frappe-ui'
+import { useSettings } from '@/stores/settings'
+import { useTextToSpeech } from '@/oslms/composables/useTextToSpeech'
+import { blobToBase64 } from '@/oslms/utils/audioApi'
 
 const EVENTS = {
 	TURN_START: 'simulation:turn_start',
@@ -29,6 +32,12 @@ export function useSimulationSession(sessionIdRef) {
 	const sending = ref(false)
 	const ending = ref(false)
 	const error = ref(null)
+
+	const settingsStore = useSettings()
+	const ttsEnabled = computed(() =>
+		Boolean(settingsStore.settings?.data?.tts_enabled),
+	)
+	const { play, prime } = useTextToSpeech()
 
 	const status = computed(() => session.value?.status || 'unknown')
 	const isTerminal = computed(() =>
@@ -61,6 +70,15 @@ export function useSimulationSession(sessionIdRef) {
 		},
 	})
 
+	const sendAudioResource = createResource({
+		url: 'os_lms.os_lms.ai.simulations.api.send_message_audio',
+		method: 'POST',
+		onError(err) {
+			error.value = err?.messages?.[0] || __('Send failed')
+			toast.error(error.value)
+		},
+	})
+
 	const endResource = createResource({
 		url: 'os_lms.os_lms.ai.simulations.api.end_session',
 		method: 'POST',
@@ -77,21 +95,63 @@ export function useSimulationSession(sessionIdRef) {
 		return fetchResource.submit()
 	}
 
-	async function send(text) {
-		if (!text || !text.trim() || sending.value) return
+	function _nextIndex() {
+		return (turns.value[turns.value.length - 1]?.turn_index || 0) + 1
+	}
+
+	// text: typed message; audioBlob: recorded voice message. When TTS is on (or
+	// an audio blob is present) we use the combined endpoint so the reply audio
+	// comes back in the same call.
+	async function send({ text = '', audioBlob = null } = {}) {
+		if (sending.value) return
+		const trimmed = (text || '').trim()
+		if (!audioBlob && !trimmed) return
+		const useCombined = Boolean(audioBlob) || ttsEnabled.value
 		sending.value = true
 		try {
-			await sendResource.submit({ session_id: sessionIdRef.value, text })
-			// Optimistic append for the user turn; the assistant turn arrives
-			// either via the WS event or the next reload().
-			turns.value.push({
-				role: 'user',
-				text_content: text.trim(),
-				turn_index: (turns.value[turns.value.length - 1]?.turn_index || 0) + 1,
-				_optimistic: true,
-			})
-			// Reload to fetch authoritative turn rows (server may have added
-			// fields like provider_used, latency_ms, etc.).
+			if (!useCombined) {
+				await sendResource.submit({ session_id: sessionIdRef.value, text: trimmed })
+				turns.value.push({
+					role: 'user',
+					text_content: trimmed,
+					turn_index: _nextIndex(),
+					_optimistic: true,
+				})
+				await load()
+				return
+			}
+
+			// Combined path: optimistic user turn (audio-pending placeholder or
+			// the typed text), then one call that does STT? -> LLM -> TTS?.
+			turns.value.push(
+				audioBlob
+					? { role: 'user', _audioPending: true, turn_index: _nextIndex(), _optimistic: true }
+					: { role: 'user', text_content: trimmed, turn_index: _nextIndex(), _optimistic: true },
+			)
+			const idx = turns.value.length - 1
+			const params = audioBlob
+				? {
+						session_id: sessionIdRef.value,
+						audio: await blobToBase64(audioBlob),
+						mime: audioBlob.type || 'audio/webm',
+						language: 'it',
+						want_audio: ttsEnabled.value,
+					}
+				: {
+						session_id: sessionIdRef.value,
+						text: trimmed,
+						language: 'it',
+						want_audio: ttsEnabled.value,
+					}
+			const res = await sendAudioResource.submit(params)
+			if (audioBlob && res?.question_text != null) {
+				turns.value[idx].text_content = res.question_text
+				turns.value[idx]._audioPending = false
+			}
+			if (res?.audio_base64) {
+				prime(res.answer_text, res.audio_base64, res.mime)
+				play(res.answer_text, res.assistant_turn)
+			}
 			await load()
 		} finally {
 			sending.value = false
