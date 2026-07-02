@@ -1,5 +1,5 @@
 <template>
-	<div class="flex flex-col h-screen max-w-3xl mx-auto">
+	<div class="flex flex-col h-screen max-w-6xl mx-auto">
 		<div
 			v-if="!session"
 			class="flex-1 flex items-center justify-center text-ink-gray-5"
@@ -29,17 +29,30 @@
 					{{ __('Vedi debrief') }} →
 				</router-link>
 			</div>
-			<ChatSession
-				class="flex-1"
-				:scenarioName="scenarioName"
-				:persona="persona"
-				:turns="turns"
-				:status="session.status"
-				:sending="sending"
-				:ending="ending"
-				@send="onSend"
-				@end="onEnd"
-			/>
+			<div class="flex flex-1 min-h-0 gap-4 px-4 pb-4">
+				<ChatSession
+					class="flex-1 min-w-0"
+					:scenarioName="scenarioName"
+					:persona="persona"
+					:turns="turns"
+					:status="session.status"
+					:sending="sending"
+					:ending="ending"
+					@send="onSend"
+					@end="onEnd"
+				/>
+				<aside
+					v-if="studentBrief"
+					class="hidden md:block w-80 shrink-0 overflow-y-auto border border-outline-gray-2 rounded-md p-4 bg-surface-gray-1"
+				>
+					<div class="text-sm font-semibold text-ink-gray-9 mb-2">
+						{{ __('Il tuo compito') }}
+					</div>
+					<div class="whitespace-pre-wrap text-sm text-ink-gray-7">
+						{{ studentBrief }}
+					</div>
+				</aside>
+			</div>
 		</template>
 	</div>
 </template>
@@ -68,6 +81,7 @@ const persona = computed(() => {
 		return null
 	}
 })
+const studentBrief = computed(() => session.value?.student_brief || '')
 
 async function onSend(text) {
 	await send(text)
