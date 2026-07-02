@@ -5183,6 +5183,7 @@ restrict_ip
 "Enter...","Inserisci..."
 "No results found for ""{0}""","Nessun risultato trovato per ""{0}"""
 "Waiting for the host to start the class","In attesa che l'host avvii la lezione"
+"Live class not started yet","Live non iniziata..."
 "Batches you evaluate","Batch che valuti"
 "Simulations","Simulazioni"
 "Bold","Grassetto"

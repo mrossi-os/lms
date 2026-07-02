@@ -615,6 +615,27 @@ def _ensure_live_class_admin():
 	frappe.only_for(["Moderator", "Batch Evaluator"])
 
 
+def _ensure_can_start_live_class(doc) -> None:
+	"""Authorize starting a Live Class.
+
+	Starting is broader than the manage-only actions guarded by
+	`_ensure_live_class_admin`: besides global admins, a valutatore of this
+	class's batch is a host and may start their own batch's classes (but must
+	not update/delete them).
+	"""
+	from os_lms.os_lms.valutatore import is_batch_valutatore
+
+	roles = frappe.get_roles(frappe.session.user)
+	if "Moderator" in roles or "Batch Evaluator" in roles:
+		return
+	if is_batch_valutatore(doc.batch_name, frappe.session.user):
+		return
+	frappe.throw(
+		frappe._("Non hai i permessi per avviare questa lezione."),
+		frappe.PermissionError,
+	)
+
+
 def _validate_reminders(reminders) -> None:
 	from os_lms.os_lms.doctype.lms_live_class_reminder.lms_live_class_reminder import (
 		offset_to_minutes,
@@ -662,9 +683,8 @@ def update_live_class(name: str, payload: dict) -> dict:
 @frappe.whitelist()
 def start_live_class(name: str) -> dict:
 	"""Mark a Live Class as started by the host so enrolled students can join."""
-	_ensure_live_class_admin()
-
 	doc = frappe.get_doc("LMS Live Class", name)
+	_ensure_can_start_live_class(doc)
 
 	if not doc.get("started_at"):
 		now = frappe.utils.now_datetime()
