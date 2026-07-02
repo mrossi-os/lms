@@ -66,6 +66,12 @@ const { resource, markDirty } = inject<CourseFormContext>('courseForm')!
 
 const doc = computed(() => resource.doc)
 
+function setVideoLink(value: string) {
+	if (!resource.doc) return
+	resource.doc.video_link = value
+	markDirty()
+}
+
 function createCategory(name: string | null, done?: () => void) {
 	if (!name) return
 	createLMSCategory(name).then((categoryName: string | undefined) => {
