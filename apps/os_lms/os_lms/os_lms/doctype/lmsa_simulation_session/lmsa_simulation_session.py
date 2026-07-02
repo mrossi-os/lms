@@ -9,6 +9,7 @@ from frappe.model.document import Document
 ROLES_WITH_FULL_ACCESS = {"System Manager", "Moderator", "LMS Manager"}
 
 # Session states. Keep in sync with the doctype JSON `status` Select options.
+STATUS_READY = "Ready"
 STATUS_IN_PROGRESS = "In Progress"
 STATUS_COMPLETED = "Completed"
 STATUS_ABANDONED = "Abandoned"
