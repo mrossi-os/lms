@@ -19,6 +19,8 @@ from __future__ import annotations
 
 import base64
 import io
+import json
+import os
 import wave
 
 import requests
@@ -149,6 +151,9 @@ class GeminiAudioProvider(AudioProvider):
             "x-goog-api-key": self._config.api_key,
             "Content-Type": "application/json",
         }
+        # Log the outgoing request (audio blobs redacted). Headers are omitted
+        # so the API key never reaches the console/log.
+        _log_io("request", self.name, {"url": url, "body": body})
         try:
             r = requests.post(url, headers=headers, json=body, timeout=timeout)
         except requests.Timeout as e:
@@ -156,13 +161,23 @@ class GeminiAudioProvider(AudioProvider):
         except requests.RequestException as e:
             raise AudioServerError(str(e), provider=self.name, cause=e) from e
 
-        self._check_status(r)
+        raw_text = r.text
         try:
-            return r.json()
-        except ValueError as e:
-            raise AudioError(
-                "Gemini returned a non-JSON response", provider=self.name, cause=e
-            ) from e
+            parsed = r.json()
+        except ValueError:
+            parsed = None
+        # Log the raw response BEFORE the status check so error bodies (e.g. a
+        # 400 for unsupported audio) and empty-transcript responses are visible.
+        _log_io(
+            "response",
+            self.name,
+            {"status": r.status_code, "body": parsed if parsed is not None else raw_text},
+        )
+
+        self._check_status(r)
+        if parsed is None:
+            raise AudioError("Gemini returned a non-JSON response", provider=self.name)
+        return parsed
 
     def _stt_model(self, model: str | None) -> str:
         return _gemini_model_or(model or self._config.stt_model, self.DEFAULT_STT_MODEL)
@@ -188,6 +203,54 @@ class GeminiAudioProvider(AudioProvider):
         if r.status_code >= 500:
             raise AudioServerError(msg, provider=self.name)
         raise AudioError(msg, provider=self.name)
+
+
+# ----------------------- I/O logging -----------------------------------------
+#
+# Console-prints every Gemini audio I/O event (request + response) to help debug
+# what is sent and received, mirroring the LLM layer's `_log_io`. base64 audio
+# blobs are redacted so the console stays readable. Disable with the env var
+# OSLMS_LOG_AUDIO_IO=0.
+
+_LOG_ENABLED = os.environ.get("OSLMS_LOG_AUDIO_IO", "1") != "0"
+_LOG_MAX_CHARS = 8000
+
+
+def _redact(obj):
+    """Recursively replace long base64 `data` blobs with a short marker so audio
+    payloads don't flood the console/log."""
+    if isinstance(obj, dict):
+        out = {}
+        for k, v in obj.items():
+            if k == "data" and isinstance(v, str) and len(v) > 128:
+                out[k] = f"<base64: {len(v)} chars>"
+            else:
+                out[k] = _redact(v)
+        return out
+    if isinstance(obj, list):
+        return [_redact(v) for v in obj]
+    return obj
+
+
+def _log_io(direction: str, provider: str, payload: dict) -> None:
+    """Print + best-effort persist a Gemini audio I/O event."""
+    if not _LOG_ENABLED:
+        return
+    label = f"[AUDIO:{provider}:{direction}]"
+    try:
+        body = json.dumps(_redact(payload), ensure_ascii=False, indent=2)
+    except (TypeError, ValueError):
+        body = repr(payload)
+    if len(body) > _LOG_MAX_CHARS:
+        body = body[:_LOG_MAX_CHARS] + f"\n... (+{len(body) - _LOG_MAX_CHARS} chars truncated)"
+    print(f"\n{label}\n{body}\n", flush=True)
+    # Best-effort persistence to logs/os_lmsa_audio.log for post-mortem.
+    try:
+        import frappe
+
+        frappe.logger("os_lmsa_audio", allow_site=True).info(f"{label} {body}")
+    except Exception:
+        pass
 
 
 # Gemini prebuilt TTS voices (https://ai.google.dev/gemini-api/docs/speech-generation).

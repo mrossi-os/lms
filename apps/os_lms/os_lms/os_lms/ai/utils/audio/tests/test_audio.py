@@ -20,6 +20,7 @@ from os_lms.os_lms.ai.utils.audio.providers.gemini import (
 	_gemini_model_or,
 	_pcm_to_wav,
 	_rate_from_mime,
+	_redact,
 )
 from os_lms.os_lms.ai.utils.audio.providers.openai import (
 	OpenAIAudioProvider,
@@ -194,6 +195,18 @@ class TestGeminiAdapterShaping(UnitTestCase):
 		}
 		self.assertEqual(_extract_text(payload), "Ciao mondo")
 		self.assertEqual(_extract_text({}), "")
+
+	def test_redact_masks_long_base64_data(self):
+		body = {
+			"contents": [
+				{"parts": [{"inlineData": {"mimeType": "audio/webm", "data": "A" * 500}}]}
+			]
+		}
+		red = _redact(body)
+		blob = red["contents"][0]["parts"][0]["inlineData"]["data"]
+		self.assertEqual(blob, "<base64: 500 chars>")
+		# Short values and other keys are left untouched.
+		self.assertEqual(red["contents"][0]["parts"][0]["inlineData"]["mimeType"], "audio/webm")
 
 	def test_transcribe_returns_text_when_present(self):
 		prov = self._provider(api_key="k")
