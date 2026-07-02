@@ -15,7 +15,7 @@ import frappe
 from frappe import _
 
 from lms.lms.utils import has_moderator_role
-from os_lms.os_lms.ai.simulations.api import _resolve_published_scenario, load_session
+from os_lms.os_lms.ai.simulations.api import load_session
 from os_lms.os_lms.ai.simulations.orchestrator import (
 	QuotaExceededError,
 	SessionOrchestrator,
@@ -47,19 +47,25 @@ def _service() -> SessionOrchestrator:
 
 
 @frappe.whitelist()
-def create_voice_session(scenario_id: str) -> dict:
-	"""Create a voice Session, mint an ephemeral provider token, return the
-	descriptor the client needs to open the direct realtime stream."""
+def create_voice_session(session_id: str) -> dict:
+	"""Activate a prepared voice Session, mint an ephemeral provider token, and
+	return the descriptor the client needs to open the direct realtime stream."""
 	settings = load_settings()
 	if not settings.realtime_enabled:
 		frappe.throw(_("Realtime voice is not enabled."), frappe.PermissionError)
 
-	scenario = _resolve_published_scenario(scenario_id)
+	session = load_session(session_id)
+	if session.student != frappe.session.user:
+		frappe.throw(_("Only the session owner can start voice."), frappe.PermissionError)
+
+	scenario = frappe.get_doc("LMSA Simulation Scenario", session.scenario)
 	if scenario.modality not in ("voice", "both"):
 		frappe.throw(_("Scenario {0} is not voice-enabled.").format(scenario.name))
 
 	try:
-		started = _service().start_voice_session(scenario_id=scenario)
+		started = _service().start_voice_session(session_id=session.name)
+	except SessionTerminatedError:
+		frappe.throw(_("This session is no longer accepting turns."), frappe.ValidationError)
 	except QuotaExceededError as e:
 		frappe.throw(str(e), frappe.ValidationError)
 

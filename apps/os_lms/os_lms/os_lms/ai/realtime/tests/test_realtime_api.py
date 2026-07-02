@@ -13,6 +13,7 @@ import frappe
 from frappe.tests import UnitTestCase
 
 from os_lms.os_lms.ai.realtime import api as rt_api
+from os_lms.os_lms.ai.simulations.api import prepare_session
 from os_lms.os_lms.ai.simulations.orchestrator import SessionOrchestrator
 from os_lms.os_lms.ai.simulations.tests import _fixtures as F
 
@@ -67,8 +68,16 @@ class TestRealtimeApi(UnitTestCase):
 		frappe.set_user("Administrator")
 
 	@patch.object(SessionOrchestrator, "_generate_variant", _stub_generate_variant)
+	def test_create_voice_session_from_prepared(self):
+		prepared = prepare_session(scenario_id=self.scenario.name, modality="voice")
+		res = rt_api.create_voice_session(session_id=prepared["session_id"])
+		self.assertEqual(res["session_id"], prepared["session_id"])
+		self.assertTrue(res["transport"])
+
+	@patch.object(SessionOrchestrator, "_generate_variant", _stub_generate_variant)
 	def test_create_persist_end_roundtrip(self):
-		out = rt_api.create_voice_session(scenario_id=self.scenario.name)
+		prepared = prepare_session(scenario_id=self.scenario.name, modality="voice")
+		out = rt_api.create_voice_session(session_id=prepared["session_id"])
 		self.assertEqual(out["transport"], "mock")
 		self.assertTrue(out["client_secret"].startswith("mock-secret-"))
 		self.assertEqual(out["max_seconds"], 300)
@@ -92,7 +101,8 @@ class TestRealtimeApi(UnitTestCase):
 
 	@patch.object(SessionOrchestrator, "_generate_variant", _stub_generate_variant)
 	def test_duration_exceeded_terminates_session(self):
-		out = rt_api.create_voice_session(scenario_id=self.scenario.name)
+		prepared = prepare_session(scenario_id=self.scenario.name, modality="voice")
+		out = rt_api.create_voice_session(session_id=prepared["session_id"])
 		sid = out["session_id"]
 		# Backdate started_at well past the 300-second limit.
 		frappe.db.set_value(
@@ -111,7 +121,8 @@ class TestRealtimeApi(UnitTestCase):
 
 	@patch.object(SessionOrchestrator, "_generate_variant", _stub_generate_variant)
 	def test_non_owner_cannot_persist_turn(self):
-		out = rt_api.create_voice_session(scenario_id=self.scenario.name)
+		prepared = prepare_session(scenario_id=self.scenario.name, modality="voice")
+		out = rt_api.create_voice_session(session_id=prepared["session_id"])
 		sid = out["session_id"]
 		# A second student (not enrolled, not moderator) must not relay turns.
 		second_student = _make_student("voice-student-2@example.com")
@@ -125,7 +136,8 @@ class TestRealtimeApi(UnitTestCase):
 
 	@patch.object(SessionOrchestrator, "_generate_variant", _stub_generate_variant)
 	def test_non_owner_cannot_end_session(self):
-		out = rt_api.create_voice_session(scenario_id=self.scenario.name)
+		prepared = prepare_session(scenario_id=self.scenario.name, modality="voice")
+		out = rt_api.create_voice_session(session_id=prepared["session_id"])
 		sid = out["session_id"]
 		# A second student (not enrolled, not moderator) must not end the session.
 		second_student = _make_student("voice-student-3@example.com")
@@ -146,7 +158,8 @@ class TestRealtimeApi(UnitTestCase):
 		self.scenario.save(ignore_permissions=True)
 		frappe.db.commit()
 		try:
-			out = rt_api.create_voice_session(scenario_id=self.scenario.name)
+			prepared = prepare_session(scenario_id=self.scenario.name, modality="voice")
+			out = rt_api.create_voice_session(session_id=prepared["session_id"])
 			self.assertEqual(out["transport"], "mock")
 		finally:
 			self.scenario.provider_override = original_override
