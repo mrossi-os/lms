@@ -85,7 +85,7 @@
 	</Teleport>
 </template>
 <script setup>
-import { Avatar, Button, TabButtons, Tooltip } from 'frappe-ui'
+import { Avatar, Button, TabButtons, Tooltip, toast } from 'frappe-ui'
 import { computed, inject, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { onClickOutside } from '@vueuse/core'
@@ -150,23 +150,48 @@ const onSelect = (n) => {
 	closeNotifications()
 }
 
+const notifyUnavailable = () =>
+	toast.warning(__('Unable to open this notification.'))
+
 const navigateToPage = (log) => {
 	if (!log.link) return
-	let link = log.link.split('/')
-	if (link[2] == 'courses') {
-		router.push({ name: 'CourseDetail', params: { courseName: link[3] } })
-	} else if (link.includes('batches')) {
-		if (link.includes('details')) {
-			router.push({ name: 'BatchDetail', params: { batchName: link.pop() } })
-		} else {
-			router.push({ name: 'Batch', params: { batchName: link.pop() } })
-		}
-	} else if (link.includes('assignment-submission')) {
-		router.push({
+
+	// Notification links can be absolute or relative, may carry the /lms prefix,
+	// and often include a tab fragment (e.g. .../batches/<name>#discussions). Peel
+	// the fragment off so it becomes the route hash instead of leaking into the
+	// route param, then normalize the path segments (drop empties + leading lms).
+	const [rawPath, hash] = String(log.link).split('#')
+	const segments = rawPath.split('/').filter(Boolean)
+	if (segments[0] === 'lms') segments.shift()
+
+	let target = null
+	if (segments[0] === 'courses' && segments[1]) {
+		target = { name: 'CourseDetail', params: { courseName: segments[1] } }
+	} else if (segments[0] === 'batches') {
+		const batchName = segments[1] === 'details' ? segments[2] : segments[1]
+		if (batchName) target = { name: 'BatchDetail', params: { batchName } }
+	} else if (segments[0] === 'assignment-submission' && segments[2]) {
+		target = {
 			name: 'AssignmentSubmission',
-			params: { submissionName: link[4], assignmentID: link[3] },
-		})
+			params: { assignmentID: segments[1], submissionName: segments[2] },
+		}
 	}
+
+	if (!target) {
+		notifyUnavailable()
+		return
+	}
+	if (hash) target.hash = `#${hash}`
+
+	// Guard stale/unknown links (deleted docs, removed routes): warn instead of
+	// letting the router throw an uncaught "No match" error.
+	try {
+		router.resolve(target)
+	} catch (e) {
+		notifyUnavailable()
+		return
+	}
+	router.push(target).catch(() => notifyUnavailable())
 }
 </script>
 <style scoped>

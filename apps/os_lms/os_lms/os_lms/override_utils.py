@@ -266,7 +266,19 @@ def get_batches(filters: dict = None, start: int = 0, order_by: str = "start_dat
 @frappe.whitelist(allow_guest=True)
 @rate_limit(limit=500, seconds=60 * 60)
 def get_batch_details(batch: str):
+	# Stale notifications / deep links can point at a batch that no longer exists.
+	# The upstream helper then crashes setting attributes on a None result (for a
+	# batch admin the permission guard passes but the row fetch returns None).
+	# Return None so the SPA's "no data" guard redirects to the batch list.
+	if not frappe.db.exists("LMS Batch", batch):
+		return None
+
 	batch_detail = _original_get_batch_details(batch)
+
+	# Upstream returns {} when the user can't access the batch — don't try to set
+	# custom attributes on a falsy result.
+	if not batch_detail:
+		return batch_detail
 
 	raw = frappe.db.get_value("LMS Batch", batch, "custom_feature_sections")
 	try:

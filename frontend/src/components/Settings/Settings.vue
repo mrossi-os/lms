@@ -69,7 +69,8 @@ import SettingDetails from '@/components/Settings/SettingDetails.vue'
 import SidebarLink from '@/components/Sidebar/SidebarLink.vue'
 import Members from '@/components/Settings/Members.vue'
 import Categories from '@/components/Settings/Categories.vue'
-import EmailTemplates from '@/components/Settings/EmailTemplates.vue'
+import EmailTemplatePage from '@/components/Settings/EmailTemplate/EmailTemplatePage.vue'
+import EmailConfig from '@/components/Settings/EmailAccount/EmailConfig.vue'
 import BrandSettings from '@/components/Settings/BrandSettings.vue'
 import ZoomSettings from '@/components/Settings/ZoomSettings.vue'
 import GoogleMeetSettings from '@/components/Settings/GoogleMeetSettings.vue'
@@ -383,15 +384,22 @@ const tabsStructure = computed(() => {
 					icon: 'Network',
 					template: markRaw(Categories),
 				},
+			],
+		},
+		{
+			label: 'Email',
+			items: [
 				{
-					key: 'Email Templates',
-					label: __('Email Templates'),
-					description: __(
-						'Manage the email templates for your learning system',
-					),
+					label: 'Accounts',
+					description: 'Manage email accounts for incoming and outgoing mail',
+					icon: 'Mail',
+					template: markRaw(EmailConfig),
+				},
+				{
+					label: 'Templates',
+					description: 'Manage the email templates for your learning system',
 					icon: 'MailPlus',
-					template: markRaw(EmailTemplates),
-					condition: isAdministrator,
+					template: markRaw(EmailTemplatePage),
 				},
 			],
 		},
