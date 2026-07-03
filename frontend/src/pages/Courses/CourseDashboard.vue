@@ -50,7 +50,7 @@
 						}"
 					>
 						<ListHeader
-							class="mb-2 grid items-center md:space-x-4 rounded-sm bg-surface-white-2 border-b p-2"
+							class="mb-2 grid items-center md:space-x-4 rounded-sm border-b p-2"
 						>
 							<ListHeaderItem
 								:item="item"

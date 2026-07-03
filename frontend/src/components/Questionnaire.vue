@@ -40,7 +40,7 @@
 							:class="
 								answers[question.key] === option.value
 									? accentClasses.selected
-									: 'border-outline-gray-2 bg-surface-white text-ink-gray-8 hover:border-outline-gray-3 hover:bg-surface-gray-2'
+									: 'border-outline-gray-2 bg-surface-base text-ink-gray-8 hover:border-outline-gray-3 hover:bg-surface-gray-2'
 							"
 						>
 							<input
@@ -64,7 +64,7 @@
 		<button
 			v-if="current > 0"
 			type="button"
-			class="absolute right-full top-1/3 mr-4 -translate-y-1/2 inline-flex items-center gap-1 rounded-lg border border-outline-gray-2 bg-surface-white p-1.5 text-sm font-medium text-ink-gray-7 transition-colors hover:border-outline-gray-3 hover:bg-surface-gray-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-3 focus-visible:ring-offset-1"
+			class="absolute right-full top-1/3 mr-4 -translate-y-1/2 inline-flex items-center gap-1 rounded-lg border border-outline-gray-2 bg-surface-base p-1.5 text-sm font-medium text-ink-gray-7 transition-colors hover:border-outline-gray-3 hover:bg-surface-gray-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-3 focus-visible:ring-offset-1"
 			@click="back"
 			:aria-label="labels.back"
 		>
@@ -74,7 +74,7 @@
 		<button
 			v-if="answered && current < total - 1"
 			type="button"
-			class="absolute left-full top-1/3 ml-4 -translate-y-1/2 inline-flex items-center gap-1 rounded-lg border border-outline-gray-2 bg-surface-white p-1.5 text-sm font-medium text-ink-gray-7 transition-colors hover:border-outline-gray-3 hover:bg-surface-gray-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-3 focus-visible:ring-offset-1"
+			class="absolute left-full top-1/3 ml-4 -translate-y-1/2 inline-flex items-center gap-1 rounded-lg border border-outline-gray-2 bg-surface-base p-1.5 text-sm font-medium text-ink-gray-7 transition-colors hover:border-outline-gray-3 hover:bg-surface-gray-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-3 focus-visible:ring-offset-1"
 			@click="next"
 			:aria-label="labels.next"
 		>

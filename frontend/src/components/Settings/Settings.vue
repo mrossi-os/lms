@@ -75,7 +75,7 @@ import BrandSettings from '@/components/Settings/BrandSettings.vue'
 import ZoomSettings from '@/components/Settings/ZoomSettings.vue'
 import GoogleMeetSettings from '@/components/Settings/GoogleMeetSettings.vue'
 import GoogleCalendarSettings from '@/components/Settings/GoogleCalendarSettings.vue'
-import Badges from '@/components/Settings/Badges.vue'
+import Badges from '@/components/Settings/Badges/Badges.vue'
 import { buildOslmsSettingsTabs } from '@/oslms/utils/settings'
 
 const GOOGLE_CALENDAR_ROLES = ['System Manager', 'Gestore']
