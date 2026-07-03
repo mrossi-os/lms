@@ -11,7 +11,9 @@
 			<div class="flex-1 text-sm font-medium text-ink-gray-9 truncate">
 				{{ headline }}
 			</div>
-			<div class="text-sm font-semibold text-ink-gray-9 tabular-nums whitespace-nowrap">
+			<div
+				class="text-sm font-semibold text-ink-gray-9 tabular-nums whitespace-nowrap"
+			>
 				{{ traceAggregate === null ? '—' : Math.round(traceAggregate * 100) }}
 			</div>
 		</div>
@@ -43,13 +45,18 @@
 					class="px-3 pb-3 pt-0 space-y-3 border-t border-outline-gray-2"
 				>
 					<!-- Summary -->
-					<div v-if="dim.summary" class="text-sm text-ink-gray-7 whitespace-pre-wrap pt-3">
+					<div
+						v-if="dim.summary"
+						class="text-sm text-ink-gray-7 whitespace-pre-wrap pt-3"
+					>
 						{{ dim.summary }}
 					</div>
 
 					<!-- Evidence quotes -->
 					<div v-if="dim.evidence_quotes?.length" class="space-y-2">
-						<div class="text-xs font-medium uppercase tracking-wide text-ink-gray-5">
+						<div
+							class="text-xs font-medium uppercase tracking-wide text-ink-gray-5"
+						>
 							{{ __('Evidence') }}
 						</div>
 						<ul class="space-y-2">
@@ -76,25 +83,28 @@
 
 					<!-- Warnings -->
 					<div v-if="dim.warnings?.length" class="space-y-1">
-						<div class="text-xs font-medium uppercase tracking-wide text-ink-orange-5">
+						<div
+							class="text-xs font-medium uppercase tracking-wide text-ink-orange-5"
+						>
 							{{ __('Warnings') }}
 						</div>
-						<ul class="text-xs text-ink-orange-5 list-disc list-inside space-y-1">
+						<ul
+							class="text-xs text-ink-orange-5 list-disc list-inside space-y-1"
+						>
 							<li v-for="(w, i) in dim.warnings" :key="i">{{ w }}</li>
 						</ul>
 					</div>
 
 					<!-- Extras (dimension-specific) -->
 					<div v-if="hasExtras(dim)" class="space-y-2">
-						<div class="text-xs font-medium uppercase tracking-wide text-ink-gray-5">
+						<div
+							class="text-xs font-medium uppercase tracking-wide text-ink-gray-5"
+						>
 							{{ __('Dettagli') }}
 						</div>
 
 						<!-- coverage.by_objective -->
-						<ul
-							v-if="dim.extras?.by_objective?.length"
-							class="space-y-2"
-						>
+						<ul v-if="dim.extras?.by_objective?.length" class="space-y-2">
 							<li
 								v-for="(o, i) in dim.extras.by_objective"
 								:key="i"
@@ -106,7 +116,9 @@
 									</div>
 									<div class="flex items-center gap-2 shrink-0">
 										<span
-											:class="o.covered ? 'text-ink-green-6' : 'text-ink-orange-5'"
+											:class="
+												o.covered ? 'text-ink-green-6' : 'text-ink-orange-5'
+											"
 										>
 											{{ o.covered ? __('coperto') : __('non coperto') }}
 										</span>
@@ -118,7 +130,9 @@
 										</span>
 									</div>
 								</div>
-								<div v-if="o.reason" class="text-ink-gray-5 mt-1">{{ o.reason }}</div>
+								<div v-if="o.reason" class="text-ink-gray-5 mt-1">
+									{{ o.reason }}
+								</div>
 							</li>
 						</ul>
 
@@ -128,18 +142,26 @@
 							class="text-xs text-ink-gray-7 space-y-1"
 						>
 							<div v-if="dim.extras?.expected_difficulty">
-								<span class="text-ink-gray-5">{{ __('Difficoltà attesa') }}:</span>
+								<span class="text-ink-gray-5"
+									>{{ __('Difficoltà attesa') }}:</span
+								>
 								{{ dim.extras.expected_difficulty }}
 							</div>
 							<div v-if="dim.extras?.perceived_difficulty">
-								<span class="text-ink-gray-5">{{ __('Difficoltà percepita') }}:</span>
+								<span class="text-ink-gray-5"
+									>{{ __('Difficoltà percepita') }}:</span
+								>
 								{{ dim.extras.perceived_difficulty }}
 							</div>
 							<div
-								v-if="dim.extras?.calibration_offset !== undefined &&
-								      dim.extras?.calibration_offset !== null"
+								v-if="
+									dim.extras?.calibration_offset !== undefined &&
+									dim.extras?.calibration_offset !== null
+								"
 							>
-								<span class="text-ink-gray-5">{{ __('Offset di calibrazione') }}:</span>
+								<span class="text-ink-gray-5"
+									>{{ __('Offset di calibrazione') }}:</span
+								>
 								{{ dim.extras.calibration_offset }}
 							</div>
 						</div>
@@ -150,32 +172,47 @@
 								v-if="dim.extras?.hallucinated_quotes?.length"
 								class="text-xs space-y-1"
 							>
-								<div class="text-ink-gray-5">{{ __('Citazioni allucinate') }}:</div>
+								<div class="text-ink-gray-5">
+									{{ __('Citazioni allucinate') }}:
+								</div>
 								<ul class="list-disc list-inside text-ink-red-5">
-									<li v-for="(h, i) in dim.extras.hallucinated_quotes" :key="i">{{ h }}</li>
+									<li v-for="(h, i) in dim.extras.hallucinated_quotes" :key="i">
+										{{ h }}
+									</li>
 								</ul>
 							</div>
 							<div
 								v-if="dim.extras?.score_inconsistencies?.length"
 								class="text-xs space-y-1"
 							>
-								<div class="text-ink-gray-5">{{ __('Incoerenze di score') }}:</div>
+								<div class="text-ink-gray-5">
+									{{ __('Incoerenze di score') }}:
+								</div>
 								<ul class="space-y-1">
 									<li
 										v-for="(s, i) in dim.extras.score_inconsistencies"
 										:key="i"
 										class="border-l-2 border-outline-orange-3 pl-2"
 									>
-										<span class="font-medium">{{ s.criterion }}:</span> {{ s.issue }}
+										<blockquote class="font-medium">
+											{{ s.criterion }}:
+										</blockquote>
+										<blockquote class="italic text-ink-gray-7">
+											{{ s.issue }}
+										</blockquote>
 									</li>
 								</ul>
 							</div>
 							<div
-								v-if="dim.extras?.overall_consistency_delta !== null &&
-								      dim.extras?.overall_consistency_delta !== undefined"
+								v-if="
+									dim.extras?.overall_consistency_delta !== null &&
+									dim.extras?.overall_consistency_delta !== undefined
+								"
 								class="text-xs text-ink-gray-7"
 							>
-								<span class="text-ink-gray-5">{{ __('Delta consistenza overall') }}:</span>
+								<span class="text-ink-gray-5"
+									>{{ __('Delta consistenza overall') }}:</span
+								>
 								{{ dim.extras.overall_consistency_delta }}
 							</div>
 						</template>
@@ -183,8 +220,12 @@
 
 					<!-- Empty state: skipped dimensions or no payload -->
 					<div
-						v-if="!dim.summary && !dim.evidence_quotes?.length &&
-						      !dim.warnings?.length && !hasExtras(dim)"
+						v-if="
+							!dim.summary &&
+							!dim.evidence_quotes?.length &&
+							!dim.warnings?.length &&
+							!hasExtras(dim)
+						"
 						class="text-xs italic text-ink-gray-5"
 					>
 						{{ __('Nessun dettaglio disponibile.') }}
@@ -203,9 +244,12 @@
 						class="text-xs"
 					>
 						<span class="font-medium text-ink-gray-9">
-							[{{ t.turn_index }}] {{ t.role === 'user' ? __('STUDENTE') : __('PERSONAGGIO') }}:
+							[{{ t.turn_index }}]
+							{{ t.role === 'user' ? __('STUDENTE') : __('PERSONAGGIO') }}:
 						</span>
-						<span class="text-ink-gray-7 whitespace-pre-wrap">{{ t.text }}</span>
+						<span class="text-ink-gray-7 whitespace-pre-wrap">{{
+							t.text
+						}}</span>
 					</div>
 				</div>
 			</details>
@@ -264,11 +308,18 @@ function hasExtras(dim) {
 	const e = dim.extras
 	if (!e || typeof e !== 'object') return false
 	if (Array.isArray(e.by_objective) && e.by_objective.length) return true
-	if (Array.isArray(e.hallucinated_quotes) && e.hallucinated_quotes.length) return true
-	if (Array.isArray(e.score_inconsistencies) && e.score_inconsistencies.length) return true
+	if (Array.isArray(e.hallucinated_quotes) && e.hallucinated_quotes.length)
+		return true
+	if (Array.isArray(e.score_inconsistencies) && e.score_inconsistencies.length)
+		return true
 	if (e.expected_difficulty || e.perceived_difficulty) return true
-	if (e.calibration_offset !== undefined && e.calibration_offset !== null) return true
-	if (e.overall_consistency_delta !== undefined && e.overall_consistency_delta !== null) return true
+	if (e.calibration_offset !== undefined && e.calibration_offset !== null)
+		return true
+	if (
+		e.overall_consistency_delta !== undefined &&
+		e.overall_consistency_delta !== null
+	)
+		return true
 	return false
 }
 </script>

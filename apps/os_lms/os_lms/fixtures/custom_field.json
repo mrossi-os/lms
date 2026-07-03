@@ -227,7 +227,7 @@
         "doctype": "Custom Field",
         "name": "LMS Settings-welcome_video_section",
         "dt": "LMS Settings",
-        "label": "Welcome Video",
+        "label": "Welcome",
         "fieldname": "welcome_video_section",
         "fieldtype": "Section Break",
         "insert_after": "trueskills_api_endpoint",
@@ -276,12 +276,35 @@
     },
     {
         "doctype": "Custom Field",
+        "name": "LMS Settings-welcome_notification_enabled",
+        "dt": "LMS Settings",
+        "label": "Enable Welcome Notification",
+        "fieldname": "welcome_notification_enabled",
+        "fieldtype": "Check",
+        "default": "0",
+        "insert_after": "welcome_video_file",
+        "description": "If enabled, a welcome notification is sent on the user's first login. Independent from the welcome video."
+    },
+    {
+        "doctype": "Custom Field",
+        "name": "LMS Settings-welcome_notification_message",
+        "dt": "LMS Settings",
+        "label": "Welcome Notification Message",
+        "fieldname": "welcome_notification_message",
+        "fieldtype": "Small Text",
+        "insert_after": "welcome_notification_enabled",
+        "depends_on": "eval:doc.welcome_notification_enabled",
+        "default": "Benvenuto/a nella piattaforma! Siamo felici di averti con noi.",
+        "description": "Plain-text content of the welcome notification. Line breaks are preserved. Independent from the welcome video."
+    },
+    {
+        "doctype": "Custom Field",
         "name": "LMS Settings-live_classes_section",
         "dt": "LMS Settings",
         "label": "Live Classes",
         "fieldname": "live_classes_section",
         "fieldtype": "Section Break",
-        "insert_after": "welcome_video_file",
+        "insert_after": "welcome_notification_message",
         "collapsible": 1
     },
     {

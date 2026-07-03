@@ -7,6 +7,26 @@ body {
 	border-radius: 0.5rem;
 	padding: 1rem;
 }
+.card-success {
+	background-color: var(--surface-green-2);
+	border: 1px solid var(--outline-green-2, #86e0a8);
+	border-radius: 0.5rem;
+	padding: 1rem;
+}
+.card-success p,
+blockquote {
+	color: var(--ink-white);
+}
+.card-failure {
+	background-color: var(--surface-red-1);
+	border: 1px solid var(--outline-red-2, #f7c08a);
+	border-radius: 0.5rem;
+	padding: 1rem;
+}
+.card-failure p,
+blockquote {
+	color: var(--ink-white);
+}
 
 /* List header */
 .os-list-view > div:first-of-type {
@@ -32,8 +52,24 @@ body {
 }
 
 /* Inputs */
+.link-component div[dir='ltr'] div {
+	background-color: var(--surface-gray-2);
+}
+button.os-input {
+	background-color: var(--surface-gray-2);
+}
+.os-input div[dir='ltr'] div {
+	background-color: var(--surface-gray-2);
+}
+.os-input div button {
+	background-color: var(--surface-gray-2);
+}
+
 input[type='text'],
 input[type='email'],
+input[type='date'],
+input[type='time'],
+input[type='number'],
 input[type='password'] {
 	background-color: var(--surface-gray-2);
 }
@@ -125,7 +161,30 @@ textarea {
 	fill: var(--ink-gray-10);
 }
 
+.prose
+	:where(ol > li):not(
+		:where([class~='not-prose'], [class~='not-prose'] *)
+	)::marker {
+	color: var(--ink-white);
+}
+.prose
+	:where(ul > li):not(
+		:where([class~='not-prose'], [class~='not-prose'] *)
+	)::marker {
+	color: var(--ink-white);
+}
 /* Inputs */
 .os-multilink div button {
 	background-color: var(--surface-gray-2) !important;
+}
+
+/* Text Colors */
+.text-ink-green-7 {
+	color: var(--ink-green-3);
+}
+.text-ink-red-7 {
+	color: var(--ink-red-3);
+}
+.text-ink-orange-5 {
+	color: var(--ink-orange-2, #ea8259);
 }

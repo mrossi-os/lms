@@ -324,8 +324,8 @@ const course = createResource({
 }) as Resource<CourseDetails | null>
 
 const tabs = computed<TabDef[]>(() => {
-	// Overview ("anteprima") + Dashboard are available to a course valutatore too
-	// (read-only). The editor / settings / simulations tabs stay admin-only.
+	// Overview ("anteprima") is available to a course valutatore too (read-only).
+	// The dashboard / editor / settings / simulations tabs stay admin-only.
 	const t: TabDef[] = [
 		{
 			id: 'overview',
@@ -333,14 +333,14 @@ const tabs = computed<TabDef[]>(() => {
 			component: markRaw(CourseOverview),
 			icon: markRaw(List),
 		},
-		{
+	]
+	if (isAdmin.value) {
+		t.push({
 			id: 'dashboard',
 			label: __('Dashboard'),
 			component: markRaw(CourseDashboard),
 			icon: markRaw(TrendingUp),
-		},
-	]
-	if (isAdmin.value) {
+		})
 		t.push({
 			id: 'editor',
 			label: __('Course editor'),

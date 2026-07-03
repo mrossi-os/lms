@@ -4,10 +4,19 @@ import frappe
 from frappe import _
 from frappe.utils import now_datetime
 
+from os_lms.os_lms.utils import (
+	get_course_feature_sections,
+	save_course_feature_sections,
+)
+from os_lms.os_lms.ai.utils.file_parser import FrappeFileParser
 from os_lms.os_lms.ai.utils.lesson_parser import LessonContentParser
 from os_lms.os_lms.ai.utils.llm import load_settings
 from os_lms.os_lms.ai.utils.oslms_settings import OsLmsSettings
 from os_lms.os_lms.ai.utils.rag_db import RagDB
+
+# Sentinel lesson identifier used when indexing course-level content
+# (e.g. feature sections) that is not tied to a specific Course Lesson.
+COURSE_FEATURES_LESSON_ID = "__course_features__"
 
 
 class IngestionService:
@@ -103,6 +112,75 @@ class IngestionService:
 		finally:
 			frappe.db.commit()
 
+	def ingest_course_features(self, course_name: str) -> None:
+		"""Main ingestion function for a course's feature sections.
+
+		Iterates the course's feature sections, extracts the text from
+		each item's attached file via :class:`FrappeFileParser`, merges
+		the non-empty contents into a single text and pushes it through
+		the RAG pipeline. Items whose file produced text are stamped
+		with ``ingestion_date`` and the updated feature_sections are
+		written back to the course.
+		"""
+		self.logger.info("Starting feature ingestion for course %s", course_name)
+		feature_sections = get_course_feature_sections(course_name)
+
+		merged_parts: list[str] = []
+		changed = False
+		now_iso = now_datetime().isoformat(timespec="seconds")
+
+		for section in feature_sections:
+			for item in section.get("items", []):
+				file_name = item.get("file")
+				if not file_name:
+					continue
+				parser = FrappeFileParser(file_name)
+				text = parser.extract_text()
+				self.logger.info(
+					"Feature ingestion: extracted %d chars from file %s",
+					len(text),
+					file_name,
+				)
+				if not text:
+					# Extraction yielded nothing (unsupported type, scanned PDF,
+					# missing file): do NOT stamp ingestion_date, so the editor
+					# badge only shows the ✨ date when content is actually indexed.
+					# Also clear a stale date left by an earlier (buggy) run.
+					if item.pop("ingestion_date", None) is not None:
+						changed = True
+					continue
+				item["ingestion_date"] = now_iso
+				changed = True
+				# Prefix the extracted text with a source label so the retrieved
+				# chunk carries its origin (badge + file name) into the prompt.
+				# Note: with multi-chunk files only the first chunk keeps the
+				# label inline; the prompt header below states the overall origin.
+				merged_parts.append(self._label_feature_text(item, parser, text))
+
+		merged_text = "\n\n".join(merged_parts)
+		if merged_text:
+			self.rag_db.ingest_data(course_name, COURSE_FEATURES_LESSON_ID, merged_text)
+
+		if changed:
+			save_course_feature_sections(course_name, feature_sections)
+
+	@staticmethod
+	def _label_feature_text(item: dict, parser: "FrappeFileParser", text: str) -> str:
+		"""Prefix a feature file's text with its origin (badge + file name).
+
+		Mirrors the lesson labeling (``[Lezione: "..."]``) so the model can
+		attribute the content and tell the learner which course-badge
+		attachment it came from.
+		"""
+		header = "Allegato del corso"
+		badge_title = (item.get("title") or "").strip()
+		if badge_title:
+			header += f' — badge "{badge_title}"'
+		display_name = parser.display_name
+		if display_name:
+			header += f' — file "{display_name}"'
+		return f"[{header}]\n{text}"
+
 	def remove_lesson(self, course: str, lesson: str) -> None:
 		"""Delete a lesson's vectors from the RAG index.
 
@@ -116,6 +194,10 @@ class IngestionService:
 			self.rag_db.delete_lesson(course, lesson)
 		except Exception as e:
 			self.logger.error("RAG cleanup failed for lesson %s: %s", lesson, e)
+
+	def search_chunks_in_feature_course(self, course: str, question: str) -> list[dict]:
+		"""Retrieve relevant chunks from a course's feature sections."""
+		return self.rag_db.search(course, [COURSE_FEATURES_LESSON_ID], question)
 
 	def search_chunks_by_course(self, course: str, question: str) -> list[dict]:
 		"""Retrieve relevant chunks across all lessons of a course."""

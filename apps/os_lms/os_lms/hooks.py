@@ -185,6 +185,10 @@ doc_events = {
     "LMS Certificate": {
         "after_insert": "os_lms.os_lms.trueskills.emission.enqueue_issue",
     },
+    "Notification Log": {
+        # Mirror each in-app notification to the user's mobile devices via FCM.
+        "after_insert": "os_lms.os_lms.push_notifications.on_notification_log_insert",
+    },
 }
 
 

@@ -132,6 +132,7 @@ import { computed, inject, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ChevronDown, Plus } from 'lucide-vue-next'
 import { sessionStore } from '@/stores/session'
+import { useLocalStorage } from '@/utils/composables'
 import BatchCard from '@/pages/Batches/components/BatchCard.vue'
 import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
 import LayoutHeader from '@/components/Layouts/LayoutHeader.vue'
@@ -156,15 +157,25 @@ const isListManager = computed(
 		user.data?.is_instructor ||
 		user.data?.is_evaluator,
 )
-const currentTab = ref(
-	is_student.value ? 'enrolled' : isListManager.value ? 'upcoming' : 'all',
-)
+const defaultTab = is_student.value
+	? 'enrolled'
+	: isListManager.value
+		? 'upcoming'
+		: 'all'
+// Persist the selected tab so it survives leaving and returning to the list.
+const currentTab = useLocalStorage('lms_batches_tab', defaultTab)
 const orderBy = ref('start_date')
 const readOnlyMode = window.read_only_mode
 const router = useRouter()
 const showBatchModal = ref(false)
 
 onMounted(() => {
+	// Fall back to the default tab if the persisted value isn't available for
+	// this user's role (e.g. role changed since it was stored).
+	const validTabs = batchTabs.value.map((tab) => tab.value)
+	if (!validTabs.includes(currentTab.value)) {
+		currentTab.value = defaultTab
+	}
 	setFiltersFromQuery()
 	updateBatches()
 	categories.value = [

@@ -26,7 +26,10 @@
 						{{ sc.scenario_name }}
 					</div>
 					<div class="text-xs text-ink-gray-5 mt-1 flex gap-3">
-						<Badge :label="sc.difficulty" :theme="difficultyTheme(sc.difficulty)" />
+						<Badge
+							:label="sc.difficulty"
+							:theme="difficultyTheme(sc.difficulty)"
+						/>
 						<span class="capitalize">{{ sc.modality }}</span>
 						<span v-if="sc.time_limit_minutes">
 							{{ sc.time_limit_minutes }} {{ __('min') }}
@@ -34,21 +37,21 @@
 					</div>
 				</button>
 			</div>
-			<div v-if="error" class="text-sm text-ink-red-5 mt-3">
+			<div v-if="error" class="text-sm text-ink-red-3 mt-3">
 				{{ error }}
 			</div>
 		</template>
 		<template #actions>
 			<div class="flex gap-2 justify-end">
-			<Button @click="visible = false">{{ __('Annulla') }}</Button>
-			<Button
-				variant="solid"
-				:loading="starting"
-				:disabled="!selected"
-				@click="onStart"
-			>
-				{{ __('Avvia') }}
-			</Button>
+				<Button @click="visible = false">{{ __('Annulla') }}</Button>
+				<Button
+					variant="solid"
+					:loading="starting"
+					:disabled="!selected"
+					@click="onStart"
+				>
+					{{ __('Avvia') }}
+				</Button>
 			</div>
 		</template>
 	</Dialog>

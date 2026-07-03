@@ -28,7 +28,7 @@
 				</span>
 			</div>
 			<div
-				v-if="isAdmin && canModeratorAccessClass(cls)"
+				v-if="canHost(cls)"
 				class="flex items-center gap-x-2 text-ink-gray-9 mt-auto"
 				@click.stop
 			>
@@ -43,25 +43,11 @@
 				</button>
 			</div>
 			<div
-				v-else-if="canObserverJoin(cls)"
-				class="flex items-center gap-x-2 text-ink-gray-9 mt-auto"
-			>
-				<a
-					:href="cls.join_url"
-					target="_blank"
-					@click.stop
-					class="w-full cursor-pointer inline-flex items-center justify-center gap-2 transition-colors focus:outline-none text-ink-gray-8 bg-surface-gray-2 hover:bg-surface-gray-3 active:bg-surface-gray-4 focus-visible:ring focus-visible:ring-outline-gray-3 h-7 text-base px-2 rounded"
-				>
-					<Video class="h-4 w-4 stroke-1.5" />
-					{{ __('Join') }}
-				</a>
-			</div>
-			<div
 				v-else-if="canStudentJoin(cls)"
 				class="flex items-center gap-x-2 text-ink-gray-9 mt-auto"
 			>
 				<a
-					:href="cls.join_url"
+					:href="studentJoinUrl(cls)"
 					target="_blank"
 					@click.stop
 					class="w-full cursor-pointer inline-flex items-center justify-center gap-2 transition-colors focus:outline-none text-ink-gray-8 bg-surface-gray-2 hover:bg-surface-gray-3 active:bg-surface-gray-4 focus-visible:ring focus-visible:ring-outline-gray-3 h-7 text-base px-2 rounded"
@@ -72,7 +58,7 @@
 			</div>
 			<Tooltip
 				v-else-if="showStudentJoinDisabled(cls)"
-				:text="__('Waiting for the host to start the class')"
+				:text="__('Live class not started yet')"
 				placement="right"
 			>
 				<div class="flex items-center gap-x-2 mt-auto" @click.stop>
@@ -125,10 +111,9 @@ const props = defineProps({
 		type: Boolean,
 		default: false,
 	},
-	// Whether the current user joins as an observer (e.g. a batch valutatore):
-	// they get the Join button while the class is on (today, not ended) without
-	// waiting for the host to press "Start" in the LMS (started_at is unreliable
-	// when the host opens the meeting directly on Zoom/Meet).
+	// Whether the current user is a batch valutatore. Valutatori are hosts of
+	// their batch's classes: like moderators/evaluators they get the Start/Open
+	// button, so they can start the class and enter the meeting as organizer.
 	observer: {
 		type: Boolean,
 		default: false,
@@ -164,14 +149,25 @@ const isWithinJoinWindow = (cls) => {
 
 const hasHostStarted = (cls) => Boolean(cls.started_at)
 
+// The student "Join" button links to the internal gate, not the raw meeting
+// link. The gate (same one used by the invitation emails) re-checks server-side
+// that the user is an enrolled student of this batch and that the host has
+// started (started_at) before redirecting to the meeting. The button is only
+// enabled once the host has started; before then a disabled button with a
+// tooltip is shown (see showStudentJoinDisabled).
 const canStudentJoin = (cls) =>
 	isWithinJoinWindow(cls) && hasHostStarted(cls) && Boolean(cls.join_url)
 
-// An observer (valutatore) can join while the class is on today, regardless of
-// the host having pressed "Start" in the LMS.
-const canObserverJoin = (cls) =>
-	props.observer && canModeratorAccessClass(cls) && Boolean(cls.join_url)
+const studentJoinUrl = (cls) =>
+	`/api/method/os_lms.os_lms.live_class_join.join?name=${encodeURIComponent(cls.name)}`
 
+// Hosts (moderators/evaluators and batch valutatori) can start/open the class
+// on the class day: they enter the meeting as organizer.
+const canHost = (cls) =>
+	(props.isAdmin || props.observer) && canModeratorAccessClass(cls)
+
+// Before the host has started, the student sees a disabled "Join" button with a
+// "Live not started yet" tooltip (within the join window, class not ended).
 const showStudentJoinDisabled = (cls) =>
 	isWithinJoinWindow(cls) &&
 	!hasHostStarted(cls) &&

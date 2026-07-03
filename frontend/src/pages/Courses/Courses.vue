@@ -117,6 +117,7 @@ import { computed, inject, onMounted, provide, ref, watch } from 'vue'
 import { ChevronDown, Plus } from 'lucide-vue-next'
 import { sessionStore } from '@/stores/session'
 import { canCreateCourse } from '@/utils'
+import { useLocalStorage } from '@/utils/composables'
 import CourseCard from '@/components/CourseCard.vue'
 import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
 import LayoutHeader from '@/components/Layouts/LayoutHeader.vue'
@@ -138,7 +139,8 @@ const currentCategory = ref(null)
 const title = ref('')
 const certification = ref(false)
 const filters = ref({})
-const currentTab = ref('live')
+// Persist the selected tab so it survives leaving and returning to the list.
+const currentTab = useLocalStorage('lms_courses_tab', 'live')
 const { brand } = sessionStore()
 const courseCount = ref(0)
 const router = useRouter()
@@ -164,6 +166,12 @@ const tagColorMap = computed(() => {
 provide('tagColorMap', tagColorMap)
 
 onMounted(() => {
+	// Fall back to the default tab if the persisted value isn't available for
+	// this user's role (e.g. role changed since it was stored).
+	const validTabs = courseTabs.value.map((tab) => tab.value)
+	if (!validTabs.includes(currentTab.value)) {
+		currentTab.value = 'live'
+	}
 	setFiltersFromQuery()
 	updateCourses()
 	getCourseCount()

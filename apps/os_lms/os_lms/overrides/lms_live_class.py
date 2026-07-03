@@ -10,6 +10,7 @@ from lms.lms.utils import get_lms_route
 
 from os_lms.os_lms.email_utils import send_templated_email
 from os_lms.os_lms.live_class_ics import get_calendar_links
+from os_lms.os_lms.live_class_join import get_join_gate_url
 
 
 def _lc_log(msg):
@@ -144,6 +145,22 @@ class CustomLMSLiveClass(LMSLiveClass):
 			_lc_log(f"[_send_notification_safe] {self.name} RAISED type={type(exc).__name__} msg={exc!r}")
 			frappe.log_error(title="LMS Live Class send_notification failed")
 
+	def _get_batch_valutatori(self) -> set[str]:
+		"""Users assigned as valutatori of this class's batch. They act as hosts:
+		they receive the invitation, can start the class and enter as organizer."""
+		return set(
+			frappe.get_all(
+				"LMS Batch Valutatore",
+				{"parent": self.batch_name, "parenttype": "LMS Batch"},
+				pluck="valutatore",
+			)
+		)
+
+	def get_participants(self):
+		# Batch valutatori are hosts too, so they must receive the invitation and
+		# the calendar event alongside the enrolled students and instructors.
+		return list(set(super().get_participants()) | self._get_batch_valutatori())
+
 	def send_invitation_email(self):
 		participants = self.get_participants()
 		instructors = set(
@@ -153,9 +170,14 @@ class CustomLMSLiveClass(LMSLiveClass):
 				pluck="instructor",
 			)
 		)
-		# For Zoom, instructors must use start_url to enter as host; students use join_url.
+		# Instructors and batch valutatori are hosts: they enter as organizer.
+		hosts = instructors | self._get_batch_valutatori()
+		# For Zoom, hosts must use start_url to enter as host; students go through
+		# the join gate (which redirects to join_url only once the host has
+		# started), so they can't enter the call before the class begins.
 		# For Google Meet, start_url and join_url are the same.
 		host_url = self.start_url or self.join_url
+		student_url = get_join_gate_url(self.name) if self.join_url else self.join_url
 		_lc_log(
 			f"[send_invitation_email] {self.name} participants_count={len(participants)} "
 			f"participants={participants} instructors={instructors} "
@@ -173,11 +195,11 @@ class CustomLMSLiveClass(LMSLiveClass):
 		for participant in participants:
 			try:
 				member_name = frappe.db.get_value("User", participant, "first_name") or participant
-				is_instructor = participant in instructors
-				participant_url = host_url if is_instructor else self.join_url
+				is_host = participant in hosts
+				participant_url = host_url if is_host else student_url
 				_lc_log(
 					f"[send_invitation_email] {self.name} -> {participant} "
-					f"(name={member_name}, is_instructor={is_instructor}) attempting sendmail"
+					f"(name={member_name}, is_host={is_host}) attempting sendmail"
 				)
 				send_templated_email(
 					template_key="live_class_invitation",

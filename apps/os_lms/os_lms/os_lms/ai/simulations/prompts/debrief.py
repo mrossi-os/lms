@@ -12,6 +12,11 @@ from dataclasses import dataclass, field
 
 DEBRIEF_VERSION = "debrief.v1"
 
+# Explicit, unambiguous speaker labels for the transcript fed to the grader.
+# The student ("user" turns) is the ONLY subject of evaluation; the AI
+# role-player ("assistant" turns) is context/stimulus and must never be graded.
+_SPEAKER_LABELS = {"user": "STUDENTE", "assistant": "CONTROPARTE"}
+
 
 # ---- dataclass result types ----
 
@@ -185,7 +190,8 @@ def build_debrief_messages(
 
     objectives_block = "\n".join(f"- {o}" for o in learning_objectives) or "—"
     transcript_block = "\n".join(
-        f"{i + 1}. [{t['role'].upper()}] {t['text']}" for i, t in enumerate(transcript)
+        f"{i + 1}. [{_SPEAKER_LABELS.get(t['role'], t['role'].upper())}] {t['text']}"
+        for i, t in enumerate(transcript)
     )
 
     config = load_prompt_template(PURPOSE_DEBRIEF)

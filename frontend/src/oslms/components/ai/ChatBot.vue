@@ -1,15 +1,12 @@
 <template>
 	<div
 		v-if="settingsStore.settings?.data?.ai_enabled"
-		class="flex flex-col h-full border-b p-4 card"
+		class="flex flex-col h-full  p-4"
 	>
-		<div class="text-lg font-semibold mb-4 text-ink-gray-9">
-			{{ __('AI Tutor') }}
-		</div>
 		<div
 			ref="messagesContainer"
 			id="messagesContainer"
-			class="flex-1 overflow-y-auto space-y-4 mb-4 min-h-[200px] max-h-[400px]"
+			class="flex-1 overflow-y-auto space-y-4 mb-4 min-h-[200px] max-h-[400px] pr-1"
 		>
 			<div v-if="chat.messages.length === 0" class="text-ink-gray-5 text-sm">
 				{{

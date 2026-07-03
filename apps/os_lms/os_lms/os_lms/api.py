@@ -1,3 +1,4 @@
+import hashlib
 import json
 import re
 
@@ -289,14 +290,40 @@ def send_batch_announcement(
 
 	from frappe.core.doctype.communication.email import make
 
+	# Resolve the sender to the actor's actual email address. frappe.session.user is
+	# the login name, which equals the email for regular users but not for the
+	# Administrator account — and frappe.sendmail silently drops a sender that is not
+	# a valid email, which would queue zero emails.
+	sender = frappe.db.get_value("User", frappe.session.user, "email") or frappe.session.user
+	sender_full_name = frappe.utils.get_fullname(frappe.session.user)
+
+	# Single Communication record drives the announcements tab and audit trail.
+	# Emails are sent individually below, so this record never sends mail itself.
 	make(
 		recipients=", ".join(recipients),
+		sender=sender,
+		sender_full_name=sender_full_name,
 		subject=rendered_subject,
 		content=rendered_content,
 		doctype="LMS Batch",
 		name=batch,
-		send_email=1 if send_email_flag else 0,
+		send_email=0,
 	)
+
+	# One email per recipient: each student gets a private message (no shared To),
+	# the From is the announcement author, and replies go back to the author via
+	# Reply-To so they land in the author's mailbox (e.g. when replying from Gmail).
+	if send_email_flag:
+		for recipient in recipients:
+			frappe.sendmail(
+				recipients=[recipient],
+				sender=sender,
+				reply_to=sender,
+				subject=rendered_subject,
+				message=rendered_content,
+				reference_doctype="LMS Batch",
+				reference_name=batch,
+			)
 
 	from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
 
@@ -375,9 +402,21 @@ def search_non_student_users(txt: str = "", page_length: int = 20, names=None) -
 
 
 @frappe.whitelist()
-def get_batch_certified_count(batch: str) -> int:
-	"""Number of certificates issued for a batch. Available to batch admins and
-	to the batch's valutatori (scoped read for the admin dashboard counter)."""
+def get_batch_certified_count(batch: str) -> dict:
+	"""Summary stats for the admin batch dashboard, fetched in a single call:
+
+	- ``certified_count``: number of certificates issued for the batch.
+	- ``students_progress``: ``{member: average_progress}`` mapping, the average
+	  course progress per enrolled student across every course of the batch (a
+	  missing enrollment counts as 0, matching ``calculate_course_progress`` in
+	  lms.lms.utils).
+
+	Available to batch admins and to the batch's valutatori (scoped read).
+	"""
+	from pypika import functions as fn
+
+	from frappe.utils import flt
+
 	from lms.lms.utils import can_modify_batch, is_batch_valutatore
 
 	if not (can_modify_batch(batch) or is_batch_valutatore(batch)):
@@ -385,7 +424,29 @@ def get_batch_certified_count(batch: str) -> int:
 			frappe._("You are not authorized to view this batch."),
 			frappe.PermissionError,
 		)
-	return frappe.db.count("LMS Certificate", {"batch_name": batch})
+
+	BatchCourse = frappe.qb.DocType("Batch Course")
+	BatchEnrollment = frappe.qb.DocType("LMS Batch Enrollment")
+	Enrollment = frappe.qb.DocType("LMS Enrollment")
+
+	rows = (
+		frappe.qb.from_(BatchEnrollment)
+		.left_join(BatchCourse)
+		.on(BatchCourse.parent == BatchEnrollment.batch)
+		.left_join(Enrollment)
+		.on((Enrollment.course == BatchCourse.course) & (Enrollment.member == BatchEnrollment.member))
+		.where(BatchEnrollment.batch == batch)
+		.groupby(BatchEnrollment.member)
+		.select(
+			BatchEnrollment.member,
+			fn.Avg(fn.Coalesce(Enrollment.progress, 0)).as_("progress"),
+		)
+	).run(as_dict=True)
+
+	return {
+		"certified_count": frappe.db.count("LMS Certificate", {"batch_name": batch}),
+		"students_progress": {row.member: flt(row.progress, 2) for row in rows},
+	}
 
 
 BATCH_TAB_SECTIONS = ("classes", "announcements", "discussions")
@@ -468,6 +529,82 @@ def mark_batch_tab_notifications_read(batch: str, section: str) -> dict:
 	return {"ok": True}
 
 
+# ----- Push notifications: device token registration -----
+
+
+def _token_hash(token: str) -> str:
+	return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+@frappe.whitelist()
+def register_push_token(token: str, platform: str = None, device_id: str = None) -> dict:
+	"""Register (or refresh) the calling user's FCM device token.
+
+	Upserts a "Push Device Token" record keyed by the token hash. When a
+	``device_id`` is supplied, any other token previously stored for that same
+	device is removed first, so a device keeps exactly one active token even
+	after FCM rotates it.
+	"""
+	user = frappe.session.user
+	if user == "Guest":
+		frappe.throw(frappe._("Authentication required"), frappe.PermissionError)
+	if not token:
+		frappe.throw(frappe._("token is required"))
+
+	token_hash = _token_hash(token)
+
+	# Drop stale tokens for the same physical device.
+	if device_id:
+		for stale in frappe.get_all(
+			"Push Device Token",
+			filters={"user": user, "device_id": device_id, "token_hash": ["!=", token_hash]},
+			pluck="name",
+		):
+			frappe.delete_doc("Push Device Token", stale, ignore_permissions=True, force=True)
+
+	existing = frappe.db.get_value("Push Device Token", {"token_hash": token_hash}, "name")
+	if existing:
+		doc = frappe.get_doc("Push Device Token", existing)
+		doc.user = user
+		if platform:
+			doc.platform = platform
+		if device_id:
+			doc.device_id = device_id
+		doc.enabled = 1
+		doc.last_active = frappe.utils.now_datetime()
+		doc.save(ignore_permissions=True)
+	else:
+		doc = frappe.get_doc(
+			{
+				"doctype": "Push Device Token",
+				"user": user,
+				"token": token,
+				"token_hash": token_hash,
+				"platform": platform,
+				"device_id": device_id,
+				"enabled": 1,
+				"last_active": frappe.utils.now_datetime(),
+			}
+		)
+		doc.insert(ignore_permissions=True)
+
+	frappe.db.commit()
+	return {"ok": True}
+
+
+@frappe.whitelist()
+def unregister_push_token(token: str) -> dict:
+	"""Remove a device token (e.g. on logout). Idempotent."""
+	if not token:
+		return {"ok": True}
+
+	name = frappe.db.get_value("Push Device Token", {"token_hash": _token_hash(token)}, "name")
+	if name:
+		frappe.delete_doc("Push Device Token", name, ignore_permissions=True, force=True)
+		frappe.db.commit()
+	return {"ok": True}
+
+
 # ----- Live Class management -----
 
 LIVE_CLASS_EDITABLE_FIELDS = ("title", "description")
@@ -476,6 +613,27 @@ MIN_REMINDER_MINUTES = 15
 
 def _ensure_live_class_admin():
 	frappe.only_for(["Moderator", "Batch Evaluator"])
+
+
+def _ensure_can_start_live_class(doc) -> None:
+	"""Authorize starting a Live Class.
+
+	Starting is broader than the manage-only actions guarded by
+	`_ensure_live_class_admin`: besides global admins, a valutatore of this
+	class's batch is a host and may start their own batch's classes (but must
+	not update/delete them).
+	"""
+	from os_lms.os_lms.valutatore import is_batch_valutatore
+
+	roles = frappe.get_roles(frappe.session.user)
+	if "Moderator" in roles or "Batch Evaluator" in roles:
+		return
+	if is_batch_valutatore(doc.batch_name, frappe.session.user):
+		return
+	frappe.throw(
+		frappe._("Non hai i permessi per avviare questa lezione."),
+		frappe.PermissionError,
+	)
 
 
 def _validate_reminders(reminders) -> None:
@@ -525,9 +683,8 @@ def update_live_class(name: str, payload: dict) -> dict:
 @frappe.whitelist()
 def start_live_class(name: str) -> dict:
 	"""Mark a Live Class as started by the host so enrolled students can join."""
-	_ensure_live_class_admin()
-
 	doc = frappe.get_doc("LMS Live Class", name)
+	_ensure_can_start_live_class(doc)
 
 	if not doc.get("started_at"):
 		now = frappe.utils.now_datetime()

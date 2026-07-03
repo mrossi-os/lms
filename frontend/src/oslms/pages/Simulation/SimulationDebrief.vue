@@ -2,12 +2,21 @@
 	<div class="max-w-3xl mx-auto p-6">
 		<!-- Header -->
 		<div class="mb-6">
-			<router-link
-				:to="{ name: 'SimulationPlay', params: { sessionId } }"
-				class="text-sm text-ink-gray-5 hover:underline"
-			>
-				← {{ __('Trascrizione') }}
-			</router-link>
+			<div class="flex items-center gap-4">
+				<router-link
+					:to="{ name: 'SimulationPlay', params: { sessionId } }"
+					class="text-sm text-ink-gray-5 hover:underline"
+				>
+					← {{ __('Trascrizione') }}
+				</router-link>
+				<router-link
+					v-if="courseName"
+					:to="{ name: 'CourseDetail', params: { courseName } }"
+					class="text-sm text-ink-gray-5 hover:underline"
+				>
+					← {{ __('Torna al corso') }}
+				</router-link>
+			</div>
 			<h1 class="text-2xl font-semibold text-ink-gray-9 mt-2">
 				{{ __('Debrief della simulazione') }}
 			</h1>
@@ -18,12 +27,16 @@
 			v-if="status === 'not_started'"
 			class="border border-outline-gray-2 rounded-md p-4 text-sm text-ink-gray-5"
 		>
-			{{ __('La sessione è ancora in corso. Termina la simulazione per generare il debrief.') }}
+			{{
+				__(
+					'La sessione è ancora in corso. Termina la simulazione per generare il debrief.',
+				)
+			}}
 		</div>
 
 		<div
 			v-else-if="status === 'pending'"
-			class="border border-outline-gray-2 rounded-md p-6 text-center"
+			class="border border-outline-gray-2 rounded-md p-6 text-center card"
 		>
 			<div class="text-base font-medium text-ink-gray-9 mb-1">
 				{{ __('Stiamo preparando il tuo debrief…') }}
@@ -32,7 +45,11 @@
 				{{ __('Di solito richiede meno di 30 secondi.') }}
 			</div>
 			<div v-if="timedOut" class="mt-3 text-xs text-ink-orange-5">
-				{{ __('Sta impiegando più tempo del previsto. Aggiorna la pagina tra un minuto.') }}
+				{{
+					__(
+						'Sta impiegando più tempo del previsto. Aggiorna la pagina tra un minuto.',
+					)
+				}}
 			</div>
 		</div>
 
@@ -40,20 +57,24 @@
 			v-else-if="status === 'failed'"
 			class="border border-outline-red-2 bg-surface-red-1 rounded-md p-4 text-sm text-ink-red-5"
 		>
-			{{ __('La generazione del debrief è fallita. Il docente potrà rivedere manualmente questa sessione.') }}
+			{{
+				__(
+					'La generazione del debrief è fallita. Il docente potrà rivedere manualmente questa sessione.',
+				)
+			}}
 		</div>
 
 		<template v-else-if="debrief">
 			<!-- Hero score -->
 			<div
 				class="border rounded-md p-5 mb-6"
-				:class="debrief.passed ? 'border-outline-green-2 bg-surface-green-1' : 'border-outline-orange-2 bg-surface-orange-1'"
+				:class="debrief.passed ? 'card-success' : 'card-failure'"
 			>
 				<div class="flex items-center justify-between gap-4">
 					<div>
-						<div class="text-xs uppercase tracking-wide text-ink-gray-5 mb-1">
+						<p class="text-xs uppercase tracking-wide text-ink-gray-5 mb-1">
 							{{ __('Punteggio complessivo') }}
-						</div>
+						</p>
 						<div class="text-4xl font-semibold text-ink-gray-9">
 							{{ Math.round(debrief.overall_score || 0) }}
 							<span class="text-base text-ink-gray-5">/100</span>
@@ -64,7 +85,10 @@
 						:theme="debrief.passed ? 'green' : 'orange'"
 					/>
 				</div>
-				<div v-if="status === 'needs_review'" class="mt-3 text-xs text-ink-orange-5">
+				<div
+					v-if="status === 'needs_review'"
+					class="mt-3 text-xs text-ink-orange-5"
+				>
 					{{ __('Il debrief richiede revisione manuale del docente.') }}
 				</div>
 			</div>
@@ -78,9 +102,11 @@
 					<div
 						v-for="c in debrief.criterion_scores"
 						:key="c.criterion_name"
-						class="border border-outline-gray-2 rounded-md p-3"
+						class="border border-outline-gray-2 rounded-md p-3 card"
 					>
-						<div class="flex items-center justify-between text-sm font-medium text-ink-gray-9">
+						<div
+							class="flex items-center justify-between text-sm font-medium text-ink-gray-9"
+						>
 							<span>{{ c.criterion_name }}</span>
 							<span>{{ c.score }} / {{ c.max_score || 10 }}</span>
 						</div>
@@ -109,8 +135,15 @@
 						class="border border-outline-green-2 bg-surface-green-1 rounded-md p-3 text-sm"
 					>
 						<div class="font-medium text-ink-gray-9">{{ s.title }}</div>
-						<div v-if="s.detail" class="text-xs text-ink-gray-5 mt-1">{{ s.detail }}</div>
-						<div v-if="s.quote" class="text-xs italic mt-2 border-l-2 border-outline-green-3 pl-2">"{{ s.quote }}"</div>
+						<div v-if="s.detail" class="text-xs text-ink-gray-5 mt-1">
+							{{ s.detail }}
+						</div>
+						<blockquote
+							v-if="s.quote"
+							class="text-xs italic mt-2 border-l-2 border-outline-green-3 pl-2"
+						>
+							"{{ s.quote }}"
+						</blockquote>
 					</li>
 				</ul>
 			</section>
@@ -124,13 +157,21 @@
 					<li
 						v-for="(imp, i) in debrief.improvements"
 						:key="i"
-						class="border border-outline-orange-2 bg-surface-orange-1 rounded-md p-3 text-sm"
+						class="card-failure text-sm"
 					>
 						<div class="font-medium text-ink-gray-9">{{ imp.title }}</div>
-						<div v-if="imp.detail" class="text-xs text-ink-gray-5 mt-1">{{ imp.detail }}</div>
-						<div v-if="imp.quote" class="text-xs italic mt-2 border-l-2 border-outline-orange-3 pl-2">"{{ imp.quote }}"</div>
+						<div v-if="imp.detail" class="text-xs text-ink-gray-5 mt-1">
+							{{ imp.detail }}
+						</div>
+						<blockquote
+							v-if="imp.quote"
+							class="text-xs italic mt-2 border-l-2 border-outline-orange-3 pl-2"
+						>
+							"{{ imp.quote }}"
+						</blockquote>
 						<div v-if="imp.suggestion" class="text-xs text-ink-gray-9 mt-2">
-							<span class="font-medium">{{ __('Suggerimento') }}:</span> {{ imp.suggestion }}
+							<span class="font-medium">{{ __('Suggerimento') }}:</span>
+							{{ imp.suggestion }}
 						</div>
 					</li>
 				</ul>
@@ -141,7 +182,9 @@
 				<h2 class="text-base font-semibold text-ink-gray-9 mb-3">
 					{{ __('Pattern comportamentali') }}
 				</h2>
-				<div class="text-sm text-ink-gray-7 whitespace-pre-wrap border border-outline-gray-2 rounded-md p-3">
+				<div
+					class="text-sm text-ink-gray-7 whitespace-pre-wrap border border-outline-gray-2 rounded-md p-3 card"
+				>
 					{{ debrief.behavioral_analysis }}
 				</div>
 			</section>
@@ -156,10 +199,14 @@
 						v-for="(r, i) in debrief.recommended_content"
 						:key="i"
 						:to="lessonRoute(r.lesson)"
-						class="block border border-outline-gray-2 rounded-md p-3 text-sm hover:bg-surface-gray-1"
+						class="block rounded-md p-3 text-sm card"
 					>
-						<div class="font-medium text-ink-gray-9">{{ r.title || r.lesson }}</div>
-						<div v-if="r.why" class="text-xs text-ink-gray-5 mt-1">{{ r.why }}</div>
+						<div class="font-medium text-ink-gray-9">
+							{{ r.title || r.lesson }}
+						</div>
+						<div v-if="r.why" class="text-xs text-ink-gray-5 mt-1">
+							{{ r.why }}
+						</div>
 					</router-link>
 				</div>
 			</section>
@@ -169,7 +216,9 @@
 				<h2 class="text-base font-semibold text-ink-gray-9 mb-3">
 					{{ __('Nota del docente') }}
 				</h2>
-				<div class="text-sm border border-outline-gray-2 rounded-md p-3 bg-surface-gray-1">
+				<div
+					class="text-sm border border-outline-gray-2 rounded-md p-3 bg-surface-gray-1 card"
+				>
 					{{ debrief.instructor_review }}
 				</div>
 			</section>
@@ -187,6 +236,8 @@ const route = useRoute()
 const sessionId = computed(() => route.params.sessionId)
 
 const { debrief, status, timedOut } = useSimulationDebrief(sessionId)
+
+const courseName = computed(() => debrief.value?.course || '')
 
 function lessonRoute(lessonName) {
 	if (!lessonName) return { name: 'Courses' }

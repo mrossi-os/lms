@@ -32,10 +32,7 @@
 							:placeholder="__('Search by name')"
 							type="text"
 						/>
-						<Button
-							v-if="!course.data?.is_valutatore"
-							@click="showEnrollmentModal = true"
-						>
+						<Button @click="showEnrollmentModal = true">
 							<template #prefix>
 								<Plus class="size-4 stroke-1.5" />
 							</template>

@@ -45,11 +45,15 @@
 						v-if="turn.injection_attempt_detected"
 						:class="turn.role === 'user' ? 'text-white' : 'text-ink-orange-5'"
 						:title="__('Tentativo di prompt injection rilevato')"
-					>⚠️</span>
+						>⚠️</span
+					>
 				</div>
 				<div>{{ turn.text_content }}</div>
 			</div>
-			<div v-if="sending" class="flex items-center gap-2 text-ink-gray-5 text-sm">
+			<div
+				v-if="sending"
+				class="flex items-center gap-2 text-ink-gray-5 text-sm"
+			>
 				<span class="animate-pulse">…</span>
 				<span>{{ __('Il personaggio sta rispondendo') }}</span>
 			</div>
@@ -61,8 +65,10 @@
 				<textarea
 					v-model="draft"
 					rows="2"
-					:placeholder="__('Scrivi al personaggio… (Cmd/Ctrl+Enter per inviare)')"
-					class="flex-1 resize-none rounded-md border border-outline-gray-2 px-3 py-2 text-sm focus:border-outline-gray-3 focus:outline-none"
+					:placeholder="
+						__('Scrivi al personaggio… (Cmd/Ctrl+Enter per inviare)')
+					"
+					class="flex-1 resize-none rounded-md border border-outline-gray-2 px-3 py-2 text-sm focus:border-outline-gray-3 focus:outline-none text-white"
 					:disabled="sending"
 					@keydown.meta.enter.prevent="onSend"
 					@keydown.ctrl.enter.prevent="onSend"
@@ -77,7 +83,10 @@
 				</Button>
 			</div>
 		</div>
-		<div v-else-if="readOnly" class="border-t px-4 py-3 text-xs text-ink-gray-5">
+		<div
+			v-else-if="readOnly"
+			class="border-t px-4 py-3 text-xs text-ink-gray-5"
+		>
 			{{ __('Sessione in sola lettura.') }}
 		</div>
 		<div v-else class="border-t px-4 py-3 text-xs text-ink-gray-5">
@@ -108,7 +117,10 @@ const scroller = ref(null)
 const personaSummary = computed(() => {
 	const p = props.persona
 	if (!p) return ''
-	const parts = [p.name, p.role && p.company ? `${p.role} di ${p.company}` : p.role || p.company]
+	const parts = [
+		p.name,
+		p.role && p.company ? `${p.role} di ${p.company}` : p.role || p.company,
+	]
 	return parts.filter(Boolean).join(' — ')
 })
 
