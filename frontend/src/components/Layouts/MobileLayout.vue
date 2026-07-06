@@ -1,5 +1,5 @@
 <template>
-	<div class="relative flex h-screen flex-col">
+	<div class="relative flex h-screen flex-col bg-surface-base">
 		<div
 			class="flex flex-1 flex-col overflow-y-auto pb-10"
 			id="scrollContainer"
@@ -31,7 +31,7 @@
 			<!-- Fixed menu -->
 			<div
 				v-if="sidebarSettings.data"
-				class="standalone:pb-4 fixed bottom-0 start-0 z-10 flex w-full items-center justify-around border-t border-outline-gray-2 bg-surface-base"
+				class="standalone:pb-4 fixed bottom-0 start-0 z-10 flex w-full items-center justify-around border-t border-outline-gray-2 bg-surface-gray-1"
 			>
 				<button
 					v-for="tab in sidebarLinks"
