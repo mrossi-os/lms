@@ -72,6 +72,7 @@
 								:label="__('Time')"
 								:required="true"
 								:disabled="isEdit"
+								:use12Hour="false"
 							/>
 						</Tooltip>
 
