@@ -47,7 +47,7 @@
 				class="flex items-center gap-x-2 text-ink-gray-9 mt-auto"
 			>
 				<a
-					:href="cls.join_url"
+					:href="internalJoinUrl(cls)"
 					target="_blank"
 					@click.stop
 					class="w-full cursor-pointer inline-flex items-center justify-center gap-2 transition-colors focus:outline-none text-ink-gray-8 bg-surface-gray-2 hover:bg-surface-gray-3 active:bg-surface-gray-4 focus-visible:ring focus-visible:ring-outline-gray-3 h-7 text-base px-2 rounded"
@@ -61,7 +61,7 @@
 				class="flex items-center gap-x-2 text-ink-gray-9 mt-auto"
 			>
 				<a
-					:href="cls.join_url"
+					:href="internalJoinUrl(cls)"
 					target="_blank"
 					@click.stop
 					class="w-full cursor-pointer inline-flex items-center justify-center gap-2 transition-colors focus:outline-none text-ink-gray-8 bg-surface-gray-2 hover:bg-surface-gray-3 active:bg-surface-gray-4 focus-visible:ring focus-visible:ring-outline-gray-3 h-7 text-base px-2 rounded"
@@ -183,6 +183,12 @@ const canModeratorAccessClass = (cls) => {
 	if (cls.date !== dayjs().format('YYYY-MM-DD')) return false
 	return true
 }
+
+// The "Join" button links to the internal gated endpoint (join_live_class),
+// NOT the raw Zoom/Meet URL. The server re-checks the user is entitled to the
+// class and that the join window is open, then redirects to the meeting.
+const internalJoinUrl = (cls) =>
+	`/api/method/os_lms.os_lms.api.join_live_class?name=${encodeURIComponent(cls.name)}`
 
 const startLiveClass = createResource({
 	url: 'os_lms.os_lms.api.start_live_class',
