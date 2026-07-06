@@ -72,7 +72,7 @@
 					</Button>
 				</template>
 				<Button
-					v-if="tabIndex === 1 && course.data"
+					v-if="activeTabId === 'dashboard' && course.data"
 					variant="outline"
 					@click="courseDashboardRef?.openEnrollModal()"
 				>
@@ -379,6 +379,14 @@ const tabs = computed<TabDef[]>(() => {
 	}
 	return t
 })
+
+// Gate index-based header actions on the active tab's stable `id`, not its raw
+// index: for an enrolled student the Simulations tab sits at index 1, the same
+// slot the Dashboard occupies for admins, so a bare `tabIndex === 1` check would
+// leak the (admin-only) Enroll button onto the student's Simulations tab.
+const activeTabId = computed<string | undefined>(
+	() => tabs.value[tabIndex.value]?.id,
+)
 
 watch(
 	() => props.courseName,

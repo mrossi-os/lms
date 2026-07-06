@@ -406,10 +406,21 @@ def list_scenarios(course: str | None = None) -> list[dict]:
             return []
     else:
         filters["lms_course"] = ["in", enrolled]
+    # `status` is always "Published" on this path (filtered above) but is returned
+    # so clients can filter uniformly across the instructor/moderator payloads,
+    # which include drafts.
     return frappe.get_all(
         "LMSA Simulation Scenario",
         filters=filters,
-        fields=["name", "scenario_name", "lms_course", "course_lesson", "difficulty", "modality"],
+        fields=[
+            "name",
+            "scenario_name",
+            "lms_course",
+            "course_lesson",
+            "difficulty",
+            "modality",
+            "status",
+        ],
         order_by="modified desc",
     )
 

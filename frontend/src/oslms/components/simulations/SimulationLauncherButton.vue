@@ -37,7 +37,11 @@ const props = defineProps<{
 const isOpen = ref(false)
 
 const scenariosRes = createResource({
-	url: 'os_lms.os_lms.ai.simulations.api.list_my_scenarios',
+	// Role-aware listing: instructors/moderators get their courses' scenarios,
+	// enrolled students get the Published scenarios of their courses. The
+	// instructor-only `list_my_scenarios` returns nothing for students, which
+	// would hide this launcher for them even when the course has scenarios.
+	url: 'os_lms.os_lms.ai.simulations.api.list_scenarios',
 	makeParams() {
 		return { course: props.course || null }
 	},
