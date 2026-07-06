@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div v-if="hasPublicScenarios">
 		<SimulationLauncher
 			v-model="isOpen"
 			:scenarios="scenarios"
@@ -23,6 +23,12 @@ import { Bot } from 'lucide-vue-next'
 import { createResource } from 'frappe-ui'
 import SimulationLauncher from '@/oslms/components/simulations/SimulationLauncher.vue'
 
+interface Scenario {
+	name: string
+	lms_course?: string
+	status?: string
+}
+
 const props = defineProps<{
 	course?: string
 	lesson?: string
@@ -37,21 +43,31 @@ const scenariosRes = createResource({
 	},
 })
 
-const scenarios = computed<unknown[]>(
-	() => (scenariosRes.data as unknown[]) || [],
+const scenarios = computed<Scenario[]>(
+	() => (scenariosRes.data as Scenario[]) || [],
+)
+
+// Only render the launcher when the current course has at least one Published
+// (public) scenario. Draft/Archived scenarios don't count.
+const hasPublicScenarios = computed<boolean>(
+	() =>
+		Boolean(props.course) &&
+		scenarios.value.some(
+			(sc) => sc.status === 'Published' && sc.lms_course === props.course,
+		),
 )
 
 function open(): void {
-	scenariosRes.submit()
 	isOpen.value = true
 }
 
-// Refetch when the course context changes while the dialog is open, so the
-// user always sees the scenarios for the current course.
+// Fetch eagerly on mount and whenever the course changes so the button's
+// visibility always reflects the scenarios for the current course.
 watch(
 	() => props.course,
-	() => {
-		if (isOpen.value) scenariosRes.submit()
+	(course) => {
+		if (course) scenariosRes.submit()
 	},
+	{ immediate: true },
 )
 </script>
