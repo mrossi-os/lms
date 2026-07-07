@@ -68,12 +68,11 @@
 							:disabled="!model.lms_course" />
 						<FormControl v-model="model.difficulty" type="select" class="lms-select "
 							:label="__('Difficoltà')" :options="['easy', 'medium', 'hard']" required />
+						<!-- Modality is locked to chat for now: voice/both are not yet
+						     enabled for new scenarios. Kept as a disabled field so the
+						     value is visible; re-add the voice/both options to unlock. -->
 						<FormControl v-model="model.modality" type="select" class="lms-select " :label="__('Modalità')"
-							:options="[
-								{ label: __('Chat'), value: 'chat' },
-								{ label: __('Voce'), value: 'voice' },
-								{ label: __('Entrambi'), value: 'both' },
-							]" required />
+							:options="[{ label: __('Chat'), value: 'chat' }]" disabled />
 					</div>
 
 					<!-- Evaluation schema link -->
@@ -371,10 +370,11 @@ async function onAiGenerate() {
 		// Replace generated fields; lms_course / course_lesson /
 		// evaluation_schema / status / provider_override stay as the user set
 		// them (the AI payload doesn't include those).
+		// `modality` is intentionally excluded: it is locked to chat for now,
+		// so the AI generator must not switch it to voice/both.
 		const REPLACE_FIELDS = [
 			'scenario_name',
 			'difficulty',
-			'modality',
 			'roleplay_persona',
 			'situation_template',
 			'max_turns',
