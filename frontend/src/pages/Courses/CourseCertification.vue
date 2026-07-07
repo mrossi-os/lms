@@ -117,7 +117,7 @@ const openCertificate = (certificate) => {
 	window.open(
 		`/api/method/frappe.utils.print_format.download_pdf?doctype=LMS+Certificate&name=${
 			certificate.name
-		}&format=${encodeURIComponent(certificate.template)}`,
+		}&format=${encodeURIComponent(certificate.template)}&pdf_generator=chrome`,
 		'_blank'
 	)
 }
