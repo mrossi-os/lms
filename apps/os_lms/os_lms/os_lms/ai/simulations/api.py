@@ -426,12 +426,14 @@ def list_scenarios(course: str | None = None) -> list[dict]:
 
 
 @frappe.whitelist()
-def list_my_sessions(course: str | None = None) -> list[dict]:
-    """List the current user's own simulation sessions (optionally by course),
-    enriched with the debrief score/status when available."""
+def list_my_sessions(course: str | None = None, scenario: str | None = None) -> list[dict]:
+    """List the current user's own simulation sessions (optionally by course
+    and/or scenario), enriched with the debrief score/status when available."""
     filters: dict = {"student": frappe.session.user}
     if course:
         filters["course"] = course
+    if scenario:
+        filters["scenario"] = scenario
 
     sessions = frappe.get_all(
         "LMSA Simulation Session",
