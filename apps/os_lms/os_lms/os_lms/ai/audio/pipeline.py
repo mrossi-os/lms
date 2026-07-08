@@ -43,9 +43,14 @@ def run_audio_turn(
 			raw, mime=mime or "audio/webm", language=language or None
 		).text
 	else:
-		question_text = (text or "").strip()
-		if not question_text:
-			frappe.throw(_("Message cannot be empty"))
+		question_text = text
+
+	# Reject empty input for both paths: a typed blank message and a silent
+	# recording (non-empty audio that the STT transcribes to nothing) must not
+	# reach produce_answer, which would spend a turn on an empty user message.
+	question_text = (question_text or "").strip()
+	if not question_text:
+		frappe.throw(_("Message cannot be empty"))
 
 	answer_text = produce_answer(question_text)
 

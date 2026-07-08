@@ -259,7 +259,8 @@
 							:status="simulationSession?.status || 'In Progress'"
 							:sending="simulationSending"
 							:ending="simulationEnding"
-							@send="simulationSend"
+							@send="simulationOnSend"
+							@send-audio="simulationOnSendAudio"
 							@end="simulationEnd"
 						/>
 					</div>
@@ -464,6 +465,17 @@ const {
 	send: simulationSend,
 	end: simulationEnd,
 } = useSimulationSession(simulationSessionId)
+
+// ChatSession emits a plain string on `send` (typed text) and a Blob on
+// `send-audio` (recorded voice), but the composable's `send` takes a
+// { text, audioBlob } object. These adapters bridge the two — mirroring
+// SimulationPlay.vue, the page reached from the floating simulation button.
+function simulationOnSend(text) {
+	return simulationSend({ text })
+}
+function simulationOnSendAudio(blob) {
+	return simulationSend({ audioBlob: blob })
+}
 
 const simulationPersona = computed(() => {
 	const raw = simulationSession.value?.generated_persona

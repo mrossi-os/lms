@@ -9,6 +9,7 @@
 import { ref } from 'vue'
 import { toast } from 'frappe-ui'
 import { transcribeAudio } from '@/oslms/utils/audioApi'
+import { audioBlobToWav } from '@/oslms/utils/audioConvert'
 
 // Cap recording length so the clip stays well under the 25 MB provider limit.
 const MAX_DURATION_MS = 60_000
@@ -16,11 +17,20 @@ const MAX_DURATION_MS = 60_000
 function pickMimeType() {
 	if (typeof MediaRecorder === 'undefined') return ''
 	// Safari has no webm/opus — fall back to mp4; Chrome/Firefox use webm.
-	const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg']
+	const candidates = [
+		'audio/webm;codecs=opus',
+		'audio/webm',
+		'audio/mp4',
+		'audio/ogg',
+	]
 	return candidates.find((t) => MediaRecorder.isTypeSupported?.(t)) || ''
 }
 
-export function useSpeechToText({ language = 'it', onTranscript, onAudio } = {}) {
+export function useSpeechToText({
+	language = 'it',
+	onTranscript,
+	onAudio,
+} = {}) {
 	const isRecording = ref(false)
 	const isTranscribing = ref(false)
 	const isSupported = ref(
@@ -47,7 +57,10 @@ export function useSpeechToText({ language = 'it', onTranscript, onAudio } = {})
 			return
 		}
 		const mimeType = pickMimeType()
-		recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
+		recorder = new MediaRecorder(
+			stream,
+			mimeType ? { mimeType } : undefined,
+		)
 		chunks = []
 		recorder.ondataavailable = (e) => {
 			if (e.data && e.data.size) chunks.push(e.data)
@@ -68,10 +81,22 @@ export function useSpeechToText({ language = 'it', onTranscript, onAudio } = {})
 	async function onStop() {
 		const tracks = recorder?.stream?.getTracks() || []
 		tracks.forEach((t) => t.stop())
-		const blob = new Blob(chunks, { type: recorder?.mimeType || 'audio/webm' })
+		let blob = new Blob(chunks, {
+			type: recorder?.mimeType || 'audio/webm',
+		})
 		recorder = null
 		chunks = []
 		if (!blob.size) return
+
+		// Re-encode to WAV before handing the clip off: some STT providers
+		// (Gemini native audio) can't decode the browser's webm/opus recording.
+		// WAV is accepted by every provider; on any failure we keep the raw clip
+		// (OpenAI still accepts webm) so conversion can only help, never break.
+		try {
+			blob = await audioBlobToWav(blob)
+		} catch {
+			// Keep the original recording.
+		}
 		// Raw mode: hand back the recorded clip and skip transcription — the
 		// caller sends the audio to a combined endpoint that does STT itself.
 		if (onAudio) {
