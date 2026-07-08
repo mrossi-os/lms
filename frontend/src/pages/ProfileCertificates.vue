@@ -13,8 +13,14 @@
 				class="flex flex-col bg-surface-base border rounded-lg card cursor-pointer hover:bg-surface-sidebar"
 				@click="openCertificate(certificate)"
 			>
-				<div class="font-medium leading-5 mb-2 text-ink-gray-9">
-					{{ certificate.course_title || certificate.batch_title }}
+				<div
+					class="font-medium leading-5 mb-2 text-ink-gray-9 flex items-center gap-2"
+				>
+					<span
+						v-if="openingName === certificate.name"
+						class="lucide-loader-circle size-4 animate-spin text-ink-gray-6 shrink-0"
+					/>
+					<span>{{ certificate.course_title || certificate.batch_title }}</span>
 				</div>
 				<div class="text-sm-medium text-ink-gray-7">
 					<span> {{ __('Issued on') }}: </span>
@@ -48,6 +54,9 @@
 <script setup>
 import { createListResource, createResource } from 'frappe-ui'
 import { inject, onMounted, ref, watch } from 'vue'
+// OSLMS-CUSTOM: open the TrueSkills openbadge image for certificates issued
+// through TrueSkills; internal/batch certificates still open the PDF.
+import { useCertificateViewer } from '@/oslms/composables/useCertificateViewer'
 
 const dayjs = inject('$dayjs')
 const props = defineProps({
@@ -107,12 +116,21 @@ watch(
 	{ immediate: true },
 )
 
-const openCertificate = (certificate) => {
-	window.open(
-		`/api/method/frappe.utils.print_format.download_pdf?doctype=LMS+Certificate&name=${
-			certificate.name
-		}&format=${encodeURIComponent(certificate.template)}&pdf_generator=chrome`,
-	)
+const { openIssuedCertificate } = useCertificateViewer()
+const openingName = ref(null)
+
+const openCertificate = async (certificate) => {
+	if (openingName.value) return
+	openingName.value = certificate.name
+	try {
+		await openIssuedCertificate({
+			name: certificate.name,
+			template: certificate.template,
+			status: trueskillsStatus.value[certificate.name],
+		})
+	} finally {
+		openingName.value = null
+	}
 }
 
 const downloadOpenbadge = (certificateName, fileFormat) => {

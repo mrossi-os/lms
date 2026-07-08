@@ -2,6 +2,7 @@
 	<Button
 		v-if="certification.data && certification.data.certificate"
 		@click="downloadCertificate"
+		:loading="opening"
 		class=""
 	>
 		<template #prefix>
@@ -55,6 +56,9 @@
 <script setup lang="ts">
 import { Button, createResource } from 'frappe-ui'
 import { inject } from 'vue'
+// OSLMS-CUSTOM: open the TrueSkills openbadge instead of the internal PDF when
+// the course issues via TrueSkills.
+import { useCertificateViewer } from '@/oslms/composables/useCertificateViewer'
 import type { CertificationInfo, Resource, SessionUser } from '@/types/api'
 
 const user = inject<SessionUser>('$user')!
@@ -73,13 +77,10 @@ const certification = createResource({
 	auto: user.data ? true : false,
 }) as Resource<CertificationInfo | null>
 
+const { opening, openCourseCertificate } = useCertificateViewer()
+
 const downloadCertificate = () => {
-	const cert = certification.data?.certificate
-	if (!cert) return
-	window.open(
-		`/api/method/frappe.utils.print_format.download_pdf?doctype=LMS+Certificate&name=${
-			cert.name
-		}&format=${encodeURIComponent(cert.template)}&pdf_generator=chrome`
-	)
+	if (!certification.data?.certificate) return
+	openCourseCertificate(props.courseName)
 }
 </script>

@@ -58,12 +58,12 @@
 					<div class="border-t -mx-5" />
 					<BooleanSwitch
 						size="sm"
-						v-model="doc.enable_certification"
+						:modelValue="Boolean(doc?.enable_certification)"
 						:label="__('Completion certificate')"
 						:description="
 							__('Issue a free certificate when learners complete the course.')
 						"
-						@update:modelValue="markDirty()"
+						@update:modelValue="setCompletionCertificate"
 					/>
 				</template>
 
@@ -71,12 +71,12 @@
 					<div class="border-t -mx-5" />
 					<BooleanSwitch
 						size="sm"
-						v-model="doc.enable_certification"
+						:modelValue="Boolean(doc?.enable_certification)"
 						:label="__('Completion certificate')"
 						:description="
 							__('Issue a free certificate when learners complete the course.')
 						"
-						@update:modelValue="markDirty()"
+						@update:modelValue="setCompletionCertificate"
 					/>
 					<BooleanSwitch
 						size="sm"
@@ -134,26 +134,15 @@
 				<div class="border-t -mx-5" />
 				<BooleanSwitch
 					size="sm"
-					v-model="doc.trueskills_certificate_enabled"
+					:modelValue="Boolean(doc?.trueskills_certificate_enabled)"
 					:label="__('Emetti certificato TrueSkill')"
 					:description="
 						__(
-							'Usa TrueSkill come emettitore del certificato per questo corso. Richiede il certificato di completamento attivo.'
+							'Emette il certificato tramite TrueSkill, in alternativa al certificato di completamento interno (non attivabili insieme).'
 						)
 					"
-					:disabled="!doc?.enable_certification"
-					@change="markDirty()"
+					@update:modelValue="setTrueskillCertificate"
 				/>
-				<div
-					v-if="!doc?.enable_certification"
-					class="text-sm text-ink-gray-5"
-				>
-					{{
-						__(
-							'Attiva il "Certificato di completamento" per poter abilitare l\'emissione TrueSkill.'
-						)
-					}}
-				</div>
 				<template v-if="doc?.trueskills_certificate_enabled">
 					<div class="text-sm text-ink-gray-7 bg-surface-gray-2 rounded-md p-3">
 						{{
@@ -425,18 +414,21 @@ watch(
 	{ immediate: true }
 )
 
-// TrueSkill emission triggers on LMS Certificate creation, which only happens
-// when completion certification is on. Keep them consistent: turning the
-// completion certificate off also turns TrueSkill emission off.
-watch(
-	() => resource.doc?.enable_certification,
-	(enabled) => {
-		if (!enabled && resource.doc?.trueskills_certificate_enabled) {
-			resource.doc.trueskills_certificate_enabled = 0
-			markDirty()
-		}
-	}
-)
+// The internal completion certificate and TrueSkills issuance are mutually
+// exclusive per course: enabling one disables the other.
+function setCompletionCertificate(val: boolean) {
+	if (!resource.doc) return
+	resource.doc.enable_certification = val ? 1 : 0
+	if (val) resource.doc.trueskills_certificate_enabled = 0
+	markDirty()
+}
+
+function setTrueskillCertificate(val: boolean) {
+	if (!resource.doc) return
+	resource.doc.trueskills_certificate_enabled = val ? 1 : 0
+	if (val) resource.doc.enable_certification = 0
+	markDirty()
+}
 
 const showTrueskillTemplateModal = ref<boolean>(false)
 

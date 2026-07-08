@@ -85,6 +85,7 @@
 				<Button
 					v-if="canGetCertificate"
 					@click="fetchCertificate()"
+					:loading="opening"
 					variant="subtle"
 					class="w-full mt-2"
 					size="md"
@@ -166,10 +167,12 @@ import { BookText, CreditCard, GraduationCap } from 'lucide-vue-next'
 // OSLMS-CUSTOM: Award, BookOpen, HelpCircle, MonitorPlay, Users were used by the
 // disabled "This course includes" stats block — restore them with that block.
 import { computed, inject } from 'vue'
-import { Badge, Button, call, createResource, toast } from 'frappe-ui'
+import { Badge, Button, call, toast } from 'frappe-ui'
 import { useRouter } from 'vue-router'
 import CertificationLinks from '@/components/CertificationLinks.vue'
 import CourseOutline from '@/components/CourseOutline.vue'
+// OSLMS-CUSTOM: route certificate opening through TrueSkills when enabled.
+import { useCertificateViewer } from '@/oslms/composables/useCertificateViewer'
 import { getVideoEmbedURL } from '@/utils/'
 import { useTelemetry } from 'frappe-ui/frappe'
 import type {
@@ -275,34 +278,22 @@ const hasCourseStats = computed<boolean>(() =>
 */
 
 const canGetCertificate = computed<boolean>(() => {
+	// TrueSkills issuance is exclusive with the internal completion certificate,
+	// so a TrueSkills-only course has enable_certification off — gate on either.
 	return Boolean(
-		props.course.data?.enable_certification &&
-		(props.course.data?.membership?.progress ?? 0) >= 100,
+		(props.course.data?.enable_certification ||
+			props.course.data?.trueskills_certificate_enabled) &&
+			(props.course.data?.membership?.progress ?? 0) >= 100,
 	)
 })
 
-const certificate = createResource({
-	url: 'lms.lms.doctype.lms_certificate.lms_certificate.create_certificate',
-	makeParams(values: { course?: string }) {
-		return {
-			course: values.course,
-		}
-	},
-	onSuccess(data: { name: string; template: string }) {
-		window.open(
-			`/api/method/frappe.utils.print_format.download_pdf?doctype=LMS+Certificate&name=${
-				data.name
-			}&format=${encodeURIComponent(data.template)}&pdf_generator=chrome`,
-			'_blank',
-		)
-	},
-}) as Resource<{ name: string; template: string } | null>
+// OSLMS-CUSTOM: for TrueSkills-enabled courses the completion certificate is the
+// TrueSkills openbadge image (opened inline), not the internal Print Format PDF.
+// useCertificateViewer ensures the LMS Certificate exists and picks the artifact.
+const { opening, openCourseCertificate } = useCertificateViewer()
 
 const fetchCertificate = () => {
-	certificate.submit({
-		course: props.course.data?.name,
-		member: user.data?.name,
-	})
+	openCourseCertificate(props.course.data?.name)
 }
 
 const isAdmin = computed<boolean>(() => {
