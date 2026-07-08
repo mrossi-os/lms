@@ -63,9 +63,10 @@
 							:options="['Draft', 'Published', 'Archived']" required />
 						<Autocomplete class="lms-auto-complete" v-model="model.lms_course" :options="courseOptions"
 							:label="__('Corso')" :placeholder="__('Cerca un corso')" required />
-						<Autocomplete class="lms-auto-complete" v-model="model.course_lesson" :options="lessonOptions"
-							:label="__('Lezione (opzionale)')" :placeholder="__('Cerca una lezione')"
-							:disabled="!model.lms_course" />
+						<!-- Lesson field hidden by request; binding kept so the rest of the logic still works -->
+						<Autocomplete v-if="false" class="lms-auto-complete" v-model="model.course_lesson"
+							:options="lessonOptions" :label="__('Lezione (opzionale)')"
+							:placeholder="__('Cerca una lezione')" :disabled="!model.lms_course" />
 						<FormControl v-model="model.difficulty" type="select" class="lms-select "
 							:label="__('Difficoltà')" :options="['easy', 'medium', 'hard']" required />
 						<FormControl v-model="model.modality" type="select" class="lms-select " :label="__('Modalità')"
