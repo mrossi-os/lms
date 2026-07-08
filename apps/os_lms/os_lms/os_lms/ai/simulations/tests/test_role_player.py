@@ -3,9 +3,16 @@ RolePlayerTurnService). Pure tests — no frappe, no DB."""
 from __future__ import annotations
 
 import json
+from unittest.mock import patch
 
 from frappe.tests import UnitTestCase
 
+from os_lms.os_lms.ai.utils.llm import (
+	LLMError,
+	LLMRateLimit,
+	LLMServerError,
+	LLMTimeout,
+)
 from os_lms.os_lms.ai.utils.llm.provider import ChatMessage, ChatResponse, Usage
 from os_lms.os_lms.ai.simulations.prompts import PersonaVariant
 from os_lms.os_lms.ai.simulations.role_player import (
@@ -38,9 +45,33 @@ class _RecordingProvider:
 		)
 
 
+class _FlakyProvider:
+	"""LLMProvider stub that raises queued exceptions or returns queued texts,
+	in order, one per chat() call. Used to exercise transient-error retries."""
+
+	name = "flaky"
+
+	def __init__(self, outcomes: list):
+		# Each outcome is either an Exception instance (raised) or a str (returned).
+		self.outcomes = list(outcomes)
+		self.calls = 0
+
+	def chat(self, messages, *, system=None, model=None, **kwargs):
+		self.calls += 1
+		outcome = self.outcomes.pop(0)
+		if isinstance(outcome, Exception):
+			raise outcome
+		return ChatResponse(
+			text=outcome,
+			finish_reason="stop", usage=Usage(),
+			model=model or "flaky-1", provider="flaky",
+		)
+
+
 def _valid_variant_json() -> str:
 	return json.dumps({
 		"situation": "Personaggio del settore manifatturiero.",
+		"student_brief": "Devi negoziare un contratto di fornitura con il CTO.",
 		"persona": {
 			"name": "Mario", "role": "CTO", "context": "AcmeCo",
 			"mood": "scettico", "key_objection": "prezzo",
@@ -94,6 +125,27 @@ class TestScenarioVariantGenerator(UnitTestCase):
 		gen = ScenarioVariantGenerator(provider=provider, model=None)
 		with self.assertRaises(ValueError):
 			gen.generate(_scenario_ref(), seed="seed-4")
+
+	def test_generate_retries_on_transient_llm_error(self):
+		# A provider hiccup (5xx) on the first attempt must not fail the whole
+		# generation: it is retried and the second attempt succeeds.
+		provider = _FlakyProvider([LLMServerError("boom"), _valid_variant_json()])
+		gen = ScenarioVariantGenerator(provider=provider, model=None)
+		with patch("os_lms.os_lms.ai.simulations.role_player.time.sleep"):
+			variant = gen.generate(_scenario_ref(), seed="seed-5")
+		self.assertEqual(variant.persona.name, "Mario")
+		self.assertEqual(provider.calls, 2)
+
+	def test_generate_propagates_after_exhausting_transient_retries(self):
+		# Every attempt hits a transient error → the last one propagates.
+		provider = _FlakyProvider(
+			[LLMTimeout("t"), LLMRateLimit("r"), LLMServerError("s")]
+		)
+		gen = ScenarioVariantGenerator(provider=provider, model=None)
+		with patch("os_lms.os_lms.ai.simulations.role_player.time.sleep"):
+			with self.assertRaises(LLMError):
+				gen.generate(_scenario_ref(), seed="seed-6")
+		self.assertEqual(provider.calls, 3)
 
 
 def _persona() -> PersonaVariant:
