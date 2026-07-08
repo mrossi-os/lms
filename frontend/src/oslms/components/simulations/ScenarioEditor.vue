@@ -701,6 +701,10 @@ async function onSave() {
 		)
 		return
 	}
+	// Modality is locked to chat for now (rendered as a disabled single-option
+	// select), so the user can't set it from the form. Force it on save so the
+	// payload always carries a valid value for the backend's mandatory check.
+	model.modality = 'chat'
 	saving.value = true
 	try {
 		const result = await saveRes.submit({ payload: { ...model } })
