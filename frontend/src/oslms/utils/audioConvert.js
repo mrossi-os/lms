@@ -3,54 +3,60 @@
  *
  * MediaRecorder produces webm/opus (Chrome/Firefox) or mp4/aac (Safari). Some
  * STT providers — notably Google Gemini's native audio understanding — do NOT
- * accept webm: their documented inputs are wav, mp3, aac, ogg, flac, aiff.
- * Sending webm/opus content to Gemini yields an empty transcript (surfaced as
- * an AudioError → HTTP 500).
+ * accept webm/mp4: their documented inputs are wav, mp3, aac, ogg, flac, aiff.
+ * Sending an unsupported container to Gemini yields an empty transcript,
+ * surfaced as an AudioError → HTTP 500.
  *
- * Converting the recorded clip to a real 16 kHz mono 16-bit PCM WAV here makes
- * the audio turn provider-agnostic: WAV is accepted by every provider (OpenAI
- * included). 16 kHz mono is the standard STT input and keeps the base64 payload
- * small (~2 MB/min, well under the 25 MB provider cap).
+ * Converting the recorded clip to a real PCM WAV here makes the audio turn
+ * provider-agnostic: WAV is accepted by every provider (OpenAI included).
+ *
+ * Portability note: we intentionally do NOT use OfflineAudioContext to resample.
+ * Safari (and some Chromium builds) reject an OfflineAudioContext created at a
+ * non-standard rate like 16 kHz, which previously made the conversion throw on
+ * those browsers and silently fall back to the raw (unsupported) recording —
+ * the exact reason a recording could work in one browser and 500 in another.
+ * We decode with a plain AudioContext (widely supported, incl. Safari), downmix
+ * to mono in JS, and encode WAV at the decoded sample rate. Gemini and OpenAI
+ * accept any sample rate, so no resampling is needed.
  */
-
-const TARGET_SAMPLE_RATE = 16000
 
 /**
- * Decode a recorded audio Blob and re-encode it as a mono WAV Blob.
- * Throws if the Web Audio API is unavailable or the clip can't be decoded — the
- * caller is expected to fall back to the original clip in that case.
+ * Decode a recorded audio Blob and re-encode it as a mono WAV Blob at the
+ * decoded sample rate. Throws if the Web Audio API is unavailable or the clip
+ * can't be decoded — the caller is expected to fall back to the original clip.
  */
-export async function audioBlobToWav(
-	blob,
-	{ sampleRate = TARGET_SAMPLE_RATE } = {},
-) {
+export async function audioBlobToWav(blob) {
 	const AudioCtx = window.AudioContext || window.webkitAudioContext
-	const OfflineCtx =
-		window.OfflineAudioContext || window.webkitOfflineAudioContext
-	if (!AudioCtx || !OfflineCtx) throw new Error('Web Audio API not available')
+	if (!AudioCtx) throw new Error('Web Audio API not available')
 
 	const arrayBuffer = await blob.arrayBuffer()
 
 	// Decode the compressed recording into raw PCM samples. `slice(0)` passes a
 	// copy since decodeAudioData detaches the underlying buffer.
-	const decodeCtx = new AudioCtx()
+	const ctx = new AudioCtx()
 	let decoded
 	try {
-		decoded = await decodeCtx.decodeAudioData(arrayBuffer.slice(0))
+		decoded = await ctx.decodeAudioData(arrayBuffer.slice(0))
 	} finally {
-		decodeCtx.close?.()
+		ctx.close?.()
 	}
 
-	// Resample to the target rate and downmix to mono via an OfflineAudioContext.
-	const frames = Math.max(1, Math.ceil(decoded.duration * sampleRate))
-	const offline = new OfflineCtx(1, frames, sampleRate)
-	const source = offline.createBufferSource()
-	source.buffer = decoded
-	source.connect(offline.destination)
-	source.start(0)
-	const rendered = await offline.startRendering()
+	return encodeWav(downmixToMono(decoded), decoded.sampleRate)
+}
 
-	return encodeWav(rendered.getChannelData(0), sampleRate)
+/** Average all channels of an AudioBuffer into a single Float32 mono track. */
+function downmixToMono(buffer) {
+	const channels = buffer.numberOfChannels
+	if (channels === 1) return buffer.getChannelData(0)
+
+	const length = buffer.length
+	const mono = new Float32Array(length)
+	for (let c = 0; c < channels; c++) {
+		const data = buffer.getChannelData(c)
+		for (let i = 0; i < length; i++) mono[i] += data[i]
+	}
+	for (let i = 0; i < length; i++) mono[i] /= channels
+	return mono
 }
 
 /** Encode Float32 PCM samples as a 16-bit mono WAV Blob. */

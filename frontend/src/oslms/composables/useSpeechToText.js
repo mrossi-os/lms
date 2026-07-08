@@ -94,8 +94,11 @@ export function useSpeechToText({
 		// (OpenAI still accepts webm) so conversion can only help, never break.
 		try {
 			blob = await audioBlobToWav(blob)
-		} catch {
-			// Keep the original recording.
+		} catch (e) {
+			// Keep the original recording. A provider that only accepts WAV
+			// (e.g. Gemini) will then reject it, so surface the reason instead
+			// of failing opaquely with a 500.
+			console.warn('audio WAV conversion failed, sending raw clip:', e)
 		}
 		// Raw mode: hand back the recorded clip and skip transcription — the
 		// caller sends the audio to a combined endpoint that does STT itself.
