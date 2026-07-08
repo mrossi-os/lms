@@ -191,7 +191,6 @@ import type {
 	SessionUser,
 } from '@/types/api'
 import CourseSimulations from '@/oslms/pages/Courses/CourseSimulations.vue'
-import CourseStudentSimulations from '@/oslms/pages/Courses/CourseStudentSimulations.vue'
 
 const { settings: lmsSettingsResource } = useSettings()
 const simulationsEnabledGlobal = computed(
@@ -369,21 +368,13 @@ const tabs = computed<TabDef[]>(() => {
 			})
 		}
 	}
-	if (!isAdmin.value && isEnrolledStudent.value) {
-		t.push({
-			id: 'simulations',
-			label: __('Simulations'),
-			component: markRaw(CourseStudentSimulations),
-			icon: markRaw(Bot),
-		})
-	}
+	// Students no longer get a Simulations course tab: they launch simulations
+	// and review past attempts through the floating launcher button instead.
 	return t
 })
 
 // Gate index-based header actions on the active tab's stable `id`, not its raw
-// index: for an enrolled student the Simulations tab sits at index 1, the same
-// slot the Dashboard occupies for admins, so a bare `tabIndex === 1` check would
-// leak the (admin-only) Enroll button onto the student's Simulations tab.
+// index, so tab order changes can't leak the wrong (admin-only) header action.
 const activeTabId = computed<string | undefined>(
 	() => tabs.value[tabIndex.value]?.id,
 )
@@ -433,18 +424,8 @@ const isValutatore = computed<boolean>(() =>
 	Boolean(course.data?.is_valutatore),
 )
 
-// An enrolled student sees a lightweight tabbed view (Overview + Simulazioni)
-// when simulations are enabled globally.
-const isEnrolledStudent = computed<boolean>(
-	() =>
-		!isAdmin.value &&
-		!isValutatore.value &&
-		Boolean(course.data?.membership) &&
-		simulationsEnabledGlobal.value,
-)
-
 const showTabs = computed<boolean>(
-	() => isAdmin.value || isValutatore.value || isEnrolledStudent.value,
+	() => isAdmin.value || isValutatore.value,
 )
 
 const breadcrumbs = computed(() => {

@@ -82,7 +82,9 @@
 									{{ __('Continua') }}
 								</Button>
 								<Button
-									v-else-if="s.status === 'In Progress' && s.modality === 'chat'"
+									v-else-if="
+										s.status === 'In Progress' && s.modality === 'chat'
+									"
 									variant="solid"
 									size="sm"
 									@click="goPlay(s.name)"
@@ -90,7 +92,9 @@
 									{{ __('Riprendi') }}
 								</Button>
 								<Button
-									v-else-if="s.status === 'In Progress' && s.modality === 'voice'"
+									v-else-if="
+										s.status === 'In Progress' && s.modality === 'voice'
+									"
 									variant="subtle"
 									size="sm"
 									@click="goPlay(s.name)"
@@ -199,14 +203,16 @@ function isTerminal(status) {
 	return TERMINAL.includes(status)
 }
 function statusTheme(status) {
-	return {
-		Ready: 'gray',
-		'In Progress': 'blue',
-		Completed: 'green',
-		Abandoned: 'orange',
-		Error: 'red',
-		'Needs Review': 'orange',
-	}[status] || 'gray'
+	return (
+		{
+			Ready: 'gray',
+			'In Progress': 'blue',
+			Completed: 'green',
+			Abandoned: 'orange',
+			Error: 'red',
+			'Needs Review': 'orange',
+		}[status] || 'gray'
+	)
 }
 function formatDate(dt) {
 	return dt ? new Date(dt).toLocaleString() : '—'
