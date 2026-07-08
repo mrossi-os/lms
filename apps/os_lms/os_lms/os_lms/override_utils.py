@@ -35,7 +35,12 @@ def get_course_details(course: str):
 		frappe.db.get_value(
 			"LMS Course",
 			course,
-			["hero_enabled", "hero_media_type", "hero_media_url"],
+			[
+				"hero_enabled",
+				"hero_media_type",
+				"hero_media_url",
+				"trueskills_certificate_enabled",
+			],
 			as_dict=True,
 		)
 		or {}
@@ -45,6 +50,12 @@ def get_course_details(course: str):
 		"media_type": hero.get("hero_media_type") or "Video",
 		"media_url": hero.get("hero_media_url") or "",
 	}
+
+	# Exposed so the SPA "Get Certificate" gate works for TrueSkills-only courses
+	# (where the internal completion certificate is off — the two are exclusive).
+	course_detail.trueskills_certificate_enabled = (
+		1 if hero.get("trueskills_certificate_enabled") else 0
+	)
 
 	# Read-only access flag for a "Valutatore" of a batch containing this course:
 	# the SPA uses it to skip the "unpublished → redirect to Courses" guard.
