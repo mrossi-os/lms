@@ -10,7 +10,7 @@ from os_lms.os_lms.doctype.lms_live_class_reminder.lms_live_class_reminder impor
 	offset_to_minutes,
 )
 from os_lms.os_lms.email_utils import send_templated_email
-from os_lms.os_lms.live_class_ics import build_ics, get_calendar_links
+from os_lms.os_lms.live_class_ics import get_calendar_links
 
 
 def send_live_class_reminders():
@@ -52,7 +52,6 @@ def _process_class_reminders(live_class, now: datetime, logger) -> None:
 		return
 
 	any_sent = False
-	ics_attachment = _build_ics_attachment(doc, logger)
 	cal_links = _build_calendar_links(doc, logger)
 	for row in reminders:
 		if row.sent_at:
@@ -63,7 +62,7 @@ def _process_class_reminders(live_class, now: datetime, logger) -> None:
 			continue
 
 		for student in students:
-			_send_reminder_mail(doc, student, ics_attachment, cal_links)
+			_send_reminder_mail(doc, student, cal_links)
 		row.sent_at = now
 		any_sent = True
 		logger.info(
@@ -75,15 +74,6 @@ def _process_class_reminders(live_class, now: datetime, logger) -> None:
 		frappe.db.commit()
 
 
-def _build_ics_attachment(live_class, logger) -> list[dict] | None:
-	try:
-		ics = build_ics(live_class)
-	except Exception:
-		logger.exception(f"Error building ICS for {live_class.name}")
-		return None
-	return [{"fname": f"live-class-{live_class.name}.ics", "fcontent": ics.encode("utf-8")}]
-
-
 def _build_calendar_links(live_class, logger) -> dict:
 	"""Build "add to calendar" links (Google, Outlook, ICS); empty dict on failure."""
 	try:
@@ -93,7 +83,7 @@ def _build_calendar_links(live_class, logger) -> dict:
 		return {}
 
 
-def _send_reminder_mail(live_class, student, ics_attachment=None, cal_links=None) -> None:
+def _send_reminder_mail(live_class, student, cal_links=None) -> None:
 	from frappe.utils import format_date
 
 	formatted_date = format_date(live_class.date, "medium")
@@ -117,7 +107,6 @@ def _send_reminder_mail(live_class, student, ics_attachment=None, cal_links=None
 			"ics_url": cal_links.get("ics_url"),
 		},
 		header=[header_text, "orange"],
-		attachments=ics_attachment,
 	)
 
 
