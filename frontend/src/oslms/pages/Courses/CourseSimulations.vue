@@ -231,9 +231,13 @@ const deleteRes = createResource({
 })
 
 async function confirmDelete(scenario) {
+	// This project's `__()` returns a `{ format }` object (not a string) when the
+	// message has a `{0}` placeholder — the value must be produced via `.format()`,
+	// not a second array argument (which is ignored). Passing the object straight
+	// to window.confirm stringifies it to "[object Object]".
 	if (
 		!window.confirm(
-			__('Eliminare lo scenario "{0}"?', [scenario.scenario_name]),
+			__('Eliminare lo scenario "{0}"?').format(scenario.scenario_name),
 		)
 	)
 		return
