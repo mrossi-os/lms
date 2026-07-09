@@ -69,7 +69,9 @@
 							:placeholder="__('Cerca una lezione')" :disabled="!model.lms_course" />
 						<FormControl v-model="model.difficulty" type="select" class="lms-select "
 							:label="__('Difficoltà')" :options="['easy', 'medium', 'hard']" required />
-						<FormControl v-model="model.modality" type="select" class="lms-select " :label="__('Modalità')"
+						<!-- Modality select hidden by request; binding kept so the rest of
+							the logic still works. New scenarios are locked to chat (see onSave). -->
+						<FormControl v-if="false" v-model="model.modality" type="select" class="lms-select " :label="__('Modalità')"
 							:options="[
 								{ label: __('Chat'), value: 'chat' },
 								{ label: __('Voce'), value: 'voice' },
@@ -713,6 +715,11 @@ async function onSave() {
 			__('Seleziona uno schema di valutazione dalla lista (oppure creane uno nuovo).'),
 		)
 		return
+	}
+	// New scenarios are locked to chat modality (the select is hidden at
+	// creation); guarantee the saved value regardless of AI-fill / JSON import.
+	if (!props.scenarioName) {
+		model.modality = 'chat'
 	}
 	saving.value = true
 	try {
