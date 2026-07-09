@@ -207,12 +207,16 @@ class SessionOrchestrator:
 	def start_session(
 		self,
 		*,
-		scenario_id: str,
+		scenario_id: str | Document,
 		modality: str = "chat",
 		seed: str | None = None,
 	) -> frappe._dict:
 		"""Prepare + begin in one call (chat). Preserved for internal callers
-		(eval runner, instructor Test Run, tests)."""
+		(eval runner, instructor Test Run, tests).
+
+		Accepts a scenario name or a pre-loaded Document; passing a Document
+		lets an authorized caller bypass the "is Published" gate in
+		`prepare_session` (used by the instructor "test as student" flow)."""
 		prepared = self.prepare_session(
 			scenario_id=scenario_id, modality=modality, seed=seed
 		)

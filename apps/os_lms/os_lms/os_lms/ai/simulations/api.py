@@ -108,8 +108,12 @@ def start_session(scenario_id: str, modality: str = "chat") -> dict:
         frappe.throw(_("Unsupported modality: {0}").format(modality))
 
     scenario = _resolve_published_scenario(scenario_id)
+    # Pass the already-authorized document (not its name) so the orchestrator
+    # skips its redundant "is Published" re-check: `_resolve_published_scenario`
+    # has already gated access, allowing instructors/moderators to launch a
+    # "test as student" run on Draft/Archived scenarios.
     try:
-        result = _service().start_session(scenario_id=scenario.name, modality=modality)
+        result = _service().start_session(scenario_id=scenario, modality=modality)
     except QuotaExceededError as e:
         frappe.throw(str(e), frappe.ValidationError)
     return dict(result)

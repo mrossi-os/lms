@@ -152,6 +152,18 @@ class TestSimulationsAPI(UnitTestCase):
         with self.assertRaises(frappe.PermissionError):
             start_session(scenario_id=self.draft_scenario.name)
 
+    def test_start_session_on_draft_scenario_allowed_for_moderator(self):
+        # Instructors/moderators can launch a "test as student" run on a
+        # non-Published scenario (the ScenarioEditor "Prova come studente"
+        # button), even though students are denied by the test above.
+        frappe.set_user("Administrator")
+        try:
+            result = start_session(scenario_id=self.draft_scenario.name)
+            self.assertIn("session", result)
+            self.assertIn("first_turn", result)
+        finally:
+            frappe.set_user(self.student_email)
+
     def test_start_session_on_unenrolled_course_denied(self):
         other = "sim-test-other2@elite.com"
         _make_student(other)
