@@ -114,8 +114,9 @@
 							<Button
 								v-if="s.status === 'Draft'"
 								size="sm"
-								variant="ghost"
-								class="ml-2 text-ink-red-5"
+								variant="solid"
+								theme="red"
+								class="ml-2"
 								@click="confirmDelete(s)"
 							>
 								{{ __('Elimina') }}
