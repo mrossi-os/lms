@@ -852,6 +852,31 @@ def delete_scenario(name: str) -> dict:
     return {"deleted": name}
 
 
+def _set_scenario_status(name: str, status: str) -> dict:
+    if not frappe.db.exists("LMSA Simulation Scenario", name):
+        frappe.throw(_("Scenario not found"), frappe.DoesNotExistError)
+    course = frappe.db.get_value("LMSA Simulation Scenario", name, "lms_course")
+    _ensure_instructor_of_course(course)
+    frappe.db.set_value("LMSA Simulation Scenario", name, "status", status)
+    frappe.db.commit()
+    return {"name": name, "status": status}
+
+
+@frappe.whitelist()
+def archive_scenario(name: str) -> dict:
+    """Move a scenario to the Archived state. Unlike delete, this is safe on
+    scenarios that already have sessions — the history stays intact, the
+    scenario just can't be started anymore."""
+    return _set_scenario_status(name, "Archived")
+
+
+@frappe.whitelist()
+def publish_scenario(name: str) -> dict:
+    """Bring an archived scenario back to the Published state so learners can
+    start it again."""
+    return _set_scenario_status(name, "Published")
+
+
 @frappe.whitelist()
 def get_evaluation_schema(name: str) -> dict:
     if not frappe.db.exists("LMSA Evaluation Schema", name):
