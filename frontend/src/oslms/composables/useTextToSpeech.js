@@ -66,7 +66,12 @@ export function useTextToSpeech() {
 			try {
 				url = await synthesize(clean, { voice })
 			} catch (e) {
-				toast.error(e?.message || __('Could not read the answer aloud.'))
+				// Prefer the server's `_server_messages` (the clear, localized
+				// audio-error string) over the raw `.message`, which is often a
+				// generic "Request failed".
+				toast.error(
+					e?.messages?.[0] || e?.message || __('Could not read the answer aloud.'),
+				)
 				return
 			} finally {
 				isSynthesizing.value = false

@@ -54,10 +54,13 @@ def transcribe(audio: str, mime: str = "audio/webm", language: str = "it") -> di
         _throw_provider(_("the transcription service is temporarily unavailable"))
     except AudioUnsupported:
         _throw_provider(_("the selected provider does not support transcription"))
-    except AudioError as e:
-        # Surface the provider's own message (e.g. invalid model) — it's the
-        # actionable part for an admin mis-configuration.
-        _throw_provider(str(e) or _("transcription failed"))
+    except AudioError:
+        # Never surface the provider's raw message to the learner: it's
+        # admin-oriented and often English. The technical detail stays in the
+        # error log; the learner gets a clear, actionable message.
+        _throw_provider(
+            _("your recording couldn't be transcribed; please try again or type your message")
+        )
 
 
 @frappe.whitelist()
@@ -84,10 +87,12 @@ def synthesize(text: str, voice: str | None = None) -> dict:
         _throw_provider(_("the speech service is temporarily unavailable"))
     except AudioUnsupported:
         _throw_provider(_("the selected provider does not support speech synthesis"))
-    except AudioError as e:
-        # Surface the provider's own message (e.g. invalid model) — it's the
-        # actionable part for an admin mis-configuration.
-        _throw_provider(str(e) or _("speech synthesis failed"))
+    except AudioError:
+        # Never surface the provider's raw message to the learner: it's
+        # admin-oriented and often English (e.g. Gemini's "model tried to
+        # generate text" TTS refusal). The technical detail stays in the error
+        # log; the learner just needs to know the audio failed and can read on.
+        _throw_provider(_("the audio couldn't be generated; you can read the text of the reply"))
 
 
 def _decode_audio(audio: str) -> bytes:

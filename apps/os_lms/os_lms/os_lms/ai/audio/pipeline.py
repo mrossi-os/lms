@@ -39,9 +39,19 @@ def run_audio_turn(
 		if not settings.stt_enabled:
 			frappe.throw(_("Speech-to-text is not enabled."), frappe.PermissionError)
 		raw = _decode_audio(audio)
-		question_text = resolve_audio_provider("stt").transcribe(
-			raw, mime=mime or "audio/webm", language=language or None
-		).text
+		try:
+			question_text = resolve_audio_provider("stt").transcribe(
+				raw, mime=mime or "audio/webm", language=language or None
+			).text
+		except AudioError:
+			# STT is critical (no transcript = no user turn), so we can't degrade
+			# to text like TTS below. Abort the turn with a clear message instead
+			# of leaking the provider's raw error as a 500; the produce_answer
+			# step never runs, so no turn is consumed.
+			frappe.log_error(title="LMSA audio-turn STT error")
+			frappe.throw(
+				_("your recording couldn't be transcribed; please try again or type your message")
+			)
 	else:
 		question_text = text
 

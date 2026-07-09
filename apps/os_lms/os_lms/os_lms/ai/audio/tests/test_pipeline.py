@@ -95,3 +95,25 @@ class TestRunAudioTurn(_Base):
         )
         self.assertIsNone(out["audio_base64"])
         self.assertEqual(out["answer_text"], "risposta")
+
+    def test_stt_failure_raises_clean_error_without_consuming_turn(self):
+        # STT is critical: on failure the turn must abort with a clean
+        # ValidationError (not leak the provider's raw AudioError as a 500), and
+        # produce_answer must never run so no simulation turn is consumed.
+        self._settings(stt_enabled=True, tts_enabled=True)
+
+        class _Boom:
+            def transcribe(self, *a, **k):
+                raise AudioError("model refused the audio")
+
+        pipeline.resolve_audio_provider = (
+            lambda cap: _Boom() if cap == "stt" else _mock_provider(cap)
+        )
+        produced = []
+        audio = base64.b64encode(b"0123456789").decode()
+        with self.assertRaises(frappe.ValidationError):
+            pipeline.run_audio_turn(
+                audio=audio, text=None, mime="audio/webm", language="it",
+                produce_answer=lambda q: produced.append(q) or "x", want_audio=True,
+            )
+        self.assertEqual(produced, [])

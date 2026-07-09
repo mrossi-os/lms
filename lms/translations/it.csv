@@ -5241,6 +5241,8 @@ restrict_ip
 "the speech service is temporarily unavailable","il servizio di sintesi vocale è temporaneamente non disponibile"
 "the selected provider does not support speech synthesis","il provider selezionato non supporta la sintesi vocale"
 "speech synthesis failed","sintesi vocale non riuscita"
+"the audio couldn't be generated; you can read the text of the reply","non è stato possibile generare l'audio; puoi leggere il testo della risposta"
+"your recording couldn't be transcribed; please try again or type your message","non è stato possibile trascrivere la registrazione; riprova o scrivi il messaggio"
 "Audio recording is not supported by this browser.","La registrazione audio non è supportata da questo browser."
 "Microphone access was denied.","Accesso al microfono negato."
 "Transcription failed.","Trascrizione non riuscita."
