@@ -60,6 +60,7 @@ def get_lms_settings():
          result["stt_enabled"] = bool(lmsa.get("stt_enabled"))
          result["tts_enabled"] = bool(lmsa.get("tts_enabled"))
          result["tts_autoplay_on_stt"] = bool(lmsa.get("tts_autoplay_on_stt"))
+         result["realtime_enabled"] = bool(lmsa.get("realtime_enabled"))
          brand = frappe.get_cached_doc("Brand Customize")
          result["theme"] = brand.get("theme") or "light"
     return result
