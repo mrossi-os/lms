@@ -42,6 +42,8 @@ override_doctype_class = {
     "Email Account": "os_lms.overrides.email_account.CustomEmailAccount",
     "Data Import": "os_lms.overrides.data_import.CustomDataImport",
     "LMS Live Class": "os_lms.overrides.lms_live_class.CustomLMSLiveClass",
+    # Suppress the internal "certified" email for TrueSkills-issued courses.
+    "LMS Certificate": "os_lms.overrides.lms_certificate.CustomLMSCertificate",
 }
 
 # Document-level permission gating for the simulation feature. The list_view

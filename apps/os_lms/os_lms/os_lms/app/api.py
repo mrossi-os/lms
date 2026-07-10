@@ -28,11 +28,29 @@ def get_course(course_name: str):
 	if not course_data:
 		return None
 
-	raw = frappe.db.get_value("LMS Course", course_name, "feature_sections")
+	course_meta = (
+		frappe.db.get_value(
+			"LMS Course",
+			course_name,
+			["feature_sections", "trueskills_certificate_enabled"],
+			as_dict=True,
+		)
+		or {}
+	)
+
+	raw = course_meta.get("feature_sections")
 	try:
 		course_data["feature_sections"] = json.loads(raw) if raw else []
 	except (json.JSONDecodeError, TypeError):
 		course_data["feature_sections"] = []
+
+	# get_course_details() qui è quello base di lms.lms.utils (non l'override
+	# os_lms), quindi non include questo flag: lo esponiamo a mano così il gate
+	# "Ottieni certificato" dell'app funziona sui corsi solo-TrueSkills, dove
+	# enable_certification è off (i due flag sono esclusivi).
+	course_data["trueskills_certificate_enabled"] = (
+		1 if course_meta.get("trueskills_certificate_enabled") else 0
+	)
 
 	# Bulk-fetch completed lessons for the current user
 	progress_map = {}

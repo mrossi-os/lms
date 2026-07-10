@@ -21,7 +21,7 @@ import random
 import re
 from dataclasses import dataclass
 
-SCENARIO_GEN_VERSION = "gen.v1"
+SCENARIO_GEN_VERSION = "gen.v2"
 
 # `{variable_name}` placeholders in the situation_template. Same convention
 # enforced client-side by the ScenarioEditor (`VAR_REF_RE`).
@@ -42,16 +42,25 @@ class PersonaVariant:
 class ScenarioVariant:
 	situation: str
 	persona: PersonaVariant
+	student_brief: str
 
 
 SCENARIO_SCHEMA: dict = {
 	"type": "object",
 	"additionalProperties": False,
-	"required": ["situation", "persona"],
+	"required": ["situation", "student_brief", "persona"],
 	"properties": {
 		"situation": {
 			"type": "string",
 			"description": "Setup concreto della scena, 2-5 frasi.",
+		},
+		"student_brief": {
+			"type": "string",
+			"description": (
+				"Briefing rivolto allo studente, in seconda persona. Spiega la "
+				"situazione, chi ha di fronte (nome, ruolo, contesto) e l'obiettivo "
+				"da raggiungere. NON rivelare MAI key_objection né hidden_motivation."
+			),
 		},
 		"persona": {
 			"type": "object",
@@ -176,9 +185,13 @@ def parse_scenario_generator_output(text: str) -> ScenarioVariant:
 	situation = data.get("situation")
 	if not isinstance(situation, str) or not situation.strip():
 		raise ValueError("situation is missing or empty")
+	student_brief = data.get("student_brief")
+	if not isinstance(student_brief, str) or not student_brief.strip():
+		raise ValueError("student_brief is missing or empty")
 
 	return ScenarioVariant(
 		situation=situation.strip(),
+		student_brief=student_brief.strip(),
 		persona=PersonaVariant(
 			name=persona_data["name"].strip(),
 			role=persona_data["role"].strip(),

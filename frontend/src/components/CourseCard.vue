@@ -1,7 +1,7 @@
 <template>
 	<div
 		v-if="course.title"
-		class="flex flex-col h-full rounded-md overflow-auto text-ink-gray-9 bg-surface-cards"
+		class="flex flex-col h-full rounded-md overflow-auto text-ink-gray-9 bg-surface-elevation-1"
 		style="min-height: 350px"
 	>
 		<div
@@ -20,10 +20,10 @@
 				class="flex items-center justify-center text-white flex-1 font-extrabold my-auto px-5 text-center leading-6 h-full"
 				:class="
 					course.title.length > 32
-						? 'text-lg'
+						? 'text-xl'
 						: course.title.length > 20
-							? 'text-xl'
-							: 'text-2xl'
+						? 'text-3xl'
+						: 'text-4xl'
 				"
 			>
 				{{ course.title }}
@@ -34,7 +34,7 @@
 				<div v-if="course.lessons">
 					<Tooltip :text="__('Lessons')">
 						<span class="flex items-center">
-							<BookOpen class="h-4 w-4 stroke-1.5 me-1" />
+							<span class="lucide-book-open size-4 me-1" />
 							{{ course.lessons }}
 						</span>
 					</Tooltip>
@@ -43,8 +43,8 @@
 				<div v-if="formattedDuration">
 					<Tooltip :text="__('Duration')">
 						<span class="flex items-center">
-							<Clock class="h-4 w-4 stroke-1.5 me-1" />
-							{{ formattedDuration }}
+							<span class="lucide-users size-4 me-1" />
+							{{ formatAmount(course.enrollments) }}
 						</span>
 					</Tooltip>
 				</div>
@@ -52,16 +52,23 @@
 				<div v-if="course.enable_certification">
 					<Tooltip :text="__('Certification available')">
 						<span class="flex items-center">
-							<Award class="h-4 w-4 stroke-1.5 me-1" />
+							<LucideStar
+								class="size-4 me-1 text-transparent fill-yellow-500"
+							/>
+							{{ formatRating(course.rating) }}
 						</span>
 					</Tooltip>
 				</div>
+
+				<Tooltip v-if="course.featured" :text="__('Featured')">
+					<span class="lucide-award size-4 text-ink-amber-6" />
+				</Tooltip>
 			</div>
 
 			<div
 				v-if="course.image"
 				class="font-semibold leading-6"
-				:class="course.title.length > 32 ? 'text-lg' : 'text-xl'"
+				:class="course.title.length > 32 ? 'text-xl' : 'text-3xl'"
 			>
 				{{ course.title }}
 			</div>

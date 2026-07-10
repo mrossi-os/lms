@@ -6,7 +6,7 @@ export default function translationPlugin(app) {
 	if (!window.translatedMessages) fetchTranslations()
 }
 
-function translate(message) {
+export function translate(message) {
 	let translatedMessages = window.translatedMessages || {}
 	let translatedMessage = translatedMessages[message] || message
 
@@ -22,7 +22,7 @@ function translate(message) {
 					return typeof args[number] != 'undefined'
 						? args[number]
 						: match
-				}
+				},
 			)
 		},
 	}

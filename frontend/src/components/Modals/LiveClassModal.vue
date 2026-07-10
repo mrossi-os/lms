@@ -13,11 +13,11 @@
 			],
 		}"
 	>
-		<template #body-content>
+		<template #default>
 			<div class="flex flex-col gap-4">
 				<div
 					v-if="isEdit"
-					class="flex items-start gap-2 bg-surface-amber-1 px-3 py-2 rounded-lg text-ink-amber-3 text-sm"
+					class="flex items-start gap-2 bg-surface-amber-1 px-3 py-2 rounded-lg text-ink-amber-6 text-sm"
 				>
 					<AlertCircle class="size-4 shrink-0 stroke-1.5 mt-0.5" />
 					<span>
@@ -59,26 +59,36 @@
 								)
 							"
 						>
+							<label
+								class="block text-p-sm-medium text-ink-gray-7"
+								for="batchTimezone"
+							>
+								{{ __('Time') }}
+								<span class="text-ink-red-6">*</span>
+							</label>
 							<FormControl
 								v-model="liveClass.time"
 								type="time"
 								:label="__('Time')"
 								:required="true"
 								:disabled="isEdit"
+								:use12Hour="false"
 							/>
 						</Tooltip>
 
 						<div class="space-y-1.5">
-							<label class="block text-ink-gray-5 text-xs" for="batchTimezone">
+							<label
+								class="block text-p-sm-medium text-ink-gray-7"
+								for="batchTimezone"
+							>
 								{{ __('Timezone') }}
-								<span class="text-ink-red-3">*</span>
+								<span class="text-ink-red-6">*</span>
 							</label>
-							<Autocomplete
-								@update:modelValue="(opt) => (liveClass.timezone = opt.value)"
+							<Combobox
 								:modelValue="liveClass.timezone"
 								:options="getTimezoneOptions()"
-								:required="true"
 								:disabled="isEdit"
+								@update:modelValue="(value) => (liveClass.timezone = value)"
 							/>
 						</div>
 						<FormControl
@@ -106,9 +116,14 @@
 								{{ __('Minimum 15 minutes before the class.') }}
 							</span>
 						</div>
-						<Button @click="addReminder" :variant="'subtle'">
+						<Button
+							@click="addReminder"
+							theme="blue"
+							:variant="'solid'"
+							class="!text-white"
+						>
 							<template #prefix>
-								<Plus class="w-4 h-4" />
+								<Plus class="w-4 h-4 !text-white" />
 							</template>
 							{{ __('Add Reminder') }}
 						</Button>
@@ -155,7 +170,7 @@
 						</div>
 						<Button @click="removeReminder(idx)" :variant="'ghost'">
 							<template #icon>
-								<Trash2 class="w-4 h-4 text-ink-red-3" />
+								<Trash2 class="w-4 h-4 text-ink-red-6" />
 							</template>
 						</Button>
 					</div>
@@ -166,17 +181,17 @@
 </template>
 <script setup>
 import {
+	Button,
+	Combobox,
 	Dialog,
 	createResource,
 	Tooltip,
 	FormControl,
-	Button,
 	toast,
 } from 'frappe-ui'
+import { computed, reactive, inject, onMounted } from 'vue'
 import { Plus, Trash2, AlertCircle } from 'lucide-vue-next'
-import { reactive, computed, inject, onMounted } from 'vue'
 import { getTimezones, getUserTimezone } from '@/utils/'
-import Autocomplete from '@/components/Controls/Autocomplete.vue'
 
 const liveClasses = defineModel('reloadLiveClasses')
 const show = defineModel()

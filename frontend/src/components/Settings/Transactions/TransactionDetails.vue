@@ -170,7 +170,7 @@
 </template>
 <script setup lang="ts">
 import { Button, FormControl, toast } from 'frappe-ui'
-import Switch from '@/components/Controls/Switch.vue'
+import Switch from '@/components/Controls/BooleanSwitch.vue'
 import { useRouter } from 'vue-router'
 import { computed, ref, watch } from 'vue'
 import Link from '@/components/Controls/Link.vue'

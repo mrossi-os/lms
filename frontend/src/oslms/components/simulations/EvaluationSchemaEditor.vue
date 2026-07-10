@@ -316,7 +316,7 @@ const aiLessonRes = createResource({
 	makeParams() {
 		return {
 			doctype: 'Course Lesson',
-			filters: { course: aiCourse.value },
+			filters: { course: unwrapAutocomplete(aiCourse.value) },
 			fields: ['name', 'title'],
 			limit_page_length: 500,
 		}
@@ -335,6 +335,17 @@ const aiGenerateRes = createResource({
 	method: 'POST',
 })
 
+// frappe-ui Autocomplete writes {label, value} into v-model when the user
+// picks from the dropdown, but a plain string when empty/reset. Normalize to
+// a plain string so the backend never receives a {label, value} object (which
+// it would treat as query filters → "Unknown column 'label'").
+function unwrapAutocomplete(v) {
+	if (v && typeof v === 'object') {
+		return v.value ?? ''
+	}
+	return v ?? ''
+}
+
 async function onAiGenerate() {
 	if (!aiHint.value.trim() && !aiCourse.value) {
 		toast.error(__('Inserisci un hint o seleziona un corso.'))
@@ -344,8 +355,8 @@ async function onAiGenerate() {
 	try {
 		const result = await aiGenerateRes.submit({
 			hint: aiHint.value || '',
-			course: aiCourse.value || null,
-			lesson: aiLesson.value || null,
+			course: unwrapAutocomplete(aiCourse.value) || null,
+			lesson: unwrapAutocomplete(aiLesson.value) || null,
 		})
 		const payload = result?.payload
 		if (!payload) {

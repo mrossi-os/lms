@@ -19,7 +19,7 @@
 				class="border-2 border-dashed rounded-lg p-10 text-center cursor-pointer transition-colors"
 				:class="
 					isDragging
-						? 'border-ink-blue-3 bg-surface-blue-1'
+						? 'border-ink-blue-6 bg-surface-blue-1'
 						: 'border-outline-gray-2 hover:border-outline-gray-4'
 				"
 				@click="fileInput?.click()"
@@ -30,9 +30,9 @@
 			>
 				<UploadIcon
 					class="w-10 h-10 mx-auto mb-3"
-					:class="isDragging ? 'text-ink-blue-3' : 'text-ink-gray-4'"
+					:class="isDragging ? 'text-ink-blue-6' : 'text-ink-gray-4'"
 				/>
-				<div class="text-sm font-medium text-ink-gray-7">
+				<div class="text-sm-medium text-ink-gray-7">
 					{{ __('Click to select files or drag them here') }}
 				</div>
 				<div class="text-xs text-ink-gray-5 mt-1">
@@ -43,7 +43,7 @@
 			<!-- Pending files preview -->
 			<div v-if="pendingFiles.length" class="mt-4 space-y-2">
 				<div class="flex items-center justify-between mb-2">
-					<div class="text-sm font-medium text-ink-gray-7">
+					<div class="text-sm-medium text-ink-gray-7">
 						{{ __('Selected files ({0})').format(pendingFiles.length) }}
 					</div>
 					<div class="flex items-center gap-2">
@@ -67,7 +67,7 @@
 				<div
 					v-for="(pf, index) in pendingFiles"
 					:key="pf.id"
-					class="flex items-center gap-3 border rounded-lg px-4 py-3 bg-surface-white"
+					class="flex items-center gap-3 border rounded-lg px-4 py-3 bg-surface-base"
 				>
 					<img
 						v-if="pf.preview"
@@ -82,7 +82,7 @@
 					/>
 
 					<div class="flex flex-col min-w-0 flex-1">
-						<span class="text-sm font-medium text-ink-gray-9 truncate">
+						<span class="text-sm-medium text-ink-gray-9 truncate">
 							{{ pf.file.name }}
 						</span>
 						<span class="text-xs text-ink-gray-5">
@@ -95,21 +95,21 @@
 						class="w-24 bg-surface-gray-2 rounded-full h-1.5"
 					>
 						<div
-							class="bg-ink-blue-3 h-1.5 rounded-full transition-all"
+							class="bg-ink-blue-6 h-1.5 rounded-full transition-all"
 							:style="{ width: `${pf.progress}%` }"
 						/>
 					</div>
 					<CheckCircle
 						v-else-if="pf.status === 'done'"
-						class="w-4 h-4 text-ink-green-3 shrink-0"
+						class="w-4 h-4 text-ink-green-6 shrink-0"
 					/>
 					<Tooltip v-else-if="pf.status === 'error'" :text="pf.error">
-						<AlertCircle class="w-4 h-4 text-ink-red-3 shrink-0" />
+						<AlertCircle class="w-4 h-4 text-ink-red-6 shrink-0" />
 					</Tooltip>
 
 					<button
 						v-if="pf.status === 'pending' || pf.status === 'error'"
-						class="p-1 rounded hover:bg-surface-gray-3 text-ink-gray-4 hover:text-ink-red-3 transition-colors shrink-0"
+						class="p-1 rounded hover:bg-surface-gray-3 text-ink-gray-4 hover:text-ink-red-6 transition-colors shrink-0"
 						@click="removePending(index)"
 					>
 						<X class="w-4 h-4" />
@@ -124,7 +124,7 @@
 					<input
 						type="checkbox"
 						v-model="uploadPrivate"
-						class="border-outline-gray-2 text-ink-blue-3 focus:ring-ink-blue-3"
+						class="border-outline-gray-2 text-ink-blue-6 focus:ring-ink-blue-6"
 					/>
 					{{ __('Upload as private') }}
 				</label>
@@ -135,7 +135,7 @@
 		<div class="mb-4 card p-3 space-y-3">
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-3">
-					<div class="text-lg font-semibold text-ink-gray-9">
+					<div class="text-xl-semibold text-ink-gray-9">
 						{{ __('Uploaded Files') }}
 					</div>
 					<span v-if="totalCount > 0" class="text-sm text-ink-gray-5">
@@ -199,7 +199,7 @@
 			<div
 				v-for="file in files.data"
 				:key="file.name"
-				class="flex items-center gap-3 border rounded-lg px-4 py-3 bg-surface-white hover:bg-surface-gray-7 transition-colors"
+				class="flex items-center gap-3 border rounded-lg px-4 py-3 bg-surface-base hover:bg-surface-gray-10 transition-colors"
 			>
 				<div
 					class="flex w-full gap-2 items-center cursor-pointer"
@@ -208,7 +208,7 @@
 					<input
 						type="checkbox"
 						:checked="selectedFiles.has(file.name)"
-						class="border-outline-gray-2 text-ink-blue-3 shrink-0 cursor-pointer"
+						class="border-outline-gray-2 text-ink-blue-6 shrink-0 cursor-pointer"
 						@click="toggleSelect(file.name)"
 						@change="toggleSelect(file.name)"
 					/>
@@ -218,7 +218,7 @@
 						:class="getFileIconColor(file.file_name)"
 					/>
 					<div class="flex flex-col min-w-0 flex-1">
-						<span class="text-sm font-medium text-ink-gray-9 truncate">
+						<span class="text-sm-medium text-ink-gray-9 truncate">
 							{{ file.file_name }}
 						</span>
 						<span class="text-xs text-ink-gray-5">
@@ -258,7 +258,7 @@
 					</Tooltip>
 					<Tooltip :text="__('Delete')">
 						<button
-							class="p-1.5 rounded hover:bg-surface-gray-3 text-ink-gray-5 hover:text-ink-red-3 transition-colors"
+							class="p-1.5 rounded hover:bg-surface-gray-3 text-ink-gray-5 hover:text-ink-red-6 transition-colors"
 							@click="confirmDelete(file)"
 						>
 							<Trash2 class="w-4 h-4" />
@@ -755,12 +755,12 @@ const extToIcon = {
 }
 
 const extToColor = {
-	pdf: 'text-ink-red-3',
-	doc: 'text-ink-blue-3',
-	docx: 'text-ink-blue-3',
-	xls: 'text-ink-green-3',
-	xlsx: 'text-ink-green-3',
-	csv: 'text-ink-green-3',
+	pdf: 'text-ink-red-6',
+	doc: 'text-ink-blue-6',
+	docx: 'text-ink-blue-6',
+	xls: 'text-ink-green-6',
+	xlsx: 'text-ink-green-6',
+	csv: 'text-ink-green-6',
 	ppt: 'text-ink-orange-3',
 	pptx: 'text-ink-orange-3',
 }

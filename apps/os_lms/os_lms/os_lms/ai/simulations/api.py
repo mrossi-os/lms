@@ -14,11 +14,15 @@ from frappe import _
 
 from lms.lms.utils import has_course_instructor_role, has_moderator_role, is_instructor
 
+from os_lms.os_lms.ai.audio.pipeline import run_audio_turn
 
 from .orchestrator import (
     QuotaExceededError,
     SessionOrchestrator,
     SessionTerminatedError,
+    closing_input_locked,
+    remaining_seconds,
+    scenario_time_limit,
 )
 from .tasks import generate_debrief as _run_generate_debrief
 
@@ -107,11 +111,53 @@ def start_session(scenario_id: str, modality: str = "chat") -> dict:
         frappe.throw(_("Unsupported modality: {0}").format(modality))
 
     scenario = _resolve_published_scenario(scenario_id)
+    # Pass the already-authorized document (not its name) so the orchestrator
+    # skips its redundant "is Published" re-check: `_resolve_published_scenario`
+    # has already gated access, allowing instructors/moderators to launch a
+    # "test as student" run on Draft/Archived scenarios.
     try:
-        result = _service().start_session(scenario_id=scenario.name, modality=modality)
+        result = _service().start_session(scenario_id=scenario, modality=modality)
     except QuotaExceededError as e:
         frappe.throw(str(e), frappe.ValidationError)
     return dict(result)
+
+
+@frappe.whitelist()
+def prepare_session(scenario_id: str, modality: str = "chat") -> dict:
+    """Phase 1: generate the variant and create a Ready session with a brief."""
+    if modality not in ("chat", "voice"):
+        frappe.throw(_("Unsupported modality: {0}").format(modality))
+
+    scenario = _resolve_published_scenario(scenario_id)
+    if modality == "chat" and scenario.modality not in ("chat", "both"):
+        frappe.throw(_("Scenario {0} is not chat-enabled.").format(scenario.name))
+    if modality == "voice" and scenario.modality not in ("voice", "both"):
+        frappe.throw(_("Scenario {0} is not voice-enabled.").format(scenario.name))
+
+    try:
+        result = _service().prepare_session(scenario_id=scenario.name, modality=modality)
+    except QuotaExceededError as e:
+        frappe.throw(str(e), frappe.ValidationError)
+    return {"session_id": result.session, "brief": result.brief, "modality": result.modality}
+
+
+@frappe.whitelist()
+def begin_session(session_id: str) -> dict:
+    """Phase 2 (chat): persist the first role-player turn for a prepared session."""
+    session = load_session(session_id)
+    if session.student != frappe.session.user:
+        frappe.throw(_("Only the session owner can begin the session"), frappe.PermissionError)
+    return dict(_service().begin_chat_session(session_id=session.name))
+
+
+@frappe.whitelist()
+def clone_session(session_id: str) -> dict:
+    """Restart a session: create a new Ready session reusing the same variant."""
+    session = load_session(session_id)
+    if session.student != frappe.session.user:
+        frappe.throw(_("Only the session owner can restart it"), frappe.PermissionError)
+    result = _service().clone_session(session_id=session.name)
+    return {"session_id": result.session, "brief": result.brief, "modality": result.modality}
 
 
 @frappe.whitelist()
@@ -133,6 +179,44 @@ def send_message(session_id: str, text: str) -> dict:
             _("This session is no longer accepting messages"), frappe.ValidationError
         )
     return dict(result)
+
+
+@frappe.whitelist()
+def send_message_audio(
+    session_id: str,
+    text: str | None = None,
+    audio: str | None = None,
+    mime: str = "audio/webm",
+    language: str = "it",
+    want_audio: bool = True,
+) -> dict:
+    """Single-call audio (or text) simulation turn: STT? -> role-player -> TTS?.
+
+    Reuses the orchestrator's send_message (persists both turns + fires the
+    realtime event). Returns question/answer text, answer audio, and the turn
+    names for client reconciliation.
+    """
+    session = load_session(session_id)
+    if session.student != frappe.session.user:
+        frappe.throw(_("Only the session owner can send messages"), frappe.PermissionError)
+
+    holder: dict = {}
+
+    def _produce(q: str) -> str:
+        r = _service().send_message(session_id=session.name, user_text=q)
+        holder["user_turn"] = r.user_turn.name
+        holder["assistant_turn"] = r.assistant_turn.name
+        holder["injection_attempt"] = bool(r.injection_attempt)
+        return r.assistant_turn.text
+
+    try:
+        result = run_audio_turn(
+            audio=audio, text=text, mime=mime, language=language,
+            want_audio=want_audio, produce_answer=_produce,
+        )
+    except SessionTerminatedError:
+        frappe.throw(_("This session is no longer accepting messages"), frappe.ValidationError)
+    return {**result, **holder}
 
 
 @frappe.whitelist()
@@ -169,6 +253,11 @@ def get_session(session_id: str) -> dict:
         ],
         order_by="turn_index asc",
     )
+    # Time-based natural-close budget: the cap comes from the scenario, the
+    # remaining seconds are computed server-side (authoritative clock) and
+    # re-synced on every reload, i.e. after each send. None when no cap is set;
+    # 0 while the forced close plays out after the time is up.
+    time_limit_minutes = scenario_time_limit(session.scenario)
     return {
         "session": {
             "name": session.name,
@@ -181,8 +270,12 @@ def get_session(session_id: str) -> dict:
             "turn_count": session.turn_count,
             "generated_persona": session.generated_persona,
             "generated_situation": session.generated_situation,
+            "student_brief": session.student_brief,
             "chat_provider_used": session.chat_provider_used,
             "chat_model_used": session.chat_model_used,
+            "time_limit_minutes": time_limit_minutes or None,
+            "remaining_seconds": remaining_seconds(session, time_limit_minutes),
+            "input_locked": closing_input_locked(session, time_limit_minutes),
         },
         "turns": turns,
     }
@@ -196,7 +289,7 @@ def get_debrief(session_id: str) -> dict:
     `ready`, `needs_review`, `failed`.
     """
     session = load_session(session_id)
-    if session.status == "In Progress":
+    if session.status in ("In Progress", "Ready"):
         return {"status": "not_started", "session": session.name, "course": session.course}
 
     name = frappe.db.get_value("LMSA Simulation Debrief", {"session": session.name}, "name")
@@ -328,12 +421,79 @@ def list_scenarios(course: str | None = None) -> list[dict]:
             return []
     else:
         filters["lms_course"] = ["in", enrolled]
+    # `status` is always "Published" on this path (filtered above) but is returned
+    # so clients can filter uniformly across the instructor/moderator payloads,
+    # which include drafts.
     return frappe.get_all(
         "LMSA Simulation Scenario",
         filters=filters,
-        fields=["name", "scenario_name", "lms_course", "course_lesson", "difficulty", "modality"],
+        fields=[
+            "name",
+            "scenario_name",
+            "lms_course",
+            "course_lesson",
+            "difficulty",
+            "modality",
+            "status",
+        ],
         order_by="modified desc",
     )
+
+
+@frappe.whitelist()
+def list_my_sessions(course: str | None = None, scenario: str | None = None) -> list[dict]:
+    """List the current user's own simulation sessions (optionally by course
+    and/or scenario), enriched with the debrief score/status when available."""
+    filters: dict = {"student": frappe.session.user}
+    if course:
+        filters["course"] = course
+    if scenario:
+        filters["scenario"] = scenario
+
+    sessions = frappe.get_all(
+        "LMSA Simulation Session",
+        filters=filters,
+        fields=[
+            "name",
+            "scenario",
+            "modality",
+            "status",
+            "started_at",
+            "ended_at",
+            "turn_count",
+        ],
+        order_by="started_at desc",
+    )
+    if not sessions:
+        return []
+
+    scenario_names = {s["scenario"] for s in sessions if s["scenario"]}
+    titles = {
+        r["name"]: r["scenario_name"]
+        for r in frappe.get_all(
+            "LMSA Simulation Scenario",
+            filters={"name": ["in", list(scenario_names)]},
+            fields=["name", "scenario_name"],
+        )
+    }
+    debriefs = {
+        d["session"]: d
+        for d in frappe.get_all(
+            "LMSA Simulation Debrief",
+            filters={"session": ["in", [s["name"] for s in sessions]]},
+            fields=["session", "overall_score", "passed", "status"],
+        )
+    }
+
+    for s in sessions:
+        s["scenario_name"] = titles.get(s["scenario"], s["scenario"])
+        s["started_at"] = str(s["started_at"]) if s["started_at"] else None
+        s["ended_at"] = str(s["ended_at"]) if s["ended_at"] else None
+        d = debriefs.get(s["name"])
+        s["overall_score"] = d["overall_score"] if d else None
+        s["passed"] = bool(d["passed"]) if d else None
+        s["debrief_status"] = d["status"] if d else None
+    return sessions
 
 
 # ============================================================================
@@ -701,6 +861,31 @@ def delete_scenario(name: str) -> dict:
     frappe.delete_doc("LMSA Simulation Scenario", name, force=True, ignore_permissions=True)
     frappe.db.commit()
     return {"deleted": name}
+
+
+def _set_scenario_status(name: str, status: str) -> dict:
+    if not frappe.db.exists("LMSA Simulation Scenario", name):
+        frappe.throw(_("Scenario not found"), frappe.DoesNotExistError)
+    course = frappe.db.get_value("LMSA Simulation Scenario", name, "lms_course")
+    _ensure_instructor_of_course(course)
+    frappe.db.set_value("LMSA Simulation Scenario", name, "status", status)
+    frappe.db.commit()
+    return {"name": name, "status": status}
+
+
+@frappe.whitelist()
+def archive_scenario(name: str) -> dict:
+    """Move a scenario to the Archived state. Unlike delete, this is safe on
+    scenarios that already have sessions — the history stays intact, the
+    scenario just can't be started anymore."""
+    return _set_scenario_status(name, "Archived")
+
+
+@frappe.whitelist()
+def publish_scenario(name: str) -> dict:
+    """Bring an archived scenario back to the Published state so learners can
+    start it again."""
+    return _set_scenario_status(name, "Published")
 
 
 @frappe.whitelist()

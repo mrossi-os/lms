@@ -1,5 +1,5 @@
 <template>
-	<div class="flex flex-col h-full text-base overflow-y-hidden">
+	<div class="flex flex-col h-full text-base overflow-y-auto">
 		<div class="">
 			<div class="flex items-center justify-between mb-2">
 				<div class="flex items-center space-x-2">

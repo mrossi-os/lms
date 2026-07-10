@@ -1,19 +1,7 @@
 <template>
 	<div class="w-[90%] lg:w-[75%] mx-auto mt-5">
-		<div class="flex items-center justify-between mb-5">
-			<div class="text-ink-gray-9 font-semibold text-lg">
-				{{ __('Announcements') }}
-			</div>
-			<Button
-				v-if="canMakeAnnouncement"
-				variant="solid"
-				@click="showAnnouncementModal = true"
-			>
-				<template #prefix>
-					<Plus class="w-4 h-4" />
-				</template>
-				{{ __('Make an Announcement') }}
-			</Button>
+		<div class="text-ink-gray-9 text-xl-semibold mb-5">
+			{{ __('Announcements') }}
 		</div>
 		<div v-if="announcements.length">
 			<div v-for="(comm, idx) in announcements" :key="idx">
@@ -37,8 +25,8 @@
 					     iframe; a plain notification keeps the app's themed card. -->
 					<div
 						v-if="isPlainNotification(comm.content)"
-						class="prose prose-sm bg-surface-menu-bar !min-w-full px-4 py-2 rounded-md"
-						v-html="comm.content"
+						class="prose prose-sm bg-surface-sidebar !min-w-full px-4 py-2 rounded-md"
+						v-html="sanitizeRichHTML(comm.content)"
 					></div>
 					<AnnouncementContent v-else :content="comm.content" />
 				</div>
@@ -53,13 +41,13 @@
 				<div class="flex items-center space-x-2">
 					<Button :disabled="currentPage <= 1" @click="currentPage--">
 						<template #prefix>
-							<ChevronLeft class="w-4 h-4" />
+							<LucideChevronLeft class="w-4 h-4" />
 						</template>
 						{{ __('Previous') }}
 					</Button>
 					<Button :disabled="currentPage >= totalPages" @click="currentPage++">
 						<template #suffix>
-							<ChevronRight class="w-4 h-4" />
+							<LucideChevronRight class="w-4 h-4" />
 						</template>
 						{{ __('Next') }}
 					</Button>
@@ -78,9 +66,9 @@
 	</div>
 </template>
 <script setup>
-import { createResource, Avatar, Button } from 'frappe-ui'
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { computed, inject, ref, watch } from 'vue'
+import { sanitizeRichHTML } from '@/utils/sanitizeRichHTML'
+import { Button, createResource, Avatar } from 'frappe-ui'
 import { timeAgo } from '@/utils'
 import AnnouncementModal from '@/pages/Batches/components/AnnouncementModal.vue'
 import AnnouncementContent from '@/pages/Batches/components/AnnouncementContent.vue'
@@ -152,6 +140,13 @@ const totalAnnouncements = computed(() => communications.data?.total || 0)
 const totalPages = computed(() =>
 	Math.max(1, Math.ceil(totalAnnouncements.value / pageSize)),
 )
+
+// Opened from the batch header's "Make Announcement" button via the tab's
+// childRef (see BatchDetail).
+const openAnnouncementModal = () => {
+	showAnnouncementModal.value = true
+}
+defineExpose({ openAnnouncementModal })
 </script>
 <style>
 .prose-sm p {

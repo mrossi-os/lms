@@ -372,7 +372,7 @@ defineSlots<{
       </ComboboxAnchor>
       <ComboboxPortal>
         <ComboboxContent
-          class="z-10 min-w-[--reka-combobox-trigger-width] mt-1 bg-surface-modal overflow-hidden rounded-lg shadow-2xl"
+          class="z-10 min-w-[--reka-combobox-trigger-width] mt-1 bg-surface-elevation-2 overflow-hidden rounded-lg shadow-2xl"
           position="popper"
           @openAutoFocus.prevent
           @closeAutoFocus.prevent
@@ -394,7 +394,7 @@ defineSlots<{
             >
               <ComboboxGroup class="px-1.5" v-if="isGroup(optionOrGroup)">
                 <ComboboxLabel
-                  class="px-2.5 pt-3 pb-1.5 text-sm font-medium text-ink-gray-5 sticky top-0 bg-surface-modal z-10"
+                  class="px-2.5 pt-3 pb-1.5 text-sm-medium text-ink-gray-5 sticky top-0 bg-surface-elevation-2 z-10"
                 >
                   {{ optionOrGroup.group }}
                 </ComboboxLabel>

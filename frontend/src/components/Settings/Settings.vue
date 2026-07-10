@@ -1,11 +1,11 @@
 <template>
 	<Dialog v-model="show" :options="{ size: '5xl' }">
 		<template #body>
-			<div class="flex h-[calc(100vh_-_8rem)] card" id="settings-modal">
+			<div class="flex h-[calc(100vh_-_8rem)]" id="settings-modal">
 				<div
 					class="flex w-52 shrink-0 flex-col bg-surface-gray-2 p-2 overflow-y-auto"
 				>
-					<h1 class="mb-3 px-2 pt-2 text-lg font-semibold text-ink-gray-9">
+					<h1 class="mb-3 px-2 pt-2 text-xl-semibold text-ink-gray-9">
 						{{ __('Settings') }}
 					</h1>
 					<div class="space-y-5">
@@ -31,7 +31,7 @@
 				<div
 					v-if="activeTab && data.doc"
 					:key="activeTab.key"
-					class="flex flex-1 flex-col p-8 bg-surface-modal overflow-x-auto overflow-y-auto"
+					class="flex flex-1 flex-col p-8 bg-surface-elevation-2 overflow-x-auto overflow-y-auto"
 				>
 					<component
 						v-if="activeTab.template"
@@ -44,8 +44,7 @@
 							activeTab.key == 'TrueSkills API'
 								? { sections: activeTab.sections }
 								: {}),
-							...(activeTab.key == 'Members' ||
-							activeTab.key == 'Transactions'
+							...(activeTab.key == 'Members' || activeTab.key == 'Transactions'
 								? { 'onUpdate:show': (val) => (show = val), show }
 								: {}),
 						}"
@@ -70,14 +69,14 @@ import SettingDetails from '@/components/Settings/SettingDetails.vue'
 import SidebarLink from '@/components/Sidebar/SidebarLink.vue'
 import Members from '@/components/Settings/Members.vue'
 import Categories from '@/components/Settings/Categories.vue'
-import EmailTemplates from '@/components/Settings/EmailTemplates.vue'
+import EmailTemplatePage from '@/components/Settings/EmailTemplate/EmailTemplatePage.vue'
+import EmailConfig from '@/components/Settings/EmailAccount/EmailConfig.vue'
 import BrandSettings from '@/components/Settings/BrandSettings.vue'
 import ZoomSettings from '@/components/Settings/ZoomSettings.vue'
 import GoogleMeetSettings from '@/components/Settings/GoogleMeetSettings.vue'
 import GoogleCalendarSettings from '@/components/Settings/GoogleCalendarSettings.vue'
-import Badges from '@/components/Settings/Badges.vue'
-import AISettings from '@/oslms/components/ai/Settings/AISettings.vue'
-import TrueSkillsSettings from '@/oslms/components/trueskills/TrueSkillsSettings.vue'
+import Badges from '@/components/Settings/Badges/Badges.vue'
+import { buildOslmsSettingsTabs } from '@/oslms/utils/settings'
 
 const GOOGLE_CALENDAR_ROLES = ['System Manager', 'Gestore']
 const ADMIN_ONLY_ROLES = ['System Manager', 'Administrator']
@@ -107,12 +106,6 @@ const data = createDocumentResource({
 	cache: doctype.value,
 	auto: true,
 })
-const aiProviders = [
-	{ label: 'OpenAI', value: 'openai' },
-	{ label: 'Google Gemini', value: 'gemini' },
-	{ label: 'Anthropic', value: 'anthropic' },
-	{ label: 'DeepSeek', value: 'deepseek' },
-]
 
 const tabsStructure = computed(() => {
 	return [
@@ -172,7 +165,7 @@ const tabsStructure = computed(() => {
 								},
 							],
 						},
-						
+
 						{
 							label: __('Notifications'),
 							columns: [
@@ -311,11 +304,12 @@ const tabsStructure = computed(() => {
 						},
 					],
 				},
-					{
+				{
 					label: __('Course Progress'),
 					icon: 'Activity',
-					description:
-						__('Control how lessons are marked complete: dwell time and enforcement toggles for video, quiz, and assignment.'),
+					description: __(
+						'Control how lessons are marked complete: dwell time and enforcement toggles for video, quiz, and assignment.',
+					),
 					sections: [
 						{
 							label: __('Dwell Time'),
@@ -326,8 +320,9 @@ const tabsStructure = computed(() => {
 											label: __('Lesson dwell time (seconds)'),
 											name: 'lesson_dwell_time',
 											type: 'number',
-											description:
-												__('Seconds a learner must stay on a lesson before it auto-marks complete.'),
+											description: __(
+												'Seconds a learner must stay on a lesson before it auto-marks complete.',
+											),
 										},
 									],
 								},
@@ -342,15 +337,17 @@ const tabsStructure = computed(() => {
 											label: __('Enforce video completion'),
 											name: 'enforce_video_completion',
 											type: 'checkbox',
-											description:
-												__('When enabled, lessons that contain a video can only be marked complete by playing the video to the end. If the video fails to load, the dwell timer is used as a fallback.'),
+											description: __(
+												'When enabled, lessons that contain a video can only be marked complete by playing the video to the end. If the video fails to load, the dwell timer is used as a fallback.',
+											),
 										},
 										{
 											label: __('Enforce assignment completion'),
 											name: 'enforce_assignment_completion',
 											type: 'checkbox',
-											description:
-												__('When enabled, lessons with an assignment cannot be marked complete until the assignment is submitted.'),
+											description: __(
+												'When enabled, lessons with an assignment cannot be marked complete until the assignment is submitted.',
+											),
 										},
 									],
 								},
@@ -360,8 +357,9 @@ const tabsStructure = computed(() => {
 											label: __('Enforce quiz completion'),
 											name: 'enforce_quiz_completion',
 											type: 'checkbox',
-											description:
-												__('When enabled, lessons with a quiz cannot be marked complete until the quiz is submitted.'),
+											description: __(
+												'When enabled, lessons with a quiz cannot be marked complete until the quiz is submitted.',
+											),
 										},
 									],
 								},
@@ -386,60 +384,22 @@ const tabsStructure = computed(() => {
 					icon: 'Network',
 					template: markRaw(Categories),
 				},
+			],
+		},
+		{
+			label: 'Email',
+			items: [
 				{
-					key: 'Email Templates',
-					label: __('Email Templates'),
-					description: __(
-						'Manage the email templates for your learning system',
-					),
-					icon: 'MailPlus',
-					template: markRaw(EmailTemplates),
-					condition: isAdministrator,
+					label: 'Accounts',
+					description: 'Manage email accounts for incoming and outgoing mail',
+					icon: 'Mail',
+					template: markRaw(EmailConfig),
 				},
 				{
-					key: 'TrueSkills API',
-					label: __('TrueSkills API'),
-					icon: 'KeyRound',
-					description: __(
-						'Configure the TrueSkills API integration for your learning system',
-					),
-					condition: isAdministrator,
-					template: markRaw(TrueSkillsSettings),
-					sections: [
-						{
-							label: __('TrueSkills API'),
-							columns: [
-								{
-									fields: [
-										{
-											label: __('Enable TrueSkills API'),
-											name: 'trueskills_api_enabled',
-											type: 'checkbox',
-											description: __(
-												'If enabled, the TrueSkills API integration will be active.',
-											),
-										},
-										{
-											label: __('API Key'),
-											name: 'trueskills_api_key',
-											type: 'password',
-											description: __(
-												'The API key used to authenticate requests to the TrueSkills API.',
-											),
-										},
-										{
-											label: __('API Endpoint'),
-											name: 'trueskills_api_endpoint',
-											type: 'text',
-											description: __(
-												'Base URL of the TrueSkills API (e.g. https://api.trueskills.example/v1).',
-											),
-										},
-									],
-								},
-							],
-						},
-					],
+					label: 'Templates',
+					description: 'Manage the email templates for your learning system',
+					icon: 'MailPlus',
+					template: markRaw(EmailTemplatePage),
 				},
 			],
 		},
@@ -805,225 +765,7 @@ const tabsStructure = computed(() => {
 				},
 			],
 		},
-		{
-			key: 'Configurazioni',
-			label: __('Configurazioni'),
-			hideLabel: false,
-			condition: isAdministrator,
-			items: [
-				{
-					key: 'Corsi',
-					label: __('Corsi'),
-					icon: 'BookOpen',
-					description: __('Impostazioni relative ai corsi'),
-					condition: isAdministrator,
-					sections: [],
-				},
-				{
-					key: 'Classi',
-					label: __('Classi'),
-					icon: 'Laptop',
-					description: __('Impostazioni relative alle classi'),
-					condition: isAdministrator,
-					sections: [
-						{
-							label: __('Classi Live'),
-							columns: [
-								{
-									fields: [
-										{
-											label: __('Abilita Classi Live'),
-											name: 'enable_live_classes',
-											type: 'checkbox',
-											description: __(
-												'Se attivo, la tab Classi Live e le funzionalità correlate sono visibili a tutti gli utenti.',
-											),
-										},
-									],
-								},
-							],
-						},
-					],
-				},
-			],
-		},
-		{
-			key: 'AI',
-			label: __('AI'),
-			hideLabel: false,
-			items: [
-				{
-					key: 'AI',
-					label: __('AI'),
-					icon: 'BrainCircuit',
-					description: __(
-						'Configure AI assistant settings for your learning system',
-					),
-					template: markRaw(AISettings),
-					condition: isAdministrator,
-					sections: [
-						{
-							label: __('Rag Tutor'),
-							columns: [
-								{
-									fields: [
-										{
-											label: __('Enabled'),
-											name: 'enabled',
-											type: 'checkbox',
-											description: __(
-												'Enable AI features for your learning system.',
-											),
-										},
-									],
-								},
-								{
-									fields: [
-											{
-											label: __('Embedding Model'),
-											name: 'embedding_model',
-											type: 'text',
-											description: __(
-												'The model used to generate embeddings for content indexing.',
-											),
-										},
-										{
-											label: __('LLM Model'),
-											name: 'llm_model',
-											type: 'text',
-											description: __('The model used to chatbot.'),
-										},
-										{
-											label: __('Chunk Size'),
-											name: 'chunk_size',
-											type: 'number',
-											description: __(
-												'Number of characters per text chunk for indexing.',
-											),
-										},
-										{
-											label: __('Chunk Overlap'),
-											name: 'chunk_overlap',
-											type: 'number',
-											description: __(
-												'Character overlap between consecutive chunks.',
-											),
-										},
-										{
-											label: __('Top K'),
-											name: 'top_k',
-											type: 'number',
-											description: __(
-												'Number of relevant chunks to retrieve for context.',
-											),
-										},
-										
-									],
-								},
-							],
-						},
-						{
-							label: __('Api Keys'),
-							columns: [
-								{
-									fields: [
-										{
-											label: __('OpenAI Key'),
-											name: 'openai_key',
-											type: 'text',
-										},
-										{
-											label: __('OpenAI Base URL'),
-											name: 'openai_base_url',
-											type: 'text',
-											description: __('Optional override for OpenAI-compatible endpoints (Ollama, vLLM, LM Studio, ...).'),
-										},
-
-										{
-											label: __('Google Gemini API Key'),
-											name: 'gemini_key',
-											type: 'text',
-										},
-										
-										
-									],
-								},
-								{
-									fields: [
-										{
-											label: __('Vimeo Api Key'),
-											name: 'vimeo_api_key',
-											type: 'text',
-											description: __('Api vimeo for transcript.'),
-										},
-										{
-											label: __('DeepSeek API Key'),
-											name: 'deepseek_key',
-											type: 'text',
-										},
-										{
-											label: __('Anthropic API Key'),
-											name: 'anthropic_key',
-											type: 'text',
-										},
-									
-									],
-								}
-							],
-						},
-						{
-							label: __('AI Simulation'),
-							columns:[
-								{
-									fields:[
-										{
-											label: __('Enabled'),
-											name: 'simulations_enabled',
-											type: 'checkbox',
-											description: __(
-												'Enable AI Simulations for your learning system.',
-											),
-										},
-										{
-											label: __('Chat LLM Provider'),
-											name: 'simulation_chat_provider',
-											type: 'select',
-											options: aiProviders,
-										},
-										{
-											label: __('Chat Model'),
-											name: 'simulation_chat_model',
-											type: 'text',
-										},
-									]
-								},
-								{
-									fields:[
-										{
-											label: __('Default LLM Provider'),
-											name: 'simulation_provider_default',
-											type: 'select',
-											options: aiProviders,
-										},
-										{
-											label: __('Debrief LLM Provider'),
-											name: 'simulation_debrief_provider',
-											type: 'select',
-											options: aiProviders,
-										},
-										{
-											label: __('Debrief Model'),
-											name: 'simulation_debrief_model',
-											type: 'text',
-										},
-									]
-								}
-							]
-						}
-					],
-				},
-			],
-		},
+		...buildOslmsSettingsTabs({ isAdministrator }),
 	]
 })
 

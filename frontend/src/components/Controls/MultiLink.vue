@@ -44,7 +44,7 @@
 			</template>
 			<template #body>
 				<div
-					class="rounded-lg border border-outline-gray-1 bg-surface-modal shadow-xl"
+					class="rounded-lg border border-outline-gray-1 bg-surface-elevation-2 shadow-xl"
 				>
 					<!--
 						`ignore-filter` disables reka's built-in client filtering: search
@@ -197,9 +197,9 @@ const triggerVariantClasses: Record<
 	string
 > = {
 	subtle:
-		'border border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3',
+		'border border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-elevation-2 hover:bg-surface-gray-3',
 	outline:
-		'border border-outline-gray-2 bg-surface-white hover:border-outline-gray-3',
+		'border border-outline-gray-2 bg-surface-base hover:border-outline-gray-3',
 	ghost:
 		'border border-transparent bg-transparent hover:bg-surface-gray-3 focus-within:bg-surface-gray-3',
 }

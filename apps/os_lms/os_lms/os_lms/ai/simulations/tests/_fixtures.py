@@ -7,6 +7,7 @@ from os_lms.os_lms.ai.simulations.prompts import PersonaVariant, ScenarioVariant
 
 CANNED_VARIANT = ScenarioVariant(
     situation="Anna ha appena visto un'offerta competitor del -20%.",
+    student_brief="Il tuo compito è convincere Anna a confermare l'ordine.",
     persona=PersonaVariant(
         name="Anna",
         role="Head Buyer",

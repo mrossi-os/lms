@@ -1,10 +1,10 @@
 <template>
 	<div
-		class="flex h-full flex-col justify-between transition-all duration-300 ease-in-out border-e bg-surface-menu-bar overflow-x-hidden"
+		class="flex h-full flex-col justify-between transition-all duration-300 ease-in-out border-e bg-surface-sidebar overflow-x-hidden"
 		:class="sidebarStore.isSidebarCollapsed ? 'w-14' : 'w-56'"
 	>
 		<div
-			class="flex flex-col overflow-y-auto"
+			class="flex flex-col overflow-y-auto flex-1 min-h-0"
 			:class="sidebarStore.isSidebarCollapsed ? 'items-center' : ''"
 		>
 			<UserDropdown :isCollapsed="sidebarStore.isSidebarCollapsed" />
@@ -12,7 +12,7 @@
 				<div v-for="link in sidebarLinks" class="mx-2 my-2.5">
 					<div
 						v-if="!link.hideLabel"
-						class="mb-2 mt-3 flex cursor-pointer gap-1.5 px-1 text-base font-medium text-ink-gray-5 transition-all duration-300 ease-in-out"
+						class="mb-2 mt-3 flex cursor-pointer gap-1.5 px-1 text-base-medium text-ink-gray-5 transition-all duration-300 ease-in-out"
 					>
 						<span>{{ __(link.label) }}</span>
 					</div>
@@ -30,7 +30,7 @@
 		<div class="m-2 flex flex-col gap-1">
 			<div
 				v-if="readOnlyMode && !sidebarStore.isSidebarCollapsed"
-				class="z-10 m-2 bg-surface-modal py-2.5 px-3 text-xs text-ink-gray-7 leading-5 rounded-md"
+				class="z-10 m-2 bg-surface-elevation-2 py-2.5 px-3 text-xs text-ink-gray-7 leading-5 rounded-md"
 			>
 				{{
 					__(
@@ -42,11 +42,11 @@
 				v-if="
 					isStudent && !profileIsComplete && !sidebarStore.isSidebarCollapsed
 				"
-				class="flex flex-col gap-3 text-ink-gray-9 py-2.5 px-3 bg-surface-white shadow-sm rounded-md"
+				class="flex flex-col gap-3 text-ink-gray-9 py-2.5 px-3 bg-surface-base shadow-sm rounded-md"
 			>
 				<div class="flex flex-col text-p-sm gap-1">
 					<div class="inline-flex gap-1">
-						<User class="h-4 my-0.5 shrink-0" />
+						<span class="lucide-user h-4 my-0.5 shrink-0" />
 						<div class="font-medium">
 							{{ __('Complete your profile') }}
 						</div>
@@ -65,7 +65,7 @@
 				>
 					<Button :label="__('My Profile')" class="w-full">
 						<template #prefix>
-							<ChevronsRight class="h-4 w-4 text-ink-gray-7 stroke-1.5" />
+							<span class="lucide-chevrons-right h-4 w-4 text-ink-gray-7" />
 						</template>
 					</Button>
 				</router-link>
@@ -85,7 +85,7 @@
 					}"
 					class="flex items-center justify-center"
 				>
-					<User class="size-4 stroke-1.5 text-ink-gray-7 cursor-pointer" />
+					<span class="lucide-user size-4 text-ink-gray-7 cursor-pointer" />
 				</router-link>
 			</Tooltip>
 			<TrialBanner
@@ -106,12 +106,12 @@
 					:class="sidebarStore.isSidebarCollapsed ? 'flex-col' : 'flex-row'"
 				>
 					<Tooltip v-if="readOnlyMode && sidebarStore.isSidebarCollapsed">
-						<CircleAlert
-							class="size-4 stroke-1.5 text-ink-gray-7 cursor-pointer"
+						<span
+							class="lucide-circle-alert size-4 text-ink-gray-7 cursor-pointer"
 						/>
 						<template #body>
 							<div
-								class="max-w-[30ch] rounded bg-surface-gray-7 px-2 py-1 text-center text-p-xs text-ink-white shadow-xl"
+								class="max-w-[30ch] rounded bg-surface-gray-10 px-2 py-1 text-center text-p-xs text-ink-base shadow-xl"
 							>
 								{{
 									__(
@@ -183,7 +183,6 @@ import {
 	UserPlus,
 	Users,
 	BookText,
-	Zap,
 } from 'lucide-vue-next'
 import {
 	TrialBanner,

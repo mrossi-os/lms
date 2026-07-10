@@ -217,7 +217,7 @@
 					{{ __('Nota del docente') }}
 				</h2>
 				<div
-					class="text-sm border border-outline-gray-2 rounded-md p-3 bg-surface-gray-1 card"
+					class="text-sm border border-outline-gray-2 rounded-md p-3 bg-surface-gray-1 card text-ink-gray-9 whitespace-pre-wrap"
 				>
 					{{ debrief.instructor_review }}
 				</div>

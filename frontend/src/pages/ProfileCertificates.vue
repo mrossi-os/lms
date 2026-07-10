@@ -1,6 +1,6 @@
 <template>
 	<div class="mt-7 mb-10">
-		<h2 class="mb-3 text-lg font-semibold text-ink-gray-9">
+		<h2 class="mb-3 text-xl-semibold text-ink-gray-9">
 			{{ __('Certificates') }}
 		</h2>
 		<div
@@ -10,13 +10,19 @@
 			<div
 				v-for="certificate in certificates.data"
 				:key="certificate.name"
-				class="flex flex-col bg-surface-white border rounded-lg card cursor-pointer hover:bg-surface-menu-bar"
+				class="flex flex-col bg-surface-base border rounded-lg card cursor-pointer hover:bg-surface-sidebar"
 				@click="openCertificate(certificate)"
 			>
-				<div class="font-medium leading-5 mb-2 text-ink-gray-9">
-					{{ certificate.course_title || certificate.batch_title }}
+				<div
+					class="font-medium leading-5 mb-2 text-ink-gray-9 flex items-center gap-2"
+				>
+					<span
+						v-if="openingName === certificate.name"
+						class="lucide-loader-circle size-4 animate-spin text-ink-gray-6 shrink-0"
+					/>
+					<span>{{ certificate.course_title || certificate.batch_title }}</span>
 				</div>
-				<div class="text-sm text-ink-gray-7 font-medium">
+				<div class="text-sm-medium text-ink-gray-7">
 					<span> {{ __('Issued on') }}: </span>
 					{{ dayjs(certificate.issue_date).format('DD MMM YYYY') }}
 				</div>
@@ -26,13 +32,13 @@
 					@click.stop
 				>
 					<button
-						class="text-xs px-2 py-1 rounded border border-outline-gray-2 hover:bg-surface-gray-2 font-medium text-ink-gray-8"
+						class="text-xs-medium px-2 py-1 rounded border border-outline-gray-2 hover:bg-surface-gray-2 text-ink-gray-8"
 						@click.stop="downloadOpenbadge(certificate.name, 'image')"
 					>
 						{{ __('Download Openbadge') }}
 					</button>
 					<button
-						class="text-xs px-2 py-1 rounded border border-outline-gray-2 hover:bg-surface-gray-2 font-medium text-ink-gray-8"
+						class="text-xs-medium px-2 py-1 rounded border border-outline-gray-2 hover:bg-surface-gray-2 text-ink-gray-8"
 						@click.stop="downloadOpenbadge(certificate.name, 'jsonp')"
 					>
 						{{ __('JSON-LD') }}
@@ -48,6 +54,9 @@
 <script setup>
 import { createListResource, createResource } from 'frappe-ui'
 import { inject, onMounted, ref, watch } from 'vue'
+// OSLMS-CUSTOM: open the TrueSkills openbadge image for certificates issued
+// through TrueSkills; internal/batch certificates still open the PDF.
+import { useCertificateViewer } from '@/oslms/composables/useCertificateViewer'
 
 const dayjs = inject('$dayjs')
 const props = defineProps({
@@ -107,12 +116,21 @@ watch(
 	{ immediate: true },
 )
 
-const openCertificate = (certificate) => {
-	window.open(
-		`/api/method/frappe.utils.print_format.download_pdf?doctype=LMS+Certificate&name=${
-			certificate.name
-		}&format=${encodeURIComponent(certificate.template)}`,
-	)
+const { openIssuedCertificate } = useCertificateViewer()
+const openingName = ref(null)
+
+const openCertificate = async (certificate) => {
+	if (openingName.value) return
+	openingName.value = certificate.name
+	try {
+		await openIssuedCertificate({
+			name: certificate.name,
+			template: certificate.template,
+			status: trueskillsStatus.value[certificate.name],
+		})
+	} finally {
+		openingName.value = null
+	}
 }
 
 const downloadOpenbadge = (certificateName, fileFormat) => {

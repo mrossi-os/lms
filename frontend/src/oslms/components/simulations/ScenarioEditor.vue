@@ -63,12 +63,15 @@
 							:options="['Draft', 'Published', 'Archived']" required />
 						<Autocomplete class="lms-auto-complete" v-model="model.lms_course" :options="courseOptions"
 							:label="__('Corso')" :placeholder="__('Cerca un corso')" required />
-						<Autocomplete class="lms-auto-complete" v-model="model.course_lesson" :options="lessonOptions"
-							:label="__('Lezione (opzionale)')" :placeholder="__('Cerca una lezione')"
-							:disabled="!model.lms_course" />
+						<!-- Lesson field hidden by request; binding kept so the rest of the logic still works -->
+						<Autocomplete v-if="false" class="lms-auto-complete" v-model="model.course_lesson"
+							:options="lessonOptions" :label="__('Lezione (opzionale)')"
+							:placeholder="__('Cerca una lezione')" :disabled="!model.lms_course" />
 						<FormControl v-model="model.difficulty" type="select" class="lms-select "
 							:label="__('Difficoltà')" :options="['easy', 'medium', 'hard']" required />
-						<FormControl v-model="model.modality" type="select" class="lms-select " :label="__('Modalità')"
+						<!-- Modality select hidden by request; binding kept so the rest of
+							the logic still works. New scenarios are locked to chat (see onSave). -->
+						<FormControl v-if="false" v-model="model.modality" type="select" class="lms-select " :label="__('Modalità')"
 							:options="[
 								{ label: __('Chat'), value: 'chat' },
 								{ label: __('Voce'), value: 'voice' },
@@ -93,11 +96,15 @@
 
 					</div>
 
-					<!-- Limits -->
+					<!-- Limits: chat sessions are time-bounded only. `max_turns` is
+						hidden from the form (kept bound + defaulted so the automated
+						eval loop, which still reads it, is unaffected). -->
 					<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-						<FormControl v-model.number="model.max_turns" type="number" :label="__('Turni max')" />
+						<FormControl v-if="false" v-model.number="model.max_turns" type="number"
+							:label="__('Turni max')" />
 						<FormControl v-model.number="model.time_limit_minutes" type="number"
-							:label="__('Tempo max (min)')" />
+							:label="__('Tempo max (min)')"
+							:description="__('0 = nessun limite. Allo scadere il personaggio chiude la conversazione entro pochi messaggi.')" />
 					</div>
 
 
@@ -260,7 +267,10 @@
 							:status="simulationSession?.status || 'In Progress'"
 							:sending="simulationSending"
 							:ending="simulationEnding"
-							@send="simulationSend"
+							:remainingSeconds="simulationRemainingSeconds"
+							:inputLocked="simulationInputLocked"
+							@send="simulationOnSend"
+							@send-audio="simulationOnSendAudio"
 							@end="simulationEnd"
 						/>
 					</div>
@@ -463,7 +473,20 @@ const {
 	isTerminal: simulationIsTerminal,
 	send: simulationSend,
 	end: simulationEnd,
+	remainingSeconds: simulationRemainingSeconds,
+	inputLocked: simulationInputLocked,
 } = useSimulationSession(simulationSessionId)
+
+// ChatSession emits a plain string on `send` (typed text) and a Blob on
+// `send-audio` (recorded voice), but the composable's `send` takes a
+// { text, audioBlob } object. These adapters bridge the two — mirroring
+// SimulationPlay.vue, the page reached from the floating simulation button.
+function simulationOnSend(text) {
+	return simulationSend({ text })
+}
+function simulationOnSendAudio(blob) {
+	return simulationSend({ audioBlob: blob })
+}
 
 const simulationPersona = computed(() => {
 	const raw = simulationSession.value?.generated_persona
@@ -700,6 +723,11 @@ async function onSave() {
 			__('Seleziona uno schema di valutazione dalla lista (oppure creane uno nuovo).'),
 		)
 		return
+	}
+	// New scenarios are locked to chat modality (the select is hidden at
+	// creation); guarantee the saved value regardless of AI-fill / JSON import.
+	if (!props.scenarioName) {
+		model.modality = 'chat'
 	}
 	saving.value = true
 	try {

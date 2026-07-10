@@ -1,6 +1,7 @@
 import hashlib
 import json
 import re
+from urllib.parse import quote
 
 import frappe
 import requests
@@ -21,7 +22,6 @@ from frappe.utils import (
 	get_fullname,
 	getdate,
 	nowtime,
-	pretty_date,
 	rounded,
 	validate_email_address,
 )
@@ -260,6 +260,17 @@ def get_lesson_icon(body: str, content: str):
 	return "icon-list"
 
 
+def rewrite_private_media(content: str) -> str:
+	if not content:
+		return content
+	endpoint = "/api/method/lms.lms.doctype.course_lesson.course_lesson.serve_resource?file_url="
+	return re.sub(
+		r"/private/files/([^\"'\\]+)",
+		lambda m: endpoint + quote(m.group(0)),
+		content,
+	)
+
+
 def get_instructors(doctype: str, docname: str):
 	CourseInstructor = frappe.qb.DocType("Course Instructor")
 	User = frappe.qb.DocType("User")
@@ -303,7 +314,6 @@ def get_reviews(course: str):
 		review.owner_details = frappe.db.get_value(
 			"User", review.owner, ["username", "full_name", "user_image"], as_dict=True
 		)
-		review.creation = pretty_date(review.creation)
 
 	return reviews
 
@@ -791,6 +801,31 @@ def get_courses(filters: dict = None, start: int = 0) -> list:
 	return courses
 
 
+@frappe.whitelist(allow_guest=True)
+@rate_limit(limit=500, seconds=60 * 60)
+def get_course_categories() -> list:
+	"""Returns the full, unfiltered list of categories used by published courses."""
+
+	if not guest_access_allowed():
+		return []
+
+	# Distinct category strings are inherently bounded (one per category, not per
+	# course), so the full set is intended; limit_page_length=0 makes the
+	# "no page cap" explicit rather than relying on get_all's default.
+	rows = frappe.get_all(
+		"LMS Course",
+		filters={"published": 1, "category": ["is", "set"]},
+		pluck="category",
+		distinct=True,
+		order_by="category asc",
+		limit_page_length=0,
+	)
+
+	options = [{"label": "", "value": None}]
+	options += [{"label": category, "value": category} for category in rows]
+	return options
+
+
 def get_course_card_details(courses: list) -> list:
 	for course in courses:
 		course.instructors = get_instructors("LMS Course", course.name)
@@ -950,6 +985,10 @@ def get_course_details(course: str):
 		fields,
 		as_dict=1,
 	)
+	# A moderator can_modify any course, so the early return above is skipped even
+	# for a course that no longer exists (e.g. just deleted). Bail before deref.
+	if not course_details:
+		return {}
 
 	course_details.instructors = get_instructors("LMS Course", course_details.name)
 	course_details.membership = membership
@@ -1207,12 +1246,11 @@ def get_lesson(course: str, chapter: int, lesson: int) -> dict:
 		as_dict=1,
 	)
 
-	if (
-		not lesson_details.include_in_preview
-		and not membership
-		and not can_modify_course(course)
-		and not is_course_valutatore(course)
-	):
+	# Local import: permissions imports from utils at module load, so importing it
+	# at the top of utils would create a cycle.
+	from lms.lms.permissions import can_access_lesson
+
+	if not can_access_lesson(lesson_name):
 		return {
 			"no_preview": 1,
 			"title": lesson_details.title,
@@ -1238,6 +1276,13 @@ def get_lesson(course: str, chapter: int, lesson: int) -> dict:
 	lesson_details.paid_certificate = course_info.paid_certificate
 	lesson_details.disable_self_learning = course_info.disable_self_learning
 	lesson_details.videos = get_video_details(lesson_name)
+
+	# Rewrite for EVERYONE, not just guests: native /private/files/ needs a Course
+	# Lesson read role-perm that students/guests lack, so all private media is routed
+	# through the access-gated serve_resource endpoint.
+	lesson_details.content = rewrite_private_media(lesson_details.content)
+	lesson_details.instructor_content = rewrite_private_media(lesson_details.instructor_content)
+
 	return lesson_details
 
 
@@ -1899,8 +1944,21 @@ def get_discussion_topics(doctype: str, docname: str, single_thread: bool = Fals
 		order_by="creation desc",
 	)
 
+	reply_counts = {}
+	if topics:
+		for row in frappe.get_all(
+			"Discussion Reply",
+			filters={"topic": ["in", [topic.name for topic in topics]]},
+			fields=["topic", "count(name) as count"],
+			group_by="topic",
+		):
+			reply_counts[row.topic] = row.count
+
 	for topic in topics:
 		topic.user = frappe.db.get_value("User", topic.owner, ["full_name", "user_image"], as_dict=True)
+		# The topic's first reply is the question body itself, so the number of
+		# answers is one less than the total reply count.
+		topic.reply_count = max(reply_counts.get(topic.name, 0) - 1, 0)
 
 	return topics
 
@@ -2506,7 +2564,12 @@ def get_related_courses(course: str) -> list:
 	related_courses = frappe.get_all("Related Courses", {"parent": course}, order_by="idx", pluck="course")
 
 	for related_course in related_courses:
-		related_course_details.append(get_course_details(related_course))
+		# get_course_details returns {} for courses the viewer can't see (e.g. a
+		# related course that was unpublished after being tagged); skip those so
+		# the frontend doesn't render a blank card.
+		details = get_course_details(related_course)
+		if details:
+			related_course_details.append(details)
 	return related_course_details
 
 

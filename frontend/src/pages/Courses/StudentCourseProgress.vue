@@ -1,12 +1,10 @@
 <template>
 	<Dialog
-		v-model="show"
-		:options="{
-			title: __('Student Progress'),
-			size: hasAssessmentData ? '4xl' : 'xl',
-		}"
+		v-model:open="show"
+		title="Student Progress"
+		:size="hasAssessmentData ? '4xl' : 'xl'"
 	>
-		<template #body-content>
+		<template #default>
 			<div class="text-base text-ink-gray-9 max-h-[70vh] overflow-y-auto">
 				<div class="flex justify-between mb-5 px-2">
 					<div class="flex items-center gap-x-2">
@@ -41,12 +39,10 @@
 				>
 					<div
 						v-if="lessons.data"
-						class="border border-outline-gray-modals rounded-lg px-3 pt-3 max-h-[60vh] overflow-y-auto"
+						class="border border-outline-elevation-2 rounded-lg px-3 max-h-[60vh] overflow-y-auto"
 					>
-						<div>
-							<div class="text-ink-gray-5 mb-5">
-								{{ __('Lesson Progress') }}
-							</div>
+						<div class="sticky top-0 z-10 bg-surface-base py-3 text-ink-gray-5">
+							{{ __('Lesson Progress') }}
 						</div>
 						<div
 							v-for="progress in lessons.data"
@@ -64,10 +60,10 @@
 								v-if="getLessonStatus(progress) == 'Complete'"
 								:text="__('Complete')"
 							>
-								<Check class="text-ink-green-3 size-4" />
+								<span class="lucide-check text-ink-green-6 size-4" />
 							</Tooltip>
 							<Tooltip v-else :text="__('Pending')">
-								<Minus class="text-ink-amber-2 size-4" />
+								<span class="lucide-minus text-ink-amber-5 size-4" />
 							</Tooltip>
 							<!-- <Badge :theme="getLessonStatusTheme(progress)">
 								{{ getLessonStatus(progress) }}
@@ -78,7 +74,7 @@
 					<div class="space-y-3">
 						<div
 							v-if="assessmentProgress.data?.quizzes?.length"
-							class="border border-outline-gray-modals rounded-lg px-3 pt-3 h-fit"
+							class="border border-outline-elevation-2 rounded-lg px-3 pt-3 h-fit"
 						>
 							<div class="grid grid-cols-4 gap-5 text-ink-gray-5 mb-5">
 								<div class="col-span-2">
@@ -107,7 +103,7 @@
 
 						<div
 							v-if="assessmentProgress.data?.assignments?.length"
-							class="border border-outline-gray-modals rounded-lg px-3 pt-3 h-fit"
+							class="border border-outline-elevation-2 rounded-lg px-3 pt-3 h-fit"
 						>
 							<div>
 								<div class="text-ink-gray-5 mb-5">
@@ -129,7 +125,7 @@
 
 						<div
 							v-if="assessmentProgress.data?.exercises?.length"
-							class="border border-outline-gray-modals rounded-lg px-3 pt-3 h-fit"
+							class="border border-outline-elevation-2 rounded-lg px-3 pt-3 h-fit"
 						>
 							<div>
 								<div class="text-ink-gray-5 mb-5">
@@ -165,7 +161,6 @@ import {
 } from 'frappe-ui'
 import ProgressBar from '@/components/ProgressBar.vue'
 import { computed } from 'vue'
-import { Check, Minus } from 'lucide-vue-next'
 
 const show = defineModel<boolean>({ required: true, default: false })
 

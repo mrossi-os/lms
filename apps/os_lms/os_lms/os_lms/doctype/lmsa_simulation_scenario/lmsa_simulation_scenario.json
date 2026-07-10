@@ -27,7 +27,9 @@
   "column_break_limits",
   "section_provider",
   "provider_override",
-  "model_override"
+  "model_override",
+  "voice",
+  "voice_instructions"
  ],
  "fields": [
   {
@@ -177,6 +179,20 @@
    "fieldname": "model_override",
    "fieldtype": "Data",
    "label": "Model"
+  },
+  {
+   "depends_on": "eval:['voice','both'].includes(doc.modality)",
+   "description": "Realtime voice for this scenario; blank = settings default",
+   "fieldname": "voice",
+   "fieldtype": "Data",
+   "label": "Voice Override"
+  },
+  {
+   "depends_on": "eval:['voice','both'].includes(doc.modality)",
+   "description": "Delivery style for the persona (tone, pacing) injected into the realtime instructions",
+   "fieldname": "voice_instructions",
+   "fieldtype": "Small Text",
+   "label": "Voice / Acting Instructions"
   }
  ],
  "grid_page_length": 50,

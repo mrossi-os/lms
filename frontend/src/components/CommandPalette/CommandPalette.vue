@@ -1,9 +1,9 @@
 <template>
-	<Dialog v-model="show" :options="{ size: '2xl' }">
+	<Dialog v-model:open="show" size="2xl">
 		<template #body>
 			<div class="text-base">
 				<div class="flex items-center gap-x-2 ps-4.5 border-b">
-					<Search class="size-4 text-ink-gray-4" />
+					<span class="lucide-search size-4 text-ink-gray-4" />
 					<input
 						ref="inputRef"
 						type="text"
@@ -35,19 +35,19 @@
 					class="flex items-center gap-x-5 w-full border-t py-2 text-sm text-ink-gray-7 px-4.5"
 				>
 					<div class="flex items-center gap-x-2">
-						<MoveUp
-							class="size-5 stroke-1.5 bg-surface-gray-2 p-1 rounded-sm"
+						<span
+							class="lucide-move-up size-5 bg-surface-gray-2 p-1 rounded-sm"
 						/>
-						<MoveDown
-							class="size-5 stroke-1.5 bg-surface-gray-2 p-1 rounded-sm"
+						<span
+							class="lucide-move-down size-5 bg-surface-gray-2 p-1 rounded-sm"
 						/>
 						<span>
 							{{ __('to navigate') }}
 						</span>
 					</div>
 					<div class="flex items-center gap-x-2">
-						<CornerDownLeft
-							class="size-5 stroke-1.5 bg-surface-gray-2 p-1 rounded-sm"
+						<span
+							class="lucide-corner-down-left size-5 bg-surface-gray-2 p-1 rounded-sm"
 						/>
 						<span>
 							{{ __('to select') }}
@@ -68,6 +68,7 @@
 import { createResource, debounce, Dialog } from 'frappe-ui'
 import { nextTick, onMounted, ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { BookOpen, Briefcase, Users } from 'lucide-vue-next'
 import * as icons from 'lucide-vue-next'
 import { getSidebarLinks } from '@/utils'
 import { useSettings } from '@/stores/settings'
@@ -120,6 +121,9 @@ const generateSearchResults = () => {
 	})
 }
 
+watch(query, () => {
+	searchResults.value = []
+})
 const appendSearchPage = () => {
 	let searchPage: { title: string; items: Array<any> } = {
 		title: '',
@@ -220,34 +224,43 @@ const navigateTo = (route: {
 	router.replace({ name: route.name, params: route.params, query: route.query })
 }
 
-const jumpToOptions = computed(() => {
-	const links = getSidebarLinks()
-	const hiddenKeys = sidebarSettings.data
-		? Object.keys(sidebarSettings.data).filter(
-				(key) => !parseInt(sidebarSettings.data[key]),
-			)
-		: []
-
-	const items = links
-		.flatMap((group) => group.items)
-		.filter((item) => {
-			if (!item.to || item.to.startsWith('http') || item.to.startsWith('mailto:')) return false
-			const key = item.label.toLowerCase().split(' ').join('_')
-			return !hiddenKeys.includes(key)
-		})
-		.map((item, index) => ({
-			title: __(item.label),
-			icon: icons[item.icon] || Search,
-			route: { name: item.to },
-			isActive: index === 0,
-		}))
-
-	return [{ title: 'Jump to', items }]
-})
+const jumpToOptions = ref([
+	{
+		title: __('Jump to'),
+		items: [
+			{
+				title: __('Courses'),
+				icon: BookOpen,
+				route: {
+					name: 'Courses',
+				},
+				isActive: true,
+			},
+			{
+				title: __('Batches'),
+				icon: Users,
+				route: {
+					name: 'Batches',
+				},
+				isActive: false,
+			},
+			{
+				title: __('Jobs'),
+				icon: Briefcase,
+				route: {
+					name: 'Jobs',
+				},
+				isActive: false,
+			},
+		],
+	},
+])
 </script>
 <style>
+/* Highlighted search match: use theme tokens so it adapts to dark mode and the
+   text stays readable (the default <mark> renders black text). */
 mark {
-	background-color: theme('colors.amber.100');
+	@apply bg-surface-amber-1 text-ink-gray-9;
 	font-weight: 500;
 }
 </style>

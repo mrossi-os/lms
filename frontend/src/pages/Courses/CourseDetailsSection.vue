@@ -40,7 +40,14 @@
 				@change="markDirty()"
 			/>
 		</div>
-		<CourseThumbnailField />
+		<div class="grid gap-5 grid-cols-1 xl:grid-cols-2">
+			<CourseThumbnailField />
+			<VideoPreviewField
+				:modelValue="doc.video_link"
+				:label="__('Preview video')"
+				@update:modelValue="setVideoLink"
+			/>
+		</div>
 	</section>
 </template>
 
@@ -52,11 +59,18 @@ import { createLMSCategory } from '@/utils'
 import Link from '@/components/Controls/Link.vue'
 import CourseInstructorsField from '@/pages/Courses/CourseInstructorsField.vue'
 import CourseThumbnailField from '@/pages/Courses/CourseThumbnailField.vue'
+import VideoPreviewField from '@/components/Controls/VideoPreviewField.vue'
 import type { CourseFormContext } from '@/types/api'
 
 const { resource, markDirty } = inject<CourseFormContext>('courseForm')!
 
 const doc = computed(() => resource.doc)
+
+function setVideoLink(value: string) {
+	if (!resource.doc) return
+	resource.doc.video_link = value
+	markDirty()
+}
 
 function createCategory(name: string | null, done?: () => void) {
 	if (!name) return

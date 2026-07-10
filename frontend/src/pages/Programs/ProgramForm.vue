@@ -1,13 +1,8 @@
 <template>
-	<Dialog
-		v-model="show"
-		:options="{
-			size: '2xl',
-		}"
-	>
-		<template #body-title>
+	<Dialog v-model:open="show" size="2xl">
+		<template #title>
 			<div class="flex items-center justify-between gap-x-2 text-base w-full">
-				<div class="text-xl font-semibold text-ink-gray-9">
+				<div class="text-3xl-semibold text-ink-gray-9">
 					{{
 						programName === 'new' ? __('Create Program') : __('Edit Program')
 					}}
@@ -17,7 +12,7 @@
 				</Badge>
 			</div>
 		</template>
-		<template #body-content>
+		<template #default>
 			<div class="text-base">
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-5 pb-5">
 					<FormControl
@@ -56,17 +51,17 @@
 						"
 						:editable="true"
 						:fixedMenu="true"
-						editorClass="prose-sm max-w-none border-b border-x border-outline-gray-modals bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]"
+						editorClass="prose-sm max-w-none border-b border-x border-outline-elevation-2 bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]"
 					/>
 				</div>
 				<div class="pb-5">
 					<div class="flex items-center justify-between mt-5 mb-4">
-						<div class="text-lg font-semibold text-ink-gray-9">
+						<div class="text-xl-semibold text-ink-gray-9">
 							{{ __('Courses') }}
 						</div>
 						<Button @click="openForm()">
 							<template #prefix>
-								<Plus class="h-4 w-4 stroke-1.5" />
+								<span class="lucide-plus size-4" />
 							</template>
 							<span>
 								{{ __('Add') }}
@@ -93,7 +88,7 @@
 						<ListRows>
 							<Draggable
 								:list="program.program_courses"
-								:item-key="programName === 'new' ? 'course' : 'name'"
+								:item-key="'course'"
 								group="items"
 								@end="updateOrder"
 								class="cursor-move"
@@ -117,7 +112,7 @@
 											)
 										"
 									>
-										<Trash2 class="h-4 w-4 stroke-1.5" />
+										<span class="lucide-trash-2 size-4" />
 									</Button>
 								</div>
 							</template>
@@ -130,7 +125,7 @@
 
 				<div>
 					<div class="flex items-center justify-between mt-5 mb-4">
-						<div class="text-lg font-semibold text-ink-gray-9">
+						<div class="text-xl-semibold text-ink-gray-9">
 							{{ __('Members') }}
 						</div>
 						<div class="flex gap-x-2">
@@ -139,13 +134,13 @@
 								@click="showProgressDialog = true"
 							>
 								<template #prefix>
-									<TrendingUp class="size-4 stroke-1.5" />
+									<span class="lucide-trending-up size-4" />
 								</template>
 								{{ __('Progress Summary') }}
 							</Button>
 							<Button @click="openMemberForm('direct')">
 								<template #prefix>
-									<Plus class="h-4 w-4 stroke-1.5" />
+									<span class="lucide-plus size-4" />
 								</template>
 								{{ __('Add Member') }}
 							</Button>
@@ -190,7 +185,7 @@
 											)
 										"
 									>
-										<Trash2 class="h-4 w-4 stroke-1.5" />
+										<span class="lucide-trash-2 size-4" />
 									</Button>
 								</div>
 							</template>
@@ -202,24 +197,28 @@
 				</div>
 			</div>
 			<Dialog
-				v-model="showFormDialog"
-				:options="{
-					size: 'lg',
-					title: __('Add Course to Program'),
-					actions: [
-						{
-							label: __('Add'),
-							variant: 'solid',
-							onClick: ({ close }: { close: () => void }) =>
-								addCourses(close),
-						},
-					],
-				}"
+				v-model:open="showFormDialog"
+				:title="
+					currentForm == 'course'
+						? __('Add Course to Program')
+						: __('Enroll Member to Program')
+				"
+				:actions="[
+					{
+						label: __('Add'),
+						variant: 'solid',
+						onClick: ({ close }: { close: () => void }) =>
+							currentForm == 'course'
+								? addCourses(close)
+								: addMembers(close),
+					},
+				]"
 			>
-				<template #body-content>
-					<div @click.stop class="min-h-[300px]">
-						<MultiSelect
-							v-model="selectedCourses"
+				<template #default>
+					<div @click.stop>
+						<Link
+							v-if="currentForm == 'course'"
+							v-model="course"
 							doctype="LMS Course"
 							:label="__('Courses')"
 							:autofocus="false"
@@ -344,7 +343,7 @@
 					theme="red"
 				>
 					<template #prefix>
-						<Trash2 class="size-4 stroke-1.5" />
+						<span class="lucide-trash-2 size-4" />
 					</template>
 					{{ __('Delete') }}
 				</Button>
@@ -373,9 +372,10 @@ import {
 } from 'frappe-ui'
 import ListSelectBanner from '@/overrides/frappe-ui/src/components/ListView/ListSelectBanner.vue'
 import { computed, ref, watch, getCurrentInstance } from 'vue'
+
+import { Programs, Program } from './types'
+import { sanitizeHTML, openSettings } from '@/utils'
 import { Plus, Trash2, TrendingUp } from 'lucide-vue-next'
-import { Programs, Program } from '@/types/programs'
-import { sanitizeHTML } from '@/utils'
 import Link from '@/components/Controls/Link.vue'
 import Draggable from 'vuedraggable'
 import ProgramProgressSummary from '@/pages/Programs/ProgramProgressSummary.vue'
@@ -502,16 +502,7 @@ const setProgramData = () => {
 	programs.value?.data.forEach((p: Program) => {
 		if (p.name === props.programName) {
 			isNew = false
-			const existingCourses = program.value.program_courses
-			const existingMembers = program.value.program_members
-			program.value = { ...p }
-			program.value.title = p.title || p.name
-			program.value.program_courses = Array.isArray(existingCourses)
-				? existingCourses
-				: []
-			program.value.program_members = Array.isArray(existingMembers)
-				? existingMembers
-				: []
+			program.value = { program_courses: [], program_members: [], ...p }
 		}
 	})
 

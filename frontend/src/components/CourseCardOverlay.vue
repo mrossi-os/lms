@@ -32,7 +32,7 @@
 					>
 						<Button variant="solid" size="md" class="w-full">
 							<template #prefix>
-								<BookText class="size-4 stroke-1.5" />
+								<span class="lucide-book-text size-4" />
 							</template>
 							<span>
 								{{ __('Continue Learning') }}
@@ -53,7 +53,7 @@
 				>
 					<Button variant="solid" size="md" class="w-full mb-8">
 						<template #prefix>
-							<CreditCard class="size-4 stroke-1.5" />
+							<span class="lucide-credit-card size-4" />
 						</template>
 						<span>
 							{{ __('Buy this course') }}
@@ -76,7 +76,7 @@
 					size="md"
 				>
 					<template #prefix>
-						<BookText class="size-4 stroke-1.5" />
+						<span class="lucide-book-text size-4" />
 					</template>
 					<span>
 						{{ __('Enroll Now') }}
@@ -85,12 +85,13 @@
 				<Button
 					v-if="canGetCertificate"
 					@click="fetchCertificate()"
+					:loading="opening"
 					variant="subtle"
 					class="w-full mt-2"
 					size="md"
 				>
 					<template #prefix>
-						<GraduationCap class="size-4 stroke-1.5" />
+						<span class="lucide-graduation-cap size-4" />
 					</template>
 					{{ __('Get Certificate') }}
 				</Button>
@@ -115,21 +116,21 @@
 					v-if="enrolledLabel"
 					class="flex items-center gap-3 text-ink-gray-8"
 				>
-					<Users class="size-4 stroke-1.5 shrink-0 text-ink-gray-7" />
+					<span class="lucide-users size-4 shrink-0 text-ink-gray-7" />
 					<span>{{ enrolledLabel }} {{ __('enrolled') }}</span>
 				</div>
 				<div
 					v-if="course.data?.video_link"
 					class="flex items-center gap-3 text-ink-gray-8"
 				>
-					<MonitorPlay class="size-4 stroke-1.5 shrink-0 text-ink-gray-7" />
+					<span class="lucide-monitor-play size-4 shrink-0 text-ink-gray-7" />
 					<span>{{ __('On demand course video') }}</span>
 				</div>
 				<div
 					v-if="course.data?.lessons"
 					class="flex items-center gap-3 text-ink-gray-8"
 				>
-					<BookOpen class="size-4 stroke-1.5 shrink-0 text-ink-gray-7" />
+					<span class="lucide-book-open size-4 shrink-0 text-ink-gray-7" />
 					<span>
 						{{ course.data?.lessons }}
 						{{ course.data?.lessons === 1 ? __('Lesson') : __('Lessons') }}
@@ -139,7 +140,7 @@
 					v-if="(course.data?.quiz_count || 0) > 0"
 					class="flex items-center gap-3 text-ink-gray-8"
 				>
-					<HelpCircle class="size-4 stroke-1.5 shrink-0 text-ink-gray-7" />
+					<span class="lucide-help-circle size-4 shrink-0 text-ink-gray-7" />
 					<span>
 						{{ course.data?.quiz_count }}
 						{{
@@ -153,7 +154,7 @@
 					v-if="course.data?.enable_certification"
 					class="flex items-center gap-3 text-ink-gray-8"
 				>
-					<Award class="size-4 stroke-1.5 shrink-0 text-ink-gray-7" />
+					<span class="lucide-award size-4 shrink-0 text-ink-gray-7" />
 					<span>{{ __('Certificate of completion') }}</span>
 				</div>
 			</section>
@@ -166,10 +167,12 @@ import { BookText, CreditCard, GraduationCap } from 'lucide-vue-next'
 // OSLMS-CUSTOM: Award, BookOpen, HelpCircle, MonitorPlay, Users were used by the
 // disabled "This course includes" stats block — restore them with that block.
 import { computed, inject } from 'vue'
-import { Badge, Button, call, createResource, toast } from 'frappe-ui'
+import { Badge, Button, call, toast } from 'frappe-ui'
 import { useRouter } from 'vue-router'
 import CertificationLinks from '@/components/CertificationLinks.vue'
 import CourseOutline from '@/components/CourseOutline.vue'
+// OSLMS-CUSTOM: route certificate opening through TrueSkills when enabled.
+import { useCertificateViewer } from '@/oslms/composables/useCertificateViewer'
 import { getVideoEmbedURL } from '@/utils/'
 import { useTelemetry } from 'frappe-ui/frappe'
 import type {
@@ -275,34 +278,22 @@ const hasCourseStats = computed<boolean>(() =>
 */
 
 const canGetCertificate = computed<boolean>(() => {
+	// TrueSkills issuance is exclusive with the internal completion certificate,
+	// so a TrueSkills-only course has enable_certification off — gate on either.
 	return Boolean(
-		props.course.data?.enable_certification &&
-		(props.course.data?.membership?.progress ?? 0) >= 100,
+		(props.course.data?.enable_certification ||
+			props.course.data?.trueskills_certificate_enabled) &&
+			(props.course.data?.membership?.progress ?? 0) >= 100,
 	)
 })
 
-const certificate = createResource({
-	url: 'lms.lms.doctype.lms_certificate.lms_certificate.create_certificate',
-	makeParams(values: { course?: string }) {
-		return {
-			course: values.course,
-		}
-	},
-	onSuccess(data: { name: string; template: string }) {
-		window.open(
-			`/api/method/frappe.utils.print_format.download_pdf?doctype=LMS+Certificate&name=${
-				data.name
-			}&format=${encodeURIComponent(data.template)}`,
-			'_blank',
-		)
-	},
-}) as Resource<{ name: string; template: string } | null>
+// OSLMS-CUSTOM: for TrueSkills-enabled courses the completion certificate is the
+// TrueSkills openbadge image (opened inline), not the internal Print Format PDF.
+// useCertificateViewer ensures the LMS Certificate exists and picks the artifact.
+const { opening, openCourseCertificate } = useCertificateViewer()
 
 const fetchCertificate = () => {
-	certificate.submit({
-		course: props.course.data?.name,
-		member: user.data?.name,
-	})
+	openCourseCertificate(props.course.data?.name)
 }
 
 const isAdmin = computed<boolean>(() => {

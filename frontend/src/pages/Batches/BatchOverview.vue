@@ -2,7 +2,7 @@
 	<div class="m-5 pb-10">
 		<div class="flex justify-between w-full">
 			<div class="md:w-2/3">
-				<div class="text-3xl font-semibold text-ink-gray-9">
+				<div class="text-5xl-semibold text-ink-gray-9">
 					{{ batch.data.title }}
 				</div>
 				<div class="my-3 leading-6 text-ink-gray-7 card">
@@ -40,7 +40,7 @@
 		</div>
 		<div v-if="courses.data?.length">
 			<div class="flex items-center mt-10">
-				<div class="text-2xl font-semibold text-ink-gray-9">
+				<div class="text-4xl-semibold text-ink-gray-9">
 					{{ __('Courses') }}
 				</div>
 			</div>
@@ -64,7 +64,7 @@
 			</div>
 			<div v-if="batch.data.batch_details_raw">
 				<div
-					v-html="batch.data.batch_details_raw"
+					v-html="sanitizeRichHTML(batch.data.batch_details_raw)"
 					class="batch-description"
 				></div>
 			</div>
@@ -72,6 +72,7 @@
 	</div>
 </template>
 <script setup lang="ts">
+import { sanitizeRichHTML } from '@/utils/sanitizeRichHTML'
 import { computed, inject } from 'vue'
 import { createResource } from 'frappe-ui'
 import CourseCard from '@/components/CourseCard.vue'

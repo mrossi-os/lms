@@ -5,19 +5,27 @@ HTTP shell does) under different identities to exercise the permission gates.
 """
 from __future__ import annotations
 
+import base64
 from unittest.mock import patch
 
 import frappe
 from frappe.tests import UnitTestCase
 
+from os_lms.os_lms.ai.audio import pipeline as audio_pipeline
 from os_lms.os_lms.ai.simulations import SessionOrchestrator
 from os_lms.os_lms.ai.simulations.api import (
+    begin_session,
+    clone_session,
     end_session,
     get_session,
+    list_my_sessions,
     list_scenarios,
+    prepare_session,
     send_message,
+    send_message_audio,
     start_session,
 )
+from os_lms.os_lms.ai.utils.audio import build_audio_config, get_audio_provider
 
 from . import _fixtures as F
 
@@ -144,6 +152,18 @@ class TestSimulationsAPI(UnitTestCase):
         with self.assertRaises(frappe.PermissionError):
             start_session(scenario_id=self.draft_scenario.name)
 
+    def test_start_session_on_draft_scenario_allowed_for_moderator(self):
+        # Instructors/moderators can launch a "test as student" run on a
+        # non-Published scenario (the ScenarioEditor "Prova come studente"
+        # button), even though students are denied by the test above.
+        frappe.set_user("Administrator")
+        try:
+            result = start_session(scenario_id=self.draft_scenario.name)
+            self.assertIn("session", result)
+            self.assertIn("first_turn", result)
+        finally:
+            frappe.set_user(self.student_email)
+
     def test_start_session_on_unenrolled_course_denied(self):
         other = "sim-test-other2@elite.com"
         _make_student(other)
@@ -181,6 +201,55 @@ class TestSimulationsAPI(UnitTestCase):
             frappe.set_user(self.student_email)
             frappe.delete_doc("User", other, force=True, ignore_permissions=True)
 
+    # ----- send_message_audio (combined STT->LLM->TTS) -----
+
+    def _mock_audio(self):
+        # Point the pipeline's audio provider + settings at the mock provider.
+        self._orig_resolve = audio_pipeline.resolve_audio_provider
+        self._orig_load = audio_pipeline.load_settings
+        audio_pipeline.resolve_audio_provider = lambda cap: get_audio_provider(
+            build_audio_config("mock", None)
+        )
+
+        class _S:
+            stt_enabled = True
+            tts_enabled = True
+            tts_voice = "alloy"
+
+        audio_pipeline.load_settings = lambda: _S()
+
+    def _unmock_audio(self):
+        audio_pipeline.resolve_audio_provider = self._orig_resolve
+        audio_pipeline.load_settings = self._orig_load
+
+    def test_send_message_audio_text_persists_turns_and_returns_audio(self):
+        start = start_session(scenario_id=self.scenario.name)
+        self._mock_audio()
+        try:
+            out = send_message_audio(session_id=start["session"], text="ciao")
+        finally:
+            self._unmock_audio()
+        self.assertEqual(out["question_text"], "ciao")
+        self.assertTrue(out["answer_text"])
+        self.assertTrue(out["assistant_turn"])
+        self.assertTrue(out["user_turn"])
+        self.assertTrue(base64.b64decode(out["audio_base64"]).startswith(b"MOCK_AUDIO:"))
+        # Turns were persisted by the orchestrator (opening + user + assistant).
+        detail = get_session(session_id=start["session"])
+        self.assertGreaterEqual(len(detail["turns"]), 3)
+
+    def test_send_message_audio_owner_only(self):
+        start = start_session(scenario_id=self.scenario.name)
+        other = "sim-audio-stranger@elite.com"
+        _make_student(other)
+        try:
+            frappe.set_user(other)
+            with self.assertRaises(frappe.PermissionError):
+                send_message_audio(session_id=start["session"], text="ciao")
+        finally:
+            frappe.set_user(self.student_email)
+            frappe.delete_doc("User", other, force=True, ignore_permissions=True)
+
     # ----- end_session + get_session -----
 
     def test_end_session_then_get_session_payload(self):
@@ -201,3 +270,80 @@ class TestSimulationsAPI(UnitTestCase):
         start = start_session(scenario_id=self.scenario.name)
         with self.assertRaises(frappe.exceptions.ValidationError):
             end_session(session_id=start["session"], reason="bogus")
+
+    # ----- prepare_session / begin_session -----
+
+    def test_prepare_then_begin(self):
+        prepared = prepare_session(scenario_id=self.scenario.name)
+        self.assertIn("session_id", prepared)
+        self.assertTrue(prepared["brief"])
+        self.assertEqual(prepared["modality"], "chat")
+        detail = get_session(session_id=prepared["session_id"])
+        self.assertEqual(detail["session"]["status"], "Ready")
+        self.assertEqual(len(detail["turns"]), 0)
+        self.assertEqual(
+            detail["session"]["student_brief"], prepared["brief"]
+        )
+
+        begun = begin_session(session_id=prepared["session_id"])
+        self.assertTrue(begun["first_turn"]["text"])
+        detail2 = get_session(session_id=prepared["session_id"])
+        self.assertEqual(detail2["session"]["status"], "In Progress")
+        self.assertEqual(len(detail2["turns"]), 1)
+
+    def test_begin_session_is_idempotent(self):
+        prepared = prepare_session(scenario_id=self.scenario.name)
+        result1 = begin_session(session_id=prepared["session_id"])
+        result2 = begin_session(session_id=prepared["session_id"])
+        self.assertEqual(result1["first_turn"]["name"], result2["first_turn"]["name"])
+        payload = get_session(session_id=prepared["session_id"])
+        self.assertEqual(len(payload["turns"]), 1)
+        self.assertEqual(payload["session"]["status"], "In Progress")
+
+    # ----- list_my_sessions -----
+
+    def test_list_my_sessions_returns_only_owner(self):
+        prepared = prepare_session(scenario_id=self.scenario.name)
+        rows = list_my_sessions(course=self.scenario.lms_course)
+        names = [r["name"] for r in rows]
+        self.assertIn(prepared["session_id"], names)
+        row = next(r for r in rows if r["name"] == prepared["session_id"])
+        self.assertEqual(row["scenario"], self.scenario.name)
+        self.assertEqual(row["status"], "Ready")
+
+        # Create a session owned by a different user and verify it is not visible
+        # to the original student (isolation check). The session is inserted
+        # directly (as Administrator) to avoid the enrollment-eligibility gate
+        # on the unpublished test course.
+        other = "sim-test-isolation@elite.com"
+        _make_student(other)
+        frappe.set_user("Administrator")
+        other_session = frappe.new_doc("LMSA Simulation Session")
+        other_session.student = other
+        other_session.scenario = self.scenario.name
+        other_session.modality = "chat"
+        other_session.status = "Ready"
+        other_session.insert(ignore_permissions=True)
+        other_session_id = other_session.name
+        frappe.set_user(self.student_email)
+        try:
+            rows_after = list_my_sessions(course=self.scenario.lms_course)
+            names_after = [r["name"] for r in rows_after]
+            self.assertNotIn(other_session_id, names_after)
+        finally:
+            frappe.delete_doc(
+                "LMSA Simulation Session", other_session_id, force=True, ignore_permissions=True
+            )
+            frappe.delete_doc("User", other, force=True, ignore_permissions=True)
+
+    # ----- clone_session -----
+
+    def test_clone_session_endpoint(self):
+        start = start_session(scenario_id=self.scenario.name)
+        end_session(session_id=start["session"], reason="completed")
+        clone = clone_session(session_id=start["session"])
+        self.assertNotEqual(clone["session_id"], start["session"])
+        self.assertTrue(clone["brief"])
+        self.assertIn("modality", clone)
+        detail = get_session(session_id=clone["session_id"])
+        self.assertEqual(detail["session"]["status"], "Ready")
