@@ -51,10 +51,10 @@
 						<div
 							v-for="card in kpiCards"
 							:key="card.label"
-							class="border rounded-md p-4 bg-surface-menu-bar"
+							class="border rounded-md p-4 bg-surface-sidebar"
 						>
 							<div class="text-xs text-ink-gray-5">{{ card.label }}</div>
-							<div class="text-2xl font-semibold text-ink-gray-9 mt-1">
+							<div class="text-4xl-semibold text-ink-gray-9 mt-1">
 								{{ card.value }}
 							</div>
 						</div>
@@ -62,7 +62,7 @@
 
 					<!-- Distribution -->
 					<div v-if="distribution.length" class="border rounded-md card">
-						<div class="text-sm font-medium text-ink-gray-9 mb-3">
+						<div class="text-sm-medium text-ink-gray-9 mb-3">
 							{{ __('Distribuzione punteggi') }}
 						</div>
 						<div class="flex items-end gap-3 h-32">
@@ -83,7 +83,7 @@
 
 					<!-- Top improvements -->
 					<div v-if="topImprovements.length" class="border rounded-md p-4">
-						<div class="text-sm font-medium text-ink-gray-9 mb-3">
+						<div class="text-sm-medium text-ink-gray-9 mb-3">
 							{{ __('Aree di miglioramento più frequenti') }}
 						</div>
 						<ul class="text-sm space-y-1">

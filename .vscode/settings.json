@@ -10,5 +10,5 @@
         "source.organizeImports.ruff": "explicit"
       }
     },
-	"js/ts.tsdk.path": "frontend/node_modules/typescript/lib"
+  "js/ts.tsdk.path": "frontend/node_modules/typescript/lib"
 }

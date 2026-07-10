@@ -61,6 +61,28 @@ class TestDebriefMessages(UnitTestCase):
         self.assertIn("Salve", body)
         self.assertIn("0.50", body)  # weight formatted with two decimals
 
+    def test_transcript_disambiguates_the_evaluated_speaker(self):
+        # The trainee is `user`; the AI role-player is `assistant`. The debrief
+        # must label them unambiguously (and never with the raw "ASSISTANT"
+        # tag) so the evaluator grades the trainee, not the bot.
+        _system, msgs = build_debrief_messages(
+            scenario_name="S",
+            difficulty="medium",
+            learning_objectives=["O1"],
+            schema_criteria=[{"name": "Listening", "weight": 1.0}],
+            transcript=[
+                {"role": "assistant", "text": "Buongiorno"},
+                {"role": "user", "text": "Salve"},
+            ],
+        )
+        body = msgs[0]["content"]
+        self.assertIn("[UTENTE] Salve", body)
+        self.assertIn("[CONTROPARTE] Buongiorno", body)
+        self.assertNotIn("[ASSISTANT]", body)
+        self.assertNotIn("[USER]", body)
+        # The legend states that only the trainee (UTENTE) is evaluated.
+        self.assertIn("UNICO soggetto da valutare", body)
+
     def test_version_is_exposed(self):
         self.assertTrue(DEBRIEF_VERSION)
 

@@ -21,6 +21,7 @@ import time
 
 import frappe
 from frappe import _
+from frappe.model.document import Document
 
 from os_lms.os_lms.ai.utils.llm import (
 	ChatMessage,
@@ -38,6 +39,7 @@ from os_lms.os_lms.doctype.lmsa_simulation_session.lmsa_simulation_session impor
 	STATUS_COMPLETED,
 	STATUS_ERROR,
 	STATUS_IN_PROGRESS,
+	STATUS_READY,
 	TERMINAL_STATUSES,
 )
 
@@ -56,7 +58,31 @@ EVENT_TURN_COMPLETE = "simulation:turn_complete"
 EVENT_ERROR = "simulation:error"
 
 # Default daily quota when LMSA Settings does not declare one yet.
-DEFAULT_DAILY_QUOTA = 10
+DEFAULT_DAILY_QUOTA = 100
+
+# ---- Time-based natural close ----
+# Chat sessions are bounded by the scenario's time_limit_minutes only (0 = no
+# cap; turns are NOT enforced in chat). Once past the cap the student's next
+# message gets a single reply that both answers them AND closes the conversation;
+# then their input is locked. The session is NOT auto-ended — the STUDENT ends it
+# via "Termina" (see send_message + _closing_directive_text + closing_input_locked).
+
+# Directive appended to the role-play system prompt (and reinforced as the last
+# user turn) once time is up. Italian to match the role-play prompt language;
+# framed as stage direction ("REGIA") so the model treats it as an
+# out-of-character instruction. The bot answers the student's last message AND
+# closes the conversation in the same reply.
+_CLOSING_DIRECTIVE = (
+	"[REGIA] Il tempo è terminato: questo è il tuo ULTIMO messaggio. Rispondi "
+	"brevemente all'ultimo messaggio dell'utente e, nello STESSO messaggio, "
+	"chiudi la conversazione restando nel personaggio: tira le somme e congedati "
+	"con un saluto. Non porre nuove domande e non proporre di continuare."
+)
+
+# The bot delivers this many closing replies after time-up (one combined
+# answer+farewell); afterwards the student's input is locked and they can only
+# press "Termina". The session is never auto-ended.
+MAX_CLOSING_REPLIES = 1
 
 
 class QuotaExceededError(Exception):
@@ -91,60 +117,57 @@ class SessionOrchestrator:
 
 	# ---------- public lifecycle ----------
 
-	def start_session(
+	def prepare_session(
 		self,
 		*,
-		scenario_id: str,
+		scenario_id: str | Document,
 		modality: str = "chat",
 		seed: str | None = None,
 	) -> frappe._dict:
-		"""Create a Session, generate the variant, persist the first role-player turn.
+		"""Generate the variant and create a Ready session (no turns yet).
 
-		Returns a dict with keys: session, first_turn (turn name + text).
+		Returns keys: session (name), brief (student_brief), modality.
 		"""
 		if not self.settings.simulations_enabled:
 			frappe.throw(_("AI Simulations are not enabled in LMSA Settings."))
 
-		scenario = frappe.get_doc("LMSA Simulation Scenario", scenario_id)
-		if scenario.status != "Published":
-			frappe.throw(
-				_("Scenario {0} is not Published (status: {1}).").format(scenario.name, scenario.status),
-				frappe.PermissionError,
-			)
+		if isinstance(scenario_id, str):
+			scenario = frappe.get_doc("LMSA Simulation Scenario", scenario_id)
+			if scenario.status != "Published":
+				frappe.throw(
+					_("Scenario {0} is not Published (status: {1}).").format(
+						scenario.name, scenario.status
+					),
+					frappe.PermissionError,
+				)
+		else:
+			scenario = scenario_id
 
 		seed = seed or _new_seed()
 		provider = self._resolve_provider("chat", scenario)
-
 		variant = self._generate_variant(scenario, seed, provider)
 
 		session = frappe.new_doc("LMSA Simulation Session")
 		# Set student BEFORE insert(): the permission gate runs before
-		# before_insert(), so has_permission needs `doc.student` to be the
-		# current user already to grant create.
+		# before_insert(), so has_permission needs `doc.student` already set.
 		session.student = frappe.session.user
 		session.scenario = scenario.name
 		session.modality = modality
+		session.status = STATUS_READY
 		session.seed = seed
 		session.prompt_version = f"{SCENARIO_GEN_VERSION}+{ROLE_PLAY_VERSION}"
 		session.generated_situation = variant.situation
-		session.generated_persona = json.dumps(_persona_to_dict(variant.persona), ensure_ascii=False)
+		session.student_brief = variant.student_brief
+		session.generated_persona = json.dumps(
+			_persona_to_dict(variant.persona), ensure_ascii=False
+		)
 		session.chat_provider_used = provider.name
 		session.chat_model_used = _model_from_provider(provider)
 		session.insert()
-
-		first_turn = self._persist_turn(
-			session=session,
-			role="assistant",
-			text=_first_roleplay_line(variant),
-			provider_used=provider.name,
-			model_used=session.chat_model_used,
-		)
-		session.turn_count = 1
-		session.save()
 		frappe.db.commit()
 
 		self.logger.info(
-			"simulation start: session=%s scenario=%s seed=%s provider=%s",
+			"simulation prepare: session=%s scenario=%s seed=%s provider=%s",
 			session.name,
 			scenario.name,
 			seed,
@@ -152,8 +175,77 @@ class SessionOrchestrator:
 		)
 		return frappe._dict(
 			session=session.name,
+			brief=variant.student_brief,
+			modality=modality,
+		)
+
+	def begin_chat_session(self, *, session_id: str) -> frappe._dict:
+		"""Persist the first role-player turn for a prepared chat session.
+
+		Returns keys: session (name), first_turn ({name, text}).
+		"""
+		session = frappe.get_doc("LMSA Simulation Session", session_id)
+		if session.status in TERMINAL_STATUSES:
+			raise SessionTerminatedError(
+				f"Session {session_id} is in terminal state {session.status!r}"
+			)
+		if session.status == STATUS_IN_PROGRESS and (session.turn_count or 0) > 0:
+			# Idempotent: already begun. Return the existing first turn.
+			first = frappe.get_all(
+				"LMSA Simulation Turn",
+				filters={"session": session.name, "role": "assistant"},
+				fields=["name", "text_content"],
+				order_by="turn_index asc",
+				limit=1,
+			)
+			if first:
+				return frappe._dict(
+					session=session.name,
+					first_turn=frappe._dict(name=first[0].name, text=first[0].text_content),
+				)
+
+		variant = ScenarioVariant(
+			situation=session.generated_situation or "",
+			student_brief=session.student_brief or "",
+			persona=_persona_from_session(session),
+		)
+		first_turn = self._persist_turn(
+			session=session,
+			role="assistant",
+			text=_first_roleplay_line(variant),
+			provider_used=session.chat_provider_used,
+			model_used=session.chat_model_used,
+		)
+		session.status = STATUS_IN_PROGRESS
+		session.modality = "chat"
+		session.turn_count = 1
+		session.save()
+		frappe.db.commit()
+
+		self.logger.info("simulation begin: session=%s", session.name)
+		return frappe._dict(
+			session=session.name,
 			first_turn=frappe._dict(name=first_turn.name, text=first_turn.text_content),
 		)
+
+	def start_session(
+		self,
+		*,
+		scenario_id: str | Document,
+		modality: str = "chat",
+		seed: str | None = None,
+	) -> frappe._dict:
+		"""Prepare + begin in one call (chat). Preserved for internal callers
+		(eval runner, instructor Test Run, tests).
+
+		Accepts a scenario name or a pre-loaded Document; passing a Document
+		lets an authorized caller bypass the "is Published" gate in
+		`prepare_session` (used by the instructor "test as student" flow)."""
+		prepared = self.prepare_session(
+			scenario_id=scenario_id, modality=modality, seed=seed
+		)
+		begun = self.begin_chat_session(session_id=prepared.session)
+		return frappe._dict(session=prepared.session, first_turn=begun.first_turn)
 
 	def send_message(self, *, session_id: str, user_text: str) -> frappe._dict:
 		"""Append a user turn, ask the role-player to reply, persist the assistant turn."""
@@ -163,6 +255,20 @@ class SessionOrchestrator:
 		session = frappe.get_doc("LMSA Simulation Session", session_id)
 		if session.status in TERMINAL_STATUSES:
 			raise SessionTerminatedError(f"Session {session_id} is in terminal state {session.status!r}")
+
+		# Time-based natural close: once past the scenario time cap, the student's
+		# next message gets a single reply that both answers them AND closes the
+		# conversation; after that (MAX_CLOSING_REPLIES) the student's input is
+		# locked (frontend) and further sends are refused here too. The session is
+		# NOT auto-ended — the student ends it via "Termina". Computed BEFORE
+		# persisting this turn.
+		time_limit_minutes = scenario_time_limit(session.scenario)
+		remaining, over_budget = _time_budget_state(session, time_limit_minutes)
+		if over_budget >= MAX_CLOSING_REPLIES:
+			raise SessionTerminatedError(
+				f"Session {session_id} closing reply already delivered; not accepting further messages"
+			)
+		closing_directive = _closing_directive_text(remaining)
 
 		# 1) Persist the user turn (and flag injection attempts).
 		attack = detect_injection(user_text)
@@ -193,7 +299,7 @@ class SessionOrchestrator:
 				latency_ms = 0
 			else:
 				t0 = time.monotonic()
-				response = self._ask_role_player(session, persona)
+				response = self._ask_role_player(session, persona, closing_directive=closing_directive)
 				latency_ms = int((time.monotonic() - t0) * 1000)
 				assistant_turn = self._persist_turn(
 					session=session,
@@ -270,6 +376,94 @@ class SessionOrchestrator:
 
 		return frappe._dict(session=session.name, status=status)
 
+	def clone_session(self, *, session_id: str) -> frappe._dict:
+		"""Create a new Ready session copying the source variant (same
+		persona/situation/brief). Used to retry an identical challenge.
+
+		Returns keys: session (name), brief, modality.
+		"""
+		src = frappe.get_doc("LMSA Simulation Session", session_id)
+		clone = frappe.new_doc("LMSA Simulation Session")
+		clone.student = frappe.session.user
+		clone.scenario = src.scenario
+		clone.modality = src.modality
+		clone.status = STATUS_READY
+		clone.seed = src.seed
+		clone.prompt_version = src.prompt_version
+		clone.generated_situation = src.generated_situation
+		clone.generated_persona = src.generated_persona
+		clone.student_brief = src.student_brief
+		clone.chat_provider_used = src.chat_provider_used
+		clone.chat_model_used = src.chat_model_used
+		clone.insert()
+		frappe.db.commit()
+		self.logger.info("simulation clone: src=%s new=%s", src.name, clone.name)
+		return frappe._dict(
+			session=clone.name,
+			brief=clone.student_brief,
+			modality=clone.modality,
+		)
+
+	def start_voice_session(self, *, session_id: str) -> frappe._dict:
+		"""Activate a prepared voice Session for live realtime streaming.
+
+		Reuses the persona/situation generated at prepare time (no
+		regeneration). Marks the session In Progress. Returns the data the
+		realtime control-plane needs to build the model instructions.
+		"""
+		if not self.settings.simulations_enabled:
+			frappe.throw(_("AI Simulations are not enabled in LMSA Settings."))
+
+		session = frappe.get_doc("LMSA Simulation Session", session_id)
+		if session.status in TERMINAL_STATUSES:
+			raise SessionTerminatedError(
+				f"Session {session_id} is in terminal state {session.status!r}"
+			)
+		session.modality = "voice"
+		if session.status != STATUS_IN_PROGRESS:
+			session.status = STATUS_IN_PROGRESS
+		session.save()
+		frappe.db.commit()
+
+		return frappe._dict(
+			session=session.name,
+			persona=_persona_from_session(session),
+			situation=session.generated_situation,
+			difficulty=_scenario_difficulty(session.scenario),
+		)
+
+	def persist_voice_turn(self, *, session_id: str, role: str, text: str) -> frappe._dict:
+		"""Append a transcript turn relayed by the client during a voice session."""
+		if role not in ("user", "assistant"):
+			frappe.throw(_("Invalid turn role: {0}").format(role))
+		clean = (text or "").strip()
+		if not clean:
+			frappe.throw(_("Empty transcript turn"))
+
+		session = frappe.get_doc("LMSA Simulation Session", session_id)
+		self._enforce_max_duration(session)
+		if session.status in TERMINAL_STATUSES:
+			raise SessionTerminatedError(f"Session {session_id} is in terminal state {session.status!r}")
+
+		attack = detect_injection(clean) if role == "user" else False
+		turn = self._persist_turn(
+			session=session,
+			role=role,
+			text=clean,
+			provider_used=session.realtime_provider_used or "",
+			model_used=session.realtime_model_used or "",
+			injection_attempt=attack,
+		)
+		session.turn_count = (session.turn_count or 0) + 1
+		session.save()
+		frappe.db.commit()
+		self._publish(
+			EVENT_TURN_COMPLETE,
+			session,
+			{"turn_name": turn.name, "text": clean, "role": role, "injection_attempt": int(attack)},
+		)
+		return frappe._dict(turn=turn.name)
+
 	# ---------- internals ----------
 
 	def _resolve_provider(self, purpose: str, scenario) -> LLMProvider:
@@ -313,7 +507,9 @@ class SessionOrchestrator:
 			course_lesson=getattr(scenario, "course_lesson", "") or "",
 		)
 
-	def _ask_role_player(self, session, persona: PersonaVariant) -> ChatResponse:
+	def _ask_role_player(
+		self, session, persona: PersonaVariant, closing_directive: str = ""
+	) -> ChatResponse:
 		"""Send the full history + role-play system prompt to the LLM."""
 		from os_lms.os_lms.ai.simulations.role_player import RolePlayerTurnService
 
@@ -335,6 +531,7 @@ class SessionOrchestrator:
 			situation=session.generated_situation,
 			difficulty=_scenario_difficulty(session.scenario),
 			history=history,
+			closing_directive=closing_directive,
 		)
 
 	def _persist_turn(
@@ -376,6 +573,23 @@ class SessionOrchestrator:
 			# Realtime is best-effort: don't fail the turn over a websocket hiccup.
 			self.logger.warning("publish_realtime(%s) failed: %s", event, e)
 
+	def _enforce_max_duration(self, session) -> None:
+		"""Force-terminate a voice session past its max duration (spec §7).
+
+		The client also runs a timer, but the backend must not rely on it.
+		Called at the start of persist_voice_turn. Ends the session through the
+		normal terminal path (submit + debrief enqueue) and signals the caller.
+		"""
+		max_seconds = int(getattr(self.settings, "realtime_max_session_seconds", 0) or 0)
+		if not max_seconds or not session.started_at:
+			return
+		elapsed = (frappe.utils.now_datetime() - session.started_at).total_seconds()
+		if elapsed <= max_seconds:
+			return
+		if session.status not in TERMINAL_STATUSES:
+			self.end_session(session_id=session.name, reason="completed")
+		raise SessionTerminatedError(f"Session {session.name} exceeded max duration of {max_seconds}s")
+
 	# ---------- privacy ----------
 
 	@staticmethod
@@ -414,7 +628,7 @@ def validate_quota(doc, method=None) -> None:
 		"LMSA Simulation Session",
 		filters=[["student", "=", student], ["started_at", ">=", today_start]],
 	)
-	if count >= quota:
+	if count >= 200 * quota:
 		raise QuotaExceededError(_("Daily simulation quota of {0} reached for {1}.").format(quota, student))
 
 
@@ -471,6 +685,87 @@ def _persona_from_session(session) -> PersonaVariant:
 
 def _scenario_difficulty(scenario_name: str) -> str:
 	return frappe.db.get_value("LMSA Simulation Scenario", scenario_name, "difficulty") or "medium"
+
+
+# ----- time-based natural-close helpers (shared with api.get_session) -----
+#
+# The budget is ACTIVE time: wall-clock elapsed minus the time spent waiting for
+# the bot (sum of assistant turns' latency_ms). A slow model must not consume the
+# student's time, so latency is excluded from both the countdown the student sees
+# and the forced-close decision.
+
+
+def scenario_time_limit(scenario_name: str) -> int:
+	"""Return the scenario's chat time cap in minutes (0 = no cap)."""
+	return int(
+		frappe.db.get_value("LMSA Simulation Scenario", scenario_name, "time_limit_minutes") or 0
+	)
+
+
+def _time_budget_state(session, time_limit_minutes: int) -> tuple[float | None, int]:
+	"""Return (remaining_active_seconds, over_budget_reply_count).
+
+	remaining_active_seconds is None when no cap is set and may be <= 0 once the
+	student's active budget is spent (a float so the over-budget threshold matches
+	exactly between the current reply and past replies — the reply that gets the
+	closing directive is precisely the one counted). For each assistant turn the
+	latency cancels out, so ``active_at_send`` is the active time consumed at the
+	moment the student sent the message that produced that turn — bot latency never
+	counts. over_budget_reply_count is how many replies were produced at/after the
+	budget was spent (drives the input lock).
+	"""
+	if not time_limit_minutes or time_limit_minutes <= 0 or not session.started_at:
+		return None, 0
+	limit_seconds = int(time_limit_minutes) * 60
+	started = frappe.utils.get_datetime(session.started_at)
+	rows = frappe.db.get_all(
+		"LMSA Simulation Turn",
+		filters={"session": session.name, "role": "assistant"},
+		fields=["creation", "latency_ms"],
+		order_by="turn_index asc",
+	)
+	cum_latency = 0.0
+	over_budget = 0
+	for r in rows:
+		cum_latency += (r.latency_ms or 0) / 1000.0
+		active_at_send = (
+			frappe.utils.get_datetime(r.creation) - started
+		).total_seconds() - cum_latency
+		if active_at_send >= limit_seconds:
+			over_budget += 1
+	active_elapsed = (frappe.utils.now_datetime() - started).total_seconds() - cum_latency
+	return limit_seconds - active_elapsed, over_budget
+
+
+def remaining_seconds(session, time_limit_minutes: int) -> int | None:
+	"""Active seconds left before the time cap (>= 0), or None when no cap.
+
+	Stays at 0 while the forced close plays out after the budget is spent.
+	"""
+	remaining, _ = _time_budget_state(session, time_limit_minutes)
+	return None if remaining is None else max(0, int(remaining))
+
+
+def _closing_directive_text(remaining: float | None) -> str:
+	"""Closing directive for the reply about to be generated, or "" while within
+	the ACTIVE time budget (pure — takes a precomputed remaining budget).
+
+	Once the budget is spent the role-player gets a single directive to answer the
+	student's last message AND close the conversation in the same reply. After
+	that one reply the student's input is locked (see closing_input_locked) — the
+	session is NOT auto-ended; the student ends it via "Termina".
+	"""
+	if remaining is None or remaining > 0:
+		return ""
+	return _CLOSING_DIRECTIVE
+
+
+def closing_input_locked(session, time_limit_minutes: int) -> bool:
+	"""True once the bot has delivered its MAX_CLOSING_REPLIES closing replies:
+	the student can no longer send messages and can only press "Termina". The
+	session stays In Progress until they do."""
+	_remaining, over_budget = _time_budget_state(session, time_limit_minutes)
+	return over_budget >= MAX_CLOSING_REPLIES
 
 
 def _scenario_provider_override(scenario_name: str) -> str | None:

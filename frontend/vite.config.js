@@ -52,6 +52,19 @@ export default defineConfig(async ({ mode }) => {
 		server: {
 			host: '0.0.0.0', // Accept connections from any network interface
 			allowedHosts: true,
+			// SCORM packages are served by Frappe's SCORMRenderer at /scorm/... .
+			// frappeProxy only forwards ^/(desk|app|login|api|assets|files|private),
+			// so without this the iframe's /scorm URL hits the SPA fallback and renders
+			// blank. The `router` mirrors frappeProxy: Frappe resolves the site from the
+			// Host header, so we must forward to http://<site>:8000 — a bare 127.0.0.1
+			// target makes Frappe 404 with "127.0.0.1 does not exist". (Backend :8000.)
+			proxy: {
+				'/scorm': {
+					target: 'http://127.0.0.1:8000',
+					router: (req) =>
+						`http://${req.headers.host.split(':')[0]}:8000`,
+				},
+			},
 		},
 		resolve: {
 			alias: [
@@ -92,6 +105,14 @@ export default defineConfig(async ({ mode }) => {
 					replacement: path.resolve(__dirname, 'src/oslms/utils/index.js'),
 				},
 				{ find: '@', replacement: path.resolve(__dirname, 'src') },
+			],
+			// Force one copy of prosemirror; duplicate copies break tiptap's
+			// instanceof checks and crash the list buttons.
+			dedupe: [
+				'prosemirror-model',
+				'prosemirror-state',
+				'prosemirror-view',
+				'prosemirror-transform',
 			],
 		},
 		optimizeDeps: {

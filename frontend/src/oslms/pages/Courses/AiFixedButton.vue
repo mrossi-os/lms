@@ -3,10 +3,10 @@
 		<Transition name="chat-fade">
 			<div
 				v-if="isOpen"
-				class="fixed bottom-24 end-6 z-50 w-[380px] max-w-[calc(100vw-3rem)] max-h-[70vh] flex flex-col bg-surface-white shadow-2xl rounded-lg border border-outline-gray-2 overflow-hidden"
+				class="fixed bottom-24 end-6 z-50 w-[380px] max-w-[calc(100vw-3rem)] max-h-[70vh] flex flex-col bg-surface-base shadow-2xl rounded-lg border border-outline-gray-2 overflow-hidden"
 			>
 				<div class="flex items-center justify-between px-4 py-2 border-b border-outline-gray-2 bg-surface-gray-1">
-					<div class="flex items-center gap-2 text-sm font-medium text-ink-gray-9">
+					<div class="flex items-center gap-2 text-sm-medium text-ink-gray-9">
 						<Sparkles class="size-4 stroke-1.5" />
 						{{ __('AI Assistant') }}
 					</div>
@@ -30,7 +30,7 @@
 
 		<button
 			type="button"
-			class="fixed bottom-6 end-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-surface-gray-7 text-ink-white shadow-lg transition hover:bg-surface-gray-6 focus:outline-none focus:ring-2 focus:ring-offset-2"
+			class="fixed bottom-6 end-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-surface-gray-10 text-ink-base shadow-lg transition hover:bg-surface-gray-9 focus:outline-none focus:ring-2 focus:ring-offset-2"
 			:aria-label="isOpen ? __('Close AI assistant') : __('Open AI assistant')"
 			@click="toggle"
 		>

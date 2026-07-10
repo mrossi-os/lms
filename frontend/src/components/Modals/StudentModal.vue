@@ -14,7 +14,7 @@
 			],
 		}"
 	>
-		<template #body-content>
+		<template #default>
 			<div class="flex flex-col gap-4">
 				<MultiLink
 					doctype="User"

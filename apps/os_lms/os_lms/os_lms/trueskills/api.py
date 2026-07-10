@@ -1,4 +1,6 @@
 import frappe
+from frappe import _
+from frappe.utils import nowdate
 
 from .certificate_image import build_certificate_png_data_uri
 from .client import TrueSkillsClientError, TrueSkillsError
@@ -180,13 +182,168 @@ def verify(uid: str, fiscal_id: str | None = None) -> dict:
 	return {"ok": True, "response": response}
 
 
+def _latest_issue_status(lms_certificate: str) -> dict:
+	"""Latest TrueSkills issuance status for a single LMS Certificate.
+
+	Returns ``{ state, issued, trueskill_id, trueskill_uid, error }``. ``state``
+	is ``None`` when no Issue Log exists yet (emission was enqueued but the
+	background worker has not created the ``pending`` row).
+	"""
+	logs = frappe.get_all(
+		"TrueSkills Issue Log",
+		filters={"lms_certificate": lms_certificate},
+		fields=["state", "trueskill_id", "trueskill_uid", "error_message"],
+		order_by="modified desc",
+		limit=1,
+	)
+	if not logs:
+		return {
+			"state": None,
+			"issued": False,
+			"trueskill_id": None,
+			"trueskill_uid": None,
+			"error": None,
+		}
+	log = logs[0]
+	return {
+		"state": log["state"],
+		"issued": log["state"] == "issued",
+		"trueskill_id": log["trueskill_id"],
+		"trueskill_uid": log["trueskill_uid"],
+		"error": log["error_message"],
+	}
+
+
+def _ensure_trueskill_certificate(course: str) -> str:
+	"""Return the session user's ``LMS Certificate`` for a TrueSkills course, creating it.
+
+	The TrueSkills switch is mutually exclusive with the internal completion
+	certificate, so ``enable_certification`` is off and the upstream
+	``create_certificate`` (which requires it) cannot be used. This mirrors the
+	eligibility (enrolled + course completed) without that gate. Inserting the
+	certificate fires ``after_insert`` → the async TrueSkills emission; the
+	internal completion email is suppressed by ``CustomLMSCertificate``.
+	"""
+	from lms.lms.doctype.lms_certificate.lms_certificate import (
+		get_default_certificate_template,
+		is_certified,
+	)
+
+	existing = is_certified(course)
+	if existing:
+		return existing
+
+	enrollment = frappe.db.get_value(
+		"LMS Enrollment",
+		{"course": course, "member": frappe.session.user},
+		["name", "progress"],
+		as_dict=True,
+	)
+	if not enrollment:
+		frappe.throw(_("You are not enrolled in this course."))
+	if (enrollment.get("progress") or 0) < 100:
+		frappe.throw(_("You have not completed the course yet."))
+
+	# ``template`` is mandatory on LMS Certificate. It is never used to render an
+	# internal PDF for TrueSkills courses (the UI opens the badge and the email is
+	# suppressed), but the field must be populated — use the default Print Format,
+	# which is also the design the openbadge image is generated from.
+	template = get_default_certificate_template()
+	if not template:
+		frappe.throw(
+			_("No certificate Print Format is configured. Create one for LMS Certificate.")
+		)
+
+	cert = frappe.get_doc(
+		{
+			"doctype": "LMS Certificate",
+			"member": frappe.session.user,
+			"course": course,
+			"issue_date": nowdate(),
+			"template": template,
+		}
+	)
+	cert.insert(ignore_permissions=True)
+	return cert.name
+
+
+@frappe.whitelist()
+def get_course_certificate(course: str) -> dict:
+	"""Resolve the completion certificate for a course and how it should open.
+
+	Ensures the ``LMS Certificate`` exists (creating it — which triggers the
+	async TrueSkills emission — when the learner qualifies), then reports:
+
+	- ``mode == "pdf"``  → open the internal Print Format PDF (default behaviour).
+	- ``mode == "trueskill"`` → the course issues via TrueSkills; the SPA must
+	  show the openbadge image instead of the internal PDF. The issuance
+	  ``state`` / ``trueskill_id`` let the client poll until the badge is ready.
+
+	The two are mutually exclusive per course (see ``CoursePublishSettings``).
+	Used by the "Get Certificate" / "View Certificate" flows.
+	"""
+	if not course:
+		frappe.throw(_("Course is required."))
+
+	flags = (
+		frappe.db.get_value(
+			"LMS Course",
+			course,
+			["trueskills_certificate_enabled", "trueskills_template_id"],
+			as_dict=True,
+		)
+		or {}
+	)
+
+	# Internal completion certificate: defer to the upstream creator, which gates
+	# on ``enable_certification`` + course completion.
+	if not flags.get("trueskills_certificate_enabled"):
+		from lms.lms.doctype.lms_certificate.lms_certificate import create_certificate
+
+		cert = create_certificate(course)
+		# create_certificate returns a dict when already certified, else the Document.
+		if isinstance(cert, dict):
+			cert_name = cert.get("name")
+			template = cert.get("template")
+		else:
+			cert_name = cert.name
+			template = cert.template
+		return {"mode": "pdf", "lms_certificate": cert_name, "template": template}
+
+	# TrueSkills is the issuer — create the backing certificate ourselves.
+	cert_name = _ensure_trueskill_certificate(course)
+
+	if not TrueSkillsService().is_ready():
+		# TrueSkills is the configured issuer but the integration is off/misconfigured:
+		# surface an error rather than silently falling back to the internal PDF.
+		return {
+			"mode": "trueskill",
+			"lms_certificate": cert_name,
+			"template": None,
+			"state": "unavailable",
+			"issued": False,
+			"trueskill_id": None,
+			"trueskill_uid": None,
+			"error": "service_unavailable",
+		}
+
+	status = _latest_issue_status(cert_name)
+	return {
+		"mode": "trueskill",
+		"lms_certificate": cert_name,
+		"template": None,
+		**status,
+	}
+
+
 @frappe.whitelist()
 def get_issue_status(lms_certificates: list[str] | str) -> dict:
 	"""Return the latest TrueSkills issuance status for the given LMS Certificates.
 
-	Response shape: ``{ <lms_certificate>: { state, issued, trueskill_id, trueskill_uid } }``.
+	Response shape: ``{ <lms_certificate>: { state, issued, trueskill_id, trueskill_uid, error } }``.
 	Only certificates owned by the session user (or all, for admins) are reported.
-	Used by the student profile page to show the "Download Openbadge" button.
+	Used by the student profile page to show the "Download Openbadge" button and
+	to poll while a badge is being issued.
 	"""
 	if isinstance(lms_certificates, str):
 		try:
@@ -209,7 +366,7 @@ def get_issue_status(lms_certificates: list[str] | str) -> dict:
 	logs = frappe.get_all(
 		"TrueSkills Issue Log",
 		filters={"lms_certificate": ["in", lms_certificates]},
-		fields=["lms_certificate", "state", "trueskill_id", "trueskill_uid"],
+		fields=["lms_certificate", "state", "trueskill_id", "trueskill_uid", "error_message"],
 		order_by="modified desc",
 	)
 	result: dict[str, dict] = {}
@@ -222,6 +379,7 @@ def get_issue_status(lms_certificates: list[str] | str) -> dict:
 			"issued": log["state"] == "issued",
 			"trueskill_id": log["trueskill_id"],
 			"trueskill_uid": log["trueskill_uid"],
+			"error": log["error_message"],
 		}
 	return result
 

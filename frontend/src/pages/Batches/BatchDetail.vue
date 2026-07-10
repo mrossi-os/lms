@@ -1,7 +1,7 @@
 <template>
 	<div v-if="batch.data" class="">
 		<header
-			class="sticky top-0 z-10 border-b flex items-center justify-between bg-surface-white px-3 py-2.5 sm:px-5"
+			class="sticky top-0 z-10 border-b flex items-center justify-between bg-surface-base px-3 py-2.5 sm:px-5"
 		>
 			<div class="flex items-center gap-x-2">
 				<Breadcrumbs :items="breadcrumbs" />
@@ -10,18 +10,20 @@
 				</Badge>
 			</div>
 			<div class="flex items-center gap-x-2">
-				<template v-if="activeTabKey === 'Settings' && isAdmin">
+				<template v-if="currentTabKey === 'Settings' && isAdmin">
 					<Badge v-if="childRef?.isDirty" theme="orange">
 						{{ __('Not Saved') }}
 					</Badge>
 					<Button @click="childRef.deleteBatch()">
 						<template #icon>
-							<Trash2 class="w-4 h-4 stroke-1.5" />
+							<span class="lucide-trash-2 w-4 h-4" />
 						</template>
 					</Button>
-					<Button variant="solid" @click="childRef.submitBatch()">
-						{{ __('Save') }}
-					</Button>
+					<ShortcutTooltip :label="__('Save')" combo="Mod+S">
+						<Button variant="solid" @click="childRef.submitBatch()">
+							{{ __('Save') }}
+						</Button>
+					</ShortcutTooltip>
 				</template>
 				<Dropdown
 					v-else-if="isAdmin && batchMenu.length"
@@ -32,14 +34,53 @@
 					<template v-slot="{ open }">
 						<Button variant="ghost">
 							<template #icon>
-								<EllipsisVertical class="w-4 h-4 stroke-1.5" />
+								<span class="lucide-ellipsis-vertical w-4 h-4" />
 							</template>
 						</Button>
 					</template>
 				</Dropdown>
 				<Button
+					v-if="tabIndex === 1 && isAdmin"
+					variant="outline"
+					@click="childRef?.goToImport?.()"
+				>
+					<template #prefix>
+						<span class="lucide-import size-4" />
+					</template>
+					{{ __('Import') }}
+				</Button>
+				<Button
+					v-if="tabIndex === 1 && isAdmin"
+					variant="solid"
+					@click="childRef?.openEnrollModal?.()"
+				>
+					<template #prefix>
+						<span class="lucide-plus size-4" />
+					</template>
+					{{ __('Enroll') }}
+				</Button>
+				<Tooltip
+					v-if="currentTabKey === 'Announcements' && isAdmin && !readOnlyMode"
+					:text="
+						batch.data?.students?.length
+							? ''
+							: __('Add students to the batch to make an announcement')
+					"
+				>
+					<Button
+						variant="solid"
+						:disabled="!batch.data?.students?.length"
+						@click="childRef?.openAnnouncementModal?.()"
+					>
+						<template #prefix>
+							<span class="lucide-send size-4" />
+						</template>
+						{{ __('Make Announcement') }}
+					</Button>
+				</Tooltip>
+				<Button
 					v-if="isAdmin"
-					:variant="batch.data?.published ? 'subtle' : 'solid'"
+					variant="solid"
 					:theme="batch.data?.published ? 'red' : 'gray'"
 					:loading="publishToggle.loading"
 					@click="togglePublishBatch"
@@ -61,11 +102,7 @@
 						>
 							<component v-if="tab.icon" :is="tab.icon" class="size-4" />
 							{{ tab.label }}
-							<Badge
-								v-if="tabBadgeCount(tab.key)"
-								theme="red"
-								size="sm"
-							>
+							<Badge v-if="tabBadgeCount(tab.key)" theme="red" size="sm">
 								{{ tabBadgeCount(tab.key) }}
 							</Badge>
 						</button>
@@ -105,17 +142,22 @@
 <script setup>
 import {
 	ClipboardPen,
-	EllipsisVertical,
 	Laptop,
 	List,
 	Mail,
 	MessageCircle,
-	SendIcon,
 	Settings2,
-	Trash2,
 	TrendingUp,
 } from 'lucide-vue-next'
-import { computed, inject, markRaw, onMounted, onUnmounted, ref, watch } from 'vue'
+import {
+	computed,
+	inject,
+	markRaw,
+	onMounted,
+	onUnmounted,
+	ref,
+	watch,
+} from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import {
 	Badge,
@@ -124,6 +166,7 @@ import {
 	createResource,
 	Dropdown,
 	Tabs,
+	Tooltip,
 	toast,
 	usePageMeta,
 } from 'frappe-ui'
@@ -137,6 +180,7 @@ import Announcements from '@/pages/Batches/components/Announcements.vue'
 import BatchForm from '@/pages/Batches/BatchForm.vue'
 import BulkCertificates from '@/pages/Batches/components/BulkCertificates.vue'
 import Discussions from '@/components/Discussions.vue'
+import ShortcutTooltip from '@/components/ShortcutTooltip.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -286,7 +330,9 @@ const addToTabs = (key, label, component, icon) => {
 }
 
 const isAdmin = computed(() => {
-	return user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente
+	return (
+		user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente
+	)
 })
 
 // A "Valutatore" of this batch gets the admin Dashboard + the live class and
@@ -299,19 +345,9 @@ const isStudent = computed(() => {
 	return batch.data?.students?.includes(user.data?.name)
 })
 
-// Gate the Settings save/delete bar on the active tab's key rather than a
-// hardcoded index, which breaks when a tab (e.g. Classes) is hidden.
-const activeTabKey = computed(() => tabs.value[tabIndex.value]?.key)
-
-const openAnnouncementModal = () => {
-	showAnnouncementModal.value = true
-}
-
-const canMakeAnnouncement = () => {
-	if (readOnlyMode) return false
-	if (!batch.data?.students?.length) return false
-	return user.data?.is_moderator || user.data?.is_evaluator
-}
+// Compare against the tab KEY (untranslated), not the label: the label is run
+// through __() so it becomes e.g. "Annunci" in Italian and would never match.
+const currentTabKey = computed(() => tabs.value[tabIndex.value]?.key)
 
 const publishToggle = createResource({
 	url: 'frappe.client.set_value',
@@ -325,7 +361,7 @@ const publishToggle = createResource({
 	},
 	onSuccess() {
 		toast.success(
-			batch.data?.published ? __('Batch unpublished') : __('Batch published')
+			batch.data?.published ? __('Batch unpublished') : __('Batch published'),
 		)
 		batch.reload()
 	},
@@ -338,11 +374,13 @@ const togglePublishBatch = () => {
 	publishToggle.submit()
 }
 
+// Announcements moved to a dedicated, tab-scoped header button; the "..." menu
+// only carries batch-wide admin actions now (and hides itself when empty).
 const batchMenu = computed(() => {
 	if (!batch.data?.certification) {
 		return []
 	}
-	let options = [
+	return [
 		{
 			label: __('Generate Certificates'),
 			onClick() {
@@ -351,7 +389,6 @@ const batchMenu = computed(() => {
 			condition: () => batch.data?.certification,
 		},
 	]
-	return options
 })
 
 const breadcrumbs = computed(() => {

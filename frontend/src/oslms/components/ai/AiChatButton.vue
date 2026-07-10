@@ -3,17 +3,17 @@
 		<Transition name="ai-panel">
 			<div
 				v-if="isOpen"
-				class="fixed bottom-24 end-6 z-50 w-[380px] max-w-[calc(100vw-3rem)] max-h-[70vh] flex flex-col bg-surface-white shadow-2xl rounded-lg border border-outline-gray-2 overflow-hidden"
+				class="fixed bottom-24 end-6 z-50 w-[380px] max-w-[calc(100vw-3rem)] max-h-[70vh] flex flex-col bg-surface-base shadow-2xl rounded-lg border border-outline-gray-2 overflow-hidden"
 			>
 				<div class="flex items-center justify-between px-4 py-2 border-b border-outline-gray-2 bg-surface-gray-1">
-					<div class="flex items-center gap-2 text-sm font-medium text-ink-gray-9">
+					<div class="flex items-center gap-2 text-sm-medium text-ink-gray-9">
 						<Sparkles class="size-4 stroke-1.5" />
 						{{ __('AI Assistant') }}
 					</div>
 					<div class="flex items-center gap-2">
 						<button
 							type="button"
-							class="text-ink-gray-5 hover:text-ink-red-3 transition disabled:opacity-40 disabled:cursor-not-allowed"
+							class="text-ink-gray-5 hover:text-ink-red-6 transition disabled:opacity-40 disabled:cursor-not-allowed"
 							:aria-label="__('Clear chat')"
 							:disabled="!chat.messages.length"
 							@click="clearChat"
@@ -44,8 +44,8 @@
 			class="flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition focus:outline-none focus:ring-2 focus:ring-offset-2"
 			:class="
 				isOpen
-					? 'bg-surface-gray-6 text-ink-white'
-					: 'bg-surface-gray-7 text-ink-white hover:bg-surface-gray-6'
+					? 'bg-surface-gray-9 text-ink-base'
+					: 'bg-surface-gray-10 text-ink-base hover:bg-surface-gray-9'
 			"
 			:aria-label="isOpen ? __('Close AI assistant') : __('Open AI assistant')"
 			:aria-expanded="isOpen"

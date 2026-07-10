@@ -35,7 +35,12 @@ def get_course_details(course: str):
 		frappe.db.get_value(
 			"LMS Course",
 			course,
-			["hero_enabled", "hero_media_type", "hero_media_url"],
+			[
+				"hero_enabled",
+				"hero_media_type",
+				"hero_media_url",
+				"trueskills_certificate_enabled",
+			],
 			as_dict=True,
 		)
 		or {}
@@ -45,6 +50,12 @@ def get_course_details(course: str):
 		"media_type": hero.get("hero_media_type") or "Video",
 		"media_url": hero.get("hero_media_url") or "",
 	}
+
+	# Exposed so the SPA "Get Certificate" gate works for TrueSkills-only courses
+	# (where the internal completion certificate is off — the two are exclusive).
+	course_detail.trueskills_certificate_enabled = (
+		1 if hero.get("trueskills_certificate_enabled") else 0
+	)
 
 	# Read-only access flag for a "Valutatore" of a batch containing this course:
 	# the SPA uses it to skip the "unpublished → redirect to Courses" guard.
@@ -266,7 +277,19 @@ def get_batches(filters: dict = None, start: int = 0, order_by: str = "start_dat
 @frappe.whitelist(allow_guest=True)
 @rate_limit(limit=500, seconds=60 * 60)
 def get_batch_details(batch: str):
+	# Stale notifications / deep links can point at a batch that no longer exists.
+	# The upstream helper then crashes setting attributes on a None result (for a
+	# batch admin the permission guard passes but the row fetch returns None).
+	# Return None so the SPA's "no data" guard redirects to the batch list.
+	if not frappe.db.exists("LMS Batch", batch):
+		return None
+
 	batch_detail = _original_get_batch_details(batch)
+
+	# Upstream returns {} when the user can't access the batch — don't try to set
+	# custom attributes on a falsy result.
+	if not batch_detail:
+		return batch_detail
 
 	raw = frappe.db.get_value("LMS Batch", batch, "custom_feature_sections")
 	try:

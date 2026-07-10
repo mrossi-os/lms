@@ -1,13 +1,31 @@
 @import 'frappe-ui/style.css';
 @import './styles/codemirror.css';
+@import './styles/blockEditor.css';
 @import './styles/theme/elite/main.css';
 
-/*
- * Pin a Combobox/MultiSelect footer to the bottom of its dropdown so footer
- * actions stay reachable while options scroll. Opt-in via [data-popover-footer-sticky]
- * on the slot's inner element so frappe-ui's `[data-slot="footer"]` wrapper picks it up.
- * Unscoped because frappe-ui popovers portal to <body>.
- */
+/* This build makes --surface-sidebar transparent in dark mode; point it at
+   gray-1 so the sidebar keeps a visible surface. */
+[data-theme='dark'] {
+	--surface-sidebar: var(--surface-gray-1);
+}
+
+/* frappe-ui beta.7 FormLabel differs from InputLabel; match standalone labels
+   (and stray inline <label>s) to the field-label style. */
+label.block:not([data-slot='label']) {
+	@apply text-p-sm-medium text-ink-gray-7;
+}
+
+/* frappe-ui beta.7 Switch leaves a loose label/description gap; tighten it so
+   they read as one group (scoped to our lms-switch wrapper). */
+.lms-switch [data-slot='label'] {
+	@apply leading-tight;
+}
+.lms-switch > div:has(> [data-slot='description']) {
+	@apply mt-0.5;
+}
+
+/* Pin a Combobox/MultiSelect dropdown footer so its actions stay reachable while
+   options scroll. Unscoped since frappe-ui popovers portal to <body>. */
 [data-slot='content-body']
 	[data-slot='footer']:has(> [data-popover-footer-sticky]) {
 	position: sticky;
@@ -23,4 +41,10 @@
  */
 [data-radix-popper-content-wrapper] {
 	z-index: 200 !important;
+}
+
+/* frappe-ui's --ink-gray-2 bullets are near-invisible; use --ink-gray-4 (as the
+   ordered-list counters do) so markers stay legible. */
+.prose {
+	--tw-prose-bullets: var(--ink-gray-4);
 }

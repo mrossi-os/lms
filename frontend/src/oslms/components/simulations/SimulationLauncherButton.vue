@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div v-if="hasPublicScenarios">
 		<SimulationLauncher
 			v-model="isOpen"
 			:scenarios="scenarios"
@@ -8,7 +8,7 @@
 
 		<button
 			type="button"
-			class="flex h-12 w-12 items-center justify-center rounded-full bg-surface-gray-7 text-ink-white shadow-lg transition hover:bg-surface-gray-6 focus:outline-none focus:ring-2 focus:ring-offset-2"
+			class="flex h-12 w-12 items-center justify-center rounded-full bg-surface-gray-10 text-ink-base shadow-lg transition hover:bg-surface-gray-9 focus:outline-none focus:ring-2 focus:ring-offset-2"
 			:aria-label="__('Start a simulation')"
 			@click="open"
 		>
@@ -23,6 +23,12 @@ import { Bot } from 'lucide-vue-next'
 import { createResource } from 'frappe-ui'
 import SimulationLauncher from '@/oslms/components/simulations/SimulationLauncher.vue'
 
+interface Scenario {
+	name: string
+	lms_course?: string
+	status?: string
+}
+
 const props = defineProps<{
 	course?: string
 	lesson?: string
@@ -31,27 +37,41 @@ const props = defineProps<{
 const isOpen = ref(false)
 
 const scenariosRes = createResource({
-	url: 'os_lms.os_lms.ai.simulations.api.list_my_scenarios',
+	// Role-aware listing: instructors/moderators get their courses' scenarios,
+	// enrolled students get the Published scenarios of their courses. The
+	// instructor-only `list_my_scenarios` returns nothing for students, which
+	// would hide this launcher for them even when the course has scenarios.
+	url: 'os_lms.os_lms.ai.simulations.api.list_scenarios',
 	makeParams() {
 		return { course: props.course || null }
 	},
 })
 
-const scenarios = computed<unknown[]>(
-	() => (scenariosRes.data as unknown[]) || [],
+const scenarios = computed<Scenario[]>(
+	() => (scenariosRes.data as Scenario[]) || [],
+)
+
+// Only render the launcher when the current course has at least one Published
+// (public) scenario. Draft/Archived scenarios don't count.
+const hasPublicScenarios = computed<boolean>(
+	() =>
+		Boolean(props.course) &&
+		scenarios.value.some(
+			(sc) => sc.status === 'Published' && sc.lms_course === props.course,
+		),
 )
 
 function open(): void {
-	scenariosRes.submit()
 	isOpen.value = true
 }
 
-// Refetch when the course context changes while the dialog is open, so the
-// user always sees the scenarios for the current course.
+// Fetch eagerly on mount and whenever the course changes so the button's
+// visibility always reflects the scenarios for the current course.
 watch(
 	() => props.course,
-	() => {
-		if (isOpen.value) scenariosRes.submit()
+	(course) => {
+		if (course) scenariosRes.submit()
 	},
+	{ immediate: true },
 )
 </script>

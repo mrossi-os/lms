@@ -15,7 +15,6 @@ from pathlib import Path
 
 from frappe.tests import UnitTestCase
 
-
 # Top-level modules whose import must stay inside utils/{llm,stt,tts}/providers/.
 # Each entry is matched against an import's top-level package name only.
 FORBIDDEN_TOP_LEVEL_PACKAGES = {
@@ -41,6 +40,8 @@ def _provider_dirs(app_root: Path) -> list[Path]:
         base / "llm" / "providers",
         base / "stt" / "providers",  # may not exist yet (fase 2)
         base / "tts" / "providers",  # may not exist yet (fase 2)
+        base / "audio" / "providers",
+        base / "realtime" / "providers",
     ]
 
 

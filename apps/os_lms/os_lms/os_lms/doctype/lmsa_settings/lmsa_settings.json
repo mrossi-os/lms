@@ -31,7 +31,24 @@
 		"simulation_chat_model",
 		"column_break_sim_chat",
 		"simulation_debrief_provider",
-		"simulation_debrief_model"
+		"simulation_debrief_model",
+		"section_audio",
+		"stt_enabled",
+		"stt_provider",
+		"stt_model",
+		"column_break_audio",
+		"tts_enabled",
+		"tts_provider",
+		"tts_model",
+		"tts_voice",
+		"tts_autoplay_on_stt",
+		"realtime_section",
+		"realtime_enabled",
+		"realtime_provider",
+		"realtime_model",
+		"realtime_voice",
+		"turn_detection",
+		"realtime_max_session_seconds"
 	],
 	"fields": [
 		{
@@ -189,13 +206,128 @@
 			"fieldname": "simulation_debrief_model",
 			"fieldtype": "Data",
 			"label": "Debrief Model"
+		},
+		{
+			"fieldname": "section_audio",
+			"fieldtype": "Section Break",
+			"label": "Audio (TTS / STT)"
+		},
+		{
+			"default": "0",
+			"description": "Master switch for Speech-to-Text (microphone input in the AI tutor chat).",
+			"fieldname": "stt_enabled",
+			"fieldtype": "Check",
+			"label": "Speech-to-Text Enabled"
+		},
+		{
+			"default": "openai",
+			"description": "Provider used for transcription. OpenAI or Gemini.",
+			"fieldname": "stt_provider",
+			"fieldtype": "Select",
+			"label": "STT Provider",
+			"options": "openai\ngemini"
+		},
+		{
+			"default": "gpt-4o-mini-transcribe",
+			"description": "Transcription model; must match the selected provider. OpenAI: gpt-4o-mini-transcribe or whisper-1. Gemini: leave empty for gemini-2.5-flash.",
+			"fieldname": "stt_model",
+			"fieldtype": "Data",
+			"label": "STT Model"
+		},
+		{
+			"fieldname": "column_break_audio",
+			"fieldtype": "Column Break"
+		},
+		{
+			"default": "0",
+			"description": "Master switch for Text-to-Speech (read AI answers aloud).",
+			"fieldname": "tts_enabled",
+			"fieldtype": "Check",
+			"label": "Text-to-Speech Enabled"
+		},
+		{
+			"default": "openai",
+			"description": "Provider used for speech synthesis. OpenAI or Gemini.",
+			"fieldname": "tts_provider",
+			"fieldtype": "Select",
+			"label": "TTS Provider",
+			"options": "openai\ngemini"
+		},
+		{
+			"default": "gpt-4o-mini-tts",
+			"description": "Speech synthesis model; must match the selected provider. OpenAI: gpt-4o-mini-tts, tts-1, tts-1-hd. Gemini: leave empty for gemini-2.5-flash-preview-tts.",
+			"fieldname": "tts_model",
+			"fieldtype": "Data",
+			"label": "TTS Model"
+		},
+		{
+			"default": "alloy",
+			"description": "Synthesis voice; must match the selected provider. OpenAI: alloy, echo, fable, onyx, nova, shimmer. Gemini: Kore, Puck, Charon, Zephyr, ... (unknown values fall back to the provider default).",
+			"fieldname": "tts_voice",
+			"fieldtype": "Data",
+			"label": "TTS Voice"
+		},
+		{
+			"default": "0",
+			"description": "When enabled, the AI answer is read aloud automatically if the question was asked by voice. Requires STT and TTS enabled.",
+			"fieldname": "tts_autoplay_on_stt",
+			"fieldtype": "Check",
+			"label": "Auto-play answer after voice input"
+		},
+		{
+			"fieldname": "realtime_section",
+			"fieldtype": "Section Break",
+			"label": "Realtime / Voice"
+		},
+		{
+			"default": "0",
+			"fieldname": "realtime_enabled",
+			"fieldtype": "Check",
+			"label": "Enable Realtime Voice"
+		},
+		{
+			"default": "openai",
+			"depends_on": "realtime_enabled",
+			"fieldname": "realtime_provider",
+			"fieldtype": "Select",
+			"label": "Realtime Provider",
+			"options": "openai\ngemini\nmock"
+		},
+		{
+			"depends_on": "realtime_enabled",
+			"description": "Blank = provider default (OpenAI: gpt-realtime-2)",
+			"fieldname": "realtime_model",
+			"fieldtype": "Data",
+			"label": "Realtime Model"
+		},
+		{
+			"depends_on": "realtime_enabled",
+			"description": "Blank = provider default (OpenAI: marin)",
+			"fieldname": "realtime_voice",
+			"fieldtype": "Data",
+			"label": "Realtime Voice"
+		},
+		{
+			"default": "server_vad",
+			"depends_on": "realtime_enabled",
+			"fieldname": "turn_detection",
+			"fieldtype": "Select",
+			"label": "Turn Detection",
+			"options": "server_vad\nsemantic_vad"
+		},
+		{
+			"default": "300",
+			"depends_on": "realtime_enabled",
+			"fieldname": "realtime_max_session_seconds",
+			"fieldtype": "Int",
+			"label": "Max Session Seconds"
 		}
 	],
 	"grid_page_length": 50,
 	"index_web_pages_for_search": 1,
 	"issingle": 1,
 	"links": [],
-	"modified": "2026-06-05 13:00:00.000000",
+	"modified": "2026-06-23 15:00:00.000000",
 	"modified_by": "Administrator",
 	"module": "OS LMS",
 	"name": "LMSA Settings",

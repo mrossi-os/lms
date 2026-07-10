@@ -14,7 +14,7 @@
 				:value="course.data?.rating || 0"
 			>
 				<template #prefix>
-					<Star class="size-5 text-transparent fill-amber-500" />
+					<LucideStar class="size-5 text-transparent fill-amber-500" />
 				</template>
 			</NumberChartGraph>
 			<NumberChartGraph :title="__('Lessons')" :value="course.data?.lessons" />
@@ -22,7 +22,7 @@
 		<div class="grid grid-cols-[2fr_1fr] gap-5 items-start">
 			<div class="border rounded-lg py-3 px-4 card">
 				<div class="flex items-center justify-between mb-3">
-					<div class="text-lg text-ink-gray-9 font-semibold">
+					<div class="text-xl-semibold text-ink-gray-9">
 						{{ __('Students') }}
 					</div>
 					<div class="flex items-center gap-x-2">
@@ -31,20 +31,16 @@
 							class="small-form"
 							:placeholder="__('Search by name')"
 							type="text"
-						/>
-						<Button @click="showEnrollmentModal = true">
+						>
 							<template #prefix>
-								<Plus class="size-4 stroke-1.5" />
+								<span class="lucide-search size-4 text-ink-gray-5" />
 							</template>
-							{{ __('Enroll') }}
-						</Button>
+						</FormControl>
 					</div>
 				</div>
-				<div
-					v-if="progressList.loading || progressList.data?.length"
-					class="max-h-[63vh] overflow-y-auto"
-				>
+				<div class="max-h-[63vh] overflow-y-auto">
 					<ListView
+						v-if="progressList.loading || progressList.data?.length"
 						:columns="progressColumns"
 						:rows="progressList.data"
 						rowKey="name"
@@ -54,7 +50,7 @@
 						}"
 					>
 						<ListHeader
-							class="mb-2 grid items-center md:space-x-4 rounded-sm bg-surface-white-2 border-b p-2"
+							class="mb-2 grid items-center md:space-x-4 rounded-sm border-b p-2"
 						>
 							<ListHeaderItem
 								:item="item"
@@ -63,8 +59,10 @@
 							>
 							</ListHeaderItem>
 						</ListHeader>
-						<ListRows v-for="row in progressList.data" class="max-h-[500px]">
+						<ListRows>
 							<ListRow
+								v-for="row in progressList.data"
+								:key="row.name"
 								:row="row"
 								@click="
 									() => {
@@ -100,7 +98,7 @@
 										</div>
 										<div
 											v-else-if="column.key == 'progress'"
-											class="text-xs !mx-0 w-5"
+											class="text-xs !mx-0 w-10 text-right shrink-0"
 										>
 											{{ Math.ceil(row[column.key]) }}%
 										</div>
@@ -112,6 +110,14 @@
 							</ListRow>
 						</ListRows>
 					</ListView>
+					<div v-else class="min-h-[200px]">
+						<EmptyStateLayout
+							name="Students"
+							icon="lucide-users"
+							:title="__('No students match your search')"
+							:description="__('Try a different name.')"
+						/>
+					</div>
 					<div
 						v-if="progressList.data && progressList.hasNextPage"
 						class="flex justify-center my-3"
@@ -155,7 +161,11 @@
 								<Tooltip :text="row.value">
 									<div class="ms-auto">
 										{{
-											Math.round((row.value / course.data?.enrollments) * 100)
+											course.data?.enrollments
+												? Math.round(
+														(row.value / course.data.enrollments) * 100
+												  )
+												: 0
 										}}%
 									</div>
 								</Tooltip>
@@ -211,7 +221,7 @@
 						/>
 					</div>
 					<div
-						class="divide-y max-h-[40vh] divide-outline-gray-modals text-ink-gray-7 overflow-y-auto"
+						class="divide-y max-h-[40vh] divide-outline-elevation-2 text-ink-gray-7 overflow-y-auto"
 					>
 						<div
 							v-for="progress in lessonProgress.data"
@@ -275,10 +285,10 @@ import {
 import Select from '@/components/Controls/Select.vue'
 import { computed, inject, ref, watch } from 'vue'
 import type dayjsType from 'dayjs'
-import { Plus, Star } from 'lucide-vue-next'
 import { formatAmount } from '@/utils'
 import colors from '@/utils/frappe-ui-colors.json'
 import CourseEnrollmentModal from '@/pages/Courses/CourseEnrollmentModal.vue'
+import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
 import NumberChartGraph from '@/components/NumberChartGraph.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
 import StudentCourseProgress from '@/pages/Courses/StudentCourseProgress.vue'
@@ -292,6 +302,13 @@ const props = defineProps<{
 const dayjs = inject<typeof dayjsType>('$dayjs')!
 const showEnrollmentModal = ref<boolean>(false)
 const searchFilter = ref<string | null>(null)
+
+function openEnrollModal() {
+	showEnrollmentModal.value = true
+}
+
+defineExpose({ openEnrollModal })
+
 const showProgressModal = ref<boolean>(false)
 const currentStudent = ref<Record<string, unknown> | null>(null)
 const theme = ref<'darkMode' | 'lightMode'>(
@@ -386,6 +403,11 @@ const averageCompletionRate = computed(() => {
 	let value = Math.ceil(chartDetails.data?.average_progress) || 0
 	return value + '%'
 })
+
+const showStudentsEmptyState = computed(
+	() =>
+		!progressList.loading && !progressList.data?.length && !searchFilter.value
+)
 
 const progressColors = computed(() => {
 	let colorList = []

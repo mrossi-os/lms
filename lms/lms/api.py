@@ -4,6 +4,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import xml.etree.ElementTree as ET
 import zipfile
 from datetime import timedelta
@@ -377,27 +378,39 @@ def get_unsplash_photos(keyword: str = None):
 def get_evaluator_details(evaluator: str):
 	frappe.only_for("Batch Evaluator")
 
-	if not frappe.db.exists("Google Calendar", {"user": evaluator}):
-		calendar = frappe.new_doc("Google Calendar")
-		calendar.update({"user": evaluator, "calendar_name": evaluator})
-		calendar.insert()
-	else:
+	if frappe.db.exists("Google Calendar", {"user": evaluator}):
 		calendar = frappe.db.get_value(
 			"Google Calendar", {"user": evaluator}, ["name", "authorization_code"], as_dict=1
 		)
+	else:
+		# Batch Evaluators are portal users without create permission on Google
+		# Calendar (only System Manager / Desk User have it), so provision the
+		# evaluator's own calendar on their behalf via ignore_permissions. This is
+		# best-effort: creation requires Google OAuth configured in Google Settings,
+		# so a missing config (ValidationError) or permission gap must not block the
+		# availability (slots) UI, the primary purpose. Any other error is
+		# unexpected and left to propagate.
+		try:
+			calendar = frappe.new_doc("Google Calendar")
+			calendar.update({"user": evaluator, "calendar_name": evaluator})
+			calendar.insert(ignore_permissions=True)
+		except (frappe.ValidationError, frappe.PermissionError):
+			frappe.clear_last_message()
+			calendar = None
 
 	if frappe.db.exists("Course Evaluator", {"evaluator": evaluator}):
 		doc = frappe.get_doc("Course Evaluator", evaluator)
 	else:
+		# Batch Evaluator already has create permission on Course Evaluator, so use
+		# a normal permission-checked insert here (no ignore_permissions).
 		doc = frappe.new_doc("Course Evaluator")
 		doc.evaluator = evaluator
 		doc.insert()
-	for slot in doc.schedule:
-		print(slot.start_time, slot.end_time)
+
 	return {
 		"slots": doc.as_dict(),
-		"calendar": calendar.name,
-		"is_authorised": calendar.authorization_code,
+		"calendar": calendar.name if calendar else None,
+		"is_authorised": calendar.authorization_code if calendar else None,
 	}
 
 
@@ -591,7 +604,32 @@ def delete_lesson(lesson: str, chapter: str):
 	update_index(lessons, chapter)
 
 	frappe.db.delete("LMS Course Progress", {"lesson": lesson})
+	frappe.db.delete("LMS Video Watch Duration", {"lesson": lesson})
+
+	# Discussion topics link to the lesson, so remove them (and their replies) first, else delete_doc raises LinkExistsError.
+	topics = frappe.get_all(
+		"Discussion Topic",
+		{"reference_doctype": "Course Lesson", "reference_docname": lesson},
+		pluck="name",
+	)
+	for topic in topics:
+		frappe.db.delete("Discussion Reply", {"topic": topic})
+		frappe.db.delete("Discussion Topic", topic)
+
 	frappe.delete_doc("Course Lesson", lesson)
+
+
+@frappe.whitelist()
+def create_lesson(chapter: str) -> str:
+	"""Create a draft "Untitled lesson" appended to the chapter, atomically via add_lesson() (inserts the Course Lesson + its Lesson Reference in one request that rolls back together; returns the new docname)."""
+	course = frappe.db.get_value("Course Chapter", chapter, "course")
+	if not course:
+		frappe.throw(_("Invalid chapter."))
+	if not can_modify_course(course):
+		frappe.throw(_("You do not have permission to add a lesson."), frappe.PermissionError)
+
+	idx = frappe.db.count("Lesson Reference", {"parent": chapter}) + 1
+	return add_lesson(_("Untitled lesson"), chapter, course, idx)
 
 
 @frappe.whitelist()
@@ -680,10 +718,26 @@ def update_chapter_index(chapter: str, course: str, idx: int):
 
 
 @frappe.whitelist()
-def get_members(start: int = 0, search: str = None):
+def get_members(start: int = 0, search: str = None, role: str = "All"):
 	frappe.only_for(["Moderator"])
-	filters = {"enabled": 1, "name": ["not in", ["Administrator", "Guest"]]}
+
+	lms_roles = ["Moderator", "Course Creator", "Batch Evaluator", "LMS Student"]
+	if not isinstance(role, str) or role not in (["All"] + lms_roles):
+		frappe.throw(_("Invalid role filter."), frappe.ValidationError)
+	if search is not None and not isinstance(search, str):
+		frappe.throw(_("Invalid search query."), frappe.ValidationError)
+
+	filters = [
+		["enabled", "=", 1],
+		["name", "not in", ["Administrator", "Guest"]],
+	]
 	or_filters = {}
+
+	if role != "All":
+		role_users = frappe.get_all("Has Role", {"role": role, "parenttype": "User"}, pluck="parent")
+		if not role_users:
+			return []
+		filters.append(["name", "in", role_users])
 
 	if search:
 		or_filters["full_name"] = ["like", f"%{search}%"]
@@ -698,7 +752,6 @@ def get_members(start: int = 0, search: str = None):
 		start=start,
 	)
 
-	lms_roles = ["Moderator", "Course Creator", "Batch Evaluator", "LMS Student"]
 	for member in members:
 		roles = frappe.get_all(
 			"Has Role",
@@ -1057,15 +1110,17 @@ def upsert_chapter(
 	values = frappe._dict({"title": title, "course": course, "is_scorm_package": is_scorm_package})
 
 	if is_scorm_package:
-		scorm_package = frappe._dict(scorm_package)
+		scorm_package = frappe._dict(scorm_package or {})
+		if not scorm_package.get("name"):
+			frappe.throw(_("Please attach a SCORM package before saving this chapter."))
 		extract_path = extract_package(course, title, scorm_package)
 
 		values.update(
 			{
 				"scorm_package": scorm_package.name,
-				"scorm_package_path": extract_path.split("public")[1],
-				"manifest_file": get_manifest_file(extract_path).split("public")[1],
-				"launch_file": get_launch_file(extract_path).split("public")[1],
+				"scorm_package_path": _scorm_url(extract_path),
+				"manifest_file": _scorm_url(get_manifest_file(extract_path)),
+				"launch_file": _scorm_url(get_launch_file(extract_path)),
 			}
 		)
 
@@ -1078,11 +1133,7 @@ def upsert_chapter(
 		chapter.update(values)
 		chapter.save()
 
-		# Link the new chapter into the course outline. This was previously done
-		# client-side via frappe.client.insert (ChapterModal.vue), which did not
-		# reliably persist on CI — leaving get_outline_chapter() empty. Creating the
-		# Chapter Reference here keeps it atomic with the chapter and consistent
-		# across environments.
+		# Link the new chapter into the outline here (was client-side frappe.client.insert in ChapterModal.vue, which didn't reliably persist on CI); keeps the Chapter Reference atomic with the chapter.
 		course_doc = frappe.get_doc("LMS Course", course)
 		course_doc.append("chapters", {"chapter": chapter.name})
 		course_doc.save()
@@ -1093,19 +1144,45 @@ def upsert_chapter(
 	return chapter
 
 
+def _scorm_url(abs_path: str) -> str:
+	"""Map an extracted SCORM disk path (<site>/private/scorm/...) to the location-independent "/scorm/<course>/<title>/..." URL stored on Course Chapter — same shape legacy public chapters have, so no DB change."""
+	rel = os.path.relpath(abs_path, frappe.get_site_path("private"))
+	return "/" + rel.replace(os.sep, "/")
+
+
+def _scorm_extract_path(course: str, title: str) -> str:
+	"""Resolve the SCORM extraction dir, contained to this course's directory (an attacker-controlled chapter title must not traverse out → cross-course overwrite / same-origin stored XSS)."""
+	scorm_root = os.path.realpath(frappe.get_site_path("private", "scorm"))
+	course_root = os.path.realpath(frappe.get_site_path("private", "scorm", course))
+
+	# The course segment must resolve strictly inside the scorm root, never the root itself (empty/"." course).
+	if not course_root.startswith(scorm_root + os.sep):
+		frappe.throw(_("Invalid course or chapter name"))
+
+	# Must resolve strictly inside the course dir — a title of "."/""/"sub/.." collapses to course_root, whose rmtree would wipe every chapter.
+	extract_path = os.path.realpath(os.path.join(course_root, title))
+	if not extract_path.startswith(course_root + os.sep):
+		frappe.throw(_("Invalid course or chapter name"))
+
+	return extract_path
+
+
 def extract_package(course: str, title: str, scorm_package: dict):
 	package = frappe.get_doc("File", scorm_package.name)
 	zip_path = package.get_full_path()
-	scorm_root = os.path.realpath(frappe.get_site_path("public", "scorm"))
-	extract_path = frappe.get_site_path("public", "scorm", course, title)
+	extract_path = _scorm_extract_path(course, title)
 
-	if not os.path.realpath(extract_path).startswith(scorm_root + os.sep):
-		frappe.throw(_("Invalid course or chapter name"))
+	# Clear any previously extracted package so a re-upload doesn't leave stale files served (path confirmed under the course dir above).
+	if os.path.exists(extract_path):
+		shutil.rmtree(extract_path)
 
 	with zipfile.ZipFile(zip_path, "r") as zf:
 		dest = os.path.realpath(extract_path)
-		for name in zf.namelist():
-			target = os.path.realpath(os.path.join(extract_path, name))
+		for info in zf.infolist():
+			# Reject symlink entries outright: a symlink + a path through it could escape the course dir once materialised.
+			if stat.S_ISLNK(info.external_attr >> 16):
+				frappe.throw(_("Invalid file path in package"))
+			target = os.path.realpath(os.path.join(extract_path, info.filename))
 			if not target.startswith(dest + os.sep) and target != dest:
 				frappe.throw(_("Invalid file path in package"))
 		zf.extractall(extract_path)
@@ -1194,6 +1271,8 @@ def add_lesson(title: str, chapter: str, course: str, idx: int):
 	)
 	lesson_reference.insert()
 
+	return lesson.name
+
 
 @frappe.whitelist()
 def delete_chapter(chapter: str):
@@ -1209,6 +1288,20 @@ def delete_chapter(chapter: str):
 		delete_scorm_package(chapterInfo.scorm_package_path)
 
 	course = frappe.db.get_value("Chapter Reference", {"chapter": chapter}, "parent")
+
+	# Clean up per-lesson dependants before the raw lesson delete below, else discussions/progress orphan at the deleted lessons.
+	lessons = frappe.get_all("Course Lesson", {"chapter": chapter}, pluck="name")
+	for lesson in lessons:
+		topics = frappe.get_all(
+			"Discussion Topic",
+			{"reference_doctype": "Course Lesson", "reference_docname": lesson},
+			pluck="name",
+		)
+		for topic in topics:
+			frappe.db.delete("Discussion Reply", {"topic": topic})
+			frappe.db.delete("Discussion Topic", topic)
+		frappe.db.delete("LMS Course Progress", {"lesson": lesson})
+		frappe.db.delete("LMS Video Watch Duration", {"lesson": lesson})
 
 	frappe.db.delete("Chapter Reference", {"chapter": chapter})
 	frappe.db.delete("Lesson Reference", {"parent": chapter})
@@ -1359,83 +1452,34 @@ def get_week_difference(start_date: str, current_date: str) -> int:
 @frappe.whitelist()
 def get_notifications(filters: dict = None):
 	filters = frappe._dict(filters or {})
-	filters.for_user = frappe.session.user
+	# Always scoped to the session user — no IDOR surface; only an optional read flag from the client is honoured.
+	query_filters = {"for_user": frappe.session.user}
+	if "read" in filters:
+		query_filters["read"] = 1 if filters.read else 0
+
 	notifications = frappe.get_all(
 		"Notification Log",
-		filters,
-		[
-			"subject",
-			"from_user",
-			"link",
-			"read",
-			"name",
-			"creation",
-			"document_type",
-			"document_name",
-			"type",
-			"email_content",
-		],
+		filters=query_filters,
+		fields=["name", "subject", "from_user", "link", "read", "creation", "type"],
 		order_by="creation desc",
+		limit_page_length=50,
 	)
 
+	# Batch-fetch sender details in a single query instead of one per row.
+	sender_names = list({n.from_user for n in notifications if n.from_user})
+	senders = {}
+	if sender_names:
+		for sender in frappe.get_all(
+			"User",
+			filters={"name": ["in", sender_names]},
+			fields=["name", "full_name", "user_image"],
+		):
+			senders[sender.name] = sender
+
 	for notification in notifications:
-		notification = update_document_details(notification)
-		notification = update_user_details(notification)
+		notification["from_user_details"] = senders.get(notification.from_user, {})
 
 	return notifications
-
-
-def update_user_details(notification: dict) -> dict:
-	if (
-		notification.document_details
-		and len(notification.document_details.get("instructors", []))
-		and not is_mention(notification)
-	):
-		from_user_details = notification.document_details["instructors"][0]
-	else:
-		from_user_details = frappe.db.get_value(
-			"User", notification.from_user, ["full_name", "user_image"], as_dict=1
-		)
-	notification["from_user_details"] = from_user_details
-	return notification
-
-
-def is_mention(notification: dict) -> bool:
-	if notification.type == "Mention":
-		return True
-	if "mentioned you" in notification.subject.lower():
-		return True
-	return False
-
-
-def update_document_details(notification: dict) -> dict:
-	if notification.document_type == "LMS Course":
-		details = frappe.db.get_value(
-			"LMS Course", notification.document_name, ["title", "video_link", "short_introduction"], as_dict=1
-		)
-		instructors = get_instructors("LMS Course", notification.document_name)
-		details["instructors"] = instructors
-		notification["document_details"] = details
-
-	elif notification.document_type == "LMS Batch":
-		details = frappe.db.get_value(
-			"LMS Batch",
-			notification.document_name,
-			[
-				"title",
-				"description as short_introduction",
-				"video_link",
-				"start_date",
-				"end_date",
-				"start_time",
-				"timezone",
-			],
-			as_dict=1,
-		)
-		instructors = get_instructors("LMS Batch", notification.document_name)
-		details["instructors"] = instructors
-		notification["document_details"] = details
-	return notification
 
 
 @frappe.whitelist(allow_guest=True)
@@ -1459,6 +1503,8 @@ def get_lms_settings():
 	settings = frappe._dict()
 	for field in allowed_fields:
 		settings[field] = frappe.get_cached_value("LMS Settings", None, field)
+
+	settings["is_payments_app_installed"] = "payments" in frappe.get_installed_apps()
 
 	return settings
 
@@ -1568,7 +1614,12 @@ def save_evaluator_role(user: str, value: int):
 		if not frappe.db.exists("Course Evaluator", {"evaluator": user}):
 			doc = frappe.new_doc("Course Evaluator")
 			doc.evaluator = user
-			doc.save(ignore_permissions=True)
+			frappe.db.savepoint("save_evaluator")
+			try:
+				doc.save(ignore_permissions=True)
+			except frappe.DuplicateEntryError:
+				# A concurrent request already created this evaluator; the primary key (autoname field:evaluator) guarantees uniqueness, so the row exists — nothing more to do.
+				frappe.db.rollback(save_point="save_evaluator")
 	else:
 		frappe.db.delete("Has Role", {"parent": user, "role": "Batch Evaluator"})
 		if frappe.db.exists("Course Evaluator", {"evaluator": user}):

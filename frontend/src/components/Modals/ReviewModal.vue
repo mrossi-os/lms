@@ -13,7 +13,7 @@
 			],
 		}"
 	>
-		<template #body-content>
+		<template #default>
 			<div class="flex flex-col gap-4">
 				<Rating v-model="review.rating" :label="__('Rating')" />
 				<FormControl
@@ -51,14 +51,15 @@ const createReview = createResource({
 			doc: {
 				doctype: 'LMS Course Review',
 				course: props.courseName,
-				...review,
+				review: review.review,
+				// the Rating control is 0–5; the doctype stores a 0–1 fraction
+				rating: review.rating / 5,
 			},
 		}
 	},
 })
 
 function submitReview(close: () => void) {
-	review.rating = review.rating / 5
 	createReview.submit(review, {
 		validate() {
 			if (!review.rating) {
@@ -68,12 +69,12 @@ function submitReview(close: () => void) {
 		onSuccess() {
 			reviews.value?.reload()
 			hasReviewed.value?.reload()
+			close()
 		},
 		onError(err: { messages?: string[] } | string) {
 			const msg = typeof err === 'string' ? err : err.messages?.[0] ?? 'Error'
 			toast.error(msg)
 		},
 	})
-	close()
 }
 </script>

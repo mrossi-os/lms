@@ -1,6 +1,8 @@
 import hashlib
 import json
 import re
+from datetime import timedelta
+from urllib.parse import quote
 
 import frappe
 import requests
@@ -706,6 +708,143 @@ def start_live_class(name: str) -> dict:
 		"join_url": doc.join_url,
 		"started_at": str(started_at),
 	}
+
+
+# ----- Live Class: internal gated join link -----
+
+JOIN_METHOD = "os_lms.os_lms.api.join_live_class"
+# Students may enter from 15 minutes before the scheduled start until the class
+# ends. Keep in sync with JOIN_WINDOW_MINUTES_BEFORE in LiveClassCard.vue.
+JOIN_WINDOW_MINUTES_BEFORE = 15
+
+
+def get_live_class_join_url(name: str) -> str:
+	"""Absolute URL of the internal gated join page for a live class.
+
+	Points to :func:`join_live_class`, NOT the raw Zoom/Meet URL, so the meeting
+	link stays out of invitation emails and access is enforced server-side.
+	"""
+	return frappe.utils.get_url(f"/api/method/{JOIN_METHOD}?name={quote(name)}")
+
+
+def _live_class_access(doc, user: str) -> str | None:
+	"""Return the access tier for ``user`` on live class ``doc``, or ``None``.
+
+	- ``"host"`` — moderators, batch evaluators, batch instructors: enter as host
+	  (``start_url``), any time before the class ends.
+	- ``"observer"`` — batch valutatori: watch (``join_url``) while the class is on,
+	  without waiting for the host to start it.
+	- ``"student"`` — enrolled members: join (``join_url``) only inside the join
+	  window AND once the host has actually started the class (``started_at``).
+
+	Mirrors the client-side gating in LiveClassCard.vue (canStudentJoin /
+	canObserverJoin / canModeratorAccessClass).
+	"""
+	from lms.lms.utils import is_batch_valutatore
+
+	roles = frappe.get_roles(user)
+	if "Moderator" in roles or "Batch Evaluator" in roles:
+		return "host"
+
+	if frappe.db.exists(
+		"Course Instructor",
+		{"parenttype": "LMS Batch", "parent": doc.batch_name, "instructor": user},
+	):
+		return "host"
+
+	if frappe.db.exists("LMS Batch Enrollment", {"batch": doc.batch_name, "member": user}):
+		return "student"
+
+	if is_batch_valutatore(doc.batch_name, user):
+		return "observer"
+
+	return None
+
+
+def _live_class_message(message: str, batch_url: str | None = None, color: str = "orange") -> None:
+	"""Render a branded message page (used for the non-happy join states)."""
+	frappe.respond_as_web_page(
+		frappe._("Lezione dal vivo"),
+		message,
+		indicator_color=color,
+		primary_action=batch_url or "/lms",
+		primary_label=frappe._("Vai alla classe") if batch_url else frappe._("Vai alla piattaforma"),
+	)
+
+
+@frappe.whitelist(allow_guest=True)
+def join_live_class(name: str) -> None:
+	"""Gated entry point for a live class join link (used by emails and the SPA card).
+
+	Authenticates the visitor, verifies they are entitled to the class (enrolled
+	student, batch instructor, moderator, evaluator or valutatore) and that the
+	join window is open, then redirects (302) to the correct meeting URL —
+	``start_url`` for hosts, ``join_url`` for everyone else. Any non-happy state
+	renders a message page instead of exposing a meeting URL.
+	"""
+	# Unauthenticated visitors log in first, then come back to this same link.
+	if frappe.session.user == "Guest":
+		redirect_to = quote(f"/api/method/{JOIN_METHOD}?name={name}", safe="")
+		frappe.local.response["type"] = "redirect"
+		frappe.local.response["location"] = f"/login?redirect-to={redirect_to}"
+		return
+
+	if not name or not frappe.db.exists("LMS Live Class", name):
+		_live_class_message(frappe._("Questa lezione dal vivo non esiste o è stata rimossa."), color="red")
+		return
+
+	doc = frappe.get_doc("LMS Live Class", name)
+	batch_url = frappe.utils.get_url(f"/lms/batches/{doc.batch_name}")
+
+	tier = _live_class_access(doc, frappe.session.user)
+	if tier is None:
+		_live_class_message(
+			frappe._("Non sei autorizzato a partecipare a questa lezione dal vivo."),
+			batch_url,
+			"red",
+		)
+		return
+
+	class_start = frappe.utils.get_datetime(f"{doc.date} {doc.time}")
+	class_end = class_start + timedelta(minutes=frappe.utils.cint(doc.duration))
+	now = frappe.utils.now_datetime()
+
+	if now > class_end:
+		_live_class_message(frappe._("Questa lezione dal vivo è terminata."), batch_url)
+		return
+
+	# Enrolled students may enter only inside the join window AND once the host
+	# has actually started the class (started_at). Hosts and observers are not
+	# gated by started_at — the host is the one who starts the class, and
+	# valutatori watch without waiting for it.
+	if tier == "student":
+		window_open = class_start - timedelta(minutes=JOIN_WINDOW_MINUTES_BEFORE)
+		if now < window_open:
+			_live_class_message(
+				frappe._("La lezione non è ancora iniziata. Potrai partecipare a partire dalle {0} del {1}.").format(
+					frappe.utils.format_time(doc.time, "HH:mm"),
+					frappe.utils.format_date(doc.date, "dd-MM-yyyy"),
+				),
+				batch_url,
+			)
+			return
+		if not doc.started_at:
+			_live_class_message(
+				frappe._("La lezione non è ancora stata avviata dal docente. Riprova tra qualche istante."),
+				batch_url,
+			)
+			return
+
+	target = (doc.start_url or doc.join_url) if tier == "host" else doc.join_url
+	if not target:
+		_live_class_message(
+			frappe._("Il link per partecipare non è ancora disponibile. Riprova più tardi."),
+			batch_url,
+		)
+		return
+
+	frappe.local.response["type"] = "redirect"
+	frappe.local.response["location"] = target
 
 
 @frappe.whitelist()

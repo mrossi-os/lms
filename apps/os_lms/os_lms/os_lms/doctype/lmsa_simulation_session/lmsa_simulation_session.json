@@ -21,10 +21,15 @@
   "prompt_version",
   "section_generated",
   "generated_situation",
+  "student_brief",
   "generated_persona",
   "section_audit",
   "chat_model_used",
-  "chat_provider_used"
+  "chat_provider_used",
+  "realtime_provider_used",
+  "realtime_model_used",
+  "voice_used",
+  "session_seconds"
  ],
  "fields": [
   {
@@ -75,7 +80,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "In Progress\nCompleted\nAbandoned\nError\nNeeds Review",
+   "options": "Ready\nIn Progress\nCompleted\nAbandoned\nError\nNeeds Review",
    "read_only": 1,
    "reqd": 1
   },
@@ -134,6 +139,12 @@
    "read_only": 1
   },
   {
+   "fieldname": "student_brief",
+   "fieldtype": "Long Text",
+   "label": "Student Brief",
+   "read_only": 1
+  },
+  {
    "description": "Persona variant as JSON (name, role, context, mood, key_objection, hidden_motivation).",
    "fieldname": "generated_persona",
    "fieldtype": "Long Text",
@@ -156,6 +167,31 @@
    "fieldname": "chat_provider_used",
    "fieldtype": "Data",
    "label": "Chat Provider",
+   "read_only": 1
+  },
+  {
+   "fieldname": "realtime_provider_used",
+   "fieldtype": "Data",
+   "label": "Realtime Provider Used",
+   "read_only": 1
+  },
+  {
+   "fieldname": "realtime_model_used",
+   "fieldtype": "Data",
+   "label": "Realtime Model Used",
+   "read_only": 1
+  },
+  {
+   "fieldname": "voice_used",
+   "fieldtype": "Data",
+   "label": "Voice Used",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "session_seconds",
+   "fieldtype": "Int",
+   "label": "Session Seconds",
    "read_only": 1
   }
  ],

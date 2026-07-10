@@ -87,12 +87,37 @@
 							<Button size="sm" variant="outline" @click="openEdit(s.name)">
 								{{ __('Modifica') }}
 							</Button>
+							<!-- Archive: only for Published scenarios (safe on scenarios
+								with sessions — keeps the history). Solid orange: the
+								Button has no `orange` theme, so it's a solid button with
+								amber tokens overridden. -->
 							<Button
+								v-if="s.status === 'Published'"
+								size="sm"
+								variant="solid"
+								class="ml-2 !bg-orange-500 hover:!bg-orange-600 !text-white"
+								@click="confirmArchive(s)"
+							>
+								{{ __('Archivia') }}
+							</Button>
+							<!-- Re-publish: only for Archived scenarios. -->
+							<Button
+								v-if="s.status === 'Archived'"
 								size="sm"
 								variant="ghost"
-								class="text-ink-red-5"
+								class="ml-2"
+								@click="confirmPublish(s)"
+							>
+								{{ __('Ripubblica') }}
+							</Button>
+							<!-- Delete: only for Draft scenarios. -->
+							<Button
+								v-if="s.status === 'Draft'"
+								size="sm"
+								variant="solid"
+								theme="red"
+								class="ml-2"
 								@click="confirmDelete(s)"
-								:disabled="s.status === 'Published'"
 							>
 								{{ __('Elimina') }}
 							</Button>
@@ -230,10 +255,56 @@ const deleteRes = createResource({
 	method: 'POST',
 })
 
-async function confirmDelete(scenario) {
+const archiveRes = createResource({
+	url: 'os_lms.os_lms.ai.simulations.api.archive_scenario',
+	method: 'POST',
+})
+
+const publishRes = createResource({
+	url: 'os_lms.os_lms.ai.simulations.api.publish_scenario',
+	method: 'POST',
+})
+
+async function confirmArchive(scenario) {
 	if (
 		!window.confirm(
-			__('Eliminare lo scenario "{0}"?', [scenario.scenario_name]),
+			__('Archiviare lo scenario "{0}"?').format(scenario.scenario_name),
+		)
+	)
+		return
+	try {
+		await archiveRes.submit({ name: scenario.name })
+		toast.success(__('Scenario archiviato'))
+		scenariosRes.submit()
+	} catch (e) {
+		toast.error(e.messages?.[0] || __('Archiviazione fallita'))
+	}
+}
+
+async function confirmPublish(scenario) {
+	if (
+		!window.confirm(
+			__('Ripubblicare lo scenario "{0}"?').format(scenario.scenario_name),
+		)
+	)
+		return
+	try {
+		await publishRes.submit({ name: scenario.name })
+		toast.success(__('Scenario ripubblicato'))
+		scenariosRes.submit()
+	} catch (e) {
+		toast.error(e.messages?.[0] || __('Ripubblicazione fallita'))
+	}
+}
+
+async function confirmDelete(scenario) {
+	// This project's `__()` returns a `{ format }` object (not a string) when the
+	// message has a `{0}` placeholder — the value must be produced via `.format()`,
+	// not a second array argument (which is ignored). Passing the object straight
+	// to window.confirm stringifies it to "[object Object]".
+	if (
+		!window.confirm(
+			__('Eliminare lo scenario "{0}"?').format(scenario.scenario_name),
 		)
 	)
 		return

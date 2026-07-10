@@ -17,6 +17,7 @@ provider).
 
 from __future__ import annotations
 
+import time
 from collections.abc import Callable
 
 from os_lms.os_lms.ai.simulations.eval.types import ScenarioRef
@@ -29,12 +30,25 @@ from os_lms.os_lms.ai.simulations.prompts import (
 	parse_scenario_generator_output,
 	render_situation_template,
 )
+from os_lms.os_lms.ai.utils.llm import (
+	LLMRateLimit,
+	LLMServerError,
+	LLMTimeout,
+)
 from os_lms.os_lms.ai.utils.llm.provider import (
 	ChatMessage,
 	ChatResponse,
 	JsonSchema,
 	LLMProvider,
 )
+
+# Transient upstream failures worth retrying: a rate-limit, a provider 5xx, or a
+# timeout usually clears on a second attempt — which is exactly why re-launching
+# a simulation "just works" after an intermittent prepare_session failure. A
+# mis-config (bad key, context window) is deliberately NOT retried here.
+_TRANSIENT_LLM_ERRORS = (LLMRateLimit, LLMServerError, LLMTimeout)
+_MAX_GENERATION_ATTEMPTS = 3
+_RETRY_BACKOFF_SECONDS = 0.6
 
 
 class ScenarioVariantGenerator:
@@ -71,6 +85,26 @@ class ScenarioVariantGenerator:
 			schema=SCENARIO_SCHEMA,
 		)
 		chat_messages = [ChatMessage(role=m["role"], content=m["content"]) for m in messages]
+
+		# Retry only transient upstream failures. A single provider hiccup
+		# otherwise surfaces as a 500 on prepare_session even though an immediate
+		# re-launch succeeds; a bounded backoff absorbs that blip. Bad JSON and
+		# mis-config errors are not transient and propagate on the first attempt.
+		for attempt in range(_MAX_GENERATION_ATTEMPTS):
+			try:
+				return self._generate_once(system, chat_messages, response_format)
+			except _TRANSIENT_LLM_ERRORS:
+				if attempt == _MAX_GENERATION_ATTEMPTS - 1:
+					raise
+				time.sleep(_RETRY_BACKOFF_SECONDS * (attempt + 1))
+
+	def _generate_once(
+		self,
+		system: str,
+		chat_messages: list[ChatMessage],
+		response_format: JsonSchema,
+	) -> ScenarioVariant:
+		"""One generation attempt: chat, then a single re-ask on invalid JSON."""
 		response = self._provider.chat(
 			messages=chat_messages,
 			system=system,
@@ -126,14 +160,28 @@ class RolePlayerTurnService:
 		situation: str,
 		difficulty: str,
 		history: list[ChatMessage],
+		closing_directive: str = "",
 	) -> ChatResponse:
 		system = build_role_play_system_prompt(
 			persona=persona,
 			generated_situation=situation,
 			difficulty=difficulty,
+			closing_directive=closing_directive,
 		)
+		messages = history
+		# A closing directive in the system prompt alone is easily overridden by
+		# the recency of the student's last message (the model keeps engaging with
+		# it). Reinforce it as the most-recent instruction by appending it to the
+		# final user turn actually sent to the model — not persisted, only this call.
+		if closing_directive and history and history[-1].role == "user":
+			messages = list(history[:-1]) + [
+				ChatMessage(
+					role="user",
+					content=f"{history[-1].content}\n\n{closing_directive}",
+				)
+			]
 		return self._chat(
-			messages=history,
+			messages=messages,
 			system=system,
 			temperature=0.7,
 			max_tokens=400,

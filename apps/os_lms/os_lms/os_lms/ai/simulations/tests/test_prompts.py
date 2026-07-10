@@ -6,6 +6,7 @@ from frappe.tests import UnitTestCase
 from os_lms.os_lms.ai.simulations.prompts import (
     ROLE_PLAY_VERSION,
     SCENARIO_GEN_VERSION,
+    SCENARIO_SCHEMA,
     PersonaVariant,
     build_role_play_system_prompt,
     build_scenario_generator_messages,
@@ -91,7 +92,7 @@ class TestScenarioGenerator(UnitTestCase):
 
     def test_parser_happy_path(self):
         payload = (
-            '{"situation":"S","persona":{"name":"A","role":"R","context":"C",'
+            '{"situation":"S","student_brief":"Brief.","persona":{"name":"A","role":"R","context":"C",'
             '"mood":"M","key_objection":"K","hidden_motivation":"H"}}'
         )
         variant = parse_scenario_generator_output(payload)
@@ -100,7 +101,7 @@ class TestScenarioGenerator(UnitTestCase):
 
     def test_parser_handles_fenced_output(self):
         payload = (
-            '```json\n{"situation":"S","persona":{"name":"A","role":"R",'
+            '```json\n{"situation":"S","student_brief":"Brief.","persona":{"name":"A","role":"R",'
             '"context":"C","mood":"M","key_objection":"K","hidden_motivation":"H"}}\n```'
         )
         self.assertEqual(parse_scenario_generator_output(payload).persona.name, "A")
@@ -116,6 +117,29 @@ class TestScenarioGenerator(UnitTestCase):
     def test_version_constants_exposed(self):
         self.assertTrue(SCENARIO_GEN_VERSION)
         self.assertTrue(ROLE_PLAY_VERSION)
+
+    def test_parser_reads_student_brief(self):
+        payload = (
+            '{"situation":"S","student_brief":"Il tuo compito è ...",'
+            '"persona":{"name":"A","role":"R","context":"C","mood":"M",'
+            '"key_objection":"K","hidden_motivation":"H"}}'
+        )
+        variant = parse_scenario_generator_output(payload)
+        self.assertEqual(variant.student_brief, "Il tuo compito è ...")
+
+    def test_parser_rejects_missing_student_brief(self):
+        with self.assertRaises(ValueError):
+            parse_scenario_generator_output(
+                '{"situation":"S","persona":{"name":"A","role":"R","context":"C",'
+                '"mood":"M","key_objection":"K","hidden_motivation":"H"}}'
+            )
+
+    def test_schema_requires_student_brief(self):
+        self.assertIn("student_brief", SCENARIO_SCHEMA["required"])
+        self.assertIn("student_brief", SCENARIO_SCHEMA["properties"])
+
+    def test_version_is_v2(self):
+        self.assertEqual(SCENARIO_GEN_VERSION, "gen.v2")
 
 
 class TestRolePlay(UnitTestCase):

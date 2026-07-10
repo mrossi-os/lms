@@ -29,9 +29,9 @@ vi.mock('frappe-ui', () => ({
 	FileUploader: { template: '<div />' },
 	Button: { template: '<button />' },
 }))
-// Checkboxes use the project-local Switch (v-modeled on field.value), not the
-// frappe-ui one — mock it so toggling emits update:modelValue.
-vi.mock('@/components/Controls/Switch.vue', () => ({
+// Checkboxes use the project-local BooleanSwitch (v-modeled on field.value), not
+// the frappe-ui one — mock it so toggling emits update:modelValue.
+vi.mock('@/components/Controls/BooleanSwitch.vue', () => ({
 	default: {
 		props: ['modelValue'],
 		emits: ['update:modelValue'],
@@ -143,6 +143,66 @@ describe('SettingFields — number input persists to data', () => {
 		expect(data.lesson_dwell_time).toBe('1')
 		// And the checkbox toggle must persist to data.
 		expect(data.enforce_video_completion).toBe(true)
+	})
+})
+
+describe('SettingFields — Upload field renders both object and string values', () => {
+	const uploadSections = () =>
+		reactive([
+			{
+				columns: [
+					{
+						fields: [
+							{
+								label: 'Brand image',
+								name: 'brand_image',
+								type: 'Upload',
+							},
+						],
+					},
+				],
+			},
+		])
+
+	// Regression: the backend (get_payment_gateway_details -> get_file_info)
+	// hands back an Attach value as a {file_name, file_url} object, but the
+	// template used to call data[field.name].split('/') on it, throwing
+	// "split is not a function" and blanking the whole settings dialog.
+	it('does not throw when the value is a {file_name, file_url} object', async () => {
+		const data = reactive({
+			brand_image: {
+				file_name: 'logo.png',
+				file_url: '/files/logo.png',
+				file_size: 1234,
+			},
+		})
+		const wrapper = mountFields(uploadSections(), data)
+		await flushPromises()
+
+		// Shows the file name from the object...
+		expect(wrapper.text()).toContain('logo.png')
+		// ...and the <img> src is the object's file_url, not [object Object].
+		expect(wrapper.get('img').attributes('src')).toBe('/files/logo.png')
+	})
+
+	it('falls back to the URL basename when the value is a plain string', async () => {
+		// A fresh upload sets data[field.name] = file.file_url (a string).
+		const data = reactive({ brand_image: '/files/fresh-upload.png' })
+		const wrapper = mountFields(uploadSections(), data)
+		await flushPromises()
+
+		expect(wrapper.text()).toContain('fresh-upload.png')
+		expect(wrapper.get('img').attributes('src')).toBe(
+			'/files/fresh-upload.png'
+		)
+	})
+
+	it('renders the uploader (no image) when the value is empty', async () => {
+		const data = reactive<Record<string, unknown>>({ brand_image: '' })
+		const wrapper = mountFields(uploadSections(), data)
+		await flushPromises()
+
+		expect(wrapper.find('img').exists()).toBe(false)
 	})
 })
 

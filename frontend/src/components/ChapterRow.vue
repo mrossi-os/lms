@@ -8,6 +8,7 @@
 					'rtl:rotate-180': !open,
 					hidden: chapter.is_scorm_package,
 					open: index == 1,
+					'self-start mt-0.5': inlineSelect,
 				}"
 				class="lucide-chevron-right size-4 text-ink-gray-9 stroke-1 transform duration-200"
 			/>
@@ -16,25 +17,38 @@
 				:class="inlineSelect ? '' : 'flex items-baseline justify-between gap-3'"
 				@click="redirectToChapter"
 			>
+				<Input
+					v-if="isRenaming"
+					ref="renameInput"
+					v-model="renameValue"
+					class="w-full"
+					@click.stop.prevent
+					@keydown.enter="commitRename"
+					@keydown.esc="cancelRename"
+					@blur="commitRename"
+				/>
 				<div
-					class="truncate text-base font-medium leading-5 text-ink-gray-9"
+					v-else
+					class="truncate text-base-medium leading-5 text-ink-gray-9"
 					:title="chapter.title"
+					@dblclick="allowEdit && !chapter.is_scorm_package && startRename()"
 				>
 					{{ chapter.title }}
 				</div>
-				<div
+			</div>
+			<div class="flex ms-3 items-center gap-x-4 shrink-0">
+				<!-- Lesson count in the corner (student-view style). When the chapter
+				is editable it gives way to the delete action on hover. -->
+				<span
 					v-if="!chapter.is_scorm_package && chapter.lessons?.length"
-					class="text-ink-gray-5 shrink-0"
-					:class="inlineSelect ? 'mt-0.5 text-xs leading-4' : 'text-sm'"
+					class="text-sm text-ink-gray-5"
+					:class="{ 'group-hover:hidden': allowEdit }"
 				>
 					{{ chapter.lessons.length }}
-					{{ chapter.lessons.length === 1 ? __('lesson') : __('lessons') }}
-				</div>
-			</div>
-			<div class="flex ms-auto gap-x-4 shrink-0">
+				</span>
 				<Tooltip :text="__('Edit Chapter')" placement="bottom">
-					<FilePenLine
-						v-if="allowEdit"
+					<span
+						v-if="allowEdit && chapter.is_scorm_package"
 						@click.prevent="emit('edit-chapter', chapter)"
 						class="size-4 text-ink-gray-9 invisible group-hover:visible cursor-pointer"
 					/>
@@ -64,7 +78,11 @@
 				<template #item="{ element: lesson }">
 					<div
 						class="outline-lesson ps-8 py-2 pe-4 text-ink-gray-9"
-						:class="isActiveLesson(lesson.number) ? 'bg-surface-gray-3' : ''"
+						:class="
+							isActiveLesson(lesson.number)
+								? 'bg-surface-gray-3 rounded-md'
+								: ''
+						"
 					>
 						<component
 							:is="inlineSelect ? 'div' : 'router-link'"
@@ -73,25 +91,25 @@
 							@click="onLessonClick(lesson)"
 						>
 							<div class="flex items-center text-sm leading-5 group">
-								<MonitorPlay
+								<span
 									v-if="lesson.icon === 'icon-youtube'"
-									class="h-4 w-4 stroke-1 me-2"
+									class="lucide-monitor-play h-4 w-4 me-2"
 								/>
-								<HelpCircle
+								<span
 									v-else-if="lesson.icon === 'icon-quiz'"
-									class="h-4 w-4 stroke-1 me-2"
+									class="lucide-help-circle h-4 w-4 me-2"
 								/>
-								<NotebookPen
+								<span
 									v-else-if="lesson.icon === 'icon-assignment'"
-									class="h-4 w-4 stroke-1 me-2"
+									class="lucide-notebook-pen h-4 w-4 me-2"
 								/>
-								<SquareCode
+								<span
 									v-else-if="lesson.icon === 'icon-code'"
-									class="h-4 w-4 stroke-1 me-2"
+									class="lucide-square-code h-4 w-4 me-2"
 								/>
-								<FileText
+								<span
 									v-else-if="lesson.icon === 'icon-list'"
-									class="h-4 w-4 text-ink-gray-9 stroke-1 me-2"
+									class="lucide-file-text h-4 w-4 text-ink-gray-9 me-2"
 								/>
 								{{ lesson.title }}
 								<!-- OSLMS-CUSTOM: per-lesson tag badges -->
@@ -117,12 +135,12 @@
 												chapter: chapter.name,
 											})
 										"
-										class="h-4 w-4 text-ink-red-3 invisible group-hover:visible"
+										class="lucide-trash-2 h-4 w-4 text-ink-red-6 invisible group-hover:visible"
 									/>
 								</div>
-								<Check
+								<span
 									v-if="lesson.is_complete"
-									class="h-4 w-4 text-green-700 ms-2"
+									class="lucide-check h-4 w-4 text-green-700 ms-2"
 								/>
 							</div>
 						</component>
@@ -130,7 +148,10 @@
 				</template>
 			</Draggable>
 			<div v-if="allowEdit" class="flex mt-2 mb-4 ps-8">
-				<Button @click="addLesson">
+				<Button :loading="creatingLesson" @click="addLesson">
+					<template #prefix>
+						<span class="lucide-plus size-4" />
+					</template>
 					{{ __('Add Lesson') }}
 				</Button>
 			</div>
@@ -139,8 +160,8 @@
 </template>
 
 <script setup lang="ts">
-import { Button, Tooltip, toast } from 'frappe-ui'
-import { computed, inject } from 'vue'
+import { Button, Input, Tooltip, toast } from 'frappe-ui'
+import { computed, inject, nextTick, ref, watch } from 'vue'
 import Draggable from 'vuedraggable'
 // OSLMS-CUSTOM: compact AI ingestion status shown in the editor outline
 import LessonAIStatus from '@/oslms/components/ai/Course/LessonAIStatus.vue'
@@ -178,31 +199,75 @@ const props = withDefaults(
 		inlineSelect?: boolean
 		editorLinks?: boolean
 		selectedLessonNumber?: string
+		creatingLesson?: boolean
 	}>(),
 	{
 		allowEdit: false,
 		inlineSelect: false,
 		editorLinks: false,
 		selectedLessonNumber: '',
+		creatingLesson: false,
 	}
 )
 
 const emit = defineEmits<{
 	'select-lesson': [{ chapterNumber: string; lessonNumber: string }]
 	'edit-chapter': [OutlineChapter]
+	'rename-chapter': [{ chapter: OutlineChapter; title: string }]
+	'renaming-change': [boolean]
 	'delete-chapter': [string]
 	'delete-lesson': [{ lesson: string; chapter: string }]
 	'move-lesson': [DraggableEvent]
-	'add-lesson': [{ chapter: OutlineChapter; lessonIdx: number }]
-	'edit-lesson': [{ chapter: OutlineChapter; lesson: OutlineLesson }]
+	'create-lesson': [{ chapter: OutlineChapter; lessonIdx: number }]
 }>()
 
 const route = useRoute()
 const router = useRouter()
 const user = inject<SessionUser>('$user')!
 
+const isRenaming = ref<boolean>(false)
+const renameValue = ref<string>('')
+const renameInput = ref<{ $el: HTMLElement } | null>(null)
+
+// Tell the parent outline to lock chapter dragging while a name is being edited,
+// so a stray drag can't fire mid-rename.
+watch(isRenaming, (renaming) => emit('renaming-change', renaming))
+
+function startRename(): void {
+	renameValue.value = props.chapter.title
+	isRenaming.value = true
+	nextTick(() => {
+		renameInput.value?.$el.querySelector('input')?.focus()
+	})
+}
+
+function commitRename(): void {
+	if (!isRenaming.value) return
+	isRenaming.value = false
+	const title = renameValue.value.trim()
+	if (!title || title === props.chapter.title) return
+	emit('rename-chapter', { chapter: props.chapter, title })
+}
+
+function cancelRename(): void {
+	isRenaming.value = false
+	renameValue.value = props.chapter.title
+}
+
 const defaultOpen = computed<boolean>(() => {
-	const active = route.params.chapterNumber
+	// Which chapter is expanded on (re)mount. The student lesson view carries
+	// the active lesson in route params; the in-page editor carries it in
+	// ?editLesson ("<chapter>-<lesson>") — which survives navigating away and
+	// back — with selectedLessonNumber as a fallback. Default to the first
+	// chapter only when nothing is active.
+	const editChapter =
+		typeof route.query.editLesson === 'string'
+			? route.query.editLesson.split('-')[0]
+			: ''
+	const active =
+		route.params.chapterNumber ||
+		editChapter ||
+		props.selectedLessonNumber.split('-')[0]
 	return active ? props.chapter.idx == Number(active) : props.chapter.idx == 1
 })
 
@@ -248,7 +313,7 @@ function onLessonClick(lesson: OutlineLesson) {
 }
 
 function addLesson() {
-	emit('add-lesson', {
+	emit('create-lesson', {
 		chapter: props.chapter,
 		lessonIdx: (props.chapter.lessons?.length ?? 0) + 1,
 	})
@@ -257,7 +322,6 @@ function addLesson() {
 function redirectToChapter() {
 	if (!props.chapter.is_scorm_package) return
 	;(event as Event | undefined)?.preventDefault()
-	if (props.allowEdit) return
 	if (!user.data) {
 		toast.success(__('Please enroll for this course to view this lesson'))
 		return

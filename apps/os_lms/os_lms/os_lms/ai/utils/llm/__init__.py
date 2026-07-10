@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import Literal
 
+# Side-effect: register all built-in adapters.
+from . import providers as _providers  # noqa: F401
 from .config import ProviderConfig
 from .errors import (
     LLMContextWindow,
@@ -30,9 +32,6 @@ from .provider import (
     Usage,
 )
 from .registry import get_provider, list_providers, register
-
-# Side-effect: register all built-in adapters.
-from . import providers as _providers  # noqa: F401
 
 Purpose = Literal["chat", "debrief"]
 
@@ -144,7 +143,6 @@ def _load_settings():
     """
     import frappe
     from frappe.utils.password import get_decrypted_password
-
     from os_lms.os_lms.ai.utils.oslms_settings import OsLmsSettings
 
     doc = frappe.get_single("LMSA Settings")
@@ -184,6 +182,22 @@ def _load_settings():
         gemini_key=_password("gemini_key"),
         deepseek_key=_password("deepseek_key"),
         anthropic_key=_password("anthropic_key"),
+        # audio (TTS / STT) — additive
+        stt_enabled=bool(getattr(doc, "stt_enabled", 0)),
+        stt_provider=getattr(doc, "stt_provider", "") or "openai",
+        stt_model=getattr(doc, "stt_model", "") or "gpt-4o-mini-transcribe",
+        tts_enabled=bool(getattr(doc, "tts_enabled", 0)),
+        tts_provider=getattr(doc, "tts_provider", "") or "openai",
+        tts_model=getattr(doc, "tts_model", "") or "gpt-4o-mini-tts",
+        tts_voice=getattr(doc, "tts_voice", "") or "alloy",
+        tts_autoplay_on_stt=bool(getattr(doc, "tts_autoplay_on_stt", 0)),
+        # realtime / voice — additive
+        realtime_enabled=bool(getattr(doc, "realtime_enabled", 0)),
+        realtime_provider=getattr(doc, "realtime_provider", "") or "openai",
+        realtime_model=getattr(doc, "realtime_model", "") or "",
+        realtime_voice=getattr(doc, "realtime_voice", "") or "",
+        turn_detection=getattr(doc, "turn_detection", "") or "server_vad",
+        realtime_max_session_seconds=int(getattr(doc, "realtime_max_session_seconds", 0) or 300),
     )
 
 

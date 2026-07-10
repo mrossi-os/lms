@@ -189,10 +189,29 @@ def build_debrief_messages(
     ) or "— (schema di valutazione vuoto)"
 
     objectives_block = "\n".join(f"- {o}" for o in learning_objectives) or "—"
-    transcript_block = "\n".join(
-        f"{i + 1}. [{_SPEAKER_LABELS.get(t['role'], t['role'].upper())}] {t['text']}"
+
+    # Role labels are made explicit so the evaluator never confuses the two
+    # speakers. The simulation semantics are inverted relative to what an LLM
+    # assumes: `user` is the human trainee under evaluation, while `assistant`
+    # is the AI role-player (the simulated counterpart) that must NOT be graded.
+    # The legend is prepended to the transcript so the disambiguation travels
+    # with the data even when the prompt template is overridden from the desk.
+    role_labels = {
+        "user": "UTENTE",
+        "assistant": "CONTROPARTE",
+        "system": "SISTEMA",
+    }
+    transcript_legend = (
+        "Legenda ruoli — UTENTE: la persona in formazione, UNICO soggetto da "
+        "valutare. CONTROPARTE: interlocutore simulato dall'AI (cliente / "
+        "personaggio), da NON valutare. Valuta esclusivamente i messaggi "
+        "dell'UTENTE; i messaggi della CONTROPARTE servono solo come contesto.\n\n"
+    )
+    transcript_lines = "\n".join(
+        f"{i + 1}. [{role_labels.get(t['role'], t['role'].upper())}] {t['text']}"
         for i, t in enumerate(transcript)
     )
+    transcript_block = transcript_legend + transcript_lines
 
     config = load_prompt_template(PURPOSE_DEBRIEF)
     ctx = {

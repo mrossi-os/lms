@@ -15,15 +15,15 @@
 		"column_break_app",
 		"app_secondary_color",
 		"section_surfaces",
-		"surface_white",
-		"surface_menu_bar",
-		"surface_selected",
-		"surface_modal",
+		"surface_base",
+		"surface_sidebar",
+		"surface_elevation_3",
+		"surface_elevation_2",
 		"column_break_surfaces",
 		"surface_gray_1",
 		"surface_gray_2",
 		"surface_gray_3",
-		"surface_gray_7",
+		"surface_gray_10",
 		"section_ink",
 		"ink_gray_5",
 		"ink_gray_6",
@@ -32,15 +32,14 @@
 		"ink_gray_8",
 		"ink_gray_9",
 		"ink_gray_10",
-		"ink_white",
+		"ink_base",
 		"section_borders",
 		"outline_gray_1",
 		"column_break_borders",
-		"outline_gray_modals",
+		"outline_elevation_2",
 		"section_layout",
 		"color_sidebar_menu",
-		"surface_card",
-		"surface_cards",
+		"surface_elevation_1",
 		"column_break_layout",
 		"color_menu_bar",
 		"section_gradient_overlay",
@@ -68,20 +67,20 @@
 			"label": "Brand"
 		},
 		{
+			"description": "CSS: --color-company-primary",
 			"fieldname": "company_primary",
 			"fieldtype": "Color",
-			"label": "Company Primary",
-			"description": "CSS: --color-company-primary"
+			"label": "Company Primary"
 		},
 		{
 			"fieldname": "column_break_brand",
 			"fieldtype": "Column Break"
 		},
 		{
+			"description": "CSS: --color-company-secondary",
 			"fieldname": "company_secondary",
 			"fieldtype": "Color",
-			"label": "Company Secondary",
-			"description": "CSS: --color-company-secondary"
+			"label": "Company Secondary"
 		},
 		{
 			"fieldname": "section_app",
@@ -89,20 +88,20 @@
 			"label": "App"
 		},
 		{
+			"description": "Primary color returned to the mobile app via get_instance_info",
 			"fieldname": "app_main_color",
 			"fieldtype": "Color",
-			"label": "App Main Color",
-			"description": "Primary color returned to the mobile app via get_instance_info"
+			"label": "App Main Color"
 		},
 		{
 			"fieldname": "column_break_app",
 			"fieldtype": "Column Break"
 		},
 		{
+			"description": "Secondary color returned to the mobile app via get_instance_info",
 			"fieldname": "app_secondary_color",
 			"fieldtype": "Color",
-			"label": "App Secondary Color",
-			"description": "Secondary color returned to the mobile app via get_instance_info"
+			"label": "App Secondary Color"
 		},
 		{
 			"fieldname": "section_surfaces",
@@ -110,56 +109,56 @@
 			"label": "Surfaces"
 		},
 		{
-			"fieldname": "surface_white",
+			"description": "CSS: --surface-white",
+			"fieldname": "surface_base",
 			"fieldtype": "Color",
-			"label": "Surface White",
-			"description": "CSS: --surface-white"
+			"label": "Surface Base"
 		},
 		{
-			"fieldname": "surface_menu_bar",
+			"description": "CSS: --surface-menu-bar",
+			"fieldname": "surface_sidebar",
 			"fieldtype": "Color",
-			"label": "Surface Menu Bar",
-			"description": "CSS: --surface-menu-bar"
+			"label": "Surface Sidebar"
 		},
 		{
-			"fieldname": "surface_selected",
+			"description": "CSS: --surface-selected",
+			"fieldname": "surface_elevation_3",
 			"fieldtype": "Color",
-			"label": "Surface Selected",
-			"description": "CSS: --surface-selected"
+			"label": "Surface Elevation 3 (selected)"
 		},
 		{
-			"fieldname": "surface_modal",
+			"description": "CSS: --surface-modal",
+			"fieldname": "surface_elevation_2",
 			"fieldtype": "Color",
-			"label": "Surface Modal",
-			"description": "CSS: --surface-modal"
+			"label": "Surface Elevation 2 (modal)"
 		},
 		{
 			"fieldname": "column_break_surfaces",
 			"fieldtype": "Column Break"
 		},
 		{
+			"description": "CSS: --surface-gray-1",
 			"fieldname": "surface_gray_1",
 			"fieldtype": "Color",
-			"label": "Surface Gray 1",
-			"description": "CSS: --surface-gray-1"
+			"label": "Surface Gray 1"
 		},
 		{
+			"description": "CSS: --surface-gray-2",
 			"fieldname": "surface_gray_2",
 			"fieldtype": "Color",
-			"label": "Surface Gray 2",
-			"description": "CSS: --surface-gray-2"
+			"label": "Surface Gray 2"
 		},
 		{
+			"description": "CSS: --surface-gray-3",
 			"fieldname": "surface_gray_3",
 			"fieldtype": "Color",
-			"label": "Surface Gray 3 (hover)",
-			"description": "CSS: --surface-gray-3"
+			"label": "Surface Gray 3 (hover)"
 		},
 		{
-			"fieldname": "surface_gray_7",
+			"description": "CSS: --surface-gray-7",
+			"fieldname": "surface_gray_10",
 			"fieldtype": "Color",
-			"label": "Surface Gray 7 (CTA)",
-			"description": "CSS: --surface-gray-7"
+			"label": "Surface Gray 10 (CTA)"
 		},
 		{
 			"fieldname": "section_ink",
@@ -167,50 +166,50 @@
 			"label": "Ink (Text)"
 		},
 		{
+			"description": "CSS: --ink-gray-5",
 			"fieldname": "ink_gray_5",
 			"fieldtype": "Color",
-			"label": "Ink Gray 5 (placeholder)",
-			"description": "CSS: --ink-gray-5"
+			"label": "Ink Gray 5 (placeholder)"
 		},
 		{
+			"description": "CSS: --ink-gray-6",
 			"fieldname": "ink_gray_6",
 			"fieldtype": "Color",
-			"label": "Ink Gray 6 (secondary)",
-			"description": "CSS: --ink-gray-6"
+			"label": "Ink Gray 6 (secondary)"
 		},
 		{
+			"description": "CSS: --ink-gray-7",
 			"fieldname": "ink_gray_7",
 			"fieldtype": "Color",
-			"label": "Ink Gray 7 (body)",
-			"description": "CSS: --ink-gray-7"
+			"label": "Ink Gray 7 (body)"
 		},
 		{
 			"fieldname": "column_break_ink",
 			"fieldtype": "Column Break"
 		},
 		{
+			"description": "CSS: --ink-gray-8",
 			"fieldname": "ink_gray_8",
 			"fieldtype": "Color",
-			"label": "Ink Gray 8 (sidebar)",
-			"description": "CSS: --ink-gray-8"
+			"label": "Ink Gray 8 (sidebar)"
 		},
 		{
+			"description": "CSS: --ink-gray-9",
 			"fieldname": "ink_gray_9",
 			"fieldtype": "Color",
-			"label": "Ink Gray 9 (titles)",
-			"description": "CSS: --ink-gray-9"
+			"label": "Ink Gray 9 (titles)"
 		},
 		{
+			"description": "CSS: --ink-gray-10",
 			"fieldname": "ink_gray_10",
 			"fieldtype": "Color",
-			"label": "Ink Gray 10",
-			"description": "CSS: --ink-gray-10"
+			"label": "Ink Gray 10"
 		},
 		{
-			"fieldname": "ink_white",
+			"description": "CSS: --ink-white",
+			"fieldname": "ink_base",
 			"fieldtype": "Color",
-			"label": "Ink White",
-			"description": "CSS: --ink-white"
+			"label": "Ink Base"
 		},
 		{
 			"fieldname": "section_borders",
@@ -218,20 +217,20 @@
 			"label": "Borders"
 		},
 		{
+			"description": "CSS: --outline-gray-1",
 			"fieldname": "outline_gray_1",
 			"fieldtype": "Color",
-			"label": "Outline Gray 1",
-			"description": "CSS: --outline-gray-1"
+			"label": "Outline Gray 1"
 		},
 		{
 			"fieldname": "column_break_borders",
 			"fieldtype": "Column Break"
 		},
 		{
-			"fieldname": "outline_gray_modals",
+			"description": "CSS: --outline-gray-modals",
+			"fieldname": "outline_elevation_2",
 			"fieldtype": "Color",
-			"label": "Outline Gray Modals",
-			"description": "CSS: --outline-gray-modals"
+			"label": "Outline Elevation 2 (modals)"
 		},
 		{
 			"fieldname": "section_layout",
@@ -239,32 +238,26 @@
 			"label": "Layout"
 		},
 		{
+			"description": "CSS: --color-sidebar-menu",
 			"fieldname": "color_sidebar_menu",
 			"fieldtype": "Color",
-			"label": "Sidebar Menu",
-			"description": "CSS: --color-sidebar-menu"
+			"label": "Sidebar Menu"
 		},
 		{
-			"fieldname": "surface_card",
+			"description": "CSS: --surface-card",
+			"fieldname": "surface_elevation_1",
 			"fieldtype": "Color",
-			"label": "Surface Card",
-			"description": "CSS: --surface-card"
-		},
-		{
-			"fieldname": "surface_cards",
-			"fieldtype": "Color",
-			"label": "Surface Cards",
-			"description": "CSS: --surface-cards"
+			"label": "Surface Elevation 1 (cards)"
 		},
 		{
 			"fieldname": "column_break_layout",
 			"fieldtype": "Column Break"
 		},
 		{
+			"description": "CSS: --color-menu-bar",
 			"fieldname": "color_menu_bar",
 			"fieldtype": "Color",
-			"label": "Menu Bar",
-			"description": "CSS: --color-menu-bar"
+			"label": "Menu Bar"
 		},
 		{
 			"fieldname": "section_gradient_overlay",
@@ -272,20 +265,20 @@
 			"label": "Gradient Overlay"
 		},
 		{
+			"description": "CSS: --gradient-overlay-from",
 			"fieldname": "gradient_overlay_from",
 			"fieldtype": "Color",
-			"label": "Gradient Overlay From",
-			"description": "CSS: --gradient-overlay-from"
+			"label": "Gradient Overlay From"
 		},
 		{
 			"fieldname": "column_break_gradient_overlay",
 			"fieldtype": "Column Break"
 		},
 		{
+			"description": "CSS: --gradient-overlay-to",
 			"fieldname": "gradient_overlay_to",
 			"fieldtype": "Color",
-			"label": "Gradient Overlay To",
-			"description": "CSS: --gradient-overlay-to"
+			"label": "Gradient Overlay To"
 		}
 	],
 	"grid_page_length": 50,

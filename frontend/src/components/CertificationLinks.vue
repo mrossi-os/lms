@@ -2,10 +2,11 @@
 	<Button
 		v-if="certification.data && certification.data.certificate"
 		@click="downloadCertificate"
+		:loading="opening"
 		class=""
 	>
 		<template #prefix>
-			<GraduationCap class="size-4 stroke-1.5" />
+			<span class="lucide-graduation-cap size-4" />
 		</template>
 		{{ __('View Certificate') }}
 	</Button>
@@ -29,7 +30,7 @@
 		>
 			<Button class="w-full">
 				<template #prefix>
-					<GraduationCap class="size-4 stroke-1.5" />
+					<span class="lucide-graduation-cap size-4" />
 				</template>
 				{{ __('Get Certified') }}
 			</Button>
@@ -45,7 +46,7 @@
 		>
 			<Button class="w-full">
 				<template #prefix>
-					<GraduationCap class="size-4 stroke-1.5" />
+					<span class="lucide-graduation-cap size-4" />
 				</template>
 				{{ __('Get Certified') }}
 			</Button>
@@ -55,7 +56,9 @@
 <script setup lang="ts">
 import { Button, createResource } from 'frappe-ui'
 import { inject } from 'vue'
-import { GraduationCap } from 'lucide-vue-next'
+// OSLMS-CUSTOM: open the TrueSkills openbadge instead of the internal PDF when
+// the course issues via TrueSkills.
+import { useCertificateViewer } from '@/oslms/composables/useCertificateViewer'
 import type { CertificationInfo, Resource, SessionUser } from '@/types/api'
 
 const user = inject<SessionUser>('$user')!
@@ -74,13 +77,10 @@ const certification = createResource({
 	auto: user.data ? true : false,
 }) as Resource<CertificationInfo | null>
 
+const { opening, openCourseCertificate } = useCertificateViewer()
+
 const downloadCertificate = () => {
-	const cert = certification.data?.certificate
-	if (!cert) return
-	window.open(
-		`/api/method/frappe.utils.print_format.download_pdf?doctype=LMS+Certificate&name=${
-			cert.name
-		}&format=${encodeURIComponent(cert.template)}`
-	)
+	if (!certification.data?.certificate) return
+	openCourseCertificate(props.courseName)
 }
 </script>
