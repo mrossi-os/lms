@@ -38,6 +38,8 @@
 					:status="session.status"
 					:sending="sending"
 					:ending="ending"
+					:remainingSeconds="remainingSeconds"
+					:inputLocked="inputLocked"
 					@send="onSend"
 					@send-audio="onSendAudio"
 					@end="onEnd"
@@ -68,8 +70,18 @@ const route = useRoute()
 const router = useRouter()
 
 const sessionId = computed(() => route.params.sessionId)
-const { session, turns, sending, ending, isTerminal, error, send, end } =
-	useSimulationSession(sessionId)
+const {
+	session,
+	turns,
+	sending,
+	ending,
+	isTerminal,
+	error,
+	send,
+	end,
+	remainingSeconds,
+	inputLocked,
+} = useSimulationSession(sessionId)
 
 const scenarioName = computed(() => session.value?.scenario || '')
 const courseName = computed(() => session.value?.course || '')

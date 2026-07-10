@@ -160,14 +160,28 @@ class RolePlayerTurnService:
 		situation: str,
 		difficulty: str,
 		history: list[ChatMessage],
+		closing_directive: str = "",
 	) -> ChatResponse:
 		system = build_role_play_system_prompt(
 			persona=persona,
 			generated_situation=situation,
 			difficulty=difficulty,
+			closing_directive=closing_directive,
 		)
+		messages = history
+		# A closing directive in the system prompt alone is easily overridden by
+		# the recency of the student's last message (the model keeps engaging with
+		# it). Reinforce it as the most-recent instruction by appending it to the
+		# final user turn actually sent to the model — not persisted, only this call.
+		if closing_directive and history and history[-1].role == "user":
+			messages = list(history[:-1]) + [
+				ChatMessage(
+					role="user",
+					content=f"{history[-1].content}\n\n{closing_directive}",
+				)
+			]
 		return self._chat(
-			messages=history,
+			messages=messages,
 			system=system,
 			temperature=0.7,
 			max_tokens=400,

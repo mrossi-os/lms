@@ -60,6 +60,30 @@ EVENT_ERROR = "simulation:error"
 # Default daily quota when LMSA Settings does not declare one yet.
 DEFAULT_DAILY_QUOTA = 100
 
+# ---- Time-based natural close ----
+# Chat sessions are bounded by the scenario's time_limit_minutes only (0 = no
+# cap; turns are NOT enforced in chat). Once past the cap the student's next
+# message gets a single reply that both answers them AND closes the conversation;
+# then their input is locked. The session is NOT auto-ended — the STUDENT ends it
+# via "Termina" (see send_message + _closing_directive_text + closing_input_locked).
+
+# Directive appended to the role-play system prompt (and reinforced as the last
+# user turn) once time is up. Italian to match the role-play prompt language;
+# framed as stage direction ("REGIA") so the model treats it as an
+# out-of-character instruction. The bot answers the student's last message AND
+# closes the conversation in the same reply.
+_CLOSING_DIRECTIVE = (
+	"[REGIA] Il tempo è terminato: questo è il tuo ULTIMO messaggio. Rispondi "
+	"brevemente all'ultimo messaggio dell'utente e, nello STESSO messaggio, "
+	"chiudi la conversazione restando nel personaggio: tira le somme e congedati "
+	"con un saluto. Non porre nuove domande e non proporre di continuare."
+)
+
+# The bot delivers this many closing replies after time-up (one combined
+# answer+farewell); afterwards the student's input is locked and they can only
+# press "Termina". The session is never auto-ended.
+MAX_CLOSING_REPLIES = 1
+
 
 class QuotaExceededError(Exception):
 	"""Raised by validate_quota when the student is past their daily limit."""
@@ -232,6 +256,20 @@ class SessionOrchestrator:
 		if session.status in TERMINAL_STATUSES:
 			raise SessionTerminatedError(f"Session {session_id} is in terminal state {session.status!r}")
 
+		# Time-based natural close: once past the scenario time cap, the student's
+		# next message gets a single reply that both answers them AND closes the
+		# conversation; after that (MAX_CLOSING_REPLIES) the student's input is
+		# locked (frontend) and further sends are refused here too. The session is
+		# NOT auto-ended — the student ends it via "Termina". Computed BEFORE
+		# persisting this turn.
+		time_limit_minutes = scenario_time_limit(session.scenario)
+		remaining, over_budget = _time_budget_state(session, time_limit_minutes)
+		if over_budget >= MAX_CLOSING_REPLIES:
+			raise SessionTerminatedError(
+				f"Session {session_id} closing reply already delivered; not accepting further messages"
+			)
+		closing_directive = _closing_directive_text(remaining)
+
 		# 1) Persist the user turn (and flag injection attempts).
 		attack = detect_injection(user_text)
 		user_turn = self._persist_turn(
@@ -261,7 +299,7 @@ class SessionOrchestrator:
 				latency_ms = 0
 			else:
 				t0 = time.monotonic()
-				response = self._ask_role_player(session, persona)
+				response = self._ask_role_player(session, persona, closing_directive=closing_directive)
 				latency_ms = int((time.monotonic() - t0) * 1000)
 				assistant_turn = self._persist_turn(
 					session=session,
@@ -469,7 +507,9 @@ class SessionOrchestrator:
 			course_lesson=getattr(scenario, "course_lesson", "") or "",
 		)
 
-	def _ask_role_player(self, session, persona: PersonaVariant) -> ChatResponse:
+	def _ask_role_player(
+		self, session, persona: PersonaVariant, closing_directive: str = ""
+	) -> ChatResponse:
 		"""Send the full history + role-play system prompt to the LLM."""
 		from os_lms.os_lms.ai.simulations.role_player import RolePlayerTurnService
 
@@ -491,6 +531,7 @@ class SessionOrchestrator:
 			situation=session.generated_situation,
 			difficulty=_scenario_difficulty(session.scenario),
 			history=history,
+			closing_directive=closing_directive,
 		)
 
 	def _persist_turn(
@@ -644,6 +685,87 @@ def _persona_from_session(session) -> PersonaVariant:
 
 def _scenario_difficulty(scenario_name: str) -> str:
 	return frappe.db.get_value("LMSA Simulation Scenario", scenario_name, "difficulty") or "medium"
+
+
+# ----- time-based natural-close helpers (shared with api.get_session) -----
+#
+# The budget is ACTIVE time: wall-clock elapsed minus the time spent waiting for
+# the bot (sum of assistant turns' latency_ms). A slow model must not consume the
+# student's time, so latency is excluded from both the countdown the student sees
+# and the forced-close decision.
+
+
+def scenario_time_limit(scenario_name: str) -> int:
+	"""Return the scenario's chat time cap in minutes (0 = no cap)."""
+	return int(
+		frappe.db.get_value("LMSA Simulation Scenario", scenario_name, "time_limit_minutes") or 0
+	)
+
+
+def _time_budget_state(session, time_limit_minutes: int) -> tuple[float | None, int]:
+	"""Return (remaining_active_seconds, over_budget_reply_count).
+
+	remaining_active_seconds is None when no cap is set and may be <= 0 once the
+	student's active budget is spent (a float so the over-budget threshold matches
+	exactly between the current reply and past replies — the reply that gets the
+	closing directive is precisely the one counted). For each assistant turn the
+	latency cancels out, so ``active_at_send`` is the active time consumed at the
+	moment the student sent the message that produced that turn — bot latency never
+	counts. over_budget_reply_count is how many replies were produced at/after the
+	budget was spent (drives the input lock).
+	"""
+	if not time_limit_minutes or time_limit_minutes <= 0 or not session.started_at:
+		return None, 0
+	limit_seconds = int(time_limit_minutes) * 60
+	started = frappe.utils.get_datetime(session.started_at)
+	rows = frappe.db.get_all(
+		"LMSA Simulation Turn",
+		filters={"session": session.name, "role": "assistant"},
+		fields=["creation", "latency_ms"],
+		order_by="turn_index asc",
+	)
+	cum_latency = 0.0
+	over_budget = 0
+	for r in rows:
+		cum_latency += (r.latency_ms or 0) / 1000.0
+		active_at_send = (
+			frappe.utils.get_datetime(r.creation) - started
+		).total_seconds() - cum_latency
+		if active_at_send >= limit_seconds:
+			over_budget += 1
+	active_elapsed = (frappe.utils.now_datetime() - started).total_seconds() - cum_latency
+	return limit_seconds - active_elapsed, over_budget
+
+
+def remaining_seconds(session, time_limit_minutes: int) -> int | None:
+	"""Active seconds left before the time cap (>= 0), or None when no cap.
+
+	Stays at 0 while the forced close plays out after the budget is spent.
+	"""
+	remaining, _ = _time_budget_state(session, time_limit_minutes)
+	return None if remaining is None else max(0, int(remaining))
+
+
+def _closing_directive_text(remaining: float | None) -> str:
+	"""Closing directive for the reply about to be generated, or "" while within
+	the ACTIVE time budget (pure — takes a precomputed remaining budget).
+
+	Once the budget is spent the role-player gets a single directive to answer the
+	student's last message AND close the conversation in the same reply. After
+	that one reply the student's input is locked (see closing_input_locked) — the
+	session is NOT auto-ended; the student ends it via "Termina".
+	"""
+	if remaining is None or remaining > 0:
+		return ""
+	return _CLOSING_DIRECTIVE
+
+
+def closing_input_locked(session, time_limit_minutes: int) -> bool:
+	"""True once the bot has delivered its MAX_CLOSING_REPLIES closing replies:
+	the student can no longer send messages and can only press "Termina". The
+	session stays In Progress until they do."""
+	_remaining, over_budget = _time_budget_state(session, time_limit_minutes)
+	return over_budget >= MAX_CLOSING_REPLIES
 
 
 def _scenario_provider_override(scenario_name: str) -> str | None:

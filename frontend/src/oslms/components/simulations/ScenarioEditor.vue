@@ -96,11 +96,15 @@
 
 					</div>
 
-					<!-- Limits -->
+					<!-- Limits: chat sessions are time-bounded only. `max_turns` is
+						hidden from the form (kept bound + defaulted so the automated
+						eval loop, which still reads it, is unaffected). -->
 					<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-						<FormControl v-model.number="model.max_turns" type="number" :label="__('Turni max')" />
+						<FormControl v-if="false" v-model.number="model.max_turns" type="number"
+							:label="__('Turni max')" />
 						<FormControl v-model.number="model.time_limit_minutes" type="number"
-							:label="__('Tempo max (min)')" />
+							:label="__('Tempo max (min)')"
+							:description="__('0 = nessun limite. Allo scadere il personaggio chiude la conversazione entro pochi messaggi.')" />
 					</div>
 
 
@@ -263,6 +267,8 @@
 							:status="simulationSession?.status || 'In Progress'"
 							:sending="simulationSending"
 							:ending="simulationEnding"
+							:remainingSeconds="simulationRemainingSeconds"
+							:inputLocked="simulationInputLocked"
 							@send="simulationOnSend"
 							@send-audio="simulationOnSendAudio"
 							@end="simulationEnd"
@@ -467,6 +473,8 @@ const {
 	isTerminal: simulationIsTerminal,
 	send: simulationSend,
 	end: simulationEnd,
+	remainingSeconds: simulationRemainingSeconds,
+	inputLocked: simulationInputLocked,
 } = useSimulationSession(simulationSessionId)
 
 // ChatSession emits a plain string on `send` (typed text) and a Blob on

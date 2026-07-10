@@ -20,6 +20,9 @@ from .orchestrator import (
     QuotaExceededError,
     SessionOrchestrator,
     SessionTerminatedError,
+    closing_input_locked,
+    remaining_seconds,
+    scenario_time_limit,
 )
 from .tasks import generate_debrief as _run_generate_debrief
 
@@ -250,6 +253,11 @@ def get_session(session_id: str) -> dict:
         ],
         order_by="turn_index asc",
     )
+    # Time-based natural-close budget: the cap comes from the scenario, the
+    # remaining seconds are computed server-side (authoritative clock) and
+    # re-synced on every reload, i.e. after each send. None when no cap is set;
+    # 0 while the forced close plays out after the time is up.
+    time_limit_minutes = scenario_time_limit(session.scenario)
     return {
         "session": {
             "name": session.name,
@@ -265,6 +273,9 @@ def get_session(session_id: str) -> dict:
             "student_brief": session.student_brief,
             "chat_provider_used": session.chat_provider_used,
             "chat_model_used": session.chat_model_used,
+            "time_limit_minutes": time_limit_minutes or None,
+            "remaining_seconds": remaining_seconds(session, time_limit_minutes),
+            "input_locked": closing_input_locked(session, time_limit_minutes),
         },
         "turns": turns,
     }

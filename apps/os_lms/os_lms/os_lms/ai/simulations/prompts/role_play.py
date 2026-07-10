@@ -41,6 +41,7 @@ def build_role_play_system_prompt(
 	generated_situation: str,
 	difficulty: str,
 	language: str = "it",
+	closing_directive: str = "",
 ) -> str:
 	"""Return the system prompt that drives the role-play.
 
@@ -48,6 +49,11 @@ def build_role_play_system_prompt(
 	persona/situation/difficulty placeholders. The output is deterministic
 	for a given (persona, situation, difficulty) tuple — the same session
 	always re-instantiates the same in-character behavior.
+
+	``closing_directive`` (optional) is appended verbatim after the rendered
+	template. It carries the natural-close instruction near the turn/time cap.
+	Appending — rather than a template placeholder — guarantees it still takes
+	effect when an operator has customized the Desk template.
 	"""
 	if language != "it":
 		# Italian-only for now; en-US/etc. arrive in fase 3 (i18n).
@@ -64,4 +70,7 @@ def build_role_play_system_prompt(
 		"generated_situation": generated_situation,
 		"difficulty": difficulty,
 	}
-	return render_template(config["system_template"], ctx)
+	system = render_template(config["system_template"], ctx)
+	if closing_directive:
+		system = f"{system}\n\n{closing_directive}"
+	return system

@@ -45,6 +45,43 @@ export function useSimulationSession(sessionIdRef) {
 	)
 	const turnCount = computed(() => turns.value.length)
 
+	// True once the bot has delivered its closing replies after time-up: the
+	// student can no longer send messages, only end the session via "Termina".
+	// The session stays In Progress until they do (server-computed, re-synced
+	// each reload).
+	const inputLocked = computed(() => Boolean(session.value?.input_locked))
+
+	// --- natural-close budget (time remaining only) ---
+
+	// Time budget: seed from the server snapshot on each reload and tick down
+	// locally. Using the server value (not client math on started_at) avoids
+	// clock/timezone drift. null = no time cap; stays at 0 while the forced
+	// close plays out after the time is up.
+	const remainingSeconds = ref(null)
+	let clockTicker = null
+	function _syncClock() {
+		const v = session.value?.remaining_seconds
+		remainingSeconds.value = v === null || v === undefined ? null : Number(v)
+	}
+	function _startClock() {
+		if (clockTicker) return
+		clockTicker = setInterval(() => {
+			if (remainingSeconds.value === null || isTerminal.value) return
+			// Pause while a message is in flight: bot latency must not consume the
+			// student's time. On reply the reload re-syncs to the server's active
+			// remaining (which also excludes latency), so there's no visible jump.
+			if (sending.value) return
+			remainingSeconds.value = Math.max(0, remainingSeconds.value - 1)
+		}, 1000)
+	}
+	function _stopClock() {
+		if (clockTicker) {
+			clearInterval(clockTicker)
+			clockTicker = null
+		}
+	}
+	watch(session, _syncClock)
+
 	// --- resources ---
 
 	const fetchResource = createResource({
@@ -213,12 +250,18 @@ export function useSimulationSession(sessionIdRef) {
 			if (id) {
 				subscribe()
 				load()
+				_startClock()
+			} else {
+				_stopClock()
 			}
 		},
 		{ immediate: true },
 	)
 
-	onUnmounted(unsubscribe)
+	onUnmounted(() => {
+		unsubscribe()
+		_stopClock()
+	})
 
 	return {
 		session,
@@ -226,6 +269,8 @@ export function useSimulationSession(sessionIdRef) {
 		status,
 		isTerminal,
 		turnCount,
+		remainingSeconds,
+		inputLocked,
 		sending,
 		ending,
 		error,
