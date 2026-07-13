@@ -1,9 +1,9 @@
 <template>
-	<div class="card p-3">
+	<div class="">
 		<div
 			ref="contentRef"
 			v-html="unescapedDescription"
-			class="prose prose-sm max-w-none !whitespace-normal prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 overflow-hidden transition-all duration-300"
+			class="ProseMirror prose prose-sm max-w-none !whitespace-normal prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 overflow-hidden transition-all duration-300"
 			:style="
 				!isExpanded && showToggle ? `max-height: ${collapsedHeight}px` : ''
 			"
@@ -91,3 +91,18 @@ watch(
 	},
 )
 </script>
+
+<style scoped>
+/*
+ * The description is authored in the TextEditor. A double line break is stored
+ * as an empty `<p></p>`, which collapses to zero height under `prose`, so the
+ * blank line the author added disappears in this read-only view. Give empty
+ * paragraphs a single line of height so the spacing matches the editor.
+ * (Named text colors / highlights already render via the `.ProseMirror` class
+ * on the container above, which pulls in frappe-ui's `--prose-color-*` /
+ * `--prose-highlight-*` variables.)
+ */
+.ProseMirror :deep(p:empty)::before {
+	content: '\00a0';
+}
+</style>
