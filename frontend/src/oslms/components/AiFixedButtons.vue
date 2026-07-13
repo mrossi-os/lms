@@ -1,7 +1,7 @@
 <template>
 	<div
 		v-if="aiContext.isActive"
-		class="fixed bottom-6 end-6 z-50 flex flex-col gap-3"
+		class="fixed bottom-20 end-6 z-50 flex flex-col gap-3 sm:bottom-6"
 	>
 		<AiChatButton
 			v-if="aiEnabled"

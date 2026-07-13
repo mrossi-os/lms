@@ -1,6 +1,6 @@
 <template>
 	<SettingsLayout
-		:title="label"
+		:title="__(label)"
 		:description="
 			__('Create and manage reusable email templates for your notifications.')
 		"

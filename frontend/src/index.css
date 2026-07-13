@@ -48,3 +48,10 @@ label.block:not([data-slot='label']) {
 .prose {
 	--tw-prose-bullets: var(--ink-gray-4);
 }
+
+/* Match the <hr> separator in rich-text descriptions to the surrounding text
+   color (renders white wherever the description text is white) instead of
+   prose's default gray. Higher specificity than prose's :where(hr) rule. */
+.ProseMirror hr {
+	border-top-color: currentColor;
+}

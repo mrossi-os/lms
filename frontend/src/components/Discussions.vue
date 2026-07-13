@@ -8,7 +8,7 @@
 			<template #prefix>
 				<span class="lucide-plus size-4" />
 			</template>
-			{{ __('New {0}').format(singularize(title)) }}
+			{{ newLabel || __('New {0}').format(singularize(title)) }}
 		</Button>
 		<div class="text-3xl-semibold text-ink-gray-9">
 			{{ __(title) }}
@@ -92,7 +92,7 @@
 	</div>
 	<DiscussionModal
 		v-model="showTopicModal"
-		:title="__('New {0}').format(title)"
+		:title="newLabel || __('New {0}').format(title)"
 		:doctype="props.doctype"
 		:docname="props.docname"
 		v-model:reloadTopics="topics"
@@ -127,6 +127,12 @@ const props = defineProps({
 	docname: {
 		type: String,
 		required: true,
+	},
+	// Optional override for the create action's wording (button + modal title).
+	// When empty, falls back to the generic "New {singularized title}" label.
+	newLabel: {
+		type: String,
+		default: '',
 	},
 	emptyStateTitle: {
 		type: String,

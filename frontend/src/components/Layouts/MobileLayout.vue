@@ -54,6 +54,8 @@
 				</button>
 			</div>
 		</div>
+
+		<AiFixedButtons />
 	</div>
 </template>
 <script setup>
@@ -66,6 +68,7 @@ import { useSettings } from '@/stores/settings'
 import { usersStore } from '@/stores/user'
 import * as icons from 'lucide-vue-next'
 import { toggleNotifications } from '@/stores/notifications'
+import AiFixedButtons from '@/oslms/components/AiFixedButtons.vue'
 
 const { logout, user } = sessionStore()
 let { isLoggedIn } = sessionStore()
@@ -165,6 +168,9 @@ const addPrograms = async () => {
 	if (sidebarLinks.value.some((link) => link.label === 'Programs')) return
 	let canAddProgram = await checkIfCanAddProgram()
 	if (!canAddProgram) return
+	// Re-check after the await: concurrent updateSidebarLinks runs can both
+	// pass the guard above before either inserts, causing a duplicate entry.
+	if (sidebarLinks.value.some((link) => link.label === 'Programs')) return
 	let activeFor = ['Programs', 'ProgramDetail']
 	let index = 1
 

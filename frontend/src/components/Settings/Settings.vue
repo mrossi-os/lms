@@ -274,7 +274,7 @@ const tabsStructure = computed(() => {
 							],
 						},
 						{
-							label: 'Integrations',
+							label: __('Integrations'),
 							columns: [
 								{
 									fields: [
