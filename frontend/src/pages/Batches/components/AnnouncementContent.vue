@@ -59,8 +59,25 @@ const srcdoc = computed(
 		--prose-color-gray: #7C7C7C;
 		--prose-color-teal: #0B9E92;
 		--prose-color-cyan: #32A4C7;
+		/* Highlight (text-background) colors — light shades for the light
+		   email background; the editor stores highlights as
+		   background-color: var(--prose-highlight-<name>). */
+		--prose-highlight-red: #ffe7e7;
+		--prose-highlight-blue: #e6f4ff;
+		--prose-highlight-green: #e4faeb;
+		--prose-highlight-yellow: #fff7d3;
+		--prose-highlight-orange: #ffefe4;
+		--prose-highlight-purple: #f6e9ff;
+		--prose-highlight-pink: #fde8f5;
+		--prose-highlight-gray: #f3f3f3;
+		--prose-highlight-teal: #e6f7f4;
+		--prose-highlight-cyan: #ddf7ff;
 	}
 	a { color: #1d5a9b; }
+	/* Highlighted text keeps the surrounding color instead of the browser's
+	   black <mark> default, so a colored span inside a mark still shows its
+	   color. */
+	mark { color: inherit; border-radius: 3px; padding: 0 2px; }
 	img { max-width: 100%; height: auto; }
 	table { max-width: 100%; }
 </style>

@@ -224,11 +224,33 @@ const NAMED_COLOR_HEX = {
 	cyan: '#32A4C7',
 }
 
+// Highlights are stored the same way, as
+// `background-color: var(--prose-highlight-<name>)`. Resolve them to light
+// shades (which read well on the light email/preview background) so the
+// highlight survives outside the editor too.
+const NAMED_HIGHLIGHT_HEX = {
+	red: '#ffe7e7',
+	blue: '#e6f4ff',
+	green: '#e4faeb',
+	yellow: '#fff7d3',
+	orange: '#ffefe4',
+	purple: '#f6e9ff',
+	pink: '#fde8f5',
+	gray: '#f3f3f3',
+	teal: '#e6f7f4',
+	cyan: '#ddf7ff',
+}
+
 const inlineNamedColors = (html) =>
-	String(html || '').replace(
-		/var\(\s*--prose-color-(\w+)\s*\)/g,
-		(match, name) => NAMED_COLOR_HEX[name] || match,
-	)
+	String(html || '')
+		.replace(
+			/var\(\s*--prose-color-(\w+)\s*\)/g,
+			(match, name) => NAMED_COLOR_HEX[name] || match,
+		)
+		.replace(
+			/var\(\s*--prose-highlight-(\w+)\s*\)/g,
+			(match, name) => NAMED_HIGHLIGHT_HEX[name] || match,
+		)
 
 const props = defineProps({
 	batch: {
