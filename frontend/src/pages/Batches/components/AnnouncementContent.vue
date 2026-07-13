@@ -3,7 +3,7 @@
 		ref="frame"
 		:srcdoc="srcdoc"
 		sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
-		class="block w-full rounded-md border-0"
+		class="block w-full rounded-md border-0 card"
 		scrolling="no"
 		@load="onLoad"
 	/>
@@ -38,13 +38,14 @@ const srcdoc = computed(
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <base target="_blank">
 <style>
-	html, body { margin: 0; padding: 12px 16px; }
+	html, body { margin: 0; }
 	body {
 		font-family: InterVar, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 		font-size: 14px;
 		line-height: 1.5;
 		color: #1f2937;
-
+		color: #ffffff;
+		padding: 0px;
 		word-break: break-word;
 		/* Fallback for announcements stored with the editor's named-color
 		   variables (color: var(--prose-color-<name>)) before colors were
