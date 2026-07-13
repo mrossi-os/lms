@@ -168,6 +168,9 @@ const addPrograms = async () => {
 	if (sidebarLinks.value.some((link) => link.label === 'Programs')) return
 	let canAddProgram = await checkIfCanAddProgram()
 	if (!canAddProgram) return
+	// Re-check after the await: concurrent updateSidebarLinks runs can both
+	// pass the guard above before either inserts, causing a duplicate entry.
+	if (sidebarLinks.value.some((link) => link.label === 'Programs')) return
 	let activeFor = ['Programs', 'ProgramDetail']
 	let index = 1
 
