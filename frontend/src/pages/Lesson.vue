@@ -276,6 +276,7 @@
 						<Discussions
 							v-else-if="allowDiscussions"
 							:title="'Questions'"
+							:newLabel="__('Ask a question')"
 							:doctype="'Course Lesson'"
 							:docname="lesson.data.name"
 							:key="lesson.data.name"
