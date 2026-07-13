@@ -54,6 +54,8 @@
 				</button>
 			</div>
 		</div>
+
+		<AiFixedButtons />
 	</div>
 </template>
 <script setup>
@@ -66,6 +68,7 @@ import { useSettings } from '@/stores/settings'
 import { usersStore } from '@/stores/user'
 import * as icons from 'lucide-vue-next'
 import { toggleNotifications } from '@/stores/notifications'
+import AiFixedButtons from '@/oslms/components/AiFixedButtons.vue'
 
 const { logout, user } = sessionStore()
 let { isLoggedIn } = sessionStore()
