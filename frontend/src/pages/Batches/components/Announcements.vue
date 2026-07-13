@@ -25,7 +25,7 @@
 					     iframe; a plain notification keeps the app's themed card. -->
 					<div
 						v-if="isPlainNotification(comm.content)"
-						class="prose prose-sm bg-surface-sidebar !min-w-full px-4 py-2 rounded-md"
+						class="announcement-card prose prose-sm bg-surface-sidebar !min-w-full px-4 py-2 rounded-md"
 						v-html="sanitizeRichHTML(comm.content)"
 					></div>
 					<AnnouncementContent v-else :content="comm.content" />
@@ -169,5 +169,46 @@ defineExpose({ openAnnouncementModal })
 	--prose-color-gray: #717171;
 	--prose-color-teal: #219c8f;
 	--prose-color-cyan: #2b8dab;
+
+	/*
+	 * Highlight (text background) colors. The editor serializes highlights as
+	 * `background-color: var(--prose-highlight-<name>)`, so — like the text
+	 * colors above — the variables must be defined here or the background is
+	 * lost. Light shades for the light theme; the dark override below swaps in
+	 * dark shades so highlighted text stays readable on the dark card.
+	 */
+	--prose-highlight-red: #ffe7e7;
+	--prose-highlight-blue: #e6f4ff;
+	--prose-highlight-green: #e4faeb;
+	--prose-highlight-yellow: #fff7d3;
+	--prose-highlight-orange: #ffefe4;
+	--prose-highlight-purple: #f6e9ff;
+	--prose-highlight-pink: #fde8f5;
+	--prose-highlight-gray: #f3f3f3;
+	--prose-highlight-teal: #e6f7f4;
+	--prose-highlight-cyan: #ddf7ff;
+}
+
+[data-theme='dark'] .announcement-card {
+	--prose-highlight-red: #742a2a;
+	--prose-highlight-blue: #063465;
+	--prose-highlight-green: #0a4229;
+	--prose-highlight-yellow: #5b4605;
+	--prose-highlight-orange: #532707;
+	--prose-highlight-purple: #391457;
+	--prose-highlight-pink: #5b183f;
+	--prose-highlight-gray: #242424;
+	--prose-highlight-teal: #0b3a35;
+	--prose-highlight-cyan: #0d3b49;
+}
+
+/*
+ * Mirror the editor's mark styling so highlighted text keeps the card's ink
+ * color (readable on both light/dark) and the rounded-chip look.
+ */
+.announcement-card mark {
+	color: inherit;
+	border-radius: 3px;
+	padding: 0 2px;
 }
 </style>
