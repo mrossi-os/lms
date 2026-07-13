@@ -19,7 +19,7 @@
 		</template>
 		<template #default>
 			<div class="text-base">
-				<div class="grid grid-cols-2 gap-10">
+				<div class="grid grid-cols-1 gap-10">
 					<div class="space-y-4">
 						<div class="space-y-4">
 							<Uploader
@@ -39,7 +39,7 @@
 								:label="__('Last Name')"
 								:required="true"
 							/>
-							<FormControl v-model="profile.headline" :label="__('Headline')" />
+							<!-- <FormControl v-model="profile.headline" :label="__('Headline')" />
 
 							<FormControl
 								v-model="profile.linkedin"
@@ -49,10 +49,10 @@
 							<FormControl
 								v-model="profile.twitter"
 								:label="__('Twitter ID')"
-							/>
+							/> -->
 						</div>
 					</div>
-					<div class="space-y-4">
+					<!-- <div class="space-y-4">
 						<FormControl
 							v-model="profile.open_to"
 							type="select"
@@ -77,7 +77,7 @@
 								editorClass="prose-sm py-2 px-2 min-h-[280px] border-outline-gray-2 hover:border-outline-gray-3 rounded-b-md bg-surface-gray-3"
 							/>
 						</div>
-					</div>
+					</div> -->
 				</div>
 			</div>
 		</template>

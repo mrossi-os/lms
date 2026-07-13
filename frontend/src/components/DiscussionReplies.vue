@@ -22,9 +22,7 @@
 				class="py-3"
 				:class="{ 'border-b': index + 1 != replies.data.length }"
 			>
-				<div
-					class="flex items-center justify-between mb-2"
-				>
+				<div class="flex items-center justify-between mb-2">
 					<div class="flex items-center text-ink-gray-5">
 						<UserAvatar :user="reply.user" class="me-2" />
 						<span>
@@ -54,7 +52,9 @@
 						]"
 					>
 						<template v-slot="{ open }">
-							<span class="lucide-more-horizontal size-4 cursor-pointer" />
+							<span
+								class="lucide-more-horizontal size-4 cursor-pointer text-ink-gray-9"
+							/>
 						</template>
 					</Dropdown>
 					<div v-if="reply.editable">
@@ -175,7 +175,7 @@ const fetchMentionUsers = () => {
 					}
 				})
 			},
-		}
+		},
 	)
 }
 
