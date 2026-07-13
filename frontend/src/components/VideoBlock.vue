@@ -21,7 +21,6 @@
 			class="video-block relative group"
 		>
 			<video
-				@timeupdate="updateTime"
 				@ended="videoEnded"
 				@click="togglePlay"
 				oncontextmenu="return false"
