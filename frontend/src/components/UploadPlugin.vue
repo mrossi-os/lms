@@ -30,12 +30,21 @@ const props = defineProps({
 	},
 })
 
-const uploadArgs = computed(() => ({
-	private: true,
-	doctype: 'Course Lesson',
-	docname: props.docname,
-	fieldname: props.fieldname,
-}))
+const uploadArgs = computed(() => {
+	// Only attach the file to the lesson record once it exists. A brand-new,
+	// unsaved lesson has no docname yet; sending doctype without a valid docname
+	// makes newer Frappe reject the upload (417, "Attached To Name must be a
+	// string or an integer"). Upload unattached in that case — the block only
+	// needs the returned file_url, and the file gets linked when the lesson is
+	// saved and re-opened with a docname.
+	const args = { private: true }
+	if (props.docname) {
+		args.doctype = 'Course Lesson'
+		args.docname = props.docname
+		args.fieldname = props.fieldname
+	}
+	return args
+})
 
 onMounted(async () => {
 	await nextTick()
