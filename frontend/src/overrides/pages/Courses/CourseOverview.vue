@@ -10,7 +10,7 @@
 		<div
 			class="flex flex-col md:flex-row items-start justify-between w-full gap-x-8 gap-y-8"
 		>
-			<div class="md:w-2/3 space-y-10 min-w-0">
+			<div class="w-full md:w-2/3 space-y-10 min-w-0">
 				<section class="space-y-4">
 					<h1 v-if="!hasHero" class="text-3xl font-semibold text-ink-gray-9">
 						{{ course.data.title }}
@@ -160,10 +160,9 @@ const tagResource = createResource({
 const tagColorMap = computed<Map<string, string>>(() => {
 	if (!tagResource.data) return new Map()
 	return new Map(
-		(tagResource.data as Array<{ tag_name: string; color: string }>).map((t) => [
-			t.tag_name,
-			t.color,
-		]),
+		(tagResource.data as Array<{ tag_name: string; color: string }>).map(
+			(t) => [t.tag_name, t.color],
+		),
 	)
 })
 
