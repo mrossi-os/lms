@@ -13,7 +13,7 @@
 							left: sidebarLeft,
 							width: '400px',
 							boxShadow: '8px 0px 8px rgba(0, 0, 0, 0.1)',
-					  }
+						}
 			"
 		>
 			<div class="flex h-full flex-col text-ink-gray-9">
@@ -129,17 +129,17 @@ const filtered = computed(() => {
 const emptyTitle = computed(() =>
 	activeTab.value === 'Unread'
 		? __('No unread notifications')
-		: __('No read notifications')
+		: __('No read notifications'),
 )
 
 const emptyDescription = computed(() =>
 	activeTab.value === 'Unread'
 		? __("You're all caught up! Check back later for updates.")
-		: __('Notifications you have read will appear here.')
+		: __('Notifications you have read will appear here.'),
 )
 
 const sidebarLeft = computed(() =>
-	sidebarStore.isSidebarCollapsed ? '3.5rem' : '14rem'
+	sidebarStore.isSidebarCollapsed ? '3.5rem' : '14rem',
 )
 
 const hasUnread = computed(() => notifications.data?.some((n) => !n.read))
