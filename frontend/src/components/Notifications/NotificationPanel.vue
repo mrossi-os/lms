@@ -108,7 +108,12 @@ const { isMobile } = useScreenSize()
 
 const panelRef = ref(null)
 const activeTab = ref('Unread')
-const tabs = [{ label: 'Unread' }, { label: 'Read' }]
+// `value` keeps the logical key stable (the filter/empty-state code compares
+// against 'Unread'/'Read') while `label` is translated for display.
+const tabs = [
+	{ label: __('Unread'), value: 'Unread' },
+	{ label: __('Read'), value: 'Read' },
+]
 
 onClickOutside(panelRef, () => closeNotifications(), {
 	ignore: ['[data-notifications-trigger]'],
