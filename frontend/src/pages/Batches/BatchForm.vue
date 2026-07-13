@@ -207,13 +207,6 @@
 							{{ __('Batch Details') }}
 							<span class="text-ink-red-3">*</span>
 						</label>
-						<TextEditor
-							:content="batchDetail.doc.batch_details"
-							@change="(val) => (batchDetail.doc.batch_details = val)"
-							:editable="true"
-							:fixedMenu="true"
-							editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem] max-h-[16rem] overflow-y-scroll mb-4"
-						/>
 						<div
 							class="rounded-t-lg rounded-b-md outline-none transition-[box-shadow] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]"
 						>
