@@ -154,6 +154,14 @@ defineExpose({ openAnnouncementModal })
 }
 
 /*
+ * Preserve blank lines (empty paragraphs from pressing Enter twice), which
+ * otherwise have no content, collapse, and disappear.
+ */
+.announcement-card p:empty::before {
+	content: '\00a0';
+}
+
+/*
  * Plain notification card sits on the dark theme, so map the editor's named
  * colors to the dark-mode shades (lighter) for readable contrast on the dark
  * background. Covers content stored as `color: var(--prose-color-<name>)`.

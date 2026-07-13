@@ -79,6 +79,10 @@ const srcdoc = computed(
 	   black <mark> default, so a colored span inside a mark still shows its
 	   color. */
 	mark { color: inherit; border-radius: 3px; padding: 0 2px; }
+	/* An empty paragraph (a blank line from pressing Enter twice) has no
+	   content, so it collapses and the blank line vanishes. A zero-width
+	   non-breaking space gives it a line box so the blank line is preserved. */
+	p:empty::before { content: '\\00a0'; }
 	img { max-width: 100%; height: auto; }
 	table { max-width: 100%; }
 </style>
