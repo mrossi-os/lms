@@ -9,7 +9,7 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import EditorJS from '@editorjs/editorjs'
 import DragDrop from 'editorjs-drag-drop'
-import { enablePlyr, getEditorTools, getEditorTunes } from '@/utils'
+import { enablePlyr, getEditorTools, getEditorTunes, getEditorI18n } from '@/utils'
 
 const props = defineProps({
 	uploadContext: {
@@ -79,9 +79,11 @@ onMounted(() => {
 		tools: getEditorTools(false, props.uploadContext),
 		tunes: getEditorTunes(),
 		defaultBlock: 'markdown',
-		i18n: {
-			direction: document.documentElement.dir === 'rtl' ? 'rtl' : 'ltr',
-		},
+		// Translate the editor chrome (toolbox tool names, block tunes, popover
+		// Filter, table/embed actions…) through the same i18n dictionary used by
+		// the read-only renderer in Lesson.vue. Labels route via __() so they
+		// follow the user's language (translations in lms/translations/it.csv).
+		i18n: getEditorI18n(),
 		onReady: () => {
 			// onReady can fire after the component unmounted (fast nav / deleting
 			// the open lesson) — by then onBeforeUnmount has nulled `editor`. Bail

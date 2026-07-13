@@ -3,7 +3,7 @@
 		ref="frame"
 		:srcdoc="srcdoc"
 		sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
-		class="block w-full rounded-md border-0"
+		class="block w-full rounded-md border-0 card"
 		scrolling="no"
 		@load="onLoad"
 	/>
@@ -38,13 +38,14 @@ const srcdoc = computed(
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <base target="_blank">
 <style>
-	html, body { margin: 0; padding: 12px 16px; }
+	html, body { margin: 0; }
 	body {
 		font-family: InterVar, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 		font-size: 14px;
 		line-height: 1.5;
 		color: #1f2937;
-
+		color: #ffffff;
+		padding: 0px;
 		word-break: break-word;
 		/* Fallback for announcements stored with the editor's named-color
 		   variables (color: var(--prose-color-<name>)) before colors were
@@ -59,8 +60,29 @@ const srcdoc = computed(
 		--prose-color-gray: #7C7C7C;
 		--prose-color-teal: #0B9E92;
 		--prose-color-cyan: #32A4C7;
+		/* Highlight (text-background) colors — light shades for the light
+		   email background; the editor stores highlights as
+		   background-color: var(--prose-highlight-<name>). */
+		--prose-highlight-red: #ffe7e7;
+		--prose-highlight-blue: #e6f4ff;
+		--prose-highlight-green: #e4faeb;
+		--prose-highlight-yellow: #fff7d3;
+		--prose-highlight-orange: #ffefe4;
+		--prose-highlight-purple: #f6e9ff;
+		--prose-highlight-pink: #fde8f5;
+		--prose-highlight-gray: #f3f3f3;
+		--prose-highlight-teal: #e6f7f4;
+		--prose-highlight-cyan: #ddf7ff;
 	}
 	a { color: #1d5a9b; }
+	/* Highlighted text keeps the surrounding color instead of the browser's
+	   black <mark> default, so a colored span inside a mark still shows its
+	   color. */
+	mark { color: inherit; border-radius: 3px; padding: 0 2px; }
+	/* An empty paragraph (a blank line from pressing Enter twice) has no
+	   content, so it collapses and the blank line vanishes. A zero-width
+	   non-breaking space gives it a line box so the blank line is preserved. */
+	p:empty::before { content: '\\00a0'; }
 	img { max-width: 100%; height: auto; }
 	table { max-width: 100%; }
 </style>

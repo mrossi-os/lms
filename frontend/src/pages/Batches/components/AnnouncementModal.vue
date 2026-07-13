@@ -54,10 +54,127 @@
 					]"
 					v-model="recipientMode"
 				/>
-				<div class="mb-4">
-					<div class="mb-1.5 text-p-sm-medium text-ink-gray-7">
+				<div v-if="recipientMode === 'specific'" class="flex flex-col gap-2">
+					<div class="flex justify-between">
+						<div class="text-sm text-ink-gray-5">
+							{{ __('Select students') }}
+							<span class="text-ink-red-3">*</span>
+						</div>
+						<div class="text-xs text-ink-gray-5">
+							{{ selectedStudents.length }} {{ __('selected') }}
+							<span v-if="studentSearch">
+								· {{ filteredStudents.length }} {{ __('shown') }}
+							</span>
+						</div>
+					</div>
+					<FormControl
+						type="text"
+						:placeholder="__('Search student...')"
+						v-model="studentSearch"
+					/>
+					<div
+						class="border rounded-md p-2 max-h-[180px] overflow-auto bg-surface-base"
+					>
+						<div v-if="!props.students.length" class="text-ink-gray-5 text-sm">
+							{{ __('No students in this batch') }}
+						</div>
+						<div
+							v-else-if="!filteredStudents.length"
+							class="text-ink-gray-5 text-sm"
+						>
+							{{ __('No students match your search') }}
+						</div>
+						<div v-for="email in filteredStudents" :key="email">
+							<FormControl
+								type="checkbox"
+								:label="studentLabels[email] || email"
+								:modelValue="selectedStudents.includes(email)"
+								@update:modelValue="(v) => toggleStudent(email, v)"
+							/>
+						</div>
+					</div>
+				</div>
+				<div
+					v-if="sendEmail && isHtmlMode && hasMessagePlaceholder"
+					class="mb-4 flex flex-col gap-3"
+				>
+					<div>
+						<div class="mb-1.5 text-sm text-ink-gray-5">
+							{{ __('Message') }}
+							<span class="text-ink-red-3">*</span>
+						</div>
+						<TextEditor
+							:fixedMenu="true"
+							:content="announcement.message"
+							@change="(val) => (announcement.message = val)"
+							editorClass="prose-sm py-2 px-2 min-h-[120px] max-h-[240px] overflow-auto border-outline-gray-2 hover:border-outline-gray-3 rounded-b-md bg-surface-gray-3"
+							:placeholder="
+								__(
+									'Write your message here. It will be inserted into the template.',
+								)
+							"
+						/>
+					</div>
+					<div>
+						<div class="mb-1.5 flex items-center justify-between">
+							<div class="text-sm text-ink-gray-5">
+								{{ __('Preview') }}
+							</div>
+							<Button size="sm" @click="showAdvanced = !showAdvanced">
+								{{
+									showAdvanced ? __('Hide HTML') : __('Edit HTML (advanced)')
+								}}
+							</Button>
+						</div>
+						<div
+							class="border rounded-md min-h-[200px] max-h-[400px] overflow-auto"
+						>
+							<AnnouncementContent :content="previewHtml" />
+						</div>
+						<textarea
+							v-if="showAdvanced"
+							v-model="announcement.announcement"
+							class="mt-2 w-full min-h-[200px] max-h-[400px] border rounded-md p-2 text-sm font-mono bg-surface-gray-3 border-outline-gray-2"
+							spellcheck="false"
+						></textarea>
+					</div>
+				</div>
+				<!--
+					HTML template without a {{ message }} placeholder (e.g. a generic
+					email): the rich editor can't round-trip email HTML without dropping
+					inline styles and buttons, so edit the raw HTML directly — body text
+					and button URLs alike — with a faithful live preview above it.
+				-->
+				<div
+					v-else-if="sendEmail && isHtmlMode"
+					class="mb-4 flex flex-col gap-3"
+				>
+					<div>
+						<div class="mb-1.5 text-sm text-ink-gray-5">
+							{{ __('Preview') }}
+						</div>
+						<div
+							class="border rounded-md min-h-[200px] max-h-[400px] overflow-auto"
+						>
+							<AnnouncementContent :content="previewHtml" />
+						</div>
+					</div>
+					<div>
+						<div class="mb-1.5 text-sm text-ink-gray-5">
+							{{ __('Announcement (HTML)') }}
+							<span class="text-ink-red-3">*</span>
+						</div>
+						<textarea
+							v-model="announcement.announcement"
+							class="w-full min-h-[240px] max-h-[400px] border rounded-md p-2 text-sm font-mono bg-surface-gray-3 border-outline-gray-2"
+							spellcheck="false"
+						></textarea>
+					</div>
+				</div>
+				<div v-else class="mb-4">
+					<div class="mb-1.5 text-sm text-ink-gray-5">
 						{{ __('Announcement') }}
-						<span class="text-ink-red-6">*</span>
+						<span class="text-ink-red-3">*</span>
 					</div>
 					<TextEditor
 						:fixedMenu="true"
@@ -107,11 +224,33 @@ const NAMED_COLOR_HEX = {
 	cyan: '#32A4C7',
 }
 
+// Highlights are stored the same way, as
+// `background-color: var(--prose-highlight-<name>)`. Resolve them to light
+// shades (which read well on the light email/preview background) so the
+// highlight survives outside the editor too.
+const NAMED_HIGHLIGHT_HEX = {
+	red: '#ffe7e7',
+	blue: '#e6f4ff',
+	green: '#e4faeb',
+	yellow: '#fff7d3',
+	orange: '#ffefe4',
+	purple: '#f6e9ff',
+	pink: '#fde8f5',
+	gray: '#f3f3f3',
+	teal: '#e6f7f4',
+	cyan: '#ddf7ff',
+}
+
 const inlineNamedColors = (html) =>
-	String(html || '').replace(
-		/var\(\s*--prose-color-(\w+)\s*\)/g,
-		(match, name) => NAMED_COLOR_HEX[name] || match,
-	)
+	String(html || '')
+		.replace(
+			/var\(\s*--prose-color-(\w+)\s*\)/g,
+			(match, name) => NAMED_COLOR_HEX[name] || match,
+		)
+		.replace(
+			/var\(\s*--prose-highlight-(\w+)\s*\)/g,
+			(match, name) => NAMED_HIGHLIGHT_HEX[name] || match,
+		)
 
 const props = defineProps({
 	batch: {

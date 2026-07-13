@@ -147,7 +147,6 @@ import { useRouter } from 'vue-router'
 import { computed, inject, onMounted, ref, watch } from 'vue'
 
 import { sessionStore } from '@/stores/session'
-import { sanitizeHTML } from '@/utils'
 import { useScreenSize } from '@/utils/composables'
 import { useTelemetry } from 'frappe-ui/frappe'
 import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
@@ -161,8 +160,6 @@ const router = useRouter()
 const search = ref('')
 const readOnlyMode = window.read_only_mode
 const quizFilters = ref({})
-const showForm = ref(false)
-const title = ref('')
 const { isMobile } = useScreenSize()
 
 onMounted(() => {
@@ -234,16 +231,7 @@ const totalQuizzes = createResource({
 	},
 })
 
-const validateTitle = () => {
-	title.value = sanitizeHTML(title.value.trim())
-}
-
-const insertQuiz = (close) => {
-	validateTitle()
-	if (!title.value) {
-		toast.warning(__('{0} is required').format(__('Title')))
-		return
-	}
+const createQuiz = () => {
 	quizzes.insert.submit(
 		{
 			title: __('Untitled Quiz'),

@@ -139,12 +139,18 @@ const props = withDefaults(
 const values = defineModel<string[]>({ default: () => [] })
 const attrs = useAttrs()
 const trigger = ref<{ $el: HTMLElement } | null>(null)
+const search = ref<{ $el: HTMLElement } | null>(null)
 const query = ref<string>('')
 const text = ref<string>('')
 const selectedValue = ref<SelectOption | null>(null)
 // Cache of options the user has actually selected, so the parent can resolve
 // labels/descriptions for chosen values (used by ProgramForm.addCourses).
 const cachedOptions = ref<SelectOption[]>([])
+
+// Clicking the box padding (not directly the input) should focus the input.
+const focusInput = () => {
+	search.value?.$el?.focus()
+}
 
 watch(selectedValue, (val) => {
 	if (!val?.value) return
