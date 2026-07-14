@@ -8,7 +8,7 @@ from lms.lms.api import get_user_info as _original_get_user_info
 from lms.lms.api import save_role as _original_save_role
 
 
-EXTRA_LMS_ROLES = ["Gestore", "Docente"]
+EXTRA_LMS_ROLES = ["Gestore", "Docente", "Valutatore"]
 
 
 @frappe.whitelist()

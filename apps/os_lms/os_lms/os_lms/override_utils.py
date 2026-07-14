@@ -321,4 +321,5 @@ def get_roles(name: str) -> dict:
 	base = _original_get_roles(name)
 	base["manager"] = _has_role(name, "Gestore")
 	base["instructor"] = _has_role(name, "Docente")
+	base["valutatore"] = _has_role(name, "Valutatore")
 	return base

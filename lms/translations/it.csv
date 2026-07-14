@@ -5412,3 +5412,5 @@ restrict_ip
 "Debrief LLM Provider","Provider LLM debrief"
 "Debrief Model","Modello debrief"
 "Turn detection","Rilevamento del turno"
+"Assessor","Valutatore"
+"Review and grade submissions for assigned batches","Esamina e valuta gli invii per le classi assegnate"
