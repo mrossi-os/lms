@@ -285,6 +285,11 @@ watch(batch, () => {
 	handleActiveTab()
 })
 
+// Keep the active tab in sync when only the URL hash changes (e.g. clicking a
+// batch notification while already inside the batch): the component is not
+// remounted and `batch` does not reload, so watch(batch) never fires.
+watch(() => route.hash, updateTabIndex)
+
 const updateTabs = () => {
 	addToTabs('Overview', __('Overview'), markRaw(BatchOverview), List)
 	if (!user.data) return
