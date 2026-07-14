@@ -182,9 +182,10 @@ def serve_resource(file_url: str):
 		_deny(file_url, "can_access_lesson denied for all references")
 		raise frappe.PermissionError
 
-	# send_private_file expects a path relative to the site's private/ dir.
+	# send_private_file expects a path relative to the site's private/ dir; it derives
+	# the download name from the path basename itself (no filename kwarg is accepted).
 	relative_path = file_url.split("/private", 1)[1] if "/private" in file_url else file_url
-	return send_private_file(relative_path, filename=file_row.file_name)
+	return send_private_file(relative_path)
 
 
 def _deny(file_url, reason):
