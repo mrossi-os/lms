@@ -25,7 +25,6 @@ from frappe.utils import (
 	rounded,
 	validate_email_address,
 )
-from frappe.utils.html_utils import sanitize_html
 from pypika import Case
 from pypika import functions as fn
 
@@ -2754,6 +2753,15 @@ def is_demo_course(course: str) -> bool:
 	return title == "A guide to Frappe Learning"
 
 
+# Custom inline elements the EditorJS toolbar emits: <lms-inline-color> carries
+# text/highlight colors (Color.ts) and <lms-align> carries text alignment
+# (TextAlign.ts). The frontend whitelists them in its own sanitizer, but Frappe's
+# HTML sanitizer doesn't know them and would strip them on save — silently
+# dropping a lesson's colors/alignment after a reload. Keep this in sync with the
+# frontend tools.
+EDITORJS_CUSTOM_TAGS = frozenset({"lms-inline-color", "lms-align"})
+
+
 def sanitize_editorjs(raw):
 	try:
 		data = json.loads(raw)
@@ -2768,5 +2776,36 @@ def sanitize_json(node):
 	if isinstance(node, list):
 		return [sanitize_json(v) for v in node]
 	if isinstance(node, str) and ("<" in node or ">" in node):
-		return sanitize_html(node, always_sanitize=True)
+		return sanitize_editorjs_html(node)
 	return node
+
+
+def sanitize_editorjs_html(html):
+	"""Sanitize a block-text HTML string like frappe's sanitize_html, but keep the
+	editor's custom inline elements (text color / alignment). Mirrors Frappe's nh3
+	configuration so every other XSS protection stays in place."""
+	import nh3
+	from bleach_allowlist import bleach_allowlist
+	from frappe.utils.html_utils import (
+		acceptable_attributes,
+		acceptable_elements,
+		mathml_elements,
+		svg_attributes,
+		svg_elements,
+	)
+
+	tags = (
+		acceptable_elements.union(svg_elements)
+		.union(mathml_elements)
+		.union(["html", "head", "meta", "link", "body", "o:p"])
+		.union(EDITORJS_CUSTOM_TAGS)
+	)
+	return nh3.clean(
+		html,
+		tags=tags,
+		attributes={"*": acceptable_attributes, "svg": svg_attributes},
+		generic_attribute_prefixes={"data-"},
+		strip_comments=False,
+		filter_style_properties=set(bleach_allowlist.all_styles),
+		url_schemes=nh3.ALLOWED_URL_SCHEMES.union({"cid"}),
+	)

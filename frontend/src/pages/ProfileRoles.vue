@@ -38,6 +38,13 @@
 			/>
 			<BooleanSwitch
 				size="sm"
+				:label="__('Valutatore')"
+				:description="__('Review and grade submissions for assigned batches')"
+				v-model="valutatore"
+				@update:modelValue="saveRole('valutatore')"
+			/>
+			<BooleanSwitch
+				size="sm"
 				:label="__('Moderator')"
 				:description="__('Oversee all users, content, and system settings')"
 				v-model="moderator"
@@ -72,6 +79,7 @@ const batch_evaluator = ref(false)
 const lms_student = ref(false)
 const manager = ref(false)
 const instructor = ref(false)
+const valutatore = ref(false)
 const readOnlyMode = window.read_only_mode
 
 const ROLE_NAME_MAP = {
@@ -102,6 +110,7 @@ const roles = createResource({
 			'lms_student',
 			'manager',
 			'instructor',
+			'valutatore',
 		]
 		for (let role of roles) {
 			if (data[role]) eval(role).value = true

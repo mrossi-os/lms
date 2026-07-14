@@ -11,19 +11,17 @@
 				variant="outline"
 				@input="markDirty()"
 			/>
-			<div class="OS-LinkWrapper">
-				<Link
-					v-model="doc.category"
-					doctype="LMS Category"
-					:label="__('Category')"
-					:placeholder="__('Select category')"
-					:inlineCreate="true"
-					:inlineCreatePlaceholder="__('Category name')"
-					:onCreate="createCategory"
-					variant="outline"
-					@update:modelValue="markDirty()"
-				/>
-			</div>
+			<Link
+				v-model="doc.category"
+				doctype="LMS Category"
+				:label="__('Category')"
+				:placeholder="__('Select category')"
+				:inlineCreate="true"
+				:inlineCreatePlaceholder="__('Category name')"
+				:onCreate="createCategory"
+				variant="outline"
+				@update:modelValue="markDirty()"
+			/>
 			<CourseInstructorsField />
 			<div class="space-y-1.5">
 				<TagPicker v-model="doc.tags" @dirty="markDirty()" />
@@ -56,7 +54,7 @@ import TagPicker from '@/oslms/components/TagPicker.vue'
 import { FormControl } from 'frappe-ui'
 import { computed, inject } from 'vue'
 import { createLMSCategory } from '@/utils'
-import Link from '@/components/Controls/Link.vue'
+import Link from '@/oslms/components/Controls/Link.vue'
 import CourseInstructorsField from '@/pages/Courses/CourseInstructorsField.vue'
 import CourseThumbnailField from '@/pages/Courses/CourseThumbnailField.vue'
 import VideoPreviewField from '@/components/Controls/VideoPreviewField.vue'
