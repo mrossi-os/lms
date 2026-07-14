@@ -128,7 +128,7 @@ function syncSelectedToUrl(number) {
 		return
 	router.replace({
 		query: { ...route.query, editLesson: number, lessonMode: nextLessonMode },
-		hash: route.hash || '#course editor',
+		hash: route.hash || '#editor',
 	})
 }
 
@@ -137,7 +137,7 @@ function syncModeToUrl(newMode) {
 	if (route.query.lessonMode === newMode) return
 	router.replace({
 		query: { ...route.query, lessonMode: newMode },
-		hash: route.hash || '#course editor',
+		hash: route.hash || '#editor',
 	})
 }
 
@@ -289,7 +289,7 @@ watch(
 				const { editLesson, ...rest } = route.query
 				router.replace({
 					query: rest,
-					hash: route.hash || '#course editor',
+					hash: route.hash || '#editor',
 				})
 			}
 		}
