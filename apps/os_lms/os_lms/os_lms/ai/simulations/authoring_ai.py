@@ -179,6 +179,58 @@ def generate_scenario_payload(
 	)
 
 
+def generate_student_brief(
+	*,
+	scenario_name: str = "",
+	roleplay_persona: str,
+	situation_template: str,
+	learning_objectives: list[str] | None = None,
+	seed_variations: dict[str, list[str]] | None = None,
+	difficulty: str = "medium",
+	provider_override: str = "auto",
+	model_override: str = "",
+) -> str:
+	"""Generate just the student_brief (the "compito") from the current
+	scenario form fields.
+
+	Reuses the runtime ``ScenarioVariantGenerator`` — the very generator that
+	produces per-session briefs — so an authored brief reads exactly like a
+	live one. The instructor reviews and saves it as a scenario field; nothing
+	is persisted here.
+	"""
+	from os_lms.os_lms.ai.simulations.eval.types import ScenarioRef
+	from os_lms.os_lms.ai.simulations.role_player import ScenarioVariantGenerator
+	from os_lms.os_lms.ai.utils.llm import resolve_provider
+
+	if not (roleplay_persona or "").strip() or not (situation_template or "").strip():
+		frappe.throw(
+			_("Compila persona e situazione prima di generare il compito con l'IA.")
+		)
+
+	override = provider_override or "auto"
+	override = None if override == "auto" else override
+	provider = resolve_provider(purpose="chat", override=override)
+
+	scenario_ref = ScenarioRef(
+		name="",
+		scenario_name=scenario_name or "",
+		learning_objectives=[
+			o.strip() for o in (learning_objectives or []) if o and o.strip()
+		],
+		difficulty=difficulty or "medium",
+		roleplay_persona=roleplay_persona,
+		situation_template=situation_template,
+		max_turns=20,
+		seed_variations=seed_variations or {},
+	)
+	generator = ScenarioVariantGenerator(
+		provider=provider,
+		model=(model_override or None),
+	)
+	variant = generator.generate(scenario_ref, seed=frappe.generate_hash(length=10))
+	return variant.student_brief
+
+
 def generate_evaluation_schema_payload(
 	*,
 	hint: str = "",

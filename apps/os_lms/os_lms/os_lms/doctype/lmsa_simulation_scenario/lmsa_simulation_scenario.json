@@ -17,6 +17,7 @@
   "section_persona",
   "roleplay_persona",
   "situation_template",
+  "student_brief",
   "section_objectives",
   "evaluation_schema",
   "learning_objectives",
@@ -115,6 +116,12 @@
    "fieldtype": "Long Text",
    "label": "Situation Template",
    "reqd": 1
+  },
+  {
+   "description": "The brief ('compito') the student reads before starting: the situation and the objective. Supports {variable_name} placeholders, resolved per session like the situation. Leave empty to have the AI generate one per session.",
+   "fieldname": "student_brief",
+   "fieldtype": "Long Text",
+   "label": "Student Brief"
   },
   {
    "fieldname": "section_objectives",

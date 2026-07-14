@@ -147,6 +147,22 @@ class SessionOrchestrator:
 		provider = self._resolve_provider("chat", scenario)
 		variant = self._generate_variant(scenario, seed, provider)
 
+		# When the instructor authored a brief (the "compito"), show that verbatim
+		# instead of the AI-generated one. `{variable_name}` placeholders are
+		# resolved with the SAME seed as the situation, so a brief that references
+		# a seed variation stays consistent with the rendered scene. Persona and
+		# situation are still AI-varied per session — only the student-facing brief
+		# text is taken from the scenario.
+		manual_brief = (getattr(scenario, "student_brief", "") or "").strip()
+		if manual_brief:
+			from .prompts.scenario_generator import render_situation_template
+
+			student_brief, _picked = render_situation_template(
+				manual_brief, _seed_variations_from_doc(scenario), seed=seed
+			)
+		else:
+			student_brief = variant.student_brief
+
 		session = frappe.new_doc("LMSA Simulation Session")
 		# Set student BEFORE insert(): the permission gate runs before
 		# before_insert(), so has_permission needs `doc.student` already set.
@@ -157,7 +173,7 @@ class SessionOrchestrator:
 		session.seed = seed
 		session.prompt_version = f"{SCENARIO_GEN_VERSION}+{ROLE_PLAY_VERSION}"
 		session.generated_situation = variant.situation
-		session.student_brief = variant.student_brief
+		session.student_brief = student_brief
 		session.generated_persona = json.dumps(
 			_persona_to_dict(variant.persona), ensure_ascii=False
 		)
@@ -175,7 +191,7 @@ class SessionOrchestrator:
 		)
 		return frappe._dict(
 			session=session.name,
-			brief=variant.student_brief,
+			brief=student_brief,
 			modality=modality,
 		)
 
@@ -486,13 +502,7 @@ class SessionOrchestrator:
 
 		objectives = [(row.objective_text or "").strip() for row in (scenario.learning_objectives or [])]
 		objectives = [o for o in objectives if o]
-		variations = {
-			(row.variable_name or "").strip(): [
-				v.strip() for v in (row.possible_values or "").splitlines() if v.strip()
-			]
-			for row in (scenario.seed_variations or [])
-			if (row.variable_name or "").strip()
-		}
+		variations = _seed_variations_from_doc(scenario)
 		return ScenarioRef(
 			name=scenario.name,
 			scenario_name=scenario.scenario_name,
@@ -793,3 +803,15 @@ def _first_roleplay_line(variant: ScenarioVariant) -> str:
 
 def _new_seed() -> str:
 	return "".join(random.choices(string.ascii_lowercase + string.digits, k=10))
+
+
+def _seed_variations_from_doc(scenario) -> dict[str, list[str]]:
+	"""Build the ``variable_name -> [values]`` map from a scenario's
+	Seed Variation rows, in the shape ``render_situation_template`` expects."""
+	return {
+		(row.variable_name or "").strip(): [
+			v.strip() for v in (row.possible_values or "").splitlines() if v.strip()
+		]
+		for row in (scenario.seed_variations or [])
+		if (row.variable_name or "").strip()
+	}

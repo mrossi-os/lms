@@ -764,6 +764,7 @@ def get_scenario(name: str) -> dict:
         "status": doc.status,
         "roleplay_persona": doc.roleplay_persona,
         "situation_template": doc.situation_template,
+        "student_brief": doc.get("student_brief"),
         "evaluation_schema": doc.evaluation_schema,
         "max_turns": doc.max_turns,
         "time_limit_minutes": doc.time_limit_minutes,
@@ -812,6 +813,7 @@ def save_scenario(payload: dict) -> dict:
         "status",
         "roleplay_persona",
         "situation_template",
+        "student_brief",
         "evaluation_schema",
         "max_turns",
         "time_limit_minutes",
@@ -1022,6 +1024,58 @@ def ai_generate_scenario(
         course=course, lesson=lesson or None, hint=hint or ""
     )
     return {"payload": payload}
+
+
+@frappe.whitelist()
+def ai_generate_student_brief(payload: dict) -> dict:
+    """Generate the student_brief ("compito") from the current editor state.
+
+    ``payload`` mirrors the scenario editor model (roleplay_persona,
+    situation_template, learning_objectives, seed_variations, difficulty,
+    optional provider/model overrides). Returns ``{"student_brief": ...}``.
+    Nothing is persisted — the instructor reviews and saves.
+    """
+    if not isinstance(payload, dict):
+        frappe.throw(_("payload must be an object"))
+
+    course = payload.get("lms_course")
+    if course:
+        _ensure_instructor_of_course(course)
+    elif not has_course_instructor_role() and not has_moderator_role():
+        frappe.throw(
+            _("Only instructors can generate simulation briefs"),
+            frappe.PermissionError,
+        )
+
+    from .authoring_ai import generate_student_brief
+
+    objectives = [
+        (row.get("objective_text") or "").strip()
+        for row in (payload.get("learning_objectives") or [])
+        if isinstance(row, dict)
+    ]
+    objectives = [o for o in objectives if o]
+    variations = {
+        (row.get("variable_name") or "").strip(): [
+            v.strip()
+            for v in (row.get("possible_values") or "").splitlines()
+            if v.strip()
+        ]
+        for row in (payload.get("seed_variations") or [])
+        if isinstance(row, dict) and (row.get("variable_name") or "").strip()
+    }
+
+    brief = generate_student_brief(
+        scenario_name=payload.get("scenario_name") or "",
+        roleplay_persona=payload.get("roleplay_persona") or "",
+        situation_template=payload.get("situation_template") or "",
+        learning_objectives=objectives,
+        seed_variations=variations,
+        difficulty=payload.get("difficulty") or "medium",
+        provider_override=payload.get("provider_override") or "auto",
+        model_override=payload.get("model_override") or "",
+    )
+    return {"student_brief": brief}
 
 
 @frappe.whitelist()
