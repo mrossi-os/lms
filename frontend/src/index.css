@@ -55,3 +55,24 @@ label.block:not([data-slot='label']) {
 .ProseMirror hr {
 	border-top-color: currentColor;
 }
+
+/* @tailwindcss/forms repaints checked radios as a filled colored circle with a
+   white center dot. Restore the classic look instead — a white circle with a
+   black center dot — for every native radio (quiz options, forms). The plugin's
+   rules use :where() (0 specificity), so these plain selectors override them; the
+   :hover/:focus variants are needed because the plugin re-asserts background-color
+   on those states. */
+input[type='radio']:checked,
+input[type='radio']:checked:hover,
+input[type='radio']:checked:focus {
+	background-color: #fff;
+	border-color: #333;
+	background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='black' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='4.5'/%3e%3c/svg%3e");
+}
+
+/* Drop the @tailwindcss/forms focus ring (box-shadow) and its blue focus border
+   on radios — no focus outline wanted. Keep the plain gray border. */
+input[type='radio']:focus {
+	box-shadow: none;
+	border-color: #ffffff;
+}
