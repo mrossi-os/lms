@@ -134,7 +134,7 @@
 						<textarea
 							v-if="showAdvanced"
 							v-model="announcement.announcement"
-							class="mt-2 w-full min-h-[200px] max-h-[400px] border rounded-md p-2 text-sm font-mono bg-surface-gray-3 border-outline-gray-2"
+							class="mt-2 w-full min-h-[200px] max-h-[400px] border rounded-md p-2 text-sm font-mono bg-surface-gray-3 border-outline-gray-2 text-ink-gray-9"
 							spellcheck="false"
 						></textarea>
 					</div>
@@ -461,10 +461,7 @@ const makeAnnouncement = (close) => {
 				if (!announcement.announcement) {
 					return __('Announcement is required')
 				}
-				if (
-					hasMessagePlaceholder.value &&
-					isEmptyHtml(announcement.message)
-				) {
+				if (hasMessagePlaceholder.value && isEmptyHtml(announcement.message)) {
 					return __('Message is required')
 				}
 			},
