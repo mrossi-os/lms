@@ -56,6 +56,11 @@ label.block:not([data-slot='label']) {
 	border-top-color: currentColor;
 }
 
+.ProseMirror .tableWrapper table td,
+.ProseMirror .tableWrapper table th {
+	border-color: var(--ink-gray-9);
+}
+
 /* @tailwindcss/forms repaints checked radios as a filled colored circle with a
    white center dot. Restore the classic look instead — a white circle with a
    black center dot — for every native radio (quiz options, forms). The plugin's
