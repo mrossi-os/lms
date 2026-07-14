@@ -51,10 +51,19 @@ import type {
   ComboboxProps,
 } from '../../../../../../node_modules/frappe-ui/src/components/Combobox/types'
 
-const props = withDefaults(defineProps<ComboboxProps>(), {
-  variant: 'subtle',
-  options: () => [],
-})
+// NOTE: upstream frappe-ui moved the model to `defineModel()`, so the current
+// `ComboboxProps` type no longer declares `modelValue`. This override still reads
+// `props.modelValue` (for the preselected value's display), so we must declare it
+// explicitly here — otherwise `:model-value` falls through to `$attrs`,
+// `props.modelValue` is always `undefined`, and a preselected value renders blank
+// (selecting still works because that path sets internal state from the event).
+const props = withDefaults(
+  defineProps<ComboboxProps & { modelValue?: string | null }>(),
+  {
+    variant: 'subtle',
+    options: () => [],
+  },
+)
 
 const emit = defineEmits<{
   /** Emitted when the selected value changes (v-model binding) */
