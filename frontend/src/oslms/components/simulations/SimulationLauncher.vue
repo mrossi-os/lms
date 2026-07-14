@@ -92,7 +92,6 @@
 							<th class="py-2">{{ __('Data') }}</th>
 							<th>{{ __('Modalità') }}</th>
 							<th>{{ __('Stato') }}</th>
-							<th>{{ __('Punteggio') }}</th>
 							<th></th>
 						</tr>
 					</thead>
@@ -107,7 +106,6 @@
 							<td>
 								<Badge :label="s.status" :theme="statusTheme(s.status)" />
 							</td>
-							<td>{{ formatScore(s.overall_score) }}</td>
 							<td class="text-right">
 								<Button
 									v-if="isTerminal(s.status)"
@@ -312,9 +310,5 @@ function formatDate(dt) {
 	const date = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`
 	const time = `${pad(d.getHours())}:${pad(d.getMinutes())}`
 	return `${date}, ${time}`
-}
-
-function formatScore(score) {
-	return score != null ? `${score}/100` : '—'
 }
 </script>

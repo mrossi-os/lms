@@ -185,13 +185,40 @@ class TestGetDebriefEndpoint(_DebriefMockBase):
         payload = get_debrief(session_id=start.session)
         self.assertEqual(payload["status"], "pending")
 
-    def test_returns_full_payload_when_ready(self):
+    def test_ready_payload_hides_scores_from_student(self):
         svc = SessionOrchestrator()
         start = svc.start_session(scenario_id=self.scenario.name)
         svc.end_session(session_id=start.session, reason="completed")
         generate_debrief(start.session)
 
-        payload = get_debrief(session_id=start.session)
+        # The session owner is a plain student (not an instructor of the
+        # course): the Coach delivers only qualitative feedback, no grade.
+        # Force the non-privileged path so the test doesn't depend on how the
+        # ambient test user's roles happen to be configured.
+        with patch(
+            "os_lms.os_lms.ai.simulations.api._ensure_instructor_of_course",
+            side_effect=frappe.PermissionError,
+        ):
+            payload = get_debrief(session_id=start.session)
+        self.assertEqual(payload["status"], "ready")
+        self.assertNotIn("overall_score", payload)
+        self.assertNotIn("passed", payload)
+        self.assertNotIn("criterion_scores", payload)
+        self.assertTrue(payload["strengths"])
+        self.assertTrue(payload["improvements"])
+        self.assertTrue(payload["behavioral_analysis"])
+
+    def test_ready_payload_includes_scores_for_instructor(self):
+        svc = SessionOrchestrator()
+        start = svc.start_session(scenario_id=self.scenario.name)
+        svc.end_session(session_id=start.session, reason="completed")
+        generate_debrief(start.session)
+
+        # An instructor/moderator viewing the same debrief still gets the grade.
+        with patch(
+            "os_lms.os_lms.ai.simulations.api.has_moderator_role", return_value=True
+        ):
+            payload = get_debrief(session_id=start.session)
         self.assertEqual(payload["status"], "ready")
         self.assertEqual(payload["overall_score"], 82.5)
         self.assertEqual(len(payload["criterion_scores"]), 2)

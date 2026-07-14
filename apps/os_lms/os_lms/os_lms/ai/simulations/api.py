@@ -298,7 +298,7 @@ def get_debrief(session_id: str) -> dict:
         return {"status": "pending", "session": session.name, "course": session.course}
 
     debrief = frappe.get_doc("LMSA Simulation Debrief", name)
-    return _serialize_debrief(debrief)
+    return _serialize_debrief(debrief, include_scores=_viewer_can_see_scores(session))
 
 
 @frappe.whitelist()
@@ -319,29 +319,33 @@ def generate_debrief(session_id: str) -> dict:
 
     name = _run_generate_debrief(session.name)
     debrief = frappe.get_doc("LMSA Simulation Debrief", name)
-    return _serialize_debrief(debrief)
+    return _serialize_debrief(debrief, include_scores=_viewer_can_see_scores(session))
 
 
 
-def _serialize_debrief(debrief) -> dict:
-    return {
+def _viewer_can_see_scores(session) -> bool:
+    """Whether the current user may see the numeric score and pass/fail.
+
+    Only instructors of the session's course and moderators do. Plain
+    students — even the session owner — receive qualitative coaching feedback
+    (strengths, improvements, suggestions) without a grade. Delegates to the
+    canonical instructor gate so score visibility can't diverge from who is
+    treated as an instructor elsewhere.
+    """
+    try:
+        _ensure_instructor_of_course(session.course)
+        return True
+    except frappe.PermissionError:
+        return False
+
+
+def _serialize_debrief(debrief, include_scores: bool = True) -> dict:
+    payload = {
         "status": debrief.status.lower().replace(" ", "_"),
         "session": debrief.session,
         "name": debrief.name,
         "course": debrief.course,
-        "overall_score": debrief.overall_score,
-        "passed": bool(debrief.passed),
         "behavioral_analysis": debrief.behavioral_analysis,
-        "criterion_scores": [
-            {
-                "criterion_name": c.criterion_name,
-                "score": c.score,
-                "max_score": c.max_score,
-                "evidence_quote": c.evidence_quote,
-                "note": c.note,
-            }
-            for c in (debrief.criterion_scores or [])
-        ],
         "strengths": [
             {"title": s.title, "detail": s.detail, "quote": s.quote}
             for s in (debrief.strengths or [])
@@ -370,6 +374,22 @@ def _serialize_debrief(debrief) -> dict:
             str(debrief.instructor_reviewed_at) if debrief.instructor_reviewed_at else None
         ),
     }
+    # The numeric grade (overall score, pass/fail, per-criterion scores) is
+    # instructor-only. Students see the coaching feedback above, not a grade.
+    if include_scores:
+        payload["overall_score"] = debrief.overall_score
+        payload["passed"] = bool(debrief.passed)
+        payload["criterion_scores"] = [
+            {
+                "criterion_name": c.criterion_name,
+                "score": c.score,
+                "max_score": c.max_score,
+                "evidence_quote": c.evidence_quote,
+                "note": c.note,
+            }
+            for c in (debrief.criterion_scores or [])
+        ]
+    return payload
 
 
 @frappe.whitelist()
@@ -481,17 +501,18 @@ def list_my_sessions(course: str | None = None, scenario: str | None = None) -> 
         for d in frappe.get_all(
             "LMSA Simulation Debrief",
             filters={"session": ["in", [s["name"] for s in sessions]]},
-            fields=["session", "overall_score", "passed", "status"],
+            fields=["session", "status"],
         )
     }
 
+    # This is the student's own session history. The numeric grade is
+    # instructor-only, so we expose only whether the debrief is ready
+    # (debrief_status) — not overall_score / passed.
     for s in sessions:
         s["scenario_name"] = titles.get(s["scenario"], s["scenario"])
         s["started_at"] = str(s["started_at"]) if s["started_at"] else None
         s["ended_at"] = str(s["ended_at"]) if s["ended_at"] else None
         d = debriefs.get(s["name"])
-        s["overall_score"] = d["overall_score"] if d else None
-        s["passed"] = bool(d["passed"]) if d else None
         s["debrief_status"] = d["status"] if d else None
     return sessions
 
@@ -1136,7 +1157,10 @@ def get_transcript(session_id: str) -> dict:
             "ended_at": str(session.ended_at) if session.ended_at else None,
         },
         "turns": turns,
-        "debrief": _serialize_debrief(frappe.get_doc("LMSA Simulation Debrief", debrief_name))
+        "debrief": _serialize_debrief(
+            frappe.get_doc("LMSA Simulation Debrief", debrief_name),
+            include_scores=_viewer_can_see_scores(session),
+        )
         if debrief_name
         else None,
     }
