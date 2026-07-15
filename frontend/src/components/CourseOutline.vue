@@ -324,7 +324,7 @@ function navigateToLesson(lesson: OutlineLesson) {
 		router.push({
 			name: 'CourseDetail',
 			params: { courseName: props.courseName },
-			hash: '#course editor',
+			hash: '#editor',
 			query: { editLesson: lesson.number, lessonMode: 'edit' },
 		})
 	}

@@ -1,6 +1,7 @@
 import { markRaw } from 'vue'
 import { translate as __ } from '@/translation'
 import AISettings from '@/oslms/components/ai/Settings/AISettings.vue'
+import PromptSettings from '@/oslms/components/ai/Settings/PromptSettings.vue'
 import TrueSkillsSettings from '@/oslms/components/trueskills/TrueSkillsSettings.vue'
 
 // AI provider options (module-specific; moved out of core Settings.vue).
@@ -420,6 +421,26 @@ export function buildOslmsSettingsTabs({ isAdministrator } = {}) {
 							],
 						},
 					],
+				},
+			],
+		},
+		// AI system prompts (tutor + coach). Admin-only for now via
+		// `condition: isAdministrator`; relax the condition to open it to
+		// other roles later.
+		{
+			key: 'Prompt AI',
+			hideLabel: true,
+			condition: isAdministrator,
+			items: [
+				{
+					key: 'Prompt AI',
+					label: __('Prompt AI'),
+					icon: 'ScrollText',
+					description: __(
+						'Modifica i system prompt delle AI: Tutor, Coach e simulazioni (personaggio e generatore di scenario).',
+					),
+					condition: isAdministrator,
+					template: markRaw(PromptSettings),
 				},
 			],
 		},

@@ -12,6 +12,24 @@ const YOUTUBE_RE =
 // like "/files/intro.mp4" never match.
 const BARE_ID_RE = /^([\w-]{11})(?:[?&].*)?$/
 
+// What Vimeo's "Copy link" share button produces. The uuid carries no video id,
+// the page doesn't redirect and Vimeo's oEmbed API rejects it, so a share link
+// can't be embedded as-is: only os_lms.os_lms.api.resolve_vimeo_share can turn
+// it into a playable vimeo.com/<id>/<hash> URL. Lives here so the lesson editor
+// and the preview field match it the same way.
+export const VIMEO_SHARE_RE =
+	/^(?:https?:\/\/)?(?:www\.)?vimeo\.com\/share\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?(?:\?\S*)?$/i
+
+// The Vimeo forms getVideoEmbedURL can turn into a player URL: vimeo.com/<id>
+// (optionally /<hash>) and player.vimeo.com/video/<id>. Share links are
+// deliberately excluded — they must be resolved into one of these first.
+const VIMEO_RE =
+	/^(?:https?:\/\/)?(?:www\.)?(?:player\.)?vimeo\.com\/(?:video\/)?\d+/i
+
+export function isVimeoLink(url: string | null | undefined): boolean {
+	return VIMEO_RE.test(String(url ?? '').trim())
+}
+
 export function getYouTubeId(url: string | null | undefined): string | null {
 	if (!url) return null
 	const s = String(url).trim()

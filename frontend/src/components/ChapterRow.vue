@@ -294,7 +294,7 @@ function lessonRoute(lesson: OutlineLesson): RouteLocationRaw {
 		return {
 			name: 'CourseDetail',
 			params: { courseName: props.courseName },
-			hash: '#course editor',
+			hash: '#editor',
 			query: { editLesson: lesson.number, lessonMode: 'edit' },
 		}
 	}

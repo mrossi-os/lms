@@ -65,26 +65,15 @@
 		</div>
 
 		<template v-else-if="debrief">
-			<!-- Hero score -->
-			<div
-				class="border rounded-md p-5 mb-6"
-				:class="debrief.passed ? 'card-success' : 'card-failure'"
-			>
-				<div class="flex items-center justify-between gap-4">
-					<div>
-						<p class="text-xs uppercase tracking-wide text-ink-gray-5 mb-1">
-							{{ __('Punteggio complessivo') }}
-						</p>
-						<div class="text-4xl font-semibold text-ink-gray-9">
-							{{ Math.round(debrief.overall_score || 0) }}
-							<span class="text-base text-ink-gray-5">/100</span>
-						</div>
-					</div>
-					<Badge
-						:label="debrief.passed ? __('Superata') : __('Non superata')"
-						:theme="debrief.passed ? 'green' : 'orange'"
-					/>
-				</div>
+			<!-- Coaching intro (no grade shown to students) -->
+			<div class="border border-outline-gray-2 rounded-md p-5 mb-6 card">
+				<p class="text-sm text-ink-gray-7">
+					{{
+						__(
+							'Ecco i consigli del coach per aiutarti a migliorare. Qui trovi i tuoi punti di forza, le aree su cui lavorare e alcune indicazioni pratiche.',
+						)
+					}}
+				</p>
 				<div
 					v-if="status === 'needs_review'"
 					class="mt-3 text-xs text-ink-orange-5"
@@ -92,36 +81,6 @@
 					{{ __('Il debrief richiede revisione manuale del docente.') }}
 				</div>
 			</div>
-
-			<!-- Criterion scores -->
-			<section v-if="debrief.criterion_scores?.length" class="mb-6">
-				<h2 class="text-base font-semibold text-ink-gray-9 mb-3">
-					{{ __('Punteggi per criterio') }}
-				</h2>
-				<div class="space-y-2">
-					<div
-						v-for="c in debrief.criterion_scores"
-						:key="c.criterion_name"
-						class="border border-outline-gray-2 rounded-md p-3 card"
-					>
-						<div
-							class="flex items-center justify-between text-sm font-medium text-ink-gray-9"
-						>
-							<span>{{ c.criterion_name }}</span>
-							<span>{{ c.score }} / {{ c.max_score || 10 }}</span>
-						</div>
-						<div
-							v-if="c.evidence_quote"
-							class="text-xs text-ink-gray-5 italic mt-1 border-l-2 border-outline-gray-2 pl-2"
-						>
-							"{{ c.evidence_quote }}"
-						</div>
-						<div v-if="c.note" class="text-xs text-ink-gray-5 mt-1">
-							{{ c.note }}
-						</div>
-					</div>
-				</div>
-			</section>
 
 			<!-- Strengths -->
 			<section v-if="debrief.strengths?.length" class="mb-6">
@@ -229,7 +188,6 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { Badge } from 'frappe-ui'
 import { useSimulationDebrief } from '@/oslms/composables/useSimulationDebrief.js'
 
 const route = useRoute()

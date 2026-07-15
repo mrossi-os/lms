@@ -11,6 +11,17 @@ from os_lms.os_lms.email_utils import send_templated_email
 
 VIMEO_URL_RE = re.compile(r"vimeo\.com/(\d+)(?:/([a-zA-Z0-9]+))?")
 
+VIMEO_SHARE_URL_RE = re.compile(
+	r"^https?://(?:www\.)?vimeo\.com/share/"
+	r"([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
+	r"/?(?:\?\S*)?$"
+)
+
+# The share page is a Next.js app, so the canonical URL only shows up inside
+# JSON payloads where slashes may be escaped ("vimeo.com\/123\/abc").
+VIMEO_PLAYER_IN_PAGE_RE = re.compile(r"player\.vimeo\.com\\?/video\\?/(\d+)\?h=([a-zA-Z0-9]+)")
+VIMEO_CANONICAL_IN_PAGE_RE = re.compile(r"(?<![\w.])vimeo\.com\\?/(\d+)\\?/([a-zA-Z0-9]+)")
+
 
 @frappe.whitelist()
 def set_lesson_as_current(course: str, lesson: str):
@@ -959,6 +970,65 @@ def _delete_zoom_meeting(zoom_account: str, meeting_id: str) -> None:
 		frappe.logger("os_lms_live_class", allow_site=True).exception(
 			f"Failed to delete Zoom meeting {meeting_id}"
 		)
+
+
+@frappe.whitelist()
+def resolve_vimeo_share(url: str) -> dict:
+	"""
+	Resolve a vimeo.com/share/<uuid> link into its canonical id/hash URLs.
+
+	Share links carry an opaque UUID instead of the video id: they don't redirect,
+	Vimeo's oEmbed API rejects them, and the page sets X-Frame-Options, so nothing
+	can embed one directly. The id is only recoverable by reading the share page,
+	which the browser can't do (no CORS) — hence this endpoint.
+	"""
+	if frappe.session.user == "Guest":
+		frappe.throw(frappe._("Authentication required"), frappe.PermissionError)
+
+	match = VIMEO_SHARE_URL_RE.match((url or "").strip())
+	if not match:
+		frappe.throw(frappe._("Not a Vimeo share link"), frappe.ValidationError)
+
+	# Rebuild the URL from the matched UUID rather than fetching the caller's
+	# string, so this can't be pointed at anything but a Vimeo share page.
+	share_url = f"https://vimeo.com/share/{match.group(1)}"
+
+	cache_key = f"vimeo:share:{match.group(1)}"
+	cached = frappe.cache().get_value(cache_key)
+	if cached:
+		return cached
+
+	try:
+		response = requests.get(
+			share_url,
+			headers={
+				"User-Agent": (
+					"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+					"(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+				)
+			},
+			timeout=10,
+		)
+		response.raise_for_status()
+	except requests.RequestException:
+		frappe.logger("os_lms", allow_site=True).exception(f"Vimeo share fetch failed: {share_url}")
+		frappe.throw(frappe._("Could not reach Vimeo to resolve this share link."))
+
+	found = VIMEO_PLAYER_IN_PAGE_RE.search(response.text) or VIMEO_CANONICAL_IN_PAGE_RE.search(response.text)
+	if not found:
+		frappe.throw(frappe._("No video found behind this Vimeo share link."))
+
+	video_id, video_hash = found.group(1), found.group(2)
+	resolved = {
+		"video_id": video_id,
+		"video_hash": video_hash,
+		# Keep both in the shape the rest of the app expects: `source` is what
+		# VIMEO_URL_RE reads for audio streaming, `embed` is what Plyr plays.
+		"source": f"https://vimeo.com/{video_id}/{video_hash}",
+		"embed": f"https://player.vimeo.com/video/{video_id}?h={video_hash}",
+	}
+	frappe.cache().set_value(cache_key, resolved, expires_in_sec=60 * 60 * 24)
+	return resolved
 
 
 @frappe.whitelist()

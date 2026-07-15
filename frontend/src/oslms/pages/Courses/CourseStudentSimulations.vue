@@ -35,7 +35,6 @@
 						<th class="py-2">{{ __('Scenario') }}</th>
 						<th>{{ __('Modalità') }}</th>
 						<th>{{ __('Stato') }}</th>
-						<th>{{ __('Punteggio') }}</th>
 						<th>{{ __('Data') }}</th>
 						<th></th>
 					</tr>
@@ -49,9 +48,6 @@
 						<td class="py-2">{{ s.scenario_name }}</td>
 						<td class="capitalize">{{ s.modality }}</td>
 						<td><Badge :label="s.status" :theme="statusTheme(s.status)" /></td>
-						<td>
-							{{ s.overall_score != null ? s.overall_score : '—' }}
-						</td>
 						<td>{{ formatDate(s.started_at) }}</td>
 						<td class="text-right">
 							<div class="flex gap-2 justify-end">

@@ -118,6 +118,29 @@
 						<FormControl v-model="model.situation_template" type="textarea" :rows="15"
 							:label="__('Template situazione')" :description="__('Variabili randomizzate vengono sostituite al runtime. Per inserire una variabile nel testo usa la sintassi {nome_variabile}: il nome deve corrispondere esattamente a una variabile definita nella sezione \'Variabili scenario\'.')
 								" required />
+
+						<!-- Student brief (the "compito" the student reads before starting) -->
+						<div class="mt-4">
+							<div class="flex items-center justify-between mb-1.5">
+								<label class="block text-xs text-ink-gray-5">
+									{{ __('Compito dello studente') }}
+								</label>
+								<Button
+									size="sm"
+									:loading="briefGenerating"
+									:disabled="!model.roleplay_persona || !model.situation_template"
+									:title="__('Genera il compito con l\'IA a partire da persona, situazione e obiettivi')"
+									@click="onGenerateBrief"
+								>
+									<template #prefix>
+										<Sparkles class="size-3.5 stroke-1.5" />
+									</template>
+									{{ __('Genera con IA') }}
+								</Button>
+							</div>
+							<FormControl v-model="model.student_brief" type="textarea" :rows="8"
+								:description="__('Ciò che lo studente legge prima di iniziare, per capire la situazione e l\'obiettivo. Puoi usare le variabili {nome_variabile}. Se lasciato vuoto, viene generato dall\'IA a ogni sessione.')" />
+						</div>
 					</div>
 				</div>
 
@@ -411,6 +434,45 @@ async function onAiGenerate() {
 	}
 }
 
+// ---- "Genera con IA" state for the student brief (compito) ----
+const briefGenerating = ref(false)
+const aiBriefRes = createResource({
+	url: 'os_lms.os_lms.ai.simulations.api.ai_generate_student_brief',
+	method: 'POST',
+})
+
+async function onGenerateBrief() {
+	if (!model.roleplay_persona || !model.situation_template) {
+		toast.error(__('Compila prima persona e situazione.'))
+		return
+	}
+	briefGenerating.value = true
+	try {
+		const result = await aiBriefRes.submit({
+			payload: {
+				scenario_name: model.scenario_name,
+				lms_course: unwrapAutocomplete(model.lms_course),
+				difficulty: model.difficulty,
+				roleplay_persona: model.roleplay_persona,
+				situation_template: model.situation_template,
+				learning_objectives: model.learning_objectives,
+				seed_variations: model.seed_variations,
+				provider_override: model.provider_override,
+				model_override: model.model_override,
+			},
+		})
+		if (!result?.student_brief) {
+			throw new Error(__('Risposta vuota dal generatore.'))
+		}
+		model.student_brief = result.student_brief
+		toast.success(__('Compito generato. Rivedi e salva.'))
+	} catch (e) {
+		toast.error(e.messages?.[0] || e.message || __('Generazione fallita'))
+	} finally {
+		briefGenerating.value = false
+	}
+}
+
 // ---- Evaluation state (Test simulazione) ----
 const evaluation = useEvaluation()
 const evalDialogOpen = ref(false)
@@ -532,6 +594,7 @@ const model = reactive({
 	status: 'Draft',
 	roleplay_persona: '',
 	situation_template: '',
+	student_brief: '',
 	evaluation_schema: '',
 	max_turns: 20,
 	time_limit_minutes: 15,
@@ -819,6 +882,7 @@ const SCENARIO_EXPORT_FIELDS = [
 	'status',
 	'roleplay_persona',
 	'situation_template',
+	'student_brief',
 	'evaluation_schema',
 	'max_turns',
 	'time_limit_minutes',

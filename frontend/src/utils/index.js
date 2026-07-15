@@ -16,6 +16,7 @@ import { Underline } from '@/utils/inline/Underline'
 import { Strikethrough } from '@/utils/inline/Strikethrough'
 import { AlignLeft, AlignCenter, AlignRight } from '@/utils/inline/TextAlign'
 import { Color } from '@/utils/inline/Color'
+import { VIMEO_SHARE_RE } from '@/utils/video'
 import {
 	clipboardTunes,
 	clipboardTuneNames,
@@ -181,6 +182,72 @@ const INLINE_TOOLBAR_ORDER = [
 	'color',
 ]
 
+// Vimeo's "Copy link" button yields vimeo.com/share/<uuid>, which holds no video
+// id: it doesn't redirect and Vimeo's own oEmbed API rejects it, so only the
+// backend can resolve it (by reading the share page — the browser can't, no
+// CORS). The embed tool matches services synchronously, so the paste is caught
+// by the `vimeoShare` service and finished off here once the backend answers.
+class VideoEmbed extends Embed {
+	onPaste(event) {
+		if (event.detail.key !== 'vimeoShare') {
+			super.onPaste(event)
+			return
+		}
+		// Not awaited: EditorJS ignores the returned promise anyway, and the
+		// block is already inserted, so the tool can fill itself in later.
+		this.resolveVimeoShare(event.detail.data)
+	}
+
+	async resolveVimeoShare(url) {
+		// Grab the block before the first await, while it is still the current one.
+		const block = this.currentBlock()
+
+		// Renders the tool's preloader with the pasted URL underneath it.
+		this.data = { service: 'vimeoShare', source: url, embed: url }
+
+		const method = 'os_lms.os_lms.api.resolve_vimeo_share'
+		try {
+			const resolved = await call(method, { url })
+			this.data = {
+				service: 'vimeo',
+				source: resolved.source,
+				embed: resolved.embed,
+			}
+		} catch {
+			toast.error(__('Could not load this Vimeo video'), {
+				description: __(
+					'Copy the link from the video page instead of the Share button.',
+				),
+			})
+			this.replaceWithText(block, url)
+		}
+	}
+
+	currentBlock() {
+		const block = this.api.blocks.getBlockByIndex(
+			this.api.blocks.getCurrentBlockIndex(),
+		)
+		// Make sure it really is ours before handing it to replaceWithText().
+		return block?.holder?.contains(this.element) ? block : null
+	}
+
+	// Leave the author with the pasted URL as text — what they'd have got before
+	// share links were handled at all — rather than an empty block.
+	replaceWithText(block, url) {
+		if (!block) return
+		const index = this.api.blocks.getBlockIndex(block.id)
+		if (typeof index !== 'number' || index < 0) return
+		this.api.blocks.insert(
+			'paragraph',
+			{ text: url },
+			{},
+			index,
+			false,
+			true,
+		)
+	}
+}
+
 export function getEditorTools(isInstructorEditor = false, uploadContext = {}) {
 	return {
 		header: {
@@ -262,7 +329,7 @@ export function getEditorTools(isInstructorEditor = false, uploadContext = {}) {
 			},
 		},
 		embed: {
-			class: Embed,
+			class: VideoEmbed,
 			inlineToolbar: false,
 			config: {
 				services: {
@@ -279,6 +346,15 @@ export function getEditorTools(isInstructorEditor = false, uploadContext = {}) {
 							'https://player.vimeo.com/video/<%= remote_id %>',
 						html: `<div class="video-player" data-plyr-provider="vimeo"></div>`,
 						id: ([id, hash]) => (hash ? `${id}?h=${hash}` : id),
+					},
+					// A share link carries no video id, so this service only exists to
+					// catch the paste — VideoEmbed resolves it and rewrites the block
+					// as a plain `vimeo` one. It never survives in saved content.
+					vimeoShare: {
+						regex: VIMEO_SHARE_RE,
+						embedUrl: '<%= remote_id %>',
+						html: `<div class="vimeo-share-resolving"></div>`,
+						id: ([uuid]) => uuid,
 					},
 					cloudflareStream: {
 						regex: /^https:\/\/customer-[a-z0-9]+\.cloudflarestream\.com\/([a-f0-9]{32})\/watch$/,

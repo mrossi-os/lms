@@ -298,7 +298,7 @@ def get_debrief(session_id: str) -> dict:
         return {"status": "pending", "session": session.name, "course": session.course}
 
     debrief = frappe.get_doc("LMSA Simulation Debrief", name)
-    return _serialize_debrief(debrief)
+    return _serialize_debrief(debrief, include_scores=_viewer_can_see_scores(session))
 
 
 @frappe.whitelist()
@@ -319,29 +319,33 @@ def generate_debrief(session_id: str) -> dict:
 
     name = _run_generate_debrief(session.name)
     debrief = frappe.get_doc("LMSA Simulation Debrief", name)
-    return _serialize_debrief(debrief)
+    return _serialize_debrief(debrief, include_scores=_viewer_can_see_scores(session))
 
 
 
-def _serialize_debrief(debrief) -> dict:
-    return {
+def _viewer_can_see_scores(session) -> bool:
+    """Whether the current user may see the numeric score and pass/fail.
+
+    Only instructors of the session's course and moderators do. Plain
+    students — even the session owner — receive qualitative coaching feedback
+    (strengths, improvements, suggestions) without a grade. Delegates to the
+    canonical instructor gate so score visibility can't diverge from who is
+    treated as an instructor elsewhere.
+    """
+    try:
+        _ensure_instructor_of_course(session.course)
+        return True
+    except frappe.PermissionError:
+        return False
+
+
+def _serialize_debrief(debrief, include_scores: bool = True) -> dict:
+    payload = {
         "status": debrief.status.lower().replace(" ", "_"),
         "session": debrief.session,
         "name": debrief.name,
         "course": debrief.course,
-        "overall_score": debrief.overall_score,
-        "passed": bool(debrief.passed),
         "behavioral_analysis": debrief.behavioral_analysis,
-        "criterion_scores": [
-            {
-                "criterion_name": c.criterion_name,
-                "score": c.score,
-                "max_score": c.max_score,
-                "evidence_quote": c.evidence_quote,
-                "note": c.note,
-            }
-            for c in (debrief.criterion_scores or [])
-        ],
         "strengths": [
             {"title": s.title, "detail": s.detail, "quote": s.quote}
             for s in (debrief.strengths or [])
@@ -370,6 +374,22 @@ def _serialize_debrief(debrief) -> dict:
             str(debrief.instructor_reviewed_at) if debrief.instructor_reviewed_at else None
         ),
     }
+    # The numeric grade (overall score, pass/fail, per-criterion scores) is
+    # instructor-only. Students see the coaching feedback above, not a grade.
+    if include_scores:
+        payload["overall_score"] = debrief.overall_score
+        payload["passed"] = bool(debrief.passed)
+        payload["criterion_scores"] = [
+            {
+                "criterion_name": c.criterion_name,
+                "score": c.score,
+                "max_score": c.max_score,
+                "evidence_quote": c.evidence_quote,
+                "note": c.note,
+            }
+            for c in (debrief.criterion_scores or [])
+        ]
+    return payload
 
 
 @frappe.whitelist()
@@ -481,17 +501,18 @@ def list_my_sessions(course: str | None = None, scenario: str | None = None) -> 
         for d in frappe.get_all(
             "LMSA Simulation Debrief",
             filters={"session": ["in", [s["name"] for s in sessions]]},
-            fields=["session", "overall_score", "passed", "status"],
+            fields=["session", "status"],
         )
     }
 
+    # This is the student's own session history. The numeric grade is
+    # instructor-only, so we expose only whether the debrief is ready
+    # (debrief_status) — not overall_score / passed.
     for s in sessions:
         s["scenario_name"] = titles.get(s["scenario"], s["scenario"])
         s["started_at"] = str(s["started_at"]) if s["started_at"] else None
         s["ended_at"] = str(s["ended_at"]) if s["ended_at"] else None
         d = debriefs.get(s["name"])
-        s["overall_score"] = d["overall_score"] if d else None
-        s["passed"] = bool(d["passed"]) if d else None
         s["debrief_status"] = d["status"] if d else None
     return sessions
 
@@ -764,6 +785,7 @@ def get_scenario(name: str) -> dict:
         "status": doc.status,
         "roleplay_persona": doc.roleplay_persona,
         "situation_template": doc.situation_template,
+        "student_brief": doc.get("student_brief"),
         "evaluation_schema": doc.evaluation_schema,
         "max_turns": doc.max_turns,
         "time_limit_minutes": doc.time_limit_minutes,
@@ -812,6 +834,7 @@ def save_scenario(payload: dict) -> dict:
         "status",
         "roleplay_persona",
         "situation_template",
+        "student_brief",
         "evaluation_schema",
         "max_turns",
         "time_limit_minutes",
@@ -1025,6 +1048,58 @@ def ai_generate_scenario(
 
 
 @frappe.whitelist()
+def ai_generate_student_brief(payload: dict) -> dict:
+    """Generate the student_brief ("compito") from the current editor state.
+
+    ``payload`` mirrors the scenario editor model (roleplay_persona,
+    situation_template, learning_objectives, seed_variations, difficulty,
+    optional provider/model overrides). Returns ``{"student_brief": ...}``.
+    Nothing is persisted — the instructor reviews and saves.
+    """
+    if not isinstance(payload, dict):
+        frappe.throw(_("payload must be an object"))
+
+    course = payload.get("lms_course")
+    if course:
+        _ensure_instructor_of_course(course)
+    elif not has_course_instructor_role() and not has_moderator_role():
+        frappe.throw(
+            _("Only instructors can generate simulation briefs"),
+            frappe.PermissionError,
+        )
+
+    from .authoring_ai import generate_student_brief
+
+    objectives = [
+        (row.get("objective_text") or "").strip()
+        for row in (payload.get("learning_objectives") or [])
+        if isinstance(row, dict)
+    ]
+    objectives = [o for o in objectives if o]
+    variations = {
+        (row.get("variable_name") or "").strip(): [
+            v.strip()
+            for v in (row.get("possible_values") or "").splitlines()
+            if v.strip()
+        ]
+        for row in (payload.get("seed_variations") or [])
+        if isinstance(row, dict) and (row.get("variable_name") or "").strip()
+    }
+
+    brief = generate_student_brief(
+        scenario_name=payload.get("scenario_name") or "",
+        roleplay_persona=payload.get("roleplay_persona") or "",
+        situation_template=payload.get("situation_template") or "",
+        learning_objectives=objectives,
+        seed_variations=variations,
+        difficulty=payload.get("difficulty") or "medium",
+        provider_override=payload.get("provider_override") or "auto",
+        model_override=payload.get("model_override") or "",
+    )
+    return {"student_brief": brief}
+
+
+@frappe.whitelist()
 def ai_generate_evaluation_schema(
     hint: str = "", course: str | None = None, lesson: str | None = None
 ) -> dict:
@@ -1082,7 +1157,10 @@ def get_transcript(session_id: str) -> dict:
             "ended_at": str(session.ended_at) if session.ended_at else None,
         },
         "turns": turns,
-        "debrief": _serialize_debrief(frappe.get_doc("LMSA Simulation Debrief", debrief_name))
+        "debrief": _serialize_debrief(
+            frappe.get_doc("LMSA Simulation Debrief", debrief_name),
+            include_scores=_viewer_can_see_scores(session),
+        )
         if debrief_name
         else None,
     }
