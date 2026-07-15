@@ -71,7 +71,7 @@
 				<p class="text-p-sm text-ink-gray-5">
 					{{
 						__(
-							'Uploaded video — students see it on the course page. Remove it to use a YouTube link instead.'
+							'Uploaded video — students see it on the course page. Remove it to use a YouTube or Vimeo link instead.'
 						)
 					}}
 				</p>
@@ -82,7 +82,7 @@
 				<FormControl
 					type="text"
 					v-model="urlInput"
-					:placeholder="__('Paste a YouTube link')"
+					:placeholder="__('Paste a YouTube or Vimeo link')"
 					variant="outline"
 				/>
 				<FileUploader
@@ -100,12 +100,14 @@
 				</FileUploader>
 				<p class="text-p-sm text-ink-gray-5">
 					{{
-						preview.type === 'youtube'
+						resolvingShareLink
+							? __('Loading the video…')
+							: hasVideoLink
 							? __(
-									'YouTube link added — students see it embedded on the course page. Clear the field to upload a file instead.'
+									'Video link added — students see it embedded on the course page. Clear the field to upload a file instead.'
 							  )
 							: __(
-									'Paste a YouTube link, or upload a video file (MP4, WebM, or OGG) to show a preview on the course page.'
+									'Paste a YouTube or Vimeo link, or upload a video file (MP4, WebM, or OGG) to show a preview on the course page.'
 							  )
 					}}
 				</p>
@@ -115,9 +117,21 @@
 </template>
 
 <script setup lang="ts">
-import { Button, FileUploader, FormControl, FormLabel, toast } from 'frappe-ui'
+import {
+	Button,
+	call,
+	FileUploader,
+	FormControl,
+	FormLabel,
+	toast,
+} from 'frappe-ui'
 import { computed, ref, watch } from 'vue'
-import { getVideoPreview, getYouTubeId } from '@/utils/video'
+import {
+	getVideoPreview,
+	getYouTubeId,
+	isVimeoLink,
+	VIMEO_SHARE_RE,
+} from '@/utils/video'
 
 // Only formats browsers can actually play — reject the rest at upload time so a
 // course never ends up with an unplayable preview (e.g. .MOV/H.265).
@@ -194,6 +208,17 @@ const isUploadedVideo = computed<boolean>(() => {
 	return v.startsWith('/files/') || v.startsWith('/private/files/')
 })
 
+// True while a pasted Vimeo share link is being resolved into a playable URL.
+const resolvingShareLink = ref<boolean>(false)
+
+// A usable video link is set, as opposed to an empty (or half-typed) field.
+// Keyed off a recognised link rather than any non-empty value so the copy
+// doesn't flip mid-keystroke. Vimeo links show no thumbnail above — the preview
+// box only renders YouTube — but they do embed on the course page.
+const hasVideoLink = computed<boolean>(
+	() => preview.value.type === 'youtube' || isVimeoLink(props.modelValue)
+)
+
 // Reset the in-browser playback error whenever the source changes.
 const videoError = ref<boolean>(false)
 watch(
@@ -227,7 +252,30 @@ const urlInput = computed<string>({
 	},
 })
 
-function update(value: string) {
-	emit('update:modelValue', value || '')
+async function update(value: string) {
+	const next = value || ''
+	// Store what was typed first: the resolve below is a round-trip, and a
+	// half-typed or non-Vimeo value must not wait on it.
+	emit('update:modelValue', next)
+
+	if (!VIMEO_SHARE_RE.test(next.trim())) return
+	// A share link can't be embedded, so swap it for the canonical URL the rest
+	// of the app (getVideoEmbedURL) knows how to play. Only the backend can do
+	// the lookup — the browser is blocked by CORS.
+	resolvingShareLink.value = true
+	try {
+		const resolved = await call('os_lms.os_lms.api.resolve_vimeo_share', {
+			url: next.trim(),
+		})
+		emit('update:modelValue', resolved.source)
+	} catch {
+		toast.error(__('Could not load this Vimeo video'), {
+			description: __(
+				'Copy the link from the video page instead of the Share button.'
+			),
+		})
+	} finally {
+		resolvingShareLink.value = false
+	}
 }
 </script>
