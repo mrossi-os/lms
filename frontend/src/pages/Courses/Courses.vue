@@ -172,6 +172,14 @@ const tagColorMap = computed(() => {
 provide('tagColorMap', tagColorMap)
 
 onMounted(() => {
+	// Students default to the "Enrolled" tab. Only when no tab has been
+	// persisted yet, so an explicit later choice is still respected.
+	if (
+		user.data?.is_student &&
+		localStorage.getItem('lms_courses_tab') === null
+	) {
+		currentTab.value = 'enrolled'
+	}
 	// Fall back to the default tab if the persisted value isn't available for
 	// this user's role (e.g. role changed since it was stored).
 	const validTabs = courseTabs.value.map((tab) => tab.value)
