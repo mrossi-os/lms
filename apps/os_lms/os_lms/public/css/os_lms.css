@@ -39,5 +39,9 @@ input {
 }
 
 .sign-up-message a {
-	color: white !important;
+	color: black !important;
+}
+
+.terms-and-conditions-content p {
+	color: black;
 }
