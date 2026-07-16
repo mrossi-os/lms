@@ -336,3 +336,71 @@ def _publish(session, event: str, payload: dict) -> None:
 	except Exception:
 		# Best-effort delivery; caller logs.
 		pass
+
+
+# A session with no activity for this many minutes is treated as left behind by
+# the scheduled reaper (the student never pressed "Termina", closed the tab, or
+# dropped the connection).
+STALE_SESSION_IDLE_MINUTES = 30
+
+
+def reap_stale_sessions() -> dict:
+	"""Close simulation sessions the student never ended (scheduled, cron).
+
+	Finds ``In Progress`` / ``Ready`` sessions idle for at least
+	``STALE_SESSION_IDLE_MINUTES`` and ends them through the orchestrator, which
+	decides the outcome server-side: Completed when the chat time cap was
+	reached during the conversation, otherwise Abandoned. A debrief is generated
+	only for the Completed ones — abandoned sessions produce nothing.
+
+	This is the reliable backstop for every case the browser can't report (tab
+	closed abruptly, crash, dropped voice connection): the frontend closes the
+	common cases immediately, this sweeps whatever is left.
+	"""
+	from os_lms.os_lms.ai.simulations import SessionOrchestrator
+	from os_lms.os_lms.doctype.lmsa_simulation_session.lmsa_simulation_session import (
+		STATUS_IN_PROGRESS,
+		STATUS_READY,
+	)
+
+	logger = frappe.logger("os_lmsa", allow_site=True)
+	cutoff = frappe.utils.add_to_date(
+		frappe.utils.now_datetime(), minutes=-STALE_SESSION_IDLE_MINUTES
+	)
+
+	candidates = frappe.get_all(
+		"LMSA Simulation Session",
+		filters={"status": ["in", [STATUS_IN_PROGRESS, STATUS_READY]]},
+		fields=["name", "modified", "started_at"],
+		order_by="modified asc",
+		limit=200,
+	)
+
+	orchestrator = SessionOrchestrator()
+	reaped = 0
+	for s in candidates:
+		last = _last_activity(s.name) or s.modified or s.started_at
+		if not last or frappe.utils.get_datetime(last) > cutoff:
+			# Still active (recent turn) or missing timestamp: leave it be.
+			continue
+		try:
+			orchestrator.end_session(session_id=s.name, reason="abandoned")
+			reaped += 1
+		except Exception as e:
+			logger.warning("reap_stale_sessions: failed to close %s: %s", s.name, e)
+
+	if reaped:
+		logger.info("reap_stale_sessions: closed %s stale session(s)", reaped)
+	return {"reaped": reaped, "scanned": len(candidates)}
+
+
+def _last_activity(session_name: str):
+	"""Creation time of the session's most recent turn, or None if it has none."""
+	rows = frappe.db.get_all(
+		"LMSA Simulation Turn",
+		filters={"session": session_name},
+		fields=["creation"],
+		order_by="creation desc",
+		limit=1,
+	)
+	return rows[0].creation if rows else None

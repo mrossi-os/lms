@@ -208,5 +208,8 @@ scheduler_events = {
         "*/15 * * * *": [
             "os_lms.os_lms.live_class_reminders.send_live_class_reminders",
         ],
+        "*/10 * * * *": [
+            "os_lms.os_lms.ai.simulations.tasks.reap_stale_sessions",
+        ],
     },
 }
