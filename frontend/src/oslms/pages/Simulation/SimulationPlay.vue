@@ -61,8 +61,8 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import ChatSession from '@/oslms/components/simulations/ChatSession.vue'
 import { useSimulationSession } from '@/oslms/composables/useSimulationSession.js'
 
@@ -129,4 +129,38 @@ watch([session, isTerminal], ([currentSession, terminal]) => {
 		})
 	}
 })
+
+// --- Leaving an in-progress session ---
+// Leaving the page or closing the tab while the session is still running closes
+// it as "abandoned"; the server upgrades it to Completed if the time cap was
+// already reached (so only Completed sessions get a debrief). The scheduled
+// reaper is the backstop when the browser can't report (crash, hard tab-close).
+
+const isActivePlay = () => session.value?.status === 'In Progress'
+
+// In-app navigation (router): the page stays alive, so the normal async call
+// completes. Skipped after "Termina" — the session is already terminal by then.
+onBeforeRouteLeave(() => {
+	if (isActivePlay()) end('abandoned')
+	return true
+})
+
+// Tab close / refresh: fire a keepalive request that outlives the page.
+function abandonBeacon() {
+	if (!isActivePlay() || !sessionId.value) return
+	const headers = { 'Content-Type': 'application/json' }
+	if (window.csrf_token && window.csrf_token !== '{{ csrf_token }}') {
+		headers['X-Frappe-CSRF-Token'] = window.csrf_token
+	}
+	// Best-effort; the server-side reaper closes it otherwise.
+	fetch('/api/method/os_lms.os_lms.ai.simulations.api.end_session', {
+		method: 'POST',
+		keepalive: true,
+		headers,
+		body: JSON.stringify({ session_id: sessionId.value, reason: 'abandoned' }),
+	}).catch(() => {})
+}
+
+onMounted(() => window.addEventListener('pagehide', abandonBeacon))
+onBeforeUnmount(() => window.removeEventListener('pagehide', abandonBeacon))
 </script>
