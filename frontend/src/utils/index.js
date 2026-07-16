@@ -921,6 +921,21 @@ export function singularize(word) {
 	)
 }
 
+/**
+ * Builds a `["like", ...]` filter value for a free-text search box.
+ *
+ * Each whitespace-separated word is matched independently (joined by `%`) so a
+ * multi-word query narrows results instead of requiring the exact contiguous
+ * phrase: "Corso p" -> `%Corso%p%` still matches "Corso di Programmazione".
+ * Words must appear in order but may have gaps. Returns null when the query is
+ * empty/blank so callers can drop the filter.
+ */
+export function searchLikeFilter(text) {
+	const words = (text || '').trim().split(/\s+/).filter(Boolean)
+	if (!words.length) return null
+	return ['like', `%${words.join('%')}%`]
+}
+
 export const validateFile = async (
 	file,
 	showToast = true,

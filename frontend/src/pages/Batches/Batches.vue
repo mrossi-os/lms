@@ -143,6 +143,7 @@ import { computed, inject, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { sessionStore } from '@/stores/session'
 import { useLocalStorage } from '@/utils/composables'
+import { searchLikeFilter } from '@/utils'
 import BatchCard from '@/pages/Batches/components/BatchCard.vue'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
 import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
@@ -251,8 +252,9 @@ const updateCategoryFilter = () => {
 }
 
 const updateTitleFilter = () => {
-	if (title.value) {
-		filters.value['title'] = ['like', `%${title.value}%`]
+	const titleFilter = searchLikeFilter(title.value)
+	if (titleFilter) {
+		filters.value['title'] = titleFilter
 	} else {
 		delete filters.value['title']
 	}

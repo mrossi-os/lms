@@ -97,6 +97,7 @@ import {
 import { computed, inject, onMounted, ref, watch } from 'vue'
 
 import { sessionStore } from '@/stores/session'
+import { searchLikeFilter } from '@/utils'
 import ProgramForm from '@/pages/Programs/ProgramForm.vue'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
 import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
@@ -159,8 +160,9 @@ const updateFilters = () => {
 }
 
 const updateTitleFilter = () => {
-	if (title.value) {
-		filters.value['title'] = ['like', `%${title.value}%`]
+	const titleFilter = searchLikeFilter(title.value)
+	if (titleFilter) {
+		filters.value['title'] = titleFilter
 	} else {
 		delete filters.value['title']
 	}

@@ -127,7 +127,7 @@ import {
 import ClearableCombobox from '@/components/Controls/ClearableCombobox.vue'
 import { computed, inject, onMounted, provide, ref, watch } from 'vue'
 import { sessionStore } from '@/stores/session'
-import { canCreateCourse } from '@/utils'
+import { canCreateCourse, searchLikeFilter } from '@/utils'
 import { useLocalStorage } from '@/utils/composables'
 import CourseCard from '@/components/CourseCard.vue'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
@@ -246,8 +246,9 @@ const updateCategoryFilter = () => {
 }
 
 const updateTitleFilter = () => {
-	if (title.value) {
-		filters.value['title'] = ['like', `%${title.value}%`]
+	const titleFilter = searchLikeFilter(title.value)
+	if (titleFilter) {
+		filters.value['title'] = titleFilter
 	} else {
 		delete filters.value['title']
 	}

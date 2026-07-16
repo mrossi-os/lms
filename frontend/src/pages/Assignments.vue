@@ -167,6 +167,7 @@ import {
 	Checkbox,
 } from 'frappe-ui'
 import Select from '@/components/Controls/Select.vue'
+import { searchLikeFilter } from '@/utils'
 import { computed, inject, onMounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { sessionStore } from '../stores/session'
@@ -221,8 +222,9 @@ const reloadAssignments = () => {
 
 const assignmentFilter = computed(() => {
 	let filters = {}
-	if (titleFilter.value) {
-		filters.title = ['like', `%${titleFilter.value}%`]
+	const titleLike = searchLikeFilter(titleFilter.value)
+	if (titleLike) {
+		filters.title = titleLike
 	}
 	if (typeFilter.value && typeFilter.value.trim() !== '') {
 		filters.type = typeFilter.value
