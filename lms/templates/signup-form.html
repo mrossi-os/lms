@@ -8,6 +8,7 @@
 	.signup-form .terms-and-conditions-content {
 		max-height: 140px;
 		overflow-y: auto;
+		overflow-x: hidden;
 		margin-bottom: 12px;
 		padding: 10px 12px;
 		border: 1px solid var(--border-color, #d1d8dd);
@@ -16,6 +17,9 @@
 		font-size: var(--text-sm, 12px);
 		line-height: 1.5;
 		color: var(--text-muted, #6c757d);
+	}
+	.signup-form .terms-and-conditions-content h1 {
+		font-size: 2.5rem;
 	}
 	.signup-form .terms-and-conditions-content p:last-child {
 		margin-bottom: 0;
@@ -71,7 +75,10 @@
 						type="text"
 						id="user_category"
 						data-fieldname="user_category"
-						style="color: var(--text-light)"
+						style="
+							color: var(--text-dark);
+							background-color: var(--color-company-tertiary);
+						"
 						class="input-with-feedback form-control ellipsis"
 						data-fieldtype="Select"
 						required
@@ -95,9 +102,6 @@
 		</div>
 		{% endif %} {% if custom_signup_content %}
 		<div class="form-group terms-and-conditions">
-			<div class="terms-and-conditions-content">
-				{{ custom_signup_content }}
-			</div>
 			<label class="terms-and-conditions-check" for="signup-terms">
 				<input
 					type="checkbox"
@@ -109,8 +113,13 @@
 					name="signup-terms"
 					required
 				/>
-				<span>{{ _("I agree to the Terms and Conditions") }}</span>
+				<span style="color: var(--text-dark)"
+					>{{ _("I agree to the Terms and Conditions") }}</span
+				>
 			</label>
+			<div class="terms-and-conditions-content">
+				{{ custom_signup_content }}
+			</div>
 		</div>
 		{% endif %}
 	</div>
