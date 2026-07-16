@@ -67,7 +67,7 @@
 						:placeholder="__('Search')"
 						type="text"
 						class="min-w-40"
-						@input="updateBatches()"
+						@update:modelValue="updateBatches()"
 					>
 						<template #prefix>
 							<span class="lucide-search size-4 text-ink-gray-5" />

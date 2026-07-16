@@ -46,7 +46,7 @@
 					:placeholder="__('Search')"
 					type="text"
 					class="w-full lg:w-40"
-					@input="updateCourses()"
+					@update:modelValue="updateCourses()"
 				>
 					<template #prefix>
 						<span class="lucide-search size-4 text-ink-gray-5" />

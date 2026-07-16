@@ -46,7 +46,7 @@
 				<FormControl
 					v-model="titleFilter"
 					:placeholder="__('Search')"
-					@input="updateList"
+					@update:modelValue="updateList()"
 				>
 					<template #prefix>
 						<span class="lucide-search size-4 text-ink-gray-5" />
