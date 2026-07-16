@@ -127,6 +127,7 @@
 
 			<div class="mb-4 mt-10">
 				<TabButtons
+					v-if="!$user.data?.is_student"
 					class="inline-block"
 					:buttons="getTabButtons()"
 					v-model="activeTab"
@@ -214,7 +215,7 @@ const setActiveTab = () => {
 			activeTab.value = convertToTitleCase(section)
 		}
 	})
-	if (!activeTab.value) activeTab.value = 'About'
+	if (!activeTab.value) activeTab.value = 'Certificates'
 }
 
 watchEffect(() => {
@@ -257,10 +258,7 @@ const isEvaluatorOrModerator = () => {
 }
 
 const getTabButtons = () => {
-	let buttons = [
-		{ label: __('About'), value: 'About' },
-		{ label: __('Certificates'), value: 'Certificates' },
-	]
+	let buttons = [{ label: __('Certificates'), value: 'Certificates' }]
 	if ($user.data?.is_moderator) {
 		buttons.push({ label: __('Roles'), value: 'Roles' })
 	}
