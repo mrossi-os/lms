@@ -176,8 +176,9 @@ const tabsStructure = computed(() => {
 											name: 'send_notification_for_published_courses',
 											type: 'select',
 											options: [' ', 'Email', 'In-app'],
-											description:
+											description: __(
 												'Notify members when a new course is published.',
+											),
 										},
 									],
 								},
@@ -188,8 +189,9 @@ const tabsStructure = computed(() => {
 											name: 'send_notification_for_published_batches',
 											type: 'select',
 											options: [' ', 'Email', 'In-app'],
-											description:
+											description: __(
 												'Notify members when a new batch is published.',
+											),
 										},
 									],
 								},
@@ -205,8 +207,9 @@ const tabsStructure = computed(() => {
 											name: 'batch_confirmation_template',
 											doctype: 'Email Template',
 											type: 'Link',
-											description:
+											description: __(
 												'Email template sent to students upon batch enrollment confirmation.',
+											),
 										},
 									],
 								},
@@ -217,8 +220,9 @@ const tabsStructure = computed(() => {
 											name: 'certification_template',
 											doctype: 'Email Template',
 											type: 'Link',
-											description:
+											description: __(
 												'Email template sent to students when they earn a certification.',
+											),
 										},
 									],
 								},

@@ -135,6 +135,7 @@
 								v-else-if="field.type == 'select'"
 								v-model="data[field.name]"
 								:options="field.options"
+								:placeholder="__('Select option')"
 								class="w-48"
 							/>
 							<FormControl

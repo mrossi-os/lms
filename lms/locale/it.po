@@ -936,7 +936,7 @@ msgstr ""
 
 #: frontend/src/pages/Batches/BatchForm.vue:28
 msgid "Batch Start Date"
-msgstr "Data di inizio del lotto"
+msgstr "Data di inizio classe"
 
 #: lms/templates/emails/batch_confirmation.html:11
 msgid "Batch Start Date:"
@@ -4831,7 +4831,7 @@ msgstr ""
 #: frontend/src/pages/Batches/components/NewBatchModal.vue:72
 #: lms/lms/doctype/lms_batch/lms_batch.json
 msgid "Medium"
-msgstr "Medio"
+msgstr "Modalità"
 
 #. Label of the medium (Data) field in DocType 'User'
 #: lms/fixtures/custom_field.json
