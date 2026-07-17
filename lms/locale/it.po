@@ -1278,7 +1278,7 @@ msgstr ""
 #: frontend/src/components/Controls/ImageUploader.vue:14
 #: lms/templates/assignment.html:13
 msgid "Change"
-msgstr "Monete"
+msgstr "Carica"
 
 #: frontend/src/components/Assignment.vue:363
 msgid "Changes saved successfully"

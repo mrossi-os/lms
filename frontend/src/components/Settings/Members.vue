@@ -62,7 +62,7 @@
 							>
 								<span class="lucide-shield size-4" />
 								<span class="text-sm">
-									{{ getRole(role) }}
+									{{ __(getRole(role)) }}
 								</span>
 							</span>
 						</div>

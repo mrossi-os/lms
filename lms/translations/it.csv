@@ -5429,3 +5429,5 @@ restrict_ip
 "Notify members when a new batch is published.","Notifica i membri quando viene pubblicata una nuova classe."
 "Email template sent to students upon batch enrollment confirmation.","Modello di email inviato agli studenti alla conferma dell'iscrizione alla classe."
 "Email template sent to students when they earn a certification.","Modello di email inviato agli studenti quando ottengono una certificazione."
+"Create a {0} Account","Crea un account {0}"
+"Middle Name","Secondo nome"
