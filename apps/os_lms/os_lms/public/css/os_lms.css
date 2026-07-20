@@ -70,3 +70,42 @@ input {
 	height: 16px;
 	flex-shrink: 0;
 }
+
+/* Custom Profile Picture widget on the Edit Profile web form (injected by
+   os_lms.js), replacing Frappe's stock Attach Image control: a visible preview
+   plus explicit Upload/Change and Remove buttons. */
+.oslms-avatar-field {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	margin-top: 4px;
+}
+.oslms-avatar-preview {
+	width: 96px;
+	height: 96px;
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	border-radius: var(--border-radius-md, 8px);
+	border: 1px solid var(--border-color, #d1d8dd);
+	background-color: var(--control-bg, #f4f5f6);
+}
+.oslms-avatar-preview img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+.oslms-avatar-placeholder {
+	padding: 4px;
+	text-align: center;
+	font-size: var(--text-sm);
+	color: var(--text-muted, #8d99a6);
+}
+.oslms-avatar-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
