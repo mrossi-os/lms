@@ -281,7 +281,10 @@ const updateTabFilter = () => {
 	if (!user.data) {
 		return
 	}
-	if (currentTab.value == 'enrolled' && is_student.value) {
+	if (currentTab.value == 'enrolled') {
+		// The "Enrolled" tab is offered to every non-admin user (students AND, e.g.,
+		// a Valutatore who is also enrolled). Don't gate the filter on is_student,
+		// or those non-student members see all/assigned batches instead of their own.
 		filters.value['enrolled'] = 1
 		delete filters.value['start_date']
 		delete filters.value['end_date']
@@ -290,6 +293,10 @@ const updateTabFilter = () => {
 	} else if (is_student.value) {
 		delete filters.value['enrolled']
 	} else {
+		// Clear the enrolled filter when leaving the Enrolled tab; otherwise a
+		// non-student member (e.g. a Valutatore) keeps filtering by enrollment
+		// after switching to All/Upcoming/etc.
+		delete filters.value['enrolled']
 		delete filters.value['start_date']
 		delete filters.value['end_date']
 		delete filters.value['published']
