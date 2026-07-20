@@ -76,7 +76,7 @@
 					<ClearableCombobox
 						v-if="categories.length"
 						v-model="currentCategory"
-						:options="categories.filter((c) => c.value)"
+						:options="categoryOptions"
 						:placeholder="__('Category')"
 						@update:modelValue="updateBatches()"
 					/>
@@ -157,6 +157,14 @@ const start = ref(0)
 const pageLength = ref(20)
 const categories = ref([])
 const currentCategory = ref(null)
+// Sentinel for the "All" category option. There's otherwise no way to clear a
+// selected category from the dropdown, so selecting "All" resets the filter and
+// shows every batch, with or without a category.
+const ALL_CATEGORIES = '__all__'
+const categoryOptions = computed(() => [
+	{ label: __('All'), value: ALL_CATEGORIES },
+	...categories.value.filter((c) => c.value),
+])
 const title = ref('')
 const certification = ref(false)
 const filters = ref({})
@@ -244,7 +252,7 @@ const updateFilters = () => {
 }
 
 const updateCategoryFilter = () => {
-	if (currentCategory.value) {
+	if (currentCategory.value && currentCategory.value !== ALL_CATEGORIES) {
 		filters.value['category'] = currentCategory.value
 	} else {
 		delete filters.value['category']
@@ -309,7 +317,9 @@ const setQueryParams = () => {
 	let queries = new URLSearchParams(location.search)
 	let filterKeys = {
 		title: title.value,
-		category: currentCategory.value,
+		// The "All" sentinel means "no category filter" — keep it out of the URL.
+		category:
+			currentCategory.value === ALL_CATEGORIES ? null : currentCategory.value,
 		certification: certification.value,
 	}
 
