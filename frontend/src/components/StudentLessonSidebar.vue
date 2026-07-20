@@ -21,7 +21,7 @@
 		<div class="flex-1 overflow-y-auto px-2 py-3">
 			<Disclosure
 				v-for="chapter in outline.data || []"
-				:key="chapter.name"
+				:key="`${chapter.name}:${chapterHasActiveLesson(chapter)}`"
 				v-slot="{ open }"
 				:defaultOpen="chapterDefaultOpen(chapter)"
 			>
@@ -186,6 +186,18 @@ function chapterDefaultOpen(chapter) {
 	return (
 		chapter.lessons?.some((l) => l.number === props.selectedLessonNumber) ||
 		false
+	)
+}
+
+// Whether this chapter holds the currently selected lesson. Used in the
+// Disclosure :key so that the chapter which *becomes* active on navigation
+// re-mounts and re-applies defaultOpen — headlessui's defaultOpen is only read
+// on mount, so without this the next chapter stays collapsed when the student
+// moves into it via "Next".
+function chapterHasActiveLesson(chapter) {
+	return !!(
+		props.selectedLessonNumber &&
+		chapter.lessons?.some((l) => l.number === props.selectedLessonNumber)
 	)
 }
 </script>
