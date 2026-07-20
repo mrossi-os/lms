@@ -23,7 +23,7 @@
 						:content="topic.reply"
 						@change="(val) => (topic.reply = val)"
 						:editable="true"
-						:fixedMenu="true"
+						:fixedMenu="discussionFixedMenu"
 						editorClass="prose-sm max-w-none border-b border-x border-outline-elevation-2 bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]"
 					/>
 				</div>
@@ -35,6 +35,7 @@
 import { call, Dialog, FormControl, TextEditor, toast } from 'frappe-ui'
 import { reactive } from 'vue'
 import { singularize } from '@/utils'
+import { discussionFixedMenu } from '@/utils/discussionToolbar'
 import { useTelemetry } from 'frappe-ui/frappe'
 
 const topics = defineModel('reloadTopics')

@@ -1,6 +1,6 @@
 <template>
-	<div class="mt-6">
-		<div v-if="!singleThread" class="flex items-center mb-5 md:hidden">
+	<div class="mt-6 flex flex-col">
+		<div v-if="!singleThread" class="order-1 flex items-center mb-5 md:hidden">
 			<Button variant="outline" @click="showTopics = true">
 				<template #icon>
 					<span class="lucide-chevron-left size-5 text-ink-gray-7" />
@@ -70,7 +70,7 @@
 					:content="reply.reply"
 					@change="(val) => (reply.reply = val)"
 					:editable="reply.editable || false"
-					:fixedMenu="reply.editable || false"
+					:fixedMenu="reply.editable ? discussionFixedMenu : false"
 					:editorClass="
 						reply.editable
 							? 'ProseMirror bg-surface-gray-2  prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none'
@@ -87,7 +87,7 @@
 			:mentions="mentionUsers"
 			@change="(val) => (newReply = val)"
 			:placeholder="__('Type your reply here...')"
-			:fixedMenu="true"
+			:fixedMenu="discussionFixedMenu"
 			editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem] max-h-[16rem] overflow-y-scroll mb-4"
 		/>
 		<div v-if="!readOnlyMode" class="flex justify-between mt-2">
@@ -110,6 +110,7 @@ import {
 	toast,
 } from 'frappe-ui'
 import { timeAgo } from '@/utils'
+import { discussionFixedMenu } from '@/utils/discussionToolbar'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { ref, inject, onMounted, onUnmounted } from 'vue'
 import { useTelemetry } from 'frappe-ui/frappe'
