@@ -25,7 +25,6 @@
 							<Uploader
 								v-model="profile.image"
 								:label="__('Profile Image')"
-								:required="true"
 								shape="circle"
 							/>
 
@@ -38,6 +37,13 @@
 								v-model="profile.last_name"
 								:label="__('Last Name')"
 								:required="true"
+							/>
+							<FormControl
+								v-model="profile.codice_fiscale"
+								:label="__('Codice Fiscale')"
+								placeholder="RSSMRA85M01H501Z"
+								type="text"
+								maxlength="16"
 							/>
 							<!-- <FormControl v-model="profile.headline" :label="__('Headline')" />
 
@@ -87,6 +93,7 @@
 import {
 	Badge,
 	Button,
+	call,
 	createResource,
 	Dialog,
 	FormControl,
@@ -101,6 +108,10 @@ const show = defineModel()
 const reloadProfile = defineModel('reloadProfile')
 const hasLanguageChanged = ref(false)
 const isDirty = ref(false)
+// Codice fiscale is PII and not part of get_profile_details; it is fetched
+// separately, scoped to the user's own record. Keep the loaded value as the
+// baseline for the dirty-state comparison.
+const originalCodiceFiscale = ref('')
 
 const props = defineProps({
 	profile: {
@@ -112,6 +123,7 @@ const props = defineProps({
 const profile = reactive({
 	first_name: '',
 	last_name: '',
+	codice_fiscale: '',
 	headline: '',
 	bio: '',
 	image: '',
@@ -130,6 +142,7 @@ const updateProfile = createResource({
 			fieldname: {
 				user_image: profile.image || null,
 				...profile,
+				codice_fiscale: profile.codice_fiscale || null,
 			},
 		}
 	},
@@ -142,7 +155,6 @@ const validateMandatoryFields = () => {
 	let missingFields = []
 	if (!profile.first_name) missingFields.push(__('First Name'))
 	if (!profile.last_name) missingFields.push(__('Last Name'))
-	if (!profile.image) missingFields.push(__('Profile Image'))
 	if (missingFields.length) {
 		toast.error(
 			__('Please fill the mandatory fields: {0}').format(
@@ -158,6 +170,7 @@ const saveProfile = () => {
 	let missingMandatoryFields = validateMandatoryFields()
 	if (missingMandatoryFields) return
 	profile.bio = sanitizeHTML(profile.bio || '')
+	profile.codice_fiscale = (profile.codice_fiscale || '').trim().toUpperCase()
 	updateProfile.submit(
 		{},
 		{
@@ -182,6 +195,8 @@ watch(
 		if (!props.profile.data) return
 		let keys = Object.keys(newVal)
 		keys.splice(keys.indexOf('image'), 1)
+		// codice_fiscale is not part of props.profile.data; compare it separately.
+		keys.splice(keys.indexOf('codice_fiscale'), 1)
 		for (let key of keys) {
 			if (newVal[key] !== props.profile.data[key]) {
 				isDirty.value = true
@@ -189,6 +204,10 @@ watch(
 			}
 		}
 		if (profile.image !== props.profile.data.user_image) {
+			isDirty.value = true
+			return
+		}
+		if (profile.codice_fiscale !== originalCodiceFiscale.value) {
 			isDirty.value = true
 			return
 		}
@@ -212,6 +231,16 @@ watch(
 			profile.twitter = newVal.twitter
 			profile.image = newVal.user_image
 			isDirty.value = false
+			// Fetch the codice fiscale separately (not exposed by
+			// get_profile_details); scoped to the user's own record.
+			call('frappe.client.get_value', {
+				doctype: 'User',
+				filters: newVal.name,
+				fieldname: 'codice_fiscale',
+			}).then((res) => {
+				profile.codice_fiscale = res?.codice_fiscale || ''
+				originalCodiceFiscale.value = profile.codice_fiscale
+			})
 		}
 	},
 )
