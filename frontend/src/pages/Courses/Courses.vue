@@ -217,10 +217,12 @@ const courses = createListResource({
 	start: start.value,
 })
 
-const categories = createListResource({
-	doctype: 'LMS Category',
+// get_course_categories returns plain { label, value } options, not doctype
+// documents, so use a plain resource: createListResource's document machinery
+// (name-keyed dataMap + offline doc cache) can leave `data` empty here. No
+// persisted cache, so the list always loads fresh.
+const categories = createResource({
 	url: 'lms.lms.utils.get_course_categories',
-	cache: ['course_categories'],
 	auto: true,
 })
 
