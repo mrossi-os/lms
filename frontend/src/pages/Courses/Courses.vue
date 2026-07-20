@@ -39,7 +39,12 @@
 			<div
 				class="flex flex-col space-y-4 lg:flex-row lg:items-center lg:gap-x-4 lg:space-y-0"
 			>
-				<TabButtons :buttons="courseTabs" v-model="currentTab" class="w-fit" />
+				<TabButtons
+					v-if="courseTabs.length > 1"
+					:buttons="courseTabs"
+					v-model="currentTab"
+					class="w-fit"
+				/>
 
 				<FormControl
 					v-model="title"
@@ -172,19 +177,16 @@ const tagColorMap = computed(() => {
 provide('tagColorMap', tagColorMap)
 
 onMounted(() => {
-	// Students default to the "Enrolled" tab. Only when no tab has been
-	// persisted yet, so an explicit later choice is still respected.
-	if (
-		user.data?.is_student &&
-		localStorage.getItem('lms_courses_tab') === null
-	) {
+	// Students only have the "Enrolled" tab, so always land them there
+	// regardless of any previously persisted value.
+	if (user.data?.is_student) {
 		currentTab.value = 'enrolled'
 	}
-	// Fall back to the default tab if the persisted value isn't available for
-	// this user's role (e.g. role changed since it was stored).
+	// Fall back to the first available tab if the persisted value isn't valid
+	// for this user's role (e.g. role changed since it was stored).
 	const validTabs = courseTabs.value.map((tab) => tab.value)
 	if (!validTabs.includes(currentTab.value)) {
-		currentTab.value = 'live'
+		currentTab.value = validTabs[0] || 'live'
 	}
 	setFiltersFromQuery()
 	updateCourses()
@@ -197,7 +199,11 @@ const setFiltersFromQuery = () => {
 	currentCategory.value = queries.get('category') || null
 	certification.value = queries.get('certification') || false
 	const tab = queries.get('tab')
-	if (tab) currentTab.value = tab
+	// Only honor tabs the current user is actually allowed to see, so a stale
+	// or crafted ?tab= can't push a student onto a hidden tab.
+	if (tab && courseTabs.value.some((t) => t.value === tab)) {
+		currentTab.value = tab
+	}
 	if (queries.get('newCourse') == '1') {
 		showCourseModal.value = true
 	}
@@ -343,6 +349,12 @@ watch(currentTab, () => {
 })
 
 const courseTabs = computed(() => {
+	// Students only see the courses they are enrolled in — the public
+	// "Published" and "Upcoming" tabs are hidden for them.
+	if (user.data?.is_student) {
+		return [{ label: __('Enrolled'), value: 'enrolled' }]
+	}
+
 	let tabs = [
 		{
 			label: __('Published'),
@@ -360,8 +372,6 @@ const courseTabs = computed(() => {
 	) {
 		tabs.push({ label: __('Created'), value: 'created' })
 		tabs.push({ label: __('Unpublished'), value: 'unpublished' })
-	} else if (user.data) {
-		tabs.push({ label: __('Enrolled'), value: 'enrolled' })
 	}
 	return tabs
 })
