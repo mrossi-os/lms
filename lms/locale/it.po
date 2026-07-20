@@ -9583,25 +9583,3 @@ msgstr ""
 msgid "{} Published"
 msgstr ""
 
-#. Override for a Frappe framework string left untranslated upstream.
-#. Shown after requesting a password reset from the login page.
-#: frappe/core/doctype/user/user.py
-msgid ""
-"If this email is registered with us, we have sent password reset "
-"instructions to it. Please check your inbox."
-msgstr ""
-"Se questa email è registrata presso di noi, ti abbiamo inviato le istruzioni "
-"per reimpostare la password. Controlla la tua casella di posta."
-
-#. Override for a Frappe framework string left untranslated upstream.
-#. Title of the password reset confirmation dialog on the login page.
-#: frappe/core/doctype/user/user.py
-msgid "Password Reset"
-msgstr "Reimposta Password"
-
-#. Override for a Frappe framework string left untranslated upstream.
-#. Label of the middle_name field in the edit-profile Web Form (/update-profile).
-#: frappe/core/web_form/edit_profile/edit_profile.json
-msgid "Middle Name (Optional)"
-msgstr "Secondo nome (facoltativo)"
-
