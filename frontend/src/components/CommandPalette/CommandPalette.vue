@@ -229,7 +229,9 @@ const jumpToOptions = ref([
 		title: __('Jump to'),
 		items: [
 			{
-				title: __('Courses'),
+				get title() {
+					return __('Courses')
+				},
 				icon: BookOpen,
 				route: {
 					name: 'Courses',
@@ -237,7 +239,9 @@ const jumpToOptions = ref([
 				isActive: true,
 			},
 			{
-				title: __('Batches'),
+				get title() {
+					return __('Batches')
+				},
 				icon: Users,
 				route: {
 					name: 'Batches',
