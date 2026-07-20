@@ -104,6 +104,10 @@ import { ref, reactive, watch } from 'vue'
 import { sanitizeHTML } from '@/utils'
 import Link from '@/components/Controls/Link.vue'
 
+// Italian codice fiscale: 6 letters + 2 digits + letter + 2 digits + letter +
+// 3 digits + letter (16 chars). Mirrors the backend pattern in safelog.py.
+const CODICE_FISCALE_RE = /^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$/
+
 const show = defineModel()
 const reloadProfile = defineModel('reloadProfile')
 const hasLanguageChanged = ref(false)
@@ -171,6 +175,10 @@ const saveProfile = () => {
 	if (missingMandatoryFields) return
 	profile.bio = sanitizeHTML(profile.bio || '')
 	profile.codice_fiscale = (profile.codice_fiscale || '').trim().toUpperCase()
+	if (profile.codice_fiscale && !CODICE_FISCALE_RE.test(profile.codice_fiscale)) {
+		toast.error(__('Please enter a valid Codice Fiscale.'))
+		return
+	}
 	updateProfile.submit(
 		{},
 		{
