@@ -106,6 +106,7 @@ override_whitelisted_methods = {
     "lms.lms.utils.get_course_details": "os_lms.os_lms.override_utils.get_course_details",
     "lms.lms.utils.get_course_outline": "os_lms.os_lms.override_utils.get_course_outline",
     "lms.lms.utils.get_courses": "os_lms.os_lms.override_utils.get_courses",
+    "lms.lms.utils.get_course_categories": "os_lms.os_lms.override_utils.get_course_categories",
     "lms.lms.utils.get_batches": "os_lms.os_lms.override_utils.get_batches",
     "lms.lms.utils.get_lesson_creation_details": "os_lms.os_lms.override_utils.get_lesson_creation_details",
     "lms.lms.utils.get_lesson": "os_lms.os_lms.override_utils.get_lesson",

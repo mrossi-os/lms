@@ -59,9 +59,9 @@
 				</FormControl>
 
 				<ClearableCombobox
-					v-if="categories.data?.length"
+					v-if="categoryOptions.length"
 					v-model="currentCategory"
-					:options="categories.data.filter((c) => c.value)"
+					:options="categoryOptions"
 					:placeholder="__('Category')"
 					@update:modelValue="updateCourses()"
 					class="w-full lg:w-40"
@@ -190,6 +190,7 @@ onMounted(() => {
 	}
 	setFiltersFromQuery()
 	updateCourses()
+	reloadCategories()
 	getCourseCount()
 })
 
@@ -220,11 +221,27 @@ const courses = createListResource({
 // get_course_categories returns plain { label, value } options, not doctype
 // documents, so use a plain resource: createListResource's document machinery
 // (name-keyed dataMap + offline doc cache) can leave `data` empty here. No
-// persisted cache, so the list always loads fresh.
+// persisted cache, so the list always loads fresh. Loaded on demand (not auto)
+// because the option set is scoped to the active tab's filters.
 const categories = createResource({
 	url: 'lms.lms.utils.get_course_categories',
-	auto: true,
 })
+
+// Real category options (the backend always prepends an empty "clear" sentinel,
+// which the ClearableCombobox provides on its own). Empty when the current tab
+// has no categorized courses, so the combobox stays hidden instead of showing
+// an empty dropdown.
+const categoryOptions = computed(
+	() => categories.data?.filter((c) => c.value) || []
+)
+
+// The category set depends on the active tab (Enrolled, Created, ...), so
+// refetch it with the current tab filters. The backend ignores the narrowing
+// filters (picked category, search text, certification), so the list stays
+// stable as those change and only needs reloading when the tab changes.
+const reloadCategories = () => {
+	categories.reload({ filters: filters.value })
+}
 
 const getCourseCount = () => {
 	if (!user.data) return
@@ -347,7 +364,11 @@ const setQueryParams = () => {
 }
 
 watch(currentTab, () => {
+	// Each tab has its own category set, so a selection made on another tab no
+	// longer applies; clear it before refetching the tab-scoped options.
+	currentCategory.value = null
 	updateCourses()
+	reloadCategories()
 })
 
 const courseTabs = computed(() => {

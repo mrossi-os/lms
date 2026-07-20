@@ -114,42 +114,6 @@ def get_course(course_name: str):
 
 
 @frappe.whitelist()
-def get_courses_categories():
-	if frappe.session.user == "Guest":
-		return []
-	"""Return categories that are assigned to courses belonging to a published program."""
-	categories = frappe.db.sql(
-		"""
-        SELECT DISTINCT cat.name, cat.category
-        FROM `tabLMS Category` cat
-        INNER JOIN `tabLMS Course` c ON c.category = cat.name
-        WHERE c.published = 1
-        ORDER BY cat.category
-        """,
-		as_dict=True,
-	)
-	return categories
-
-
-@frappe.whitelist()
-def get_courses_categories():
-	if frappe.session.user == "Guest":
-		return []
-	"""Return categories that are assigned to courses belonging to a published program."""
-	categories = frappe.db.sql(
-		"""
-        SELECT DISTINCT cat.name, cat.category
-        FROM `tabLMS Category` cat
-        INNER JOIN `tabLMS Course` c ON c.category = cat.name
-        WHERE c.published = 1
-        ORDER BY cat.category
-        """,
-		as_dict=True,
-	)
-	return categories
-
-
-@frappe.whitelist()
 def get_app_home_courses():
 	if frappe.session.user == "Guest":
 		return []
