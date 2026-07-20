@@ -253,7 +253,7 @@ msgstr ""
 
 #: frontend/src/pages/QuizForm.vue:129
 msgid "Add a question to get started."
-msgstr "Aggiungi una domanda per iniziare."
+msgstr ""
 
 #: frontend/src/components/AssessmentPlugin.vue:6
 msgid "Add a quiz to your lesson"
@@ -4729,7 +4729,7 @@ msgstr ""
 
 #: frontend/src/pages/Batches/BatchDetail.vue:68
 msgid "Make Announcement"
-msgstr "Fai un annuncio"
+msgstr ""
 
 #. Label of the default_home (Check) field in DocType 'LMS Settings'
 #: lms/lms/doctype/lms_settings/lms_settings.json
