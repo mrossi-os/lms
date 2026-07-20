@@ -4729,7 +4729,7 @@ msgstr ""
 
 #: frontend/src/pages/Batches/BatchDetail.vue:68
 msgid "Make Announcement"
-msgstr ""
+msgstr "Fai un annuncio"
 
 #. Label of the default_home (Check) field in DocType 'LMS Settings'
 #: lms/lms/doctype/lms_settings/lms_settings.json
