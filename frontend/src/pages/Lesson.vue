@@ -159,11 +159,6 @@
 								v-if="zenModeEnabled"
 								class="flex items-center gap-x-2 mt-2 md:mt-0"
 							>
-								<Button @click="showDiscussionsInZenMode()">
-									<template #icon>
-										<span class="lucide-message-circle-question size-4" />
-									</template>
-								</Button>
 								<Button v-if="lesson.data.prev" @click="switchLesson('prev')">
 									<template #prefix>
 										<span class="lucide-chevron-left size-4" />
@@ -257,32 +252,13 @@
 						</div>
 					</div>
 					<div
-						v-if="lesson.data && (allowDiscussions || tabs.length > 1)"
+						v-if="lesson.data && allowDiscussions && currentTab === 'Notes'"
 						class="mt-10 pb-20 pt-5 border-t px-5"
-						ref="discussionsContainer"
 					>
-						<TabButtons
-							v-if="tabs.length > 1"
-							:buttons="tabs"
-							v-model="currentTab"
-							class="w-fit mb-10"
-						/>
 						<Notes
-							v-if="currentTab === 'Notes'"
 							:lesson="lesson.data?.name"
 							v-model:notes="notes"
 							@updateNotes="updateNotes"
-						/>
-						<Discussions
-							v-else-if="allowDiscussions"
-							:title="'Questions'"
-							:newLabel="__('Ask a question')"
-							:doctype="'Course Lesson'"
-							:docname="lesson.data.name"
-							:key="lesson.data.name"
-							:emptyStateText="
-								__('Ask a question to get help from the community.')
-							"
 						/>
 					</div>
 				</div>
@@ -321,7 +297,6 @@ import {
 	call,
 	createListResource,
 	createResource,
-	TabButtons,
 	Tooltip,
 	usePageMeta,
 	toast,
@@ -357,7 +332,6 @@ import EditorJS from '@editorjs/editorjs'
 import LessonContent from '@/components/LessonContent.vue'
 import CourseInstructors from '@/components/CourseInstructors.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
-import Discussions from '@/components/Discussions.vue'
 import CertificationLinks from '@/components/CertificationLinks.vue'
 import VideoStatistics from '@/components/Modals/VideoStatistics.vue'
 import { hasVideoContent } from '@/utils/video'
@@ -380,7 +354,6 @@ const lessonContainer = ref(null)
 const zenModeEnabled = ref(false)
 const showStatsDialog = ref(false)
 const hasQuiz = ref(false)
-const discussionsContainer = ref(null)
 const timer = ref(0)
 const { brand } = sessionStore()
 const sidebarStore = useSidebar()
@@ -1036,26 +1009,6 @@ const goFullScreen = () => {
 	}
 }
 
-const showDiscussionsInZenMode = () => {
-	if (allowDiscussions.value) {
-		allowDiscussions.value = false
-	} else {
-		allowDiscussions.value = true
-		currentTab.value = 'Community'
-		scrollDiscussionsIntoView()
-	}
-}
-
-const scrollDiscussionsIntoView = () => {
-	nextTick(() => {
-		discussionsContainer.value?.scrollIntoView({
-			behavior: 'smooth',
-			block: 'center',
-			inline: 'nearest',
-		})
-	})
-}
-
 const updateNotes = () => {
 	if (!user.data) return
 	notes.update({
@@ -1068,25 +1021,19 @@ const updateNotes = () => {
 }
 
 watch(allowDiscussions, () => {
-	if (!isAdmin.value) {
-		if (!tabs.value.find((tab) => tab.value === 'Notes')) {
-			tabs.value.push({
-				label: __('Notes'),
-				value: 'Notes',
-			})
-		}
-		currentTab.value = 'Notes'
-	} else {
-		currentTab.value = allowDiscussions.value ? 'Community' : null
+	// Community/discussions are hidden for all users and roles; only the
+	// students' Notes tab remains in the lesson view.
+	if (isAdmin.value) {
+		currentTab.value = null
+		return
 	}
-	if (allowDiscussions.value) {
-		if (!tabs.value.find((tab) => tab.value === 'Community')) {
-			tabs.value.push({
-				label: __('Community'),
-				value: 'Community',
-			})
-		}
+	if (!tabs.value.find((tab) => tab.value === 'Notes')) {
+		tabs.value.push({
+			label: __('Notes'),
+			value: 'Notes',
+		})
 	}
+	currentTab.value = 'Notes'
 })
 
 const redirectToLogin = () => {
