@@ -876,6 +876,11 @@ def update_course_filters(filters: dict) -> tuple:
 	if filters.get("certification"):
 		or_filters.update({"enable_certification": 1})
 		or_filters.update({"paid_certificate": 1})
+		# os_lms graft: a course can also offer certification through TrueSkills
+		# (trueskills_certificate_enabled), independently of the built-in flags.
+		# Include it so the "Certification" filter doesn't hide TrueSkills-only
+		# courses. Re-apply after upstream merges.
+		or_filters.update({"trueskills_certificate_enabled": 1})
 		del filters["certification"]
 
 	return filters, or_filters, show_featured

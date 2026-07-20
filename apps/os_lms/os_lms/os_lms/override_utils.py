@@ -261,8 +261,20 @@ def get_courses(filters: dict = None, start: int = 0) -> list:
 	if courses:
 		course_names = [course.name for course in courses]
 		duration_map = get_courses_total_minutes(course_names)
+		# Upstream get_course_fields omits the custom TrueSkills flag; expose it so
+		# the course card can show the "certification available" icon for courses
+		# that only offer a TrueSkills certificate.
+		ts_map = dict(
+			frappe.get_all(
+				"LMS Course",
+				filters={"name": ["in", course_names]},
+				fields=["name", "trueskills_certificate_enabled"],
+				as_list=True,
+			)
+		)
 		for course in courses:
 			course.total_minutes = duration_map.get(course.name, 0)
+			course.trueskills_certificate_enabled = 1 if ts_map.get(course.name) else 0
 
 	return courses
 
