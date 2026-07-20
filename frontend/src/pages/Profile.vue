@@ -136,6 +136,7 @@
 			<router-view :profile="profile" :key="profile.data?.name" />
 		</div>
 	</div>
+	<NoPermission v-else-if="profile.error" />
 	<EditProfile
 		v-model="showProfileModal"
 		v-model:reloadProfile="profile"

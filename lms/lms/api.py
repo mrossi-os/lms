@@ -1954,12 +1954,18 @@ def get_profile_details(username: str):
 		],
 		as_dict=True,
 	)
-	roles = frappe.get_roles(details.name)
-	if not has_lms_role():
+	if not details:
+		frappe.throw(_("User {0} not found").format(username), frappe.DoesNotExistError)
+
+	# A user can always view their own profile, even without an LMS role (e.g. a
+	# freshly created account not yet granted "LMS Student"). Viewing other users'
+	# profiles still requires an LMS role.
+	if details.name != frappe.session.user and not has_lms_role():
 		frappe.throw(
 			_("User does not have permission to access this user's profile details."), frappe.PermissionError
 		)
-	details.roles = roles
+
+	details.roles = frappe.get_roles(details.name)
 	return details
 
 
