@@ -18,8 +18,10 @@
 					<div
 						class="flex flex-wrap items-center gap-x-3 gap-y-2 text-ink-gray-7"
 					>
+						<!-- OSLMS-CUSTOM: hide the course instructors from students;
+						only moderators/course instructors see them. -->
 						<div
-							v-if="course.data.instructors?.length"
+							v-if="isCourseAdmin && course.data.instructors?.length"
 							class="flex items-center"
 						>
 							<span

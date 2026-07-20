@@ -191,7 +191,12 @@
 							</div>
 						</div>
 
-						<div v-if="!zenModeEnabled" class="flex items-center mt-4 md:mt-2">
+						<!-- Hide the course instructors from students; only
+						moderators/course instructors see them. -->
+						<div
+							v-if="!zenModeEnabled && isAdmin"
+							class="flex items-center mt-4 md:mt-2"
+						>
 							<span
 								class="h-6 me-1"
 								:class="{
