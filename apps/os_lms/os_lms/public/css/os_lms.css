@@ -45,3 +45,28 @@ input {
 .terms-and-conditions-content p {
 	color: black;
 }
+
+/* Back link on the account sub-pages reached from the /me "Settings" box
+   (the Reset Password page and the Edit Profile web form), which Frappe
+   renders without any way to return. Sits like a breadcrumb above the title.
+   Both hosts are white cards, so a muted color stays legible. */
+.oslms-back-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 0.75rem;
+	font-size: var(--text-sm);
+	font-weight: 500;
+	line-height: 1;
+	color: var(--text-muted);
+	text-decoration: none;
+}
+.oslms-back-link:hover {
+	color: var(--text-color);
+	text-decoration: none;
+}
+.oslms-back-link svg {
+	width: 16px;
+	height: 16px;
+	flex-shrink: 0;
+}
