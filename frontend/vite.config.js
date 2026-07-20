@@ -106,9 +106,15 @@ export default defineConfig(async ({ mode }) => {
 				},
 				{ find: '@', replacement: path.resolve(__dirname, 'src') },
 			],
-			// Force one copy of prosemirror; duplicate copies break tiptap's
-			// instanceof checks and crash the list buttons.
+			// Force one copy of tiptap/prosemirror; duplicate copies break tiptap's
+			// instanceof checks and crash the list buttons. The @tiptap/* entries are
+			// also declared as direct deps in package.json so the bare imports in
+			// src/overrides/.../TextEditor resolve in a clean (Docker) install, where
+			// they are not hoisted to the top-level node_modules.
 			dedupe: [
+				'@tiptap/core',
+				'@tiptap/pm',
+				'@tiptap/vue-3',
 				'prosemirror-model',
 				'prosemirror-state',
 				'prosemirror-view',
