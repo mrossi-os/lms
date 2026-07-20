@@ -166,8 +166,8 @@
 import { BookText, CreditCard, GraduationCap } from 'lucide-vue-next'
 // OSLMS-CUSTOM: Award, BookOpen, HelpCircle, MonitorPlay, Users were used by the
 // disabled "This course includes" stats block — restore them with that block.
-import { computed, inject } from 'vue'
-import { Badge, Button, call, toast } from 'frappe-ui'
+import { computed, inject, watch } from 'vue'
+import { Badge, Button, call, createResource, toast } from 'frappe-ui'
 import { useRouter } from 'vue-router'
 import CertificationLinks from '@/components/CertificationLinks.vue'
 import CourseOutline from '@/components/CourseOutline.vue'
@@ -176,6 +176,7 @@ import { useCertificateViewer } from '@/oslms/composables/useCertificateViewer'
 import { getVideoEmbedURL } from '@/utils/'
 import { useTelemetry } from 'frappe-ui/frappe'
 import type {
+	CertificationInfo,
 	CourseDetails,
 	CourseInstructorInfo,
 	Resource,
@@ -277,13 +278,36 @@ const hasCourseStats = computed<boolean>(() =>
 )
 */
 
+// OSLMS-CUSTOM: once the certificate has been issued we only want to show
+// CertificationLinks' "View Certificate", not a second "Get Certificate" button.
+// LMS Enrollment.certificate is not set on issuance, so query the authoritative
+// LMS Certificate via get_certification_details (same signal CertificationLinks uses).
+const certification = createResource({
+	url: 'lms.lms.api.get_certification_details',
+	makeParams() {
+		return { course: props.course.data?.name }
+	},
+}) as Resource<CertificationInfo | null>
+
+watch(
+	() => props.course.data?.name,
+	(name) => {
+		if (name && user.data) certification.reload()
+	},
+	{ immediate: true },
+)
+
 const canGetCertificate = computed<boolean>(() => {
 	// TrueSkills issuance is exclusive with the internal completion certificate,
 	// so a TrueSkills-only course has enable_certification off — gate on either.
 	return Boolean(
 		(props.course.data?.enable_certification ||
 			props.course.data?.trueskills_certificate_enabled) &&
-			(props.course.data?.membership?.progress ?? 0) >= 100,
+			(props.course.data?.membership?.progress ?? 0) >= 100 &&
+			// Hide once the certificate exists (CertificationLinks shows "View
+			// Certificate"). Wait for the resource to load to avoid a flash.
+			certification.data &&
+			!certification.data.certificate,
 	)
 })
 
