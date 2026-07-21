@@ -92,7 +92,7 @@
 								:key="row.title"
 								class="flex justify-between"
 							>
-								<span>{{ row.title }}</span>
+								<span class="text-ink-gray-7">{{ row.title }}</span>
 								<span class="text-ink-gray-5">{{ row.occurrences }}×</span>
 							</li>
 						</ul>

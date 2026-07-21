@@ -6,7 +6,7 @@
 				<h2 class="text-lg font-semibold text-ink-gray-9">
 					{{ __('Simulazioni AI') }}
 				</h2>
-				<p class="text-sm">
+				<p class="text-sm text-ink-gray-9">
 					{{ __('Gestisci gli scenari di simulazione per questo corso.') }}
 				</p>
 			</div>
@@ -183,7 +183,11 @@
 							<span v-else class="">—</span>
 						</td>
 						<td class="px-3 py-2 text-right whitespace-nowrap">
-							<Button size="sm" variant="ghost" @click="openTranscript(s.name)">
+							<Button
+								size="sm"
+								variant="outline"
+								@click="openTranscript(s.name)"
+							>
 								{{ __('Apri') }}
 							</Button>
 						</td>
