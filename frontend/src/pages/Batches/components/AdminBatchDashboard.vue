@@ -187,6 +187,66 @@
 				<div class="card">
 					<BatchFeedback v-if="batch.data" :batch="batch.data.name" />
 				</div>
+
+				<div
+					v-if="batch.data?.courses?.length"
+					class="border rounded-lg pt-4 px-4 card"
+				>
+					<div class="flex items-center justify-between gap-x-2 mb-4">
+						<div class="text-ink-gray-5">
+							{{ __('Course Progress') }}
+						</div>
+						<Select
+							v-model="selectedCourse"
+							:options="courseOptions"
+							class="!w-40"
+						/>
+					</div>
+					<div
+						v-if="progressStats.loading"
+						class="text-sm text-ink-gray-5 py-2"
+					>
+						{{ __('Loading...') }}
+					</div>
+					<template v-else>
+						<div
+							v-if="!selectedCourse"
+							class="divide-y max-h-[40vh] divide-outline-elevation-2 text-ink-gray-7 overflow-y-auto"
+						>
+							<div
+								v-for="course in progressStats.data?.courses"
+								:key="course.course"
+								class="flex justify-between items-center text-sm py-2 my-1 text-ink-gray-9"
+							>
+								<span>{{ course.title }}</span>
+								<span>{{ Math.round(course.avg_progress) }}%</span>
+							</div>
+						</div>
+						<div
+							v-else-if="progressStats.data?.lessons?.length"
+							class="divide-y max-h-[40vh] divide-outline-elevation-2 text-ink-gray-7 overflow-y-auto"
+						>
+							<div
+								v-for="lesson in progressStats.data.lessons"
+								:key="lesson.lesson_name"
+								class="flex justify-between text-sm py-2 my-1 text-ink-gray-9"
+							>
+								<div>
+									<span class="me-3 text-xs">
+										{{ lesson.chapter_idx }}.{{ lesson.idx }}
+									</span>
+									<span>{{ lesson.title }}</span>
+								</div>
+								<Tooltip :text="String(lesson.completion_count)">
+									<div>{{ completionPct(lesson.completion_count) }}%</div>
+								</Tooltip>
+							</div>
+						</div>
+						<div v-else class="text-sm text-ink-gray-5 py-2">
+							{{ __('No lessons in this course') }}
+						</div>
+					</template>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -218,8 +278,10 @@ import {
 	ListSelectBanner,
 	Avatar,
 	Button,
+	Tooltip,
 	toast,
 } from 'frappe-ui'
+import Select from '@/components/Controls/Select.vue'
 import { computed, inject, ref, watch } from 'vue'
 import type dayjsType from 'dayjs'
 import { formatAmount } from '@/utils'
@@ -300,6 +362,39 @@ const students = createListResource({
 
 const getStudentProgress = (member: string) =>
 	Math.ceil(batchStats.data?.students_progress?.[member] || 0)
+
+// Course-progress panel: no course selected -> per-course averages across the
+// batch's students; a course selected -> per-lesson completion for that course,
+// scoped to the batch (see os_lms.os_lms.api.get_batch_progress_stats).
+const selectedCourse = ref<string>('')
+
+const progressStats = createResource({
+	url: 'os_lms.os_lms.api.get_batch_progress_stats',
+	makeParams() {
+		return {
+			batch: props.batch?.data?.name,
+			course: selectedCourse.value || undefined,
+		}
+	},
+	auto: true,
+})
+
+watch(selectedCourse, () => {
+	progressStats.reload()
+})
+
+const courseOptions = computed(() => [
+	{ label: __('All Courses'), value: '' },
+	...(props.batch?.data?.courses || []).map((course: any) => ({
+		label: course.title,
+		value: course.course,
+	})),
+])
+
+const completionPct = (count: number) => {
+	const total = progressStats.data?.students_count || 0
+	return total ? Math.ceil((count / total) * 100) : 0
+}
 
 const seriesName = computed(() => __('Value'))
 

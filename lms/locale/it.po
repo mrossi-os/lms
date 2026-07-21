@@ -9583,3 +9583,11 @@ msgstr ""
 msgid "{} Published"
 msgstr ""
 
+#: frontend/src/pages/Batches/components/AdminBatchDashboard.vue:209
+msgid "Loading..."
+msgstr "Caricamento..."
+
+#: frontend/src/pages/Batches/components/AdminBatchDashboard.vue:246
+msgid "No lessons in this course"
+msgstr "Nessuna lezione in questo corso"
+

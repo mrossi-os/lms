@@ -462,6 +462,112 @@ def get_batch_certified_count(batch: str) -> dict:
 	}
 
 
+@frappe.whitelist()
+def get_batch_progress_stats(batch: str, course: str | None = None) -> dict:
+	"""Progress statistics for the admin batch dashboard, scoped to the batch's
+	own students.
+
+	Available to batch admins and to the batch's valutatori (scoped read).
+
+	Without ``course``: returns ``courses`` — one entry per batch course with the
+	average course progress across the batch's enrolled students (a missing
+	enrollment counts as 0, matching ``get_batch_certified_count``).
+
+	With ``course``: returns ``lessons`` — one entry per lesson with the number of
+	batch students who completed it (``completion_count``). ``students_count`` (the
+	enrolled batch students) is returned in both cases as the completion-rate
+	denominator.
+	"""
+	from pypika import functions as fn
+
+	from frappe.utils import flt
+
+	from lms.lms.utils import can_modify_batch, is_batch_valutatore
+
+	if not (can_modify_batch(batch) or is_batch_valutatore(batch)):
+		frappe.throw(
+			frappe._("You are not authorized to view this batch."),
+			frappe.PermissionError,
+		)
+
+	students_count = frappe.db.count("LMS Batch Enrollment", {"batch": batch})
+
+	if not course:
+		BatchCourse = frappe.qb.DocType("Batch Course")
+		BatchEnrollment = frappe.qb.DocType("LMS Batch Enrollment")
+		Enrollment = frappe.qb.DocType("LMS Enrollment")
+
+		# Cross every batch course with every batch student (left join on the batch),
+		# then bring in that student's enrollment progress for the course. Averaging
+		# Coalesce(progress, 0) per course yields the batch-scoped average.
+		rows = (
+			frappe.qb.from_(BatchCourse)
+			.left_join(BatchEnrollment)
+			.on(BatchEnrollment.batch == BatchCourse.parent)
+			.left_join(Enrollment)
+			.on((Enrollment.course == BatchCourse.course) & (Enrollment.member == BatchEnrollment.member))
+			.where(BatchCourse.parent == batch)
+			.groupby(BatchCourse.course)
+			.orderby(BatchCourse.idx)
+			.select(
+				BatchCourse.course,
+				BatchCourse.title,
+				fn.Avg(fn.Coalesce(Enrollment.progress, 0)).as_("avg_progress"),
+			)
+		).run(as_dict=True)
+
+		return {
+			"students_count": students_count,
+			"courses": [
+				{
+					"course": row.course,
+					"title": row.title,
+					"avg_progress": flt(row.avg_progress, 2),
+				}
+				for row in rows
+			],
+		}
+
+	# A specific course: per-lesson completion count restricted to batch students,
+	# so both numerator and denominator are relative to the class.
+	members = frappe.get_all("LMS Batch Enrollment", filters={"batch": batch}, pluck="member")
+	if not members:
+		return {"students_count": 0, "lessons": []}
+
+	CourseProgress = frappe.qb.DocType("LMS Course Progress")
+	LessonReference = frappe.qb.DocType("Lesson Reference")
+	ChapterReference = frappe.qb.DocType("Chapter Reference")
+	Lesson = frappe.qb.DocType("Course Lesson")
+
+	lessons = (
+		frappe.qb.from_(LessonReference)
+		.join(ChapterReference)
+		.on(LessonReference.parent == ChapterReference.chapter)
+		.join(Lesson)
+		.on(LessonReference.lesson == Lesson.name)
+		.left_join(CourseProgress)
+		.on(
+			(CourseProgress.lesson == LessonReference.lesson)
+			& (CourseProgress.course == course)
+			& (CourseProgress.status == "Complete")
+			& (CourseProgress.member.isin(members))
+		)
+		.select(
+			LessonReference.idx,
+			ChapterReference.idx.as_("chapter_idx"),
+			Lesson.title,
+			Lesson.name.as_("lesson_name"),
+			fn.Count(CourseProgress.name).as_("completion_count"),
+		)
+		.where(ChapterReference.parent == course)
+		.groupby(LessonReference.lesson)
+		.orderby(ChapterReference.idx, LessonReference.idx)
+		.run(as_dict=True)
+	)
+
+	return {"students_count": students_count, "lessons": lessons}
+
+
 BATCH_TAB_SECTIONS = ("classes", "announcements", "discussions")
 
 
