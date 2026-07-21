@@ -139,18 +139,22 @@
 			}
 		}
 
-		// Keep the field control and the web form doc in sync. Setting the doc
+		// Keep the field value and the web form doc in sync. Setting the doc
 		// value directly matters for removal: get_values() drops empty values,
 		// so an empty string on the doc is what makes Save clear the image
 		// (the backend also deletes the previously attached file).
+		//
+		// IMPORTANT: do NOT call field.set_input() here. On this web form the
+		// Attach Image control's make_input() never populated its $input/$value,
+		// so ControlAttach.set_input() falls into its `else` branch and does
+		// `this.$wrapper.html(...)`, wiping the entire field wrapper — including
+		// our injected widget — and replacing it with a bare link that shows the
+		// raw file URL instead of the image. Save reads field.value (get_value)
+		// and frappe.web_form.doc.user_image, both set below, so set_input is
+		// not needed for persistence — only destructive here.
 		function apply(url) {
 			var value = url || null;
 			field.value = value;
-			if (field.set_input) {
-				try {
-					field.set_input(value);
-				} catch (e) {}
-			}
 			if (window.frappe && frappe.web_form && frappe.web_form.doc) {
 				frappe.web_form.doc.user_image = value || "";
 			}
