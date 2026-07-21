@@ -96,17 +96,45 @@
 			return;
 		}
 
-		// Hide the stock control (URL link + Attach/Clear/Reload buttons). The
-		// value still lives on the field object and drives the web form's Save.
+		// Neutralise the control's set_input(). On this web form the Attach Image
+		// control has no $input/$value, so ControlAttach.set_input() runs its
+		// destructive `else` branch (`this.$wrapper.html(...)`), wiping the whole
+		// field and leaving only a bare link that shows the raw file URL. The web
+		// form calls it once on load for a pre-existing value (already wiped by
+		// the time we run — cleaned up below) and may call it again later; replace
+		// it with a value-only setter so it can never touch the DOM again.
+		field.set_input = function (value) {
+			field.value = value || null;
+		};
+
+		// Hide the stock control (URL link + Attach/Clear/Reload buttons) when the
+		// native structure is still intact...
 		var nativeInput = wrapper.querySelector(".control-input-wrapper");
 		if (nativeInput) {
 			nativeInput.style.display = "none";
 		}
+		// ...and hide the bare "attached-file" link the destructive set_input
+		// leaves behind when the field loaded with an existing value (this is the
+		// stray URL the enhancement is meant to replace).
+		var strayFile = wrapper.querySelector(".attached-file");
+		if (strayFile) {
+			strayFile.style.display = "none";
+		}
 
-		// Translate the field label (untranslated by Frappe for Italian).
+		// Translate the field label (untranslated by Frappe for Italian), or
+		// re-create it when set_input wiped the label away with the wrapper.
 		var labelEl = wrapper.querySelector(".control-label");
 		if (labelEl) {
 			labelEl.textContent = t("label");
+		} else {
+			var labelWrap = document.createElement("div");
+			labelWrap.className = "clearfix";
+			labelEl = document.createElement("label");
+			labelEl.className = "control-label";
+			labelEl.style.paddingRight = "5px";
+			labelEl.textContent = t("label");
+			labelWrap.appendChild(labelEl);
+			wrapper.insertBefore(labelWrap, wrapper.firstChild);
 		}
 
 		var container = document.createElement("div");
