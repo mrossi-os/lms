@@ -75,6 +75,7 @@ declare module 'vue' {
     EvaluationModal: typeof import('./src/components/Modals/EvaluationModal.vue')['default']
     Event: typeof import('./src/components/Modals/Event.vue')['default']
     FeedbackModal: typeof import('./src/components/Modals/FeedbackModal.vue')['default']
+    FileBlock: typeof import('./src/components/FileBlock.vue')['default']
     FilePicker: typeof import('./src/components/Controls/FilePicker.vue')['default']
     FrappeCloudIcon: typeof import('./src/components/Icons/FrappeCloudIcon.vue')['default']
     GoogleCalendarModal: typeof import('./src/components/Settings/GoogleCalendarModal.vue')['default']

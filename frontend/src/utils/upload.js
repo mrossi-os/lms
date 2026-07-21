@@ -1,5 +1,6 @@
 import AudioBlock from '@/components/AudioBlock.vue'
 import VideoBlock from '@/components/VideoBlock.vue'
+import FileBlock from '@/components/FileBlock.vue'
 import UploadPlugin from '@/components/UploadPlugin.vue'
 import { h, createApp } from 'vue'
 import { Upload as UploadIcon } from 'lucide-vue-next'
@@ -36,6 +37,12 @@ export class Upload {
 		this.wrapper = document.createElement('div')
 
 		if (this.data && this.data.file_url) {
+			// Some uploads (e.g. certain archive types) come back from the
+			// server without a file_type. Backfill it from the URL extension so
+			// the block validates, renders, and re-saves with a valid type.
+			if (!this.data.file_type) {
+				this.data.file_type = this.getFileType(this.data)
+			}
 			this.renderFile(this.data)
 		} else {
 			this.renderFileUploader()
@@ -45,7 +52,8 @@ export class Upload {
 	}
 
 	renderFile(file) {
-		if (this.isVideo(file.file_type)) {
+		const fileType = this.getFileType(file)
+		if (this.isVideo(fileType)) {
 			const app = createApp(VideoBlock, {
 				file: file.file_url,
 				readOnly: this.readOnly,
@@ -59,23 +67,30 @@ export class Upload {
 			app.config.globalProperties.$dialog = createDialog
 			app.mount(this.wrapper)
 			return
-		} else if (this.isAudio(file.file_type)) {
+		} else if (this.isAudio(fileType)) {
 			const app = createApp(AudioBlock, {
 				file: file.file_url,
 			})
 			app.mount(this.wrapper)
 			return
-		} else if (file.file_type == 'PDF') {
+		} else if (fileType.toLowerCase() == 'pdf') {
 			this.wrapper.innerHTML = `<iframe src="${
 				window.location.origin
 			}${encodeURI(
-				file.file_url
+				file.file_url,
 			)}" width='100%' height='700px' class="mb-4" type="application/pdf"></iframe>`
 			return
-		} else {
+		} else if (this.isImage(fileType)) {
 			this.wrapper.innerHTML = `<img class="mb-4" src=${encodeURI(
-				file.file_url
+				file.file_url,
 			)} width='100%'>`
+			return
+		} else {
+			const app = createApp(FileBlock, {
+				file: file.file_url,
+			})
+			app.use(translationPlugin)
+			app.mount(this.wrapper)
 			return
 		}
 	}
@@ -95,7 +110,10 @@ export class Upload {
 	}
 
 	validate(savedData) {
-		if (!savedData.file_url || !savedData.file_type) {
+		// Only file_url is required; file_type can be derived from it when the
+		// server didn't provide one, so blocks with an empty file_type are
+		// still valid instead of being silently dropped.
+		if (!savedData || !savedData.file_url) {
 			return false
 		}
 		return true
@@ -109,11 +127,35 @@ export class Upload {
 		}
 	}
 
+	getFileType(file) {
+		if (file.file_type) {
+			return file.file_type
+		}
+		// Fall back to the extension parsed from the file URL.
+		const path = (file.file_url || '').split('?')[0]
+		return path.includes('.') ? path.split('.').pop() : ''
+	}
+
 	isVideo(type) {
 		return ['mov', 'mp4', 'avi', 'mkv', 'webm'].includes(type.toLowerCase())
 	}
 
 	isAudio(type) {
 		return ['mp3', 'wav', 'ogg'].includes(type.toLowerCase())
+	}
+
+	isImage(type) {
+		return [
+			'jpg',
+			'jpeg',
+			'png',
+			'gif',
+			'webp',
+			'svg',
+			'bmp',
+			'ico',
+			'avif',
+			'tiff',
+		].includes(type.toLowerCase())
 	}
 }
