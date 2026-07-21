@@ -273,7 +273,7 @@ msgstr ""
 
 #: frontend/src/components/Sidebar/AppSidebar.vue:554
 msgid "Add courses to your batch"
-msgstr "Aggiungi corsi al tuo gruppo"
+msgstr "Aggiungi corsi al tua classe"
 
 #: frontend/src/components/Modals/Question.vue:211
 msgid "Add new question"
@@ -5291,7 +5291,7 @@ msgstr ""
 
 #: lms/lms/utils.py:471
 msgid "New comment in batch {0}"
-msgstr "Nuovo commento nel gruppo {0}"
+msgstr "Nuovo commento nella classe {0}"
 
 #: frontend/src/components/Modals/LessonModal.vue:62
 msgid "New lesson"
@@ -5833,7 +5833,7 @@ msgstr ""
 #: frontend/src/pages/Batches/BatchForm.vue:104
 #: lms/lms/doctype/lms_batch/lms_batch.json
 msgid "Paid Batch"
-msgstr "Gruppo a pagamento"
+msgstr "Classe a pagamento"
 
 #. Label of the paid_certificate (Check) field in DocType 'LMS Course'
 #: lms/lms/doctype/lms_course/lms_course.json
@@ -6136,7 +6136,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:72
 msgid "Please install the Payments App to create a paid batch. Refer to the documentation for more details. {0}"
-msgstr "Installa l'app Pagamenti per creare un gruppo a pagamento. Consulta la documentazione per maggiori dettagli. {0}"
+msgstr "Installa l'app Pagamenti per creare una classe a pagamento. Consulta la documentazione per maggiori dettagli. {0}"
 
 #: lms/lms/doctype/lms_course/lms_course.py:71
 msgid "Please install the Payments App to create a paid course. Refer to the documentation for more details. {0}"
@@ -7952,7 +7952,7 @@ msgstr ""
 #. 'LMS Batch'
 #: lms/lms/doctype/lms_batch/lms_batch.json
 msgid "These customisations will work on the main batch page."
-msgstr "Queste personalizzazioni funzioneranno sulla pagina principale del gruppo."
+msgstr "Queste personalizzazioni funzioneranno sulla pagina principale della classe."
 
 #: frontend/src/pages/Courses/CourseOverviewSection.vue:51
 msgid "These tags help search engines describe and rank your course in results."
@@ -9531,7 +9531,7 @@ msgstr ""
 
 #: lms/templates/emails/mention_template.html:2
 msgid "{0} mentioned you in a comment in your batch."
-msgstr "{0} ti ha menzionato in un commento nel tuo gruppo."
+msgstr "{0} ti ha menzionato in un commento nel tua classe."
 
 #: lms/lms/utils.py:517 lms/lms/utils.py:523
 msgid "{0} mentioned you in a comment in {1}"
