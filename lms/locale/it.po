@@ -441,7 +441,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:79
 msgid "Amount and currency are required for paid batches."
-msgstr "Per i gruppi a pagamento sono richiesti importo e valuta."
+msgstr "Per le classi a pagamento sono richiesti importo e valuta."
 
 #: lms/lms/doctype/lms_course/lms_course.py:91
 msgid "Amount and currency are required for paid certificates."
@@ -1005,7 +1005,7 @@ msgstr ""
 #: lms/lms/doctype/lms_settings/lms_settings.json
 #: lms/workspace_sidebar/learning.json lms/www/_lms.py:132
 msgid "Batches"
-msgstr "Gruppi"
+msgstr "Classi"
 
 #: lms/templates/emails/batch_confirmation.html:33
 #: lms/templates/emails/batch_start_reminder.html:31
