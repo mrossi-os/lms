@@ -1,18 +1,12 @@
 <template>
 	<SkeletonLoader v-if="!course.data" variant="course-page" />
 	<div v-else class="p-5">
-		<CourseHero
-			v-if="hasHero"
-			:hero="heroData"
-			:title="course.data.title"
-			:short-introduction="course.data.short_introduction"
-		/>
 		<div
 			class="flex flex-col md:flex-row items-start justify-between w-full gap-x-8 gap-y-8"
 		>
 			<div class="w-full md:w-2/3 space-y-10 min-w-0">
 				<section class="space-y-4">
-					<h1 v-if="!hasHero" class="text-3xl font-semibold text-ink-gray-9">
+					<h1 class="text-3xl font-semibold text-ink-gray-9">
 						{{ course.data.title }}
 					</h1>
 					<div
@@ -45,7 +39,7 @@
 						class="my-4"
 					/>
 					<p
-						v-if="!hasHero && course.data.short_introduction"
+						v-if="course.data.short_introduction"
 						class="text-ink-gray-7 leading-6"
 					>
 						{{ course.data.short_introduction }}
@@ -80,6 +74,14 @@
 					</div>
 				</section>
 				-->
+
+				<!-- OSLMS-CUSTOM: hero media as a standalone section between the
+				short introduction and the "About this course" section. -->
+				<CourseHero
+					v-if="hasHero"
+					:hero="heroData"
+					:title="course.data.title"
+				/>
 
 				<section v-if="course.data.description" class="space-y-3">
 					<h2 class="text-2xl font-semibold text-ink-gray-9">
