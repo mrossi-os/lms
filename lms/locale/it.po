@@ -9591,3 +9591,11 @@ msgstr "Caricamento..."
 msgid "No lessons in this course"
 msgstr "Nessuna lezione in questo corso"
 
+#: frontend/src/pages/Batches/components/AdminBatchDashboard.vue:62
+msgid "Export Statistics"
+msgstr "Esporta statistiche"
+
+#: frontend/src/pages/Batches/components/AdminBatchDashboard.vue
+msgid "CSV (raw data)"
+msgstr "CSV (dati grezzi)"
+

@@ -55,6 +55,14 @@
 								<span class="lucide-search size-4 text-ink-gray-5" />
 							</template>
 						</FormControl>
+						<Dropdown :options="exportMenu" placement="right">
+							<Button variant="outline">
+								<template #prefix>
+									<span class="lucide-download size-4" />
+								</template>
+								{{ __('Export Statistics') }}
+							</Button>
+						</Dropdown>
 					</div>
 				</div>
 				<div class="max-h-[63vh] overflow-y-auto">
@@ -296,6 +304,7 @@ import {
 	ListSelectBanner,
 	Avatar,
 	Button,
+	Dropdown,
 	Tooltip,
 	toast,
 } from 'frappe-ui'
@@ -437,6 +446,31 @@ const completionPct = (count: number) => {
 	const total = progressStats.data?.students_count || 0
 	return total ? Math.ceil((count / total) * 100) : 0
 }
+
+// Stream the progress report from the backend; the content-disposition response
+// makes the browser download it without leaving the SPA. "xlsx" is the
+// human-readable summary, "csv" the raw per-lesson dataset for AI analysis.
+function exportProgress(fileFormat: 'xlsx' | 'csv') {
+	const name = props.batch?.data?.name
+	if (!name) return
+	window.open(
+		`/api/method/os_lms.os_lms.api.export_batch_progress?batch=${encodeURIComponent(
+			name,
+		)}&file_format=${fileFormat}`,
+		'_blank',
+	)
+}
+
+const exportMenu = computed(() => [
+	{
+		label: __('Excel (.xlsx)'),
+		onClick: () => exportProgress('xlsx'),
+	},
+	{
+		label: __('CSV (raw data)'),
+		onClick: () => exportProgress('csv'),
+	},
+])
 
 const seriesName = computed(() => __('Value'))
 

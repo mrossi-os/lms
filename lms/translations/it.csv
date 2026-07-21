@@ -5459,6 +5459,8 @@ restrict_ip
 "Add caption","Aggiungi didascalia"
 "Loading...","Caricamento..."
 "No lessons in this course","Nessuna lezione in questo corso"
+"Export Statistics","Esporta statistiche"
+"CSV (raw data)","CSV (dati grezzi)"
 "File type .{0} is not supported.","Tipo di file .{0} non supportato."
 "Error uploading file.","Errore durante il caricamento del file."
 "Click the icon to download","Clicca sull'icona per scaricare"

@@ -630,6 +630,197 @@ def get_batch_student_course_progress(batch: str, course: str, member: str) -> d
 	return {"lessons": lessons}
 
 
+@frappe.whitelist()
+def export_batch_progress(batch: str, file_format: str = "xlsx"):
+	"""Download a report of the batch students' course progress. Labels are in Italian.
+
+	``file_format="xlsx"`` (default) — human-readable summary: one row per
+	(student, started course) with the started / not-started course counts and the
+	completed / not-completed lesson names. Students with no started course still
+	get a row so the roster stays complete.
+
+	``file_format="csv"`` — raw, un-aggregated dataset for downstream (e.g. AI)
+	analysis: one row per (student, course, lesson) with completion flags, covering
+	every batch course and lesson.
+
+	A course is "started" when the student has any progress row for it; a lesson
+	counts as completed when its status is ``Complete``.
+
+	Streams the file back via ``frappe.response`` (content-disposition), so the
+	frontend just opens the endpoint URL. Available to batch admins and to the
+	batch's valutatori (scoped read).
+	"""
+	from lms.lms.utils import can_modify_batch, is_batch_valutatore
+
+	if not (can_modify_batch(batch) or is_batch_valutatore(batch)):
+		frappe.throw(
+			frappe._("You are not authorized to view this batch."),
+			frappe.PermissionError,
+		)
+
+	students = frappe.get_all(
+		"LMS Batch Enrollment",
+		filters={"batch": batch},
+		fields=["member", "member_name"],
+		order_by="member_name asc",
+	)
+
+	courses = frappe.get_all(
+		"Batch Course",
+		filters={"parent": batch, "parenttype": "LMS Batch"},
+		fields=["course", "title"],
+		order_by="idx asc",
+	)
+	course_ids = [c.course for c in courses]
+	course_title = {c.course: c.title for c in courses}
+
+	# Ordered lessons for every batch course in a single query.
+	lessons_by_course = {cid: [] for cid in course_ids}
+	if course_ids:
+		LessonReference = frappe.qb.DocType("Lesson Reference")
+		ChapterReference = frappe.qb.DocType("Chapter Reference")
+		Lesson = frappe.qb.DocType("Course Lesson")
+		lesson_rows = (
+			frappe.qb.from_(LessonReference)
+			.join(ChapterReference)
+			.on(LessonReference.parent == ChapterReference.chapter)
+			.join(Lesson)
+			.on(LessonReference.lesson == Lesson.name)
+			.select(
+				ChapterReference.parent.as_("course"),
+				ChapterReference.idx.as_("chapter_idx"),
+				LessonReference.idx.as_("lesson_idx"),
+				Lesson.name.as_("lesson"),
+				Lesson.title,
+			)
+			.where(ChapterReference.parent.isin(course_ids))
+			.orderby(ChapterReference.parent, ChapterReference.idx, LessonReference.idx)
+			.run(as_dict=True)
+		)
+		for row in lesson_rows:
+			lessons_by_course.setdefault(row.course, []).append(row)
+
+	# All progress rows for the batch's members and courses: presence marks the
+	# course as started; a "Complete" row marks the lesson as completed.
+	members = [s.member for s in students]
+	completed = {}  # (member, course) -> set(lesson)
+	started = {}  # member -> set(course)
+	if members and course_ids:
+		CourseProgress = frappe.qb.DocType("LMS Course Progress")
+		progress_rows = (
+			frappe.qb.from_(CourseProgress)
+			.select(
+				CourseProgress.member,
+				CourseProgress.course,
+				CourseProgress.lesson,
+				CourseProgress.status,
+			)
+			.where(CourseProgress.member.isin(members) & CourseProgress.course.isin(course_ids))
+			.run(as_dict=True)
+		)
+		for row in progress_rows:
+			started.setdefault(row.member, set()).add(row.course)
+			if row.status == "Complete":
+				completed.setdefault((row.member, row.course), set()).add(row.lesson)
+
+	batch_title = frappe.db.get_value("LMS Batch", batch, "title") or batch
+	safe_title = re.sub(r"[^\w\- ]", "_", batch_title).strip() or "batch"
+
+	if file_format == "csv":
+		# Raw, un-aggregated matrix for AI analysis: one row per
+		# (student, course, lesson), covering every batch course and lesson.
+		import csv
+		import io
+
+		buffer = io.StringIO()
+		writer = csv.writer(buffer)
+		writer.writerow(
+			["Studente", "Email", "Corso", "Corso avviato", "Capitolo", "Lezione n.", "Lezione", "Completata"]
+		)
+		for student in students:
+			student_started = started.get(student.member, set())
+			for cid in course_ids:
+				is_started = 1 if cid in student_started else 0
+				done = completed.get((student.member, cid), set())
+				for lesson in lessons_by_course.get(cid, []):
+					writer.writerow(
+						[
+							student.member_name or student.member,
+							student.member,
+							course_title.get(cid, cid),
+							is_started,
+							lesson.chapter_idx,
+							lesson.lesson_idx,
+							lesson.title,
+							1 if lesson.lesson in done else 0,
+						]
+					)
+
+		frappe.response["filename"] = f"{safe_title} - Dati grezzi.csv"
+		frappe.response["filecontent"] = buffer.getvalue().encode("utf-8")
+		frappe.response["type"] = "download"
+		frappe.response["content_type"] = "text/csv; charset=utf-8"
+		return
+
+	# Default: human-readable XLSX summary, one row per (student, started course).
+	from frappe.utils.xlsxutils import make_xlsx
+
+	data = [
+		[
+			"Studente",
+			"Email",
+			"Corsi avviati",
+			"Corsi non iniziati",
+			"Corso",
+			"Lezioni completate",
+			"Nomi lezioni completate",
+			"Lezioni non completate",
+			"Nomi lezioni non completate",
+		]
+	]
+
+	total_courses = len(course_ids)
+	for student in students:
+		student_started = started.get(student.member, set())
+		started_courses = [cid for cid in course_ids if cid in student_started]
+		started_count = len(started_courses)
+		not_started_count = total_courses - started_count
+
+		if not started_courses:
+			data.append(
+				[student.member_name or student.member, student.member, started_count, not_started_count, "", "", "", "", ""]
+			)
+			continue
+
+		for cid in started_courses:
+			lessons = lessons_by_course.get(cid, [])
+			done = completed.get((student.member, cid), set())
+			done_lessons = [lesson for lesson in lessons if lesson.lesson in done]
+			todo_lessons = [lesson for lesson in lessons if lesson.lesson not in done]
+			data.append(
+				[
+					student.member_name or student.member,
+					student.member,
+					started_count,
+					not_started_count,
+					course_title.get(cid, cid),
+					len(done_lessons),
+					"; ".join(lesson.title for lesson in done_lessons),
+					len(todo_lessons),
+					"; ".join(lesson.title for lesson in todo_lessons),
+				]
+			)
+
+	xlsx_file = make_xlsx(data, "Statistiche")
+
+	frappe.response["filename"] = f"{safe_title} - Statistiche.xlsx"
+	frappe.response["filecontent"] = xlsx_file.getvalue()
+	frappe.response["type"] = "download"
+	frappe.response["content_type"] = (
+		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	)
+
+
 BATCH_TAB_SECTIONS = ("classes", "announcements", "discussions")
 
 
