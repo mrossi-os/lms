@@ -64,7 +64,7 @@
 			<div
 				v-else
 				ref="lessonContainer"
-				class="bg-surface-base"
+				class="bg-surface-base min-w-0"
 				:class="{
 					'overflow-y-auto': zenModeEnabled,
 				}"
@@ -79,8 +79,8 @@
 						<div
 							class="flex flex-col space-y-3 md:space-y-0 md:flex-row md:items-center justify-between"
 						>
-							<div class="flex flex-col">
-								<div class="text-5xl-semibold text-ink-gray-9">
+							<div class="flex flex-col min-w-0">
+								<div class="text-5xl-semibold text-ink-gray-9 break-words">
 									{{ lesson.data.title }}
 								</div>
 
@@ -268,7 +268,7 @@
 					</div>
 				</div>
 			</div>
-			<div v-if="!embedded" class="sticky top-10 h-[94vh]">
+			<div v-if="!embedded" class="sticky top-10 h-[94vh] min-w-0">
 				<StudentLessonSidebar
 					:courseName="courseName"
 					:courseTitle="lesson.data.course_title"
@@ -1123,6 +1123,18 @@ usePageMeta(() => {
 
 .ce-block__content {
 	max-width: unset;
+}
+
+/* Long unbreakable strings (URLs, long single words) in lesson text must wrap
+   instead of overflowing the column and shoving the whole page sideways — the
+   cause of a lesson looking "shifted right" in courses whose content holds such
+   a token (e.g. a bare Cloudflare/Bunny video URL pasted as text). Scoped to
+   .ProseMirror so it covers BOTH content types: EditorJS (#editor lives inside
+   .ProseMirror) and the markdown body (LessonContent). The explicit
+   .ce-paragraph selector out-specifies any EditorJS default on that element. */
+.ProseMirror,
+.ProseMirror .ce-paragraph {
+	overflow-wrap: break-word;
 }
 
 .codex-editor__redactor {
