@@ -40,7 +40,18 @@ const props = defineProps({
 	},
 })
 
-const fileURL = computed(() => encodeURI(props.file))
+const fileURL = computed(() => {
+	// Content fetched from the server already routes private files through the
+	// access-gated serve_resource endpoint with a properly percent-encoded URL
+	// (see rewrite_private_media). Running encodeURI on it again would escape the
+	// percent signs (%20 → %2520) and break the download with a 404. Only encode
+	// raw paths that haven't been through the server rewrite yet (fresh uploads
+	// in the editor), where spaces/parens still need escaping.
+	const file = props.file
+	const alreadyEncoded =
+		file.includes('serve_resource') || /%[0-9A-Fa-f]{2}/.test(file)
+	return alreadyEncoded ? file : encodeURI(file)
+})
 
 const fileName = computed(() => {
 	const path = props.file.split('/').pop() || props.file
