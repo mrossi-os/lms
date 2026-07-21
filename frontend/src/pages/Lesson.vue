@@ -991,7 +991,17 @@ const showVideoStats = () => {
 	showStatsDialog.value = true
 }
 
+// Zen mode is driven by the browser Fullscreen API, which iPhone does not
+// expose for non-video elements (every iOS browser runs on WebKit). Feature-
+// detect it so the Zen affordance is hidden where it can't work — a dead button
+// is worse than no button. This gates the header, the in-lesson controls and
+// the CourseEditor preview, since they all read canGoZen().
+const fullscreenSupported = Boolean(
+	document.fullscreenEnabled || document.webkitFullscreenEnabled,
+)
+
 const canGoZen = () => {
+	if (!fullscreenSupported) return false
 	if (
 		user.data?.is_moderator ||
 		user.data?.is_instructor ||
