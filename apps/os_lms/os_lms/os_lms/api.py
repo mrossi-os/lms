@@ -568,6 +568,68 @@ def get_batch_progress_stats(batch: str, course: str | None = None) -> dict:
 	return {"students_count": students_count, "lessons": lessons}
 
 
+@frappe.whitelist()
+def get_batch_student_course_progress(batch: str, course: str, member: str) -> dict:
+	"""Per-lesson progress of a single batch student in one course.
+
+	Powers the course drill-down in the admin batch dashboard's student dialog:
+	each lesson of ``course`` in order, flagged with whether ``member`` has
+	completed it.
+
+	Available to batch admins and to the batch's valutatori (scoped read). Going
+	through this batch-authorized endpoint lets valutatori — who cannot read
+	``LMS Course Progress`` directly — see the drill-down for their own students.
+	"""
+	from pypika import functions as fn
+
+	from lms.lms.utils import can_modify_batch, is_batch_valutatore
+
+	if not (can_modify_batch(batch) or is_batch_valutatore(batch)):
+		frappe.throw(
+			frappe._("You are not authorized to view this batch."),
+			frappe.PermissionError,
+		)
+
+	CourseProgress = frappe.qb.DocType("LMS Course Progress")
+	LessonReference = frappe.qb.DocType("Lesson Reference")
+	ChapterReference = frappe.qb.DocType("Chapter Reference")
+	Lesson = frappe.qb.DocType("Course Lesson")
+
+	# Left-join this member's "Complete" progress row onto every lesson of the
+	# course, so a missing row reads as not-completed. Count is 0 or 1 per lesson
+	# (a member completes a lesson at most once).
+	lessons = (
+		frappe.qb.from_(LessonReference)
+		.join(ChapterReference)
+		.on(LessonReference.parent == ChapterReference.chapter)
+		.join(Lesson)
+		.on(LessonReference.lesson == Lesson.name)
+		.left_join(CourseProgress)
+		.on(
+			(CourseProgress.lesson == LessonReference.lesson)
+			& (CourseProgress.course == course)
+			& (CourseProgress.status == "Complete")
+			& (CourseProgress.member == member)
+		)
+		.select(
+			LessonReference.idx,
+			ChapterReference.idx.as_("chapter_idx"),
+			Lesson.title,
+			Lesson.name.as_("lesson_name"),
+			fn.Count(CourseProgress.name).as_("completed"),
+		)
+		.where(ChapterReference.parent == course)
+		.groupby(LessonReference.lesson)
+		.orderby(ChapterReference.idx, LessonReference.idx)
+		.run(as_dict=True)
+	)
+
+	for lesson in lessons:
+		lesson["completed"] = bool(lesson["completed"])
+
+	return {"lessons": lessons}
+
+
 BATCH_TAB_SECTIONS = ("classes", "announcements", "discussions")
 
 
