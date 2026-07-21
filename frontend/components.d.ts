@@ -100,6 +100,8 @@ declare module 'vue' {
     LMSLogo: typeof import('./src/components/Icons/LMSLogo.vue')['default']
     LucideChevronLeft: typeof import('~icons/lucide/chevron-left')['default']
     LucideChevronRight: typeof import('~icons/lucide/chevron-right')['default']
+    LucideChevronsUpDown: typeof import('~icons/lucide/chevrons-up-down')['default']
+    LucideChevronUp: typeof import('~icons/lucide/chevron-up')['default']
     LucidePlus: typeof import('~icons/lucide/plus')['default']
     LucideStar: typeof import('~icons/lucide/star')['default']
     LucideTrash2: typeof import('~icons/lucide/trash2')['default']

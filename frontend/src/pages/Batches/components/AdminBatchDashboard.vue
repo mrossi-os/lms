@@ -61,7 +61,7 @@
 					<ListView
 						v-if="students.loading || students.data?.length"
 						:columns="studentColumns"
-						:rows="students.data"
+						:rows="sortedStudents"
 						rowKey="name"
 						:options="{
 							selectable: isFullAdmin,
@@ -79,11 +79,24 @@
 								:item="item"
 								v-for="item in studentColumns"
 								:key="item.key"
+								class="cursor-pointer select-none"
+								@click="toggleSort(item.key)"
 							>
+								<template #suffix>
+									<LucideChevronUp
+										v-if="sortColumn === item.key"
+										class="size-3.5 shrink-0 text-ink-gray-7 transition-transform duration-200"
+										:class="sortOrder === 'desc' ? 'rotate-180' : ''"
+									/>
+									<LucideChevronsUpDown
+										v-else
+										class="size-3.5 shrink-0 text-ink-gray-4"
+									/>
+								</template>
 							</ListHeaderItem>
 						</ListHeader>
 						<ListRows>
-							<ListRow v-for="row in students.data" :key="row.name" :row="row">
+							<ListRow v-for="row in sortedStudents" :key="row.name" :row="row">
 								<template #default="{ column, item }">
 									<ListRowItem
 										:item="row[column.key]"
@@ -99,13 +112,18 @@
 													size="sm"
 												/>
 											</div>
+											<ProgressBar
+												v-else-if="column.key == 'progress'"
+												:progress="getStudentProgress(row.member)"
+												class="!mx-0 !me-4"
+											/>
 										</template>
 										<div v-if="column.key == 'creation'">
 											{{ dayjs(row[column.key]).format('DD MMM YYYY') }}
 										</div>
 										<div
 											v-else-if="column.key == 'progress'"
-											class="text-xs !mx-0 w-9 text-right"
+											class="text-xs !mx-0 w-10 text-right shrink-0"
 										>
 											{{ getStudentProgress(row.member) }}%
 										</div>
@@ -288,6 +306,7 @@ import { formatAmount } from '@/utils'
 import BatchFeedback from '@/pages/Batches/components/BatchFeedback.vue'
 import BatchStudentProgress from '@/pages/Batches/components/BatchStudentProgress.vue'
 import NumberChartGraph from '@/components/NumberChartGraph.vue'
+import ProgressBar from '@/components/ProgressBar.vue'
 import StudentModal from '@/components/Modals/StudentModal.vue'
 import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
 import { useRouter } from 'vue-router'
@@ -305,6 +324,15 @@ const isFullAdmin = computed(
 		user?.data?.is_docente,
 )
 const searchFilter = ref<string | null>(null)
+
+// Column sorting for the students list. `member_name` and `creation` are real
+// LMS Batch Enrollment fields sorted server-side (correct across the paginated
+// "Load More" pages); `progress` is derived client-side from `batchStats` (see
+// `getStudentProgress`), so it has no backing column and is reordered
+// client-side over the loaded rows instead. Defaults mirror the list resource's
+// initial `orderBy: 'creation desc'`.
+const sortColumn = ref<string>('creation')
+const sortOrder = ref<'asc' | 'desc'>('desc')
 const showEnrollmentModal = ref<boolean>(false)
 const showProgressModal = ref<boolean>(false)
 const currentStudent = ref<any>(null)
@@ -362,6 +390,20 @@ const students = createListResource({
 
 const getStudentProgress = (member: string) =>
 	Math.ceil(batchStats.data?.students_progress?.[member] || 0)
+
+// Rows rendered in the students list. For the two server-sortable columns this
+// is just the resource data (already ordered by `orderBy`); for `progress` —
+// which has no backing DB column — reorder the loaded rows client-side by the
+// client-computed progress value.
+const sortedStudents = computed(() => {
+	const rows = students.data || []
+	if (sortColumn.value !== 'progress') return rows
+	const dir = sortOrder.value === 'asc' ? 1 : -1
+	return [...rows].sort(
+		(a: any, b: any) =>
+			(getStudentProgress(a.member) - getStudentProgress(b.member)) * dir,
+	)
+})
 
 // Course-progress panel: no course selected -> per-course averages across the
 // batch's students; a course selected -> per-lesson completion for that course,
@@ -422,6 +464,24 @@ watch(searchFilter, () => {
 	students.update({ filters })
 	students.reload()
 })
+
+// Toggle sorting on a students-list column. Clicking the active column flips its
+// direction; clicking a different column starts ascending. `member_name` and
+// `creation` sort server-side via `orderBy` (`update` merges only `orderBy`,
+// leaving the search `filters` intact); `progress` is handled entirely by the
+// `sortedStudents` computed, so it needs no server round-trip.
+const toggleSort = (key: string) => {
+	if (sortColumn.value === key) {
+		sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+	} else {
+		sortColumn.value = key
+		sortOrder.value = 'asc'
+	}
+	if (key !== 'progress') {
+		students.update({ orderBy: `${sortColumn.value} ${sortOrder.value}` })
+		students.reload()
+	}
+}
 
 const studentColumns = computed(() => {
 	return [

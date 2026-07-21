@@ -56,7 +56,20 @@
 								:item="item"
 								v-for="item in progressColumns"
 								:key="item.key"
+								class="cursor-pointer select-none"
+								@click="toggleSort(item.key)"
 							>
+								<template #suffix>
+									<LucideChevronUp
+										v-if="sortColumn === item.key"
+										class="size-3.5 shrink-0 text-ink-gray-7 transition-transform duration-200"
+										:class="sortOrder === 'desc' ? 'rotate-180' : ''"
+									/>
+									<LucideChevronsUpDown
+										v-else
+										class="size-3.5 shrink-0 text-ink-gray-4"
+									/>
+								</template>
 							</ListHeaderItem>
 						</ListHeader>
 						<ListRows>
@@ -303,6 +316,13 @@ const dayjs = inject<typeof dayjsType>('$dayjs')!
 const showEnrollmentModal = ref<boolean>(false)
 const searchFilter = ref<string | null>(null)
 
+// Server-side sorting for the students list. Keys map to real LMS Enrollment
+// fields (member_name, progress) or the standard `creation` column, so sorting
+// stays correct across the paginated "Load More" pages. Defaults mirror the
+// list resource's initial `orderBy: 'creation desc'`.
+const sortColumn = ref<string>('creation')
+const sortOrder = ref<'asc' | 'desc'>('desc')
+
 function openEnrollModal() {
 	showEnrollmentModal.value = true
 }
@@ -357,6 +377,7 @@ const progressList = createListResource({
 		'progress',
 		'creation',
 	],
+	orderBy: 'creation desc',
 	pageLength: 100,
 	auto: true,
 	cache: ['courseProgress', props.course.data?.name],
@@ -398,6 +419,20 @@ watch([searchFilter], () => {
 	})
 	progressList.reload()
 })
+
+// Toggle sorting on a students-list column. Clicking the active column flips
+// its direction; clicking a different column starts ascending. `update` merges
+// only `orderBy`, leaving the current search `filters` intact.
+const toggleSort = (key: string) => {
+	if (sortColumn.value === key) {
+		sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+	} else {
+		sortColumn.value = key
+		sortOrder.value = 'asc'
+	}
+	progressList.update({ orderBy: `${sortColumn.value} ${sortOrder.value}` })
+	progressList.reload()
+}
 
 const averageCompletionRate = computed(() => {
 	let value = Math.ceil(chartDetails.data?.average_progress) || 0
