@@ -129,6 +129,12 @@ textarea {
 	background-color: var(--surface-gray-2) !important;
 }
 
+/* Focus ring of the "Sommario" (Table of Contents) node: frappe-ui draws a 2px
+   --outline-gray-2 outline when the node is selected — recolor it to --ink-gray-9. */
+.os-editor-wrapper .table-of-contents-node.ProseMirror-selectednode {
+	outline-color: var(--ink-gray-9);
+}
+
 .ProseMirror {
 	border-radius: 0.5rem;
 	padding: 0.7rem;
