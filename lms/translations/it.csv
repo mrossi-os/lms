@@ -5344,6 +5344,8 @@ restrict_ip
 "Enroll students to track their progress here.","Iscrivi degli studenti per seguirne qui i progressi."
 "Select valutatori","Seleziona valutatori"
 "Select date","Seleziona data"
+"Select time","Seleziona orario"
+"Now","Adesso"
 "Untitled lesson","Lezione senza titolo"
 "Integrations","Integrazioni"
 "Accounts","Account"

@@ -27,6 +27,7 @@
 							v-model="batchDetail.doc.start_date"
 							:label="__('Batch Start Date')"
 							type="date"
+							:placeholder="__('Select date')"
 							:required="true"
 							variant="outline"
 						/>
@@ -34,6 +35,7 @@
 							v-model="batchDetail.doc.end_date"
 							:label="__('Batch End Date')"
 							type="date"
+							:placeholder="__('Select date')"
 							:required="true"
 							variant="outline"
 						/>
@@ -46,6 +48,7 @@
 							<FormControl
 								v-model="batchDetail.doc.start_time"
 								type="time"
+								:placeholder="__('Select time')"
 								variant="outline"
 							/>
 						</div>
@@ -54,6 +57,7 @@
 							<FormControl
 								v-model="batchDetail.doc.end_time"
 								type="time"
+								:placeholder="__('Select time')"
 								variant="outline"
 							/>
 						</div>
@@ -135,6 +139,7 @@
 								v-model="batchDetail.doc.evaluation_end_date"
 								:label="__('Evaluation End Date')"
 								type="date"
+								:placeholder="__('Select date')"
 								variant="outline"
 							/>
 						</div>
