@@ -5346,6 +5346,7 @@ restrict_ip
 "Select date","Seleziona data"
 "Select time","Seleziona orario"
 "Now","Adesso"
+"This file is public and can be accessed by anyone, even without logging in. Mark it private to limit access.","Questo file è pubblico ed è accessibile a chiunque, anche senza effettuare l'accesso. Rendilo privato per limitarne l'accesso."
 "Untitled lesson","Lezione senza titolo"
 "Integrations","Integrazioni"
 "Accounts","Account"
