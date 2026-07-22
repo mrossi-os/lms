@@ -1,6 +1,10 @@
 <template>
-	<!-- OSLMS-CUSTOM: push the card down when the video is hidden (hero shows it) -->
+	<!-- OSLMS-CUSTOM: push the card down when the video is hidden (hero shows it).
+	Hide the whole card when it would be empty — on mobile the outline and the
+	"Continue Learning" CTA are moved out (hideOutline/hideContinueCta), which can
+	leave nothing to show (see hasCardContent). -->
 	<div
+		v-if="hasCardContent"
 		class="border-2 rounded-md w-full md:min-w-80 max-w-sm card !p-0"
 		:class="{ 'md:mt-16': hideVideo }"
 	>
@@ -17,6 +21,7 @@
 			<div v-if="!readOnlyMode">
 				<div v-if="course.data?.membership" class="space-y-2 mb-8">
 					<router-link
+						v-if="!hideContinueCta"
 						:to="{
 							name: 'Lesson',
 							params: {
@@ -96,8 +101,10 @@
 					{{ __('Get Certificate') }}
 				</Button>
 			</div>
-			<!-- OSLMS-CUSTOM: navigable course outline (replaces the stats block below) -->
-			<div :class="readOnlyMode ? 'mt-4' : 'mt-0'">
+			<!-- OSLMS-CUSTOM: navigable course outline (replaces the stats block below).
+			On mobile it is hidden here and re-rendered at the page bottom (see
+			CourseOverview), so pass `hideOutline` from the mobile mount. -->
+			<div v-if="!hideOutline" :class="readOnlyMode ? 'mt-4' : 'mt-0'">
 				<CourseOutline
 					:title="__('Course Outline')"
 					:courseName="course.data?.name ?? ''"
@@ -194,8 +201,14 @@ const props = withDefaults(
 		course: Resource<CourseDetails | null>
 		// OSLMS-CUSTOM: suppress the preview video iframe (e.g. when a hero shows it)
 		hideVideo?: boolean
+		// OSLMS-CUSTOM: suppress the embedded course outline (moved to the page
+		// bottom on mobile — see CourseOverview).
+		hideOutline?: boolean
+		// OSLMS-CUSTOM: suppress the "Continue Learning" button (replaced by a fixed
+		// bottom bar on mobile — see CourseOverview).
+		hideContinueCta?: boolean
 	}>(),
-	{ hideVideo: false },
+	{ hideVideo: false, hideOutline: false, hideContinueCta: false },
 )
 
 const video_link = computed<string | undefined>(() => {
@@ -303,11 +316,11 @@ const canGetCertificate = computed<boolean>(() => {
 	return Boolean(
 		(props.course.data?.enable_certification ||
 			props.course.data?.trueskills_certificate_enabled) &&
-			(props.course.data?.membership?.progress ?? 0) >= 100 &&
-			// Hide once the certificate exists (CertificationLinks shows "View
-			// Certificate"). Wait for the resource to load to avoid a flash.
-			certification.data &&
-			!certification.data.certificate,
+		(props.course.data?.membership?.progress ?? 0) >= 100 &&
+		// Hide once the certificate exists (CertificationLinks shows "View
+		// Certificate"). Wait for the resource to load to avoid a flash.
+		certification.data &&
+		!certification.data.certificate,
 	)
 })
 
@@ -326,5 +339,35 @@ const isAdmin = computed<boolean>(() => {
 		Boolean(user.data?.is_docente) ||
 		is_instructor()
 	)
+})
+
+// OSLMS-CUSTOM: mirrors CertificationLinks' own visibility (using the same
+// certification resource), so the card can tell whether that child will render
+// anything before deciding to hide itself.
+const certLinksVisible = computed<boolean>(() => {
+	const d = certification.data
+	if (!d) return false
+	if (d.certificate) return true
+	if (d.membership && d.paid_certificate && user.data?.is_student) {
+		return !d.membership.purchased_certificate || !d.membership.certificate
+	}
+	return false
+})
+
+// OSLMS-CUSTOM: whether the card has anything worth a border. On mobile the outline
+// and Continue CTA are moved out (hideOutline/hideContinueCta), which can leave the
+// card empty — hide it in that case rather than render an empty box.
+const hasCardContent = computed<boolean>(() => {
+	// Non-stripped mounts (desktop sidebar / 640–767 inline) always show the outline.
+	if (!props.hideOutline) return true
+	// Preview video.
+	if (props.course.data?.video_link && !props.hideVideo) return true
+	// Enrolled member: certificate actions (issue, or view/get-certified).
+	if (props.course.data?.membership) {
+		return canGetCertificate.value || certLinksVisible.value
+	}
+	// Non-member student: an enroll/buy/contact CTA always renders (admins get the
+	// tabbed editor instead of this overview, so isAdmin is effectively false here).
+	return !isAdmin.value
 })
 </script>

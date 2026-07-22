@@ -1,6 +1,8 @@
 <template>
 	<SkeletonLoader v-if="!course.data" variant="course-page" />
-	<div v-else class="p-5">
+	<!-- OSLMS-CUSTOM: extra bottom padding on mobile so the fixed "Continue Learning"
+	bar (rendered below) never covers the last section. -->
+	<div v-else class="p-5" :class="{ 'pb-36': showMobileCta }">
 		<div
 			class="flex flex-col md:flex-row items-start justify-between w-full gap-x-8 gap-y-8"
 		>
@@ -44,8 +46,25 @@
 					>
 						{{ course.data.short_introduction }}
 					</p>
-					<div class="md:hidden">
+					<!-- OSLMS-CUSTOM: 640–767px keeps the desktop shell (with sidebar),
+					so the new mobile treatment (fixed bottom CTA + outline-at-bottom)
+					is confined to the phone shell (<640px, MobileLayout, no sidebar).
+					In the 640–767px gap the page is single-column but the desktop
+					sidebar card is hidden, so render the original full card inline. -->
+					<div v-if="isNarrow && !isMobile" class="md:hidden">
 						<CourseCardOverlay :course="course" :hideVideo="hasHero" />
+					</div>
+					<!-- Phone (<640px): the outline moves to the page bottom and the
+					"Continue Learning" CTA becomes a fixed bar, so the card keeps only
+					the preview/enroll + certificate actions. It hides itself when that
+					would leave it empty (see hasCardContent in CourseCardOverlay). -->
+					<div v-else-if="isMobile">
+						<CourseCardOverlay
+							:course="course"
+							:hideVideo="hasHero"
+							hideOutline
+							hideContinueCta
+						/>
 					</div>
 				</section>
 
@@ -105,6 +124,19 @@
 					:membership="course.data.membership || null"
 				/>
 				-->
+
+				<!-- OSLMS-CUSTOM: on the phone shell (<640px) the course outline
+				("Programma del Corso") moves to the bottom, below the content
+				sections. In every wider layout it stays in the card (inline 640–767px,
+				sidebar ≥768px), so this is mount-gated to avoid a duplicate outline. -->
+				<section v-if="isMobile">
+					<CourseOutline
+						:title="__('Course Outline')"
+						:courseName="course.data.name"
+						:showOutline="false"
+						:getProgress="course.data.membership ? true : false"
+					/>
+				</section>
 			</div>
 
 			<aside
@@ -118,14 +150,37 @@
 		</div>
 
 		<RelatedCourses :courseName="course.data.name" class="mt-12" />
+
+		<!-- OSLMS-CUSTOM: phone-only (<640px) floating "Continue Learning" CTA — a
+		full-width bar pinned above the MobileLayout bottom nav (~48px = bottom-12).
+		Confined to the phone shell so it never overlaps the desktop sidebar. The
+		course outline moved to the page bottom so this stays the single primary
+		action. AiFixedButtons lifts above it via the shared mobile-cta store. -->
+		<div
+			v-if="showMobileCta"
+			class="fixed inset-x-0 bottom-12 standalone:bottom-16 z-30 p-3"
+		>
+			<router-link :to="continueRoute" class="flex w-full justify-center">
+				<Button variant="solid" size="md" class="w-2/3">
+					<template #prefix>
+						<span class="lucide-book-text size-4" />
+					</template>
+					<span>
+						{{ __('Continue Learning') }}
+					</span>
+				</Button>
+			</router-link>
+		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
-import { computed, inject, provide } from 'vue'
-import { createResource, Badge } from 'frappe-ui'
+import { computed, inject, provide, watch, onUnmounted } from 'vue'
+import { createResource, Badge, Button } from 'frappe-ui'
 import { Star, UsersRound } from 'lucide-vue-next'
 import { formatAmount, formatRating } from '@/utils/'
+import { useScreenSize } from '@/utils/composables'
+import { useMobileCta } from '@/stores/mobileCta'
 import type { SessionUser } from '@/types/api'
 import CourseCardOverlay from '@/components/CourseCardOverlay.vue'
 import CourseOutline from '@/components/CourseOutline.vue'
@@ -146,6 +201,42 @@ const props = defineProps<{
 }>()
 
 const user = inject<SessionUser>('$user')
+
+// OSLMS-CUSTOM: mobile treatment for the course page. `isNarrow` matches the
+// page's own `md:` split (single column below 768px); `isMobile` matches the app
+// shell breakpoint (MobileLayout + its bottom nav render below 640px), used to
+// park the floating CTA above that nav.
+const { size } = useScreenSize()
+const isNarrow = computed<boolean>(() => size.width < 768)
+const isMobile = computed<boolean>(() => size.width < 640)
+
+// The floating "Continue Learning" bar shows on the phone shell (<640px, where the
+// MobileLayout bottom nav lives and there is no sidebar) for enrolled members.
+const showMobileCta = computed<boolean>(
+	() => isMobile.value && Boolean(props.course.data?.membership),
+)
+
+// Same target as CourseCardOverlay's "Continue Learning" button: resume at the
+// stored current lesson, or the very first lesson when none is recorded yet.
+const continueRoute = computed(() => {
+	const current = props.course.data?.current_lesson
+	return {
+		name: 'Lesson',
+		params: {
+			courseName: props.course.data?.name ?? '',
+			chapterNumber: current ? current.split('-')[0] : 1,
+			lessonNumber: current ? current.split('-')[1] : 1,
+		},
+	}
+})
+
+// Publish the bar's presence so global floating UI (AiFixedButtons) can lift above
+// it instead of overlapping. Cleared on unmount so it never leaks to other pages.
+const mobileCta = useMobileCta()
+watch(showMobileCta, (visible) => mobileCta.setBar(visible), {
+	immediate: true,
+})
+onUnmounted(() => mobileCta.setBar(false))
 
 // OSLMS-CUSTOM: tag colours are provided by Courses.vue on the listing page, but
 // not in the CourseDetail tab tree. Re-fetch the LMS OS Tag colour map here and
