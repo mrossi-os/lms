@@ -1,7 +1,9 @@
 <!--
   Override of frappe-ui's TextEditor LinkPopup.vue via the osOverrideTheme Vite
-  plugin. The ONLY change from the upstream component is the link anchor's text
-  color: `text-ink-gray-700` -> `text-ink-gray-9`. Keep this file in sync with
+  plugin. Changes from the upstream component:
+    1. Link anchor's text color: `text-ink-gray-700` -> `text-ink-gray-9`.
+    2. Action tooltips translated (upstream hardcodes English).
+  Keep this file in sync with
   node_modules/frappe-ui/src/components/TextEditor/components/LinkPopup.vue after
   any upstream frappe-ui bump.
 -->
@@ -32,13 +34,13 @@
       <template v-if="edit">
         <Button
           @click="submitLink"
-          tooltip="Submit"
+          :tooltip="__('Conferma')"
           :icon="LucideCheck"
           variant="subtle"
         />
         <Button
           @click="props.href ? (edit = false) : $emit('updateHref', '')"
-          tooltip="Exit"
+          :tooltip="__('Annulla')"
           :icon="LucideX"
           variant="subtle"
         />
@@ -46,18 +48,18 @@
       <template v-else>
         <Button
           @click="copyLink"
-          tooltip="Copy"
+          :tooltip="__('Copia')"
           :icon="LucideCopy"
           variant="subtle"
         />
         <Button
           @click="edit = true"
-          tooltip="Edit"
+          :tooltip="__('Modifica')"
           :icon="LucidePencil"
           variant="subtle"
         />
         <Button
-          tooltip="Remove"
+          :tooltip="__('Rimuovi')"
           variant="subtle"
           @click="$emit('updateHref', '')"
           :icon="Link2Off"

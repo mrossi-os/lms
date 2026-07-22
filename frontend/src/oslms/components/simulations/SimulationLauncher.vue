@@ -48,7 +48,7 @@
 								{{ sc.scenario_name }}
 							</div>
 							<div class="text-xs text-ink-gray-5 mt-1 flex gap-3">
-								<Badge :label="sc.difficulty" :theme="difficultyTheme(sc.difficulty)" />
+								<Badge :label="difficultyLabel(sc.difficulty)" :theme="difficultyTheme(sc.difficulty)" />
 								<span class="capitalize">{{ sc.modality }}</span>
 							</div>
 						</div>
@@ -104,7 +104,7 @@
 							<td class="py-2">{{ formatDate(s.started_at) }}</td>
 							<td class="capitalize">{{ s.modality }}</td>
 							<td>
-								<Badge :label="s.status" :theme="statusTheme(s.status)" />
+								<Badge :label="statusLabel(s.status)" :theme="statusTheme(s.status)" />
 							</td>
 							<td class="text-right">
 								<Button
@@ -285,6 +285,13 @@ function difficultyTheme(diff) {
 	return { easy: 'green', medium: 'blue', hard: 'orange' }[diff] || 'gray'
 }
 
+function difficultyLabel(diff) {
+	return (
+		{ easy: __('Facile'), medium: __('Media'), hard: __('Difficile') }[diff] ||
+		diff
+	)
+}
+
 const TERMINAL = ['Completed', 'Abandoned', 'Error', 'Needs Review']
 function isTerminal(status) {
 	return TERMINAL.includes(status)
@@ -300,6 +307,19 @@ function statusTheme(status) {
 			Error: 'red',
 			'Needs Review': 'orange',
 		}[status] || 'gray'
+	)
+}
+
+function statusLabel(status) {
+	return (
+		{
+			Ready: __('Pronta'),
+			'In Progress': __('In corso'),
+			Completed: __('Completata'),
+			Abandoned: __('Abbandonata'),
+			Error: __('Errore'),
+			'Needs Review': __('Da revisionare'),
+		}[status] || status
 	)
 }
 

@@ -172,7 +172,7 @@
 							{{ formatDate(s.started_at) }}
 						</td>
 						<td class="px-3 py-2">
-							<Badge :label="s.status" :theme="sessionStatusTheme(s.status)" />
+							<Badge :label="sessionStatusLabel(s.status)" :theme="sessionStatusTheme(s.status)" />
 						</td>
 						<td class="px-3 py-2 text-right">
 							<span
@@ -388,6 +388,20 @@ function sessionStatusTheme(s) {
 			Error: 'red',
 			'Needs Review': 'orange',
 		}[s] || 'gray'
+	)
+}
+
+// Translate the backend session status enum for display.
+function sessionStatusLabel(s) {
+	return (
+		{
+			Ready: __('Pronta'),
+			'In Progress': __('In corso'),
+			Completed: __('Completata'),
+			Abandoned: __('Abbandonata'),
+			Error: __('Errore'),
+			'Needs Review': __('Da revisionare'),
+		}[s] || s
 	)
 }
 

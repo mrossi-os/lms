@@ -47,7 +47,7 @@
 					>
 						<td class="py-2">{{ s.scenario_name }}</td>
 						<td class="capitalize">{{ s.modality }}</td>
-						<td><Badge :label="s.status" :theme="statusTheme(s.status)" /></td>
+						<td><Badge :label="statusLabel(s.status)" :theme="statusTheme(s.status)" /></td>
 						<td>{{ formatDate(s.started_at) }}</td>
 						<td class="text-right">
 							<div class="flex gap-2 justify-end">
@@ -208,6 +208,19 @@ function statusTheme(status) {
 			Error: 'red',
 			'Needs Review': 'orange',
 		}[status] || 'gray'
+	)
+}
+// Translate the backend status enum for display (the raw value drives logic).
+function statusLabel(status) {
+	return (
+		{
+			Ready: __('Pronta'),
+			'In Progress': __('In corso'),
+			Completed: __('Completata'),
+			Abandoned: __('Abbandonata'),
+			Error: __('Errore'),
+			'Needs Review': __('Da revisionare'),
+		}[status] || status
 	)
 }
 function formatDate(dt) {

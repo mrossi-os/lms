@@ -118,7 +118,7 @@
 									@click="openEvaluation(ev.eval_id)"
 								>
 									<span class="text-ink-gray-7">{{ ev.triggered_at }}</span>
-									<Badge :label="ev.status" :theme="evalStatusTheme(ev.status)" />
+									<Badge :label="evalStatusLabel(ev.status)" :theme="evalStatusTheme(ev.status)" />
 								</li>
 							</ul>
 						</section>
@@ -270,6 +270,16 @@ function openEvaluation(evalId) {
 
 function evalStatusTheme(s) {
 	return { queued: 'gray', running: 'blue', complete: 'green', failed: 'red' }[s] || 'gray'
+}
+
+// Backend evaluation status enum → Italian display label.
+function evalStatusLabel(s) {
+	return {
+		queued: __('In coda'),
+		running: __('In corso'),
+		complete: __('Completata'),
+		failed: __('Fallita'),
+	}[s] || s
 }
 
 evaluation.subscribeToCompletion({

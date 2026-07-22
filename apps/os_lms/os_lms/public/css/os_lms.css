@@ -38,8 +38,11 @@ input {
 	border: 1px solid var(--border-color);
 }
 
+.forgot-password-message a {
+	color: var(--text-dark) !important;
+}
 .sign-up-message a {
-	color: black !important;
+	color: var(--text-dark) !important;
 }
 
 .terms-and-conditions-content p {
