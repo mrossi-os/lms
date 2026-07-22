@@ -79,6 +79,15 @@ import LucideX from '~icons/lucide/x'
 import Link2Off from '~icons/lucide/link-2-off'
 import { isValidUrl } from '../../../../../../../node_modules/frappe-ui/src/utils/url-validation'
 
+// LinkPopup is mounted by the Link extension through its OWN createApp()
+// (node_modules/.../extensions/link/link-extension.ts) — a detached Vue app
+// that does NOT inherit the main app's globalProperties.__. A bare `__()` in
+// the template compiles to `_ctx.__`, which is undefined in that app instance
+// → "u.__ is not a function". Bind the always-available global `window.__`
+// (set once at boot in main.js) so the template resolves it regardless of app
+// context.
+const __ = window.__
+
 const props = defineProps<{
   href: string
 }>()
