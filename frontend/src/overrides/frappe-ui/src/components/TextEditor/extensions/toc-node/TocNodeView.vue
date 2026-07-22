@@ -22,7 +22,7 @@
       v-if="isEditable"
       @click="removeNode"
       class="absolute top-2 right-2 bg-black/65 hover:bg-black/80 text-ink-gray-4 hover:text-ink-base p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-      title="Remove table of contents"
+      :title="__('Rimuovi indice')"
     >
       <span class="lucide-x size-4" />
     </button>
@@ -33,9 +33,10 @@
 // OSLMS-CUSTOM OVERRIDE of
 // node_modules/frappe-ui/src/components/TextEditor/extensions/toc-node/TocNodeView.vue
 // Resolved in place of the original by the osOverrideTheme Vite plugin
-// (frontend/vite.config.js). The ONLY functional change vs upstream is wrapping
-// the hardcoded "There are no headings in this document." empty-state string in
-// __() so it can be translated (it is otherwise hardcoded English in frappe-ui).
+// (frontend/vite.config.js). The ONLY functional changes vs upstream are the two
+// hardcoded English strings translated for display:
+//   1. the "There are no headings in this document." empty-state (wrapped in __()).
+//   2. the "Remove table of contents" button title (Italian literal).
 // Everything else is a verbatim copy — re-sync this file with upstream after any
 // frappe-ui upgrade that touches TocNodeView.vue.
 import {

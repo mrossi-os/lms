@@ -16,6 +16,7 @@ export default defineConfig(async ({ mode }) => {
 		},
 		plugins: [
 			osOverrideTheme(),
+			osTranslateTocFallback(),
 			frappeui({
 				frappeProxy: true,
 				lucideIcons: true,
@@ -165,6 +166,33 @@ async function importConfigSite(isDev) {
 	return JSON.parse(readFileSync(filePath, 'utf-8'))
 }
 
+
+// frappe-ui's tocNode extension lives in a `.ts` file, so it is out of reach of
+// osOverrideTheme (which only intercepts `.vue`). Its `renderHTML` serialization
+// path hardcodes an English empty-state string, shown in the read-only render of
+// a saved Table-of-Contents block that has no headings. Translate that single
+// literal to match the interactive NodeView (the TocNodeView.vue override).
+// NOTE: a targeted string replace — re-verify the matched literal after any
+// frappe-ui bump; a wording change upstream makes this silently no-op.
+function osTranslateTocFallback() {
+	return {
+		name: 'os-translate-toc-fallback',
+		enforce: 'pre',
+		transform(code, id) {
+			if (
+				id
+					.replace(/\\/g, '/')
+					.endsWith('/extensions/toc-node/toc-node-extension.ts')
+			) {
+				return code.replace(
+					"'No headings found in this document.',",
+					"'Non ci sono intestazioni in questo documento.',"
+				)
+			}
+			return null
+		},
+	}
+}
 
 // Vite plugin that allows overriding Vue components from node_modules
 // (e.g. frappe-ui) with local versions placed in `src/overrides/`.
