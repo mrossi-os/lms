@@ -129,6 +129,56 @@ export default defineConfig(async ({ mode }) => {
 				'interactjs',
 				'highlight.js',
 				'plyr',
+				// Pre-bundle EVERY tiptap/prosemirror entrypoint the editor touches.
+				// `frappe-ui` is excluded from optimization below (its source must be
+				// served raw for the osOverrideTheme plugin to intercept the relative
+				// component imports), so Vite's scanner never walks its dep tree. Any
+				// `@tiptap/pm/*` subpath imported ONLY through frappe-ui (and its
+				// transitive @tiptap/extension-* / starter-kit packages) is therefore
+				// served raw from node_modules, dragging in a SECOND raw copy of
+				// prosemirror-state alongside the optimized one used by @tiptap/vue-3.
+				// Two prosemirror-state instances = two plugin-key counters, so
+				// unnamed plugins (e.g. dropcursor/gapcursor from StarterKit) collide
+				// with the editor's own on `plugin$` and it throws
+				// "Adding different instances of a keyed plugin (plugin$)".
+				// Listing the complete @tiptap/pm subpath set forces them all into
+				// one optimize pass that shares a single prosemirror-state chunk.
+				'@tiptap/core',
+				'@tiptap/vue-3',
+				'@tiptap/pm/changeset',
+				'@tiptap/pm/commands',
+				'@tiptap/pm/dropcursor',
+				'@tiptap/pm/gapcursor',
+				'@tiptap/pm/history',
+				'@tiptap/pm/inputrules',
+				'@tiptap/pm/keymap',
+				'@tiptap/pm/model',
+				'@tiptap/pm/schema-list',
+				'@tiptap/pm/state',
+				'@tiptap/pm/tables',
+				'@tiptap/pm/transform',
+				'@tiptap/pm/view',
+				// Some @tiptap/extension-* packages (e.g. extension-list,
+				// extension-blockquote) import the BARE `prosemirror-*` packages
+				// directly rather than through `@tiptap/pm/*`. When those extensions
+				// are pulled in by raw-served frappe-ui, a bare import that isn't a
+				// known optimized dep resolves to a raw node_modules copy — a second
+				// instance. Listing the bare packages too collapses every import path
+				// (subpath or bare) onto one optimized copy. This also guards the
+				// documented "duplicate prosemirror-model crashes list buttons" case.
+				'prosemirror-changeset',
+				'prosemirror-commands',
+				'prosemirror-dropcursor',
+				'prosemirror-gapcursor',
+				'prosemirror-history',
+				'prosemirror-inputrules',
+				'prosemirror-keymap',
+				'prosemirror-model',
+				'prosemirror-schema-list',
+				'prosemirror-state',
+				'prosemirror-tables',
+				'prosemirror-transform',
+				'prosemirror-view',
 			],
 			exclude: mode === 'production' ? [] : ['frappe-ui'],
 		},
