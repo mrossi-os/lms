@@ -1,5 +1,7 @@
 :root,
 [data-theme="light"] {
+	--color-white: #ffffff;
+	--color-black: #000000;
 	--color-company-primary: #111d2e;
 	--color-company-secondary: #123456;
 	--color-company-tertiary: #124679;
@@ -11,12 +13,12 @@ body {
 }
 
 .login-content {
-	background-color: var(--color-company-secondary) !important;
-	border-color: var(--outline-gray-1) !important;
+	/* background-color: var(--color-white) !important; */
+	/* border-color: var(--outline-gray-1) !important; */
 }
 
 .btn-login {
-	background-color: var(--color-company-tertiary) !important;
+	/* background-color: var(--color-company-tertiary) !important; */
 }
 
 input {
@@ -29,8 +31,8 @@ input {
 }
 
 .forgot-section {
-	padding: 45px 10px;
-	background-color: var(--color-company-secondary) !important;
+	padding: 45px 40px;
+	background-color: var(--color-white) !important;
 	border-color: var(--outline-gray-1) !important;
 	max-width: 400px;
 	margin: 0 auto;
@@ -39,10 +41,10 @@ input {
 }
 
 .forgot-password-message a {
-	color: var(--text-dark) !important;
+	/* color: var(--text-dark) !important; */
 }
 .sign-up-message a {
-	color: var(--text-dark) !important;
+	/* color: var(--text-dark) !important; */
 }
 
 .terms-and-conditions-content p {
