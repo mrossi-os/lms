@@ -15,7 +15,7 @@
 						<template #prefix>
 							<span class="lucide-plus size-4" />
 						</template>
-						{{ __('Create') }}
+						{{ __('Createsssss') }}
 						<template #suffix>
 							<span
 								:class="[
@@ -232,7 +232,7 @@ const categories = createResource({
 // has no categorized courses, so the combobox stays hidden instead of showing
 // an empty dropdown.
 const categoryOptions = computed(
-	() => categories.data?.filter((c) => c.value) || []
+	() => categories.data?.filter((c) => c.value) || [],
 )
 
 // The category set depends on the active tab (Enrolled, Created, ...), so
