@@ -106,6 +106,10 @@ def get_user_info():
         result["is_valutatore"] = is_valutatore
         if is_valutatore:
             result["is_student"] = False
+        # Gate for the student-statistics export page. The single source of truth
+        # is can_export_student_stats() in os_lms.os_lms.api — keep the two in sync
+        # when more roles are allowed to export.
+        result["can_export_stats"] = "System Manager" in result.get("roles", [])
         # Course counters shown on the mobile profile page:
         # "Corsi attivi" = enrollments still in progress, "Completati" = enrollments
         # with full progress. progress is a Float (0-100) on LMS Enrollment.

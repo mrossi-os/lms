@@ -848,6 +848,15 @@ const getSidebarItems = (forMobile = false) => {
 						'ProgrammingExerciseSubmission',
 					],
 				},
+				{
+					label: 'Export Statistics',
+					icon: 'Download',
+					to: 'StudentStatsExport',
+					activeFor: ['StudentStatsExport'],
+					condition: () => {
+						return !forMobile && userResource?.data?.can_export_stats
+					},
+				},
 			],
 		},
 	]

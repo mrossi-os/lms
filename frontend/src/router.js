@@ -299,6 +299,11 @@ const routes = [
 		component: () => import('@/oslms/pages/Simulation/SimulationDebrief.vue'),
 		props: true,
 	},
+	{
+		path: '/statistics/export',
+		name: 'StudentStatsExport',
+		component: () => import('@/oslms/pages/StudentStatsExport.vue'),
+	},
 ]
 
 let router = createRouter({
