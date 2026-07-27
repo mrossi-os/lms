@@ -4,9 +4,9 @@
 	bar (rendered below) never covers the last section. -->
 	<div v-else class="p-5" :class="{ 'pb-36': showMobileCta }">
 		<div
-			class="flex flex-col md:flex-row items-start justify-between w-full gap-x-8 gap-y-8"
+			class="flex flex-col lg:flex-row items-start justify-between w-full gap-x-8 gap-y-8"
 		>
-			<div class="w-full md:w-2/3 space-y-10 min-w-0">
+			<div class="w-full lg:w-2/3 space-y-10 min-w-0">
 				<section class="space-y-4">
 					<h1 class="text-3xl font-semibold text-ink-gray-9">
 						{{ course.data.title }}
@@ -46,12 +46,12 @@
 					>
 						{{ course.data.short_introduction }}
 					</p>
-					<!-- OSLMS-CUSTOM: 640–767px keeps the desktop shell (with sidebar),
+					<!-- OSLMS-CUSTOM: 640–1023px (tablet) keeps the desktop card treatment,
 					so the new mobile treatment (fixed bottom CTA + outline-at-bottom)
 					is confined to the phone shell (<640px, MobileLayout, no sidebar).
-					In the 640–767px gap the page is single-column but the desktop
-					sidebar card is hidden, so render the original full card inline. -->
-					<div v-if="isNarrow && !isMobile" class="md:hidden">
+					In the 640–1023px gap the page is single-column but the desktop
+					sidebar card (lg:) is hidden, so render the original full card inline. -->
+					<div v-if="isNarrow && !isMobile" class="lg:hidden">
 						<CourseCardOverlay :course="course" :hideVideo="hasHero" />
 					</div>
 					<!-- Phone (<640px): the outline moves to the page bottom and the
@@ -127,8 +127,8 @@
 
 				<!-- OSLMS-CUSTOM: on the phone shell (<640px) the course outline
 				("Programma del Corso") moves to the bottom, below the content
-				sections. In every wider layout it stays in the card (inline 640–767px,
-				sidebar ≥768px), so this is mount-gated to avoid a duplicate outline. -->
+				sections. In every wider layout it stays in the card (inline 640–1023px,
+				sidebar ≥1024px), so this is mount-gated to avoid a duplicate outline. -->
 				<section v-if="isMobile">
 					<CourseOutline
 						:title="__('Course Outline')"
@@ -140,7 +140,7 @@
 			</div>
 
 			<aside
-				class="hidden md:flex w-80 shrink-0 flex-col space-y-6 self-start sticky top-5"
+				class="hidden lg:flex w-80 shrink-0 flex-col space-y-6 self-start sticky top-5"
 			>
 				<CourseCardOverlay :course="course" :hideVideo="hasHero" />
 				<!-- OSLMS-CUSTOM: CourseCreatorCard removed (commented out)
@@ -203,11 +203,11 @@ const props = defineProps<{
 const user = inject<SessionUser>('$user')
 
 // OSLMS-CUSTOM: mobile treatment for the course page. `isNarrow` matches the
-// page's own `md:` split (single column below 768px); `isMobile` matches the app
-// shell breakpoint (MobileLayout + its bottom nav render below 640px), used to
-// park the floating CTA above that nav.
+// page's own `lg:` split (single column below 1024px, i.e. phones and tablets);
+// `isMobile` matches the app shell breakpoint (MobileLayout + its bottom nav
+// render below 640px), used to park the floating CTA above that nav.
 const { size } = useScreenSize()
-const isNarrow = computed<boolean>(() => size.width < 768)
+const isNarrow = computed<boolean>(() => size.width < 1024)
 const isMobile = computed<boolean>(() => size.width < 640)
 
 // The floating "Continue Learning" bar shows on the phone shell (<640px, where the
