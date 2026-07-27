@@ -72,7 +72,7 @@
 						type="checkbox"
 						v-model="certification"
 						:label="__('Certification')"
-						@change="updateCourses()"
+						@update:modelValue="updateCourses()"
 					/>
 				</Tooltip>
 			</div>
