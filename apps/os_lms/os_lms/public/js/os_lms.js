@@ -47,6 +47,31 @@
 	}
 })();
 
+// Frappe's file-uploader renders a privacy hint ("This file is public and can be
+// accessed by anyone...") via a CLIENT-side __() call. On this web form page the
+// client message dict is empty (see the back-link block above), so the hint stays
+// English even though the server translation exists in lms/translations/it.csv.
+// Seed the Italian string into frappe._messages so __() resolves it — same idea
+// as lms/www/login.html seeding frappe._messages["Message"]. Guarded by the
+// document language so only Italian pages are affected.
+(function () {
+	var path = window.location.pathname;
+	if (path.indexOf("/update-profile") !== 0 && path.indexOf("/edit-profile") !== 0) {
+		return;
+	}
+	var lang = (document.documentElement.getAttribute("lang") || "en").slice(0, 2);
+	if (lang !== "it" || !window.frappe) {
+		return;
+	}
+	frappe._messages = frappe._messages || {};
+	var key =
+		"This file is public and can be accessed by anyone, even without logging in. Mark it private to limit access.";
+	if (!frappe._messages[key]) {
+		frappe._messages[key] =
+			"Questo file è pubblico ed è accessibile a chiunque, anche senza effettuare l'accesso. Rendilo privato per limitarne l'accesso.";
+	}
+})();
+
 // The Edit Profile web form renders the "Profile Picture" (user_image) field
 // with Frappe's stock "Attach Image" control: it shows the file URL as a link
 // with no obvious upload button, and the image itself is only visible on hover.
