@@ -15,7 +15,7 @@
 						<template #prefix>
 							<span class="lucide-plus size-4" />
 						</template>
-						{{ __('Createsssss') }}
+						{{ __('Create') }}
 						<template #suffix>
 							<span
 								:class="[

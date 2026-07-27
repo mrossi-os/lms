@@ -2,7 +2,7 @@
 	<NoPermission v-if="!$user.data" />
 	<div v-else-if="profile.data">
 		<header
-			class="sticky group top-0 z-10 flex flex-col md:flex-row md:items-center justify-between border-b bg-surface-base px-3 py-2.5 sm:px-5"
+			class="sticky bg-surface-gray-1 group top-0 z-10 flex flex-col md:flex-row md:items-center justify-between border-b bg-surface-base px-3 py-2.5 sm:px-5"
 		>
 			<Breadcrumbs class="h-7" :items="breadcrumbs" />
 			<Button v-if="isSessionUser()" class="invisible group-hover:visible">
@@ -14,39 +14,7 @@
 				</template>
 			</Button>
 		</header>
-		<div class="group relative h-[130px] w-full">
-			<img
-				v-if="profile.data.cover_image"
-				:src="profile.data.cover_image"
-				class="h-[130px] w-full object-cover object-center"
-			/>
-			<div
-				v-else
-				:class="{ 'bg-surface-gray-2': !profile.data.cover_image }"
-				class="h-[130px] w-full"
-			></div>
-			<div
-				class="absolute bottom-[30%] md:bottom-0 start-[50%] mb-4 flex -translate-x-1/2 gap-x-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100"
-				v-if="isSessionUser()"
-			>
-				<EditCoverImage
-					@select="(imageUrl) => coverImage.submit({ url: imageUrl })"
-				>
-					<template v-slot="{ togglePopover }">
-						<Button
-							v-if="!readOnlyMode"
-							variant="outline"
-							@click="togglePopover()"
-						>
-							<template #prefix>
-								<span class="lucide-edit size-4 text-ink-gray-7" />
-							</template>
-							{{ __('Edit') }}
-						</Button>
-					</template>
-				</EditCoverImage>
-			</div>
-		</div>
+		<div class="group relative h-[130px] w-full"></div>
 		<div class="mx-auto -mt-10 md:-mt-4 max-w-4xl translate-x-0 px-5">
 			<div class="flex flex-col md:flex-row items-center">
 				<div>
