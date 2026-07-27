@@ -17,7 +17,11 @@ export class Upload {
 	static get toolbox() {
 		const app = createApp({
 			render: () =>
-				h(UploadIcon, { size: 18, strokeWidth: 1.5, color: 'black' }),
+				h(UploadIcon, {
+					size: 18,
+					strokeWidth: 1.5,
+					color: 'currentColor',
+				}),
 		})
 
 		const div = document.createElement('div')
