@@ -183,36 +183,9 @@
 			</div>
 
 			<div class="order-1 lg:order-2 space-y-5">
-				<AxisChart
-					v-if="showProgressChart"
-					class="border rounded-lg p-3 min-h-[300px] card"
-					:config="{
-						data: filteredChartData,
-						title: __('Batch Summary'),
-						subtitle: __('Progress of students in courses and assessments'),
-						xAxis: {
-							key: 'task',
-							title: __('Tasks'),
-							type: 'category',
-						},
-						yAxis: {
-							title: __('Number of Students'),
-							echartOptions: {
-								minInterval: 1,
-							},
-						},
-						series: [
-							{
-								name: __('Value'),
-								type: 'bar',
-							},
-						],
-					}"
-				/>
-
-				<div class="card">
+				<!-- <div class="card">
 					<BatchFeedback v-if="batch.data" :batch="batch.data.name" />
-				</div>
+				</div> -->
 
 				<div
 					v-if="batch.data?.courses?.length"
@@ -235,16 +208,27 @@
 						{{ __('Loading...') }}
 					</div>
 					<template v-else>
+						<ECharts
+							v-if="showProgressChart"
+							class="w-full h-48 mb-2"
+							:options="progressChartOptions"
+						/>
 						<div
 							v-if="!selectedCourse"
 							class="divide-y max-h-[40vh] divide-outline-elevation-2 text-ink-gray-7 overflow-y-auto"
 						>
 							<div
-								v-for="course in progressStats.data?.courses"
+								v-for="(course, idx) in progressStats.data?.courses"
 								:key="course.course"
-								class="flex justify-between items-center text-sm py-2 my-1 text-ink-gray-9"
+								class="flex justify-between items-center gap-x-2 text-sm py-2 my-1 text-ink-gray-9"
 							>
-								<span>{{ course.title }}</span>
+								<div class="flex items-center gap-x-2">
+									<div
+										class="size-2 rounded shrink-0"
+										:style="{ backgroundColor: sliceColor(idx) }"
+									></div>
+									<span>{{ course.title }}</span>
+								</div>
 								<span>{{ Math.round(course.avg_progress) }}%</span>
 							</div>
 						</div>
@@ -253,15 +237,21 @@
 							class="divide-y max-h-[40vh] divide-outline-elevation-2 text-ink-gray-7 overflow-y-auto"
 						>
 							<div
-								v-for="lesson in progressStats.data.lessons"
+								v-for="(lesson, idx) in progressStats.data.lessons"
 								:key="lesson.lesson_name"
-								class="flex justify-between text-sm py-2 my-1 text-ink-gray-9"
+								class="flex justify-between items-center gap-x-2 text-sm py-2 my-1 text-ink-gray-9"
 							>
-								<div>
-									<span class="me-3 text-xs">
-										{{ lesson.chapter_idx }}.{{ lesson.idx }}
-									</span>
-									<span>{{ lesson.title }}</span>
+								<div class="flex items-center gap-x-2">
+									<div
+										class="size-2 rounded shrink-0"
+										:style="{ backgroundColor: sliceColor(idx) }"
+									></div>
+									<div>
+										<span class="me-3 text-xs">
+											{{ lesson.chapter_idx }}.{{ lesson.idx }}
+										</span>
+										<span>{{ lesson.title }}</span>
+									</div>
 								</div>
 								<Tooltip :text="String(lesson.completion_count)">
 									<div>{{ completionPct(lesson.completion_count) }}%</div>
@@ -291,7 +281,7 @@
 </template>
 <script setup lang="ts">
 import {
-	AxisChart,
+	ECharts,
 	createResource,
 	createListResource,
 	FormControl,
@@ -312,6 +302,7 @@ import Select from '@/components/Controls/Select.vue'
 import { computed, inject, ref, watch } from 'vue'
 import type dayjsType from 'dayjs'
 import { formatAmount } from '@/utils'
+import colors from '@/utils/frappe-ui-colors.json'
 import BatchFeedback from '@/pages/Batches/components/BatchFeedback.vue'
 import BatchStudentProgress from '@/pages/Batches/components/BatchStudentProgress.vue'
 import NumberChartGraph from '@/components/NumberChartGraph.vue'
@@ -361,13 +352,6 @@ function goToImport() {
 	const importName = `LMS Batch Enrollment Import on ${now}`
 	router.push(`/data-import/${encodeURIComponent(importName)}`)
 }
-
-const chartData = createResource({
-	url: 'lms.lms.utils.get_batch_chart_data',
-	cache: ['batch_chart_data', props.batch?.data?.name],
-	params: { batch: props.batch?.data?.name },
-	auto: true,
-})
 
 // Single call for the dashboard summary: certified count + per-student average
 // course progress. Keeps one network round-trip on page load.
@@ -447,6 +431,82 @@ const completionPct = (count: number) => {
 	return total ? Math.ceil((count / total) * 100) : 0
 }
 
+// Donut palette. It cycles when the batch has more courses (or the course more
+// lessons) than hues; the list rows below reuse `sliceColor` with the same index
+// so they double as the chart legend.
+const theme = ref<'darkMode' | 'lightMode'>(
+	localStorage.getItem('theme') == 'dark' ? 'darkMode' : 'lightMode',
+)
+
+const chartHues = [
+	'blue',
+	'green',
+	'amber',
+	'purple',
+	'teal',
+	'pink',
+	'orange',
+	'cyan',
+	'violet',
+	'red',
+] as const
+
+const sliceColor = (idx: number) =>
+	colors[theme.value][chartHues[idx % chartHues.length]][400]
+
+// The donut follows the course selector: no course selected -> one slice per
+// batch course weighted by its average progress; a course selected -> one slice
+// per lesson weighted by how many batch students completed it.
+const progressChartData = computed(() => {
+	if (!selectedCourse.value) {
+		return (progressStats.data?.courses || []).map((course: any) => ({
+			name: course.title,
+			value: Math.round(course.avg_progress),
+			detail: `${Math.round(course.avg_progress)}%`,
+		}))
+	}
+	return (progressStats.data?.lessons || []).map((lesson: any) => ({
+		name: `${lesson.chapter_idx}.${lesson.idx} ${lesson.title}`,
+		value: lesson.completion_count,
+		detail: `${lesson.completion_count} (${completionPct(
+			lesson.completion_count,
+		)}%)`,
+	}))
+})
+
+const showProgressChart = computed(() =>
+	progressChartData.value.some((slice) => slice.value > 0),
+)
+
+const progressChartOptions = computed(() => ({
+	color: progressChartData.value.map((_, idx: number) => sliceColor(idx)),
+	tooltip: {
+		trigger: 'item',
+		formatter: (params: any) =>
+			`${params.marker} ${params.name}<br/>${params.data.detail}`,
+	},
+	series: [
+		{
+			type: 'pie',
+			radius: ['50%', '70%'],
+			center: ['50%', '50%'],
+			label: {
+				show: false,
+			},
+			labelLine: {
+				show: false,
+			},
+			emphasis: {
+				label: {
+					show: false,
+				},
+				scale: false,
+			},
+			data: progressChartData.value,
+		},
+	],
+}))
+
 // Stream the progress report from the backend; the content-disposition response
 // makes the browser download it without leaving the SPA. "xlsx" is the
 // human-readable summary, "csv" the raw per-lesson dataset for AI analysis.
@@ -471,20 +531,6 @@ const exportMenu = computed(() => [
 		onClick: () => exportProgress('csv'),
 	},
 ])
-
-const seriesName = computed(() => __('Value'))
-
-const filteredChartData = computed(() =>
-	(chartData.data || [])
-		.filter(
-			(item: { value: number; task: string | null }) =>
-				item.value > 0 && item.task,
-		)
-		.map((item: { task: string; value: number }) => ({
-			task: item.task,
-			[seriesName.value]: item.value,
-		})),
-)
 
 watch(searchFilter, () => {
 	let filters: Record<string, any> = {
@@ -547,14 +593,6 @@ const removeStudents = async (
 	unselectAll()
 	toast.success(__('Students removed successfully'))
 }
-
-const showProgressChart = computed(
-	() =>
-		students.data?.length &&
-		(props.batch?.data?.courses?.length ||
-			props.batch?.data?.assessments?.length) &&
-		filteredChartData.value.length > 0,
-)
 
 const showStudentsEmptyState = computed(
 	() => !students.loading && !students.data?.length && !searchFilter.value,
