@@ -16,7 +16,11 @@ base_template = "templates/base.html"
 # Vue SPA wrapper) the link is appended at the end of <head> directly in
 # templates/base.html, so it remains the last stylesheet and overrides
 # defaults from frontend/src/styles/theme/elite/variables.css.
-app_include_css = ["/api/method/os_lms.os_lms.branding.brand_css"]
+# desk.css comes last so its rules override the Brand Customize variables.
+app_include_css = [
+    "/api/method/os_lms.os_lms.branding.brand_css",
+    "/assets/os_lms/css/desk.css",
+]
 
 
 # activate debug if needed
