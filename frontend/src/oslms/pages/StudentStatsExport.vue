@@ -31,7 +31,11 @@
 					/>
 
 					<Dropdown :options="exportMenu" placement="left">
-						<Button variant="solid" :disabled="!selectedForReport.length">
+						<Button
+							variant="solid"
+							:loading="startResource.loading"
+							:disabled="!selectedForReport.length"
+						>
 							<template #prefix>
 								<span class="lucide-download size-4" />
 							</template>
@@ -59,7 +63,7 @@
 							class="text-ink-gray-6 hover:text-ink-gray-9"
 							@click="selectNone"
 						>
-							{{ __('Clear') }}
+							{{ __('Deselect All') }}
 						</button>
 					</div>
 				</div>
@@ -112,12 +116,14 @@
 						<FormControl
 							v-model="activityFrom"
 							:label="__('Activity from')"
+							:placeholder="__('Select date')"
 							type="date"
 							variant="outline"
 						/>
 						<FormControl
 							v-model="activityTo"
 							:label="__('Activity to')"
+							:placeholder="__('Select date')"
 							type="date"
 							variant="outline"
 						/>
@@ -125,14 +131,93 @@
 				</div>
 			</section>
 
-			<!-- Export -->
-			<section class="flex items-center justify-between"></section>
+			<!-- Generated reports -->
+			<section class="space-y-3 rounded-md border card">
+				<div class="flex items-center justify-between">
+					<h2 class="text-base font-semibold text-ink-gray-9">
+						{{ __('Generated reports') }}
+					</h2>
+					<button
+						class="text-sm text-ink-gray-6 hover:text-ink-gray-9 disabled:opacity-50"
+						:disabled="exportsList.loading"
+						@click="refreshExports"
+					>
+						{{ exportsList.loading ? __('Refreshing…') : __('Refresh') }}
+					</button>
+				</div>
+
+				<div
+					v-if="!exportsList.data?.length"
+					class="py-6 text-center text-sm text-ink-gray-5"
+				>
+					{{ __('No reports yet') }}
+				</div>
+
+				<div v-else class="overflow-x-auto">
+					<table class="w-full text-sm">
+						<thead>
+							<tr class="text-left text-ink-gray-5">
+								<th class="py-2 font-medium">{{ __('Report') }}</th>
+								<th class="py-2 font-medium">{{ __('Format') }}</th>
+								<th class="py-2 font-medium">{{ __('Date') }}</th>
+								<th class="py-2 font-medium">{{ __('Status') }}</th>
+								<th class="py-2 text-right font-medium">
+									{{ __('Actions') }}
+								</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr
+								v-for="row in exportsList.data"
+								:key="row.name"
+								class="border-t border-outline-gray-1"
+							>
+								<td class="py-2 text-ink-gray-8">
+									{{ row.report_label }}
+								</td>
+								<td class="py-2 uppercase text-ink-gray-6">
+									{{ row.file_format }}
+								</td>
+								<td class="py-2 text-ink-gray-6">
+									{{ formatDate(row.creation) }}
+								</td>
+								<td class="py-2">
+									<Badge
+										:theme="statusTheme(row.status)"
+										:label="statusLabel(row.status)"
+										:title="row.error || ''"
+									/>
+								</td>
+								<td class="py-2">
+									<div class="flex items-center justify-end gap-1">
+										<Button
+											v-if="row.status === 'Ready'"
+											variant="subtle"
+											@click="downloadExport(row)"
+										>
+											{{ __('Download') }}
+										</Button>
+										<Button
+											variant="ghost"
+											theme="red"
+											@click="removeExport(row)"
+										>
+											{{ __('Delete') }}
+										</Button>
+									</div>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</section>
 		</div>
 	</div>
 </template>
 
 <script setup>
 import {
+	Badge,
 	Breadcrumbs,
 	Button,
 	Checkbox,
@@ -145,7 +230,8 @@ import {
 } from 'frappe-ui'
 import MultiLink from '@/components/Controls/MultiLink.vue'
 import { useLocalStorage } from '@/utils/composables'
-import { computed, ref, watch } from 'vue'
+import dayjs from '@/utils/dayjs'
+import { computed, onUnmounted, ref, watch } from 'vue'
 
 const breadcrumbs = computed(() => [
 	{
@@ -158,6 +244,85 @@ const schema = createResource({
 	url: 'os_lms.os_lms.api.get_student_stats_schema',
 	auto: true,
 })
+
+// --- Generated reports (async export jobs) ---
+function isPending(r) {
+	return r.status === 'Queued' || r.status === 'Processing'
+}
+
+let pollTimer = null
+
+function stopPolling() {
+	if (pollTimer) {
+		clearInterval(pollTimer)
+		pollTimer = null
+	}
+}
+
+function ensurePolling() {
+	if (pollTimer) return
+	pollTimer = setInterval(() => exportsList.reload(), 4000)
+}
+
+onUnmounted(stopPolling)
+
+const exportsList = createResource({
+	url: 'os_lms.os_lms.api.list_student_stats_exports',
+	auto: true,
+	onSuccess(data) {
+		if ((data || []).some(isPending)) ensurePolling()
+		else stopPolling()
+	},
+})
+
+const startResource = createResource({
+	url: 'os_lms.os_lms.api.start_student_stats_export',
+})
+
+const deleteResource = createResource({
+	url: 'os_lms.os_lms.api.delete_student_stats_export',
+})
+
+function statusTheme(s) {
+	return { Ready: 'green', Processing: 'orange', Queued: 'gray', Failed: 'red' }[s] || 'gray'
+}
+
+function statusLabel(s) {
+	return (
+		{
+			Queued: __('Queued'),
+			Processing: __('Processing'),
+			Ready: __('Ready'),
+			Failed: __('Export failed'),
+		}[s] || s
+	)
+}
+
+function formatDate(value) {
+	return value ? dayjs(value).format('DD/MM/YYYY HH:mm') : ''
+}
+
+function downloadExport(row) {
+	if (row.file) window.open(row.file, '_blank')
+}
+
+function removeExport(row) {
+	deleteResource.submit(
+		{ name: row.name },
+		{
+			onSuccess: () => exportsList.reload(),
+			onError: (err) =>
+				toast.error(err?.messages?.[0] || __('Could not delete the report')),
+		},
+	)
+}
+
+function refreshExports() {
+	exportsList.reload().then(
+		() => toast.success(__('List updated')),
+		() => toast.error(__('Could not refresh the list')),
+	)
+}
 
 const reportType = ref('users')
 
@@ -245,15 +410,23 @@ function exportStats(fileFormat) {
 		toast.error(__('Select at least one column'))
 		return
 	}
-	const params = new URLSearchParams({
-		report_type: reportType.value,
-		file_format: fileFormat,
-		columns: JSON.stringify(cols),
-		filters: JSON.stringify(buildFilters()),
-	})
-	window.open(
-		`/api/method/os_lms.os_lms.api.export_student_stats?${params.toString()}`,
-		'_blank',
+	startResource.submit(
+		{
+			report_type: reportType.value,
+			columns: JSON.stringify(cols),
+			file_format: fileFormat,
+			filters: JSON.stringify(buildFilters()),
+		},
+		{
+			onSuccess() {
+				toast.success(__('Export queued'))
+				exportsList.reload()
+				ensurePolling()
+			},
+			onError(err) {
+				toast.error(err?.messages?.[0] || __('Could not start the export'))
+			},
+		},
 	)
 }
 

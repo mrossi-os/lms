@@ -1317,25 +1317,10 @@ STUDENT_STATS_BUILDERS = {
 }
 
 
-@frappe.whitelist()
-def export_student_stats(
-	report_type: str, columns: str, file_format: str = "csv", filters: str | None = None
-):
-	"""Export the selected student-statistics columns as CSV or XLSX.
-
-	``columns`` and ``filters`` arrive JSON-encoded via the query string, so the
-	SPA just opens the endpoint URL. Streams the file back via ``frappe.response``.
-	"""
-	_ensure_can_export_student_stats()
-
-	report = STUDENT_STATS_REPORTS.get(report_type)
-	if not report:
-		frappe.throw(frappe._("Unknown report type."), frappe.ValidationError)
-
-	# Validate the requested columns against the report's declared columns and
-	# keep the declared order for a stable layout.
+def _normalize_export_columns(report: dict, columns) -> list:
+	"""Validate the requested columns against the report and return them in the
+	report's declared order. Raises if none are valid."""
 	declared = [c["key"] for c in report["columns"]]
-	label_by_key = {c["key"]: c["label"] for c in report["columns"]}
 	requested = frappe.parse_json(columns) if columns else []
 	if isinstance(requested, str):
 		requested = [requested]
@@ -1343,13 +1328,23 @@ def export_student_stats(
 	selected = [k for k in declared if k in requested_set]
 	if not selected:
 		frappe.throw(frappe._("Select at least one valid column."), frappe.ValidationError)
+	return selected
 
-	parsed_filters = _parse_stats_filters(filters)
+
+def _build_export_bytes(report_type: str, columns, file_format: str, parsed_filters: dict):
+	"""Build the export file. Returns (filename, content_type, content_bytes,
+	row_count). Validates the report type and columns and keeps the report's
+	declared column order for a stable layout."""
+	report = STUDENT_STATS_REPORTS.get(report_type)
+	if not report:
+		frappe.throw(frappe._("Unknown report type."), frappe.ValidationError)
+
+	selected = _normalize_export_columns(report, columns)
+	label_by_key = {c["key"]: c["label"] for c in report["columns"]}
+
 	rows = STUDENT_STATS_BUILDERS[report_type](parsed_filters)
-
 	header = [label_by_key[k] for k in selected]
 	data = [[row.get(k, "") for k in selected] for row in rows]
-
 	safe_label = re.sub(r"[^\w\- ]", "_", report["label"]).strip() or "statistiche"
 
 	if file_format == "csv":
@@ -1360,21 +1355,136 @@ def export_student_stats(
 		writer = csv.writer(buffer)
 		writer.writerow(header)
 		writer.writerows(data)
-		frappe.response["filename"] = f"{safe_label}.csv"
-		frappe.response["filecontent"] = buffer.getvalue().encode("utf-8")
-		frappe.response["type"] = "download"
-		frappe.response["content_type"] = "text/csv; charset=utf-8"
-		return
+		return (
+			f"{safe_label}.csv",
+			"text/csv; charset=utf-8",
+			buffer.getvalue().encode("utf-8"),
+			len(rows),
+		)
 
 	from frappe.utils.xlsxutils import make_xlsx
 
 	xlsx_file = make_xlsx([header] + data, "Statistiche")
-	frappe.response["filename"] = f"{safe_label}.xlsx"
-	frappe.response["filecontent"] = xlsx_file.getvalue()
-	frappe.response["type"] = "download"
-	frappe.response["content_type"] = (
-		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	return f"{safe_label}.xlsx", content_type, xlsx_file.getvalue(), len(rows)
+
+
+@frappe.whitelist()
+def start_student_stats_export(
+	report_type: str, columns: str, file_format: str = "csv", filters: str | None = None
+):
+	"""Queue a student-statistics export.
+
+	Creates a ``Student Stats Export`` record (status Queued) and enqueues the
+	build on the dedicated ``export`` queue. Returns the record name; the SPA
+	polls ``list_student_stats_exports`` for the status and downloads the file
+	once it is Ready. Every export is heavy enough to warrant the background job,
+	so there is no synchronous path.
+	"""
+	_ensure_can_export_student_stats()
+
+	report = STUDENT_STATS_REPORTS.get(report_type)
+	if not report:
+		frappe.throw(frappe._("Unknown report type."), frappe.ValidationError)
+	if file_format not in ("csv", "xlsx"):
+		frappe.throw(frappe._("Invalid file format."), frappe.ValidationError)
+
+	selected = _normalize_export_columns(report, columns)
+
+	export = frappe.new_doc("Student Stats Export")
+	export.report_type = report_type
+	export.report_label = report["label"]
+	export.file_format = file_format
+	export.columns = frappe.as_json(selected)
+	export.filters = filters or "{}"
+	export.status = "Queued"
+	export.insert(ignore_permissions=True)
+
+	frappe.enqueue(
+		"os_lms.os_lms.api.run_student_stats_export",
+		queue="export",
+		timeout=1800,
+		enqueue_after_commit=True,
+		export_name=export.name,
 	)
+	return {"name": export.name}
+
+
+def run_student_stats_export(export_name: str):
+	"""Background job (dedicated ``export`` queue): build the export file and
+	attach it to the record as a private File, flipping the status to
+	Ready/Failed. Never streams anything back."""
+	export = frappe.get_doc("Student Stats Export", export_name)
+	frappe.db.set_value("Student Stats Export", export_name, "status", "Processing")
+	frappe.db.commit()
+	try:
+		parsed_filters = _parse_stats_filters(export.filters)
+		filename, _content_type, content, row_count = _build_export_bytes(
+			export.report_type, export.columns, export.file_format, parsed_filters
+		)
+
+		from frappe.utils.file_manager import save_file
+
+		file_doc = save_file(filename, content, "Student Stats Export", export_name, is_private=1)
+		frappe.db.set_value(
+			"Student Stats Export",
+			export_name,
+			{
+				"file": file_doc.file_url,
+				"row_count": row_count,
+				"file_size": len(content),
+				"status": "Ready",
+				"error": "",
+			},
+		)
+		frappe.db.commit()
+	except Exception:
+		frappe.db.rollback()
+		frappe.db.set_value(
+			"Student Stats Export",
+			export_name,
+			{"status": "Failed", "error": frappe.get_traceback()[:2000]},
+		)
+		frappe.db.commit()
+		frappe.log_error(title="Student stats export failed", message=export_name)
+		raise
+
+
+@frappe.whitelist()
+def list_student_stats_exports():
+	"""List all student-statistics exports, newest first. Shared: every user who
+	can export sees (and can manage) every export."""
+	_ensure_can_export_student_stats()
+	return frappe.get_all(
+		"Student Stats Export",
+		fields=[
+			"name",
+			"report_type",
+			"report_label",
+			"file_format",
+			"status",
+			"creation",
+			"owner",
+			"row_count",
+			"file_size",
+			"file",
+			"error",
+		],
+		order_by="creation desc",
+		limit=200,
+	)
+
+
+@frappe.whitelist()
+def delete_student_stats_export(name: str):
+	"""Delete an export record and its generated file. Any user who can export may
+	delete any export (shared management), so gate on the export capability only."""
+	_ensure_can_export_student_stats()
+	if frappe.db.exists("Student Stats Export", name):
+		frappe.delete_doc(
+			"Student Stats Export", name, ignore_permissions=True, delete_permanently=True
+		)
+	return {"name": name}
 
 
 BATCH_TAB_SECTIONS = ("classes", "announcements", "discussions")
