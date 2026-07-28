@@ -62,28 +62,6 @@ if [ -f "${bench_dir}/Procfile" ]; then
     sed -i '/watch/d' "${bench_dir}/Procfile"
 fi
 
-# Dedicated `export` queue (student-statistics exports), so heavy exports never
-# queue behind the AI jobs running on the default short/long queues. Two parts:
-#   1) register the queue in common_site_config so frappe.enqueue accepts it,
-#   2) a dedicated worker in the Procfile that consumes it.
-"${bench_dir}/env/bin/python3" - "${bench_dir}/sites/common_site_config.json" <<'PY'
-import json, os, sys
-path = sys.argv[1]
-cfg = json.load(open(path)) if os.path.exists(path) else {}
-workers = cfg.get("workers") or {}
-if "export" not in workers:
-    workers["export"] = {"timeout": 1800}
-    cfg["workers"] = workers
-    with open(path, "w") as f:
-        json.dump(cfg, f, indent=1)
-    print(" --- Registered 'export' queue in common_site_config")
-PY
-
-if [ -f "${bench_dir}/Procfile" ] && ! grep -q "queue export" "${bench_dir}/Procfile"; then
-    echo " --- Adding dedicated 'export' queue worker to Procfile"
-    printf '\nworker_export: bench worker --queue export 1>> logs/worker_export.log 2>> logs/worker_export.error.log\n' >> "${bench_dir}/Procfile"
-fi
-
 git config --global --add safe.directory /workspace
 git config --global --add safe.directory /workspace/.git
 

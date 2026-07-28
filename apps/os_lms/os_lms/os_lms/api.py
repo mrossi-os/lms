@@ -1376,7 +1376,8 @@ def start_student_stats_export(
 	"""Queue a student-statistics export.
 
 	Creates a ``Student Stats Export`` record (status Queued) and enqueues the
-	build on the dedicated ``export`` queue. Returns the record name; the SPA
+	build on the standard ``long`` queue (present in every Frappe deployment,
+	same queue used by the simulation debrief). Returns the record name; the SPA
 	polls ``list_student_stats_exports`` for the status and downloads the file
 	once it is Ready. Every export is heavy enough to warrant the background job,
 	so there is no synchronous path.
@@ -1402,7 +1403,7 @@ def start_student_stats_export(
 
 	frappe.enqueue(
 		"os_lms.os_lms.api.run_student_stats_export",
-		queue="export",
+		queue="long",
 		timeout=1800,
 		enqueue_after_commit=True,
 		export_name=export.name,
@@ -1411,9 +1412,9 @@ def start_student_stats_export(
 
 
 def run_student_stats_export(export_name: str):
-	"""Background job (dedicated ``export`` queue): build the export file and
-	attach it to the record as a private File, flipping the status to
-	Ready/Failed. Never streams anything back."""
+	"""Background job (``long`` queue): build the export file and attach it to
+	the record as a private File, flipping the status to Ready/Failed. Never
+	streams anything back."""
 	export = frappe.get_doc("Student Stats Export", export_name)
 	frappe.db.set_value("Student Stats Export", export_name, "status", "Processing")
 	frappe.db.commit()
