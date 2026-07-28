@@ -1,14 +1,14 @@
 <template>
 	<div class="p-5">
-		<div class="grid grid-cols-4 gap-5 mb-5 text-ink-gray-9">
+		<div class="grid grid-cols-3 gap-5 mb-5 text-ink-gray-9">
 			<NumberChartGraph
 				:title="__('Enrolled')"
 				:value="formatAmount(course.data?.enrollments)"
 			/>
-			<NumberChartGraph
+			<!-- <NumberChartGraph
 				:title="__('Average Completion Rate')"
 				:value="averageCompletionRate"
-			/>
+			/> -->
 			<NumberChartGraph
 				:title="__('Average Rating')"
 				:value="course.data?.rating || 0"
@@ -176,8 +176,8 @@
 										{{
 											course.data?.enrollments
 												? Math.round(
-														(row.value / course.data.enrollments) * 100
-												  )
+														(row.value / course.data.enrollments) * 100,
+													)
 												: 0
 										}}%
 									</div>
@@ -441,7 +441,7 @@ const averageCompletionRate = computed(() => {
 
 const showStudentsEmptyState = computed(
 	() =>
-		!progressList.loading && !progressList.data?.length && !searchFilter.value
+		!progressList.loading && !progressList.data?.length && !searchFilter.value,
 )
 
 const progressColors = computed(() => {
