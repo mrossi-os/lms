@@ -9128,7 +9128,7 @@ msgstr ""
 
 #: lms/www/new-sign-up.html:56
 msgid "Your Account has been successfully created!"
-msgstr ""
+msgstr "Il tuo account è stato creato con successo!"
 
 #: frontend/src/pages/ProgrammingExercises/ProgrammingExerciseSubmission.vue:124
 msgid "Your Output"

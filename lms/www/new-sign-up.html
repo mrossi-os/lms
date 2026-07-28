@@ -52,7 +52,14 @@
 				callback: (data) => {
 					$("input").val("");
 					if (data.message == "OK") {
+						// Pass the title pre-translated via server-side Jinja: this web
+						// page's client message dict doesn't carry "Message", so relying
+						// on msgprint's default client-side __("Message") title renders it
+						// untranslated. "Message" has a translation server-side, so the
+						// Jinja _() resolves it deterministically (no frappe._messages
+						// dependency). No-op for English, "Messaggio" for Italian.
 						frappe.msgprint({
+							title: "{{ _('Message') }}",
 							message: __("Your Account has been successfully created!"),
 							clear: true
 						});
