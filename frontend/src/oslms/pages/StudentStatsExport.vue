@@ -148,22 +148,26 @@
 							<span class="lucide-x size-4" />
 						</Button>
 					</div>
-					<div class="grid grid-cols-2 gap-2">
+					<div
+						v-for="df in dateFilters"
+						:key="df.key"
+						class="grid grid-cols-2 gap-2 sm:col-span-2"
+					>
 						<div class="flex items-end gap-1">
 							<FormControl
 								class="flex-1"
-								v-model="activityFrom"
-								:label="__(activityFromLabel)"
+								v-model="dates[df.key + '_from']"
+								:label="df.from_label"
 								:placeholder="__('Select date')"
 								type="date"
 								variant="outline"
 							/>
 							<Button
-								v-if="activityFrom"
+								v-if="dates[df.key + '_from']"
 								variant="ghost"
 								class="shrink-0"
 								:aria-label="__('Clear filter')"
-								@click="activityFrom = ''"
+								@click="dates[df.key + '_from'] = ''"
 							>
 								<span class="lucide-x size-4" />
 							</Button>
@@ -171,18 +175,18 @@
 						<div class="flex items-end gap-1">
 							<FormControl
 								class="flex-1"
-								v-model="activityTo"
-								:label="__(activityToLabel)"
+								v-model="dates[df.key + '_to']"
+								:label="df.to_label"
 								:placeholder="__('Select date')"
 								type="date"
 								variant="outline"
 							/>
 							<Button
-								v-if="activityTo"
+								v-if="dates[df.key + '_to']"
 								variant="ghost"
 								class="shrink-0"
 								:aria-label="__('Clear filter')"
-								@click="activityTo = ''"
+								@click="dates[df.key + '_to'] = ''"
 							>
 								<span class="lucide-x size-4" />
 							</Button>
@@ -291,7 +295,7 @@ import {
 import MultiLink from '@/components/Controls/MultiLink.vue'
 import { useLocalStorage } from '@/utils/composables'
 import dayjs from '@/utils/dayjs'
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, onUnmounted, reactive, ref, watch } from 'vue'
 
 const breadcrumbs = computed(() => [
 	{
@@ -455,37 +459,31 @@ function selectNone() {
 const filterCourse = ref([])
 const filterBatch = ref([])
 const filterStudents = ref([])
-const activityFrom = ref('')
-const activityTo = ref('')
 
-// The activity-date filter targets a different field per report type (see the
-// per-report builders in api.py), so its labels name the actual field:
-//   users        -> User.last_login
-//   user_courses -> LMS Enrollment.creation (enrollment date)
-//   quizzes      -> LMS Quiz Submission.creation (attempt date)
-//   ai           -> LMSA Query Log.creation (interaction date)
-const ACTIVITY_LABELS = {
-	users: { from: 'Last login from', to: 'Last login to' },
-	user_courses: { from: 'Enrolled from', to: 'Enrolled to' },
-	quizzes: { from: 'Quiz attempt from', to: 'Quiz attempt to' },
-	ai: { from: 'AI interaction from', to: 'AI interaction to' },
-}
-
-const activityFromLabel = computed(
-	() => (ACTIVITY_LABELS[reportType.value] || {}).from || 'Activity from',
+// Date-range filters are per-report (see each report's `date_filters` in the
+// schema): each entry renders a from/to pair keyed `${key}_from` / `${key}_to`.
+const dateFilters = computed(
+	() => schema.data?.reports?.[reportType.value]?.date_filters || [],
 )
 
-const activityToLabel = computed(
-	() => (ACTIVITY_LABELS[reportType.value] || {}).to || 'Activity to',
-)
+// Values for the date pairs, keyed by `${key}_from` / `${key}_to`.
+const dates = reactive({})
+
+// Reset the date values when switching report so keys from one report don't
+// leak into another's export payload.
+watch(reportType, () => {
+	Object.keys(dates).forEach((k) => delete dates[k])
+})
 
 function buildFilters() {
 	const f = {}
 	if (filterCourse.value.length) f.course = filterCourse.value
 	if (filterBatch.value.length) f.batch = filterBatch.value
 	if (filterStudents.value.length) f.students = filterStudents.value
-	if (activityFrom.value) f.activity_from = activityFrom.value
-	if (activityTo.value) f.activity_to = activityTo.value
+	for (const df of dateFilters.value) {
+		if (dates[df.key + '_from']) f[df.key + '_from'] = dates[df.key + '_from']
+		if (dates[df.key + '_to']) f[df.key + '_to'] = dates[df.key + '_to']
+	}
 	return f
 }
 

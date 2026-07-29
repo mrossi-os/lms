@@ -835,6 +835,7 @@ STUDENT_STATS_REPORTS = {
 	"users": {
 		"label": "Utenti",
 		"columns": [
+			# User-level columns (one row per user by default).
 			{"key": "user_id", "label": "ID utente"},
 			{"key": "full_name", "label": "Nome e cognome"},
 			{"key": "email", "label": "Email"},
@@ -847,30 +848,30 @@ STUDENT_STATS_REPORTS = {
 			{"key": "total_logins", "label": "Numero accessi"},
 			{"key": "distinct_active_days", "label": "Giorni di attività"},
 			{"key": "failed_logins", "label": "Accessi falliti"},
-		],
-	},
-	"user_courses": {
-		"label": "Utenti x Corsi",
-		"columns": [
-			{"key": "user_id", "label": "ID utente"},
-			{"key": "full_name", "label": "Nome e cognome"},
-			{"key": "email", "label": "Email"},
-			{"key": "course_id", "label": "ID corso"},
-			{"key": "course_title", "label": "Titolo corso"},
-			{"key": "enrolled_on", "label": "Data di iscrizione"},
-			{"key": "progress", "label": "Completamento (%)"},
-			{"key": "started_on", "label": "Data di primo avvio"},
-			{"key": "last_activity_on", "label": "Ultima attivita"},
-			{"key": "completed_on", "label": "Data di completamento"},
-			# Lesson-level columns: selecting any of these switches the report to
-			# one row per lesson (see _build_user_courses_rows / dynamic granularity).
-			# default=False so the report stays course-level until the user opts in.
+			# Course-level columns: selecting any switches to one row per
+			# (user, course). default=False so the report stays user-level.
+			{"key": "course_id", "label": "ID corso", "default": False},
+			{"key": "course_title", "label": "Titolo corso", "default": False},
+			{"key": "enrolled_on", "label": "Data di iscrizione", "default": False},
+			{"key": "progress", "label": "Completamento (%)", "default": False},
+			{"key": "started_on", "label": "Data di primo avvio", "default": False},
+			{"key": "last_activity_on", "label": "Ultima attivita", "default": False},
+			{"key": "completed_on", "label": "Data di completamento", "default": False},
+			# Lesson-level columns: selecting any switches to one row per
+			# (user, course, lesson). default=False.
 			{"key": "chapter", "label": "Capitolo", "default": False},
 			{"key": "content_id", "label": "ID contenuto", "default": False},
 			{"key": "content_title", "label": "Titolo contenuto", "default": False},
 			{"key": "content_type", "label": "Tipo contenuto", "default": False},
 			{"key": "content_status", "label": "Stato completamento contenuto", "default": False},
 			{"key": "content_completed_on", "label": "Data completamento contenuto", "default": False},
+		],
+		# Two separate date-range dimensions: user-side (last login, registration)
+		# and course-side (enrollment). Each renders a from/to pair.
+		"date_filters": [
+			{"key": "last_login", "from_label": "Ultimo accesso da", "to_label": "Ultimo accesso a"},
+			{"key": "registered", "from_label": "Registrazione da", "to_label": "Registrazione a"},
+			{"key": "enrolled", "from_label": "Iscrizione da", "to_label": "Iscrizione a"},
 		],
 	},
 	"quizzes": {
@@ -888,6 +889,9 @@ STUDENT_STATS_REPORTS = {
 			{"key": "best_score", "label": "Punteggio migliore (%)"},
 			{"key": "max_score", "label": "Punteggio massimo"},
 		],
+		"date_filters": [
+			{"key": "activity", "from_label": "Tentativo quiz da", "to_label": "Tentativo quiz a"},
+		],
 	},
 	"ai": {
 		"label": "Interazioni AI",
@@ -902,10 +906,15 @@ STUDENT_STATS_REPORTS = {
 			{"key": "server_error", "label": "Errore del server"},
 			{"key": "cannot_answer", "label": "Non posso rispondere"},
 		],
+		"date_filters": [
+			{"key": "activity", "from_label": "Interazione AI da", "to_label": "Interazione AI a"},
+		],
 	},
 }
 
-STUDENT_STATS_FILTERS = ["course", "batch", "students", "activity_from", "activity_to"]
+# Entity filters shared by every report; date filters are per-report (see each
+# report's ``date_filters``).
+STUDENT_STATS_FILTERS = ["course", "batch", "students"]
 
 
 def can_export_student_stats() -> bool:
@@ -953,7 +962,13 @@ def _fmt_date(value) -> str:
 
 
 def _parse_stats_filters(filters) -> dict:
-	"""Normalize the (JSON-encoded) filters payload into a predictable dict."""
+	"""Normalize the (JSON-encoded) filters payload into a predictable dict.
+
+	Entity filters (course/batch/students) are always present as lists. Date
+	filters are per-report and open-ended (e.g. ``last_login_from``,
+	``enrolled_to``, ``activity_from``): any ``*_from`` / ``*_to`` key is passed
+	through, so builders read the ranges they care about via ``.get``.
+	"""
 	filters = frappe.parse_json(filters) if filters else {}
 	if not isinstance(filters, dict):
 		filters = {}
@@ -965,13 +980,15 @@ def _parse_stats_filters(filters) -> dict:
 			return [value]
 		return list(value)
 
-	return {
+	parsed = {
 		"course": _as_list(filters.get("course")),
 		"batch": _as_list(filters.get("batch")),
 		"students": _as_list(filters.get("students")),
-		"activity_from": filters.get("activity_from") or None,
-		"activity_to": filters.get("activity_to") or None,
 	}
+	for key, value in filters.items():
+		if key.endswith("_from") or key.endswith("_to"):
+			parsed[key] = value or None
+	return parsed
 
 
 def _member_scope(filters: dict):
@@ -1009,102 +1026,20 @@ def _role_label(roles: set) -> str:
 	return "Studente"
 
 
-def _build_users_rows(filters: dict, selected: list | None = None) -> list:
-	member_scope = _member_scope(filters)
+# Course-level columns of the unified "Utenti" report: selecting any switches
+# the report from one row per user to one row per (user, course).
+USER_COURSES_COURSE_COLUMNS = {
+	"course_id",
+	"course_title",
+	"enrolled_on",
+	"progress",
+	"started_on",
+	"last_activity_on",
+	"completed_on",
+}
 
-	# A course filter narrows the user set to that course's enrolled members.
-	if filters["course"]:
-		enrolled = frappe.get_all(
-			"LMS Enrollment",
-			filters={"course": ["in", filters["course"]]},
-			fields=["member"],
-		)
-		course_members = {r.member for r in enrolled}
-		member_scope = course_members if member_scope is None else (member_scope & course_members)
-
-	conditions = [["enabled", "=", 1], ["name", "not in", ["Guest", "Administrator"]]]
-	if member_scope is not None:
-		if not member_scope:
-			return []
-		conditions.append(["name", "in", list(member_scope)])
-	if filters["activity_from"]:
-		conditions.append(["last_login", ">=", filters["activity_from"]])
-	if filters["activity_to"]:
-		conditions.append(["last_login", "<=", filters["activity_to"]])
-
-	users = frappe.get_all(
-		"User",
-		filters=conditions,
-		fields=["name", "full_name", "email", "enabled", "creation", "last_login"],
-		order_by="full_name asc",
-	)
-	if not users:
-		return []
-
-	names = [u.name for u in users]
-
-	# Roles and class (batch) memberships in bulk to avoid per-user queries.
-	roles_by_user = {}
-	for r in frappe.get_all(
-		"Has Role",
-		filters={"parent": ["in", names], "parenttype": "User"},
-		fields=["parent", "role"],
-	):
-		roles_by_user.setdefault(r.parent, set()).add(r.role)
-
-	class_by_user = {}
-	batch_rows = frappe.get_all(
-		"LMS Batch Enrollment",
-		filters={"member": ["in", names]},
-		fields=["member", "batch"],
-	)
-	batch_ids = list({b.batch for b in batch_rows if b.batch})
-	batch_title = {}
-	if batch_ids:
-		for bt in frappe.get_all(
-			"LMS Batch", filters={"name": ["in", batch_ids]}, fields=["name", "title"]
-		):
-			batch_title[bt.name] = bt.title
-	for b in batch_rows:
-		if b.batch:
-			class_by_user.setdefault(b.member, []).append(batch_title.get(b.batch, b.batch))
-
-	# Access aggregates from our own tracking (LMSA User Access): durable and
-	# retention-independent, unlike counting Activity Log rows on the fly. The
-	# record name is the user id (autoname field:user).
-	access_by_user = {
-		a.name: a
-		for a in frappe.get_all(
-			"LMSA User Access",
-			filters={"user": ["in", names]},
-			fields=["user", "first_login", "total_logins", "distinct_active_days", "failed_logins"],
-		)
-	}
-
-	rows = []
-	for u in users:
-		acc = access_by_user.get(u.name)
-		rows.append(
-			{
-				"user_id": u.name,
-				"full_name": u.full_name or "",
-				"email": u.email or u.name,
-				"role": _role_label(roles_by_user.get(u.name, set())),
-				"class": ", ".join(sorted(set(class_by_user.get(u.name, [])))),
-				"registered_on": _fmt_dt(u.creation),
-				"status": "Attivo" if u.enabled else "Disattivato",
-				"first_login": _fmt_dt(acc.first_login) if acc else "",
-				"last_login": _fmt_dt(u.last_login),
-				"total_logins": (acc.total_logins if acc else 0) or 0,
-				"distinct_active_days": (acc.distinct_active_days if acc else 0) or 0,
-				"failed_logins": (acc.failed_logins if acc else 0) or 0,
-			}
-		)
-	return rows
-
-
-# Selecting any of these lesson-level columns switches the "Utenti x Corsi"
-# report from one row per (student, course) to one row per (student, lesson).
+# Selecting any of these lesson-level columns further switches the report to one
+# row per (user, course, lesson).
 USER_COURSES_LESSON_COLUMNS = {
 	"chapter",
 	"content_id",
@@ -1133,90 +1068,196 @@ _LESSON_STATUS_LABEL = {
 }
 
 
-def _build_user_courses_rows(filters: dict, selected: list | None = None) -> list:
+def _empty_course_fields() -> dict:
+	return {
+		"course_id": "",
+		"course_title": "",
+		"enrolled_on": "",
+		"progress": "",
+		"started_on": "",
+		"last_activity_on": "",
+		"completed_on": "",
+	}
+
+
+def _build_users_rows(filters: dict, selected: list | None = None) -> list:
+	"""Unified "Utenti" report with dynamic granularity:
+
+	  - user columns only -> one row per user
+	  - + course columns  -> one row per (user, course)
+	  - + lesson columns  -> one row per (user, course, lesson)
+
+	Users with no enrollment are kept (empty course cells) unless a course-side
+	filter (course entity or the enrollment date range) is active, in which case
+	only users with a matching enrollment appear.
+	"""
+	selected = selected or []
+	course_mode = any(
+		c in USER_COURSES_COURSE_COLUMNS or c in USER_COURSES_LESSON_COLUMNS for c in selected
+	)
+	lesson_mode = any(c in USER_COURSES_LESSON_COLUMNS for c in selected)
+
 	member_scope = _member_scope(filters)
 
-	conditions = []
+	# Course-side enrollment filter (course entity + enrollment date range).
+	enroll_conditions = []
 	if filters["course"]:
-		conditions.append(["course", "in", filters["course"]])
+		enroll_conditions.append(["course", "in", filters["course"]])
+	if filters.get("enrolled_from"):
+		enroll_conditions.append(["creation", ">=", filters["enrolled_from"]])
+	if filters.get("enrolled_to"):
+		enroll_conditions.append(["creation", "<=", filters["enrolled_to"]])
+	course_filter_active = bool(enroll_conditions)
+
+	# A course-side filter restricts users to those with a matching enrollment
+	# (and so drops the "keep unenrolled users" rule).
+	if course_filter_active:
+		matching_members = {
+			e.member
+			for e in frappe.get_all("LMS Enrollment", filters=enroll_conditions, fields=["member"])
+		}
+		member_scope = matching_members if member_scope is None else (member_scope & matching_members)
+
+	conditions = [["enabled", "=", 1], ["name", "not in", ["Guest", "Administrator"]]]
 	if member_scope is not None:
 		if not member_scope:
 			return []
-		conditions.append(["member", "in", list(member_scope)])
-	if filters["activity_from"]:
-		conditions.append(["creation", ">=", filters["activity_from"]])
-	if filters["activity_to"]:
-		conditions.append(["creation", "<=", filters["activity_to"]])
+		conditions.append(["name", "in", list(member_scope)])
+	if filters.get("last_login_from"):
+		conditions.append(["last_login", ">=", filters["last_login_from"]])
+	if filters.get("last_login_to"):
+		conditions.append(["last_login", "<=", filters["last_login_to"]])
+	if filters.get("registered_from"):
+		conditions.append(["creation", ">=", filters["registered_from"]])
+	if filters.get("registered_to"):
+		conditions.append(["creation", "<=", filters["registered_to"]])
 
-	enrollments = frappe.get_all(
-		"LMS Enrollment",
-		filters=conditions or None,
-		fields=["member", "member_name", "course", "creation", "progress"],
-		order_by="member_name asc",
+	users = frappe.get_all(
+		"User",
+		filters=conditions,
+		fields=["name", "full_name", "email", "enabled", "creation", "last_login"],
+		order_by="full_name asc",
 	)
-	if not enrollments:
+	if not users:
 		return []
 
-	lesson_mode = bool(selected) and any(k in USER_COURSES_LESSON_COLUMNS for k in selected)
+	names = [u.name for u in users]
 
-	members = list({e.member for e in enrollments})
+	# --- User-level enrichment (roles, class, access aggregates) ---
+	roles_by_user = {}
+	for r in frappe.get_all(
+		"Has Role", filters={"parent": ["in", names], "parenttype": "User"}, fields=["parent", "role"]
+	):
+		roles_by_user.setdefault(r.parent, set()).add(r.role)
+
+	class_by_user = {}
+	batch_rows = frappe.get_all(
+		"LMS Batch Enrollment", filters={"member": ["in", names]}, fields=["member", "batch"]
+	)
+	batch_ids = list({b.batch for b in batch_rows if b.batch})
+	batch_title = {}
+	if batch_ids:
+		for bt in frappe.get_all(
+			"LMS Batch", filters={"name": ["in", batch_ids]}, fields=["name", "title"]
+		):
+			batch_title[bt.name] = bt.title
+	for b in batch_rows:
+		if b.batch:
+			class_by_user.setdefault(b.member, []).append(batch_title.get(b.batch, b.batch))
+
+	# Access aggregates from our own tracking (LMSA User Access): durable and
+	# retention-independent, unlike counting Activity Log rows on the fly.
+	access_by_user = {
+		a.name: a
+		for a in frappe.get_all(
+			"LMSA User Access",
+			filters={"user": ["in", names]},
+			fields=["user", "first_login", "total_logins", "distinct_active_days", "failed_logins"],
+		)
+	}
+
+	def user_base(u):
+		acc = access_by_user.get(u.name)
+		return {
+			"user_id": u.name,
+			"full_name": u.full_name or "",
+			"email": u.email or u.name,
+			"role": _role_label(roles_by_user.get(u.name, set())),
+			"class": ", ".join(sorted(set(class_by_user.get(u.name, [])))),
+			"registered_on": _fmt_dt(u.creation),
+			"status": "Attivo" if u.enabled else "Disattivato",
+			"first_login": _fmt_dt(acc.first_login) if acc else "",
+			"last_login": _fmt_dt(u.last_login),
+			"total_logins": (acc.total_logins if acc else 0) or 0,
+			"distinct_active_days": (acc.distinct_active_days if acc else 0) or 0,
+			"failed_logins": (acc.failed_logins if acc else 0) or 0,
+		}
+
+	if not course_mode:
+		return [user_base(u) for u in users]
+
+	# --- Course mode: one row per (user, enrollment) ---
+	enrollments = frappe.get_all(
+		"LMS Enrollment",
+		filters=[["member", "in", names]] + enroll_conditions,
+		fields=["member", "course", "creation", "progress"],
+		order_by="creation asc",
+	)
+	enroll_by_member = {}
+	for e in enrollments:
+		enroll_by_member.setdefault(e.member, []).append(e)
+
 	course_ids = list({e.course for e in enrollments})
-
-	user_map = {
-		u.name: u
-		for u in frappe.get_all(
-			"User", filters={"name": ["in", members]}, fields=["name", "full_name", "email"]
-		)
-	}
-	course_title = {
-		c.name: c.title
-		for c in frappe.get_all(
-			"LMS Course", filters={"name": ["in", course_ids]}, fields=["name", "title"]
-		)
-	}
+	course_title = (
+		{
+			c.name: c.title
+			for c in frappe.get_all(
+				"LMS Course", filters={"name": ["in", course_ids]}, fields=["name", "title"]
+			)
+		}
+		if course_ids
+		else {}
+	)
 
 	# Per (member, course) progress aggregates: first/last activity and the
-	# timestamp of the last completed lesson (the completion moment at 100%).
-	# In lesson mode we also keep the per-lesson status/timestamp.
-	first_on, last_on, complete_last = {}, {}, {}
-	lesson_progress = {}
-	for r in frappe.get_all(
-		"LMS Course Progress",
-		filters={"member": ["in", members], "course": ["in", course_ids]},
-		fields=["member", "course", "lesson", "status", "creation"],
-	):
-		key = (r.member, r.course)
-		if key not in first_on or r.creation < first_on[key]:
-			first_on[key] = r.creation
-		if key not in last_on or r.creation > last_on[key]:
-			last_on[key] = r.creation
-		if r.status == "Complete" and (key not in complete_last or r.creation > complete_last[key]):
-			complete_last[key] = r.creation
-		if lesson_mode and r.lesson:
-			lesson_progress[(r.member, r.lesson)] = (r.status, r.creation)
+	# timestamp of the last completed lesson. In lesson mode we also keep the
+	# per-lesson status/timestamp.
+	first_on, last_on, complete_last, lesson_progress = {}, {}, {}, {}
+	if course_ids:
+		for r in frappe.get_all(
+			"LMS Course Progress",
+			filters={"member": ["in", names], "course": ["in", course_ids]},
+			fields=["member", "course", "lesson", "status", "creation"],
+		):
+			key = (r.member, r.course)
+			if key not in first_on or r.creation < first_on[key]:
+				first_on[key] = r.creation
+			if key not in last_on or r.creation > last_on[key]:
+				last_on[key] = r.creation
+			if r.status == "Complete" and (key not in complete_last or r.creation > complete_last[key]):
+				complete_last[key] = r.creation
+			if lesson_mode and r.lesson:
+				lesson_progress[(r.member, r.lesson)] = (r.status, r.creation)
 
 	# Explicit completion date from the certificate, when the course issues one.
 	cert_date = {}
-	for c in frappe.get_all(
-		"LMS Certificate",
-		filters={"member": ["in", members], "course": ["in", course_ids]},
-		fields=["member", "course", "issue_date"],
-	):
-		if c.issue_date:
-			cert_date[(c.member, c.course)] = c.issue_date
+	if course_ids:
+		for c in frappe.get_all(
+			"LMS Certificate",
+			filters={"member": ["in", names], "course": ["in", course_ids]},
+			fields=["member", "course", "issue_date"],
+		):
+			if c.issue_date:
+				cert_date[(c.member, c.course)] = c.issue_date
 
-	def base_row(e):
-		key = (e.member, e.course)
-		u = user_map.get(e.member)
+	def course_fields(member, e):
+		key = (member, e.course)
 		completed = None
 		if key in cert_date:
 			completed = cert_date[key]
 		elif (e.progress or 0) >= 100:
 			completed = complete_last.get(key)
 		return {
-			"user_id": e.member,
-			"full_name": e.member_name or (u.full_name if u else "") or "",
-			"email": (u.email if u else "") or e.member,
 			"course_id": e.course,
 			"course_title": course_title.get(e.course, e.course),
 			"enrolled_on": _fmt_dt(e.creation),
@@ -1226,32 +1267,43 @@ def _build_user_courses_rows(filters: dict, selected: list | None = None) -> lis
 			"completed_on": _fmt_date(completed),
 		}
 
-	if not lesson_mode:
-		return [base_row(e) for e in enrollments]
+	course_lessons = _course_outline_lessons(course_ids) if lesson_mode else {}
 
-	# --- Lesson mode: expand each enrollment into one row per lesson ---
-	course_lessons = _course_outline_lessons(course_ids)
 	rows = []
-	for e in enrollments:
-		base = base_row(e)
-		outline = course_lessons.get(e.course, [])
-		if not outline:
-			# Keep the enrolled student visible even if the course has no lessons.
-			rows.append({**base, **_empty_lesson_fields()})
+	for u in users:
+		base = user_base(u)
+		u_enrolls = enroll_by_member.get(u.name, [])
+		if not u_enrolls:
+			# No enrollment: keep the user with empty course (and lesson) cells.
+			# When a course-side filter is active such users are already excluded
+			# from `users`, so this only fires without that filter.
+			extra = _empty_course_fields()
+			if lesson_mode:
+				extra = {**extra, **_empty_lesson_fields()}
+			rows.append({**base, **extra})
 			continue
-		for chapter_title, lesson_id, lesson_title, content_type in outline:
-			status, cdate = lesson_progress.get((e.member, lesson_id), (None, None))
-			rows.append(
-				{
-					**base,
-					"chapter": chapter_title,
-					"content_id": lesson_id,
-					"content_title": lesson_title,
-					"content_type": content_type,
-					"content_status": _LESSON_STATUS_LABEL.get(status, "Non iniziato"),
-					"content_completed_on": _fmt_dt(cdate) if status == "Complete" else "",
-				}
-			)
+		for e in u_enrolls:
+			crow = {**base, **course_fields(u.name, e)}
+			if not lesson_mode:
+				rows.append(crow)
+				continue
+			outline = course_lessons.get(e.course, [])
+			if not outline:
+				rows.append({**crow, **_empty_lesson_fields()})
+				continue
+			for chapter_title, lesson_id, lesson_title, content_type in outline:
+				status, cdate = lesson_progress.get((u.name, lesson_id), (None, None))
+				rows.append(
+					{
+						**crow,
+						"chapter": chapter_title,
+						"content_id": lesson_id,
+						"content_title": lesson_title,
+						"content_type": content_type,
+						"content_status": _LESSON_STATUS_LABEL.get(status, "Non iniziato"),
+						"content_completed_on": _fmt_dt(cdate) if status == "Complete" else "",
+					}
+				)
 	return rows
 
 
@@ -1350,10 +1402,10 @@ def _build_quizzes_rows(filters: dict, selected: list | None = None) -> list:
 		if not member_scope:
 			return []
 		conditions.append(["member", "in", list(member_scope)])
-	if filters["activity_from"]:
-		conditions.append(["creation", ">=", filters["activity_from"]])
-	if filters["activity_to"]:
-		conditions.append(["creation", "<=", filters["activity_to"]])
+	if filters.get("activity_from"):
+		conditions.append(["creation", ">=", filters.get("activity_from")])
+	if filters.get("activity_to"):
+		conditions.append(["creation", "<=", filters.get("activity_to")])
 
 	# Ordered ascending so the last submission processed per (member, quiz) is
 	# the most recent one, which drives "last_score".
@@ -1452,10 +1504,10 @@ def _build_ai_rows(filters: dict, selected: list | None = None) -> list:
 		if not member_scope:
 			return []
 		conditions.append(["member", "in", list(member_scope)])
-	if filters["activity_from"]:
-		conditions.append(["creation", ">=", filters["activity_from"]])
-	if filters["activity_to"]:
-		conditions.append(["creation", "<=", filters["activity_to"]])
+	if filters.get("activity_from"):
+		conditions.append(["creation", ">=", filters.get("activity_from")])
+	if filters.get("activity_to"):
+		conditions.append(["creation", "<=", filters.get("activity_to")])
 
 	logs = frappe.get_all(
 		"LMSA Query Log",
@@ -1486,7 +1538,6 @@ def _build_ai_rows(filters: dict, selected: list | None = None) -> list:
 
 STUDENT_STATS_BUILDERS = {
 	"users": _build_users_rows,
-	"user_courses": _build_user_courses_rows,
 	"quizzes": _build_quizzes_rows,
 	"ai": _build_ai_rows,
 }
