@@ -119,6 +119,9 @@ override_whitelisted_methods = {
 
     
     "lms.command_palette.search_sqlite": "os_lms.os_lms.override_api.search_sqlite",
+    # Hand out a template matching the columns our import expanders expect; the
+    # stock one lists the doctype fields and would skip user creation.
+    "frappe.core.doctype.data_import.data_import.download_template": "os_lms.data_import.template.download_template",
     # Redirect the Google Calendar OAuth callback to the LMS SPA instead of the desk.
     "frappe.integrations.doctype.google_calendar.google_calendar.google_callback": "os_lms.os_lms.google_calendar.google_callback",
 }

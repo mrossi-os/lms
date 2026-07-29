@@ -101,6 +101,17 @@ export default defineConfig(async ({ mode }) => {
 						'node_modules/frappe-ui/src/components/TextEditor/TextEditor.vue'
 					),
 				},
+				// The Data Import overrides are forks of frappe-ui components (accepted
+				// file types and every label are hardcoded in them, with no prop to
+				// configure either). A fork still needs whatever the original imported
+				// relatively, and those paths do not resolve from src/overrides — so
+				// each one is rewritten mechanically as `frappe-ui-original/<same path>`.
+				// Keep it that way: it makes re-syncing after a frappe-ui bump a
+				// prefix swap rather than a hunt.
+				{
+					find: 'frappe-ui-original',
+					replacement: path.resolve(__dirname, 'node_modules/frappe-ui'),
+				},
 				{
 					find: /^@\/utils$/,
 					replacement: path.resolve(__dirname, 'src/oslms/utils/index.js'),
