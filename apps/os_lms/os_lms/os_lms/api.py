@@ -858,6 +858,15 @@ STUDENT_STATS_REPORTS = {
 			{"key": "started_on", "label": "Data di primo avvio"},
 			{"key": "last_activity_on", "label": "Ultima attivita"},
 			{"key": "completed_on", "label": "Data di completamento"},
+			# Lesson-level columns: selecting any of these switches the report to
+			# one row per lesson (see _build_user_courses_rows / dynamic granularity).
+			# default=False so the report stays course-level until the user opts in.
+			{"key": "chapter", "label": "Capitolo", "default": False},
+			{"key": "content_id", "label": "ID contenuto", "default": False},
+			{"key": "content_title", "label": "Titolo contenuto", "default": False},
+			{"key": "content_type", "label": "Tipo contenuto", "default": False},
+			{"key": "content_status", "label": "Stato completamento contenuto", "default": False},
+			{"key": "content_completed_on", "label": "Data completamento contenuto", "default": False},
 		],
 	},
 	"quizzes": {
@@ -996,7 +1005,7 @@ def _role_label(roles: set) -> str:
 	return "Studente"
 
 
-def _build_users_rows(filters: dict) -> list:
+def _build_users_rows(filters: dict, selected: list | None = None) -> list:
 	member_scope = _member_scope(filters)
 
 	# A course filter narrows the user set to that course's enrolled members.
@@ -1073,7 +1082,37 @@ def _build_users_rows(filters: dict) -> list:
 	return rows
 
 
-def _build_user_courses_rows(filters: dict) -> list:
+# Selecting any of these lesson-level columns switches the "Utenti x Corsi"
+# report from one row per (student, course) to one row per (student, lesson).
+USER_COURSES_LESSON_COLUMNS = {
+	"chapter",
+	"content_id",
+	"content_title",
+	"content_type",
+	"content_status",
+	"content_completed_on",
+}
+
+# get_lesson_icon (the same helper that drives the course-outline icon) mapped
+# to a human-readable content type, so the report always matches the UI.
+_CONTENT_TYPE_LABEL = {
+	"icon-youtube": "Video",
+	"icon-quiz": "Quiz",
+	"icon-assignment": "Esercizio",
+	"icon-code": "Programma",
+	"icon-list": "Testo",
+}
+
+# LMS Course Progress.status -> label. A missing progress row means the student
+# has not started that lesson.
+_LESSON_STATUS_LABEL = {
+	"Complete": "Completato",
+	"Partially Complete": "Parzialmente completato",
+	"Incomplete": "Non completato",
+}
+
+
+def _build_user_courses_rows(filters: dict, selected: list | None = None) -> list:
 	member_scope = _member_scope(filters)
 
 	conditions = []
@@ -1097,6 +1136,8 @@ def _build_user_courses_rows(filters: dict) -> list:
 	if not enrollments:
 		return []
 
+	lesson_mode = bool(selected) and any(k in USER_COURSES_LESSON_COLUMNS for k in selected)
+
 	members = list({e.member for e in enrollments})
 	course_ids = list({e.course for e in enrollments})
 
@@ -1115,11 +1156,13 @@ def _build_user_courses_rows(filters: dict) -> list:
 
 	# Per (member, course) progress aggregates: first/last activity and the
 	# timestamp of the last completed lesson (the completion moment at 100%).
+	# In lesson mode we also keep the per-lesson status/timestamp.
 	first_on, last_on, complete_last = {}, {}, {}
+	lesson_progress = {}
 	for r in frappe.get_all(
 		"LMS Course Progress",
 		filters={"member": ["in", members], "course": ["in", course_ids]},
-		fields=["member", "course", "status", "creation"],
+		fields=["member", "course", "lesson", "status", "creation"],
 	):
 		key = (r.member, r.course)
 		if key not in first_on or r.creation < first_on[key]:
@@ -1128,6 +1171,8 @@ def _build_user_courses_rows(filters: dict) -> list:
 			last_on[key] = r.creation
 		if r.status == "Complete" and (key not in complete_last or r.creation > complete_last[key]):
 			complete_last[key] = r.creation
+		if lesson_mode and r.lesson:
+			lesson_progress[(r.member, r.lesson)] = (r.status, r.creation)
 
 	# Explicit completion date from the certificate, when the course issues one.
 	cert_date = {}
@@ -1139,8 +1184,7 @@ def _build_user_courses_rows(filters: dict) -> list:
 		if c.issue_date:
 			cert_date[(c.member, c.course)] = c.issue_date
 
-	rows = []
-	for e in enrollments:
+	def base_row(e):
 		key = (e.member, e.course)
 		u = user_map.get(e.member)
 		completed = None
@@ -1148,24 +1192,134 @@ def _build_user_courses_rows(filters: dict) -> list:
 			completed = cert_date[key]
 		elif (e.progress or 0) >= 100:
 			completed = complete_last.get(key)
-		rows.append(
-			{
-				"user_id": e.member,
-				"full_name": e.member_name or (u.full_name if u else "") or "",
-				"email": (u.email if u else "") or e.member,
-				"course_id": e.course,
-				"course_title": course_title.get(e.course, e.course),
-				"enrolled_on": _fmt_dt(e.creation),
-				"progress": e.progress or 0,
-				"started_on": _fmt_dt(first_on.get(key)),
-				"last_activity_on": _fmt_dt(last_on.get(key)),
-				"completed_on": _fmt_date(completed),
-			}
-		)
+		return {
+			"user_id": e.member,
+			"full_name": e.member_name or (u.full_name if u else "") or "",
+			"email": (u.email if u else "") or e.member,
+			"course_id": e.course,
+			"course_title": course_title.get(e.course, e.course),
+			"enrolled_on": _fmt_dt(e.creation),
+			"progress": e.progress or 0,
+			"started_on": _fmt_dt(first_on.get(key)),
+			"last_activity_on": _fmt_dt(last_on.get(key)),
+			"completed_on": _fmt_date(completed),
+		}
+
+	if not lesson_mode:
+		return [base_row(e) for e in enrollments]
+
+	# --- Lesson mode: expand each enrollment into one row per lesson ---
+	course_lessons = _course_outline_lessons(course_ids)
+	rows = []
+	for e in enrollments:
+		base = base_row(e)
+		outline = course_lessons.get(e.course, [])
+		if not outline:
+			# Keep the enrolled student visible even if the course has no lessons.
+			rows.append({**base, **_empty_lesson_fields()})
+			continue
+		for chapter_title, lesson_id, lesson_title, content_type in outline:
+			status, cdate = lesson_progress.get((e.member, lesson_id), (None, None))
+			rows.append(
+				{
+					**base,
+					"chapter": chapter_title,
+					"content_id": lesson_id,
+					"content_title": lesson_title,
+					"content_type": content_type,
+					"content_status": _LESSON_STATUS_LABEL.get(status, "Non iniziato"),
+					"content_completed_on": _fmt_dt(cdate) if status == "Complete" else "",
+				}
+			)
 	return rows
 
 
-def _build_quizzes_rows(filters: dict) -> list:
+def _empty_lesson_fields() -> dict:
+	return {
+		"chapter": "",
+		"content_id": "",
+		"content_title": "",
+		"content_type": "",
+		"content_status": "",
+		"content_completed_on": "",
+	}
+
+
+def _course_outline_lessons(course_ids: list) -> dict:
+	"""Return, per course, its lessons in outline order as tuples
+	(chapter_title, lesson_id, lesson_title, content_type_label).
+
+	Order follows the UI outline: LMS Course.chapters (Chapter Reference) then
+	each Course Chapter.lessons (Lesson Reference). content_type reuses
+	get_lesson_icon so it matches the icon shown in the course outline.
+	"""
+	from lms.lms.utils import get_lesson_icon
+
+	if not course_ids:
+		return {}
+
+	# Chapters in order per course.
+	chapter_refs = frappe.get_all(
+		"Chapter Reference",
+		filters={"parenttype": "LMS Course", "parent": ["in", course_ids]},
+		fields=["parent as course", "chapter", "idx"],
+		order_by="idx asc",
+	)
+	chapters_of_course = {}
+	for c in chapter_refs:
+		chapters_of_course.setdefault(c.course, []).append(c.chapter)
+
+	chapter_names = [c.chapter for c in chapter_refs]
+	if not chapter_names:
+		return {}
+
+	chapter_title = {
+		c.name: c.title
+		for c in frappe.get_all(
+			"Course Chapter", filters={"name": ["in", chapter_names]}, fields=["name", "title"]
+		)
+	}
+
+	# Lessons in order per chapter.
+	lesson_refs = frappe.get_all(
+		"Lesson Reference",
+		filters={"parenttype": "Course Chapter", "parent": ["in", chapter_names]},
+		fields=["parent as chapter", "lesson", "idx"],
+		order_by="idx asc",
+	)
+	lessons_of_chapter = {}
+	for lr in lesson_refs:
+		lessons_of_chapter.setdefault(lr.chapter, []).append(lr.lesson)
+
+	lesson_ids = [lr.lesson for lr in lesson_refs]
+	lesson_map = {
+		lesson.name: lesson
+		for lesson in frappe.get_all(
+			"Course Lesson",
+			filters={"name": ["in", lesson_ids]},
+			fields=["name", "title", "body", "content"],
+		)
+	}
+
+	outline = {}
+	for course in course_ids:
+		items = []
+		for chapter in chapters_of_course.get(course, []):
+			for lesson_id in lessons_of_chapter.get(chapter, []):
+				lesson = lesson_map.get(lesson_id)
+				if not lesson:
+					continue
+				content_type = _CONTENT_TYPE_LABEL.get(
+					get_lesson_icon(lesson.body, lesson.content), "Testo"
+				)
+				items.append(
+					(chapter_title.get(chapter, chapter), lesson_id, lesson.title or "", content_type)
+				)
+		outline[course] = items
+	return outline
+
+
+def _build_quizzes_rows(filters: dict, selected: list | None = None) -> list:
 	member_scope = _member_scope(filters)
 
 	conditions = []
@@ -1267,7 +1421,7 @@ def _build_quizzes_rows(filters: dict) -> list:
 	return rows
 
 
-def _build_ai_rows(filters: dict) -> list:
+def _build_ai_rows(filters: dict, selected: list | None = None) -> list:
 	member_scope = _member_scope(filters)
 
 	conditions = []
@@ -1342,7 +1496,7 @@ def _build_export_bytes(report_type: str, columns, file_format: str, parsed_filt
 	selected = _normalize_export_columns(report, columns)
 	label_by_key = {c["key"]: c["label"] for c in report["columns"]}
 
-	rows = STUDENT_STATS_BUILDERS[report_type](parsed_filters)
+	rows = STUDENT_STATS_BUILDERS[report_type](parsed_filters, selected)
 	header = [label_by_key[k] for k in selected]
 	data = [[row.get(k, "") for k in selected] for row in rows]
 	safe_label = re.sub(r"[^\w\- ]", "_", report["label"]).strip() or "statistiche"

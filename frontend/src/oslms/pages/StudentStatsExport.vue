@@ -80,9 +80,18 @@
 
 			<!-- Filters -->
 			<section class="space-y-4 rounded-md border card">
-				<h2 class="text-base font-semibold text-ink-gray-9">
-					{{ __('Filters') }}
-				</h2>
+				<div class="flex items-center justify-between">
+					<h2 class="text-base font-semibold text-ink-gray-9">
+						{{ __('Filters') }}
+					</h2>
+					<button
+						class="text-sm text-ink-gray-6 hover:text-ink-gray-9 disabled:opacity-50"
+						:disabled="!hasActiveFilters"
+						@click="clearFilters"
+					>
+						{{ __('Clear filters') }}
+					</button>
+				</div>
 				<p class="text-sm text-ink-gray-6">
 					{{
 						__(
@@ -115,14 +124,14 @@
 					<div class="grid grid-cols-2 gap-2">
 						<FormControl
 							v-model="activityFrom"
-							:label="__('Activity from')"
+							:label="__(activityFromLabel)"
 							:placeholder="__('Select date')"
 							type="date"
 							variant="outline"
 						/>
 						<FormControl
 							v-model="activityTo"
-							:label="__('Activity to')"
+							:label="__(activityToLabel)"
 							:placeholder="__('Select date')"
 							type="date"
 							variant="outline"
@@ -345,14 +354,18 @@ const selectedForReport = computed(
 	() => savedColumns.value[reportType.value] || [],
 )
 
-// Default every column to selected the first time a report type is opened.
+// Default the first time a report type is opened: select every column except
+// those flagged default:false (e.g. the lesson columns that switch the report
+// to one row per lesson — the user opts into those explicitly).
 function ensureDefaults() {
 	const cols = availableColumns.value
 	if (!cols.length) return
 	if (!Array.isArray(savedColumns.value[reportType.value])) {
 		savedColumns.value = {
 			...savedColumns.value,
-			[reportType.value]: cols.map((c) => c.key),
+			[reportType.value]: cols
+				.filter((c) => c.default !== false)
+				.map((c) => c.key),
 		}
 	}
 }
@@ -393,6 +406,44 @@ const filterBatch = ref([])
 const filterStudents = ref([])
 const activityFrom = ref('')
 const activityTo = ref('')
+
+const hasActiveFilters = computed(
+	() =>
+		filterCourse.value.length > 0 ||
+		filterBatch.value.length > 0 ||
+		filterStudents.value.length > 0 ||
+		!!activityFrom.value ||
+		!!activityTo.value,
+)
+
+function clearFilters() {
+	filterCourse.value = []
+	filterBatch.value = []
+	filterStudents.value = []
+	activityFrom.value = ''
+	activityTo.value = ''
+}
+
+// The activity-date filter targets a different field per report type (see the
+// per-report builders in api.py), so its labels name the actual field:
+//   users        -> User.last_login
+//   user_courses -> LMS Enrollment.creation (enrollment date)
+//   quizzes      -> LMS Quiz Submission.creation (attempt date)
+//   ai           -> LMSA Query Log.creation (interaction date)
+const ACTIVITY_LABELS = {
+	users: { from: 'Last login from', to: 'Last login to' },
+	user_courses: { from: 'Enrolled from', to: 'Enrolled to' },
+	quizzes: { from: 'Quiz attempt from', to: 'Quiz attempt to' },
+	ai: { from: 'AI interaction from', to: 'AI interaction to' },
+}
+
+const activityFromLabel = computed(
+	() => (ACTIVITY_LABELS[reportType.value] || {}).from || 'Activity from',
+)
+
+const activityToLabel = computed(
+	() => (ACTIVITY_LABELS[reportType.value] || {}).to || 'Activity to',
+)
 
 function buildFilters() {
 	const f = {}
