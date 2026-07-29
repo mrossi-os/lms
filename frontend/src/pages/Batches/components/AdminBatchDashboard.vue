@@ -188,80 +188,125 @@
 				</div> -->
 
 				<div
-					v-if="batch.data?.courses?.length"
+					v-if="progressSummaryTotal || batch.data?.courses?.length"
 					class="border rounded-lg pt-4 px-4 card"
 				>
-					<div class="flex items-center justify-between gap-x-2 mb-4">
-						<div class="text-ink-gray-5">
+					<Select
+						v-if="batch.data?.courses?.length"
+						v-model="selectedCourse"
+						:options="courseOptions"
+						class="mb-4"
+					/>
+
+					<!-- Batch-wide student distribution: averaged over every batch
+					course, so it does not follow the course selector above. -->
+					<div v-if="progressSummaryTotal">
+						<div class="text-ink-gray-5 mb-4">
+							{{ __('Progress Summary') }}
+						</div>
+						<div
+							class="grid grid-cols-[2fr_1fr] items-center justify-between text-ink-gray-9"
+						>
+							<div class="flex flex-col space-y-4 flex-1 text-sm">
+								<div
+									class="flex items-center text-ink-gray-7"
+									v-for="(bucket, idx) in progressSummary"
+									:key="bucket.name"
+								>
+									<div
+										class="size-2 rounded shrink-0"
+										:style="{ backgroundColor: progressSummaryColors[idx] }"
+									></div>
+									<Tooltip :text="bucket.range">
+										<div class="ms-2">
+											{{ __(bucket.label) }}
+										</div>
+									</Tooltip>
+									<Tooltip :text="String(bucket.value)">
+										<div class="ms-auto">
+											{{
+												Math.round((bucket.value / progressSummaryTotal) * 100)
+											}}%
+										</div>
+									</Tooltip>
+								</div>
+							</div>
+							<ECharts
+								class="w-40 h-20"
+								:options="progressSummaryChartOptions"
+							/>
+						</div>
+					</div>
+
+					<div
+						v-if="batch.data?.courses?.length"
+						:class="progressSummaryTotal ? 'border-t mt-4 pt-4' : ''"
+					>
+						<div class="text-ink-gray-5 mb-4">
 							{{ __('Course Progress') }}
 						</div>
-						<Select
-							v-model="selectedCourse"
-							:options="courseOptions"
-							class="!w-40"
-						/>
-					</div>
-					<div
-						v-if="progressStats.loading"
-						class="text-sm text-ink-gray-5 py-2"
-					>
-						{{ __('Loading...') }}
-					</div>
-					<template v-else>
-						<ECharts
-							v-if="showProgressChart"
-							class="w-full h-48 mb-2"
-							:options="progressChartOptions"
-						/>
 						<div
-							v-if="!selectedCourse"
-							class="divide-y max-h-[40vh] divide-outline-elevation-2 text-ink-gray-7 overflow-y-auto"
+							v-if="progressStats.loading"
+							class="text-sm text-ink-gray-5 py-2"
 						>
-							<div
-								v-for="(course, idx) in progressStats.data?.courses"
-								:key="course.course"
-								class="flex justify-between items-center gap-x-2 text-sm py-2 my-1 text-ink-gray-9"
-							>
-								<div class="flex items-center gap-x-2">
-									<div
-										class="size-2 rounded shrink-0"
-										:style="{ backgroundColor: sliceColor(idx) }"
-									></div>
-									<span>{{ course.title }}</span>
-								</div>
-								<span>{{ Math.round(course.avg_progress) }}%</span>
-							</div>
+							{{ __('Loading...') }}
 						</div>
-						<div
-							v-else-if="progressStats.data?.lessons?.length"
-							class="divide-y max-h-[40vh] divide-outline-elevation-2 text-ink-gray-7 overflow-y-auto"
-						>
+						<template v-else>
+							<ECharts
+								v-if="showProgressChart"
+								class="w-full h-48 mb-2"
+								:options="progressChartOptions"
+							/>
 							<div
-								v-for="(lesson, idx) in progressStats.data.lessons"
-								:key="lesson.lesson_name"
-								class="flex justify-between items-center gap-x-2 text-sm py-2 my-1 text-ink-gray-9"
+								v-if="!selectedCourse"
+								class="divide-y max-h-[40vh] divide-outline-elevation-2 text-ink-gray-7 overflow-y-auto"
 							>
-								<div class="flex items-center gap-x-2">
-									<div
-										class="size-2 rounded shrink-0"
-										:style="{ backgroundColor: sliceColor(idx) }"
-									></div>
-									<div>
-										<span class="me-3 text-xs">
-											{{ lesson.chapter_idx }}.{{ lesson.idx }}
-										</span>
-										<span>{{ lesson.title }}</span>
+								<div
+									v-for="(course, idx) in progressStats.data?.courses"
+									:key="course.course"
+									class="flex justify-between items-center gap-x-2 text-sm py-2 my-1 text-ink-gray-9"
+								>
+									<div class="flex items-center gap-x-2">
+										<div
+											class="size-2 rounded shrink-0"
+											:style="{ backgroundColor: sliceColor(idx) }"
+										></div>
+										<span>{{ course.title }}</span>
 									</div>
+									<span>{{ Math.round(course.avg_progress) }}%</span>
 								</div>
-								<Tooltip :text="String(lesson.completion_count)">
-									<div>{{ completionPct(lesson.completion_count) }}%</div>
-								</Tooltip>
 							</div>
-						</div>
-						<div v-else class="text-sm text-ink-gray-5 py-2">
-							{{ __('No lessons in this course') }}
-						</div>
-					</template>
+							<div
+								v-else-if="progressStats.data?.lessons?.length"
+								class="divide-y max-h-[40vh] divide-outline-elevation-2 text-ink-gray-7 overflow-y-auto"
+							>
+								<div
+									v-for="(lesson, idx) in progressStats.data.lessons"
+									:key="lesson.lesson_name"
+									class="flex justify-between items-center gap-x-2 text-sm py-2 my-1 text-ink-gray-9"
+								>
+									<div class="flex items-center gap-x-2">
+										<div
+											class="size-2 rounded shrink-0"
+											:style="{ backgroundColor: sliceColor(idx) }"
+										></div>
+										<div>
+											<span class="me-3 text-xs">
+												{{ lesson.chapter_idx }}.{{ lesson.idx }}
+											</span>
+											<span>{{ lesson.title }}</span>
+										</div>
+									</div>
+									<Tooltip :text="String(lesson.completion_count)">
+										<div>{{ completionPct(lesson.completion_count) }}%</div>
+									</Tooltip>
+								</div>
+							</div>
+							<div v-else class="text-sm text-ink-gray-5 py-2">
+								{{ __('No lessons in this course') }}
+							</div>
+						</template>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -453,6 +498,78 @@ const chartHues = [
 
 const sliceColor = (idx: number) =>
 	colors[theme.value][chartHues[idx % chartHues.length]][400]
+
+// Progress summary: how the batch's students spread over the same buckets the
+// course dashboard uses (see get_progress_distribution in lms.lms.api). It is
+// derived client-side from `batchStats.students_progress` — which already holds
+// every enrolled student's average progress across the batch courses — so the
+// card costs no extra request. Buckets read the same rounded value shown in the
+// students list, keeping a student displayed as 100% inside "Completed".
+const progressBuckets = [
+	{ label: 'Just Started', range: '0-30%', hue: 'red' },
+	{ label: 'In Progress', range: '30-60%', hue: 'amber' },
+	{ label: 'Advanced', range: '60-99%', hue: 'blue' },
+	{ label: 'Completed', range: '100%', hue: 'green' },
+] as const
+
+const bucketIndex = (progress: number) => {
+	if (progress >= 100) return 3
+	if (progress >= 60) return 2
+	if (progress >= 30) return 1
+	return 0
+}
+
+const progressSummary = computed(() => {
+	const counts = [0, 0, 0, 0]
+	const students = batchStats.data?.students_progress || {}
+	for (const member of Object.keys(students)) {
+		counts[bucketIndex(getStudentProgress(member))] += 1
+	}
+	// `label` stays untranslated here and goes through __() in the template, so
+	// the legend still translates when the dictionary loads after this computed
+	// first evaluates. The donut never renders names (labels/tooltip are off).
+	return progressBuckets.map((bucket, idx) => ({
+		name: bucket.label,
+		label: bucket.label,
+		range: bucket.range,
+		value: counts[idx],
+	}))
+})
+
+const progressSummaryTotal = computed(() =>
+	progressSummary.value.reduce((total, bucket) => total + bucket.value, 0),
+)
+
+const progressSummaryColors = computed(() =>
+	progressBuckets.map((bucket) => colors[theme.value][bucket.hue][400]),
+)
+
+const progressSummaryChartOptions = computed(() => ({
+	color: progressSummaryColors.value,
+	series: [
+		{
+			type: 'pie' as const,
+			radius: ['50%', '70%'],
+			center: ['50%', '50%'],
+			label: {
+				show: false,
+			},
+			labelLine: {
+				show: false,
+			},
+			emphasis: {
+				label: {
+					show: false,
+				},
+				scale: false,
+			},
+			data: progressSummary.value.map((bucket) => ({
+				name: bucket.name,
+				value: bucket.value,
+			})),
+		},
+	],
+}))
 
 // The donut follows the course selector: no course selected -> one slice per
 // batch course weighted by its average progress; a course selected -> one slice
