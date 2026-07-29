@@ -5,14 +5,14 @@
 				:title="__('Enrolled')"
 				:value="formatAmount(course.data?.enrollments)"
 			/>
-			<!-- <NumberChartGraph
+			<NumberChartGraph
 				:title="__('Average Completion Rate')"
 				:value="averageCompletionRate"
-			/> -->
-			<NumberChartGraph
+			/>
+			<!-- <NumberChartGraph
 				:title="__('Average Rating')"
 				:value="course.data?.rating || 0"
-			>
+			> -->
 				<template #prefix>
 					<LucideStar class="size-5 text-transparent fill-amber-500" />
 				</template>
