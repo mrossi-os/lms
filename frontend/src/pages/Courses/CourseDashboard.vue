@@ -12,11 +12,11 @@
 			<!-- <NumberChartGraph
 				:title="__('Average Rating')"
 				:value="course.data?.rating || 0"
-			> -->
+			> 
 				<template #prefix>
 					<LucideStar class="size-5 text-transparent fill-amber-500" />
 				</template>
-			</NumberChartGraph>
+			</NumberChartGraph>-->
 			<NumberChartGraph :title="__('Lessons')" :value="course.data?.lessons" />
 		</div>
 		<div class="grid grid-cols-[2fr_1fr] gap-5 items-start">
