@@ -80,18 +80,9 @@
 
 			<!-- Filters -->
 			<section class="space-y-4 rounded-md border card">
-				<div class="flex items-center justify-between">
-					<h2 class="text-base font-semibold text-ink-gray-9">
-						{{ __('Filters') }}
-					</h2>
-					<button
-						class="text-sm text-ink-gray-6 hover:text-ink-gray-9 disabled:opacity-50"
-						:disabled="!hasActiveFilters"
-						@click="clearFilters"
-					>
-						{{ __('Clear filters') }}
-					</button>
-				</div>
+				<h2 class="text-base font-semibold text-ink-gray-9">
+					{{ __('Filters') }}
+				</h2>
 				<p class="text-sm text-ink-gray-6">
 					{{
 						__(
@@ -100,42 +91,102 @@
 					}}
 				</p>
 				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-					<MultiLink
-						v-model="filterCourse"
-						doctype="LMS Course"
-						:label="__('Courses')"
-						:placeholder="__('All courses')"
-						variant="outline"
-					/>
-					<MultiLink
-						v-model="filterBatch"
-						doctype="LMS Batch"
-						:label="__('Class')"
-						:placeholder="__('All classes')"
-						variant="outline"
-					/>
-					<MultiLink
-						v-model="filterStudents"
-						doctype="User"
-						:label="__('Students')"
-						:placeholder="__('All students')"
-						variant="outline"
-					/>
+					<div class="flex items-end gap-1">
+						<MultiLink
+							class="flex-1"
+							v-model="filterCourse"
+							doctype="LMS Course"
+							:label="__('Courses')"
+							:placeholder="__('All courses')"
+							variant="outline"
+						/>
+						<Button
+							v-if="filterCourse.length"
+							variant="ghost"
+							class="shrink-0"
+							:aria-label="__('Clear filter')"
+							@click="filterCourse = []"
+						>
+							<span class="lucide-x size-4" />
+						</Button>
+					</div>
+					<div class="flex items-end gap-1">
+						<MultiLink
+							class="flex-1"
+							v-model="filterBatch"
+							doctype="LMS Batch"
+							:label="__('Class')"
+							:placeholder="__('All classes')"
+							variant="outline"
+						/>
+						<Button
+							v-if="filterBatch.length"
+							variant="ghost"
+							class="shrink-0"
+							:aria-label="__('Clear filter')"
+							@click="filterBatch = []"
+						>
+							<span class="lucide-x size-4" />
+						</Button>
+					</div>
+					<div class="flex items-end gap-1">
+						<MultiLink
+							class="flex-1"
+							v-model="filterStudents"
+							doctype="User"
+							:label="__('Students')"
+							:placeholder="__('All students')"
+							variant="outline"
+						/>
+						<Button
+							v-if="filterStudents.length"
+							variant="ghost"
+							class="shrink-0"
+							:aria-label="__('Clear filter')"
+							@click="filterStudents = []"
+						>
+							<span class="lucide-x size-4" />
+						</Button>
+					</div>
 					<div class="grid grid-cols-2 gap-2">
-						<FormControl
-							v-model="activityFrom"
-							:label="__(activityFromLabel)"
-							:placeholder="__('Select date')"
-							type="date"
-							variant="outline"
-						/>
-						<FormControl
-							v-model="activityTo"
-							:label="__(activityToLabel)"
-							:placeholder="__('Select date')"
-							type="date"
-							variant="outline"
-						/>
+						<div class="flex items-end gap-1">
+							<FormControl
+								class="flex-1"
+								v-model="activityFrom"
+								:label="__(activityFromLabel)"
+								:placeholder="__('Select date')"
+								type="date"
+								variant="outline"
+							/>
+							<Button
+								v-if="activityFrom"
+								variant="ghost"
+								class="shrink-0"
+								:aria-label="__('Clear filter')"
+								@click="activityFrom = ''"
+							>
+								<span class="lucide-x size-4" />
+							</Button>
+						</div>
+						<div class="flex items-end gap-1">
+							<FormControl
+								class="flex-1"
+								v-model="activityTo"
+								:label="__(activityToLabel)"
+								:placeholder="__('Select date')"
+								type="date"
+								variant="outline"
+							/>
+							<Button
+								v-if="activityTo"
+								variant="ghost"
+								class="shrink-0"
+								:aria-label="__('Clear filter')"
+								@click="activityTo = ''"
+							>
+								<span class="lucide-x size-4" />
+							</Button>
+						</div>
 					</div>
 				</div>
 			</section>
@@ -406,23 +457,6 @@ const filterBatch = ref([])
 const filterStudents = ref([])
 const activityFrom = ref('')
 const activityTo = ref('')
-
-const hasActiveFilters = computed(
-	() =>
-		filterCourse.value.length > 0 ||
-		filterBatch.value.length > 0 ||
-		filterStudents.value.length > 0 ||
-		!!activityFrom.value ||
-		!!activityTo.value,
-)
-
-function clearFilters() {
-	filterCourse.value = []
-	filterBatch.value = []
-	filterStudents.value = []
-	activityFrom.value = ''
-	activityTo.value = ''
-}
 
 // The activity-date filter targets a different field per report type (see the
 // per-report builders in api.py), so its labels name the actual field:
