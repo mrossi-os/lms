@@ -196,6 +196,11 @@ doc_events = {
         # Mirror each in-app notification to the user's mobile devices via FCM.
         "after_insert": "os_lms.os_lms.push_notifications.on_notification_log_insert",
     },
+    "Activity Log": {
+        # Accumulate per-user access stats (LMSA User Access) from login events.
+        # Captures successes and failures alike, independently of log retention.
+        "after_insert": "os_lms.os_lms.access_tracking.on_activity_log_insert",
+    },
 }
 
 

@@ -842,7 +842,11 @@ STUDENT_STATS_REPORTS = {
 			{"key": "class", "label": "Classe"},
 			{"key": "registered_on", "label": "Data di registrazione"},
 			{"key": "status", "label": "Stato utente"},
+			{"key": "first_login", "label": "Data primo accesso"},
 			{"key": "last_login", "label": "Ultimo accesso"},
+			{"key": "total_logins", "label": "Numero accessi"},
+			{"key": "distinct_active_days", "label": "Giorni di attività"},
+			{"key": "failed_logins", "label": "Accessi falliti"},
 		],
 	},
 	"user_courses": {
@@ -1065,8 +1069,21 @@ def _build_users_rows(filters: dict, selected: list | None = None) -> list:
 		if b.batch:
 			class_by_user.setdefault(b.member, []).append(batch_title.get(b.batch, b.batch))
 
+	# Access aggregates from our own tracking (LMSA User Access): durable and
+	# retention-independent, unlike counting Activity Log rows on the fly. The
+	# record name is the user id (autoname field:user).
+	access_by_user = {
+		a.name: a
+		for a in frappe.get_all(
+			"LMSA User Access",
+			filters={"user": ["in", names]},
+			fields=["user", "first_login", "total_logins", "distinct_active_days", "failed_logins"],
+		)
+	}
+
 	rows = []
 	for u in users:
+		acc = access_by_user.get(u.name)
 		rows.append(
 			{
 				"user_id": u.name,
@@ -1076,7 +1093,11 @@ def _build_users_rows(filters: dict, selected: list | None = None) -> list:
 				"class": ", ".join(sorted(set(class_by_user.get(u.name, [])))),
 				"registered_on": _fmt_dt(u.creation),
 				"status": "Attivo" if u.enabled else "Disattivato",
+				"first_login": _fmt_dt(acc.first_login) if acc else "",
 				"last_login": _fmt_dt(u.last_login),
+				"total_logins": (acc.total_logins if acc else 0) or 0,
+				"distinct_active_days": (acc.distinct_active_days if acc else 0) or 0,
+				"failed_logins": (acc.failed_logins if acc else 0) or 0,
 			}
 		)
 	return rows
