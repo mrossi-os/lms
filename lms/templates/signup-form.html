@@ -31,6 +31,11 @@
 		margin: 0;
 		font-size: var(--text-sm, 12px);
 		color: var(--text-color, #1f272e);
+		cursor: pointer;
+	}
+	.signup-form .terms-and-conditions-check input[type="checkbox"] {
+		margin-top: 2px;
+		flex-shrink: 0;
 	}
 </style>
 <form class="signup-form" role="form">
@@ -61,47 +66,23 @@
 			/>
 		</div>
 
-		{% if frappe.db.get_single_value("LMS Settings", "user_category") %}
-		<div class="form-group">
-			<label class="form-label sr-only"> {{ _("User Category") }} </label>
-			<div class="control-input-wrapper">
-				<div class="control-input flex align-center">
-					<select
-						type="text"
-						id="user_category"
-						data-fieldname="user_category"
-						style="
-							color: var(--text-dark);
-							background-color: var(--color-company-tertiary);
-						"
-						class="input-with-feedback form-control ellipsis"
-						data-fieldtype="Select"
-						required
-					>
-						<option value="">{{ _("Category") }}</option>
-						<option value="Business Owner">
-							{{ _("Business Owner") }}
-						</option>
-						<option value="Manager (Sales/Marketing/Customer)">
-							{{ _("Manager (Sales/Marketing/Customer)") }}
-						</option>
-						<option value="Employee">{{ _("Employee") }}</option>
-						<option value="Student">{{ _("Student") }}</option>
-						<option value="Freelancer/Just looking">
-							{{ _("Freelancer/Just looking") }}
-						</option>
-						<option value="Others">{{ _("Others") }}</option>
-					</select>
-				</div>
-			</div>
-		</div>
-		{% endif %} {% if custom_signup_content %}
+		{% if custom_signup_content %}
 		<div class="form-group terms-and-conditions">
-			<div class="terms-and-conditions-check">
+			<label class="terms-and-conditions-check" for="signup-terms">
+				<input
+					type="checkbox"
+					autocomplete="off"
+					class="input-with-feedback"
+					data-fieldtype="Check"
+					data-fieldname="terms"
+					id="signup-terms"
+					name="signup-terms"
+					required
+				/>
 				<span style="color: black"
 					>{{ _("I agree to the Terms and Conditions") }}</span
 				>
-			</div>
+			</label>
 			<div class="terms-and-conditions-content">
 				{{ custom_signup_content }}
 			</div>
@@ -124,21 +105,10 @@
 
 <script>
 	frappe.ready(function () {
-		$("#user_category").on("change", (e) => {
-			style_category(e);
-		});
-
 		$(".signup-form").on("submit", (e) => {
 			signup(e);
 		});
 	});
-
-	const style_category = (e) => {
-		let category_color = $(e.currentTarget).val()
-			? "var(--text-color)"
-			: "var(--text-muted)";
-		$("#user_category").css("color", category_color);
-	};
 
 	const signup = (e) => {
 		e.preventDefault();
@@ -157,10 +127,8 @@
 			args: {
 				email: email,
 				full_name: full_name,
-				verify_terms: 0,
-				user_category: $("#user_category").length
-					? $("#user_category").val()
-					: "",
+				verify_terms: $("#signup-terms").prop("checked") ? 1 : 0,
+				user_category: "",
 			},
 			statusCode: login.login_handlers,
 		});
