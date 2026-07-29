@@ -31,11 +31,6 @@
 		margin: 0;
 		font-size: var(--text-sm, 12px);
 		color: var(--text-color, #1f272e);
-		cursor: pointer;
-	}
-	.signup-form .terms-and-conditions-check input[type="checkbox"] {
-		margin-top: 2px;
-		flex-shrink: 0;
 	}
 </style>
 <form class="signup-form" role="form">
@@ -102,21 +97,11 @@
 		</div>
 		{% endif %} {% if custom_signup_content %}
 		<div class="form-group terms-and-conditions">
-			<label class="terms-and-conditions-check" for="signup-terms">
-				<input
-					type="checkbox"
-					autocomplete="off"
-					class="input-with-feedback"
-					data-fieldtype="Check"
-					data-fieldname="terms"
-					id="signup-terms"
-					name="signup-terms"
-					required
-				/>
-				<span style="color: var(--text-dark)"
+			<div class="terms-and-conditions-check">
+				<span style="color: black"
 					>{{ _("I agree to the Terms and Conditions") }}</span
 				>
-			</label>
+			</div>
 			<div class="terms-and-conditions-content">
 				{{ custom_signup_content }}
 			</div>
@@ -172,7 +157,7 @@
 			args: {
 				email: email,
 				full_name: full_name,
-				verify_terms: $("#signup-terms").prop("checked") ? 1 : 0,
+				verify_terms: 0,
 				user_category: $("#user_category").length
 					? $("#user_category").val()
 					: "",
