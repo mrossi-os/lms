@@ -48,7 +48,7 @@
                 >
                     <div class="space-y-1">
                         <div class="text-ink-gray-7">
-                            {{ dataImport.reference_doctype }}
+                            {{ __(dataImport.reference_doctype) }}
                         </div>
                         <div class="text-ink-gray-5">
                             {{ dayjs(dataImport.creation).fromNow() }}
@@ -91,6 +91,7 @@
                             'allow_import': 1
                         }"
                         :label="__('Choose a Document Type to import')"
+                        :placeholder="__('Select a document type')"
                     />
                 </div>
             </template>
@@ -98,18 +99,15 @@
 	</div>
 </template>
 <script setup lang="ts">
+import { Badge, Button, Dialog, FeatherIcon, FormControl, toast } from 'frappe-ui'
+import type { BadgeProps } from 'frappe-ui'
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import type { DataImports, DataImport } from 'frappe-ui-original/frappe/DataImport/types'
-import { dayjs } from "frappe-ui-original/src/utils/dayjs"
-import { getBadgeColor } from "frappe-ui-original/frappe/DataImport/dataImport"
-import Badge from 'frappe-ui-original/src/components/Badge/Badge.vue'
-import type { BadgeProps } from 'frappe-ui-original/src/components/Badge/types'
-import { toast } from "frappe-ui-original/src/components/Toast/toast"
-import Button from 'frappe-ui-original/src/components/Button/Button.vue'
-import Dialog from 'frappe-ui-original/src/components/Dialog/Dialog.vue'
-import FeatherIcon from 'frappe-ui-original/src/components/FeatherIcon.vue'
-import FormControl from 'frappe-ui-original/src/components/FormControl/FormControl.vue'
+import type { DataImports, DataImport } from '../../../../../node_modules/frappe-ui/frappe/DataImport/types'
+// The SPA's own dayjs, which loads the Italian locale; frappe-ui's has none,
+// so `fromNow()` came out in English.
+import dayjs from '@/utils/dayjs'
+import { getBadgeColor } from '../../../../../node_modules/frappe-ui/frappe/DataImport/dataImport'
 import Link from '@/overrides/frappe-ui/frappe/Link/Link.vue'
 
 const search = ref('')
@@ -125,7 +123,7 @@ const props = defineProps<{
 
 const importOptions = computed(() => {
     const options = ["All", "Pending", "Success", "Partial Success", "Error", "Timed Out"]
-    return options.map(option => ({ label: option, value: option }))
+    return options.map(option => ({ label: __(option), value: option }))
 })
 
 watch([search, importStatus], ([newSearch, newStatus]) => {

@@ -25,7 +25,7 @@
                     <div class="space-y-8">
                         <div v-for="doctype in Object.keys(fields.data)" :key="doctype" class="flex flex-col space-y-2">
                             <div class="text-ink-gray-5">
-                                {{ doctype }}
+                                {{ __(doctype) }}
                             </div>
                             <div class="grid grid-cols-2 gap-5">
                                 <div v-for="field in fields.data[doctype]" :key="field.fieldname" class="flex items-center space-x-2">
@@ -39,7 +39,7 @@
                                         :class="{
                                             'text-ink-red-6': field.reqd
                                         }">
-                                        {{ field.label || field.fieldname }}
+                                        {{ __(field.label) || field.fieldname }}
                                     </label>
                                 </div>
                             </div>
@@ -57,14 +57,10 @@
     </Dialog>
 </template>
 <script setup lang="ts">
+import { Button, Checkbox, Dialog, FormControl, createResource } from 'frappe-ui'
 import { ref } from 'vue'
-import type { DocField } from 'frappe-ui-original/frappe/DataImport/types'
-import { createResource } from 'frappe-ui-original/src/resources'
-import { fieldsToIgnore, getChildTableName } from 'frappe-ui-original/frappe/DataImport/dataImport'
-import Button from "frappe-ui-original/src/components/Button/Button.vue"
-import Checkbox from "frappe-ui-original/src/components/Checkbox/Checkbox.vue"
-import Dialog from "frappe-ui-original/src/components/Dialog/Dialog.vue"
-import FormControl from "frappe-ui-original/src/components/FormControl/FormControl.vue"
+import type { DocField } from '../../../../../node_modules/frappe-ui/frappe/DataImport/types'
+import { fieldsToIgnore, getChildTableName } from '../../../../../node_modules/frappe-ui/frappe/DataImport/dataImport'
 
 const show = defineModel<boolean>({ required: true, default: false })
 const fileType = ref<'Excel' | 'CSV'>('CSV')

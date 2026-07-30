@@ -45,13 +45,11 @@
     </div>
 </template>
 <script setup lang="ts">
-import type { DataImport, DataImports } from 'frappe-ui-original/frappe/DataImport/types';
-import { fieldsToIgnore, getBadgeColor, getPreviewData } from 'frappe-ui-original/frappe/DataImport/dataImport'
+import { Badge, Button, toast } from 'frappe-ui'
+import type { DataImport, DataImports } from '../../../../../node_modules/frappe-ui/frappe/DataImport/types'
+import { fieldsToIgnore, getBadgeColor, getPreviewData } from '../../../../../node_modules/frappe-ui/frappe/DataImport/dataImport'
 import { computed, nextTick, onMounted, ref } from 'vue';
-import { toast } from "frappe-ui-original/src/components/Toast/toast"
 import Autocomplete from '@/overrides/frappe-ui/src/components/Autocomplete/Autocomplete.vue';
-import Badge from 'frappe-ui-original/src/components/Badge/Badge.vue';
-import Button from 'frappe-ui-original/src/components/Button/Button.vue';
 
 const previewData = ref<any>(null);
 const emit = defineEmits(['updateStep'])

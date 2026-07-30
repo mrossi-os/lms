@@ -165,16 +165,10 @@
     </div>
 </template>
 <script setup lang="ts">
-import { getPreviewData, getBadgeColor } from 'frappe-ui-original/frappe/DataImport/dataImport'
+import { Badge, Button, FeatherIcon, Popover, TabButtons, call, initSocket } from 'frappe-ui'
+import { getPreviewData, getBadgeColor } from '../../../../../node_modules/frappe-ui/frappe/DataImport/dataImport'
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
-import type { DataImport, DataImports } from 'frappe-ui-original/frappe/DataImport/types';
-import Badge from 'frappe-ui-original/src/components/Badge/Badge.vue';
-import Button from 'frappe-ui-original/src/components/Button/Button.vue';
-import call from 'frappe-ui-original/src/utils/call';
-import FeatherIcon from 'frappe-ui-original/src/components/FeatherIcon.vue'
-import initSocket from "frappe-ui-original/src/utils/socketio";
-import Popover from "frappe-ui-original/src/components/Popover/Popover.vue"
-import TabButtons from 'frappe-ui-original/src/components/TabButtons/TabButtons.vue';
+import type { DataImport, DataImports } from '../../../../../node_modules/frappe-ui/frappe/DataImport/types'
 
 const preview = ref<any>(null);
 const emit = defineEmits(['updateStep'])

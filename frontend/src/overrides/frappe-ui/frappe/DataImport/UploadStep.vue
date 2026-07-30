@@ -9,8 +9,12 @@
     1. `accept` on the file input lists ACCEPTED_EXTENSIONS
     2. `uploadFile` validates the extension instead of `file.type`
     3. every user-visible string goes through __()
-    4. relative imports are prefixed with the `frappe-ui-original` alias (defined
-       in vite.config.js), since they do not resolve from src/overrides
+    4. anything with runtime state (components, resources, call, toast) comes from
+       the `frappe-ui` barrel, and frappe-ui's own internal modules are reached by
+       relative path into node_modules. Never import those as a bare specifier:
+       in dev Vite pre-bundles bare imports while `frappe-ui` itself is excluded
+       from optimizeDeps, which yields a SECOND instance of the resource layer
+       with no resourceFetcher configured — requests then return the SPA's HTML
 
   Re-diff this file against node_modules after every frappe-ui upgrade.
 -->
@@ -174,7 +178,7 @@ import type {
 	DataImport,
 	DocField,
 	DocType,
-} from 'frappe-ui-original/frappe/DataImport/types'
+} from '../../../../../node_modules/frappe-ui/frappe/DataImport/types'
 import {
 	Badge,
 	Button,
@@ -187,7 +191,7 @@ import {
 	fieldsToIgnore,
 	getChildTableName,
 	getBadgeColor,
-} from 'frappe-ui-original/frappe/DataImport/dataImport'
+} from '../../../../../node_modules/frappe-ui/frappe/DataImport/dataImport'
 // Our fork, not the original: the override plugin never re-routes imports
 // made from inside src/overrides, so it has to be named explicitly.
 import TemplateModal from '@/overrides/frappe-ui/frappe/DataImport/TemplateModal.vue'

@@ -7,7 +7,12 @@
     2. the child steps are imported from src/overrides — the override plugin does
        not re-route imports made from inside src/overrides, so naming the
        originals here would silently drop every other fork of this page
-    3. remaining relative imports carry the `frappe-ui-original` alias prefix
+    3. both computeds read `translationsLoaded`, or a label built before the
+       translations arrive would stay English forever (they are cached, and
+       __() reads a non-reactive global)
+    4. runtime imports come from the `frappe-ui` barrel and internal frappe-ui
+       modules by relative path — never as bare specifiers, or dev builds end up
+       with a second, unconfigured copy of the resource layer
 
   Re-diff this file against node_modules after every frappe-ui upgrade.
 -->
@@ -55,13 +60,13 @@
   </div>
 </template>
 <script setup lang="ts">
+import { Breadcrumbs, createListResource, createResource } from 'frappe-ui'
 import { computed, nextTick, ref, watch } from 'vue'
 // Relative, not aliased: this type feeds `defineProps<DataImportProps>()`, and
 // the SFC compiler resolves that import itself, without Vite's aliases.
 import type { DataImportProps, DataImport } from '../../../../../node_modules/frappe-ui/frappe/DataImport/types'
-import { createListResource, createResource } from 'frappe-ui-original/src/resources'
 import { useRoute } from 'vue-router'
-import Breadcrumbs from 'frappe-ui-original/src/components/Breadcrumbs/Breadcrumbs.vue'
+import { translationsLoaded } from '@/translation'
 import DataImportList from '@/overrides/frappe-ui/frappe/DataImport/DataImportList.vue'
 import ImportSteps from '@/overrides/frappe-ui/frappe/DataImport/ImportSteps.vue'
 import MappingStep from '@/overrides/frappe-ui/frappe/DataImport/MappingStep.vue'
@@ -150,11 +155,15 @@ const updateStep = (newStep: 'list' | 'upload' | 'map' | 'preview', newData: Dat
 }
 
 const doctypeTitle = computed(() => {
+  // Touch the flag so this recomputes once the translations arrive: __() reads a
+  // plain global, so a computed evaluated before then caches the English text.
+  translationsLoaded.value
   let doctype = props.doctype || data.value?.reference_doctype
   return props.doctypeMap?.[doctype || '']?.title || __(doctype) || ''
 })
 
 const breadcrumbs = computed(() => {
+  translationsLoaded.value
   let crumbs = [
     {
       label: __('Data Import'),

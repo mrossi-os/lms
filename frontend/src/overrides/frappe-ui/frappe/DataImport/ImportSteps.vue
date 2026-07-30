@@ -65,9 +65,9 @@
     </div>
 </template>
 <script setup lang="ts">
-import type { DataImport } from 'frappe-ui-original/frappe/DataImport/types'
+import { FeatherIcon } from 'frappe-ui'
+import type { DataImport } from '../../../../../node_modules/frappe-ui/frappe/DataImport/types'
 import { computed } from 'vue'
-import FeatherIcon from 'frappe-ui-original/src/components/FeatherIcon.vue'
 
 const emit = defineEmits(['updateStep'])
 
