@@ -61,6 +61,21 @@ CUSTOM_FIELDS = {
             ),
         },
     ],
+    "LMS Lesson Note": [
+        {
+            "fieldname": "text_offset",
+            "fieldtype": "Int",
+            "label": "Text Offset",
+            "insert_after": "highlighted_text",
+            "description": (
+                "Character offset of the highlight within the plain text of the "
+                "lesson body. Without it the highlight can only be restored by "
+                "searching for the text, which always matches the first "
+                "occurrence instead of the one the learner selected. Notes saved "
+                "before this field existed carry 0 and fall back to that search."
+            ),
+        },
+    ],
     "LMS Batch": [
         {
             "fieldname": "valutatori",

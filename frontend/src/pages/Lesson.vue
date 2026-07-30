@@ -582,7 +582,7 @@ const notes = createListResource({
 		lesson: lesson.data?.name,
 		member: user.data?.name,
 	},
-	fields: ['name', 'color', 'highlighted_text', 'note'],
+	fields: ['name', 'color', 'highlighted_text', 'text_offset', 'note'],
 	cache: ['notes', lesson.data?.name, user.data?.name],
 	onSuccess(data) {
 		data.forEach((note) => {

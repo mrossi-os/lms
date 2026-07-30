@@ -156,6 +156,7 @@ fixtures = [
                     "LMS Course",
                     "LMS Batch",
                     "LMS Live Class",
+                    "LMS Lesson Note",
                     "User",
                     "Email Template",
                 ],
