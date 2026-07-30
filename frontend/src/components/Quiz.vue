@@ -117,7 +117,7 @@
 					>
 						{{
 							__(
-								'You have already exceeded the maximum number of attempts allowed for this quiz.'
+								'You have already exceeded the maximum number of attempts allowed for this quiz.',
 							)
 						}}
 					</div>
@@ -245,9 +245,7 @@
 							editorClass="prose-sm max-w-none border-b border-x border-outline-elevation-2 bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]"
 						/>
 					</div>
-					<div
-						class="flex items-center justify-between mt-8"
-					>
+					<div class="flex items-center justify-between mt-8">
 						<Checkbox
 							v-if="!quiz.data.show_answers"
 							:label="__('Mark for review')"
@@ -304,7 +302,7 @@
 								!showAnswers.length &&
 								questionDetails.data.type != 'Open Ended'
 							"
-							class="ms-auto"
+							class=""
 							@click="checkAnswer()"
 						>
 							<span>
@@ -316,7 +314,7 @@
 								activeQuestion != questions.length && quiz.data.show_answers
 							"
 							@click="nextQuestion()"
-							class="ms-auto"
+							class=""
 						>
 							<span>
 								{{ __('Next') }}
@@ -326,7 +324,7 @@
 							variant="solid"
 							v-else
 							@click="handleSubmitClick()"
-							class="ms-auto"
+							class=""
 						>
 							<span>
 								{{ __('Submit Quiz') }}
@@ -335,10 +333,7 @@
 					</div>
 				</div>
 			</div>
-			<div
-				v-if="reviewQuestions.length"
-				class="border rounded-lg p-4 mt-4"
-			>
+			<div v-if="reviewQuestions.length" class="border rounded-lg p-4 mt-4">
 				<div class="font-semibold">
 					{{ __('Questions marked for review') }}
 				</div>
@@ -380,6 +375,7 @@
 			</div>
 			<div class="flex items-center justify-center gap-x-2">
 				<Button
+					variant="solid"
 					@click="resetQuiz()"
 					v-if="
 						!quiz.data.max_attempts ||
@@ -435,26 +431,26 @@
 			<div class="border border-outline-elevation-2 rounded-lg text-base">
 				<div class="divide-y divide-outline-elevation-2">
 					<div class="grid grid-cols-2 divide-x divide-outline-elevation-2">
-						<div class="p-2">
+						<div class="p-2 text-ink-gray-9">
 							{{ __('Total Questions') }}
 						</div>
-						<div class="p-2">
+						<div class="p-2 text-ink-gray-9">
 							{{ questions.length }}
 						</div>
 					</div>
 					<div class="grid grid-cols-2 divide-x divide-outline-elevation-2">
-						<div class="p-2">
+						<div class="p-2 text-ink-gray-9">
 							{{ __('Attempted Questions') }}
 						</div>
-						<div class="p-2">
+						<div class="p-2 text-ink-gray-9">
 							{{ attemptedQuestions.length }}
 						</div>
 					</div>
 					<div class="grid grid-cols-2 divide-x divide-outline-elevation-2">
-						<div class="p-2">
+						<div class="p-2 text-ink-gray-9">
 							{{ __('Unattempted Questions') }}
 						</div>
-						<div class="p-2">
+						<div class="p-2 text-ink-gray-9">
 							{{ questions.length - attemptedQuestions.length }}
 						</div>
 					</div>
@@ -587,7 +583,7 @@ const populateQuestions = () => {
 	// unload handlers — which, since the quiz now mounts inline in the lesson,
 	// blanks the whole lesson view.
 	const resolvable = rawQuestions.filter(
-		(row) => row?.question && questionsByName.value[row.question]
+		(row) => row?.question && questionsByName.value[row.question],
 	)
 	if (data?.shuffle_questions) {
 		let next = shuffleArray([...resolvable])
@@ -769,7 +765,7 @@ const markAnswer = (index) => {
 		selectedOptions.value.splice(
 			0,
 			selectedOptions.value.length,
-			...Array(MAX_OPTIONS).fill(0)
+			...Array(MAX_OPTIONS).fill(0),
 		)
 	selectedOptions.value[index - 1] = selectedOptions.value[index - 1] ? 0 : 1
 }
@@ -865,7 +861,7 @@ const resetQuestion = () => {
 	selectedOptions.value.splice(
 		0,
 		selectedOptions.value.length,
-		...Array(MAX_OPTIONS).fill(0)
+		...Array(MAX_OPTIONS).fill(0),
 	)
 	showAnswers.length = 0
 	possibleAnswer.value = null
@@ -912,7 +908,7 @@ const resetQuiz = () => {
 	selectedOptions.value.splice(
 		0,
 		selectedOptions.value.length,
-		...Array(MAX_OPTIONS).fill(0)
+		...Array(MAX_OPTIONS).fill(0),
 	)
 	showAnswers.length = 0
 	possibleAnswer.value = null
