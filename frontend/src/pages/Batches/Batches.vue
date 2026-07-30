@@ -81,14 +81,6 @@
 						@update:modelValue="updateBatches()"
 					/>
 				</div>
-
-				<Tooltip :text="__('Only show batches that offer a certificate')">
-					<Checkbox
-						v-model="certification"
-						:label="__('Certification')"
-						@change="updateBatches()"
-					/>
-				</Tooltip>
 			</div>
 		</div>
 		<SkeletonLoader
@@ -133,10 +125,8 @@ import {
 	createListResource,
 	Dropdown,
 	FormControl,
-	Tooltip,
 	TabButtons,
 	usePageMeta,
-	Checkbox,
 } from 'frappe-ui'
 import ClearableCombobox from '@/components/Controls/ClearableCombobox.vue'
 import { computed, inject, onMounted, ref, watch } from 'vue'
