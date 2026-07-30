@@ -7,7 +7,7 @@
 	</div>
 	<div v-else-if="quiz.data">
 		<div
-			class="bg-surface-blue-2 text-ink-blue-6 space-y-2 p-3 mb-4 rounded-lg leading-5"
+			class="bg-surface-blue-2 text-ink-grey-9 space-y-2 p-3 mb-4 rounded-lg leading-5"
 		>
 			<div class="font-medium">
 				{{
@@ -245,7 +245,11 @@
 							editorClass="prose-sm max-w-none border-b border-x border-outline-elevation-2 bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]"
 						/>
 					</div>
-					<div class="flex items-center justify-between mt-8">
+					<!-- Stacked on phones: the row (review checkbox + pagination +
+					action button) does not fit, so the action button drops below. -->
+					<div
+						class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-8"
+					>
 						<Checkbox
 							v-if="!quiz.data.show_answers"
 							:label="__('Mark for review')"
@@ -254,7 +258,7 @@
 						/>
 						<div
 							v-if="!quiz.data.show_answers"
-							class="flex items-center gap-x-2"
+							class="flex flex-wrap items-center justify-center gap-2 sm:justify-start"
 						>
 							<Button
 								@click="switchQuestion(activeQuestion - 1)"
@@ -302,7 +306,7 @@
 								!showAnswers.length &&
 								questionDetails.data.type != 'Open Ended'
 							"
-							class=""
+							class="w-full sm:w-auto"
 							@click="checkAnswer()"
 						>
 							<span>
@@ -314,7 +318,7 @@
 								activeQuestion != questions.length && quiz.data.show_answers
 							"
 							@click="nextQuestion()"
-							class=""
+							class="w-full sm:w-auto"
 						>
 							<span>
 								{{ __('Next') }}
@@ -324,7 +328,7 @@
 							variant="solid"
 							v-else
 							@click="handleSubmitClick()"
-							class=""
+							class="w-full sm:w-auto"
 						>
 							<span>
 								{{ __('Submit Quiz') }}
@@ -499,6 +503,8 @@ const showSubmissionConfirmation = ref(false)
 const possibleAnswer = ref(null)
 const timer = ref(0)
 let timerInterval = null
+let timerDeadline = null
+let submitting = false
 
 const props = defineProps({
 	quizName: {
@@ -518,11 +524,15 @@ const props = defineProps({
 onMounted(() => {
 	window.addEventListener('pagehide', handlePageHide)
 	window.addEventListener('beforeunload', handleBeforeUnload)
+	// A cache hit hands back an already-resolved resource, so the watcher below
+	// only fires once the background reload lands — seed the display now.
+	if (quiz.data) setupTimer()
 })
 
 onUnmounted(() => {
 	window.removeEventListener('pagehide', handlePageHide)
 	window.removeEventListener('beforeunload', handleBeforeUnload)
+	stopTimer()
 })
 
 const handlePageHide = () => {
@@ -597,19 +607,38 @@ const populateQuestions = () => {
 }
 
 const setupTimer = () => {
-	if (quiz.data.duration) {
-		timer.value = quiz.data.duration * 60
+	// Never clobber a countdown that is already running — `quiz` is a cached
+	// resource, so a reload can fire this again while an attempt is in progress.
+	if (timerInterval) return
+	timer.value = quiz.data?.duration ? quiz.data.duration * 60 : 0
+}
+
+const stopTimer = () => {
+	if (timerInterval) {
+		clearInterval(timerInterval)
+		timerInterval = null
 	}
+	timerDeadline = null
 }
 
 const startTimer = () => {
-	timerInterval = setInterval(() => {
-		timer.value--
-		if (timer.value == 0) {
-			clearInterval(timerInterval)
-			submitQuiz()
-		}
-	}, 1000)
+	if (!quiz.data?.duration) return
+	stopTimer()
+	// Anchor the countdown to a wall-clock deadline instead of decrementing a
+	// counter: setInterval drifts and is throttled hard in background tabs, so
+	// a plain counter overshoots and the auto submit never fires.
+	timerDeadline = Date.now() + quiz.data.duration * 60 * 1000
+	timer.value = quiz.data.duration * 60
+	timerInterval = setInterval(tickTimer, 1000)
+}
+
+const tickTimer = () => {
+	const remaining = Math.max(0, Math.round((timerDeadline - Date.now()) / 1000))
+	timer.value = remaining
+	if (remaining <= 0) {
+		stopTimer()
+		submitQuiz()
+	}
 }
 
 const formatTimer = (seconds) => {
@@ -624,7 +653,9 @@ const formatTimer = (seconds) => {
 }
 
 const timerProgress = computed(() => {
-	return (timer.value / (quiz.data.duration * 60)) * 100
+	const total = quiz.data?.duration * 60
+	if (!total) return 0
+	return Math.min(100, Math.max(0, (timer.value / total) * 100))
 })
 
 const shuffleArray = (array) => {
@@ -668,6 +699,11 @@ watch(
 	() => {
 		if (quiz.data) {
 			populateQuestions()
+			// The resource's own onSuccess belongs to whichever component
+			// instance created it first — `cache` hands the same resource back
+			// on every later mount — so seed the timer from here as well,
+			// otherwise a remounted quiz starts its countdown from zero.
+			setupTimer()
 		}
 		if (quiz.data && quiz.data.max_attempts) {
 			attempts.reload()
@@ -881,15 +917,19 @@ const submitQuiz = () => {
 }
 
 const createSubmission = () => {
+	// The learner and the expiring timer can both land here — submit once.
+	if (submitting || quizSubmission.data) return
+	submitting = true
+	stopTimer()
 	quizSubmission.submit(
 		{},
 		{
 			onSuccess(data) {
 				markLessonProgress()
 				if (quiz.data && quiz.data.max_attempts) attempts.reload()
-				if (quiz.data.duration) clearInterval(timerInterval)
 			},
 			onError(err) {
+				submitting = false
 				const errorTitle = err?.message || ''
 				if (errorTitle.includes('MaximumAttemptsExceededError')) {
 					const errorMessage = err.messages?.[0] || err
@@ -897,6 +937,8 @@ const createSubmission = () => {
 					setTimeout(() => {
 						window.location.reload()
 					}, 3000)
+				} else {
+					toast.error(__('Your quiz could not be submitted. Please try again.'))
 				}
 			},
 		},
@@ -904,6 +946,8 @@ const createSubmission = () => {
 }
 
 const resetQuiz = () => {
+	submitting = false
+	stopTimer()
 	activeQuestion.value = 0
 	selectedOptions.value.splice(
 		0,

@@ -61,7 +61,6 @@
 <script setup>
 import { getSidebarLinks } from '@/utils'
 import { useRouter } from 'vue-router'
-import { call } from 'frappe-ui'
 import { ref, watch } from 'vue'
 import { sessionStore } from '@/stores/session'
 import { useSettings } from '@/stores/settings'
@@ -152,7 +151,7 @@ const updateSidebarLinks = () => {
 		{
 			onSuccess: async (data) => {
 				filterLinksToShow(data)
-				await addPrograms()
+				// Programs are intentionally hidden on mobile
 				if (isModerator.value || isInstructor.value) {
 					if (isLinkEnabled('Quizzes')) addLink('Quizzes', 'CircleHelp', 'Quizzes')
 					if (isLinkEnabled('Assignments')) addLink('Assignments', 'Pencil', 'Assignments')
@@ -162,24 +161,6 @@ const updateSidebarLinks = () => {
 			},
 		},
 	)
-}
-
-const addPrograms = async () => {
-	if (sidebarLinks.value.some((link) => link.label === 'Programs')) return
-	let canAddProgram = await checkIfCanAddProgram()
-	if (!canAddProgram) return
-	// Re-check after the await: concurrent updateSidebarLinks runs can both
-	// pass the guard above before either inserts, causing a duplicate entry.
-	if (sidebarLinks.value.some((link) => link.label === 'Programs')) return
-	let activeFor = ['Programs', 'ProgramDetail']
-	let index = 1
-
-	sidebarLinks.value.splice(index, 0, {
-		label: 'Programs',
-		icon: 'Route',
-		to: 'Programs',
-		activeFor: activeFor,
-	})
 }
 
 watch(
@@ -194,15 +175,6 @@ watch(
 	},
 	{ immediate: true },
 )
-
-const checkIfCanAddProgram = async () => {
-	if (!userResource.data) return false
-	if (isModerator.value || isInstructor.value) {
-		return true
-	}
-	const programs = await call('lms.lms.utils.get_programs')
-	return programs.enrolled.length > 0 || programs.published.length > 0
-}
 
 let isActive = (tab) => {
 	return tab.activeFor?.includes(router.currentRoute.value.name)

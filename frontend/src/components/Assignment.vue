@@ -1,12 +1,14 @@
 <template>
+	<!-- Single column on phones: side by side each pane is ~190px wide, which
+	pushes the Save button and the editor toolbar out of the viewport. -->
 	<div
 		v-if="assignment.data"
-		class="grid grid-cols-2 h-full"
+		class="grid grid-cols-1 md:grid-cols-2 h-full"
 		:class="{ 'border rounded-lg overflow-auto': !showTitle }"
 	>
 		<div
-			class="border-e p-5 overflow-y-auto h-[calc(100vh-3.2rem)]"
-			:class="{ 'h-full': !showTitle }"
+			class="border-b md:border-b-0 md:border-e p-5 md:overflow-y-auto md:h-[calc(100vh-3.2rem)]"
+			:class="{ 'md:h-full': !showTitle }"
 		>
 			<div v-if="showTitle" class="text-xl-semibold mb-5 text-ink-gray-9">
 				<div v-if="submissionName === 'new'">
@@ -25,9 +27,9 @@
 			></div>
 		</div>
 
-		<div class="flex flex-col overflow-y-auto">
+		<div class="flex flex-col md:overflow-y-auto">
 			<div class="p-5 space-y-5">
-				<div class="flex items-center justify-between">
+				<div class="flex flex-wrap items-center justify-between gap-2">
 					<div class="font-semibold text-ink-gray-9">
 						{{ __('Submission') }}
 					</div>

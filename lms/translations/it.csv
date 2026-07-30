@@ -1795,6 +1795,7 @@ restrict_ip
 "Attempted Questions","Domande Tentate"
 "Unattempted Questions","Domande Non Tentate"
 "Please select an option","Seleziona un'opzione"
+"Your quiz could not be submitted. Please try again.","Non è stato possibile inviare il quiz. Riprova."
 "Choose all answers that apply","Scegli tutte le risposte applicabili"
 "Choose one answer","Scegli una risposta"
 "Type your answer","Digita la tua risposta"
@@ -3686,7 +3687,6 @@ restrict_ip
 "As a part of this batch's curriculum you will have to complete the following courses and assessments.","Come parte del programma di questa classe dovrai completare i seguenti corsi e valutazioni."
 "Ask a question about this lesson...","Fai una domanda su questa lezione..."
 "Ask a question to get help from the community.","Fai una domanda per ricevere aiuto dalla community."
-
 "Assessment added successfully","Valutazione aggiunta con successo"
 "Assign For","Assegna Per"
 "Assign To","Assegna A"

@@ -696,7 +696,7 @@ msgstr ""
 #: frontend/src/pages/Assignments.vue:315
 #: frontend/src/pages/Assignments.vue:322 lms/www/_lms.py:301
 msgid "Assignments"
-msgstr "Assegnazioni"
+msgstr "Elaborati"
 
 #: frontend/src/pages/Assignments.vue:310
 msgid "Assignments deleted successfully"
