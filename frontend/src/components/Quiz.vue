@@ -300,40 +300,46 @@
 								</template>
 							</Button>
 						</div>
-						<Button
-							v-if="
-								quiz.data.show_answers &&
-								!showAnswers.length &&
-								questionDetails.data.type != 'Open Ended'
-							"
-							class="w-full sm:w-auto"
-							@click="checkAnswer()"
+						<!-- Check and Next stay available side by side with Submit so a
+						question can be left unanswered: the learner can move on, or
+						hand the quiz in from any question. -->
+						<div
+							class="flex flex-col sm:flex-row sm:items-center gap-2 sm:ms-auto"
 						>
-							<span>
-								{{ __('Check') }}
-							</span>
-						</Button>
-						<Button
-							v-else-if="
-								activeQuestion != questions.length && quiz.data.show_answers
-							"
-							@click="nextQuestion()"
-							class="w-full sm:w-auto"
-						>
-							<span>
-								{{ __('Next') }}
-							</span>
-						</Button>
-						<Button
-							variant="solid"
-							v-else
-							@click="handleSubmitClick()"
-							class="w-full sm:w-auto"
-						>
-							<span>
-								{{ __('Submit Quiz') }}
-							</span>
-						</Button>
+							<Button
+								v-if="
+									quiz.data.show_answers &&
+									!showAnswers.length &&
+									questionDetails.data.type != 'Open Ended'
+								"
+								class="w-full sm:w-auto"
+								@click="checkAnswer()"
+							>
+								<span>
+									{{ __('Check') }}
+								</span>
+							</Button>
+							<Button
+								v-if="
+									quiz.data.show_answers && activeQuestion != questions.length
+								"
+								@click="nextQuestion()"
+								class="w-full sm:w-auto"
+							>
+								<span>
+									{{ __('Next') }}
+								</span>
+							</Button>
+							<Button
+								variant="solid"
+								@click="handleSubmitClick()"
+								class="w-full sm:w-auto"
+							>
+								<span>
+									{{ __('Submit Quiz') }}
+								</span>
+							</Button>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -455,10 +461,23 @@
 							{{ __('Unattempted Questions') }}
 						</div>
 						<div class="p-2 text-ink-gray-9">
-							{{ questions.length - attemptedQuestions.length }}
+							{{ unattemptedCount }}
 						</div>
 					</div>
 				</div>
+			</div>
+			<div
+				v-if="unattemptedCount"
+				class="flex items-start gap-2 mt-3 rounded-lg bg-surface-amber-2 p-2 text-ink-amber-6 text-sm leading-5"
+			>
+				<span class="lucide-alert-circle size-4 shrink-0 mt-0.5" />
+				<span>
+					{{
+						__(
+							'Some questions have not been answered. If you submit now, they will be scored as incorrect.',
+						)
+					}}
+				</span>
 			</div>
 		</template>
 	</Dialog>
@@ -806,6 +825,20 @@ const markAnswer = (index) => {
 	selectedOptions.value[index - 1] = selectedOptions.value[index - 1] ? 0 : 1
 }
 
+// An untouched Open Ended editor still emits markup ("<p></p>"), and a
+// User Input textarea emits "" — neither is an answer. Media on its own is.
+const isBlankAnswer = (value) => {
+	if (value == null) return true
+	const html = String(value)
+	if (/<(img|video|audio|iframe|table)\b/i.test(html)) return false
+	return (
+		html
+			.replace(/<[^>]*>/g, '')
+			.replace(/&nbsp;/gi, ' ')
+			.trim() === ''
+	)
+}
+
 const getAnswers = () => {
 	let answers = []
 	if (!questionDetails.data) return answers
@@ -815,7 +848,9 @@ const getAnswers = () => {
 			if (selectedOptions.value[index])
 				answers.push(questionDetails.data[`option_${index + 1}`])
 		})
-	} else {
+	} else if (!isBlankAnswer(possibleAnswer.value)) {
+		// Pushing a blank answer used to make every visited question count as
+		// attempted, and shipped [null] to submit_quiz — which fails there.
 		answers.push(possibleAnswer.value)
 	}
 
@@ -853,7 +888,7 @@ const checkAnswer = () => {
 			} else {
 				showAnswers.push(data)
 			}
-			addToLocalStorage()
+			recordCurrentAttempt()
 			if (!quiz.data.show_answers) {
 				resetQuestion()
 			}
@@ -884,7 +919,9 @@ const addToLocalStorage = () => {
 
 const nextQuestion = () => {
 	if (!quiz.data.show_answers) return
-	if (questionDetails.data?.type == 'Open Ended') addToLocalStorage()
+	// Keep an answer that was filled in but never checked; a question left
+	// blank simply records nothing and stays unattempted.
+	recordCurrentAttempt()
 	resetQuestion()
 }
 
@@ -986,12 +1023,10 @@ const markLessonProgress = () => {
 }
 
 const handleSubmitClick = () => {
-	if (!quiz.data.show_answers) {
-		recordCurrentAttempt()
-		showSubmissionConfirmation.value = true
-	} else {
-		submitQuiz()
-	}
+	// Confirm in both modes: the quiz can now be handed in from any question,
+	// so the learner needs to see what is still unanswered before doing it.
+	recordCurrentAttempt()
+	showSubmissionConfirmation.value = true
 }
 
 const recordCurrentAttempt = () => {
@@ -1001,6 +1036,10 @@ const recordCurrentAttempt = () => {
 	}
 	addToLocalStorage()
 }
+
+const unattemptedCount = computed(() =>
+	Math.max(0, questions.value.length - attemptedQuestions.value.length),
+)
 
 const paginationWindow = computed(() => {
 	const total = questions.value.length

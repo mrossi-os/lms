@@ -96,6 +96,103 @@ class TestLMSQuiz(unittest.TestCase):
 		frappe.db.delete("LMS Question")
 
 
+class TestSkippedQuestions(unittest.TestCase):
+	"""A learner may hand a quiz in with questions left blank. Those reach
+	process_results() with an empty or null answer, which must score as zero
+	rather than take the whole submission down."""
+
+	@classmethod
+	def setUpClass(cls) -> None:
+		cls.choices = frappe.new_doc("LMS Question")
+		cls.choices.question = "Skippable choices"
+		cls.choices.type = "Choices"
+		cls.choices.option_1 = "right"
+		cls.choices.is_correct_1 = 1
+		cls.choices.option_2 = "wrong"
+		cls.choices.save()
+
+		cls.user_input = frappe.new_doc("LMS Question")
+		cls.user_input.question = "Skippable user input"
+		cls.user_input.type = "User Input"
+		cls.user_input.possibility_1 = "an answer"
+		cls.user_input.save()
+
+		cls.open_ended = frappe.new_doc("LMS Question")
+		cls.open_ended.question = "Skippable open ended"
+		cls.open_ended.type = "Open Ended"
+		cls.open_ended.save()
+
+		# A quiz may not mix open ended with the other types, hence two quizzes.
+		cls.quiz = frappe.get_doc(
+			{"doctype": "LMS Quiz", "title": "Skipped Question Quiz", "passing_percentage": 50}
+		)
+		for question in (cls.choices, cls.user_input):
+			cls.quiz.append("questions", {"question": question.name, "marks": 1})
+		cls.quiz.save()
+
+		cls.open_quiz = frappe.get_doc(
+			{"doctype": "LMS Quiz", "title": "Skipped Open Ended Quiz", "passing_percentage": 50}
+		)
+		cls.open_quiz.append("questions", {"question": cls.open_ended.name, "marks": 1})
+		cls.open_quiz.save()
+
+	def process(self, quiz, results, enable_negative_marking=0):
+		from lms.lms.doctype.lms_quiz.lms_quiz import process_results
+
+		return process_results(
+			results,
+			frappe._dict(
+				{
+					"name": quiz.name,
+					"enable_negative_marking": enable_negative_marking,
+					"marks_to_cut": 1,
+				}
+			),
+		)
+
+	def test_blank_answers_score_zero_instead_of_raising(self):
+		data = self.process(
+			self.quiz,
+			[
+				{"question_name": self.choices.name, "answer": []},
+				{"question_name": self.user_input.name, "answer": [None]},
+			],
+		)
+
+		self.assertFalse(data["is_open_ended"])
+		for result in data["results"]:
+			self.assertEqual(result["answer"], "")
+			self.assertEqual(result["marks"], 0)
+			self.assertEqual(result["is_correct"], 0)
+
+	def test_blank_open_ended_answer_still_marks_the_quiz_open_ended(self):
+		data = self.process(self.open_quiz, [{"question_name": self.open_ended.name, "answer": [""]}])
+
+		self.assertTrue(data["is_open_ended"])
+		self.assertEqual(data["results"][0]["answer"], "")
+
+	def test_blank_answer_is_not_penalised_by_negative_marking(self):
+		data = self.process(
+			self.quiz,
+			[{"question_name": self.choices.name, "answer": [None]}],
+			enable_negative_marking=1,
+		)
+
+		self.assertEqual(data["results"][0]["marks"], 0)
+
+	def test_answered_questions_still_score(self):
+		data = self.process(self.quiz, [{"question_name": self.choices.name, "answer": ["right"]}])
+
+		self.assertEqual(data["results"][0]["marks"], 1)
+		self.assertEqual(data["results"][0]["is_correct"], 1)
+
+	@classmethod
+	def tearDownClass(cls) -> None:
+		frappe.db.delete("LMS Quiz", cls.quiz.name)
+		frappe.db.delete("LMS Quiz", cls.open_quiz.name)
+		frappe.db.delete("LMS Question")
+
+
 class TestQuizAnswerImageUpload(unittest.TestCase):
 	"""Open-ended quiz answers may embed inline images as data: URIs that get
 	written to the public /files/ directory. Only image types are allowed: an

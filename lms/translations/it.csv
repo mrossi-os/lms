@@ -1796,6 +1796,7 @@ restrict_ip
 "Unattempted Questions","Domande Non Tentate"
 "Please select an option","Seleziona un'opzione"
 "Your quiz could not be submitted. Please try again.","Non è stato possibile inviare il quiz. Riprova."
+"Some questions have not been answered. If you submit now, they will be scored as incorrect.","Alcune domande non hanno risposta. Se invii ora, verranno considerate errate."
 "Choose all answers that apply","Scegli tutte le risposte applicabili"
 "Choose one answer","Scegli una risposta"
 "Type your answer","Digita la tua risposta"
