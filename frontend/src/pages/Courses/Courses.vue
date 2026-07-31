@@ -399,8 +399,18 @@ const courseTabs = computed(() => {
 	return tabs
 })
 
+// A "Gestore" may only create courses manually, so the file-based entries
+// (Data Import tool, ZIP) are hidden for them. System Managers keep them —
+// including the Administrator, who implicitly holds every role and would
+// otherwise lose the import too.
+const canImportCourse = computed(() => {
+	const roles = user.data?.roles || []
+	if (!roles.includes('Gestore')) return true
+	return !!user.data?.is_system_manager
+})
+
 const courseMenu = computed(() => {
-	return [
+	const menu = [
 		{
 			label: __('New Course'),
 			icon: 'book-open',
@@ -408,6 +418,11 @@ const courseMenu = computed(() => {
 				showCourseModal.value = true
 			},
 		},
+	]
+
+	if (!canImportCourse.value) return menu
+
+	menu.push(
 		{
 			label: __('Import via Data Import Tool'),
 			icon: 'upload',
@@ -425,7 +440,9 @@ const courseMenu = computed(() => {
 				showCourseImportModal.value = true
 			},
 		},
-	]
+	)
+
+	return menu
 })
 
 const breadcrumbs = computed(() => [
