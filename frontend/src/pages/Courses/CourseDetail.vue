@@ -1,10 +1,14 @@
 <template>
 	<div class="flex h-full flex-col">
-		<LayoutHeader :isLoading="!course.data">
+		<LayoutHeader
+			:isLoading="!course.data"
+			class="max-sm:[&_a]:text-base max-sm:[&_button]:text-xs"
+		>
 			<template #left-header>
 				<Breadcrumbs class="h-7" :items="breadcrumbs" />
 				<Badge v-if="course.data?.published" theme="green">
-					{{ __('Published') }}
+					<span class="sm:hidden">{{ __('Publ.') }}</span>
+					<span class="max-sm:hidden">{{ __('Published') }}</span>
 				</Badge>
 			</template>
 			<template #right-header>
@@ -88,7 +92,12 @@
 					:loading="publishToggle.loading"
 					@click="togglePublishCourse"
 				>
-					{{ course.data?.published ? __('Unpublish') : __('Publish') }}
+					<span class="sm:hidden">
+						{{ course.data?.published ? __('Unpubl.') : __('Publish') }}
+					</span>
+					<span class="max-sm:hidden">
+						{{ course.data?.published ? __('Unpublish') : __('Publish') }}
+					</span>
 				</Button>
 			</template>
 		</LayoutHeader>
@@ -177,6 +186,7 @@ import {
 } from 'lucide-vue-next'
 import { sessionStore } from '@/stores/session'
 import { useSettings } from '@/stores/settings'
+import { useScreenSize } from '@/utils/composables'
 import LayoutHeader from '@/components/Layouts/LayoutHeader.vue'
 import CourseOverview from '@/pages/Courses/CourseOverview.vue'
 import CourseDashboard from '@/pages/Courses/CourseDashboard.vue'
@@ -206,6 +216,7 @@ interface TabDef {
 }
 
 const { brand } = sessionStore() as { brand: Brand }
+const { isMobile } = useScreenSize()
 const router: Router = useRouter()
 const route: RouteLocationNormalizedLoadedGeneric = useRoute()
 const user = inject<SessionUser>('$user')!
@@ -428,14 +439,22 @@ const showTabs = computed<boolean>(
 	() => isAdmin.value || isValutatore.value,
 )
 
+// The phone header has to fit the breadcrumb, the published badge and the
+// publish button on one line, so a long course title is cut short there.
+const MOBILE_TITLE_LIMIT = 12
+
 const breadcrumbs = computed(() => {
 	const crumbs: {
 		label: string
 		route: { name: string; params?: Record<string, string> }
 	}[] = [{ label: __('Courses'), route: { name: 'Courses' } }]
 	if (course.data) {
+		const title = course.data.title
 		crumbs.push({
-			label: course.data.title,
+			label:
+				isMobile.value && title.length > MOBILE_TITLE_LIMIT
+					? `${title.slice(0, MOBILE_TITLE_LIMIT)}…`
+					: title,
 			route: { name: 'CourseDetail', params: { courseName: course.data.name } },
 		})
 	}

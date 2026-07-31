@@ -1,12 +1,13 @@
 <template>
 	<div v-if="batch.data" class="">
 		<header
-			class="sticky top-0 z-10 border-b flex items-center justify-between bg-surface-base px-3 py-2.5 sm:px-5"
+			class="sticky top-0 z-10 border-b flex items-center justify-between bg-surface-base px-3 py-2.5 sm:px-5 max-sm:[&_a]:text-base max-sm:[&_button]:text-xs"
 		>
 			<div class="flex items-center gap-x-2">
 				<Breadcrumbs :items="breadcrumbs" />
 				<Badge v-if="batch.data?.published" theme="green">
-					{{ __('Published') }}
+					<span class="sm:hidden">{{ __('Publ.') }}</span>
+					<span class="max-sm:hidden">{{ __('Published') }}</span>
 				</Badge>
 			</div>
 			<div class="flex items-center gap-x-2">
