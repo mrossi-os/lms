@@ -1,6 +1,6 @@
 <template>
 	<div
-		class="flex flex-col border rounded-md h-full text-ink-gray-7 hover:border-outline-gray-3 p-3 card"
+		class="relative flex flex-col border rounded-md h-full text-ink-gray-7 hover:border-outline-gray-3 p-3 card"
 		:class="{ 'cursor-pointer': clickable }"
 		@click="$emit('card-click', cls)"
 	>
