@@ -6552,6 +6552,10 @@ msgstr ""
 msgid "Publish"
 msgstr "Pubblica"
 
+#: frontend/src/pages/Batches/BatchDetail.vue:8
+msgid "Publ."
+msgstr "Pubbl."
+
 #. Label of the published (Check) field in DocType 'LMS Certificate'
 #: lms/lms/doctype/lms_certificate/lms_certificate.json
 msgid "Publish on Participant Page"
@@ -8388,6 +8392,10 @@ msgstr ""
 #: frontend/src/pages/Courses/CourseDetail.vue:91
 msgid "Unpublish"
 msgstr "Annulla pubblicazione"
+
+#: frontend/src/pages/Batches/BatchDetail.vue:86
+msgid "Unpubl."
+msgstr "Annulla pubbl."
 
 #: frontend/src/pages/Batches/Batches.vue:338
 #: frontend/src/pages/Courses/Courses.vue:321

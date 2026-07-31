@@ -85,7 +85,12 @@
 					:loading="publishToggle.loading"
 					@click="togglePublishBatch"
 				>
-					{{ batch.data?.published ? __('Unpublish') : __('Publish') }}
+					<span class="sm:hidden">
+						{{ batch.data?.published ? __('Unpubl.') : __('Publish') }}
+					</span>
+					<span class="max-sm:hidden">
+						{{ batch.data?.published ? __('Unpublish') : __('Publish') }}
+					</span>
 				</Button>
 			</div>
 		</header>
