@@ -32,6 +32,7 @@ after_migrate = [
     "os_lms.setup.remove_deprecated_custom_fields",
     "os_lms.setup.create_custom_fields",
     "os_lms.setup.setup_valutatore_role_and_permissions",
+    "os_lms.setup.setup_gestore_role_permissions",
     "os_lms.setup.create_redis_index",
     "os_lms.setup.rebuild_search_index",
     # Migration must run BEFORE seed_prompt_templates so operator-customised
@@ -105,6 +106,7 @@ override_whitelisted_methods = {
     "lms.lms.api.get_notifications": "os_lms.os_lms.override_api.get_notifications",
     "lms.lms.api.get_user_info": "os_lms.os_lms.override_api.get_user_info",
     "lms.lms.api.get_all_users": "os_lms.os_lms.override_api.get_all_users",
+    "lms.lms.api.get_members": "os_lms.os_lms.override_api.get_members",
     "lms.lms.api.save_role": "os_lms.os_lms.override_api.save_role",
 
     "lms.lms.utils.get_course_details": "os_lms.os_lms.override_utils.get_course_details",
@@ -183,9 +185,10 @@ doc_events = {
         "before_save": "os_lms.os_lms.live_class_reminders.reset_sent_at",
     },
     "LMS Batch": {
-        # Keep the "Valutatore" role aligned with the batch `valutatori` field.
+        # Grant the "Valutatore" role to the users listed in the batch
+        # `valutatori` field. Grant-only: the role is never revoked automatically
+        # (see os_lms.os_lms.valutatore.sync_batch_valutatore_roles).
         "on_update": "os_lms.os_lms.valutatore.sync_batch_valutatore_roles",
-        "on_trash": "os_lms.os_lms.valutatore.cleanup_batch_valutatore_roles",
     },
     "Brand Customize": {
         "on_update": "os_lms.os_lms.branding.clear_brand_cache",

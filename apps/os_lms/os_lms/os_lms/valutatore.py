@@ -17,10 +17,11 @@ veto-only at the controller level, so the baseline read/write comes from the
 - ``get_permission_query_conditions`` scopes list views to the batch members;
 - ``has_permission`` vetoes direct (by-name) access outside that scope.
 
-The "Valutatore" Role record itself is granted/revoked automatically when an
-admin adds/removes a user from a batch's `valutatori` field (see
-``sync_batch_valutatore_roles``), so it only acts as the technical container of
-the doctype permissions.
+The "Valutatore" Role record itself only acts as the technical container of the
+doctype permissions. It is granted automatically when an admin adds a user to a
+batch's `valutatori` field (see ``sync_batch_valutatore_roles``) and can also be
+assigned by hand (Settings > Members, profile Roles tab); it is never revoked
+automatically — removing the batch assignment only removes the scope.
 """
 
 import frappe
@@ -225,7 +226,7 @@ def course_scoped_has_permission(doc, ptype: str = "read", user: str | None = No
 
 
 # ---------------------------------------------------------------------------
-# Role lifecycle: keep the "Valutatore" Role aligned with batch assignments
+# Role lifecycle: grant the "Valutatore" Role to the users a batch assigns
 # ---------------------------------------------------------------------------
 def _ensure_role(user: str, role: str) -> None:
 	if not frappe.db.exists("Has Role", {"parent": user, "role": role}):
@@ -238,38 +239,19 @@ def _ensure_role(user: str, role: str) -> None:
 		frappe.clear_cache(user=user)
 
 
-def _is_valutatore_of_any_batch(user: str, exclude_batch: str | None = None) -> bool:
-	filters = {"parenttype": "LMS Batch", "valutatore": user}
-	if exclude_batch:
-		filters["parent"] = ["!=", exclude_batch]
-	return bool(frappe.db.exists("LMS Batch Valutatore", filters))
-
-
-def _revoke_role_if_orphan(user: str, exclude_batch: str | None = None) -> None:
-	if not _is_valutatore_of_any_batch(user, exclude_batch=exclude_batch):
-		frappe.db.delete("Has Role", {"parent": user, "role": ROLE})
-		frappe.clear_cache(user=user)
-
-
 def _row_members(rows) -> set[str]:
 	return {row.valutatore for row in (rows or []) if getattr(row, "valutatore", None)}
 
 
 def sync_batch_valutatore_roles(doc, method: str | None = None) -> None:
-	"""LMS Batch on_update: grant the role to current valutatori and revoke it
-	from users who are no longer a valutatore of any batch."""
-	current = _row_members(doc.get("valutatori"))
-	for member in current:
-		_ensure_role(member, ROLE)
+	"""LMS Batch on_update: grant the role to the batch valutatori.
 
-	before = doc.get_doc_before_save()
-	previous = _row_members(before.get("valutatori")) if before else set()
-	for member in previous - current:
-		_revoke_role_if_orphan(member, exclude_batch=doc.name)
-
-
-def cleanup_batch_valutatore_roles(doc, method: str | None = None) -> None:
-	"""LMS Batch on_trash: revoke the role from this batch's valutatori when they
-	are not evaluating any other batch."""
+	Grant-only on purpose. The role is also assignable by hand (Settings > Members
+	and the profile Roles tab), so removing a user from a batch's `valutatori`
+	field must NOT take the role away — it would silently undo an explicit admin
+	assignment and, when the user evaluates nothing else, drop them out of the
+	role entirely. Losing the batch assignment is already enough: every scoping
+	rule above resolves to "no batches" and grants no data access.
+	"""
 	for member in _row_members(doc.get("valutatori")):
-		_revoke_role_if_orphan(member, exclude_batch=doc.name)
+		_ensure_role(member, ROLE)

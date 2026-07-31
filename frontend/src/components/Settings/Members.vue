@@ -260,8 +260,9 @@ const getRole = (role: string) => {
 		'Course Creator': 'Instructor',
 		Moderator: 'Moderator',
 		'Batch Evaluator': 'Evaluator',
+		Valutatore: 'Valutatore',
 	}
-	return map[role]
+	return map[role] || role
 }
 
 const openEditMember = (member: Member) => {

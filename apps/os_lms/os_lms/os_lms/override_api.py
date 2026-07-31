@@ -67,6 +67,40 @@ def get_lms_settings():
 
 
 @frappe.whitelist()
+def get_members(start: int = 0, search: str = None, role: str = "All"):
+    """Wrap the base member list so the custom "Valutatore" role is reported.
+
+    The base method hardcodes the four upstream LMS roles, so a member holding
+    Valutatore came back without it: the Members settings modal then rendered the
+    toggle as off for someone who already had the role. Only the returned roles
+    are widened here — the `role` filter is still validated (and paginated) by
+    the base method, so it keeps accepting the upstream values only.
+    """
+    from lms.lms.api import get_members as _original_get_members
+
+    members = _original_get_members(start, search, role)
+    if not members:
+        return members
+
+    valutatori = set(
+        frappe.get_all(
+            "Has Role",
+            {
+                "role": "Valutatore",
+                "parenttype": "User",
+                "parent": ["in", [member.name for member in members]],
+            },
+            pluck="parent",
+        )
+    )
+    for member in members:
+        if member.name in valutatori:
+            member.roles = (member.roles or []) + ["Valutatore"]
+
+    return members
+
+
+@frappe.whitelist()
 def get_all_users():
     # Broaden the role gate of the base method so the custom instructor/evaluator
     # roles can also fetch the user list (used for @mentions in discussions, etc.).
@@ -106,10 +140,12 @@ def get_user_info():
         result["is_valutatore"] = is_valutatore
         if is_valutatore:
             result["is_student"] = False
-        # Gate for the student-statistics export page. The single source of truth
-        # is can_export_student_stats() in os_lms.os_lms.api — keep the two in sync
-        # when more roles are allowed to export.
-        result["can_export_stats"] = "System Manager" in result.get("roles", [])
+        # Gate for the student-statistics export page. Delegated to the single
+        # source of truth in os_lms.os_lms.api so the SPA link and the endpoints
+        # can never disagree (imported locally to avoid an import cycle).
+        from os_lms.os_lms.api import can_export_student_stats
+
+        result["can_export_stats"] = can_export_student_stats()
         # Course counters shown on the mobile profile page:
         # "Corsi attivi" = enrollments still in progress, "Completati" = enrollments
         # with full progress. progress is a Float (0-100) on LMS Enrollment.

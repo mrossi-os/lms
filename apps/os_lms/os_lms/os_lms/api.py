@@ -917,13 +917,18 @@ STUDENT_STATS_REPORTS = {
 STUDENT_STATS_FILTERS = ["course", "batch", "students"]
 
 
+EXPORT_STATS_ROLES = ("System Manager", "Gestore")
+
+
 def can_export_student_stats() -> bool:
 	"""Single source of truth for who may export student statistics.
 
-	For now only System Manager (Administrator). Add further roles here when the
-	product decides to broaden access (keep override_api.get_user_info in sync).
+	System Manager (Administrator) and Gestore. Add further roles to
+	``EXPORT_STATS_ROLES`` when the product decides to broaden access; the SPA
+	gate reads the same helper through override_api.get_user_info.
 	"""
-	return "System Manager" in frappe.get_roles()
+	roles = frappe.get_roles()
+	return any(role in roles for role in EXPORT_STATS_ROLES)
 
 
 def _ensure_can_export_student_stats():

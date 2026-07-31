@@ -32,15 +32,19 @@ const turnDetectionOptions = [
 // Settings.vue's `tabsStructure` via spread so the core file stays close to
 // upstream and future merges stay conflict-free. This is a factory (not a
 // static const) so __() labels and condition() re-evaluate reactively inside
-// the computed; `isAdministrator` is passed in to reuse the core role logic.
-export function buildOslmsSettingsTabs({ isAdministrator } = {}) {
+// the computed; the role predicates are passed in to reuse the core role logic
+// (`canManageOsIntegrations` = administrators + "Gestore").
+export function buildOslmsSettingsTabs({
+	isAdministrator,
+	canManageOsIntegrations = isAdministrator,
+} = {}) {
 	return [
 		// TrueSkills API — previously an item inside the core "Configuration"
 		// group; wrapped in a hideLabel group to keep it rendering as a bare tab.
 		{
 			key: 'TrueSkills',
 			hideLabel: true,
-			condition: isAdministrator,
+			condition: canManageOsIntegrations,
 			items: [
 				{
 					key: 'TrueSkills API',
@@ -49,7 +53,7 @@ export function buildOslmsSettingsTabs({ isAdministrator } = {}) {
 					description: __(
 						'Configure the TrueSkills API integration for your learning system',
 					),
-					condition: isAdministrator,
+					condition: canManageOsIntegrations,
 					template: markRaw(TrueSkillsSettings),
 					sections: [
 						{
@@ -424,13 +428,13 @@ export function buildOslmsSettingsTabs({ isAdministrator } = {}) {
 				},
 			],
 		},
-		// AI system prompts (tutor + coach). Admin-only for now via
-		// `condition: isAdministrator`; relax the condition to open it to
-		// other roles later.
+		// AI system prompts (tutor + coach). Open to administrators and to the
+		// "Gestore" role via `condition: canManageOsIntegrations`; relax the
+		// condition further to open it to other roles later.
 		{
 			key: 'Prompt AI',
 			hideLabel: true,
-			condition: isAdministrator,
+			condition: canManageOsIntegrations,
 			items: [
 				{
 					key: 'Prompt AI',
@@ -439,7 +443,7 @@ export function buildOslmsSettingsTabs({ isAdministrator } = {}) {
 					description: __(
 						'Modifica i system prompt delle AI: Tutor, Coach e simulazioni (personaggio e generatore di scenario).',
 					),
-					condition: isAdministrator,
+					condition: canManageOsIntegrations,
 					template: markRaw(PromptSettings),
 				},
 			],

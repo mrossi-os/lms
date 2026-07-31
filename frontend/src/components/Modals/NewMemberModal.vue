@@ -61,6 +61,11 @@
 						/>
 						<BooleanSwitch
 							size="sm"
+							:label="__('Valutatore')"
+							v-model="roles.valutatore"
+						/>
+						<BooleanSwitch
+							size="sm"
 							:label="__('Moderator')"
 							v-model="roles.moderator"
 						/>
@@ -97,6 +102,8 @@ const ROLE_MAP: Record<string, string> = {
 	course_creator: 'Course Creator',
 	batch_evaluator: 'Batch Evaluator',
 	lms_student: 'LMS Student',
+	// Custom per-batch evaluator role (see os_lms.os_lms.valutatore).
+	valutatore: 'Valutatore',
 }
 
 const member = reactive({
@@ -110,6 +117,7 @@ const roles = reactive({
 	course_creator: false,
 	batch_evaluator: false,
 	lms_student: false,
+	valutatore: false,
 })
 
 const initialRoles = reactive({ ...roles })
@@ -127,6 +135,7 @@ const applyDefaultRoles = () => {
 	roles.batch_evaluator =
 		props.defaultRoles?.includes('batch_evaluator') ?? false
 	roles.lms_student = props.defaultRoles?.includes('lms_student') ?? false
+	roles.valutatore = props.defaultRoles?.includes('valutatore') ?? false
 }
 
 const loadMember = () => {
