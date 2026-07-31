@@ -1,6 +1,6 @@
 <template>
 	<div class="p-5">
-		<div class="grid grid-cols-3 gap-5 mb-5 text-ink-gray-9">
+		<div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-5 text-ink-gray-9">
 			<NumberChartGraph
 				:title="__('Enrolled')"
 				:value="formatAmount(course.data?.enrollments)"
@@ -19,9 +19,9 @@
 			</NumberChartGraph>-->
 			<NumberChartGraph :title="__('Lessons')" :value="course.data?.lessons" />
 		</div>
-		<div class="grid grid-cols-[2fr_1fr] gap-5 items-start">
-			<div class="border rounded-lg py-3 px-4 card">
-				<div class="flex items-center justify-between mb-3">
+		<div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-5 items-start">
+			<div class="min-w-0 border rounded-lg py-3 px-4 card">
+				<div class="flex flex-wrap items-center justify-between gap-2 mb-3">
 					<div class="text-xl-semibold text-ink-gray-9">
 						{{ __('Students') }}
 					</div>
@@ -38,7 +38,7 @@
 						</FormControl>
 					</div>
 				</div>
-				<div class="max-h-[63vh] overflow-y-auto">
+				<div class="max-h-[63vh] overflow-y-auto overflow-x-auto">
 					<ListView
 						v-if="progressList.loading || progressList.data?.length"
 						:columns="progressColumns"
@@ -141,7 +141,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="space-y-5">
+			<div class="min-w-0 space-y-5">
 				<div
 					v-if="chartDetails.data?.average_progress > 0"
 					class="border rounded-lg p-4 card"
@@ -150,7 +150,7 @@
 						{{ __('Progress Summary') }}
 					</div>
 					<div
-						class="grid grid-cols-[2fr_1fr] items-center justify-between text-ink-gray-9"
+						class="grid grid-cols-1 sm:grid-cols-[2fr_1fr] gap-4 sm:gap-0 items-center justify-between text-ink-gray-9"
 					>
 						<div class="flex flex-col space-y-4 flex-1 text-sm">
 							<div
@@ -185,7 +185,7 @@
 							</div>
 						</div>
 						<ECharts
-							class="w-40 h-20"
+							class="w-40 h-20 justify-self-center sm:justify-self-auto"
 							:options="{
 								color: progressColors,
 								series: [
