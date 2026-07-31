@@ -545,7 +545,13 @@ onMounted(() => {
 	window.addEventListener('beforeunload', handleBeforeUnload)
 	// A cache hit hands back an already-resolved resource, so the watcher below
 	// only fires once the background reload lands — seed the display now.
-	if (quiz.data) setupTimer()
+	// Without this the reopened quiz renders its empty question list for a beat
+	// and flashes "no questions available" over the Start button.
+	if (quiz.data) {
+		populateQuestions()
+		setupTimer()
+		if (quiz.data.max_attempts) attempts.reload()
+	}
 })
 
 onUnmounted(() => {
@@ -579,8 +585,7 @@ const handleBeforeUnload = (event) => {
 // Quiz doc + every question's content in one round trip. The lesson-side
 // quiz used to fetch the quiz, then fire one get_question_details per
 // question as the learner advanced — pulling them all up front lets the
-// activeQuestion watcher read from a local map instead of round-tripping.
-const questionsByName = ref({})
+// activeQuestion watcher read from a prefetched map instead of round-tripping.
 const quiz = createResource({
 	url: 'lms.lms.utils.get_quiz_with_questions',
 	makeParams() {
@@ -594,7 +599,12 @@ const quiz = createResource({
 	transform(data) {
 		const quizDoc = data?.quiz || {}
 		quizDoc.duration = parseInt(quizDoc.duration)
-		questionsByName.value = data?.questions_by_name || {}
+		// The map rides along inside the doc instead of a component-local ref:
+		// a cached resource is shared across mounts and keeps the *first*
+		// instance's transform, so a per-instance ref stays empty on every later
+		// mount — populateQuestions then drops every row as unresolvable and the
+		// quiz claims it has no questions until a full page reload.
+		quizDoc._questions_by_name = data?.questions_by_name || {}
 		return quizDoc
 	},
 	onSuccess() {
@@ -602,6 +612,8 @@ const quiz = createResource({
 		setupTimer()
 	},
 })
+
+const questionsByName = computed(() => quiz.data?._questions_by_name || {})
 
 const populateQuestions = () => {
 	const data = quiz.data

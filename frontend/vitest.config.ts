@@ -9,6 +9,10 @@ export default defineConfig({
 		environment: 'jsdom',
 		globals: true,
 		include: ['src/tests/**/*.test.{ts,js}'],
+		// frappe-ui ships untranspiled sources; a test that pulls one of its
+		// internal modules (e.g. the real resource cache) needs them processed by
+		// vite rather than resolved as external node ESM.
+		server: { deps: { inline: [/frappe-ui/] } },
 	},
 	resolve: {
 		alias: {
