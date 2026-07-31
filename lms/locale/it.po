@@ -8484,7 +8484,7 @@ msgstr ""
 
 #: frontend/src/pages/Courses/NewCourseModal.vue:189
 msgid "Upload a 750×422 image (.jpg, .jpeg, .gif, or .png) — shown on the catalog card and lesson hero."
-msgstr ""
+msgstr "Carica un'immagine 750×422 (.jpg, .jpeg, .gif o .png) — mostrata sulla scheda del catalogo e nell'intestazione della lezione."
 
 #: frontend/src/pages/Courses/CourseThumbnailField.vue:115
 msgid "Upload an image to replace the color."
