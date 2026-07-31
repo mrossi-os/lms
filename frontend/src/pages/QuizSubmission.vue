@@ -3,7 +3,7 @@
 		class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-base px-3 py-2.5 sm:px-5"
 	>
 		<Breadcrumbs v-if="submissionDetails.doc" :items="breadcrumbs" />
-		<div class="flex gap-2 items-center">
+		<div v-if="canGrade" class="flex gap-2 items-center">
 			<Badge
 				v-if="submissionDetails.isDirty"
 				:label="__('Not Saved')"
@@ -17,10 +17,7 @@
 			</ShortcutTooltip>
 		</div>
 	</header>
-	<div
-		v-if="submissionDetails.doc"
-		class="w-2/3 border-x mx-auto py-5"
-	>
+	<div v-if="submissionDetails.doc" class="w-2/3 border-x mx-auto py-5">
 		<div class="text-xl px-10 font-semibold text-ink-gray-9 mb-5">
 			{{ submissionDetails.doc.member_name }}
 		</div>
@@ -67,7 +64,11 @@
 					<span class="leading-5" v-html="sanitizeRichHTML(row.answer)"></span>
 				</div>
 				<div class="grid grid-cols-2 gap-5">
-					<FormControl v-model="row.marks" :label="__('Marks')" />
+					<FormControl
+						v-model="row.marks"
+						:label="__('Marks')"
+						:disabled="!canGrade"
+					/>
 					<FormControl
 						v-model="row.marks_out_of"
 						:label="__('Marks out of')"
@@ -102,8 +103,16 @@ const { brand } = sessionStore()
 const router = useRouter()
 const user = inject('$user')
 
+// A scoped "Valutatore" reaches this page from the batch dashboard (student
+// drill-down) to read the quiz answers of their own students — the per-batch
+// scoping is enforced server-side. Grading quizzes stays with the batch admins,
+// so for them the page is read-only (see `canGrade`).
+const canGrade = computed(
+	() => user.data?.is_instructor || user.data?.is_moderator,
+)
+
 onMounted(() => {
-	if (!user.data?.is_instructor && !user.data?.is_moderator)
+	if (!canGrade.value && !user.data?.is_valutatore)
 		router.push({ name: 'Courses' })
 })
 
@@ -112,7 +121,8 @@ useKeyboardShortcuts({
 	shortcuts: [
 		{
 			...saveShortcut(() => saveSubmission()),
-			guard: (e) => !e.target?.classList?.contains('ProseMirror'),
+			guard: (e) =>
+				canGrade.value && !e.target?.classList?.contains('ProseMirror'),
 		},
 	],
 })

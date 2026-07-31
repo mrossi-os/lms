@@ -118,7 +118,6 @@ override_whitelisted_methods = {
     "lms.lms.utils.get_lesson": "os_lms.os_lms.override_utils.get_lesson",
     "lms.lms.utils.get_batch_details": "os_lms.os_lms.override_utils.get_batch_details",
     "lms.lms.utils.get_roles": "os_lms.os_lms.override_utils.get_roles",
-    "lms.lms.utils.get_batch_student_progress": "os_lms.os_lms.override_utils.get_batch_student_progress",
 
     
     "lms.command_palette.search_sqlite": "os_lms.os_lms.override_api.search_sqlite",

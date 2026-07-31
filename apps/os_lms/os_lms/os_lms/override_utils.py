@@ -328,25 +328,6 @@ def get_batch_details(batch: str):
 	return batch_detail
 
 
-@frappe.whitelist()
-def get_batch_student_progress(member: str, batch: str) -> dict:
-	"""Hide the assessment results from a scoped "Valutatore".
-
-	The student drill-down of the batch dashboard lists the quiz scores and the
-	assignment ("elaborati") outcomes, and each row links to the submission. A
-	valutatore must not reach those from the batch, so the payload comes back
-	without them — the SPA hides the section as well, this keeps the data from
-	being served at all. Batch admins are unaffected, and the role's own
-	permissions on the submissions are left untouched.
-	"""
-	from lms.lms.utils import get_batch_student_progress as _original
-
-	details = _original(member, batch)
-	if isinstance(details, dict) and _only_scoped_valutatore(frappe.session.user):
-		details["assessments"] = []
-	return details
-
-
 def _has_role(member: str, role: str):
 	return frappe.db.get_value(
 		"Has Role",

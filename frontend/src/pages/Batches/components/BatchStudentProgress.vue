@@ -38,7 +38,6 @@
 				<div class="space-y-8">
 					<!-- Assessments -->
 					<ListView
-						v-if="canViewAssessments"
 						:columns="assessmentColumns"
 						:rows="studentDetails.data.assessments"
 						row-key="title"
@@ -200,28 +199,16 @@ import {
 	Tooltip,
 } from 'frappe-ui'
 import { useRouter } from 'vue-router'
-import { computed, inject, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import ProgressBar from '@/components/ProgressBar.vue'
 import Select from '@/components/Controls/Select.vue'
 
 const show = defineModel()
 const router = useRouter()
-const user = inject<{ data?: Record<string, any> }>('$user')
 const props = defineProps<{
 	student: string
 	batch: string
 }>()
-
-// A scoped "Valutatore" reads the batch dashboard but must not reach the quiz
-// and assignment results from it (each row links to the submission). The backend
-// strips them from the payload too, see os_lms override_utils.
-const canViewAssessments = computed(
-	() =>
-		!user?.data?.is_valutatore ||
-		user?.data?.is_moderator ||
-		user?.data?.is_evaluator ||
-		user?.data?.is_docente,
-)
 
 const studentDetails = createResource({
 	url: 'lms.lms.utils.get_batch_student_progress',
