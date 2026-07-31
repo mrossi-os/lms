@@ -11,7 +11,12 @@ core (frappe/permissions.py), CRM (crm.permissions.*), and Raven (raven.permissi
 
 import frappe
 
-from lms.lms.utils import can_modify_course, get_membership, guest_access_allowed
+from lms.lms.utils import (
+	can_modify_course,
+	get_membership,
+	guest_access_allowed,
+	is_course_valutatore,
+)
 
 # File fields that hold instructor-only lesson media (never served to students).
 INSTRUCTOR_FIELDS = {"instructor_content", "instructor_notes"}
@@ -22,8 +27,8 @@ def can_access_lesson(lesson: str, *, instructor_only: bool = False, user: str |
 
 	- instructors / moderators (can_modify_course) → all media (incl. instructor files)
 	- instructor_only=True → only the above; enrolled students denied
-	- else (student media): enrolled member OR (published course AND include_in_preview
-	  AND guest access allowed)
+	- else (student media): valutatore of a batch holding the course OR enrolled
+	  member OR (published course AND include_in_preview AND guest access allowed)
 	"""
 	if not isinstance(lesson, str) or not lesson:
 		return False
@@ -41,6 +46,12 @@ def can_access_lesson(lesson: str, *, instructor_only: bool = False, user: str |
 			return True
 		if instructor_only:
 			return False
+		# A "Valutatore" reviews the courses of the batches they evaluate: they read
+		# every lesson like an enrolled student would, without an enrolment (and so
+		# without progress tracking). Instructor-only media stays out of reach —
+		# this branch sits after the instructor_only gate on purpose.
+		if is_course_valutatore(lesson_row.course, user):
+			return True
 		if get_membership(lesson_row.course, user):
 			return True
 		# Preview is for prospective students of a LIVE course. Require the course to be
