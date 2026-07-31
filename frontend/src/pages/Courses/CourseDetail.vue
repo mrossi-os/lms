@@ -1,14 +1,15 @@
 <template>
 	<div class="flex h-full flex-col">
+		<!-- On phones the header stacks: breadcrumb + badge on the first row,
+		     the actions right-aligned on the second one. -->
 		<LayoutHeader
 			:isLoading="!course.data"
-			class="max-sm:[&_a]:text-base max-sm:[&_button]:text-xs"
+			class="max-sm:flex-col max-sm:items-stretch max-sm:gap-y-2 max-sm:[&>div:last-child]:flex-wrap max-sm:[&>div:last-child]:justify-end max-sm:[&>div:last-child:empty]:hidden max-sm:[&_button]:text-xs"
 		>
 			<template #left-header>
 				<Breadcrumbs class="h-7" :items="breadcrumbs" />
-				<Badge v-if="course.data?.published" theme="green">
-					<span class="sm:hidden">{{ __('Publ.') }}</span>
-					<span class="max-sm:hidden">{{ __('Published') }}</span>
+				<Badge v-if="course.data?.published" theme="green" class="shrink-0">
+					{{ __('Published') }}
 				</Badge>
 			</template>
 			<template #right-header>
@@ -186,7 +187,6 @@ import {
 } from 'lucide-vue-next'
 import { sessionStore } from '@/stores/session'
 import { useSettings } from '@/stores/settings'
-import { useScreenSize } from '@/utils/composables'
 import LayoutHeader from '@/components/Layouts/LayoutHeader.vue'
 import CourseOverview from '@/pages/Courses/CourseOverview.vue'
 import CourseDashboard from '@/pages/Courses/CourseDashboard.vue'
@@ -216,7 +216,6 @@ interface TabDef {
 }
 
 const { brand } = sessionStore() as { brand: Brand }
-const { isMobile } = useScreenSize()
 const router: Router = useRouter()
 const route: RouteLocationNormalizedLoadedGeneric = useRoute()
 const user = inject<SessionUser>('$user')!
@@ -439,22 +438,16 @@ const showTabs = computed<boolean>(
 	() => isAdmin.value || isValutatore.value,
 )
 
-// The phone header has to fit the breadcrumb, the published badge and the
-// publish button on one line, so a long course title is cut short there.
-const MOBILE_TITLE_LIMIT = 12
-
 const breadcrumbs = computed(() => {
 	const crumbs: {
 		label: string
 		route: { name: string; params?: Record<string, string> }
 	}[] = [{ label: __('Courses'), route: { name: 'Courses' } }]
 	if (course.data) {
-		const title = course.data.title
+		// The breadcrumb owns a full row on phones now, and Breadcrumbs already
+		// truncates the last crumb with an ellipsis, so the title is not cut here.
 		crumbs.push({
-			label:
-				isMobile.value && title.length > MOBILE_TITLE_LIMIT
-					? `${title.slice(0, MOBILE_TITLE_LIMIT)}…`
-					: title,
+			label: course.data.title,
 			route: { name: 'CourseDetail', params: { courseName: course.data.name } },
 		})
 	}

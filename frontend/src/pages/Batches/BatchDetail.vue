@@ -1,16 +1,19 @@
 <template>
 	<div v-if="batch.data" class="">
+		<!-- On phones the header stacks: breadcrumb + badge on the first row,
+		     the actions right-aligned on the second one. -->
 		<header
-			class="sticky top-0 z-10 border-b flex items-center justify-between bg-surface-base px-3 py-2.5 sm:px-5 max-sm:[&_a]:text-base max-sm:[&_button]:text-xs"
+			class="sticky top-0 z-10 border-b flex flex-col gap-y-2 sm:flex-row sm:items-center sm:justify-between sm:gap-y-0 bg-surface-base px-3 py-2.5 sm:px-5 max-sm:[&_button]:text-xs"
 		>
 			<div class="flex items-center gap-x-2">
 				<Breadcrumbs :items="breadcrumbs" />
-				<Badge v-if="batch.data?.published" theme="green">
-					<span class="sm:hidden">{{ __('Publ.') }}</span>
-					<span class="max-sm:hidden">{{ __('Published') }}</span>
+				<Badge v-if="batch.data?.published" theme="green" class="shrink-0">
+					{{ __('Published') }}
 				</Badge>
 			</div>
-			<div class="flex items-center gap-x-2">
+			<div
+				class="flex items-center gap-x-2 max-sm:flex-wrap max-sm:gap-y-2 max-sm:justify-end max-sm:empty:hidden"
+			>
 				<template v-if="currentTabKey === 'Settings' && isAdmin">
 					<Badge v-if="childRef?.isDirty" theme="orange">
 						{{ __('Not Saved') }}
