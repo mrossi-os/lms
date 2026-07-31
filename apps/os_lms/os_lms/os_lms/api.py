@@ -647,12 +647,13 @@ def export_batch_progress(batch: str, file_format: str = "xlsx"):
 	counts as completed when its status is ``Complete``.
 
 	Streams the file back via ``frappe.response`` (content-disposition), so the
-	frontend just opens the endpoint URL. Available to batch admins and to the
-	batch's valutatori (scoped read).
+	frontend just opens the endpoint URL. Restricted to batch admins: a
+	"Valutatore" reads the batch dashboard but must not export it, which is why
+	the SPA hides the export button for them too.
 	"""
-	from lms.lms.utils import can_modify_batch, is_batch_valutatore
+	from lms.lms.utils import can_modify_batch
 
-	if not (can_modify_batch(batch) or is_batch_valutatore(batch)):
+	if not can_modify_batch(batch):
 		frappe.throw(
 			frappe._("You are not authorized to view this batch."),
 			frappe.PermissionError,

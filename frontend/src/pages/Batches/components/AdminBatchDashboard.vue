@@ -55,7 +55,11 @@
 								<span class="lucide-search size-4 text-ink-gray-5" />
 							</template>
 						</FormControl>
-						<Dropdown :options="exportMenu" placement="right">
+						<Dropdown
+							v-if="isFullAdmin"
+							:options="exportMenu"
+							placement="right"
+						>
 							<Button variant="outline">
 								<template #prefix>
 									<span class="lucide-download size-4" />
@@ -360,8 +364,9 @@ const dayjs = inject<typeof dayjsType>('$dayjs')!
 const user = inject<{ data?: Record<string, any> }>('$user')
 const router = useRouter()
 
-// A "Valutatore" of this batch sees the dashboard read-only: hide enroll/import
-// and student removal, which require full batch-admin rights.
+// A "Valutatore" of this batch sees the dashboard read-only: hide enroll/import,
+// student removal and the statistics export, which require full batch-admin
+// rights.
 const isFullAdmin = computed(
 	() =>
 		user?.data?.is_moderator ||
