@@ -68,7 +68,7 @@
 							'If you answer incorrectly, {0} {1} will be deducted from your score for each incorrect answer.',
 						).format(
 							quiz.data.marks_to_cut,
-							quiz.data.marks_to_cut == 1 ? 'mark' : 'marks',
+							quiz.data.marks_to_cut == 1 ? __('mark') : __('marks'),
 						)
 					}}
 				</li>

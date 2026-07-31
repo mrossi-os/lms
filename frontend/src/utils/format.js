@@ -1,7 +1,32 @@
 import { useTimeAgo } from '@vueuse/core'
 
+// Italian relative-time strings for useTimeAgo (English-only by default).
+// Mirrors @vueuse's default message shape: `past`/`future` receive the
+// already-formatted unit string and only wrap it when it contains a number, so
+// single-unit words like "ieri"/"domani" are returned as-is (not "ieri fa").
+const IT_TIME_AGO_MESSAGES = {
+	justNow: 'proprio ora',
+	past: (n) => (/\d/.test(n) ? `${n} fa` : n),
+	future: (n) => (/\d/.test(n) ? `tra ${n}` : n),
+	month: (n, past) =>
+		n === 1 ? (past ? 'il mese scorso' : 'il mese prossimo') : `${n} mesi`,
+	year: (n, past) =>
+		n === 1 ? (past ? "l'anno scorso" : "l'anno prossimo") : `${n} anni`,
+	day: (n, past) => (n === 1 ? (past ? 'ieri' : 'domani') : `${n} giorni`),
+	week: (n, past) =>
+		n === 1
+			? past
+				? 'la settimana scorsa'
+				: 'la settimana prossima'
+			: `${n} settimane`,
+	hour: (n) => `${n} ${n === 1 ? 'ora' : 'ore'}`,
+	minute: (n) => `${n} ${n === 1 ? 'minuto' : 'minuti'}`,
+	second: (n) => `${n} ${n === 1 ? 'secondo' : 'secondi'}`,
+	invalid: '',
+}
+
 export function timeAgo(date) {
-	return useTimeAgo(date).value
+	return useTimeAgo(date, { messages: IT_TIME_AGO_MESSAGES }).value
 }
 
 export const formatSeconds = (time) => {
