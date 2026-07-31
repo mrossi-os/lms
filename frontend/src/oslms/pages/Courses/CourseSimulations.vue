@@ -1,5 +1,7 @@
 <template>
-	<div class="p-5 sm:p-7 space-y-5">
+	<!-- max-sm:pb-14: on a phone the last table would end up behind the fixed
+		 bottom navigation, so the page keeps room below its content. -->
+	<div class="p-5 sm:p-7 space-y-5 max-sm:pb-14">
 		<!-- Header -->
 		<div class="flex items-center justify-between">
 			<div>
@@ -46,8 +48,11 @@
 		<div class="text-sm font-medium text-ink-gray-9">
 			{{ __('Scenari') }}
 		</div>
-		<div class="border rounded-md overflow-hidden">
-			<table class="w-full text-sm os-table-view">
+		<!-- overflow-x-auto (not hidden): on a phone the table is wider than the
+			 screen, so the last columns have to be reachable by scrolling the
+			 table itself rather than being clipped away. -->
+		<div class="border rounded-md overflow-x-auto">
+			<table class="w-full min-w-[42rem] text-sm os-table-view">
 				<thead class="bg-surface-gray-2 text-xs text-ink-gray-7">
 					<tr>
 						<th class="text-left px-3 py-2">{{ __('Nome') }}</th>
@@ -148,8 +153,8 @@
 				]"
 			/>
 		</div>
-		<div class="border rounded-md overflow-hidden">
-			<table class="w-full text-sm os-table-view">
+		<div class="border rounded-md overflow-x-auto">
+			<table class="w-full min-w-[42rem] text-sm os-table-view">
 				<thead class="bg-surface-gray-2 text-xs text-ink-gray-7">
 					<tr>
 						<th class="text-left px-3 py-2">{{ __('Studente') }}</th>
