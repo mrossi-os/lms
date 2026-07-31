@@ -104,7 +104,16 @@ const createNewOption = {
 } as ComboboxOption
 
 const linkOptions = computed(() => {
-	const _options = options.data || []
+	let _options = options.data || []
+	// A DocType link lists doctype names, which are interface labels and have
+	// translations; every other link lists records, whose values are data and
+	// must stay verbatim. Note the server still searches the untranslated name.
+	if (props.doctype === 'DocType') {
+		_options = _options.map((option: any) => ({
+			...option,
+			label: __(option.label),
+		}))
+	}
 	if (props.allowCreate) {
 		return [..._options, createNewOption]
 	}

@@ -142,12 +142,12 @@ const columnsFromSystem = computed(() => {
         .map((f: any) => ({
           value: f.fieldname,
           label: isParent
-            ? f.label
-            : `${f.label} (${getChildTableName(parent, doc.name)})`,
+            ? __(f.label)
+            : `${__(f.label)} (${getChildTableName(parent, doc.name)})`,
         }))
 
       return [
-        { value: "name", label: "ID" },
+        { value: "name", label: __('ID') },
         ...columns,
       ]
     })

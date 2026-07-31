@@ -57,8 +57,8 @@
 					{{
 						__('You can attempt this quiz {0}.').format(
 							quiz.data.max_attempts == 1
-								? '1 time'
-								: `${quiz.data.max_attempts} times`,
+								? __('1 time')
+								: __('{0} times').format(quiz.data.max_attempts),
 						)
 					}}
 				</li>
@@ -1080,25 +1080,25 @@ const markForReview = (event, questionNumber) => {
 const getSubmissionColumns = () => {
 	return [
 		{
-			label: 'No.',
+			label: __('No.'),
 			key: 'idx',
 		},
 		{
-			label: 'Date',
+			label: __('Date'),
 			key: 'creation',
 		},
 		{
-			label: 'Score',
+			label: __('Score'),
 			key: 'score',
 			align: 'center',
 		},
 		{
-			label: 'Score out of',
+			label: __('Score out of'),
 			key: 'score_out_of',
 			align: 'center',
 		},
 		{
-			label: 'Percentage',
+			label: __('Percentage'),
 			key: 'percentage',
 			align: 'center',
 		},
