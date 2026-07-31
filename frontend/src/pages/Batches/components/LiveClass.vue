@@ -174,7 +174,7 @@
 					<span>
 						{{
 							__(
-								'Notifica gli studenti del batch via email + notifica in piattaforma.',
+								'Notifica gli studenti della classe via email + notifica in piattaforma.',
 							)
 						}}
 					</span>
