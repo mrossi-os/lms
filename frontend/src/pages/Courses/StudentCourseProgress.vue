@@ -118,7 +118,7 @@
 									{{ assignment.assignment_title }}
 								</div>
 								<Badge :theme="getAssessmentStatusTheme(assignment.status)">
-									{{ assignment.status }}
+									{{ __(assignment.status) }}
 								</Badge>
 							</div>
 						</div>
@@ -140,7 +140,7 @@
 									{{ exercise.exercise_title }}
 								</div>
 								<Badge :theme="getAssessmentStatusTheme(exercise.status)">
-									{{ exercise.status }}
+									{{ __(exercise.status) }}
 								</Badge>
 							</div>
 						</div>
