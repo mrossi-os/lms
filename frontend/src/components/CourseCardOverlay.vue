@@ -47,7 +47,7 @@
 					<CertificationLinks :courseName="course.data.name" class="w-full" />
 				</div>
 				<router-link
-					v-else-if="course.data?.paid_course && !isAdmin"
+					v-else-if="course.data?.paid_course && canEnroll"
 					:to="{
 						name: 'Billing',
 						params: {
@@ -66,7 +66,7 @@
 					</Button>
 				</router-link>
 				<Badge
-					v-else-if="course.data?.disable_self_learning && !isAdmin"
+					v-else-if="course.data?.disable_self_learning && canEnroll"
 					theme="blue"
 					size="lg"
 					class="mb-4"
@@ -74,7 +74,7 @@
 					{{ __('Contact the Administrator to enroll for this course') }}
 				</Badge>
 				<Button
-					v-else-if="!isAdmin"
+					v-else-if="canEnroll"
 					@click="enrollStudent()"
 					variant="solid"
 					class="w-full mb-8"
@@ -341,6 +341,19 @@ const isAdmin = computed<boolean>(() => {
 	)
 })
 
+// OSLMS-CUSTOM: a "Valutatore" of a batch holding this course reviews it read-only
+// and is never a student (the session forces is_student = false). They reach the
+// lessons without an enrolment, so offering them an enrolment CTA is a trap: one
+// click creates a real LMS Enrollment and lists them among the course students.
+const isValutatore = computed<boolean>(() =>
+	Boolean(props.course.data?.is_valutatore),
+)
+
+// Only a prospective student is offered an enrol / buy / contact-the-admin CTA.
+// Enrolled members never reach these branches (the template checks `membership`
+// first), so a valutatore who is also enrolled keeps the full student view.
+const canEnroll = computed<boolean>(() => !isAdmin.value && !isValutatore.value)
+
 // OSLMS-CUSTOM: mirrors CertificationLinks' own visibility (using the same
 // certification resource), so the card can tell whether that child will render
 // anything before deciding to hide itself.
@@ -366,8 +379,8 @@ const hasCardContent = computed<boolean>(() => {
 	if (props.course.data?.membership) {
 		return canGetCertificate.value || certLinksVisible.value
 	}
-	// Non-member student: an enroll/buy/contact CTA always renders (admins get the
-	// tabbed editor instead of this overview, so isAdmin is effectively false here).
-	return !isAdmin.value
+	// Non-member student: an enroll/buy/contact CTA always renders. Admins and
+	// valutatori get no CTA, so for them the stripped card would be empty.
+	return canEnroll.value
 })
 </script>
