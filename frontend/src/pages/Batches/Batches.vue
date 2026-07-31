@@ -173,7 +173,14 @@ const defaultTab = is_student.value
 		? 'upcoming'
 		: 'all'
 // Persist the selected tab so it survives leaving and returning to the list.
-const currentTab = useLocalStorage('lms_batches_tab', defaultTab)
+// Students are deliberately kept out of that: they have no tab bar (see the
+// TabButtons v-if) and always see their own batches, while `lms_batches_tab` is
+// a per-browser key — an "all" left there by another user of the same browser
+// would strand them on an empty list (updateStudentFilter narrows it to future
+// published batches) with no visible tab to switch back.
+const currentTab = is_student.value
+	? ref('enrolled')
+	: useLocalStorage('lms_batches_tab', defaultTab)
 const orderBy = ref('start_date')
 const readOnlyMode = window.read_only_mode
 const router = useRouter()
@@ -353,6 +360,12 @@ watch(currentTab, () => {
 })
 
 const batchTabs = computed(() => {
+	// A student's tab is pinned to "Enrolled" (see currentTab), so that's the
+	// only valid value for them. Mirrors courseTabs on the Courses page.
+	if (is_student.value) {
+		return [{ label: __('Enrolled'), value: 'enrolled' }]
+	}
+
 	let tabs = [
 		{
 			label: __('All'),
