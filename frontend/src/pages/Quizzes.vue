@@ -148,6 +148,7 @@ import { computed, inject, onMounted, ref, watch } from 'vue'
 
 import { sessionStore } from '@/stores/session'
 import { useScreenSize } from '@/utils/composables'
+import { searchLikeFilter } from '@/utils'
 import { useTelemetry } from 'frappe-ui/frappe'
 import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
 import LayoutHeader from '@/components/Layouts/LayoutHeader.vue'
@@ -173,7 +174,12 @@ onMounted(() => {
 })
 
 watch(search, () => {
-	quizFilters.value['title'] = ['like', `%${search.value}%`]
+	const titleFilter = searchLikeFilter(search.value)
+	if (titleFilter) {
+		quizFilters.value['title'] = titleFilter
+	} else {
+		delete quizFilters.value['title']
+	}
 	quizzes.update({
 		filters: quizFilters.value,
 	})

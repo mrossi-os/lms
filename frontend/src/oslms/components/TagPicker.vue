@@ -5,11 +5,11 @@
 		</div>
 
 		<!-- Selected tags -->
-		<div class="flex items-center flex-wrap gap-2 min-h-[32px]">
+		<div class="flex items-center flex-wrap gap-1.5 sm:gap-2 min-h-[32px]">
 			<span
 				v-for="tag in selectedTagObjects"
 				:key="tag.tag_name"
-				class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-md font-medium text-ink-gray-9"
+				class="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-xs sm:text-md font-medium text-ink-gray-9"
 				:style="{ backgroundColor: tag.color }"
 			>
 				{{ tag.tag_name }}
@@ -17,7 +17,7 @@
 					class="hover:opacity-70 transition-opacity"
 					@click="removeTag(tag.tag_name)"
 				>
-					<X class="w-3 h-3" />
+					<X class="w-2.5 h-2.5 sm:w-3 sm:h-3" />
 				</button>
 			</span>
 			<span
@@ -28,7 +28,7 @@
 			</span>
 		</div>
 
-		<div class="flex items-center gap-2">
+		<div class="flex flex-col items-start gap-2 sm:flex-row sm:items-center">
 			<!-- Add existing tag to course -->
 			<Popover placement="bottom-start">
 				<template #target="{ togglePopover }">

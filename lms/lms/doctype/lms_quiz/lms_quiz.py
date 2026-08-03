@@ -168,12 +168,24 @@ def process_results(results: list, quiz_details: dict):
 		result["question"] = question_details.question_detail
 		result["marks_out_of"] = question_details.marks
 
-		if question_details.type != "Open Ended":
+		# A skipped question can still reach us with a blank or null answer —
+		# joining or matching against that raises, which used to take the whole
+		# submission down and left the learner unable to hand the quiz in.
+		answers = [answer for answer in (result.get("answer") or []) if answer not in (None, "")]
+
+		if not answers:
+			result["answer"] = ""
+			result["marks"] = 0
+			result["is_correct"] = 0
+			if question_details.type == "Open Ended":
+				is_open_ended = True
+
+		elif question_details.type != "Open Ended":
 			if question_details.type == "User Input":
-				correct = bool(check_input_answers(question_details.question, result["answer"][0]))
+				correct = bool(check_input_answers(question_details.question, answers[0]))
 			else:
-				correct = verify_answer(question_details.question, result["answer"])
-			result["answer"] = ", ".join(result["answer"])
+				correct = verify_answer(question_details.question, answers)
+			result["answer"] = ", ".join(answers)
 			if correct:
 				result["marks"] = question_details.marks
 			else:
@@ -183,7 +195,7 @@ def process_results(results: list, quiz_details: dict):
 		else:
 			is_open_ended = True
 			result["is_correct"] = 0
-			answer = re.sub(r'<img[^>]*src\s*=\s*["\'](?=data:)(.*?)["\']', _save_file, result["answer"][0])
+			answer = re.sub(r'<img[^>]*src\s*=\s*["\'](?=data:)(.*?)["\']', _save_file, answers[0])
 			# Defense-in-depth: the answer is later rendered in the instructor's
 			# privileged grading view (QuizSubmission.vue). The frontend already
 			# wraps it in sanitizeRichHTML, but a student-controlled answer must

@@ -1,6 +1,7 @@
 
 export type Note = {
 	highlighted_text?: string
+	text_offset?: number | null
 	color?: string
 	name: string
     note?: string | null

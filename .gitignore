@@ -29,3 +29,15 @@ frontend/yarn-error.log
 
 /graphify-out/cache
 lms/lms/print_format/certificato_salessciensae/
+
+*.tsv
+
+UAT_studente_semplificato.md
+
+docs/uat/Funzionalita studente.md
+
+docs/uat/
+
+UAT_gestore_semplificato.md
+
+UAT_valutatore_semplificato.md

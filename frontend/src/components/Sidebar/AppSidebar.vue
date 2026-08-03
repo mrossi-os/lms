@@ -38,56 +38,6 @@
 					)
 				}}
 			</div>
-			<div
-				v-if="
-					isStudent && !profileIsComplete && !sidebarStore.isSidebarCollapsed
-				"
-				class="flex flex-col gap-3 text-ink-gray-9 py-2.5 px-3 bg-surface-base shadow-sm rounded-md"
-			>
-				<div class="flex flex-col text-p-sm gap-1">
-					<div class="inline-flex gap-1">
-						<span class="lucide-user h-4 my-0.5 shrink-0" />
-						<div class="font-medium">
-							{{ __('Complete your profile') }}
-						</div>
-					</div>
-					<div class="text-ink-gray-7 leading-5">
-						{{ __('Highlight what makes you unique and show your skills.') }}
-					</div>
-				</div>
-				<router-link
-					:to="{
-						name: 'Profile',
-						params: {
-							username: userResource.data?.username,
-						},
-					}"
-				>
-					<Button :label="__('My Profile')" class="w-full">
-						<template #prefix>
-							<span class="lucide-chevrons-right h-4 w-4 text-ink-gray-7" />
-						</template>
-					</Button>
-				</router-link>
-			</div>
-			<Tooltip
-				v-if="
-					isStudent && !profileIsComplete && sidebarStore.isSidebarCollapsed
-				"
-				:text="__('Complete your profile')"
-			>
-				<router-link
-					:to="{
-						name: 'Profile',
-						params: {
-							username: userResource.data?.username,
-						},
-					}"
-					class="flex items-center justify-center"
-				>
-					<span class="lucide-user size-4 text-ink-gray-7 cursor-pointer" />
-				</router-link>
-			</Tooltip>
 			<TrialBanner
 				v-if="
 					userResource.data?.is_system_manager && userResource.data?.is_fc_site

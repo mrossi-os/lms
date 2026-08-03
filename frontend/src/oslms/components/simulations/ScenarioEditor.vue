@@ -60,7 +60,11 @@
 					<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 						<FormControl v-model="model.scenario_name" type="text" :label="__('Nome scenario')" required />
 						<FormControl v-model="model.status" type="select" class="lms-select " :label="__('Stato')"
-							:options="['Draft', 'Published', 'Archived']" required />
+							:options="[
+								{ label: __('Bozza'), value: 'Draft' },
+								{ label: __('Pubblicato'), value: 'Published' },
+								{ label: __('Archiviato'), value: 'Archived' },
+							]" required />
 						<Autocomplete class="lms-auto-complete" v-model="model.lms_course" :options="courseOptions"
 							:label="__('Corso')" :placeholder="__('Cerca un corso')" required />
 						<!-- Lesson field hidden by request; binding kept so the rest of the logic still works -->
@@ -68,7 +72,11 @@
 							:options="lessonOptions" :label="__('Lezione (opzionale)')"
 							:placeholder="__('Cerca una lezione')" :disabled="!model.lms_course" />
 						<FormControl v-model="model.difficulty" type="select" class="lms-select "
-							:label="__('Difficoltà')" :options="['easy', 'medium', 'hard']" required />
+							:label="__('Difficoltà')" :options="[
+								{ label: __('Facile'), value: 'easy' },
+								{ label: __('Media'), value: 'medium' },
+								{ label: __('Difficile'), value: 'hard' },
+							]" required />
 						<!-- Modality select hidden by request; binding kept so the rest of
 							the logic still works. New scenarios are locked to chat (see onSave). -->
 						<FormControl v-if="false" v-model="model.modality" type="select" class="lms-select " :label="__('Modalità')"
@@ -112,7 +120,7 @@
 					<div class="">
 						<div class="mb-4">
 							<FormControl v-model="model.roleplay_persona" type="textarea" :rows="15"
-								:label="__('Persona del personaggio')" :description="__('Età, ruolo, contesto, stato emotivo iniziale del personaggio AI (cliente, esaminatore, paziente, ecc.).')
+								:label="__('Descrizione del personaggio')" :description="__('Età, ruolo, contesto, stato emotivo iniziale del personaggio AI (cliente, esaminatore, paziente, ecc.).')
 									" required />
 						</div>
 						<FormControl v-model="model.situation_template" type="textarea" :rows="15"
@@ -763,7 +771,7 @@ async function onSave() {
 	const REQUIRED_FIELDS = [
 		['scenario_name', __('Nome scenario')],
 		['lms_course', __('Corso')],
-		['roleplay_persona', __('Persona del personaggio')],
+		['roleplay_persona', __('Descrizione del personaggio')],
 		['situation_template', __('Template situazione')],
 	]
 	for (const [field, label] of REQUIRED_FIELDS) {

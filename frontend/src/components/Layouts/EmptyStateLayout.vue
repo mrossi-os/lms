@@ -48,11 +48,11 @@ const computedDescription = computed(
 const widthClass = computed(() => {
 	switch (props.width) {
 		case 'sm':
-			return 'w-2/12'
+			return 'w-full sm:w-2/12'
 		case 'lg':
-			return 'w-8/12'
+			return 'w-full sm:w-8/12'
 		default:
-			return 'w-4/12'
+			return 'w-full sm:w-4/12'
 	}
 })
 </script>

@@ -1,9 +1,14 @@
 <template>
 	<div class="flex h-full flex-col">
-		<LayoutHeader :isLoading="!course.data">
+		<!-- On phones the header stacks: breadcrumb + badge on the first row,
+		     the actions right-aligned on the second one. -->
+		<LayoutHeader
+			:isLoading="!course.data"
+			class="max-sm:flex-col max-sm:items-stretch max-sm:gap-y-2 max-sm:[&>div:last-child]:flex-wrap max-sm:[&>div:last-child]:justify-end max-sm:[&>div:last-child:empty]:hidden max-sm:[&_button]:text-xs"
+		>
 			<template #left-header>
 				<Breadcrumbs class="h-7" :items="breadcrumbs" />
-				<Badge v-if="course.data?.published" theme="green">
+				<Badge v-if="course.data?.published" theme="green" class="shrink-0">
 					{{ __('Published') }}
 				</Badge>
 			</template>
@@ -88,7 +93,12 @@
 					:loading="publishToggle.loading"
 					@click="togglePublishCourse"
 				>
-					{{ course.data?.published ? __('Unpublish') : __('Publish') }}
+					<span class="sm:hidden">
+						{{ course.data?.published ? __('Unpubl.') : __('Publish') }}
+					</span>
+					<span class="max-sm:hidden">
+						{{ course.data?.published ? __('Unpublish') : __('Publish') }}
+					</span>
 				</Button>
 			</template>
 		</LayoutHeader>
@@ -434,6 +444,8 @@ const breadcrumbs = computed(() => {
 		route: { name: string; params?: Record<string, string> }
 	}[] = [{ label: __('Courses'), route: { name: 'Courses' } }]
 	if (course.data) {
+		// The breadcrumb owns a full row on phones now, and Breadcrumbs already
+		// truncates the last crumb with an ellipsis, so the title is not cut here.
 		crumbs.push({
 			label: course.data.title,
 			route: { name: 'CourseDetail', params: { courseName: course.data.name } },

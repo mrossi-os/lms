@@ -848,6 +848,15 @@ const getSidebarItems = (forMobile = false) => {
 						'ProgrammingExerciseSubmission',
 					],
 				},
+				{
+					label: 'Export Statistics',
+					icon: 'Download',
+					to: 'StudentStatsExport',
+					activeFor: ['StudentStatsExport'],
+					condition: () => {
+						return !forMobile && userResource?.data?.can_export_stats
+					},
+				},
 			],
 		},
 	]
@@ -919,6 +928,21 @@ export function singularize(word) {
 		new RegExp(`(${Object.keys(endings).join('|')})$`),
 		(r) => endings[r],
 	)
+}
+
+/**
+ * Builds a `["like", ...]` filter value for a free-text search box.
+ *
+ * Each whitespace-separated word is matched independently (joined by `%`) so a
+ * multi-word query narrows results instead of requiring the exact contiguous
+ * phrase: "Corso p" -> `%Corso%p%` still matches "Corso di Programmazione".
+ * Words must appear in order but may have gaps. Returns null when the query is
+ * empty/blank so callers can drop the filter.
+ */
+export function searchLikeFilter(text) {
+	const words = (text || '').trim().split(/\s+/).filter(Boolean)
+	if (!words.length) return null
+	return ['like', `%${words.join('%')}%`]
 }
 
 export const validateFile = async (
@@ -1222,26 +1246,97 @@ const getRootNode = (selector = '#editor') => {
 	return root
 }
 
-const createTextWalker = (root, phrase) => {
-	return document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-		acceptNode(node) {
-			return node.nodeValue.toLowerCase().includes(phrase.toLowerCase())
-				? NodeFilter.FILTER_ACCEPT
-				: NodeFilter.FILTER_SKIP
-		},
-	})
+/*
+ * A highlight is stored as its text plus the character offset of that text
+ * within the lesson body, because the text alone is ambiguous: searching for
+ * it always lands on the first occurrence, not the one the learner selected.
+ * Offsets are counted over the concatenated text nodes of the root — wrapping
+ * a highlight in a <span> splits text nodes but never changes the text, so an
+ * offset stays valid however many highlights are already drawn.
+ */
+export const getRangeOffset = (range, selector = '#editor') => {
+	const root = getRootNode(selector)
+	if (!root || !range || !root.contains(range.startContainer)) return null
+
+	const preRange = document.createRange()
+	preRange.selectNodeContents(root)
+	preRange.setEnd(range.startContainer, range.startOffset)
+	return preRange.toString().length
 }
 
-const findMatchingTextNode = (walker, phrase) => {
-	const node = walker.nextNode()
-	if (!node) return null
+// Text node slices covered by [start, end), in document order. A selection can
+// span several nodes when it crosses an inline or block boundary.
+const collectTextSegments = (root, start, end) => {
+	const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+	const segments = []
+	let consumed = 0
+	let node
 
-	const startIndex = node.nodeValue
-		.toLowerCase()
-		.indexOf(phrase.toLowerCase())
-	const endIndex = startIndex + phrase.length
+	while ((node = walker.nextNode())) {
+		const nodeStart = consumed
+		const nodeEnd = nodeStart + node.nodeValue.length
+		consumed = nodeEnd
 
-	return { node, startIndex, endIndex }
+		if (nodeEnd <= start) continue
+		if (nodeStart >= end) break
+
+		const startIndex = Math.max(start - nodeStart, 0)
+		const endIndex = Math.min(end - nodeStart, node.nodeValue.length)
+		if (endIndex > startIndex) segments.push({ node, startIndex, endIndex })
+	}
+
+	return segments
+}
+
+// Resolve the stored offset, but only trust it when the text it points at is
+// still the highlighted text — the lesson may have been edited since.
+const findSegmentsAtOffset = (root, offset, phrase) => {
+	if (typeof offset !== 'number' || offset < 0) return null
+
+	const segments = collectTextSegments(root, offset, offset + phrase.length)
+	if (!segments.length) return null
+
+	const text = segments
+		.map((s) => s.node.nodeValue.slice(s.startIndex, s.endIndex))
+		.join('')
+	return text === phrase ? segments : null
+}
+
+const getRootText = (root) => {
+	const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+	let text = ''
+	let node
+	while ((node = walker.nextNode())) text += node.nodeValue
+	return text
+}
+
+/*
+ * Search fallback, used for notes saved before the offset existed and when the
+ * offset no longer points at the highlighted text (the lesson was edited). An
+ * offset that is merely stale is still a good hint, so pick the occurrence
+ * closest to it instead of blindly taking the first one.
+ */
+const findSegmentsByText = (root, phrase, offset) => {
+	const text = getRootText(root).toLowerCase()
+	const needle = phrase.toLowerCase()
+	const matches = []
+
+	let index = text.indexOf(needle)
+	while (index !== -1) {
+		matches.push(index)
+		index = text.indexOf(needle, index + 1)
+	}
+	if (!matches.length) return null
+
+	const start =
+		typeof offset === 'number'
+			? matches.reduce((best, i) =>
+					Math.abs(i - offset) < Math.abs(best - offset) ? i : best,
+				)
+			: matches[0]
+
+	const segments = collectTextSegments(root, start, start + phrase.length)
+	return segments.length ? segments : null
 }
 
 const createHighlightSpan = (color, name, scrollIntoView) => {
@@ -1257,18 +1352,26 @@ const createHighlightSpan = (color, name, scrollIntoView) => {
 	return span
 }
 
-const wrapRangeInHighlight = (
-	{ node, startIndex, endIndex },
-	color,
-	name,
-	scrollIntoView,
-) => {
-	const range = document.createRange()
-	range.setStart(node, startIndex)
-	range.setEnd(node, endIndex)
+// One span per segment: surroundContents() throws when a range crosses element
+// boundaries, so a multi-node selection is wrapped piece by piece. Wrapping a
+// segment splits its own text node only, leaving the other segments intact.
+const wrapSegmentsInHighlight = (segments, color, name, scrollIntoView) => {
+	return segments.map(({ node, startIndex, endIndex }) => {
+		const range = document.createRange()
+		range.setStart(node, startIndex)
+		range.setEnd(node, endIndex)
 
-	const span = createHighlightSpan(color, name, scrollIntoView)
-	range.surroundContents(span)
+		const span = createHighlightSpan(color, name, scrollIntoView)
+		range.surroundContents(span)
+		return span
+	})
+}
+
+const findHighlightSpans = (name) => {
+	if (!name) return []
+	return Array.from(document.querySelectorAll('.highlighted-text')).filter(
+		(el) => el.dataset.name === name,
+	)
 }
 
 export const highlightText = (note, scrollIntoView = false) => {
@@ -1277,31 +1380,48 @@ export const highlightText = (note, scrollIntoView = false) => {
 	const root = getRootNode()
 	if (!root) return
 
+	// The note list is reloaded after every change and re-highlights everything;
+	// without this a second span would be nested inside the existing one.
+	if (findHighlightSpans(note.name).length) return
+
 	const phrase = note.highlighted_text
 	const color = note.color.toLowerCase()
 
-	const walker = createTextWalker(root, phrase)
-	const match = findMatchingTextNode(walker, phrase)
-	if (!match) return
+	const segments =
+		findSegmentsAtOffset(root, note.text_offset, phrase) ||
+		findSegmentsByText(root, phrase, note.text_offset)
+	if (!segments?.length) return
 
-	wrapRangeInHighlight(match, color, note.name, scrollIntoView)
+	const spans = wrapSegmentsInHighlight(
+		segments,
+		color,
+		note.name,
+		scrollIntoView,
+	)
 
 	if (scrollIntoView) {
-		match.node.parentElement.scrollIntoView({
+		spans[0].scrollIntoView({
 			behavior: 'smooth',
 			block: 'center',
 		})
 		setTimeout(() => {
-			const highlightedElements =
-				document.querySelectorAll('.highlighted-text')
-			highlightedElements.forEach((el) => {
-				if (el.dataset.name === note.name) {
-					el.style.border = 'none'
-					el.style.borderRadius = '0px'
-				}
+			spans.forEach((span) => {
+				span.style.border = 'none'
+				span.style.borderRadius = '0px'
 			})
 		}, 3000)
 	}
+}
+
+// Unwrap instead of just clearing the background: a leftover span would make
+// the same text impossible to highlight again without nesting.
+export const removeHighlight = (name) => {
+	findHighlightSpans(name).forEach((span) => {
+		const parent = span.parentNode
+		while (span.firstChild) parent.insertBefore(span.firstChild, span)
+		parent.removeChild(span)
+		parent.normalize()
+	})
 }
 
 export const scrollToReference = (text) => {

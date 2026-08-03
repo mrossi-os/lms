@@ -55,7 +55,13 @@
 <script setup lang="ts">
 import { computed, inject, ref, watch } from 'vue'
 import type { Note, Notes } from '@/components/Notes/types'
-import { blockQuotesClick, getColor, highlightText } from '@/utils'
+import {
+	blockQuotesClick,
+	getColor,
+	getRangeOffset,
+	highlightText,
+	removeHighlight,
+} from '@/utils'
 
 const user = inject<any>('$user')
 const show = defineModel()
@@ -64,6 +70,7 @@ const top = ref(0)
 const left = ref(0)
 const currentSelection = ref<Selection | null>(null)
 const selectedText = ref('')
+const selectionOffset = ref<number | null>(null)
 const emit = defineEmits<{
 	(e: 'updateNotes'): void
 }>()
@@ -86,9 +93,17 @@ watch(show, () => {
 })
 
 const updateMenuPosition = () => {
-	selectedText.value = currentSelection.value?.toString() || ''
-	const range = currentSelection.value?.getRangeAt(0)
-	const rect = range?.getBoundingClientRect()
+	const range = currentSelection.value?.rangeCount
+		? currentSelection.value.getRangeAt(0)
+		: null
+	if (!range) return
+
+	// Range.toString() rather than Selection.toString(): the latter can insert
+	// newlines at block boundaries, which would desync the text from the offset.
+	selectedText.value = range.toString()
+	selectionOffset.value = getRangeOffset(range)
+
+	const rect = range.getBoundingClientRect()
 	if (!rect) return
 
 	const offsetY = window.scrollY
@@ -107,26 +122,37 @@ const colors = computed(() => {
 	return ['Red', 'Blue', 'Green', 'Yellow', 'Purple']
 })
 
+// Match on the offset too, otherwise a second highlight of the same word would
+// resolve to the first note and delete the wrong one. Notes saved before the
+// offset existed carry 0 and can only be matched on their text.
+const noteForSelection = () => {
+	return notes.value?.data?.find((note: Note) => {
+		if (note.highlighted_text !== selectedText.value) return false
+		if (selectionOffset.value === null || !note.text_offset) return true
+		return note.text_offset === selectionOffset.value
+	})
+}
+
 const highlightExists = () => {
-	return notes.value?.data?.some(
-		(note: Note) => note.highlighted_text === selectedText.value
-	)
+	return Boolean(noteForSelection())
 }
 
 const saveHighLight = (color: string) => {
 	if (!selectedText.value) return
 
+	const offset = selectionOffset.value
 	notes.value?.insert.submit(
 		{
 			lesson: props.lesson,
 			member: user?.data?.name,
 			highlighted_text: selectedText.value,
+			text_offset: offset ?? 0,
 			color: color,
 			name: '',
 		},
 		{
 			onSuccess(data: Note) {
-				highlightText(data)
+				highlightText({ ...data, text_offset: offset ?? 0 })
 				resetStates()
 				emit('updateNotes')
 			},
@@ -139,19 +165,12 @@ const saveHighLight = (color: string) => {
 }
 
 const deleteHighlight = () => {
-	let notesToDelete = notes.value?.data.find(
-		(note: Note) => note.highlighted_text === selectedText.value
-	)
+	const notesToDelete = noteForSelection()
 	if (!notesToDelete) return
 	notes.value?.delete.submit(notesToDelete.name, {
 		onSuccess() {
 			resetStates()
-			document.querySelectorAll('.highlighted-text').forEach((el) => {
-				const element = el as HTMLElement
-				if (element.dataset.name === notesToDelete.name) {
-					element.style.backgroundColor = 'transparent'
-				}
-			})
+			removeHighlight(notesToDelete.name)
 		},
 		onError(err: any) {
 			console.error('Error deleting highlight:', err)
@@ -233,6 +252,7 @@ const scrollToText = (text: string) => {
 
 const resetStates = () => {
 	selectedText.value = ''
+	selectionOffset.value = null
 	show.value = false
 	resetMenuPosition()
 }

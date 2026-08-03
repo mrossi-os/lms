@@ -41,7 +41,7 @@
 							<div class="mb-4">
 								<Button @click="openFileSelector" :loading="uploading">
 									{{
-										uploading ? `Uploading ${progress}%` : 'Upload an ZIP file'
+										uploading ? `Uploading ${progress}%` : __('Upload an ZIP file')
 									}}
 								</Button>
 							</div>

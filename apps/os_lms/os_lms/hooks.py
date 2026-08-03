@@ -16,7 +16,11 @@ base_template = "templates/base.html"
 # Vue SPA wrapper) the link is appended at the end of <head> directly in
 # templates/base.html, so it remains the last stylesheet and overrides
 # defaults from frontend/src/styles/theme/elite/variables.css.
-app_include_css = ["/api/method/os_lms.os_lms.branding.brand_css"]
+# desk.css comes last so its rules override the Brand Customize variables.
+app_include_css = [
+    "/api/method/os_lms.os_lms.branding.brand_css",
+    "/assets/os_lms/css/desk.css",
+]
 
 
 # activate debug if needed
@@ -28,6 +32,7 @@ after_migrate = [
     "os_lms.setup.remove_deprecated_custom_fields",
     "os_lms.setup.create_custom_fields",
     "os_lms.setup.setup_valutatore_role_and_permissions",
+    "os_lms.setup.setup_gestore_role_permissions",
     "os_lms.setup.create_redis_index",
     "os_lms.setup.rebuild_search_index",
     # Migration must run BEFORE seed_prompt_templates so operator-customised
@@ -101,11 +106,13 @@ override_whitelisted_methods = {
     "lms.lms.api.get_notifications": "os_lms.os_lms.override_api.get_notifications",
     "lms.lms.api.get_user_info": "os_lms.os_lms.override_api.get_user_info",
     "lms.lms.api.get_all_users": "os_lms.os_lms.override_api.get_all_users",
+    "lms.lms.api.get_members": "os_lms.os_lms.override_api.get_members",
     "lms.lms.api.save_role": "os_lms.os_lms.override_api.save_role",
 
     "lms.lms.utils.get_course_details": "os_lms.os_lms.override_utils.get_course_details",
     "lms.lms.utils.get_course_outline": "os_lms.os_lms.override_utils.get_course_outline",
     "lms.lms.utils.get_courses": "os_lms.os_lms.override_utils.get_courses",
+    "lms.lms.utils.get_course_categories": "os_lms.os_lms.override_utils.get_course_categories",
     "lms.lms.utils.get_batches": "os_lms.os_lms.override_utils.get_batches",
     "lms.lms.utils.get_lesson_creation_details": "os_lms.os_lms.override_utils.get_lesson_creation_details",
     "lms.lms.utils.get_lesson": "os_lms.os_lms.override_utils.get_lesson",
@@ -114,6 +121,9 @@ override_whitelisted_methods = {
 
     
     "lms.command_palette.search_sqlite": "os_lms.os_lms.override_api.search_sqlite",
+    # Hand out a template matching the columns our import expanders expect; the
+    # stock one lists the doctype fields and would skip user creation.
+    "frappe.core.doctype.data_import.data_import.download_template": "os_lms.data_import.template.download_template",
     # Redirect the Google Calendar OAuth callback to the LMS SPA instead of the desk.
     "frappe.integrations.doctype.google_calendar.google_calendar.google_callback": "os_lms.os_lms.google_calendar.google_callback",
 }
@@ -148,6 +158,7 @@ fixtures = [
                     "LMS Course",
                     "LMS Batch",
                     "LMS Live Class",
+                    "LMS Lesson Note",
                     "User",
                     "Email Template",
                 ],
@@ -174,9 +185,10 @@ doc_events = {
         "before_save": "os_lms.os_lms.live_class_reminders.reset_sent_at",
     },
     "LMS Batch": {
-        # Keep the "Valutatore" role aligned with the batch `valutatori` field.
+        # Grant the "Valutatore" role to the users listed in the batch
+        # `valutatori` field. Grant-only: the role is never revoked automatically
+        # (see os_lms.os_lms.valutatore.sync_batch_valutatore_roles).
         "on_update": "os_lms.os_lms.valutatore.sync_batch_valutatore_roles",
-        "on_trash": "os_lms.os_lms.valutatore.cleanup_batch_valutatore_roles",
     },
     "Brand Customize": {
         "on_update": "os_lms.os_lms.branding.clear_brand_cache",
@@ -190,6 +202,11 @@ doc_events = {
     "Notification Log": {
         # Mirror each in-app notification to the user's mobile devices via FCM.
         "after_insert": "os_lms.os_lms.push_notifications.on_notification_log_insert",
+    },
+    "Activity Log": {
+        # Accumulate per-user access stats (LMSA User Access) from login events.
+        # Captures successes and failures alike, independently of log retention.
+        "after_insert": "os_lms.os_lms.access_tracking.on_activity_log_insert",
     },
 }
 
@@ -207,6 +224,9 @@ scheduler_events = {
     "cron": {
         "*/15 * * * *": [
             "os_lms.os_lms.live_class_reminders.send_live_class_reminders",
+        ],
+        "*/10 * * * *": [
+            "os_lms.os_lms.ai.simulations.tasks.reap_stale_sessions",
         ],
     },
 }

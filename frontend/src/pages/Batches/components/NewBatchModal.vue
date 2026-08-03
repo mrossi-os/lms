@@ -14,6 +14,7 @@
 						v-model="batch.start_date"
 						:label="__('Start Date')"
 						type="date"
+						:placeholder="__('Select date')"
 						:required="true"
 						variant="outline"
 					/>
@@ -21,6 +22,7 @@
 						v-model="batch.end_date"
 						:label="__('End Date')"
 						type="date"
+						:placeholder="__('Select date')"
 						:required="true"
 						variant="outline"
 					/>
@@ -32,6 +34,7 @@
 						<FormControl
 							v-model="batch.start_time"
 							type="time"
+							:placeholder="__('Select time')"
 							variant="outline"
 						/>
 					</div>
@@ -40,6 +43,7 @@
 						<FormControl
 							v-model="batch.end_time"
 							type="time"
+							:placeholder="__('Select time')"
 							variant="outline"
 						/>
 					</div>

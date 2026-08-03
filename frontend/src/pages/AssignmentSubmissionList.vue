@@ -5,7 +5,7 @@
 		<Breadcrumbs :items="breadcrumbs" />
 	</header>
 	<div class="md:w-3/4 md:mx-auto py-5 mx-5">
-		<div class="grid grid-cols-3 gap-5 mb-5">
+		<div class="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-5 mb-5">
 			<Link
 				doctype="LMS Assignment"
 				v-model="assignmentID"

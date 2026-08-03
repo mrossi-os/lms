@@ -45,7 +45,7 @@
 								</div>
 								<div v-else-if="isNaN(row[column.key])">
 									<Badge :theme="getStatusTheme(row[column.key])">
-										{{ row[column.key] }}
+										{{ __(row[column.key]) }}
 									</Badge>
 								</div>
 								<div v-else>

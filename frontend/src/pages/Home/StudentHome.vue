@@ -44,7 +44,7 @@
 					</span>
 				</router-link>
 			</div>
-			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" :class="courseGridClass">
+			<div class="grid gap-5" :class="courseGridClass">
 				<router-link
 					v-for="course in myCourses.data"
 					:to="{ name: 'CourseDetail', params: { courseName: course.name } }"
@@ -61,12 +61,12 @@
 				</span>
 				<router-link :to="{ name: 'Courses' }">
 					<span
-						class="flex items-center space-x-1 text-ink-gray-5 text-xs card p-1.5"
+						class="flex items-center gap-x-1 text-ink-gray-5 text-xs"
 					>
 						<span>
 							{{ __('See all') }}
 						</span>
-						<MoveRight class="size-3 stroke-1.5" />
+						<MoveRight class="size-3 stroke-1.5 rtl:rotate-180" />
 					</span>
 				</router-link>
 			</div>
@@ -87,12 +87,12 @@
 				</span>
 				<router-link :to="{ name: 'Courses' }">
 					<span
-						class="flex items-center space-x-1 text-ink-gray-5 text-xs card p-1.5"
+						class="flex items-center gap-x-1 text-ink-gray-5 text-xs"
 					>
 						<span>
 							{{ __('See all') }}
 						</span>
-						<MoveRight class="size-3 stroke-1.5" />
+						<MoveRight class="size-3 stroke-1.5 rtl:rotate-180" />
 					</span>
 				</router-link>
 			</div>

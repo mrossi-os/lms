@@ -80,6 +80,9 @@ import { buildOslmsSettingsTabs } from '@/oslms/utils/settings'
 
 const GOOGLE_CALENDAR_ROLES = ['System Manager', 'Gestore']
 const ADMIN_ONLY_ROLES = ['System Manager', 'Administrator']
+// Roles allowed on the os_lms integration tabs (TrueSkills API, Prompt AI):
+// administrators plus the "Gestore" manager bundle.
+const OS_INTEGRATION_ROLES = ['Gestore']
 
 const user = inject('$user')
 
@@ -92,6 +95,12 @@ const isAdministrator = () => {
 	if (user?.data?.name === 'Administrator') return true
 	const roles = user?.data?.roles || []
 	return ADMIN_ONLY_ROLES.some((role) => roles.includes(role))
+}
+
+const canManageOsIntegrations = () => {
+	if (isAdministrator()) return true
+	const roles = user?.data?.roles || []
+	return OS_INTEGRATION_ROLES.some((role) => roles.includes(role))
 }
 
 const show = defineModel()
@@ -176,8 +185,9 @@ const tabsStructure = computed(() => {
 											name: 'send_notification_for_published_courses',
 											type: 'select',
 											options: [' ', 'Email', 'In-app'],
-											description:
+											description: __(
 												'Notify members when a new course is published.',
+											),
 										},
 									],
 								},
@@ -188,8 +198,9 @@ const tabsStructure = computed(() => {
 											name: 'send_notification_for_published_batches',
 											type: 'select',
 											options: [' ', 'Email', 'In-app'],
-											description:
+											description: __(
 												'Notify members when a new batch is published.',
+											),
 										},
 									],
 								},
@@ -205,8 +216,9 @@ const tabsStructure = computed(() => {
 											name: 'batch_confirmation_template',
 											doctype: 'Email Template',
 											type: 'Link',
-											description:
+											description: __(
 												'Email template sent to students upon batch enrollment confirmation.',
+											),
 										},
 									],
 								},
@@ -217,8 +229,9 @@ const tabsStructure = computed(() => {
 											name: 'certification_template',
 											doctype: 'Email Template',
 											type: 'Link',
-											description:
+											description: __(
 												'Email template sent to students when they earn a certification.',
+											),
 										},
 									],
 								},
@@ -765,7 +778,7 @@ const tabsStructure = computed(() => {
 				},
 			],
 		},
-		...buildOslmsSettingsTabs({ isAdministrator }),
+		...buildOslmsSettingsTabs({ isAdministrator, canManageOsIntegrations }),
 	]
 })
 

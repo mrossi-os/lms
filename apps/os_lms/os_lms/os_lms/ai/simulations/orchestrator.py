@@ -358,13 +358,38 @@ class SessionOrchestrator:
 			injection_attempt=bool(attack),
 		)
 
+	def _resolve_end_status(self, session, reason: str) -> str:
+		"""Terminal status for an ending session.
+
+		``reason="completed"`` (the student pressed "Termina") always completes.
+		Any other close — the student navigated away / closed the tab, or the
+		scheduled reaper swept a stale session — completes ONLY when the chat
+		time cap was actually reached during the conversation (the closing reply
+		was delivered); otherwise it is an Abandonment. Voice sessions are never
+		completed this way: their completion runs through the realtime
+		max-duration path with reason="completed".
+		"""
+		if reason == "completed":
+			return STATUS_COMPLETED
+		if session.modality == "chat":
+			limit = scenario_time_limit(session.scenario)
+			if limit and closing_input_locked(session, limit):
+				return STATUS_COMPLETED
+		return STATUS_ABANDONED
+
 	def end_session(self, *, session_id: str, reason: str = "completed") -> frappe._dict:
-		"""Mark the session as completed/abandoned and submit it (immutability)."""
+		"""End the session and submit it (immutability).
+
+		The final status is decided server-side (see ``_resolve_end_status``):
+		"Termina" and a reached time cap yield Completed; leaving early yields
+		Abandoned. The debrief is generated ONLY for Completed sessions —
+		Abandoned sessions produce nothing.
+		"""
 		session = frappe.get_doc("LMSA Simulation Session", session_id)
 		if session.status in TERMINAL_STATUSES:
 			return frappe._dict(session=session.name, status=session.status, already_terminal=True)
 
-		status = STATUS_COMPLETED if reason == "completed" else STATUS_ABANDONED
+		status = self._resolve_end_status(session, reason)
 		session.status = status
 		session.ended_at = frappe.utils.now_datetime()
 		session.save()
@@ -374,21 +399,27 @@ class SessionOrchestrator:
 		frappe.db.commit()
 
 		self.logger.info(
-			"simulation end: session=%s status=%s turns=%s", session.name, status, session.turn_count
+			"simulation end: session=%s status=%s reason=%s turns=%s",
+			session.name,
+			status,
+			reason,
+			session.turn_count,
 		)
 
-		# Enqueue the debrief job. Best-effort: if the queue is unavailable
-		# we still return success — the polling endpoint will report Pending.
-		try:
-			frappe.enqueue(
-				"os_lms.os_lms.ai.simulations.tasks.generate_debrief",
-				queue="long",
-				timeout=300,
-				session_id=session.name,
-				enqueue_after_commit=True,
-			)
-		except Exception as e:
-			self.logger.warning("failed to enqueue debrief: %s", e)
+		# Debrief is generated only for Completed sessions. Best-effort enqueue:
+		# if the queue is unavailable we still return success — the polling
+		# endpoint reports Pending.
+		if status == STATUS_COMPLETED:
+			try:
+				frappe.enqueue(
+					"os_lms.os_lms.ai.simulations.tasks.generate_debrief",
+					queue="long",
+					timeout=300,
+					session_id=session.name,
+					enqueue_after_commit=True,
+				)
+			except Exception as e:
+				self.logger.warning("failed to enqueue debrief: %s", e)
 
 		return frappe._dict(session=session.name, status=status)
 

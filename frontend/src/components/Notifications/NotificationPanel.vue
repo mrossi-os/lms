@@ -109,10 +109,23 @@ const { isMobile } = useScreenSize()
 const panelRef = ref(null)
 const activeTab = ref('Unread')
 // `value` keeps the logical key stable (the filter/empty-state code compares
-// against 'Unread'/'Read') while `label` is translated for display.
+// against 'Unread'/'Read') while `label` is translated for display. `label` is a
+// getter so __() re-runs at render time: this array is built at setup, which on a
+// full page reload happens before the async translations load, and a baked
+// __('Unread') would freeze to English (TabButtons renders label raw).
 const tabs = [
-	{ label: __('Unread'), value: 'Unread' },
-	{ label: __('Read'), value: 'Read' },
+	{
+		get label() {
+			return __('Unread')
+		},
+		value: 'Unread',
+	},
+	{
+		get label() {
+			return __('Read')
+		},
+		value: 'Read',
+	},
 ]
 
 onClickOutside(panelRef, () => closeNotifications(), {

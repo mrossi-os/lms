@@ -64,7 +64,7 @@
 			<div
 				v-else
 				ref="lessonContainer"
-				class="bg-surface-base"
+				class="bg-surface-base min-w-0"
 				:class="{
 					'overflow-y-auto': zenModeEnabled,
 				}"
@@ -79,8 +79,8 @@
 						<div
 							class="flex flex-col space-y-3 md:space-y-0 md:flex-row md:items-center justify-between"
 						>
-							<div class="flex flex-col">
-								<div class="text-5xl-semibold text-ink-gray-9">
+							<div class="flex flex-col min-w-0">
+								<div class="text-5xl-semibold text-ink-gray-9 break-words">
 									{{ lesson.data.title }}
 								</div>
 
@@ -159,11 +159,6 @@
 								v-if="zenModeEnabled"
 								class="flex items-center gap-x-2 mt-2 md:mt-0"
 							>
-								<Button @click="showDiscussionsInZenMode()">
-									<template #icon>
-										<span class="lucide-message-circle-question size-4" />
-									</template>
-								</Button>
 								<Button v-if="lesson.data.prev" @click="switchLesson('prev')">
 									<template #prefix>
 										<span class="lucide-chevron-left size-4" />
@@ -196,7 +191,12 @@
 							</div>
 						</div>
 
-						<div v-if="!zenModeEnabled" class="flex items-center mt-4 md:mt-2">
+						<!-- Hide the course instructors from students; only
+						moderators/course instructors see them. -->
+						<div
+							v-if="!zenModeEnabled && isAdmin"
+							class="flex items-center mt-4 md:mt-2"
+						>
 							<span
 								class="h-6 me-1"
 								:class="{
@@ -257,37 +257,18 @@
 						</div>
 					</div>
 					<div
-						v-if="lesson.data && (allowDiscussions || tabs.length > 1)"
+						v-if="lesson.data && allowDiscussions && currentTab === 'Notes'"
 						class="mt-10 pb-20 pt-5 border-t px-5"
-						ref="discussionsContainer"
 					>
-						<TabButtons
-							v-if="tabs.length > 1"
-							:buttons="tabs"
-							v-model="currentTab"
-							class="w-fit mb-10"
-						/>
 						<Notes
-							v-if="currentTab === 'Notes'"
 							:lesson="lesson.data?.name"
 							v-model:notes="notes"
 							@updateNotes="updateNotes"
 						/>
-						<Discussions
-							v-else-if="allowDiscussions"
-							:title="'Questions'"
-							:newLabel="__('Ask a question')"
-							:doctype="'Course Lesson'"
-							:docname="lesson.data.name"
-							:key="lesson.data.name"
-							:emptyStateText="
-								__('Ask a question to get help from the community.')
-							"
-						/>
 					</div>
 				</div>
 			</div>
-			<div v-if="!embedded" class="sticky top-10 h-[94vh]">
+			<div v-if="!embedded" class="sticky top-10 h-[94vh] min-w-0">
 				<StudentLessonSidebar
 					:courseName="courseName"
 					:courseTitle="lesson.data.course_title"
@@ -321,7 +302,6 @@ import {
 	call,
 	createListResource,
 	createResource,
-	TabButtons,
 	Tooltip,
 	usePageMeta,
 	toast,
@@ -357,7 +337,6 @@ import EditorJS from '@editorjs/editorjs'
 import LessonContent from '@/components/LessonContent.vue'
 import CourseInstructors from '@/components/CourseInstructors.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
-import Discussions from '@/components/Discussions.vue'
 import CertificationLinks from '@/components/CertificationLinks.vue'
 import VideoStatistics from '@/components/Modals/VideoStatistics.vue'
 import { hasVideoContent } from '@/utils/video'
@@ -380,7 +359,6 @@ const lessonContainer = ref(null)
 const zenModeEnabled = ref(false)
 const showStatsDialog = ref(false)
 const hasQuiz = ref(false)
-const discussionsContainer = ref(null)
 const timer = ref(0)
 const { brand } = sessionStore()
 const sidebarStore = useSidebar()
@@ -604,7 +582,7 @@ const notes = createListResource({
 		lesson: lesson.data?.name,
 		member: user.data?.name,
 	},
-	fields: ['name', 'color', 'highlighted_text', 'note'],
+	fields: ['name', 'color', 'highlighted_text', 'text_offset', 'note'],
 	cache: ['notes', lesson.data?.name, user.data?.name],
 	onSuccess(data) {
 		data.forEach((note) => {
@@ -1013,7 +991,17 @@ const showVideoStats = () => {
 	showStatsDialog.value = true
 }
 
+// Zen mode is driven by the browser Fullscreen API, which iPhone does not
+// expose for non-video elements (every iOS browser runs on WebKit). Feature-
+// detect it so the Zen affordance is hidden where it can't work — a dead button
+// is worse than no button. This gates the header, the in-lesson controls and
+// the CourseEditor preview, since they all read canGoZen().
+const fullscreenSupported = Boolean(
+	document.fullscreenEnabled || document.webkitFullscreenEnabled,
+)
+
 const canGoZen = () => {
+	if (!fullscreenSupported) return false
 	if (
 		user.data?.is_moderator ||
 		user.data?.is_instructor ||
@@ -1036,26 +1024,6 @@ const goFullScreen = () => {
 	}
 }
 
-const showDiscussionsInZenMode = () => {
-	if (allowDiscussions.value) {
-		allowDiscussions.value = false
-	} else {
-		allowDiscussions.value = true
-		currentTab.value = 'Community'
-		scrollDiscussionsIntoView()
-	}
-}
-
-const scrollDiscussionsIntoView = () => {
-	nextTick(() => {
-		discussionsContainer.value?.scrollIntoView({
-			behavior: 'smooth',
-			block: 'center',
-			inline: 'nearest',
-		})
-	})
-}
-
 const updateNotes = () => {
 	if (!user.data) return
 	notes.update({
@@ -1068,25 +1036,19 @@ const updateNotes = () => {
 }
 
 watch(allowDiscussions, () => {
-	if (!isAdmin.value) {
-		if (!tabs.value.find((tab) => tab.value === 'Notes')) {
-			tabs.value.push({
-				label: __('Notes'),
-				value: 'Notes',
-			})
-		}
-		currentTab.value = 'Notes'
-	} else {
-		currentTab.value = allowDiscussions.value ? 'Community' : null
+	// Community/discussions are hidden for all users and roles; only the
+	// students' Notes tab remains in the lesson view.
+	if (isAdmin.value) {
+		currentTab.value = null
+		return
 	}
-	if (allowDiscussions.value) {
-		if (!tabs.value.find((tab) => tab.value === 'Community')) {
-			tabs.value.push({
-				label: __('Community'),
-				value: 'Community',
-			})
-		}
+	if (!tabs.value.find((tab) => tab.value === 'Notes')) {
+		tabs.value.push({
+			label: __('Notes'),
+			value: 'Notes',
+		})
 	}
+	currentTab.value = 'Notes'
 })
 
 const redirectToLogin = () => {
@@ -1161,6 +1123,18 @@ usePageMeta(() => {
 
 .ce-block__content {
 	max-width: unset;
+}
+
+/* Long unbreakable strings (URLs, long single words) in lesson text must wrap
+   instead of overflowing the column and shoving the whole page sideways — the
+   cause of a lesson looking "shifted right" in courses whose content holds such
+   a token (e.g. a bare Cloudflare/Bunny video URL pasted as text). Scoped to
+   .ProseMirror so it covers BOTH content types: EditorJS (#editor lives inside
+   .ProseMirror) and the markdown body (LessonContent). The explicit
+   .ce-paragraph selector out-specifies any EditorJS default on that element. */
+.ProseMirror,
+.ProseMirror .ce-paragraph {
+	overflow-wrap: break-word;
 }
 
 .codex-editor__redactor {

@@ -1,6 +1,7 @@
 import QuizBlock from '@/components/QuizBlock.vue'
 import AssessmentPlugin from '@/components/AssessmentPlugin.vue'
 import { createApp, h } from 'vue'
+import { call } from 'frappe-ui'
 import { usersStore } from '../stores/user'
 import translationPlugin from '../translation'
 import { CircleHelp } from 'lucide-vue-next'
@@ -60,12 +61,32 @@ export class Quiz {
 			this.quizApp.mount(this.wrapper)
 			return
 		}
-		this.wrapper.innerHTML = `<div class='border rounded-md p-4 text-center bg-surface-sidebar mb-4'>
-            <span class="font-medium">
-                ${__('Quiz')}: ${quiz}
-            </span>
-        </div>`
+		// `quiz` is the link value (e.g. "untitled-quiz-5"), which says nothing to
+		// the author — show the docname only until the title comes back.
+		this.renderQuizPlaceholder(quiz)
+		call('frappe.client.get_value', {
+			doctype: 'LMS Quiz',
+			filters: {
+				name: quiz,
+			},
+			fieldname: ['title'],
+		}).then((data) => {
+			this.renderQuizPlaceholder(data?.title || quiz)
+		})
 		return
+	}
+
+	// Built up with textContent instead of an innerHTML template so a quiz title
+	// can't inject markup into the lesson editor.
+	renderQuizPlaceholder(label) {
+		const box = document.createElement('div')
+		box.className =
+			'border rounded-md p-4 text-center bg-surface-sidebar mb-4'
+		const text = document.createElement('span')
+		text.className = 'font-medium'
+		text.textContent = `${__('Quiz')}: ${label}`
+		box.appendChild(text)
+		this.wrapper.replaceChildren(box)
 	}
 
 	// Tear down the inline quiz app when EditorJS removes the block so the mount

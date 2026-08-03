@@ -1,6 +1,6 @@
 <template>
 	<div
-		class="flex flex-col border rounded-md h-full text-ink-gray-7 hover:border-outline-gray-3 p-3 card"
+		class="relative flex flex-col border rounded-md h-full text-ink-gray-7 hover:border-outline-gray-3 p-3 card"
 		:class="{ 'cursor-pointer': clickable }"
 		@click="$emit('card-click', cls)"
 	>
@@ -123,7 +123,16 @@ const props = defineProps({
 const emit = defineEmits(['card-click', 'started'])
 
 const getClassStart = (cls) => {
-	return new Date(`${cls.date}T${cls.time}`)
+	// A Frappe Time field is serialised as `str(timedelta)`, which drops the
+	// leading zero on hours < 10 (e.g. midnight -> "0:00:00", 9am -> "9:00:00").
+	// `new Date("...T9:00:00")` rejects that as an Invalid Date, which surfaces
+	// as "Invalid date" in the card and breaks the join-window logic. Normalise
+	// each component to two digits before building the Date.
+	const time = String(cls.time || '00:00:00')
+		.split(':')
+		.map((part) => part.padStart(2, '0'))
+		.join(':')
+	return new Date(`${cls.date}T${time}`)
 }
 
 const getClassEnd = (cls) => {

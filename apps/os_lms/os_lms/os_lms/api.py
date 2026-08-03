@@ -462,6 +462,1264 @@ def get_batch_certified_count(batch: str) -> dict:
 	}
 
 
+@frappe.whitelist()
+def get_batch_progress_stats(batch: str, course: str | None = None) -> dict:
+	"""Progress statistics for the admin batch dashboard, scoped to the batch's
+	own students.
+
+	Available to batch admins and to the batch's valutatori (scoped read).
+
+	Without ``course``: returns ``courses`` — one entry per batch course with the
+	average course progress across the batch's enrolled students (a missing
+	enrollment counts as 0, matching ``get_batch_certified_count``).
+
+	With ``course``: returns ``lessons`` — one entry per lesson with the number of
+	batch students who completed it (``completion_count``). ``students_count`` (the
+	enrolled batch students) is returned in both cases as the completion-rate
+	denominator.
+	"""
+	from pypika import functions as fn
+
+	from frappe.utils import flt
+
+	from lms.lms.utils import can_modify_batch, is_batch_valutatore
+
+	if not (can_modify_batch(batch) or is_batch_valutatore(batch)):
+		frappe.throw(
+			frappe._("You are not authorized to view this batch."),
+			frappe.PermissionError,
+		)
+
+	students_count = frappe.db.count("LMS Batch Enrollment", {"batch": batch})
+
+	if not course:
+		BatchCourse = frappe.qb.DocType("Batch Course")
+		BatchEnrollment = frappe.qb.DocType("LMS Batch Enrollment")
+		Enrollment = frappe.qb.DocType("LMS Enrollment")
+
+		# Cross every batch course with every batch student (left join on the batch),
+		# then bring in that student's enrollment progress for the course. Averaging
+		# Coalesce(progress, 0) per course yields the batch-scoped average.
+		rows = (
+			frappe.qb.from_(BatchCourse)
+			.left_join(BatchEnrollment)
+			.on(BatchEnrollment.batch == BatchCourse.parent)
+			.left_join(Enrollment)
+			.on((Enrollment.course == BatchCourse.course) & (Enrollment.member == BatchEnrollment.member))
+			.where(BatchCourse.parent == batch)
+			.groupby(BatchCourse.course)
+			.orderby(BatchCourse.idx)
+			.select(
+				BatchCourse.course,
+				BatchCourse.title,
+				fn.Avg(fn.Coalesce(Enrollment.progress, 0)).as_("avg_progress"),
+			)
+		).run(as_dict=True)
+
+		return {
+			"students_count": students_count,
+			"courses": [
+				{
+					"course": row.course,
+					"title": row.title,
+					"avg_progress": flt(row.avg_progress, 2),
+				}
+				for row in rows
+			],
+		}
+
+	# A specific course: per-lesson completion count restricted to batch students,
+	# so both numerator and denominator are relative to the class.
+	members = frappe.get_all("LMS Batch Enrollment", filters={"batch": batch}, pluck="member")
+	if not members:
+		return {"students_count": 0, "lessons": []}
+
+	CourseProgress = frappe.qb.DocType("LMS Course Progress")
+	LessonReference = frappe.qb.DocType("Lesson Reference")
+	ChapterReference = frappe.qb.DocType("Chapter Reference")
+	Lesson = frappe.qb.DocType("Course Lesson")
+
+	lessons = (
+		frappe.qb.from_(LessonReference)
+		.join(ChapterReference)
+		.on(LessonReference.parent == ChapterReference.chapter)
+		.join(Lesson)
+		.on(LessonReference.lesson == Lesson.name)
+		.left_join(CourseProgress)
+		.on(
+			(CourseProgress.lesson == LessonReference.lesson)
+			& (CourseProgress.course == course)
+			& (CourseProgress.status == "Complete")
+			& (CourseProgress.member.isin(members))
+		)
+		.select(
+			LessonReference.idx,
+			ChapterReference.idx.as_("chapter_idx"),
+			Lesson.title,
+			Lesson.name.as_("lesson_name"),
+			fn.Count(CourseProgress.name).as_("completion_count"),
+		)
+		.where(ChapterReference.parent == course)
+		.groupby(LessonReference.lesson)
+		.orderby(ChapterReference.idx, LessonReference.idx)
+		.run(as_dict=True)
+	)
+
+	return {"students_count": students_count, "lessons": lessons}
+
+
+@frappe.whitelist()
+def get_batch_student_course_progress(batch: str, course: str, member: str) -> dict:
+	"""Per-lesson progress of a single batch student in one course.
+
+	Powers the course drill-down in the admin batch dashboard's student dialog:
+	each lesson of ``course`` in order, flagged with whether ``member`` has
+	completed it.
+
+	Available to batch admins and to the batch's valutatori (scoped read). Going
+	through this batch-authorized endpoint lets valutatori — who cannot read
+	``LMS Course Progress`` directly — see the drill-down for their own students.
+	"""
+	from pypika import functions as fn
+
+	from lms.lms.utils import can_modify_batch, is_batch_valutatore
+
+	if not (can_modify_batch(batch) or is_batch_valutatore(batch)):
+		frappe.throw(
+			frappe._("You are not authorized to view this batch."),
+			frappe.PermissionError,
+		)
+
+	CourseProgress = frappe.qb.DocType("LMS Course Progress")
+	LessonReference = frappe.qb.DocType("Lesson Reference")
+	ChapterReference = frappe.qb.DocType("Chapter Reference")
+	Lesson = frappe.qb.DocType("Course Lesson")
+
+	# Left-join this member's "Complete" progress row onto every lesson of the
+	# course, so a missing row reads as not-completed. Count is 0 or 1 per lesson
+	# (a member completes a lesson at most once).
+	lessons = (
+		frappe.qb.from_(LessonReference)
+		.join(ChapterReference)
+		.on(LessonReference.parent == ChapterReference.chapter)
+		.join(Lesson)
+		.on(LessonReference.lesson == Lesson.name)
+		.left_join(CourseProgress)
+		.on(
+			(CourseProgress.lesson == LessonReference.lesson)
+			& (CourseProgress.course == course)
+			& (CourseProgress.status == "Complete")
+			& (CourseProgress.member == member)
+		)
+		.select(
+			LessonReference.idx,
+			ChapterReference.idx.as_("chapter_idx"),
+			Lesson.title,
+			Lesson.name.as_("lesson_name"),
+			fn.Count(CourseProgress.name).as_("completed"),
+		)
+		.where(ChapterReference.parent == course)
+		.groupby(LessonReference.lesson)
+		.orderby(ChapterReference.idx, LessonReference.idx)
+		.run(as_dict=True)
+	)
+
+	for lesson in lessons:
+		lesson["completed"] = bool(lesson["completed"])
+
+	return {"lessons": lessons}
+
+
+@frappe.whitelist()
+def export_batch_progress(batch: str, file_format: str = "xlsx"):
+	"""Download a report of the batch students' course progress. Labels are in Italian.
+
+	``file_format="xlsx"`` (default) — human-readable summary: one row per
+	(student, started course) with the started / not-started course counts and the
+	completed / not-completed lesson names. Students with no started course still
+	get a row so the roster stays complete.
+
+	``file_format="csv"`` — raw, un-aggregated dataset for downstream (e.g. AI)
+	analysis: one row per (student, course, lesson) with completion flags, covering
+	every batch course and lesson.
+
+	A course is "started" when the student has any progress row for it; a lesson
+	counts as completed when its status is ``Complete``.
+
+	Streams the file back via ``frappe.response`` (content-disposition), so the
+	frontend just opens the endpoint URL. Restricted to batch admins: a
+	"Valutatore" reads the batch dashboard but must not export it, which is why
+	the SPA hides the export button for them too.
+	"""
+	from lms.lms.utils import can_modify_batch
+
+	if not can_modify_batch(batch):
+		frappe.throw(
+			frappe._("You are not authorized to view this batch."),
+			frappe.PermissionError,
+		)
+
+	students = frappe.get_all(
+		"LMS Batch Enrollment",
+		filters={"batch": batch},
+		fields=["member", "member_name"],
+		order_by="member_name asc",
+	)
+
+	courses = frappe.get_all(
+		"Batch Course",
+		filters={"parent": batch, "parenttype": "LMS Batch"},
+		fields=["course", "title"],
+		order_by="idx asc",
+	)
+	course_ids = [c.course for c in courses]
+	course_title = {c.course: c.title for c in courses}
+
+	# Ordered lessons for every batch course in a single query.
+	lessons_by_course = {cid: [] for cid in course_ids}
+	if course_ids:
+		LessonReference = frappe.qb.DocType("Lesson Reference")
+		ChapterReference = frappe.qb.DocType("Chapter Reference")
+		Lesson = frappe.qb.DocType("Course Lesson")
+		lesson_rows = (
+			frappe.qb.from_(LessonReference)
+			.join(ChapterReference)
+			.on(LessonReference.parent == ChapterReference.chapter)
+			.join(Lesson)
+			.on(LessonReference.lesson == Lesson.name)
+			.select(
+				ChapterReference.parent.as_("course"),
+				ChapterReference.idx.as_("chapter_idx"),
+				LessonReference.idx.as_("lesson_idx"),
+				Lesson.name.as_("lesson"),
+				Lesson.title,
+			)
+			.where(ChapterReference.parent.isin(course_ids))
+			.orderby(ChapterReference.parent, ChapterReference.idx, LessonReference.idx)
+			.run(as_dict=True)
+		)
+		for row in lesson_rows:
+			lessons_by_course.setdefault(row.course, []).append(row)
+
+	# All progress rows for the batch's members and courses: presence marks the
+	# course as started; a "Complete" row marks the lesson as completed.
+	members = [s.member for s in students]
+	completed = {}  # (member, course) -> set(lesson)
+	started = {}  # member -> set(course)
+	if members and course_ids:
+		CourseProgress = frappe.qb.DocType("LMS Course Progress")
+		progress_rows = (
+			frappe.qb.from_(CourseProgress)
+			.select(
+				CourseProgress.member,
+				CourseProgress.course,
+				CourseProgress.lesson,
+				CourseProgress.status,
+			)
+			.where(CourseProgress.member.isin(members) & CourseProgress.course.isin(course_ids))
+			.run(as_dict=True)
+		)
+		for row in progress_rows:
+			started.setdefault(row.member, set()).add(row.course)
+			if row.status == "Complete":
+				completed.setdefault((row.member, row.course), set()).add(row.lesson)
+
+	batch_title = frappe.db.get_value("LMS Batch", batch, "title") or batch
+	safe_title = re.sub(r"[^\w\- ]", "_", batch_title).strip() or "batch"
+
+	if file_format == "csv":
+		# Raw, un-aggregated matrix for AI analysis: one row per
+		# (student, course, lesson), covering every batch course and lesson.
+		import csv
+		import io
+
+		buffer = io.StringIO()
+		writer = csv.writer(buffer)
+		writer.writerow(
+			["Studente", "Email", "Corso", "Corso avviato", "Capitolo", "Lezione n.", "Lezione", "Completata"]
+		)
+		for student in students:
+			student_started = started.get(student.member, set())
+			for cid in course_ids:
+				is_started = 1 if cid in student_started else 0
+				done = completed.get((student.member, cid), set())
+				for lesson in lessons_by_course.get(cid, []):
+					writer.writerow(
+						[
+							student.member_name or student.member,
+							student.member,
+							course_title.get(cid, cid),
+							is_started,
+							lesson.chapter_idx,
+							lesson.lesson_idx,
+							lesson.title,
+							1 if lesson.lesson in done else 0,
+						]
+					)
+
+		frappe.response["filename"] = f"{safe_title} - Dati grezzi.csv"
+		frappe.response["filecontent"] = buffer.getvalue().encode("utf-8")
+		frappe.response["type"] = "download"
+		frappe.response["content_type"] = "text/csv; charset=utf-8"
+		return
+
+	# Default: human-readable XLSX summary, one row per (student, started course).
+	from frappe.utils.xlsxutils import make_xlsx
+
+	data = [
+		[
+			"Studente",
+			"Email",
+			"Corsi avviati",
+			"Corsi non iniziati",
+			"Corso",
+			"Lezioni completate",
+			"Nomi lezioni completate",
+			"Lezioni non completate",
+			"Nomi lezioni non completate",
+		]
+	]
+
+	total_courses = len(course_ids)
+	for student in students:
+		student_started = started.get(student.member, set())
+		started_courses = [cid for cid in course_ids if cid in student_started]
+		started_count = len(started_courses)
+		not_started_count = total_courses - started_count
+
+		if not started_courses:
+			data.append(
+				[student.member_name or student.member, student.member, started_count, not_started_count, "", "", "", "", ""]
+			)
+			continue
+
+		for cid in started_courses:
+			lessons = lessons_by_course.get(cid, [])
+			done = completed.get((student.member, cid), set())
+			done_lessons = [lesson for lesson in lessons if lesson.lesson in done]
+			todo_lessons = [lesson for lesson in lessons if lesson.lesson not in done]
+			data.append(
+				[
+					student.member_name or student.member,
+					student.member,
+					started_count,
+					not_started_count,
+					course_title.get(cid, cid),
+					len(done_lessons),
+					"; ".join(lesson.title for lesson in done_lessons),
+					len(todo_lessons),
+					"; ".join(lesson.title for lesson in todo_lessons),
+				]
+			)
+
+	xlsx_file = make_xlsx(data, "Statistiche")
+
+	frappe.response["filename"] = f"{safe_title} - Statistiche.xlsx"
+	frappe.response["filecontent"] = xlsx_file.getvalue()
+	frappe.response["type"] = "download"
+	frappe.response["content_type"] = (
+		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	)
+
+
+# ---------------------------------------------------------------------------
+# Student statistics export
+#
+# A role-gated CSV/XLSX export of student statistics. The available report
+# types and their selectable columns are declared once in
+# STUDENT_STATS_REPORTS, so the SPA (get_student_stats_schema) and the export
+# builders can never diverge. Reuses the CSV/XLSX streaming mechanics of
+# export_batch_progress above.
+# ---------------------------------------------------------------------------
+
+STUDENT_STATS_REPORTS = {
+	"users": {
+		"label": "Utenti",
+		"columns": [
+			# User-level columns (one row per user by default).
+			{"key": "user_id", "label": "ID utente"},
+			{"key": "full_name", "label": "Nome e cognome"},
+			{"key": "email", "label": "Email"},
+			{"key": "role", "label": "Ruolo"},
+			{"key": "class", "label": "Classe"},
+			{"key": "registered_on", "label": "Data di registrazione"},
+			{"key": "status", "label": "Stato utente"},
+			{"key": "first_login", "label": "Data primo accesso"},
+			{"key": "last_login", "label": "Ultimo accesso"},
+			{"key": "total_logins", "label": "Numero accessi"},
+			{"key": "distinct_active_days", "label": "Giorni di attività"},
+			{"key": "failed_logins", "label": "Accessi falliti"},
+			# Course-level columns: selecting any switches to one row per
+			# (user, course). default=False so the report stays user-level.
+			{"key": "course_id", "label": "ID corso", "default": False},
+			{"key": "course_title", "label": "Titolo corso", "default": False},
+			{"key": "enrolled_on", "label": "Data di iscrizione", "default": False},
+			{"key": "progress", "label": "Completamento (%)", "default": False},
+			{"key": "started_on", "label": "Data di primo avvio", "default": False},
+			{"key": "last_activity_on", "label": "Ultima attivita", "default": False},
+			{"key": "completed_on", "label": "Data di completamento", "default": False},
+			# Lesson-level columns: selecting any switches to one row per
+			# (user, course, lesson). default=False.
+			{"key": "chapter", "label": "Capitolo", "default": False},
+			{"key": "content_id", "label": "ID contenuto", "default": False},
+			{"key": "content_title", "label": "Titolo contenuto", "default": False},
+			{"key": "content_type", "label": "Tipo contenuto", "default": False},
+			{"key": "content_status", "label": "Stato completamento contenuto", "default": False},
+			{"key": "content_completed_on", "label": "Data completamento contenuto", "default": False},
+		],
+		# Two separate date-range dimensions: user-side (last login, registration)
+		# and course-side (enrollment). Each renders a from/to pair.
+		"date_filters": [
+			{"key": "last_login", "from_label": "Ultimo accesso da", "to_label": "Ultimo accesso a"},
+			{"key": "registered", "from_label": "Registrazione da", "to_label": "Registrazione a"},
+			{"key": "enrolled", "from_label": "Iscrizione da", "to_label": "Iscrizione a"},
+		],
+	},
+	"quizzes": {
+		"label": "Quiz",
+		"columns": [
+			{"key": "user_id", "label": "ID utente"},
+			{"key": "full_name", "label": "Nome e cognome"},
+			{"key": "course_title", "label": "Titolo corso"},
+			{"key": "quiz_id", "label": "ID quiz"},
+			{"key": "quiz_title", "label": "Titolo quiz"},
+			{"key": "attempts", "label": "N. tentativi"},
+			{"key": "first_attempt_on", "label": "Primo tentativo"},
+			{"key": "last_attempt_on", "label": "Ultimo tentativo"},
+			{"key": "last_score", "label": "Punteggio ultimo tentativo (%)"},
+			{"key": "best_score", "label": "Punteggio migliore (%)"},
+			{"key": "max_score", "label": "Punteggio massimo"},
+		],
+		"date_filters": [
+			{"key": "activity", "from_label": "Tentativo quiz da", "to_label": "Tentativo quiz a"},
+		],
+	},
+	"ai": {
+		"label": "Interazioni AI",
+		"columns": [
+			{"key": "student_id", "label": "ID studente"},
+			{"key": "interacted_on", "label": "Data e ora"},
+			{"key": "course", "label": "Corso"},
+			{"key": "lesson", "label": "Contenuto / lezione"},
+			{"key": "question", "label": "Domanda"},
+			{"key": "answer", "label": "Risposta"},
+			{"key": "context", "label": "Contesto"},
+			{"key": "server_error", "label": "Errore del server"},
+			{"key": "cannot_answer", "label": "Non posso rispondere"},
+		],
+		"date_filters": [
+			{"key": "activity", "from_label": "Interazione AI da", "to_label": "Interazione AI a"},
+		],
+	},
+}
+
+# Entity filters shared by every report; date filters are per-report (see each
+# report's ``date_filters``).
+STUDENT_STATS_FILTERS = ["course", "batch", "students"]
+
+
+EXPORT_STATS_ROLES = ("System Manager", "Gestore")
+
+
+def can_export_student_stats() -> bool:
+	"""Single source of truth for who may export student statistics.
+
+	System Manager (Administrator) and Gestore. Add further roles to
+	``EXPORT_STATS_ROLES`` when the product decides to broaden access; the SPA
+	gate reads the same helper through override_api.get_user_info.
+	"""
+	roles = frappe.get_roles()
+	return any(role in roles for role in EXPORT_STATS_ROLES)
+
+
+def _ensure_can_export_student_stats():
+	if not can_export_student_stats():
+		frappe.throw(
+			frappe._("You are not authorized to export student statistics."),
+			frappe.PermissionError,
+		)
+
+
+@frappe.whitelist()
+def get_student_stats_schema():
+	"""Return the report types, their selectable columns and the supported
+	filters. Single source of truth shared with the SPA export page."""
+	_ensure_can_export_student_stats()
+	return {
+		"reports": STUDENT_STATS_REPORTS,
+		"filters": STUDENT_STATS_FILTERS,
+	}
+
+
+def _fmt_dt(value) -> str:
+	if not value:
+		return ""
+	from frappe.utils import format_datetime
+
+	return format_datetime(value, "yyyy-MM-dd HH:mm")
+
+
+def _fmt_date(value) -> str:
+	if not value:
+		return ""
+	from frappe.utils import formatdate
+
+	return formatdate(value, "yyyy-MM-dd")
+
+
+def _parse_stats_filters(filters) -> dict:
+	"""Normalize the (JSON-encoded) filters payload into a predictable dict.
+
+	Entity filters (course/batch/students) are always present as lists. Date
+	filters are per-report and open-ended (e.g. ``last_login_from``,
+	``enrolled_to``, ``activity_from``): any ``*_from`` / ``*_to`` key is passed
+	through, so builders read the ranges they care about via ``.get``.
+	"""
+	filters = frappe.parse_json(filters) if filters else {}
+	if not isinstance(filters, dict):
+		filters = {}
+
+	def _as_list(value):
+		if not value:
+			return []
+		if isinstance(value, str):
+			return [value]
+		return list(value)
+
+	parsed = {
+		"course": _as_list(filters.get("course")),
+		"batch": _as_list(filters.get("batch")),
+		"students": _as_list(filters.get("students")),
+	}
+	for key, value in filters.items():
+		if key.endswith("_from") or key.endswith("_to"):
+			parsed[key] = value or None
+	return parsed
+
+
+def _member_scope(filters: dict):
+	"""Member set implied by the batch + students filters (the course filter is
+	applied per-report on the row's own course field). Returns None when no
+	member-scoping filter is set, meaning "no restriction"."""
+	member_sets = []
+	if filters["students"]:
+		member_sets.append(set(filters["students"]))
+	if filters["batch"]:
+		rows = frappe.get_all(
+			"LMS Batch Enrollment",
+			filters={"batch": ["in", filters["batch"]]},
+			fields=["member"],
+		)
+		member_sets.append({r.member for r in rows})
+
+	if not member_sets:
+		return None
+
+	result = member_sets[0]
+	for extra in member_sets[1:]:
+		result &= extra
+	return result
+
+
+def _role_label(roles: set) -> str:
+	"""Collapse a user's roles into a single LMS-facing label."""
+	if "Moderator" in roles or "Gestore" in roles:
+		return "Moderatore"
+	if "Course Creator" in roles or "Docente" in roles:
+		return "Docente"
+	if "Batch Evaluator" in roles or "Valutatore" in roles:
+		return "Valutatore"
+	return "Studente"
+
+
+# Course-level columns of the unified "Utenti" report: selecting any switches
+# the report from one row per user to one row per (user, course).
+USER_COURSES_COURSE_COLUMNS = {
+	"course_id",
+	"course_title",
+	"enrolled_on",
+	"progress",
+	"started_on",
+	"last_activity_on",
+	"completed_on",
+}
+
+# Selecting any of these lesson-level columns further switches the report to one
+# row per (user, course, lesson).
+USER_COURSES_LESSON_COLUMNS = {
+	"chapter",
+	"content_id",
+	"content_title",
+	"content_type",
+	"content_status",
+	"content_completed_on",
+}
+
+# get_lesson_icon (the same helper that drives the course-outline icon) mapped
+# to a human-readable content type, so the report always matches the UI.
+_CONTENT_TYPE_LABEL = {
+	"icon-youtube": "Video",
+	"icon-quiz": "Quiz",
+	"icon-assignment": "Esercizio",
+	"icon-code": "Programma",
+	"icon-list": "Testo",
+}
+
+# LMS Course Progress.status -> label. A missing progress row means the student
+# has not started that lesson.
+_LESSON_STATUS_LABEL = {
+	"Complete": "Completato",
+	"Partially Complete": "Parzialmente completato",
+	"Incomplete": "Non completato",
+}
+
+
+def _empty_course_fields() -> dict:
+	return {
+		"course_id": "",
+		"course_title": "",
+		"enrolled_on": "",
+		"progress": "",
+		"started_on": "",
+		"last_activity_on": "",
+		"completed_on": "",
+	}
+
+
+def _build_users_rows(filters: dict, selected: list | None = None) -> list:
+	"""Unified "Utenti" report with dynamic granularity:
+
+	  - user columns only -> one row per user
+	  - + course columns  -> one row per (user, course)
+	  - + lesson columns  -> one row per (user, course, lesson)
+
+	Users with no enrollment are kept (empty course cells) unless a course-side
+	filter (course entity or the enrollment date range) is active, in which case
+	only users with a matching enrollment appear.
+	"""
+	selected = selected or []
+	course_mode = any(
+		c in USER_COURSES_COURSE_COLUMNS or c in USER_COURSES_LESSON_COLUMNS for c in selected
+	)
+	lesson_mode = any(c in USER_COURSES_LESSON_COLUMNS for c in selected)
+
+	member_scope = _member_scope(filters)
+
+	# Course-side enrollment filter (course entity + enrollment date range).
+	enroll_conditions = []
+	if filters["course"]:
+		enroll_conditions.append(["course", "in", filters["course"]])
+	if filters.get("enrolled_from"):
+		enroll_conditions.append(["creation", ">=", filters["enrolled_from"]])
+	if filters.get("enrolled_to"):
+		enroll_conditions.append(["creation", "<=", filters["enrolled_to"]])
+	course_filter_active = bool(enroll_conditions)
+
+	# A course-side filter restricts users to those with a matching enrollment
+	# (and so drops the "keep unenrolled users" rule).
+	if course_filter_active:
+		matching_members = {
+			e.member
+			for e in frappe.get_all("LMS Enrollment", filters=enroll_conditions, fields=["member"])
+		}
+		member_scope = matching_members if member_scope is None else (member_scope & matching_members)
+
+	conditions = [["enabled", "=", 1], ["name", "not in", ["Guest", "Administrator"]]]
+	if member_scope is not None:
+		if not member_scope:
+			return []
+		conditions.append(["name", "in", list(member_scope)])
+	if filters.get("last_login_from"):
+		conditions.append(["last_login", ">=", filters["last_login_from"]])
+	if filters.get("last_login_to"):
+		conditions.append(["last_login", "<=", filters["last_login_to"]])
+	if filters.get("registered_from"):
+		conditions.append(["creation", ">=", filters["registered_from"]])
+	if filters.get("registered_to"):
+		conditions.append(["creation", "<=", filters["registered_to"]])
+
+	users = frappe.get_all(
+		"User",
+		filters=conditions,
+		fields=["name", "full_name", "email", "enabled", "creation", "last_login"],
+		order_by="full_name asc",
+	)
+	if not users:
+		return []
+
+	names = [u.name for u in users]
+
+	# --- User-level enrichment (roles, class, access aggregates) ---
+	roles_by_user = {}
+	for r in frappe.get_all(
+		"Has Role", filters={"parent": ["in", names], "parenttype": "User"}, fields=["parent", "role"]
+	):
+		roles_by_user.setdefault(r.parent, set()).add(r.role)
+
+	class_by_user = {}
+	batch_rows = frappe.get_all(
+		"LMS Batch Enrollment", filters={"member": ["in", names]}, fields=["member", "batch"]
+	)
+	batch_ids = list({b.batch for b in batch_rows if b.batch})
+	batch_title = {}
+	if batch_ids:
+		for bt in frappe.get_all(
+			"LMS Batch", filters={"name": ["in", batch_ids]}, fields=["name", "title"]
+		):
+			batch_title[bt.name] = bt.title
+	for b in batch_rows:
+		if b.batch:
+			class_by_user.setdefault(b.member, []).append(batch_title.get(b.batch, b.batch))
+
+	# Access aggregates from our own tracking (LMSA User Access): durable and
+	# retention-independent, unlike counting Activity Log rows on the fly.
+	access_by_user = {
+		a.name: a
+		for a in frappe.get_all(
+			"LMSA User Access",
+			filters={"user": ["in", names]},
+			fields=["user", "first_login", "total_logins", "distinct_active_days", "failed_logins"],
+		)
+	}
+
+	def user_base(u):
+		acc = access_by_user.get(u.name)
+		return {
+			"user_id": u.name,
+			"full_name": u.full_name or "",
+			"email": u.email or u.name,
+			"role": _role_label(roles_by_user.get(u.name, set())),
+			"class": ", ".join(sorted(set(class_by_user.get(u.name, [])))),
+			"registered_on": _fmt_dt(u.creation),
+			"status": "Attivo" if u.enabled else "Disattivato",
+			"first_login": _fmt_dt(acc.first_login) if acc else "",
+			"last_login": _fmt_dt(u.last_login),
+			"total_logins": (acc.total_logins if acc else 0) or 0,
+			"distinct_active_days": (acc.distinct_active_days if acc else 0) or 0,
+			"failed_logins": (acc.failed_logins if acc else 0) or 0,
+		}
+
+	if not course_mode:
+		return [user_base(u) for u in users]
+
+	# --- Course mode: one row per (user, enrollment) ---
+	enrollments = frappe.get_all(
+		"LMS Enrollment",
+		filters=[["member", "in", names]] + enroll_conditions,
+		fields=["member", "course", "creation", "progress"],
+		order_by="creation asc",
+	)
+	enroll_by_member = {}
+	for e in enrollments:
+		enroll_by_member.setdefault(e.member, []).append(e)
+
+	course_ids = list({e.course for e in enrollments})
+	course_title = (
+		{
+			c.name: c.title
+			for c in frappe.get_all(
+				"LMS Course", filters={"name": ["in", course_ids]}, fields=["name", "title"]
+			)
+		}
+		if course_ids
+		else {}
+	)
+
+	# Per (member, course) progress aggregates: first/last activity and the
+	# timestamp of the last completed lesson. In lesson mode we also keep the
+	# per-lesson status/timestamp.
+	first_on, last_on, complete_last, lesson_progress = {}, {}, {}, {}
+	if course_ids:
+		for r in frappe.get_all(
+			"LMS Course Progress",
+			filters={"member": ["in", names], "course": ["in", course_ids]},
+			fields=["member", "course", "lesson", "status", "creation"],
+		):
+			key = (r.member, r.course)
+			if key not in first_on or r.creation < first_on[key]:
+				first_on[key] = r.creation
+			if key not in last_on or r.creation > last_on[key]:
+				last_on[key] = r.creation
+			if r.status == "Complete" and (key not in complete_last or r.creation > complete_last[key]):
+				complete_last[key] = r.creation
+			if lesson_mode and r.lesson:
+				lesson_progress[(r.member, r.lesson)] = (r.status, r.creation)
+
+	# Explicit completion date from the certificate, when the course issues one.
+	cert_date = {}
+	if course_ids:
+		for c in frappe.get_all(
+			"LMS Certificate",
+			filters={"member": ["in", names], "course": ["in", course_ids]},
+			fields=["member", "course", "issue_date"],
+		):
+			if c.issue_date:
+				cert_date[(c.member, c.course)] = c.issue_date
+
+	def course_fields(member, e):
+		key = (member, e.course)
+		completed = None
+		if key in cert_date:
+			completed = cert_date[key]
+		elif (e.progress or 0) >= 100:
+			completed = complete_last.get(key)
+		return {
+			"course_id": e.course,
+			"course_title": course_title.get(e.course, e.course),
+			"enrolled_on": _fmt_dt(e.creation),
+			"progress": e.progress or 0,
+			"started_on": _fmt_dt(first_on.get(key)),
+			"last_activity_on": _fmt_dt(last_on.get(key)),
+			"completed_on": _fmt_date(completed),
+		}
+
+	course_lessons = _course_outline_lessons(course_ids) if lesson_mode else {}
+
+	rows = []
+	for u in users:
+		base = user_base(u)
+		u_enrolls = enroll_by_member.get(u.name, [])
+		if not u_enrolls:
+			# No enrollment: keep the user with empty course (and lesson) cells.
+			# When a course-side filter is active such users are already excluded
+			# from `users`, so this only fires without that filter.
+			extra = _empty_course_fields()
+			if lesson_mode:
+				extra = {**extra, **_empty_lesson_fields()}
+			rows.append({**base, **extra})
+			continue
+		for e in u_enrolls:
+			crow = {**base, **course_fields(u.name, e)}
+			if not lesson_mode:
+				rows.append(crow)
+				continue
+			outline = course_lessons.get(e.course, [])
+			if not outline:
+				rows.append({**crow, **_empty_lesson_fields()})
+				continue
+			for chapter_title, lesson_id, lesson_title, content_type in outline:
+				status, cdate = lesson_progress.get((u.name, lesson_id), (None, None))
+				rows.append(
+					{
+						**crow,
+						"chapter": chapter_title,
+						"content_id": lesson_id,
+						"content_title": lesson_title,
+						"content_type": content_type,
+						"content_status": _LESSON_STATUS_LABEL.get(status, "Non iniziato"),
+						"content_completed_on": _fmt_dt(cdate) if status == "Complete" else "",
+					}
+				)
+	return rows
+
+
+def _empty_lesson_fields() -> dict:
+	return {
+		"chapter": "",
+		"content_id": "",
+		"content_title": "",
+		"content_type": "",
+		"content_status": "",
+		"content_completed_on": "",
+	}
+
+
+def _course_outline_lessons(course_ids: list) -> dict:
+	"""Return, per course, its lessons in outline order as tuples
+	(chapter_title, lesson_id, lesson_title, content_type_label).
+
+	Order follows the UI outline: LMS Course.chapters (Chapter Reference) then
+	each Course Chapter.lessons (Lesson Reference). content_type reuses
+	get_lesson_icon so it matches the icon shown in the course outline.
+	"""
+	from lms.lms.utils import get_lesson_icon
+
+	if not course_ids:
+		return {}
+
+	# Chapters in order per course.
+	chapter_refs = frappe.get_all(
+		"Chapter Reference",
+		filters={"parenttype": "LMS Course", "parent": ["in", course_ids]},
+		fields=["parent as course", "chapter", "idx"],
+		order_by="idx asc",
+	)
+	chapters_of_course = {}
+	for c in chapter_refs:
+		chapters_of_course.setdefault(c.course, []).append(c.chapter)
+
+	chapter_names = [c.chapter for c in chapter_refs]
+	if not chapter_names:
+		return {}
+
+	chapter_title = {
+		c.name: c.title
+		for c in frappe.get_all(
+			"Course Chapter", filters={"name": ["in", chapter_names]}, fields=["name", "title"]
+		)
+	}
+
+	# Lessons in order per chapter.
+	lesson_refs = frappe.get_all(
+		"Lesson Reference",
+		filters={"parenttype": "Course Chapter", "parent": ["in", chapter_names]},
+		fields=["parent as chapter", "lesson", "idx"],
+		order_by="idx asc",
+	)
+	lessons_of_chapter = {}
+	for lr in lesson_refs:
+		lessons_of_chapter.setdefault(lr.chapter, []).append(lr.lesson)
+
+	lesson_ids = [lr.lesson for lr in lesson_refs]
+	lesson_map = {
+		lesson.name: lesson
+		for lesson in frappe.get_all(
+			"Course Lesson",
+			filters={"name": ["in", lesson_ids]},
+			fields=["name", "title", "body", "content"],
+		)
+	}
+
+	outline = {}
+	for course in course_ids:
+		items = []
+		for chapter in chapters_of_course.get(course, []):
+			for lesson_id in lessons_of_chapter.get(chapter, []):
+				lesson = lesson_map.get(lesson_id)
+				if not lesson:
+					continue
+				content_type = _CONTENT_TYPE_LABEL.get(
+					get_lesson_icon(lesson.body, lesson.content), "Testo"
+				)
+				items.append(
+					(chapter_title.get(chapter, chapter), lesson_id, lesson.title or "", content_type)
+				)
+		outline[course] = items
+	return outline
+
+
+def _build_quizzes_rows(filters: dict, selected: list | None = None) -> list:
+	member_scope = _member_scope(filters)
+
+	conditions = []
+	if filters["course"]:
+		conditions.append(["course", "in", filters["course"]])
+	if member_scope is not None:
+		if not member_scope:
+			return []
+		conditions.append(["member", "in", list(member_scope)])
+	if filters.get("activity_from"):
+		conditions.append(["creation", ">=", filters.get("activity_from")])
+	if filters.get("activity_to"):
+		conditions.append(["creation", "<=", filters.get("activity_to")])
+
+	# Ordered ascending so the last submission processed per (member, quiz) is
+	# the most recent one, which drives "last_score".
+	subs = frappe.get_all(
+		"LMS Quiz Submission",
+		filters=conditions or None,
+		fields=[
+			"member",
+			"member_name",
+			"quiz",
+			"quiz_title",
+			"course",
+			"percentage",
+			"score_out_of",
+			"creation",
+		],
+		order_by="creation asc",
+	)
+	if not subs:
+		return []
+
+	members = list({s.member for s in subs})
+	course_ids = list({s.course for s in subs if s.course})
+	user_map = {
+		u.name: u
+		for u in frappe.get_all("User", filters={"name": ["in", members]}, fields=["name", "full_name"])
+	}
+	course_title = (
+		{
+			c.name: c.title
+			for c in frappe.get_all(
+				"LMS Course", filters={"name": ["in", course_ids]}, fields=["name", "title"]
+			)
+		}
+		if course_ids
+		else {}
+	)
+
+	agg = {}
+	for s in subs:
+		key = (s.member, s.quiz)
+		a = agg.get(key)
+		if a is None:
+			a = agg[key] = {
+				"member": s.member,
+				"member_name": s.member_name,
+				"quiz": s.quiz,
+				"quiz_title": s.quiz_title,
+				"course": s.course,
+				"attempts": 0,
+				"first_on": s.creation,
+				"last_on": s.creation,
+				"last_score": s.percentage or 0,
+				"best_score": s.percentage or 0,
+				"max_score": s.score_out_of or 0,
+			}
+		a["attempts"] += 1
+		if s.creation < a["first_on"]:
+			a["first_on"] = s.creation
+		if s.creation >= a["last_on"]:
+			a["last_on"] = s.creation
+			a["last_score"] = s.percentage or 0
+		a["best_score"] = max(a["best_score"], s.percentage or 0)
+		if s.score_out_of:
+			a["max_score"] = s.score_out_of
+
+	rows = []
+	for a in agg.values():
+		u = user_map.get(a["member"])
+		rows.append(
+			{
+				"user_id": a["member"],
+				"full_name": a["member_name"] or (u.full_name if u else "") or "",
+				"course_title": course_title.get(a["course"], a["course"] or ""),
+				"quiz_id": a["quiz"],
+				"quiz_title": a["quiz_title"] or a["quiz"],
+				"attempts": a["attempts"],
+				"first_attempt_on": _fmt_dt(a["first_on"]),
+				"last_attempt_on": _fmt_dt(a["last_on"]),
+				"last_score": a["last_score"],
+				"best_score": a["best_score"],
+				"max_score": a["max_score"],
+			}
+		)
+	rows.sort(key=lambda r: (r["full_name"], r["quiz_title"]))
+	return rows
+
+
+def _build_ai_rows(filters: dict, selected: list | None = None) -> list:
+	member_scope = _member_scope(filters)
+
+	conditions = []
+	if filters["course"]:
+		conditions.append(["course", "in", filters["course"]])
+	if member_scope is not None:
+		if not member_scope:
+			return []
+		conditions.append(["member", "in", list(member_scope)])
+	if filters.get("activity_from"):
+		conditions.append(["creation", ">=", filters.get("activity_from")])
+	if filters.get("activity_to"):
+		conditions.append(["creation", "<=", filters.get("activity_to")])
+
+	logs = frappe.get_all(
+		"LMSA Query Log",
+		filters=conditions or None,
+		fields=["member", "creation", "course", "lesson", "question", "answer", "context", "status"],
+		order_by="creation desc",
+	)
+
+	rows = []
+	for log in logs:
+		answer = log.answer or ""
+		rows.append(
+			{
+				"student_id": log.member,
+				"interacted_on": _fmt_dt(log.creation),
+				"course": log.course or "",
+				"lesson": log.lesson or "",
+				"question": log.question or "",
+				"answer": answer,
+				"context": log.context or "",
+				# status options are Pending / Answered / Failed
+				"server_error": 1 if log.status == "Failed" else 0,
+				"cannot_answer": 1 if "non posso rispondere" in answer.lower() else 0,
+			}
+		)
+	return rows
+
+
+STUDENT_STATS_BUILDERS = {
+	"users": _build_users_rows,
+	"quizzes": _build_quizzes_rows,
+	"ai": _build_ai_rows,
+}
+
+
+def _normalize_export_columns(report: dict, columns) -> list:
+	"""Validate the requested columns against the report and return them in the
+	report's declared order. Raises if none are valid."""
+	declared = [c["key"] for c in report["columns"]]
+	requested = frappe.parse_json(columns) if columns else []
+	if isinstance(requested, str):
+		requested = [requested]
+	requested_set = set(requested)
+	selected = [k for k in declared if k in requested_set]
+	if not selected:
+		frappe.throw(frappe._("Select at least one valid column."), frappe.ValidationError)
+	return selected
+
+
+def _build_export_bytes(report_type: str, columns, file_format: str, parsed_filters: dict):
+	"""Build the export file. Returns (filename, content_type, content_bytes,
+	row_count). Validates the report type and columns and keeps the report's
+	declared column order for a stable layout."""
+	report = STUDENT_STATS_REPORTS.get(report_type)
+	if not report:
+		frappe.throw(frappe._("Unknown report type."), frappe.ValidationError)
+
+	selected = _normalize_export_columns(report, columns)
+	label_by_key = {c["key"]: c["label"] for c in report["columns"]}
+
+	rows = STUDENT_STATS_BUILDERS[report_type](parsed_filters, selected)
+	header = [label_by_key[k] for k in selected]
+	data = [[row.get(k, "") for k in selected] for row in rows]
+	safe_label = re.sub(r"[^\w\- ]", "_", report["label"]).strip() or "statistiche"
+
+	if file_format == "csv":
+		import csv
+		import io
+
+		buffer = io.StringIO()
+		writer = csv.writer(buffer)
+		writer.writerow(header)
+		writer.writerows(data)
+		return (
+			f"{safe_label}.csv",
+			"text/csv; charset=utf-8",
+			buffer.getvalue().encode("utf-8"),
+			len(rows),
+		)
+
+	from frappe.utils.xlsxutils import make_xlsx
+
+	xlsx_file = make_xlsx([header] + data, "Statistiche")
+	content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	return f"{safe_label}.xlsx", content_type, xlsx_file.getvalue(), len(rows)
+
+
+@frappe.whitelist()
+def start_student_stats_export(
+	report_type: str, columns: str, file_format: str = "csv", filters: str | None = None
+):
+	"""Queue a student-statistics export.
+
+	Creates a ``Student Stats Export`` record (status Queued) and enqueues the
+	build on the standard ``long`` queue (present in every Frappe deployment,
+	same queue used by the simulation debrief). Returns the record name; the SPA
+	polls ``list_student_stats_exports`` for the status and downloads the file
+	once it is Ready. Every export is heavy enough to warrant the background job,
+	so there is no synchronous path.
+	"""
+	_ensure_can_export_student_stats()
+
+	report = STUDENT_STATS_REPORTS.get(report_type)
+	if not report:
+		frappe.throw(frappe._("Unknown report type."), frappe.ValidationError)
+	if file_format not in ("csv", "xlsx"):
+		frappe.throw(frappe._("Invalid file format."), frappe.ValidationError)
+
+	selected = _normalize_export_columns(report, columns)
+
+	export = frappe.new_doc("Student Stats Export")
+	export.report_type = report_type
+	export.report_label = report["label"]
+	export.file_format = file_format
+	export.columns = frappe.as_json(selected)
+	export.filters = filters or "{}"
+	export.status = "Queued"
+	export.insert(ignore_permissions=True)
+
+	frappe.enqueue(
+		"os_lms.os_lms.api.run_student_stats_export",
+		queue="long",
+		timeout=1800,
+		enqueue_after_commit=True,
+		export_name=export.name,
+	)
+	return {"name": export.name}
+
+
+def run_student_stats_export(export_name: str):
+	"""Background job (``long`` queue): build the export file and attach it to
+	the record as a private File, flipping the status to Ready/Failed. Never
+	streams anything back."""
+	export = frappe.get_doc("Student Stats Export", export_name)
+	frappe.db.set_value("Student Stats Export", export_name, "status", "Processing")
+	frappe.db.commit()
+	try:
+		parsed_filters = _parse_stats_filters(export.filters)
+		filename, _content_type, content, row_count = _build_export_bytes(
+			export.report_type, export.columns, export.file_format, parsed_filters
+		)
+
+		from frappe.utils.file_manager import save_file
+
+		file_doc = save_file(filename, content, "Student Stats Export", export_name, is_private=1)
+		frappe.db.set_value(
+			"Student Stats Export",
+			export_name,
+			{
+				"file": file_doc.file_url,
+				"row_count": row_count,
+				"file_size": len(content),
+				"status": "Ready",
+				"error": "",
+			},
+		)
+		frappe.db.commit()
+	except Exception:
+		frappe.db.rollback()
+		frappe.db.set_value(
+			"Student Stats Export",
+			export_name,
+			{"status": "Failed", "error": frappe.get_traceback()[:2000]},
+		)
+		frappe.db.commit()
+		frappe.log_error(title="Student stats export failed", message=export_name)
+		raise
+
+
+@frappe.whitelist()
+def list_student_stats_exports():
+	"""List all student-statistics exports, newest first. Shared: every user who
+	can export sees (and can manage) every export."""
+	_ensure_can_export_student_stats()
+	return frappe.get_all(
+		"Student Stats Export",
+		fields=[
+			"name",
+			"report_type",
+			"report_label",
+			"file_format",
+			"status",
+			"creation",
+			"owner",
+			"row_count",
+			"file_size",
+			"file",
+			"error",
+		],
+		order_by="creation desc",
+		limit=200,
+	)
+
+
+@frappe.whitelist()
+def delete_student_stats_export(name: str):
+	"""Delete an export record and its generated file. Any user who can export may
+	delete any export (shared management), so gate on the export capability only."""
+	_ensure_can_export_student_stats()
+	if frappe.db.exists("Student Stats Export", name):
+		frappe.delete_doc(
+			"Student Stats Export", name, ignore_permissions=True, delete_permanently=True
+		)
+	return {"name": name}
+
+
 BATCH_TAB_SECTIONS = ("classes", "announcements", "discussions")
 
 

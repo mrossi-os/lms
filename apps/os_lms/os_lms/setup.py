@@ -61,6 +61,21 @@ CUSTOM_FIELDS = {
             ),
         },
     ],
+    "LMS Lesson Note": [
+        {
+            "fieldname": "text_offset",
+            "fieldtype": "Int",
+            "label": "Text Offset",
+            "insert_after": "highlighted_text",
+            "description": (
+                "Character offset of the highlight within the plain text of the "
+                "lesson body. Without it the highlight can only be restored by "
+                "searching for the text, which always matches the first "
+                "occurrence instead of the one the learner selected. Notes saved "
+                "before this field existed carry 0 and fall back to that search."
+            ),
+        },
+    ],
     "LMS Batch": [
         {
             "fieldname": "valutatori",
@@ -115,6 +130,40 @@ def setup_valutatore_role_and_permissions():
         for ptype, value in perms.items():
             update_permission_property(
                 doctype, VALUTATORE_ROLE, 0, ptype, value, validate=False
+            )
+    frappe.db.commit()
+
+
+GESTORE_ROLE = "Gestore"
+# The "Gestore" manager bundle may run the student-statistics export page, so it
+# needs DocPerms on the export records: the endpoints themselves are gated by
+# os_lms.os_lms.api.can_export_student_stats, but downloading the generated
+# private file goes through Frappe's File permission check, which delegates to
+# read permission on the attached Student Stats Export.
+GESTORE_DOCPERMS = {
+    "Student Stats Export": {"read": 1, "create": 1, "write": 1, "delete": 1},
+}
+
+
+def setup_gestore_role_permissions():
+    """Grant the baseline DocPerms carried by the "Gestore" role.
+
+    The role itself is created and assigned from the desk (it is never assigned
+    alone — it always comes with Moderator & co.), so this only tops up the
+    permissions and skips silently when the role does not exist yet.
+    """
+    from frappe.permissions import add_permission, update_permission_property
+
+    if not frappe.db.exists("Role", GESTORE_ROLE):
+        return
+
+    for doctype, perms in GESTORE_DOCPERMS.items():
+        if not frappe.db.exists("DocType", doctype):
+            continue
+        add_permission(doctype, GESTORE_ROLE, 0)
+        for ptype, value in perms.items():
+            update_permission_property(
+                doctype, GESTORE_ROLE, 0, ptype, value, validate=False
             )
     frappe.db.commit()
 

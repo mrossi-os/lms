@@ -1,6 +1,6 @@
 <template>
 	<div class="py-10">
-		<div class="mx-10 space-y-6 px-20">
+		<div class="space-y-6 px-3 sm:mx-10 sm:px-20">
 			<!-- Inline-editable lesson title -->
 			<textarea
 				ref="titleRef"
@@ -568,7 +568,7 @@ const editCurrentLesson = () => {
 						isNew: false,
 					})
 				},
-			}
+			},
 		)
 		.catch((err) => {
 			if (lessonDeleted) return

@@ -273,7 +273,7 @@ msgstr ""
 
 #: frontend/src/components/Sidebar/AppSidebar.vue:554
 msgid "Add courses to your batch"
-msgstr "Aggiungi corsi al tuo gruppo"
+msgstr "Aggiungi corsi al tua classe"
 
 #: frontend/src/components/Modals/Question.vue:211
 msgid "Add new question"
@@ -441,7 +441,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:79
 msgid "Amount and currency are required for paid batches."
-msgstr "Per i gruppi a pagamento sono richiesti importo e valuta."
+msgstr "Per le classi a pagamento sono richiesti importo e valuta."
 
 #: lms/lms/doctype/lms_course/lms_course.py:91
 msgid "Amount and currency are required for paid certificates."
@@ -696,7 +696,7 @@ msgstr ""
 #: frontend/src/pages/Assignments.vue:315
 #: frontend/src/pages/Assignments.vue:322 lms/www/_lms.py:301
 msgid "Assignments"
-msgstr "Assegnazioni"
+msgstr "Elaborati"
 
 #: frontend/src/pages/Assignments.vue:310
 msgid "Assignments deleted successfully"
@@ -869,7 +869,7 @@ msgstr ""
 #: lms/lms/doctype/lms_batch/lms_batch.json
 #: lms/templates/emails/batch_confirmation.html:26
 msgid "Batch Details"
-msgstr "Dettagli del lotto"
+msgstr "Dettagli della classe"
 
 #. Label of the batch_details_raw (HTML Editor) field in DocType 'LMS Batch'
 #: lms/lms/doctype/lms_batch/lms_batch.json
@@ -936,7 +936,7 @@ msgstr ""
 
 #: frontend/src/pages/Batches/BatchForm.vue:28
 msgid "Batch Start Date"
-msgstr "Data di inizio del lotto"
+msgstr "Data di inizio classe"
 
 #: lms/templates/emails/batch_confirmation.html:11
 msgid "Batch Start Date:"
@@ -1005,7 +1005,7 @@ msgstr ""
 #: lms/lms/doctype/lms_settings/lms_settings.json
 #: lms/workspace_sidebar/learning.json lms/www/_lms.py:132
 msgid "Batches"
-msgstr "Gruppi"
+msgstr "Classi"
 
 #: lms/templates/emails/batch_confirmation.html:33
 #: lms/templates/emails/batch_start_reminder.html:31
@@ -1278,7 +1278,7 @@ msgstr ""
 #: frontend/src/components/Controls/ImageUploader.vue:14
 #: lms/templates/assignment.html:13
 msgid "Change"
-msgstr "Monete"
+msgstr "Carica"
 
 #: frontend/src/components/Assignment.vue:363
 msgid "Changes saved successfully"
@@ -3260,7 +3260,7 @@ msgstr "Esporta"
 #: lms/lms/doctype/lms_assignment_submission/lms_assignment_submission.json
 #: lms/lms/doctype/lms_certificate_evaluation/lms_certificate_evaluation.json
 msgid "Fail"
-msgstr "Errore"
+msgstr "Non superato"
 
 #. Option for the 'Status' (Select) field in DocType 'LMS Programming Exercise
 #. Submission'
@@ -4831,7 +4831,7 @@ msgstr ""
 #: frontend/src/pages/Batches/components/NewBatchModal.vue:72
 #: lms/lms/doctype/lms_batch/lms_batch.json
 msgid "Medium"
-msgstr "Medio"
+msgstr "Modalità"
 
 #. Label of the medium (Data) field in DocType 'User'
 #: lms/fixtures/custom_field.json
@@ -5291,7 +5291,7 @@ msgstr ""
 
 #: lms/lms/utils.py:471
 msgid "New comment in batch {0}"
-msgstr "Nuovo commento nel gruppo {0}"
+msgstr "Nuovo commento nella classe {0}"
 
 #: frontend/src/components/Modals/LessonModal.vue:62
 msgid "New lesson"
@@ -5833,7 +5833,7 @@ msgstr ""
 #: frontend/src/pages/Batches/BatchForm.vue:104
 #: lms/lms/doctype/lms_batch/lms_batch.json
 msgid "Paid Batch"
-msgstr "Gruppo a pagamento"
+msgstr "Classe a pagamento"
 
 #. Label of the paid_certificate (Check) field in DocType 'LMS Course'
 #: lms/lms/doctype/lms_course/lms_course.json
@@ -5874,7 +5874,7 @@ msgstr ""
 #: lms/lms/doctype/lms_assignment_submission/lms_assignment_submission.json
 #: lms/lms/doctype/lms_certificate_evaluation/lms_certificate_evaluation.json
 msgid "Pass"
-msgstr "Riuscito"
+msgstr "Superato"
 
 #. Option for the 'Status' (Select) field in DocType 'LMS Programming Exercise
 #. Submission'
@@ -6136,7 +6136,7 @@ msgstr ""
 
 #: lms/lms/doctype/lms_batch/lms_batch.py:72
 msgid "Please install the Payments App to create a paid batch. Refer to the documentation for more details. {0}"
-msgstr "Installa l'app Pagamenti per creare un gruppo a pagamento. Consulta la documentazione per maggiori dettagli. {0}"
+msgstr "Installa l'app Pagamenti per creare una classe a pagamento. Consulta la documentazione per maggiori dettagli. {0}"
 
 #: lms/lms/doctype/lms_course/lms_course.py:71
 msgid "Please install the Payments App to create a paid course. Refer to the documentation for more details. {0}"
@@ -6551,6 +6551,10 @@ msgstr ""
 #: frontend/src/pages/Courses/CourseDetail.vue:91
 msgid "Publish"
 msgstr "Pubblica"
+
+#: frontend/src/pages/Batches/BatchDetail.vue:8
+msgid "Publ."
+msgstr "Pubbl."
 
 #. Label of the published (Check) field in DocType 'LMS Certificate'
 #: lms/lms/doctype/lms_certificate/lms_certificate.json
@@ -7952,7 +7956,7 @@ msgstr ""
 #. 'LMS Batch'
 #: lms/lms/doctype/lms_batch/lms_batch.json
 msgid "These customisations will work on the main batch page."
-msgstr "Queste personalizzazioni funzioneranno sulla pagina principale del gruppo."
+msgstr "Queste personalizzazioni funzioneranno sulla pagina principale della classe."
 
 #: frontend/src/pages/Courses/CourseOverviewSection.vue:51
 msgid "These tags help search engines describe and rank your course in results."
@@ -8389,6 +8393,10 @@ msgstr ""
 msgid "Unpublish"
 msgstr "Annulla pubblicazione"
 
+#: frontend/src/pages/Batches/BatchDetail.vue:86
+msgid "Unpubl."
+msgstr "Annulla pubbl."
+
 #: frontend/src/pages/Batches/Batches.vue:338
 #: frontend/src/pages/Courses/Courses.vue:321
 #: frontend/src/pages/Programs/Programs.vue:196
@@ -8476,7 +8484,7 @@ msgstr ""
 
 #: frontend/src/pages/Courses/NewCourseModal.vue:189
 msgid "Upload a 750×422 image (.jpg, .jpeg, .gif, or .png) — shown on the catalog card and lesson hero."
-msgstr ""
+msgstr "Carica un'immagine 750×422 (.jpg, .jpeg, .gif o .png) — mostrata sulla scheda del catalogo e nell'intestazione della lezione."
 
 #: frontend/src/pages/Courses/CourseThumbnailField.vue:115
 msgid "Upload an image to replace the color."
@@ -9128,7 +9136,7 @@ msgstr ""
 
 #: lms/www/new-sign-up.html:56
 msgid "Your Account has been successfully created!"
-msgstr ""
+msgstr "Il tuo account è stato creato con successo!"
 
 #: frontend/src/pages/ProgrammingExercises/ProgrammingExerciseSubmission.vue:124
 msgid "Your Output"
@@ -9531,7 +9539,7 @@ msgstr ""
 
 #: lms/templates/emails/mention_template.html:2
 msgid "{0} mentioned you in a comment in your batch."
-msgstr "{0} ti ha menzionato in un commento nel tuo gruppo."
+msgstr "{0} ti ha menzionato in un commento nel tua classe."
 
 #: lms/lms/utils.py:517 lms/lms/utils.py:523
 msgid "{0} mentioned you in a comment in {1}"
@@ -9582,4 +9590,20 @@ msgstr ""
 #: lms/lms/workspace/learning/learning.json
 msgid "{} Published"
 msgstr ""
+
+#: frontend/src/pages/Batches/components/AdminBatchDashboard.vue:209
+msgid "Loading..."
+msgstr "Caricamento..."
+
+#: frontend/src/pages/Batches/components/AdminBatchDashboard.vue:246
+msgid "No lessons in this course"
+msgstr "Nessuna lezione in questo corso"
+
+#: frontend/src/pages/Batches/components/AdminBatchDashboard.vue:62
+msgid "Export Statistics"
+msgstr "Esporta statistiche"
+
+#: frontend/src/pages/Batches/components/AdminBatchDashboard.vue
+msgid "CSV (raw data)"
+msgstr "CSV (dati grezzi)"
 

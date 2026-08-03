@@ -1,15 +1,18 @@
 <template>
-	<Button
+	<router-link
 		v-if="certification.data && certification.data.certificate"
-		@click="downloadCertificate"
-		:loading="opening"
-		class=""
+		:to="{
+			name: 'ProfileCertificates',
+			params: { username: user.data?.username },
+		}"
 	>
-		<template #prefix>
-			<span class="lucide-graduation-cap size-4" />
-		</template>
-		{{ __('View Certificate') }}
-	</Button>
+		<Button class="w-full">
+			<template #prefix>
+				<span class="lucide-graduation-cap size-4" />
+			</template>
+			{{ __('View Certificate') }}
+		</Button>
+	</router-link>
 	<div
 		v-else-if="
 			certification.data &&
@@ -56,9 +59,6 @@
 <script setup lang="ts">
 import { Button, createResource } from 'frappe-ui'
 import { inject } from 'vue'
-// OSLMS-CUSTOM: open the TrueSkills openbadge instead of the internal PDF when
-// the course issues via TrueSkills.
-import { useCertificateViewer } from '@/oslms/composables/useCertificateViewer'
 import type { CertificationInfo, Resource, SessionUser } from '@/types/api'
 
 const user = inject<SessionUser>('$user')!
@@ -76,11 +76,4 @@ const certification = createResource({
 	},
 	auto: user.data ? true : false,
 }) as Resource<CertificationInfo | null>
-
-const { opening, openCourseCertificate } = useCertificateViewer()
-
-const downloadCertificate = () => {
-	if (!certification.data?.certificate) return
-	openCourseCertificate(props.courseName)
-}
 </script>

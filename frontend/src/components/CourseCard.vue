@@ -49,7 +49,13 @@
 					</Tooltip>
 				</div>
 
-				<div v-if="course.enable_certification">
+				<div
+					v-if="
+						course.enable_certification ||
+						course.paid_certificate ||
+						course.trueskills_certificate_enabled
+					"
+				>
 					<Tooltip :text="__('Certification available')">
 						<span class="flex items-center">
 							<LucideStar

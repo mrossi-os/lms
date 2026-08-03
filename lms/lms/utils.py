@@ -802,18 +802,45 @@ def get_courses(filters: dict = None, start: int = 0) -> list:
 
 @frappe.whitelist(allow_guest=True)
 @rate_limit(limit=500, seconds=60 * 60)
-def get_course_categories() -> list:
-	"""Returns the full, unfiltered list of categories used by published courses."""
+def get_course_categories(filters: dict = None) -> list:
+	"""Returns the categories present among the courses visible for ``filters``.
+
+	The frontend passes the same tab filters it sends to ``get_courses``, so the
+	dropdown lists the categories actually present in the currently shown tab
+	(Enrolled, Created, Unpublished, ...) instead of only those of published
+	courses. An arg-less call keeps the historical public behavior (published
+	courses only), so naive callers never see draft-only categories.
+	"""
 
 	if not guest_access_allowed():
 		return []
+
+	filters = dict(filters or {})
+
+	# Drop the filters that only narrow the visible set (a picked category, the
+	# search text, the certification toggle, and the featured-ordering "live"
+	# flag): the dropdown must list every category present in the tab, not just
+	# those matching the other active filters.
+	for key in ("category", "title", "certification", "live"):
+		filters.pop(key, None)
+
+	# No tab context (a direct, arg-less call) → scope to published courses.
+	if not filters:
+		filters = {"published": 1}
+
+	# Reuse get_courses' translation so synthetic tab flags (enrolled, created)
+	# map to real course filters. or_filters is empty here because its only
+	# sources (title, certification) were stripped above.
+	filters, or_filters, _ = update_course_filters(filters)
+	filters["category"] = ["is", "set"]
 
 	# Distinct category strings are inherently bounded (one per category, not per
 	# course), so the full set is intended; limit_page_length=0 makes the
 	# "no page cap" explicit rather than relying on get_all's default.
 	rows = frappe.get_all(
 		"LMS Course",
-		filters={"published": 1, "category": ["is", "set"]},
+		filters=filters,
+		or_filters=or_filters,
 		pluck="category",
 		distinct=True,
 		order_by="category asc",
@@ -876,6 +903,11 @@ def update_course_filters(filters: dict) -> tuple:
 	if filters.get("certification"):
 		or_filters.update({"enable_certification": 1})
 		or_filters.update({"paid_certificate": 1})
+		# os_lms graft: a course can also offer certification through TrueSkills
+		# (trueskills_certificate_enabled), independently of the built-in flags.
+		# Include it so the "Certification" filter doesn't hide TrueSkills-only
+		# courses. Re-apply after upstream merges.
+		or_filters.update({"trueskills_certificate_enabled": 1})
 		del filters["certification"]
 
 	return filters, or_filters, show_featured

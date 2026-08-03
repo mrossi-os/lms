@@ -1,6 +1,10 @@
 <template>
-	<!-- OSLMS-CUSTOM: push the card down when the video is hidden (hero shows it) -->
+	<!-- OSLMS-CUSTOM: push the card down when the video is hidden (hero shows it).
+	Hide the whole card when it would be empty — on mobile the outline and the
+	"Continue Learning" CTA are moved out (hideOutline/hideContinueCta), which can
+	leave nothing to show (see hasCardContent). -->
 	<div
+		v-if="hasCardContent"
 		class="border-2 rounded-md w-full md:min-w-80 max-w-sm card !p-0"
 		:class="{ 'md:mt-16': hideVideo }"
 	>
@@ -17,6 +21,7 @@
 			<div v-if="!readOnlyMode">
 				<div v-if="course.data?.membership" class="space-y-2 mb-8">
 					<router-link
+						v-if="!hideContinueCta"
 						:to="{
 							name: 'Lesson',
 							params: {
@@ -42,7 +47,7 @@
 					<CertificationLinks :courseName="course.data.name" class="w-full" />
 				</div>
 				<router-link
-					v-else-if="course.data?.paid_course && !isAdmin"
+					v-else-if="course.data?.paid_course && canEnroll"
 					:to="{
 						name: 'Billing',
 						params: {
@@ -61,7 +66,7 @@
 					</Button>
 				</router-link>
 				<Badge
-					v-else-if="course.data?.disable_self_learning && !isAdmin"
+					v-else-if="course.data?.disable_self_learning && canEnroll"
 					theme="blue"
 					size="lg"
 					class="mb-4"
@@ -69,7 +74,7 @@
 					{{ __('Contact the Administrator to enroll for this course') }}
 				</Badge>
 				<Button
-					v-else-if="!isAdmin"
+					v-else-if="canEnroll"
 					@click="enrollStudent()"
 					variant="solid"
 					class="w-full mb-8"
@@ -96,8 +101,10 @@
 					{{ __('Get Certificate') }}
 				</Button>
 			</div>
-			<!-- OSLMS-CUSTOM: navigable course outline (replaces the stats block below) -->
-			<div :class="readOnlyMode ? 'mt-4' : 'mt-0'">
+			<!-- OSLMS-CUSTOM: navigable course outline (replaces the stats block below).
+			On mobile it is hidden here and re-rendered at the page bottom (see
+			CourseOverview), so pass `hideOutline` from the mobile mount. -->
+			<div v-if="!hideOutline" :class="readOnlyMode ? 'mt-4' : 'mt-0'">
 				<CourseOutline
 					:title="__('Course Outline')"
 					:courseName="course.data?.name ?? ''"
@@ -166,8 +173,8 @@
 import { BookText, CreditCard, GraduationCap } from 'lucide-vue-next'
 // OSLMS-CUSTOM: Award, BookOpen, HelpCircle, MonitorPlay, Users were used by the
 // disabled "This course includes" stats block — restore them with that block.
-import { computed, inject } from 'vue'
-import { Badge, Button, call, toast } from 'frappe-ui'
+import { computed, inject, watch } from 'vue'
+import { Badge, Button, call, createResource, toast } from 'frappe-ui'
 import { useRouter } from 'vue-router'
 import CertificationLinks from '@/components/CertificationLinks.vue'
 import CourseOutline from '@/components/CourseOutline.vue'
@@ -176,6 +183,7 @@ import { useCertificateViewer } from '@/oslms/composables/useCertificateViewer'
 import { getVideoEmbedURL } from '@/utils/'
 import { useTelemetry } from 'frappe-ui/frappe'
 import type {
+	CertificationInfo,
 	CourseDetails,
 	CourseInstructorInfo,
 	Resource,
@@ -193,8 +201,14 @@ const props = withDefaults(
 		course: Resource<CourseDetails | null>
 		// OSLMS-CUSTOM: suppress the preview video iframe (e.g. when a hero shows it)
 		hideVideo?: boolean
+		// OSLMS-CUSTOM: suppress the embedded course outline (moved to the page
+		// bottom on mobile — see CourseOverview).
+		hideOutline?: boolean
+		// OSLMS-CUSTOM: suppress the "Continue Learning" button (replaced by a fixed
+		// bottom bar on mobile — see CourseOverview).
+		hideContinueCta?: boolean
 	}>(),
-	{ hideVideo: false },
+	{ hideVideo: false, hideOutline: false, hideContinueCta: false },
 )
 
 const video_link = computed<string | undefined>(() => {
@@ -277,13 +291,36 @@ const hasCourseStats = computed<boolean>(() =>
 )
 */
 
+// OSLMS-CUSTOM: once the certificate has been issued we only want to show
+// CertificationLinks' "View Certificate", not a second "Get Certificate" button.
+// LMS Enrollment.certificate is not set on issuance, so query the authoritative
+// LMS Certificate via get_certification_details (same signal CertificationLinks uses).
+const certification = createResource({
+	url: 'lms.lms.api.get_certification_details',
+	makeParams() {
+		return { course: props.course.data?.name }
+	},
+}) as Resource<CertificationInfo | null>
+
+watch(
+	() => props.course.data?.name,
+	(name) => {
+		if (name && user.data) certification.reload()
+	},
+	{ immediate: true },
+)
+
 const canGetCertificate = computed<boolean>(() => {
 	// TrueSkills issuance is exclusive with the internal completion certificate,
 	// so a TrueSkills-only course has enable_certification off — gate on either.
 	return Boolean(
 		(props.course.data?.enable_certification ||
 			props.course.data?.trueskills_certificate_enabled) &&
-			(props.course.data?.membership?.progress ?? 0) >= 100,
+		(props.course.data?.membership?.progress ?? 0) >= 100 &&
+		// Hide once the certificate exists (CertificationLinks shows "View
+		// Certificate"). Wait for the resource to load to avoid a flash.
+		certification.data &&
+		!certification.data.certificate,
 	)
 })
 
@@ -302,5 +339,48 @@ const isAdmin = computed<boolean>(() => {
 		Boolean(user.data?.is_docente) ||
 		is_instructor()
 	)
+})
+
+// OSLMS-CUSTOM: a "Valutatore" of a batch holding this course reviews it read-only
+// and is never a student (the session forces is_student = false). They reach the
+// lessons without an enrolment, so offering them an enrolment CTA is a trap: one
+// click creates a real LMS Enrollment and lists them among the course students.
+const isValutatore = computed<boolean>(() =>
+	Boolean(props.course.data?.is_valutatore),
+)
+
+// Only a prospective student is offered an enrol / buy / contact-the-admin CTA.
+// Enrolled members never reach these branches (the template checks `membership`
+// first), so a valutatore who is also enrolled keeps the full student view.
+const canEnroll = computed<boolean>(() => !isAdmin.value && !isValutatore.value)
+
+// OSLMS-CUSTOM: mirrors CertificationLinks' own visibility (using the same
+// certification resource), so the card can tell whether that child will render
+// anything before deciding to hide itself.
+const certLinksVisible = computed<boolean>(() => {
+	const d = certification.data
+	if (!d) return false
+	if (d.certificate) return true
+	if (d.membership && d.paid_certificate && user.data?.is_student) {
+		return !d.membership.purchased_certificate || !d.membership.certificate
+	}
+	return false
+})
+
+// OSLMS-CUSTOM: whether the card has anything worth a border. On mobile the outline
+// and Continue CTA are moved out (hideOutline/hideContinueCta), which can leave the
+// card empty — hide it in that case rather than render an empty box.
+const hasCardContent = computed<boolean>(() => {
+	// Non-stripped mounts (desktop sidebar / 640–767 inline) always show the outline.
+	if (!props.hideOutline) return true
+	// Preview video.
+	if (props.course.data?.video_link && !props.hideVideo) return true
+	// Enrolled member: certificate actions (issue, or view/get-certified).
+	if (props.course.data?.membership) {
+		return canGetCertificate.value || certLinksVisible.value
+	}
+	// Non-member student: an enroll/buy/contact CTA always renders. Admins and
+	// valutatori get no CTA, so for them the stripped card would be empty.
+	return canEnroll.value
 })
 </script>

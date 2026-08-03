@@ -1,8 +1,8 @@
 <template>
-	<Dialog v-model:open="show" title="New Course" size="3xl">
+	<Dialog v-model:open="show" :title="__('New Course')" size="3xl">
 		<template #default>
 			<div class="text-base">
-				<div class="grid grid-cols-2 gap-5 border-b pb-5 mb-5">
+				<div class="grid grid-cols-1 sm:grid-cols-2 gap-5 border-b pb-5 mb-5">
 					<FormControl
 						v-model="course.title"
 						:label="__('Title')"

@@ -8,7 +8,7 @@
 			@failure="onUploadFailure"
 		>
 			<template v-slot="{ uploading, progress, openFileSelector }">
-				<div class="flex items-start gap-4">
+				<div class="flex flex-wrap items-start gap-4">
 					<div
 						:class="[
 							'relative shrink-0 border rounded-md bg-surface-gray-2 grid place-items-center overflow-hidden',
@@ -52,6 +52,9 @@
 						</Button>
 					</div>
 				</div>
+				<p v-if="description" class="text-p-xs text-ink-gray-5 mt-1.5">
+					{{ __(description) }}
+				</p>
 			</template>
 		</FileUploader>
 	</div>
@@ -71,6 +74,7 @@ const props = withDefaults(
 	defineProps<{
 		modelValue: string | null
 		label?: string
+		description?: string
 		type?: 'image' | 'video'
 		required?: boolean
 		shape?: 'square' | 'circle'
@@ -88,7 +92,9 @@ const fileType = computed<string>(() =>
 
 const previewBoxClasses = computed<string>(() => {
 	if (props.shape === 'circle') return 'size-24 rounded-full'
-	return 'w-56 aspect-[750/422] rounded-md'
+	// max-w-full lets the preview shrink on narrow containers (mobile) so the
+	// action buttons keep enough room to wrap below instead of being clipped.
+	return 'w-56 max-w-full aspect-[750/422] rounded-md'
 })
 
 const saveFile = (file: { file_url: string }) => {

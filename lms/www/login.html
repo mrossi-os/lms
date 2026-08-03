@@ -231,6 +231,19 @@
 
 {% block script %}
 <script>{% include "templates/includes/login/login.js" %}</script>
+<script>
+	// After sign-up, Frappe's login.js shows the result via frappe.msgprint(),
+	// whose default dialog title is the CLIENT-side __("Message"). This web login
+	// page's client translation dict doesn't carry that key (only the server-side
+	// {{ _() }} does), so the dialog title renders the untranslated "Message".
+	// Seed the missing entry from the server translation so it localises. Runs in
+	// frappe.ready to win any async load of the message dict; page-language-aware
+	// (a no-op for English, "Messaggio" for Italian).
+	frappe.ready(function () {
+		frappe._messages = frappe._messages || {};
+		frappe._messages["Message"] = '{{ _("Message") }}';
+	});
+</script>
 {% endblock %}
 
 {% block sidebar %}{% endblock %}

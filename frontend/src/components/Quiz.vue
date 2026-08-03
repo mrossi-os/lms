@@ -7,7 +7,7 @@
 	</div>
 	<div v-else-if="quiz.data">
 		<div
-			class="bg-surface-blue-2 text-ink-blue-6 space-y-2 p-3 mb-4 rounded-lg leading-5"
+			class="bg-surface-blue-2 text-ink-grey-9 space-y-2 p-3 mb-4 rounded-lg leading-5"
 		>
 			<div class="font-medium">
 				{{
@@ -57,8 +57,8 @@
 					{{
 						__('You can attempt this quiz {0}.').format(
 							quiz.data.max_attempts == 1
-								? '1 time'
-								: `${quiz.data.max_attempts} times`,
+								? __('1 time')
+								: __('{0} times').format(quiz.data.max_attempts),
 						)
 					}}
 				</li>
@@ -68,7 +68,7 @@
 							'If you answer incorrectly, {0} {1} will be deducted from your score for each incorrect answer.',
 						).format(
 							quiz.data.marks_to_cut,
-							quiz.data.marks_to_cut == 1 ? 'mark' : 'marks',
+							quiz.data.marks_to_cut == 1 ? __('mark') : __('marks'),
 						)
 					}}
 				</li>
@@ -117,7 +117,7 @@
 					>
 						{{
 							__(
-								'You have already exceeded the maximum number of attempts allowed for this quiz.'
+								'You have already exceeded the maximum number of attempts allowed for this quiz.',
 							)
 						}}
 					</div>
@@ -245,8 +245,10 @@
 							editorClass="prose-sm max-w-none border-b border-x border-outline-elevation-2 bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]"
 						/>
 					</div>
+					<!-- Stacked on phones: the row (review checkbox + pagination +
+					action button) does not fit, so the action button drops below. -->
 					<div
-						class="flex items-center justify-between mt-8"
+						class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-8"
 					>
 						<Checkbox
 							v-if="!quiz.data.show_answers"
@@ -256,7 +258,7 @@
 						/>
 						<div
 							v-if="!quiz.data.show_answers"
-							class="flex items-center gap-x-2"
+							class="flex flex-wrap items-center justify-center gap-2 sm:justify-start"
 						>
 							<Button
 								@click="switchQuestion(activeQuestion - 1)"
@@ -298,47 +300,50 @@
 								</template>
 							</Button>
 						</div>
-						<Button
-							v-if="
-								quiz.data.show_answers &&
-								!showAnswers.length &&
-								questionDetails.data.type != 'Open Ended'
-							"
-							class="ms-auto"
-							@click="checkAnswer()"
+						<!-- Check and Next stay available side by side with Submit so a
+						question can be left unanswered: the learner can move on, or
+						hand the quiz in from any question. -->
+						<div
+							class="flex flex-col sm:flex-row sm:items-center gap-2 sm:ms-auto"
 						>
-							<span>
-								{{ __('Check') }}
-							</span>
-						</Button>
-						<Button
-							v-else-if="
-								activeQuestion != questions.length && quiz.data.show_answers
-							"
-							@click="nextQuestion()"
-							class="ms-auto"
-						>
-							<span>
-								{{ __('Next') }}
-							</span>
-						</Button>
-						<Button
-							variant="solid"
-							v-else
-							@click="handleSubmitClick()"
-							class="ms-auto"
-						>
-							<span>
-								{{ __('Submit Quiz') }}
-							</span>
-						</Button>
+							<Button
+								v-if="
+									quiz.data.show_answers &&
+									!showAnswers.length &&
+									questionDetails.data.type != 'Open Ended'
+								"
+								class="w-full sm:w-auto"
+								@click="checkAnswer()"
+							>
+								<span>
+									{{ __('Check') }}
+								</span>
+							</Button>
+							<Button
+								v-if="
+									quiz.data.show_answers && activeQuestion != questions.length
+								"
+								@click="nextQuestion()"
+								class="w-full sm:w-auto"
+							>
+								<span>
+									{{ __('Next') }}
+								</span>
+							</Button>
+							<Button
+								variant="solid"
+								@click="handleSubmitClick()"
+								class="w-full sm:w-auto"
+							>
+								<span>
+									{{ __('Submit Quiz') }}
+								</span>
+							</Button>
+						</div>
 					</div>
 				</div>
 			</div>
-			<div
-				v-if="reviewQuestions.length"
-				class="border rounded-lg p-4 mt-4"
-			>
+			<div v-if="reviewQuestions.length" class="border rounded-lg p-4 mt-4">
 				<div class="font-semibold">
 					{{ __('Questions marked for review') }}
 				</div>
@@ -380,6 +385,7 @@
 			</div>
 			<div class="flex items-center justify-center gap-x-2">
 				<Button
+					variant="solid"
 					@click="resetQuiz()"
 					v-if="
 						!quiz.data.max_attempts ||
@@ -435,30 +441,43 @@
 			<div class="border border-outline-elevation-2 rounded-lg text-base">
 				<div class="divide-y divide-outline-elevation-2">
 					<div class="grid grid-cols-2 divide-x divide-outline-elevation-2">
-						<div class="p-2">
+						<div class="p-2 text-ink-gray-9">
 							{{ __('Total Questions') }}
 						</div>
-						<div class="p-2">
+						<div class="p-2 text-ink-gray-9">
 							{{ questions.length }}
 						</div>
 					</div>
 					<div class="grid grid-cols-2 divide-x divide-outline-elevation-2">
-						<div class="p-2">
+						<div class="p-2 text-ink-gray-9">
 							{{ __('Attempted Questions') }}
 						</div>
-						<div class="p-2">
+						<div class="p-2 text-ink-gray-9">
 							{{ attemptedQuestions.length }}
 						</div>
 					</div>
 					<div class="grid grid-cols-2 divide-x divide-outline-elevation-2">
-						<div class="p-2">
+						<div class="p-2 text-ink-gray-9">
 							{{ __('Unattempted Questions') }}
 						</div>
-						<div class="p-2">
-							{{ questions.length - attemptedQuestions.length }}
+						<div class="p-2 text-ink-gray-9">
+							{{ unattemptedCount }}
 						</div>
 					</div>
 				</div>
+			</div>
+			<div
+				v-if="unattemptedCount"
+				class="flex items-start gap-2 mt-3 rounded-lg bg-surface-amber-2 p-2 text-ink-amber-6 text-sm leading-5"
+			>
+				<span class="lucide-alert-circle size-4 shrink-0 mt-0.5" />
+				<span>
+					{{
+						__(
+							'Some questions have not been answered. If you submit now, they will be scored as incorrect.',
+						)
+					}}
+				</span>
 			</div>
 		</template>
 	</Dialog>
@@ -503,6 +522,8 @@ const showSubmissionConfirmation = ref(false)
 const possibleAnswer = ref(null)
 const timer = ref(0)
 let timerInterval = null
+let timerDeadline = null
+let submitting = false
 
 const props = defineProps({
 	quizName: {
@@ -522,11 +543,21 @@ const props = defineProps({
 onMounted(() => {
 	window.addEventListener('pagehide', handlePageHide)
 	window.addEventListener('beforeunload', handleBeforeUnload)
+	// A cache hit hands back an already-resolved resource, so the watcher below
+	// only fires once the background reload lands — seed the display now.
+	// Without this the reopened quiz renders its empty question list for a beat
+	// and flashes "no questions available" over the Start button.
+	if (quiz.data) {
+		populateQuestions()
+		setupTimer()
+		if (quiz.data.max_attempts) attempts.reload()
+	}
 })
 
 onUnmounted(() => {
 	window.removeEventListener('pagehide', handlePageHide)
 	window.removeEventListener('beforeunload', handleBeforeUnload)
+	stopTimer()
 })
 
 const handlePageHide = () => {
@@ -554,8 +585,7 @@ const handleBeforeUnload = (event) => {
 // Quiz doc + every question's content in one round trip. The lesson-side
 // quiz used to fetch the quiz, then fire one get_question_details per
 // question as the learner advanced — pulling them all up front lets the
-// activeQuestion watcher read from a local map instead of round-tripping.
-const questionsByName = ref({})
+// activeQuestion watcher read from a prefetched map instead of round-tripping.
 const quiz = createResource({
 	url: 'lms.lms.utils.get_quiz_with_questions',
 	makeParams() {
@@ -569,7 +599,12 @@ const quiz = createResource({
 	transform(data) {
 		const quizDoc = data?.quiz || {}
 		quizDoc.duration = parseInt(quizDoc.duration)
-		questionsByName.value = data?.questions_by_name || {}
+		// The map rides along inside the doc instead of a component-local ref:
+		// a cached resource is shared across mounts and keeps the *first*
+		// instance's transform, so a per-instance ref stays empty on every later
+		// mount — populateQuestions then drops every row as unresolvable and the
+		// quiz claims it has no questions until a full page reload.
+		quizDoc._questions_by_name = data?.questions_by_name || {}
 		return quizDoc
 	},
 	onSuccess() {
@@ -577,6 +612,8 @@ const quiz = createResource({
 		setupTimer()
 	},
 })
+
+const questionsByName = computed(() => quiz.data?._questions_by_name || {})
 
 const populateQuestions = () => {
 	const data = quiz.data
@@ -587,7 +624,7 @@ const populateQuestions = () => {
 	// unload handlers — which, since the quiz now mounts inline in the lesson,
 	// blanks the whole lesson view.
 	const resolvable = rawQuestions.filter(
-		(row) => row?.question && questionsByName.value[row.question]
+		(row) => row?.question && questionsByName.value[row.question],
 	)
 	if (data?.shuffle_questions) {
 		let next = shuffleArray([...resolvable])
@@ -601,19 +638,38 @@ const populateQuestions = () => {
 }
 
 const setupTimer = () => {
-	if (quiz.data.duration) {
-		timer.value = quiz.data.duration * 60
+	// Never clobber a countdown that is already running — `quiz` is a cached
+	// resource, so a reload can fire this again while an attempt is in progress.
+	if (timerInterval) return
+	timer.value = quiz.data?.duration ? quiz.data.duration * 60 : 0
+}
+
+const stopTimer = () => {
+	if (timerInterval) {
+		clearInterval(timerInterval)
+		timerInterval = null
 	}
+	timerDeadline = null
 }
 
 const startTimer = () => {
-	timerInterval = setInterval(() => {
-		timer.value--
-		if (timer.value == 0) {
-			clearInterval(timerInterval)
-			submitQuiz()
-		}
-	}, 1000)
+	if (!quiz.data?.duration) return
+	stopTimer()
+	// Anchor the countdown to a wall-clock deadline instead of decrementing a
+	// counter: setInterval drifts and is throttled hard in background tabs, so
+	// a plain counter overshoots and the auto submit never fires.
+	timerDeadline = Date.now() + quiz.data.duration * 60 * 1000
+	timer.value = quiz.data.duration * 60
+	timerInterval = setInterval(tickTimer, 1000)
+}
+
+const tickTimer = () => {
+	const remaining = Math.max(0, Math.round((timerDeadline - Date.now()) / 1000))
+	timer.value = remaining
+	if (remaining <= 0) {
+		stopTimer()
+		submitQuiz()
+	}
 }
 
 const formatTimer = (seconds) => {
@@ -628,7 +684,9 @@ const formatTimer = (seconds) => {
 }
 
 const timerProgress = computed(() => {
-	return (timer.value / (quiz.data.duration * 60)) * 100
+	const total = quiz.data?.duration * 60
+	if (!total) return 0
+	return Math.min(100, Math.max(0, (timer.value / total) * 100))
 })
 
 const shuffleArray = (array) => {
@@ -672,6 +730,11 @@ watch(
 	() => {
 		if (quiz.data) {
 			populateQuestions()
+			// The resource's own onSuccess belongs to whichever component
+			// instance created it first — `cache` hands the same resource back
+			// on every later mount — so seed the timer from here as well,
+			// otherwise a remounted quiz starts its countdown from zero.
+			setupTimer()
 		}
 		if (quiz.data && quiz.data.max_attempts) {
 			attempts.reload()
@@ -769,9 +832,23 @@ const markAnswer = (index) => {
 		selectedOptions.value.splice(
 			0,
 			selectedOptions.value.length,
-			...Array(MAX_OPTIONS).fill(0)
+			...Array(MAX_OPTIONS).fill(0),
 		)
 	selectedOptions.value[index - 1] = selectedOptions.value[index - 1] ? 0 : 1
+}
+
+// An untouched Open Ended editor still emits markup ("<p></p>"), and a
+// User Input textarea emits "" — neither is an answer. Media on its own is.
+const isBlankAnswer = (value) => {
+	if (value == null) return true
+	const html = String(value)
+	if (/<(img|video|audio|iframe|table)\b/i.test(html)) return false
+	return (
+		html
+			.replace(/<[^>]*>/g, '')
+			.replace(/&nbsp;/gi, ' ')
+			.trim() === ''
+	)
 }
 
 const getAnswers = () => {
@@ -783,7 +860,9 @@ const getAnswers = () => {
 			if (selectedOptions.value[index])
 				answers.push(questionDetails.data[`option_${index + 1}`])
 		})
-	} else {
+	} else if (!isBlankAnswer(possibleAnswer.value)) {
+		// Pushing a blank answer used to make every visited question count as
+		// attempted, and shipped [null] to submit_quiz — which fails there.
 		answers.push(possibleAnswer.value)
 	}
 
@@ -821,7 +900,7 @@ const checkAnswer = () => {
 			} else {
 				showAnswers.push(data)
 			}
-			addToLocalStorage()
+			recordCurrentAttempt()
 			if (!quiz.data.show_answers) {
 				resetQuestion()
 			}
@@ -852,7 +931,9 @@ const addToLocalStorage = () => {
 
 const nextQuestion = () => {
 	if (!quiz.data.show_answers) return
-	if (questionDetails.data?.type == 'Open Ended') addToLocalStorage()
+	// Keep an answer that was filled in but never checked; a question left
+	// blank simply records nothing and stays unattempted.
+	recordCurrentAttempt()
 	resetQuestion()
 }
 
@@ -865,7 +946,7 @@ const resetQuestion = () => {
 	selectedOptions.value.splice(
 		0,
 		selectedOptions.value.length,
-		...Array(MAX_OPTIONS).fill(0)
+		...Array(MAX_OPTIONS).fill(0),
 	)
 	showAnswers.length = 0
 	possibleAnswer.value = null
@@ -885,15 +966,19 @@ const submitQuiz = () => {
 }
 
 const createSubmission = () => {
+	// The learner and the expiring timer can both land here — submit once.
+	if (submitting || quizSubmission.data) return
+	submitting = true
+	stopTimer()
 	quizSubmission.submit(
 		{},
 		{
 			onSuccess(data) {
 				markLessonProgress()
 				if (quiz.data && quiz.data.max_attempts) attempts.reload()
-				if (quiz.data.duration) clearInterval(timerInterval)
 			},
 			onError(err) {
+				submitting = false
 				const errorTitle = err?.message || ''
 				if (errorTitle.includes('MaximumAttemptsExceededError')) {
 					const errorMessage = err.messages?.[0] || err
@@ -901,6 +986,8 @@ const createSubmission = () => {
 					setTimeout(() => {
 						window.location.reload()
 					}, 3000)
+				} else {
+					toast.error(__('Your quiz could not be submitted. Please try again.'))
 				}
 			},
 		},
@@ -908,11 +995,13 @@ const createSubmission = () => {
 }
 
 const resetQuiz = () => {
+	submitting = false
+	stopTimer()
 	activeQuestion.value = 0
 	selectedOptions.value.splice(
 		0,
 		selectedOptions.value.length,
-		...Array(MAX_OPTIONS).fill(0)
+		...Array(MAX_OPTIONS).fill(0),
 	)
 	showAnswers.length = 0
 	possibleAnswer.value = null
@@ -946,12 +1035,10 @@ const markLessonProgress = () => {
 }
 
 const handleSubmitClick = () => {
-	if (!quiz.data.show_answers) {
-		recordCurrentAttempt()
-		showSubmissionConfirmation.value = true
-	} else {
-		submitQuiz()
-	}
+	// Confirm in both modes: the quiz can now be handed in from any question,
+	// so the learner needs to see what is still unanswered before doing it.
+	recordCurrentAttempt()
+	showSubmissionConfirmation.value = true
 }
 
 const recordCurrentAttempt = () => {
@@ -961,6 +1048,10 @@ const recordCurrentAttempt = () => {
 	}
 	addToLocalStorage()
 }
+
+const unattemptedCount = computed(() =>
+	Math.max(0, questions.value.length - attemptedQuestions.value.length),
+)
 
 const paginationWindow = computed(() => {
 	const total = questions.value.length
@@ -1001,25 +1092,25 @@ const markForReview = (event, questionNumber) => {
 const getSubmissionColumns = () => {
 	return [
 		{
-			label: 'No.',
+			label: __('No.'),
 			key: 'idx',
 		},
 		{
-			label: 'Date',
+			label: __('Date'),
 			key: 'creation',
 		},
 		{
-			label: 'Score',
+			label: __('Score'),
 			key: 'score',
 			align: 'center',
 		},
 		{
-			label: 'Score out of',
+			label: __('Score out of'),
 			key: 'score_out_of',
 			align: 'center',
 		},
 		{
-			label: 'Percentage',
+			label: __('Percentage'),
 			key: 'percentage',
 			align: 'center',
 		},

@@ -12,14 +12,14 @@
 			<!-- Badge della sezione -->
 			<div
 				v-if="section.items?.length"
-				class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"
+				class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(min(100%,300px),300px))] gap-3"
 			>
 				<div
 					v-for="(item, iIndex) in section.items"
 					:key="item.id || iIndex"
 					class="flex flex-col border rounded-lg p-4 card transition-colors"
 				>
-					<div class="flex flex-wrap items-start gap-3">
+					<div class="flex flex-col lg:flex-row lg:flex-wrap items-start gap-3">
 						<!-- Icona Lucide -->
 						<div
 							class="flex-shrink-0 w-9 h-9 flex items-center justify-center bg-surface-gray-2 rounded-md"
@@ -49,10 +49,10 @@
 							:href="getFileUrl(item.file)"
 							target="_blank"
 							download
-							class="flex flex-col items-center gap-1.5 border-t border-outline-gray-1 text-xs text-ink-gray-5 hover:text-ink-gray-8 hover:bg-surface-gray-7 transition-colors w-fit card p-2"
+							class="flex flex-row lg:flex-col items-center gap-1.5 border-t border-outline-gray-1 text-xs text-ink-gray-5 hover:text-ink-gray-8 hover:bg-surface-gray-7 transition-colors w-full lg:w-fit card p-2"
 						>
 							<Download class="w-5 h-5 shrink-0" />
-							<span class="truncate max-w-20">{{
+							<span class="truncate max-w-full lg:max-w-20">{{
 								getFileName(item.file)
 							}}</span>
 						</a>
@@ -60,7 +60,7 @@
 						<!-- File not found -->
 						<div
 							v-else-if="isFileMissing(item.file)"
-							class="flex flex-col items-center gap-1.5 text-xs text-ink-orange-3"
+							class="flex flex-row lg:flex-col items-center gap-1.5 text-xs text-ink-orange-3"
 						>
 							<AlertTriangle class="w-5 h-5 shrink-0 text-ink-amber-2" />
 							<span class="text-ink-amber-2">{{ __('File not found') }}</span>

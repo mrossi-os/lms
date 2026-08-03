@@ -1,6 +1,6 @@
 <template>
 	<div class="p-5">
-		<div class="grid grid-cols-4 gap-5 mb-5 text-ink-gray-9">
+		<div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-5 text-ink-gray-9">
 			<NumberChartGraph
 				:title="__('Enrolled')"
 				:value="formatAmount(course.data?.enrollments)"
@@ -9,19 +9,19 @@
 				:title="__('Average Completion Rate')"
 				:value="averageCompletionRate"
 			/>
-			<NumberChartGraph
+			<!-- <NumberChartGraph
 				:title="__('Average Rating')"
 				:value="course.data?.rating || 0"
-			>
+			> 
 				<template #prefix>
 					<LucideStar class="size-5 text-transparent fill-amber-500" />
 				</template>
-			</NumberChartGraph>
+			</NumberChartGraph>-->
 			<NumberChartGraph :title="__('Lessons')" :value="course.data?.lessons" />
 		</div>
-		<div class="grid grid-cols-[2fr_1fr] gap-5 items-start">
-			<div class="border rounded-lg py-3 px-4 card">
-				<div class="flex items-center justify-between mb-3">
+		<div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-5 items-start">
+			<div class="min-w-0 border rounded-lg py-3 px-4 card">
+				<div class="flex flex-wrap items-center justify-between gap-2 mb-3">
 					<div class="text-xl-semibold text-ink-gray-9">
 						{{ __('Students') }}
 					</div>
@@ -38,7 +38,7 @@
 						</FormControl>
 					</div>
 				</div>
-				<div class="max-h-[63vh] overflow-y-auto">
+				<div class="max-h-[63vh] overflow-y-auto overflow-x-auto">
 					<ListView
 						v-if="progressList.loading || progressList.data?.length"
 						:columns="progressColumns"
@@ -56,7 +56,20 @@
 								:item="item"
 								v-for="item in progressColumns"
 								:key="item.key"
+								class="cursor-pointer select-none"
+								@click="toggleSort(item.key)"
 							>
+								<template #suffix>
+									<LucideChevronUp
+										v-if="sortColumn === item.key"
+										class="size-3.5 shrink-0 text-ink-gray-7 transition-transform duration-200"
+										:class="sortOrder === 'desc' ? 'rotate-180' : ''"
+									/>
+									<LucideChevronsUpDown
+										v-else
+										class="size-3.5 shrink-0 text-ink-gray-4"
+									/>
+								</template>
 							</ListHeaderItem>
 						</ListHeader>
 						<ListRows>
@@ -128,7 +141,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="space-y-5">
+			<div class="min-w-0 space-y-5">
 				<div
 					v-if="chartDetails.data?.average_progress > 0"
 					class="border rounded-lg p-4 card"
@@ -137,7 +150,7 @@
 						{{ __('Progress Summary') }}
 					</div>
 					<div
-						class="grid grid-cols-[2fr_1fr] items-center justify-between text-ink-gray-9"
+						class="grid grid-cols-1 sm:grid-cols-[2fr_1fr] gap-4 sm:gap-0 items-center justify-between text-ink-gray-9"
 					>
 						<div class="flex flex-col space-y-4 flex-1 text-sm">
 							<div
@@ -163,8 +176,8 @@
 										{{
 											course.data?.enrollments
 												? Math.round(
-														(row.value / course.data.enrollments) * 100
-												  )
+														(row.value / course.data.enrollments) * 100,
+													)
 												: 0
 										}}%
 									</div>
@@ -172,7 +185,7 @@
 							</div>
 						</div>
 						<ECharts
-							class="w-40 h-20"
+							class="w-40 h-20 justify-self-center sm:justify-self-auto"
 							:options="{
 								color: progressColors,
 								series: [
@@ -303,6 +316,13 @@ const dayjs = inject<typeof dayjsType>('$dayjs')!
 const showEnrollmentModal = ref<boolean>(false)
 const searchFilter = ref<string | null>(null)
 
+// Server-side sorting for the students list. Keys map to real LMS Enrollment
+// fields (member_name, progress) or the standard `creation` column, so sorting
+// stays correct across the paginated "Load More" pages. Defaults mirror the
+// list resource's initial `orderBy: 'creation desc'`.
+const sortColumn = ref<string>('creation')
+const sortOrder = ref<'asc' | 'desc'>('desc')
+
 function openEnrollModal() {
 	showEnrollmentModal.value = true
 }
@@ -357,6 +377,7 @@ const progressList = createListResource({
 		'progress',
 		'creation',
 	],
+	orderBy: 'creation desc',
 	pageLength: 100,
 	auto: true,
 	cache: ['courseProgress', props.course.data?.name],
@@ -399,6 +420,20 @@ watch([searchFilter], () => {
 	progressList.reload()
 })
 
+// Toggle sorting on a students-list column. Clicking the active column flips
+// its direction; clicking a different column starts ascending. `update` merges
+// only `orderBy`, leaving the current search `filters` intact.
+const toggleSort = (key: string) => {
+	if (sortColumn.value === key) {
+		sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+	} else {
+		sortColumn.value = key
+		sortOrder.value = 'asc'
+	}
+	progressList.update({ orderBy: `${sortColumn.value} ${sortOrder.value}` })
+	progressList.reload()
+}
+
 const averageCompletionRate = computed(() => {
 	let value = Math.ceil(chartDetails.data?.average_progress) || 0
 	return value + '%'
@@ -406,7 +441,7 @@ const averageCompletionRate = computed(() => {
 
 const showStudentsEmptyState = computed(
 	() =>
-		!progressList.loading && !progressList.data?.length && !searchFilter.value
+		!progressList.loading && !progressList.data?.length && !searchFilter.value,
 )
 
 const progressColors = computed(() => {

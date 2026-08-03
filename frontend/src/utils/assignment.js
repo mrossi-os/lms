@@ -43,6 +43,15 @@ export class Assignment {
 	}
 
 	renderAssignment(assignment) {
+		// Saving the modal without picking an assignment passes a null value,
+		// which otherwise renders "Assignment: undefined". Show a translated
+		// placeholder instead.
+		if (!assignment) {
+			this.wrapper.innerHTML = `<div class='border rounded-md p-4 text-center bg-surface-sidebar mb-4'>
+				<span class="font-medium">${__('No assignment selected')}</span>
+			</div>`
+			return
+		}
 		if (this.readOnly) {
 			const { userResource } = usersStore()
 			call('frappe.client.get_value', {

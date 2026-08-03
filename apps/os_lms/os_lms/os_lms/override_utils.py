@@ -5,6 +5,7 @@ from frappe.rate_limiter import rate_limit
 
 from lms.lms.utils import get_batch_details as _original_get_batch_details
 from lms.lms.utils import get_batches as _original_get_batches
+from lms.lms.utils import get_course_categories as _original_get_course_categories
 from lms.lms.utils import get_course_details as _original_get_course_details
 from lms.lms.utils import get_course_outline as _original_get_course_outline
 from lms.lms.utils import get_courses as _orginal_get_courses
@@ -261,10 +262,31 @@ def get_courses(filters: dict = None, start: int = 0) -> list:
 	if courses:
 		course_names = [course.name for course in courses]
 		duration_map = get_courses_total_minutes(course_names)
+		# Upstream get_course_fields omits the custom TrueSkills flag; expose it so
+		# the course card can show the "certification available" icon for courses
+		# that only offer a TrueSkills certificate.
+		ts_map = dict(
+			frappe.get_all(
+				"LMS Course",
+				filters={"name": ["in", course_names]},
+				fields=["name", "trueskills_certificate_enabled"],
+				as_list=True,
+			)
+		)
 		for course in courses:
 			course.total_minutes = duration_map.get(course.name, 0)
+			course.trueskills_certificate_enabled = 1 if ts_map.get(course.name) else 0
 
 	return courses
+
+
+@frappe.whitelist(allow_guest=True)
+@rate_limit(limit=500, seconds=60 * 60)
+def get_course_categories(filters: dict = None) -> list:
+	# Keep the category dropdown consistent with the (valutatore-scoped) course
+	# list: a valutatore must only see categories of courses they can access.
+	filters = _scope_filters_for_valutatore(filters, "LMS Course", get_valutatore_course_names)
+	return _original_get_course_categories(filters)
 
 
 @frappe.whitelist(allow_guest=True)

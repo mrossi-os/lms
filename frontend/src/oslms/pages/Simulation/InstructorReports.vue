@@ -92,7 +92,7 @@
 								:key="row.title"
 								class="flex justify-between"
 							>
-								<span>{{ row.title }}</span>
+								<span class="text-ink-gray-7">{{ row.title }}</span>
 								<span class="text-ink-gray-5">{{ row.occurrences }}×</span>
 							</li>
 						</ul>
@@ -123,7 +123,7 @@
 										{{ formatDate(s.started_at) }}
 									</td>
 									<td class="px-3 py-2">
-										<Badge :label="s.status" :theme="statusTheme(s.status)" />
+										<Badge :label="sessionStatusLabel(s.status)" :theme="statusTheme(s.status)" />
 									</td>
 									<td class="px-3 py-2 text-right">
 										<span v-if="s.overall_score !== null">
@@ -185,13 +185,13 @@
 									<td class="px-3 py-2 text-ink-gray-5">{{ s.lms_course }}</td>
 									<td class="px-3 py-2">
 										<Badge
-											:label="s.difficulty"
+											:label="difficultyLabel(s.difficulty)"
 											:theme="difficultyTheme(s.difficulty)"
 										/>
 									</td>
 									<td class="px-3 py-2">
 										<Badge
-											:label="s.status"
+											:label="scenarioStatusLabel(s.status)"
 											:theme="scenarioStatusTheme(s.status)"
 										/>
 									</td>
@@ -313,7 +313,7 @@ const kpiCards = computed(() => {
 				k.avg_score !== null && k.avg_score !== undefined ? k.avg_score : '—',
 		},
 		{
-			label: __('Pass rate'),
+			label: __('Tasso di successo'),
 			value:
 				k.pass_rate !== null && k.pass_rate !== undefined
 					? `${k.pass_rate}%`
@@ -390,11 +390,41 @@ function statusTheme(s) {
 	)
 }
 
+// Backend enums drive logic/theme; translate only what's shown in the badges.
+function sessionStatusLabel(s) {
+	return (
+		{
+			Ready: __('Pronta'),
+			'In Progress': __('In corso'),
+			Completed: __('Completata'),
+			Abandoned: __('Abbandonata'),
+			Error: __('Errore'),
+			'Needs Review': __('Da revisionare'),
+		}[s] || s
+	)
+}
+
 function difficultyTheme(d) {
 	return { easy: 'green', medium: 'blue', hard: 'orange' }[d] || 'gray'
 }
 
+function difficultyLabel(d) {
+	return (
+		{ easy: __('Facile'), medium: __('Media'), hard: __('Difficile') }[d] || d
+	)
+}
+
 function scenarioStatusTheme(s) {
 	return { Draft: 'gray', Published: 'green', Archived: 'orange' }[s] || 'gray'
+}
+
+function scenarioStatusLabel(s) {
+	return (
+		{
+			Draft: __('Bozza'),
+			Published: __('Pubblicato'),
+			Archived: __('Archiviato'),
+		}[s] || s
+	)
 }
 </script>

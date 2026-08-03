@@ -52,7 +52,13 @@
 				callback: (data) => {
 					$("input").val("");
 					if (data.message == "OK") {
+						// Hardcoded Italian title: msgprint's default client-side
+						// __("Message") stays English here (this anonymous web page
+						// resolves neither the client message dict nor server-side _()
+						// to Italian), so on this Italian-only deployment we set the
+						// title literally.
 						frappe.msgprint({
+							title: "Messaggio",
 							message: __("Your Account has been successfully created!"),
 							clear: true
 						});

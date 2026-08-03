@@ -46,7 +46,7 @@
 				<FormControl
 					v-model="titleFilter"
 					:placeholder="__('Search')"
-					@input="updateList"
+					@update:modelValue="updateList()"
 				>
 					<template #prefix>
 						<span class="lucide-search size-4 text-ink-gray-5" />
@@ -182,6 +182,7 @@ import {
 } from 'frappe-ui'
 import Select from '@/components/Controls/Select.vue'
 import dayjs from '@/utils/dayjs'
+import { searchLikeFilter } from '@/utils'
 import { ClipboardList, Plus } from 'lucide-vue-next'
 import { sessionStore } from '@/stores/session'
 import { useRouter } from 'vue-router'
@@ -238,8 +239,9 @@ const updateList = () => {
 
 const getFilters = () => {
 	let filters: any = {}
-	if (titleFilter.value) {
-		filters['title'] = ['like', `%${titleFilter.value}%`]
+	const titleLike = searchLikeFilter(titleFilter.value)
+	if (titleLike) {
+		filters['title'] = titleLike
 	}
 	if (languageFilter.value && languageFilter.value.trim() !== '') {
 		filters['language'] = languageFilter.value

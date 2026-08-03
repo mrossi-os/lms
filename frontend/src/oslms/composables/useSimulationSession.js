@@ -206,6 +206,22 @@ export function useSimulationSession(sessionIdRef) {
 		}
 	}
 
+	// Time up = the session is over: auto-complete it (which generates the
+	// debrief) the moment the countdown reaches 0, instead of waiting for the
+	// student to press "Termina" or leave. So "tempo scaduto = Completata"
+	// always, regardless of what the student does next. Leaving BEFORE the time
+	// is up is still handled as an abandonment by the page-level guard.
+	watch(remainingSeconds, (val) => {
+		if (
+			val === 0 &&
+			status.value === 'In Progress' &&
+			!isTerminal.value &&
+			!ending.value
+		) {
+			end('completed')
+		}
+	})
+
 	// --- realtime ---
 
 	function _matchesSession(payload) {

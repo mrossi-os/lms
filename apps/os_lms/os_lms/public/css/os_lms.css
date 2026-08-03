@@ -1,5 +1,7 @@
 :root,
 [data-theme="light"] {
+	--color-white: #ffffff;
+	--color-black: #000000;
 	--color-company-primary: #111d2e;
 	--color-company-secondary: #123456;
 	--color-company-tertiary: #124679;
@@ -11,12 +13,12 @@ body {
 }
 
 .login-content {
-	background-color: var(--color-company-secondary) !important;
-	border-color: var(--outline-gray-1) !important;
+	/* background-color: var(--color-white) !important; */
+	/* border-color: var(--outline-gray-1) !important; */
 }
 
 .btn-login {
-	background-color: var(--color-company-tertiary) !important;
+	/* background-color: var(--color-company-tertiary) !important; */
 }
 
 input {
@@ -29,8 +31,8 @@ input {
 }
 
 .forgot-section {
-	padding: 45px 10px;
-	background-color: var(--color-company-secondary) !important;
+	padding: 45px 40px;
+	background-color: var(--color-white) !important;
 	border-color: var(--outline-gray-1) !important;
 	max-width: 400px;
 	margin: 0 auto;
@@ -38,6 +40,77 @@ input {
 	border: 1px solid var(--border-color);
 }
 
+.forgot-password-message a {
+	/* color: var(--text-dark) !important; */
+}
 .sign-up-message a {
-	color: white !important;
+	/* color: var(--text-dark) !important; */
+}
+
+.terms-and-conditions-content p {
+	color: black;
+}
+
+/* Back link on the account sub-pages reached from the /me "Settings" box
+   (the Reset Password page and the Edit Profile web form), which Frappe
+   renders without any way to return. Sits like a breadcrumb above the title.
+   Both hosts are white cards, so a muted color stays legible. */
+.oslms-back-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 0.75rem;
+	font-size: var(--text-sm);
+	font-weight: 500;
+	line-height: 1;
+	color: var(--text-muted);
+	text-decoration: none;
+}
+.oslms-back-link:hover {
+	color: var(--text-color);
+	text-decoration: none;
+}
+.oslms-back-link svg {
+	width: 16px;
+	height: 16px;
+	flex-shrink: 0;
+}
+
+/* Custom Profile Picture widget on the Edit Profile web form (injected by
+   os_lms.js), replacing Frappe's stock Attach Image control: a visible preview
+   plus explicit Upload/Change and Remove buttons. */
+.oslms-avatar-field {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	margin-top: 4px;
+}
+.oslms-avatar-preview {
+	width: 96px;
+	height: 96px;
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	border-radius: var(--border-radius-md, 8px);
+	border: 1px solid var(--border-color, #d1d8dd);
+	background-color: var(--control-bg, #f4f5f6);
+}
+.oslms-avatar-preview img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+.oslms-avatar-placeholder {
+	padding: 4px;
+	text-align: center;
+	font-size: var(--text-sm);
+	color: var(--text-muted, #8d99a6);
+}
+.oslms-avatar-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
 }

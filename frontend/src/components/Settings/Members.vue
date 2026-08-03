@@ -62,7 +62,7 @@
 							>
 								<span class="lucide-shield size-4" />
 								<span class="text-sm">
-									{{ getRole(role) }}
+									{{ __(getRole(role)) }}
 								</span>
 							</span>
 						</div>
@@ -260,8 +260,9 @@ const getRole = (role: string) => {
 		'Course Creator': 'Instructor',
 		Moderator: 'Moderator',
 		'Batch Evaluator': 'Evaluator',
+		Valutatore: 'Valutatore',
 	}
-	return map[role]
+	return map[role] || role
 }
 
 const openEditMember = (member: Member) => {

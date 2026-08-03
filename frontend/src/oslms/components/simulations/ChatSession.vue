@@ -24,7 +24,7 @@
 				<span v-if="timeUp">{{ __('Tempo scaduto') }}</span>
 				<span v-else>{{ formattedRemainingTime }}</span>
 			</div>
-			<Badge v-if="status" :label="status" :theme="statusTheme" />
+			<Badge v-if="status" :label="statusLabel" :theme="statusTheme" />
 			<Button
 				v-if="!readOnly && !isTerminal"
 				variant="outline"
@@ -222,6 +222,19 @@ const statusTheme = computed(() => {
 			return 'gray'
 	}
 })
+
+// Translate the backend status enum for display (the raw value drives logic).
+const statusLabel = computed(
+	() =>
+		({
+			Ready: __('Pronta'),
+			'In Progress': __('In corso'),
+			Completed: __('Completata'),
+			Abandoned: __('Abbandonata'),
+			Error: __('Errore'),
+			'Needs Review': __('Da revisionare'),
+		})[props.status] || props.status,
+)
 
 const renderableTurns = computed(() =>
 	(props.turns || []).filter((t) => t.role !== 'system'),

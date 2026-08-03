@@ -39,14 +39,19 @@
 			<div
 				class="flex flex-col space-y-4 lg:flex-row lg:items-center lg:gap-x-4 lg:space-y-0"
 			>
-				<TabButtons :buttons="courseTabs" v-model="currentTab" class="w-fit" />
+				<TabButtons
+					v-if="courseTabs.length > 1"
+					:buttons="courseTabs"
+					v-model="currentTab"
+					class="w-fit"
+				/>
 
 				<FormControl
 					v-model="title"
 					:placeholder="__('Search')"
 					type="text"
 					class="w-full lg:w-40"
-					@input="updateCourses()"
+					@update:modelValue="updateCourses()"
 				>
 					<template #prefix>
 						<span class="lucide-search size-4 text-ink-gray-5" />
@@ -54,9 +59,9 @@
 				</FormControl>
 
 				<ClearableCombobox
-					v-if="categories.data?.length"
+					v-if="categoryOptions.length"
 					v-model="currentCategory"
-					:options="categories.data.filter((c) => c.value)"
+					:options="categoryOptions"
 					:placeholder="__('Category')"
 					@update:modelValue="updateCourses()"
 					class="w-full lg:w-40"
@@ -67,7 +72,7 @@
 						type="checkbox"
 						v-model="certification"
 						:label="__('Certification')"
-						@change="updateCourses()"
+						@update:modelValue="updateCourses()"
 					/>
 				</Tooltip>
 			</div>
@@ -127,7 +132,7 @@ import {
 import ClearableCombobox from '@/components/Controls/ClearableCombobox.vue'
 import { computed, inject, onMounted, provide, ref, watch } from 'vue'
 import { sessionStore } from '@/stores/session'
-import { canCreateCourse } from '@/utils'
+import { canCreateCourse, searchLikeFilter } from '@/utils'
 import { useLocalStorage } from '@/utils/composables'
 import CourseCard from '@/components/CourseCard.vue'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
@@ -172,14 +177,20 @@ const tagColorMap = computed(() => {
 provide('tagColorMap', tagColorMap)
 
 onMounted(() => {
-	// Fall back to the default tab if the persisted value isn't available for
-	// this user's role (e.g. role changed since it was stored).
+	// Students only have the "Enrolled" tab, so always land them there
+	// regardless of any previously persisted value.
+	if (user.data?.is_student) {
+		currentTab.value = 'enrolled'
+	}
+	// Fall back to the first available tab if the persisted value isn't valid
+	// for this user's role (e.g. role changed since it was stored).
 	const validTabs = courseTabs.value.map((tab) => tab.value)
 	if (!validTabs.includes(currentTab.value)) {
-		currentTab.value = 'live'
+		currentTab.value = validTabs[0] || 'live'
 	}
 	setFiltersFromQuery()
 	updateCourses()
+	reloadCategories()
 	getCourseCount()
 })
 
@@ -189,7 +200,11 @@ const setFiltersFromQuery = () => {
 	currentCategory.value = queries.get('category') || null
 	certification.value = queries.get('certification') || false
 	const tab = queries.get('tab')
-	if (tab) currentTab.value = tab
+	// Only honor tabs the current user is actually allowed to see, so a stale
+	// or crafted ?tab= can't push a student onto a hidden tab.
+	if (tab && courseTabs.value.some((t) => t.value === tab)) {
+		currentTab.value = tab
+	}
 	if (queries.get('newCourse') == '1') {
 		showCourseModal.value = true
 	}
@@ -203,12 +218,30 @@ const courses = createListResource({
 	start: start.value,
 })
 
-const categories = createListResource({
-	doctype: 'LMS Category',
+// get_course_categories returns plain { label, value } options, not doctype
+// documents, so use a plain resource: createListResource's document machinery
+// (name-keyed dataMap + offline doc cache) can leave `data` empty here. No
+// persisted cache, so the list always loads fresh. Loaded on demand (not auto)
+// because the option set is scoped to the active tab's filters.
+const categories = createResource({
 	url: 'lms.lms.utils.get_course_categories',
-	cache: ['course_categories'],
-	auto: true,
 })
+
+// Real category options (the backend always prepends an empty "clear" sentinel,
+// which the ClearableCombobox provides on its own). Empty when the current tab
+// has no categorized courses, so the combobox stays hidden instead of showing
+// an empty dropdown.
+const categoryOptions = computed(
+	() => categories.data?.filter((c) => c.value) || [],
+)
+
+// The category set depends on the active tab (Enrolled, Created, ...), so
+// refetch it with the current tab filters. The backend ignores the narrowing
+// filters (picked category, search text, certification), so the list stays
+// stable as those change and only needs reloading when the tab changes.
+const reloadCategories = () => {
+	categories.reload({ filters: filters.value })
+}
 
 const getCourseCount = () => {
 	if (!user.data) return
@@ -246,8 +279,9 @@ const updateCategoryFilter = () => {
 }
 
 const updateTitleFilter = () => {
-	if (title.value) {
-		filters.value['title'] = ['like', `%${title.value}%`]
+	const titleFilter = searchLikeFilter(title.value)
+	if (titleFilter) {
+		filters.value['title'] = titleFilter
 	} else {
 		delete filters.value['title']
 	}
@@ -330,10 +364,20 @@ const setQueryParams = () => {
 }
 
 watch(currentTab, () => {
+	// Each tab has its own category set, so a selection made on another tab no
+	// longer applies; clear it before refetching the tab-scoped options.
+	currentCategory.value = null
 	updateCourses()
+	reloadCategories()
 })
 
 const courseTabs = computed(() => {
+	// Students only see the courses they are enrolled in — the public
+	// "Published" and "Upcoming" tabs are hidden for them.
+	if (user.data?.is_student) {
+		return [{ label: __('Enrolled'), value: 'enrolled' }]
+	}
+
 	let tabs = [
 		{
 			label: __('Published'),
@@ -351,14 +395,22 @@ const courseTabs = computed(() => {
 	) {
 		tabs.push({ label: __('Created'), value: 'created' })
 		tabs.push({ label: __('Unpublished'), value: 'unpublished' })
-	} else if (user.data) {
-		tabs.push({ label: __('Enrolled'), value: 'enrolled' })
 	}
 	return tabs
 })
 
+// A "Gestore" may only create courses manually, so the file-based entries
+// (Data Import tool, ZIP) are hidden for them. System Managers keep them —
+// including the Administrator, who implicitly holds every role and would
+// otherwise lose the import too.
+const canImportCourse = computed(() => {
+	const roles = user.data?.roles || []
+	if (!roles.includes('Gestore')) return true
+	return !!user.data?.is_system_manager
+})
+
 const courseMenu = computed(() => {
-	return [
+	const menu = [
 		{
 			label: __('New Course'),
 			icon: 'book-open',
@@ -366,6 +418,11 @@ const courseMenu = computed(() => {
 				showCourseModal.value = true
 			},
 		},
+	]
+
+	if (!canImportCourse.value) return menu
+
+	menu.push(
 		{
 			label: __('Import via Data Import Tool'),
 			icon: 'upload',
@@ -383,7 +440,9 @@ const courseMenu = computed(() => {
 				showCourseImportModal.value = true
 			},
 		},
-	]
+	)
+
+	return menu
 })
 
 const breadcrumbs = computed(() => [

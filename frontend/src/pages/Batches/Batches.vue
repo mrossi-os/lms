@@ -67,7 +67,7 @@
 						:placeholder="__('Search')"
 						type="text"
 						class="min-w-40"
-						@input="updateBatches()"
+						@update:modelValue="updateBatches()"
 					>
 						<template #prefix>
 							<span class="lucide-search size-4 text-ink-gray-5" />
@@ -76,19 +76,11 @@
 					<ClearableCombobox
 						v-if="categories.length"
 						v-model="currentCategory"
-						:options="categories.filter((c) => c.value)"
+						:options="categoryOptions"
 						:placeholder="__('Category')"
 						@update:modelValue="updateBatches()"
 					/>
 				</div>
-
-				<Tooltip :text="__('Only show batches that offer a certificate')">
-					<Checkbox
-						v-model="certification"
-						:label="__('Certification')"
-						@change="updateBatches()"
-					/>
-				</Tooltip>
 			</div>
 		</div>
 		<SkeletonLoader
@@ -133,16 +125,15 @@ import {
 	createListResource,
 	Dropdown,
 	FormControl,
-	Tooltip,
 	TabButtons,
 	usePageMeta,
-	Checkbox,
 } from 'frappe-ui'
 import ClearableCombobox from '@/components/Controls/ClearableCombobox.vue'
 import { computed, inject, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { sessionStore } from '@/stores/session'
 import { useLocalStorage } from '@/utils/composables'
+import { searchLikeFilter } from '@/utils'
 import BatchCard from '@/pages/Batches/components/BatchCard.vue'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
 import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
@@ -156,6 +147,14 @@ const start = ref(0)
 const pageLength = ref(20)
 const categories = ref([])
 const currentCategory = ref(null)
+// Sentinel for the "All" category option. There's otherwise no way to clear a
+// selected category from the dropdown, so selecting "All" resets the filter and
+// shows every batch, with or without a category.
+const ALL_CATEGORIES = '__all__'
+const categoryOptions = computed(() => [
+	{ label: __('All'), value: ALL_CATEGORIES },
+	...categories.value.filter((c) => c.value),
+])
 const title = ref('')
 const certification = ref(false)
 const filters = ref({})
@@ -174,7 +173,14 @@ const defaultTab = is_student.value
 		? 'upcoming'
 		: 'all'
 // Persist the selected tab so it survives leaving and returning to the list.
-const currentTab = useLocalStorage('lms_batches_tab', defaultTab)
+// Students are deliberately kept out of that: they have no tab bar (see the
+// TabButtons v-if) and always see their own batches, while `lms_batches_tab` is
+// a per-browser key — an "all" left there by another user of the same browser
+// would strand them on an empty list (updateStudentFilter narrows it to future
+// published batches) with no visible tab to switch back.
+const currentTab = is_student.value
+	? ref('enrolled')
+	: useLocalStorage('lms_batches_tab', defaultTab)
 const orderBy = ref('start_date')
 const readOnlyMode = window.read_only_mode
 const router = useRouter()
@@ -243,7 +249,7 @@ const updateFilters = () => {
 }
 
 const updateCategoryFilter = () => {
-	if (currentCategory.value) {
+	if (currentCategory.value && currentCategory.value !== ALL_CATEGORIES) {
 		filters.value['category'] = currentCategory.value
 	} else {
 		delete filters.value['category']
@@ -251,8 +257,9 @@ const updateCategoryFilter = () => {
 }
 
 const updateTitleFilter = () => {
-	if (title.value) {
-		filters.value['title'] = ['like', `%${title.value}%`]
+	const titleFilter = searchLikeFilter(title.value)
+	if (titleFilter) {
+		filters.value['title'] = titleFilter
 	} else {
 		delete filters.value['title']
 	}
@@ -271,7 +278,10 @@ const updateTabFilter = () => {
 	if (!user.data) {
 		return
 	}
-	if (currentTab.value == 'enrolled' && is_student.value) {
+	if (currentTab.value == 'enrolled') {
+		// The "Enrolled" tab is offered to every non-admin user (students AND, e.g.,
+		// a Valutatore who is also enrolled). Don't gate the filter on is_student,
+		// or those non-student members see all/assigned batches instead of their own.
 		filters.value['enrolled'] = 1
 		delete filters.value['start_date']
 		delete filters.value['end_date']
@@ -280,6 +290,10 @@ const updateTabFilter = () => {
 	} else if (is_student.value) {
 		delete filters.value['enrolled']
 	} else {
+		// Clear the enrolled filter when leaving the Enrolled tab; otherwise a
+		// non-student member (e.g. a Valutatore) keeps filtering by enrollment
+		// after switching to All/Upcoming/etc.
+		delete filters.value['enrolled']
 		delete filters.value['start_date']
 		delete filters.value['end_date']
 		delete filters.value['published']
@@ -307,7 +321,9 @@ const setQueryParams = () => {
 	let queries = new URLSearchParams(location.search)
 	let filterKeys = {
 		title: title.value,
-		category: currentCategory.value,
+		// The "All" sentinel means "no category filter" — keep it out of the URL.
+		category:
+			currentCategory.value === ALL_CATEGORIES ? null : currentCategory.value,
 		certification: certification.value,
 	}
 
@@ -344,6 +360,12 @@ watch(currentTab, () => {
 })
 
 const batchTabs = computed(() => {
+	// A student's tab is pinned to "Enrolled" (see currentTab), so that's the
+	// only valid value for them. Mirrors courseTabs on the Courses page.
+	if (is_student.value) {
+		return [{ label: __('Enrolled'), value: 'enrolled' }]
+	}
+
 	let tabs = [
 		{
 			label: __('All'),

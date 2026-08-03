@@ -16,6 +16,7 @@ export default defineConfig(async ({ mode }) => {
 		},
 		plugins: [
 			osOverrideTheme(),
+			osTranslateTocFallback(),
 			frappeui({
 				frappeProxy: true,
 				lucideIcons: true,
@@ -100,15 +101,28 @@ export default defineConfig(async ({ mode }) => {
 						'node_modules/frappe-ui/src/components/TextEditor/TextEditor.vue'
 					),
 				},
+				// NOTE: the Data Import forks in src/overrides deliberately do NOT use an
+				// alias like these to reach frappe-ui internals. `frappe-ui` is excluded
+				// from optimizeDeps in dev, so a bare specifier resolving into it gets
+				// pre-bundled separately and yields a second copy of whatever it pulls
+				// in — including the resource layer, whose fetcher is then unconfigured.
+				// They import runtime code from the `frappe-ui` barrel and frappe-ui's
+				// internal modules by relative path instead.
 				{
 					find: /^@\/utils$/,
 					replacement: path.resolve(__dirname, 'src/oslms/utils/index.js'),
 				},
 				{ find: '@', replacement: path.resolve(__dirname, 'src') },
 			],
-			// Force one copy of prosemirror; duplicate copies break tiptap's
-			// instanceof checks and crash the list buttons.
+			// Force one copy of tiptap/prosemirror; duplicate copies break tiptap's
+			// instanceof checks and crash the list buttons. The @tiptap/* entries are
+			// also declared as direct deps in package.json so the bare imports in
+			// src/overrides/.../TextEditor resolve in a clean (Docker) install, where
+			// they are not hoisted to the top-level node_modules.
 			dedupe: [
+				'@tiptap/core',
+				'@tiptap/pm',
+				'@tiptap/vue-3',
 				'prosemirror-model',
 				'prosemirror-state',
 				'prosemirror-view',
@@ -122,6 +136,56 @@ export default defineConfig(async ({ mode }) => {
 				'interactjs',
 				'highlight.js',
 				'plyr',
+				// Pre-bundle EVERY tiptap/prosemirror entrypoint the editor touches.
+				// `frappe-ui` is excluded from optimization below (its source must be
+				// served raw for the osOverrideTheme plugin to intercept the relative
+				// component imports), so Vite's scanner never walks its dep tree. Any
+				// `@tiptap/pm/*` subpath imported ONLY through frappe-ui (and its
+				// transitive @tiptap/extension-* / starter-kit packages) is therefore
+				// served raw from node_modules, dragging in a SECOND raw copy of
+				// prosemirror-state alongside the optimized one used by @tiptap/vue-3.
+				// Two prosemirror-state instances = two plugin-key counters, so
+				// unnamed plugins (e.g. dropcursor/gapcursor from StarterKit) collide
+				// with the editor's own on `plugin$` and it throws
+				// "Adding different instances of a keyed plugin (plugin$)".
+				// Listing the complete @tiptap/pm subpath set forces them all into
+				// one optimize pass that shares a single prosemirror-state chunk.
+				'@tiptap/core',
+				'@tiptap/vue-3',
+				'@tiptap/pm/changeset',
+				'@tiptap/pm/commands',
+				'@tiptap/pm/dropcursor',
+				'@tiptap/pm/gapcursor',
+				'@tiptap/pm/history',
+				'@tiptap/pm/inputrules',
+				'@tiptap/pm/keymap',
+				'@tiptap/pm/model',
+				'@tiptap/pm/schema-list',
+				'@tiptap/pm/state',
+				'@tiptap/pm/tables',
+				'@tiptap/pm/transform',
+				'@tiptap/pm/view',
+				// Some @tiptap/extension-* packages (e.g. extension-list,
+				// extension-blockquote) import the BARE `prosemirror-*` packages
+				// directly rather than through `@tiptap/pm/*`. When those extensions
+				// are pulled in by raw-served frappe-ui, a bare import that isn't a
+				// known optimized dep resolves to a raw node_modules copy — a second
+				// instance. Listing the bare packages too collapses every import path
+				// (subpath or bare) onto one optimized copy. This also guards the
+				// documented "duplicate prosemirror-model crashes list buttons" case.
+				'prosemirror-changeset',
+				'prosemirror-commands',
+				'prosemirror-dropcursor',
+				'prosemirror-gapcursor',
+				'prosemirror-history',
+				'prosemirror-inputrules',
+				'prosemirror-keymap',
+				'prosemirror-model',
+				'prosemirror-schema-list',
+				'prosemirror-state',
+				'prosemirror-tables',
+				'prosemirror-transform',
+				'prosemirror-view',
 			],
 			exclude: mode === 'production' ? [] : ['frappe-ui'],
 		},
@@ -159,6 +223,33 @@ async function importConfigSite(isDev) {
 	return JSON.parse(readFileSync(filePath, 'utf-8'))
 }
 
+
+// frappe-ui's tocNode extension lives in a `.ts` file, so it is out of reach of
+// osOverrideTheme (which only intercepts `.vue`). Its `renderHTML` serialization
+// path hardcodes an English empty-state string, shown in the read-only render of
+// a saved Table-of-Contents block that has no headings. Translate that single
+// literal to match the interactive NodeView (the TocNodeView.vue override).
+// NOTE: a targeted string replace — re-verify the matched literal after any
+// frappe-ui bump; a wording change upstream makes this silently no-op.
+function osTranslateTocFallback() {
+	return {
+		name: 'os-translate-toc-fallback',
+		enforce: 'pre',
+		transform(code, id) {
+			if (
+				id
+					.replace(/\\/g, '/')
+					.endsWith('/extensions/toc-node/toc-node-extension.ts')
+			) {
+				return code.replace(
+					"'No headings found in this document.',",
+					"'Non ci sono intestazioni in questo documento.',"
+				)
+			}
+			return null
+		},
+	}
+}
 
 // Vite plugin that allows overriding Vue components from node_modules
 // (e.g. frappe-ui) with local versions placed in `src/overrides/`.

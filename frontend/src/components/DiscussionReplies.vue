@@ -1,6 +1,6 @@
 <template>
-	<div class="mt-6">
-		<div v-if="!singleThread" class="flex items-center mb-5 md:hidden">
+	<div class="mt-6 flex flex-col">
+		<div v-if="!singleThread" class="order-1 flex items-center mb-5 md:hidden">
 			<Button variant="outline" @click="showTopics = true">
 				<template #icon>
 					<span class="lucide-chevron-left size-5 text-ink-gray-7" />
@@ -12,15 +12,15 @@
 		</div>
 		<div
 			v-if="!singleThread"
-			class="hidden md:block text-xl-semibold mb-5 text-ink-gray-9"
+			class="order-1 hidden md:block text-xl-semibold mb-5 text-ink-gray-9"
 		>
 			{{ topic.title }}
 		</div>
 
-		<div v-for="(reply, index) in replies.data">
+		<div v-for="(reply, index) in orderedReplies" class="order-3">
 			<div
 				class="py-3"
-				:class="{ 'border-b': index + 1 != replies.data.length }"
+				:class="{ 'border-b': index + 1 != orderedReplies.length }"
 			>
 				<div class="flex items-center justify-between mb-2">
 					<div class="flex items-center text-ink-gray-5">
@@ -70,7 +70,7 @@
 					:content="reply.reply"
 					@change="(val) => (reply.reply = val)"
 					:editable="reply.editable || false"
-					:fixedMenu="reply.editable || false"
+					:fixedMenu="reply.editable ? discussionFixedMenu : false"
 					:editorClass="
 						reply.editable
 							? 'ProseMirror bg-surface-gray-2  prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none'
@@ -82,15 +82,18 @@
 
 		<TextEditor
 			v-if="renderEditor && !readOnlyMode"
-			class="mt-5"
+			:class="['mt-5', singleThread ? 'order-2' : 'order-4']"
 			:content="newReply"
 			:mentions="mentionUsers"
 			@change="(val) => (newReply = val)"
 			:placeholder="__('Type your reply here...')"
-			:fixedMenu="true"
+			:fixedMenu="discussionFixedMenu"
 			editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem] max-h-[16rem] overflow-y-scroll mb-4"
 		/>
-		<div v-if="!readOnlyMode" class="flex justify-between mt-2">
+		<div
+			v-if="!readOnlyMode"
+			:class="['flex justify-between mt-2', singleThread ? 'order-2' : 'order-4']"
+		>
 			<span> </span>
 			<Button @click="postReply()">
 				<span>
@@ -110,8 +113,9 @@ import {
 	toast,
 } from 'frappe-ui'
 import { timeAgo } from '@/utils'
+import { discussionFixedMenu } from '@/utils/discussionToolbar'
 import UserAvatar from '@/components/UserAvatar.vue'
-import { ref, inject, onMounted, onUnmounted } from 'vue'
+import { ref, computed, inject, onMounted, onUnmounted } from 'vue'
 import { useTelemetry } from 'frappe-ui/frappe'
 
 const showTopics = defineModel('showTopics')
@@ -157,6 +161,13 @@ const replies = createResource({
 		}
 	},
 	auto: true,
+})
+
+// The single-thread batch chat shows newest messages first (top) with the
+// composer above them; topic threads keep chronological order (oldest first).
+const orderedReplies = computed(() => {
+	if (!replies.data) return []
+	return props.singleThread ? [...replies.data].reverse() : replies.data
 })
 
 const fetchMentionUsers = () => {

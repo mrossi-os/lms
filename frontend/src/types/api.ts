@@ -60,6 +60,9 @@ export interface CourseDetails
 	rating?: string
 	rating_count?: number
 	quiz_count?: number
+	// OSLMS-CUSTOM: read-only access flag for a "Valutatore" of a batch holding
+	// this course, injected by the os_lms get_course_details override.
+	is_valutatore?: 0 | 1
 }
 
 export interface BatchDetails extends Omit<LMSBatch, 'instructors'> {

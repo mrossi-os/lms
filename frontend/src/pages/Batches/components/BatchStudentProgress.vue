@@ -79,52 +79,106 @@
 					</ListView>
 
 					<!-- Courses -->
-					<ListView
-						:columns="courseColumns"
-						:rows="studentDetails.data.courses"
-						row-key="title"
-						class="border border-outline-elevation-2 rounded-lg"
-						:options="{
-							selectable: false,
-							showTooltip: false,
-							onRowClick: (row: any) => {
-								redirectToCourse(row)
-							},
-						}"
-					>
-						<ListHeader
-							class="mb-2 grid items-center gap-x-4 rounded-t-lg bg-surface-gray-2 p-2"
+					<div class="space-y-3">
+						<div class="flex items-center justify-between gap-x-2">
+							<div class="text-ink-gray-5">
+								{{ __('Courses') }}
+							</div>
+							<Select
+								v-model="selectedCourse"
+								:options="courseSelectOptions"
+								class="!w-48"
+							/>
+						</div>
+
+						<!-- All courses selected: per-course average progress -->
+						<ListView
+							v-if="!selectedCourse"
+							:columns="courseColumns"
+							:rows="studentDetails.data.courses"
+							row-key="title"
+							class="border border-outline-elevation-2 rounded-lg"
+							:options="{
+								selectable: false,
+								showTooltip: false,
+								onRowClick: (row: any) => {
+									redirectToCourse(row)
+								},
+							}"
 						>
-						</ListHeader>
-						<ListRows v-for="row in studentDetails.data.courses">
-							<ListRow :row="row" class="!rounded-none last:!rounded-b-lg">
-								<template #default="{ column, item }">
-									<ListRowItem
-										:item="row[column.key]"
-										:align="column.align"
-										class="w-full"
-									>
-										<template #prefix>
-											<ProgressBar
-												v-if="column.key == 'progress'"
-												:progress="Math.ceil(row[column.key])"
-												class="!mx-0 !me-4 max-w-32"
-											/>
-										</template>
-										<div
-											v-if="column.key == 'progress'"
-											class="text-xs !ms-0 !me-3 w-5"
+							<ListHeader
+								class="mb-2 grid items-center gap-x-4 rounded-t-lg bg-surface-gray-2 p-2"
+							>
+							</ListHeader>
+							<ListRows v-for="row in studentDetails.data.courses">
+								<ListRow :row="row" class="!rounded-none last:!rounded-b-lg">
+									<template #default="{ column, item }">
+										<ListRowItem
+											:item="row[column.key]"
+											:align="column.align"
+											class="w-full"
 										>
-											{{ Math.ceil(row[column.key]) }}%
-										</div>
-										<div v-else>
-											{{ row[column.key] }}
-										</div>
-									</ListRowItem>
-								</template>
-							</ListRow>
-						</ListRows>
-					</ListView>
+											<template #prefix>
+												<ProgressBar
+													v-if="column.key == 'progress'"
+													:progress="Math.ceil(row[column.key])"
+													class="!mx-0 !me-4 max-w-32"
+												/>
+											</template>
+											<div
+												v-if="column.key == 'progress'"
+												class="text-xs !ms-0 !me-3 w-5"
+											>
+												{{ Math.ceil(row[column.key]) }}%
+											</div>
+											<div v-else>
+												{{ row[column.key] }}
+											</div>
+										</ListRowItem>
+									</template>
+								</ListRow>
+							</ListRows>
+						</ListView>
+
+						<!-- A specific course selected: this student's per-lesson detail -->
+						<div
+							v-else
+							class="border border-outline-elevation-2 rounded-lg px-3 py-1 max-h-[50vh] overflow-y-auto"
+						>
+							<div
+								v-if="courseLessonProgress.loading"
+								class="flex items-center justify-center py-8"
+							>
+								<LoadingIndicator class="size-4" />
+							</div>
+							<template v-else-if="courseLessonProgress.data?.lessons?.length">
+								<div
+									v-for="lesson in courseLessonProgress.data.lessons"
+									:key="lesson.lesson_name"
+									class="flex items-center justify-between text-sm py-2 my-1"
+								>
+									<div>
+										<span class="me-3 text-xs text-ink-gray-5">
+											{{ lesson.chapter_idx }}.{{ lesson.idx }}
+										</span>
+										<span class="text-ink-gray-8">{{ lesson.title }}</span>
+									</div>
+									<Tooltip
+										:text="lesson.completed ? __('Complete') : __('Pending')"
+									>
+										<span
+											v-if="lesson.completed"
+											class="lucide-check text-ink-green-6 size-4"
+										/>
+										<span v-else class="lucide-minus text-ink-amber-5 size-4" />
+									</Tooltip>
+								</div>
+							</template>
+							<div v-else class="text-ink-gray-5 py-8 text-center">
+								{{ __('No lessons in this course') }}
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
 		</template>
@@ -142,9 +196,12 @@ import {
 	ListRow,
 	ListRowItem,
 	LoadingIndicator,
+	Tooltip,
 } from 'frappe-ui'
 import { useRouter } from 'vue-router'
+import { computed, ref, watch } from 'vue'
 import ProgressBar from '@/components/ProgressBar.vue'
+import Select from '@/components/Controls/Select.vue'
 
 const show = defineModel()
 const router = useRouter()
@@ -162,6 +219,36 @@ const studentDetails = createResource({
 		}
 	},
 	auto: true,
+})
+
+// Course drill-down. Empty value = "All courses" (the per-course summary list);
+// a course value switches to this student's per-lesson detail for that course.
+const selectedCourse = ref('')
+
+const courseSelectOptions = computed(() => [
+	{ label: __('All Courses'), value: '' },
+	...(studentDetails.data?.courses || []).map((course: any) => ({
+		label: course.title,
+		value: course.course,
+	})),
+])
+
+// Per-lesson progress of this student in the selected course. Goes through the
+// batch-authorized endpoint so valutatori can see it too. Fetched on demand only
+// when a specific course is selected (no `auto`).
+const courseLessonProgress = createResource({
+	url: 'os_lms.os_lms.api.get_batch_student_course_progress',
+	makeParams() {
+		return {
+			batch: props.batch,
+			course: selectedCourse.value,
+			member: props.student,
+		}
+	},
+})
+
+watch(selectedCourse, (course) => {
+	if (course) courseLessonProgress.reload()
 })
 
 const redirectToAssessment = (row: any) => {
