@@ -9,7 +9,12 @@ from frappe.utils import validate_url
 
 from lms.lms.utils import get_lms_route
 
-PRIVILEGED_ROLES = {"Moderator", "Course Creator", "Batch Evaluator", "System Manager"}
+# Roles allowed to save a submission that belongs to somebody else — i.e. the
+# ones that grade. "Valutatore" is the os_lms custom role: it is scoped to its
+# own batches, but that scoping is already applied by the time this runs, since
+# Document.save checks the write permission — and with it
+# os_lms.os_lms.valutatore.submission_has_permission — before validate.
+PRIVILEGED_ROLES = {"Moderator", "Course Creator", "Batch Evaluator", "System Manager", "Valutatore"}
 
 
 class LMSAssignmentSubmission(Document):
