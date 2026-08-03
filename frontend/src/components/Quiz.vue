@@ -9,7 +9,7 @@
 		<div
 			class="bg-surface-blue-2 text-ink-grey-9 space-y-2 p-3 mb-4 rounded-lg leading-5"
 		>
-			<div class="font-medium">
+			<div class="font-medium text-ink-gray-9">
 				{{
 					__(
 						'Please read the following instructions carefully before starting the quiz',
@@ -17,43 +17,43 @@
 				}}
 			</div>
 			<ol class="list-decimal list-inside space-y-2">
-				<li v-if="inVideo">
+				<li v-if="inVideo" class="text-ink-gray-9">
 					{{ __('You will have to complete the quiz to continue the video') }}
 				</li>
-				<li>
+				<li class="text-ink-gray-9">
 					{{
 						__(
 							'Do not refresh the page or close this window. If you do, the quiz will be submitted automatically.',
 						)
 					}}
 				</li>
-				<li>
+				<li class="text-ink-gray-9">
 					{{
 						__('This quiz consists of {0} questions.').format(questions.length)
 					}}
 				</li>
-				<li v-if="quiz.data?.duration">
+				<li v-if="quiz.data?.duration" class="text-ink-gray-9">
 					{{
 						__(
 							'Please ensure that you complete all the questions in {0} minutes.',
 						).format(quiz.data.duration)
 					}}
 				</li>
-				<li v-if="quiz.data?.duration">
+				<li v-if="quiz.data?.duration" class="text-ink-gray-9">
 					{{
 						__(
 							'If you fail to do so, the quiz will be automatically submitted when the timer ends.',
 						)
 					}}
 				</li>
-				<li v-if="quiz.data.passing_percentage">
+				<li v-if="quiz.data.passing_percentage" class="text-ink-gray-9">
 					{{
 						__(
 							'You will have to get {0}% correct answers in order to pass the quiz.',
 						).format(quiz.data.passing_percentage)
 					}}
 				</li>
-				<li v-if="quiz.data.max_attempts">
+				<li v-if="quiz.data.max_attempts" class="text-ink-gray-9">
 					{{
 						__('You can attempt this quiz {0}.').format(
 							quiz.data.max_attempts == 1
@@ -62,7 +62,7 @@
 						)
 					}}
 				</li>
-				<li v-if="quiz.data.enable_negative_marking">
+				<li v-if="quiz.data.enable_negative_marking" class="text-ink-gray-9">
 					{{
 						__(
 							'If you answer incorrectly, {0} {1} will be deducted from your score for each incorrect answer.',
