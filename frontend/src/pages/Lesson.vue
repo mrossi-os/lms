@@ -138,7 +138,11 @@
 									</template>
 									<span>{{ __('Previous') }}</span>
 								</Button>
-								<Button v-if="lesson.data.next" @click="switchLesson('next')">
+								<Button
+									v-if="lesson.data.next"
+									@click="switchLesson('next')"
+									:disabled="lessonBlocked"
+								>
 									<template #suffix>
 										<span class="lucide-chevron-right size-4" />
 									</template>
@@ -168,7 +172,11 @@
 									</span>
 								</Button>
 
-								<Button v-if="lesson.data.next" @click="switchLesson('next')">
+								<Button
+									v-if="lesson.data.next"
+									@click="switchLesson('next')"
+									:disabled="lessonBlocked"
+								>
 									<template #suffix>
 										<span class="lucide-chevron-right size-4" />
 									</template>
@@ -214,8 +222,24 @@
 							/>
 						</div>
 
+						<!-- Sequential access (os_lms): when the course enforces the lesson
+						order and the previous lesson is not complete, the locked screen
+						replaces the whole lesson body. -->
+						<div
+							v-if="lessonBlocked"
+							class="flex flex-col items-center justify-center mt-16 text-center"
+						>
+							<span class="lucide-lock-keyhole size-12 text-ink-gray-4 mb-4" />
+							<div class="text-lg font-semibold text-ink-gray-7 mb-2">
+								{{ __('Lezione bloccata') }}
+							</div>
+							<div class="text-base text-ink-gray-5 max-w-sm leading-6">
+								{{ blockedReason }}
+							</div>
+						</div>
 						<div
 							v-if="
+								!lessonBlocked &&
 								lesson.data.instructor_content &&
 								JSON.parse(lesson.data.instructor_content)?.blocks?.length >
 									1 &&
@@ -232,24 +256,52 @@
 							></div>
 						</div>
 						<div
-							v-else-if="lesson.data.instructor_notes"
+							v-else-if="!lessonBlocked && lesson.data.instructor_notes"
 							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
 						>
 							<LessonContent :content="lesson.data.instructor_notes" />
 						</div>
 						<div
-							v-if="lesson.data.content"
+							v-if="!lessonBlocked && lesson.data.content"
 							@mouseup="toggleInlineMenu"
 							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
 						>
-							<div id="editor"></div>
+							<div
+								v-if="quizBlocked && contentHasQuiz"
+								class="flex flex-col items-center justify-center mt-8 mb-8 text-center"
+							>
+								<span
+									class="lucide-lock-keyhole size-12 text-ink-gray-4 mb-4"
+								/>
+								<div class="text-lg font-semibold text-ink-gray-7 mb-2">
+									{{ __('Quiz bloccato') }}
+								</div>
+								<div class="text-base text-ink-gray-5 max-w-sm leading-6">
+									{{ quizBlockedReason }}
+								</div>
+							</div>
+							<div v-else id="editor"></div>
 						</div>
 						<div
-							v-else
+							v-else-if="!lessonBlocked"
 							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
 						>
+							<div
+								v-if="quizBlocked && lesson.data?.quiz_id"
+								class="flex flex-col items-center justify-center mt-8 mb-8 text-center"
+							>
+								<span
+									class="lucide-lock-keyhole size-12 text-ink-gray-4 mb-4"
+								/>
+								<div class="text-lg font-semibold text-ink-gray-7 mb-2">
+									{{ __('Quiz bloccato') }}
+								</div>
+								<div class="text-base text-ink-gray-5 max-w-sm leading-6">
+									{{ quizBlockedReason }}
+								</div>
+							</div>
 							<LessonContent
-								v-if="lesson.data?.body"
+								v-else-if="lesson.data?.body"
 								:content="lesson.data.body"
 								:youtube="lesson.data.youtube"
 								:quizId="lesson.data.quiz_id"
@@ -257,7 +309,12 @@
 						</div>
 					</div>
 					<div
-						v-if="lesson.data && allowDiscussions && currentTab === 'Notes'"
+						v-if="
+							!lessonBlocked &&
+							lesson.data &&
+							allowDiscussions &&
+							currentTab === 'Notes'
+						"
 						class="mt-10 pb-20 pt-5 border-t px-5"
 					>
 						<Notes
@@ -366,6 +423,13 @@ const plyrSources = ref([])
 const showInlineMenu = ref(false)
 const currentTab = ref(null)
 const completedLesson = ref(null)
+// Sequential access rules: `lesson_access` and `quiz_access` are computed
+// server-side by the os_lms override of `get_lesson`, out of the course
+// flags `enforce_lesson_order` and `enforce_quiz_on_completion`.
+const lessonBlocked = ref(false)
+const blockedReason = ref('')
+const quizBlocked = ref(false)
+const quizBlockedReason = ref('')
 const settingsStore = useSettings()
 const aiContext = useAiContext()
 let timerInterval = null
@@ -530,6 +594,10 @@ const renderEditor = (holder, content) => {
 let progressSubmitting = false
 const markProgress = () => {
 	if (progressSubmitting) return
+	// A lesson locked by the sequential-access rule must not be marked
+	// complete: the dwell timer keeps running behind the locked screen and
+	// would otherwise unlock the next lesson without the content being read.
+	if (lessonBlocked.value) return
 	// Only enrolled students record progress; a moderator previewing has no
 	// membership row so save_progress would no-op server-side but still
 	// flip the in-memory `completedLesson` and show a green tick that
@@ -663,6 +731,10 @@ const resetLessonState = (newChapterNumber, newLessonNumber) => {
 		chapter: newChapterNumber,
 		lesson: newLessonNumber,
 	})
+	lessonBlocked.value = false
+	blockedReason.value = ''
+	quizBlocked.value = false
+	quizBlockedReason.value = ''
 	videoFallbackArmed = false
 	fallbackGeneration++
 	clearInterval(timerInterval)
@@ -714,10 +786,34 @@ const cleanYouTubeUrl = (url) => {
 	return urlObj.toString()
 }
 
+const applyAccessFromLesson = (data) => {
+	const lessonAccess = data?.lesson_access || { allowed: true }
+	const quizAccess = data?.quiz_access || { allowed: true }
+	lessonBlocked.value = !lessonAccess.allowed
+	blockedReason.value = lessonAccess.reason || ''
+	quizBlocked.value = !quizAccess.allowed
+	quizBlockedReason.value = quizAccess.reason || ''
+}
+
+// A quiz can also live inside the EditorJS content, not only as `quiz_id`.
+const contentHasQuiz = computed(() => {
+	if (!lesson.data?.content) return false
+	try {
+		return JSON.parse(lesson.data.content)?.blocks?.some(
+			(block) => block.type === 'quiz',
+		)
+	} catch {
+		return false
+	}
+})
+
 watch(
 	() => lesson.data,
 	async (data) => {
 		setupLesson(data)
+		// Read the access flags after setupLesson so the EditorJS holder is
+		// still in the DOM when the editor is instantiated.
+		applyAccessFromLesson(data)
 		// Settings drive dwell + enforcement; if they haven't resolved yet
 		// the timer reads undefined and falls back to 30s. Await the
 		// resource so the admin-configured dwell time wins from the first
