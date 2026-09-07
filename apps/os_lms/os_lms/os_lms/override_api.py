@@ -100,6 +100,71 @@ def get_members(start: int = 0, search: str = None, role: str = "All"):
     return members
 
 
+# Roles the Members settings modal is allowed to grant: the four upstream LMS
+# roles plus the custom ones handled by `save_role` above.
+MANAGEABLE_ROLES = [
+    "LMS Student",
+    "Course Creator",
+    "Batch Evaluator",
+    "Moderator",
+] + EXTRA_LMS_ROLES
+
+
+@frappe.whitelist()
+def create_member(
+    email: str,
+    roles: list[str],
+    first_name: str | None = None,
+    last_name: str | None = None,
+) -> dict:
+    """Create a member carrying exactly the selected roles.
+
+    `lms.lms.user.add_lms_student_role` (a `before_insert` hook on User) grants
+    "LMS Student" to every new user, so adding a member with only, say,
+    "Valutatore" ticked used to leave them a student as well: the client only
+    ever added the ticked roles on top of that implicit one. The whole role set
+    is reconciled here, in the same request as the insert, so the new user ends
+    up with the selected roles and nothing else.
+    """
+    frappe.only_for("Moderator")
+
+    if isinstance(roles, str):
+        roles = frappe.parse_json(roles)
+    roles = [role for role in (roles or []) if role]
+    if not roles:
+        frappe.throw(frappe._("Select at least one role for the new member."))
+
+    unknown = [role for role in roles if role not in MANAGEABLE_ROLES]
+    if unknown:
+        frappe.throw(
+            frappe._("You do not have permission to grant this role: {0}").format(
+                ", ".join(unknown)
+            ),
+            frappe.PermissionError,
+        )
+
+    user = frappe.get_doc(
+        {
+            "doctype": "User",
+            "email": email,
+            "first_name": first_name or None,
+            "last_name": last_name or None,
+        }
+    ).insert()
+
+    # Grant what was selected and drop what was not — including the "LMS Student"
+    # role appended by the before_insert hook. save_role() is reused so the
+    # "Batch Evaluator" keeps its Course Evaluator record in sync.
+    for role in MANAGEABLE_ROLES:
+        save_role(user.name, role, 1 if role in roles else 0)
+
+    return {
+        "name": user.name,
+        "full_name": user.full_name,
+        "user_image": user.user_image,
+    }
+
+
 @frappe.whitelist()
 def get_all_users():
     # Broaden the role gate of the base method so the custom instructor/evaluator
