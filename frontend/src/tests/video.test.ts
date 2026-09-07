@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { getYouTubeId, getVideoPreview, hasVideoContent } from '@/utils/video'
+import {
+	getYouTubeId,
+	getVideoPreview,
+	getVideoEmbedURL,
+	hasVideoContent,
+} from '@/utils/video'
 
 describe('getYouTubeId', () => {
 	it('extracts the id from watch, short, embed and youtu.be links', () => {
@@ -36,6 +41,22 @@ describe('getVideoPreview', () => {
 		expect(getVideoPreview('https://youtu.be/dQw4w9WgXcQ')).toEqual({
 			type: 'youtube',
 			src: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+		})
+	})
+
+	it('classifies a vimeo link as an embed, not a <video> source', () => {
+		// Regression: a Vimeo link used to fall through to the 'file' branch and
+		// render a <video> pointed at a Vimeo page, which shows nothing at all.
+		expect(getVideoPreview('https://vimeo.com/76979871')).toEqual({
+			type: 'embed',
+			src: 'https://player.vimeo.com/video/76979871',
+		})
+		expect(getVideoPreview('https://vimeo.com/76979871/abc123').src).toBe(
+			'https://player.vimeo.com/video/76979871?h=abc123'
+		)
+		expect(getVideoPreview('https://player.vimeo.com/video/76979871')).toEqual({
+			type: 'embed',
+			src: 'https://player.vimeo.com/video/76979871',
 		})
 	})
 
@@ -102,5 +123,33 @@ describe('hasVideoContent', () => {
 				}),
 			})
 		).toBe(false)
+	})
+})
+
+describe('getVideoEmbedURL', () => {
+	it('builds player urls for youtube and vimeo', () => {
+		expect(getVideoEmbedURL('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBe(
+			'https://www.youtube.com/embed/dQw4w9WgXcQ'
+		)
+		expect(getVideoEmbedURL('https://youtu.be/dQw4w9WgXcQ')).toBe(
+			'https://www.youtube.com/embed/dQw4w9WgXcQ'
+		)
+		expect(getVideoEmbedURL('dQw4w9WgXcQ')).toBe(
+			'https://www.youtube.com/embed/dQw4w9WgXcQ'
+		)
+		expect(getVideoEmbedURL('https://vimeo.com/76979871')).toBe(
+			'https://player.vimeo.com/video/76979871'
+		)
+		expect(getVideoEmbedURL('https://vimeo.com/76979871/abc123')).toBe(
+			'https://player.vimeo.com/video/76979871?h=abc123'
+		)
+	})
+
+	it('passes through embed urls and returns empty for no value', () => {
+		expect(getVideoEmbedURL('https://www.youtube.com/embed/dQw4w9WgXcQ')).toBe(
+			'https://www.youtube.com/embed/dQw4w9WgXcQ'
+		)
+		expect(getVideoEmbedURL('')).toBe('')
+		expect(getVideoEmbedURL(null)).toBe('')
 	})
 })
