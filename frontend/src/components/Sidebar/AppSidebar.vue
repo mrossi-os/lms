@@ -71,7 +71,9 @@
 							</div>
 						</template>
 					</Tooltip>
+					<span id="versionApp" class="text-xs text-ink-gray-5"> 1.12.0 </span>
 				</div>
+
 				<Tooltip
 					:text="
 						sidebarStore.isSidebarCollapsed ? __('Expand') : __('Collapse')
