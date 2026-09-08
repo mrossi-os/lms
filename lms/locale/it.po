@@ -8632,7 +8632,7 @@ msgstr "Statistiche video"
 
 #: frontend/src/pages/Lesson.vue:902
 msgid "Video failed to load — this lesson will still be marked complete after you spend some time on it."
-msgstr ""
+msgstr "Caricamento del video non riuscito — questa lezione verrà comunque segnata come completata dopo un po' di tempo di permanenza."
 
 #: frontend/src/pages/JobDetail.vue:31
 msgid "View Applications"
