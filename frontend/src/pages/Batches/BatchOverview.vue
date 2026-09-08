@@ -5,7 +5,14 @@
 				<div class="text-5xl-semibold text-ink-gray-9">
 					{{ batch.data.title }}
 				</div>
-				<div class="my-3 leading-6 text-ink-gray-7 card">
+				<!-- OSLMS-CUSTOM: description is a Small Text field, so authors can
+				type multi-line descriptions. HTML collapses those newlines, so keep
+				them with whitespace-pre-line (blank lines and line breaks are
+				preserved, other whitespace still collapses). Same treatment as the
+				course short description in CourseOverview. -->
+				<div
+					class="my-3 leading-6 text-ink-gray-7 card whitespace-pre-line"
+				>
 					{{ batch.data.description }}
 				</div>
 				<!-- OSLMS-CUSTOM: preview video, under the batch's short description
