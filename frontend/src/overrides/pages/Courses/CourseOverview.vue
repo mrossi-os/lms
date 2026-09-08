@@ -40,9 +40,13 @@
 						:tags="course.data.tags"
 						class="my-4"
 					/>
+					<!-- OSLMS-CUSTOM: short_introduction is a Small Text field, so
+					authors can type multi-line descriptions. HTML collapses those
+					newlines, so keep them with whitespace-pre-line (blank lines and
+					line breaks are preserved, other whitespace still collapses). -->
 					<p
 						v-if="course.data.short_introduction"
-						class="text-ink-gray-7 leading-6"
+						class="text-ink-gray-7 leading-6 whitespace-pre-line"
 					>
 						{{ course.data.short_introduction }}
 					</p>
