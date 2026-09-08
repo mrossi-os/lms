@@ -43,8 +43,8 @@
 				<div v-if="formattedDuration">
 					<Tooltip :text="__('Duration')">
 						<span class="flex items-center">
-							<span class="lucide-users size-4 me-1" />
-							{{ formatAmount(course.enrollments) }}
+							<span class="lucide-clock size-4 me-1" />
+							{{ formattedDuration }}
 						</span>
 					</Tooltip>
 				</div>
@@ -101,7 +101,7 @@
 import { BookOpen, Clock, Award } from 'lucide-vue-next'
 import { sessionStore } from '@/stores/session'
 import { Tooltip } from 'frappe-ui'
-import { formatAmount, formatRating } from '@/utils'
+import { formatRating } from '@/utils'
 import { theme } from '@/utils/theme'
 import { computed } from 'vue'
 import ProgressBar from '@/components/ProgressBar.vue'
