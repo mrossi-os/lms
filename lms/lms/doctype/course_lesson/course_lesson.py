@@ -2,7 +2,7 @@
 # For license information, please see license.txt
 
 import json
-from urllib.parse import unquote
+from urllib.parse import quote, unquote
 
 import frappe
 from frappe import _
@@ -182,10 +182,21 @@ def serve_resource(file_url: str):
 		_deny(file_url, "can_access_lesson denied for all references")
 		raise frappe.PermissionError
 
-	# send_private_file expects a path relative to the site's private/ dir; it derives
-	# the download name from the path basename itself (no filename kwarg is accepted).
+	# send_private_file expects a path relative to the site's private/ dir; it accepts
+	# no filename kwarg and names the response only for force-download extensions.
 	relative_path = file_url.split("/private", 1)[1] if "/private" in file_url else file_url
-	return send_private_file(relative_path)
+	response = send_private_file(relative_path)
+
+	# Frappe only names the response for force-download extensions, so an inline file
+	# (a PDF, say) carries no Content-Disposition at all. Browsers then fall back to
+	# the last path segment of the URL, which here is this method's dotted name -- what
+	# mobile Chrome shows in its PDF placeholder, and what a save dialog would propose.
+	# Name it explicitly, still inline so it keeps rendering in the browser.
+	file_name = file_url.rstrip("/").split("/")[-1]
+	if file_name and "Content-Disposition" not in response.headers:
+		response.headers["Content-Disposition"] = f"inline; filename*=UTF-8''{quote(file_name)}"
+
+	return response
 
 
 def _deny(file_url, reason):

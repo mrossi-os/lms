@@ -1,6 +1,7 @@
 import AudioBlock from '@/components/AudioBlock.vue'
 import VideoBlock from '@/components/VideoBlock.vue'
 import FileBlock from '@/components/FileBlock.vue'
+import PdfBlock from '@/components/PdfBlock.vue'
 import UploadPlugin from '@/components/UploadPlugin.vue'
 import { h, createApp } from 'vue'
 import { Upload as UploadIcon } from 'lucide-vue-next'
@@ -78,11 +79,11 @@ export class Upload {
 			app.mount(this.wrapper)
 			return
 		} else if (fileType.toLowerCase() == 'pdf') {
-			this.wrapper.innerHTML = `<iframe src="${
-				window.location.origin
-			}${encodeURI(
-				file.file_url,
-			)}" width='100%' height='700px' class="mb-4" type="application/pdf"></iframe>`
+			const app = createApp(PdfBlock, {
+				file: file.file_url,
+			})
+			app.use(translationPlugin)
+			app.mount(this.wrapper)
 			return
 		} else if (this.isImage(fileType)) {
 			this.wrapper.innerHTML = `<img class="mb-4" src=${encodeURI(

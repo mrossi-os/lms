@@ -120,6 +120,7 @@ declare module 'vue' {
     PageModal: typeof import('./src/components/Modals/PageModal.vue')['default']
     PaymentGatewayDetails: typeof import('./src/components/Settings/PaymentGatewayDetails.vue')['default']
     PaymentGateways: typeof import('./src/components/Settings/PaymentGateways.vue')['default']
+    PdfBlock: typeof import('./src/components/PdfBlock.vue')['default']
     Play: typeof import('./src/components/Icons/Play.vue')['default']
     ProgressBar: typeof import('./src/components/ProgressBar.vue')['default']
     Question: typeof import('./src/components/Modals/Question.vue')['default']

@@ -5517,3 +5517,5 @@ restrict_ip
 "Select at least one role","Seleziona almeno un ruolo"
 "Select at least one role for the new member.","Seleziona almeno un ruolo per il nuovo membro."
 "You do not have permission to grant this role: {0}","Non hai il permesso di assegnare questo ruolo: {0}"
+"Open the PDF","Apri il PDF"
+"Opens in a new tab","Si apre in una nuova scheda"
