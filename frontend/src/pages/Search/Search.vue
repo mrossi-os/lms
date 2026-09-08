@@ -118,10 +118,11 @@ import {
 	Tooltip,
 	usePageMeta,
 } from 'frappe-ui'
-import { inject, onMounted, ref, watch } from 'vue'
+import { computed, inject, onMounted, ref, watch } from 'vue'
 import { Search, X } from 'lucide-vue-next'
 import { sessionStore } from '@/stores/session'
 import { useRouter, useRoute } from 'vue-router'
+import { getSearchResultRoute } from '@/oslms/utils/searchRoutes'
 
 const query = ref('')
 const searchInput = ref<HTMLInputElement | null>(null)
@@ -131,6 +132,7 @@ const router = useRouter()
 const route = useRoute()
 const queryChanged = ref(false)
 const dayjs = inject<any>('$dayjs')
+const user = inject<any>('$user')
 
 onMounted(() => {
 	if (router.currentRoute.value.query.q) {
@@ -185,40 +187,15 @@ const sortResults = () => {
 	})
 }
 
+// Moderators and instructors reach the management pages; everyone else gets the
+// learner route (same gate the target pages themselves apply).
+const isManager = computed(() =>
+	Boolean(user?.data?.is_moderator || user?.data?.is_instructor),
+)
+
 const navigate = (result: any) => {
-	if (result.doctype === 'LMS Course') {
-		router.push({
-			name: 'CourseDetail',
-			params: { courseName: result.name },
-		})
-	} else if (result.doctype === 'LMS Batch') {
-		router.push({
-			name: 'BatchDetail',
-			params: { batchName: result.name },
-		})
-	} else if (result.doctype === 'Job Opportunity') {
-		router.push({
-			name: 'JobDetail',
-			params: { job: result.name },
-		})
-	} else if (result.doctype === 'LMS Program') {
-		router.push({
-			name: 'ProgramDetail',
-			params: { programName: result.name },
-		})
-	} else if (result.doctype === 'LMS Quiz') {
-		router.push({
-			name: 'QuizForm',
-			params: { quizID: result.name },
-		})
-	} else if (result.doctype === 'LMS Assignment') {
-		router.push({ name: 'Assignments' })
-	} else if (result.doctype === 'Course Lesson') {
-		router.push({
-			name: 'CourseDetail',
-			params: { courseName: result.parent || result.course },
-		})
-	}
+	const route = getSearchResultRoute(result, isManager.value)
+	if (route) router.push(route)
 }
 
 watch(query, () => {

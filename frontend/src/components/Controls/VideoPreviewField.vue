@@ -6,7 +6,7 @@
 				class="relative aspect-[750/422] w-56 shrink-0 grid place-items-center overflow-hidden rounded-lg border border-outline-gray-2 bg-surface-gray-2"
 			>
 				<iframe
-					v-if="preview.type === 'youtube'"
+					v-if="isEmbedPreview"
 					:src="preview.src"
 					class="size-full"
 					frameborder="0"
@@ -126,12 +126,7 @@ import {
 	toast,
 } from 'frappe-ui'
 import { computed, ref, watch } from 'vue'
-import {
-	getVideoPreview,
-	getYouTubeId,
-	isVimeoLink,
-	VIMEO_SHARE_RE,
-} from '@/utils/video'
+import { getVideoPreview, getYouTubeId, VIMEO_SHARE_RE } from '@/utils/video'
 
 // Only formats browsers can actually play — reject the rest at upload time so a
 // course never ends up with an unplayable preview (e.g. .MOV/H.265).
@@ -199,6 +194,11 @@ const emit = defineEmits<{
 
 const preview = computed(() => getVideoPreview(props.modelValue))
 
+// YouTube and Vimeo links both preview as an iframe, like on the course page.
+const isEmbedPreview = computed<boolean>(
+	() => preview.value.type === 'youtube' || preview.value.type === 'embed'
+)
+
 // Whether the current value is an actually-uploaded video. Uploads are stored as
 // a /files/ (or /private/files/) path; anything else is a link. We key off the
 // path — NOT getVideoPreview's 'file' type — so a half-typed link (e.g. just "h")
@@ -213,11 +213,8 @@ const resolvingShareLink = ref<boolean>(false)
 
 // A usable video link is set, as opposed to an empty (or half-typed) field.
 // Keyed off a recognised link rather than any non-empty value so the copy
-// doesn't flip mid-keystroke. Vimeo links show no thumbnail above — the preview
-// box only renders YouTube — but they do embed on the course page.
-const hasVideoLink = computed<boolean>(
-	() => preview.value.type === 'youtube' || isVimeoLink(props.modelValue)
-)
+// doesn't flip mid-keystroke.
+const hasVideoLink = computed<boolean>(() => isEmbedPreview.value)
 
 // Reset the in-browser playback error whenever the source changes.
 const videoError = ref<boolean>(false)

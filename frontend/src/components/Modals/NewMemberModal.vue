@@ -160,17 +160,10 @@ const submit = (close?: () => void) => {
 	return isEdit.value ? saveRoles(close) : addMember(close)
 }
 
-const assignRoles = async (userEmail: string) => {
-	const selectedRoles = Object.entries(roles).filter(([_, checked]) => checked)
-
-	for (const [key, _] of selectedRoles) {
-		await call('lms.lms.api.save_role', {
-			user: userEmail,
-			role: ROLE_MAP[key],
-			value: 1,
-		})
-	}
-}
+const selectedRoleNames = () =>
+	Object.entries(roles)
+		.filter(([_, checked]) => checked)
+		.map(([key]) => ROLE_MAP[key])
 
 const addMember = async (close?: () => void) => {
 	if (!member.email?.trim()) {
@@ -178,18 +171,23 @@ const addMember = async (close?: () => void) => {
 		return
 	}
 
+	const selectedRoles = selectedRoleNames()
+	if (!selectedRoles.length) {
+		toast.error(__('Select at least one role'))
+		return
+	}
+
 	submitting.value = true
 	try {
-		const user = await call('frappe.client.insert', {
-			doc: {
-				doctype: 'User',
-				email: member.email.trim(),
-				first_name: member.first_name.trim() || undefined,
-				last_name: member.last_name.trim() || undefined,
-			},
+		// Single call: the user is created with exactly the selected roles. Creating
+		// it client-side instead would leave it an "LMS Student" too, because the LMS
+		// app grants that role to every new user through a before_insert hook.
+		const user = await call('os_lms.os_lms.override_api.create_member', {
+			email: member.email.trim(),
+			first_name: member.first_name.trim() || undefined,
+			last_name: member.last_name.trim() || undefined,
+			roles: selectedRoles,
 		})
-
-		await assignRoles(user.name)
 
 		toast.success(__('Member added successfully'))
 		emit('created', user)

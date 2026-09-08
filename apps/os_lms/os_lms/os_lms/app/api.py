@@ -32,7 +32,13 @@ def get_course(course_name: str):
 		frappe.db.get_value(
 			"LMS Course",
 			course_name,
-			["feature_sections", "trueskills_certificate_enabled"],
+			[
+				"feature_sections",
+				"trueskills_certificate_enabled",
+				"hero_enabled",
+				"hero_media_type",
+				"hero_media_url",
+			],
 			as_dict=True,
 		)
 		or {}
@@ -51,6 +57,15 @@ def get_course(course_name: str):
 	course_data["trueskills_certificate_enabled"] = (
 		1 if course_meta.get("trueskills_certificate_enabled") else 0
 	)
+
+	# Stessa ragione: l'hero lo aggiunge l'override os_lms di get_course_details,
+	# che qui è scavalcato. Si ricostruisce la stessa forma annidata che consuma
+	# CourseHero.vue, così l'app mostra in testata lo stesso media della SPA.
+	course_data["hero"] = {
+		"enabled": bool(course_meta.get("hero_enabled")),
+		"media_type": course_meta.get("hero_media_type") or "Video",
+		"media_url": course_meta.get("hero_media_url") or "",
+	}
 
 	# Bulk-fetch completed lessons for the current user
 	progress_map = {}

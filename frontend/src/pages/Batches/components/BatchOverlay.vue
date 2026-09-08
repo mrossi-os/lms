@@ -2,7 +2,8 @@
 	<div v-if="batch.data" class="border-2 rounded-md lg:w-72">
 		<VideoPreview
 			:video-link="batch.data.video_link"
-			:fallback-image="batch.data.image"
+			:fallback-image="batch.data.meta_image"
+			class="overflow-hidden rounded-t-md"
 		/>
 		<div class="p-5">
 			<Badge

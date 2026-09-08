@@ -8,6 +8,15 @@
 				<div class="my-3 leading-6 text-ink-gray-7 card">
 					{{ batch.data.description }}
 				</div>
+				<!-- OSLMS-CUSTOM: preview video, under the batch's short description
+				at every width (never in a side column) and as wide as the description
+				box above it — the player keeps a 16:9 ratio, so its height follows.
+				Only the video: the rest of BatchOverlay (price, seats, enrolment CTA)
+				stays off this page. -->
+				<VideoPreview
+					:video-link="batch.data.video_link"
+					class="my-4 w-full overflow-hidden rounded-md border-2 card !p-0"
+				/>
 				<div class="flex avatar-group overlap">
 					<div
 						class="h-6 me-1"
@@ -78,6 +87,7 @@ import CourseCard from '@/components/CourseCard.vue'
 import CourseInstructors from '@/components/CourseInstructors.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import FeaturedSectionView from '@/oslms/components/FeaturedSectionView.vue'
+import VideoPreview from '@/components/VideoPreview.vue'
 const props = defineProps({
 	batch: {
 		type: Object,

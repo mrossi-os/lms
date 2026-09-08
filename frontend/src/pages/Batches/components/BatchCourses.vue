@@ -141,6 +141,8 @@ const isAdmin = () => {
 	if (readOnlyMode) {
 		return false
 	}
-	return user.data?.is_moderator || user.data?.is_evaluator
+	// A "Batch Evaluator" may open the batch settings but has no read access to
+	// LMS Course, so adding a course would open a dialog with an empty list.
+	return user.data?.is_moderator
 }
 </script>

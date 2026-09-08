@@ -117,8 +117,8 @@ describe('VideoPreviewField copy', () => {
 		expect(mountField().text()).toContain('Paste a YouTube or Vimeo link')
 	})
 
-	// The field renders no thumbnail for Vimeo (getVideoPreview is YouTube-only),
-	// so the copy is the only thing telling the author the link took.
+	// The copy confirms the link took, alongside the Vimeo thumbnail the preview
+	// box now renders.
 	it('confirms a vimeo link took, rather than reading as an empty field', () => {
 		const text = mountField(CANONICAL).text()
 		expect(text).toContain('Video link added')

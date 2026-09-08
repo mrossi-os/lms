@@ -225,6 +225,13 @@
 							/>
 						</div>
 					</div>
+					<div>
+						<FeatureSectionEditor
+							:modelValue="batchDetail.doc"
+							fieldName="custom_feature_sections"
+							@dirty="isDirty = true"
+						/>
+					</div>
 				</div>
 
 				<div class="px-5 pb-5 space-y-5 border-b mb-5">
@@ -364,6 +371,7 @@ import BatchCourses from '@/pages/Batches/components/BatchCourses.vue'
 import Assessments from '@/pages/Batches/components/Assessments.vue'
 import NewMemberModal from '@/components/Modals/NewMemberModal.vue'
 import EmailTemplateModal from '@/components/Modals/EmailTemplateModal.vue'
+import FeatureSectionEditor from '@/oslms/components/FeatureSectionEditor.vue'
 import type { LMSBatch } from '@/types/lms/LMSBatch'
 import type { CourseInstructor } from '@/types/lms/CourseInstructor'
 import type { Resource, BatchDetails, SessionUser } from '@/types/api'

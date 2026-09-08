@@ -30,6 +30,50 @@ export function isVimeoLink(url: string | null | undefined): boolean {
 	return VIMEO_RE.test(String(url ?? '').trim())
 }
 
+// Capturing variants used to build the player URL. Kept next to the matchers
+// above so the two never drift apart.
+const YOUTUBE_WATCH =
+	/^(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?(?:.*&)?v=([\w-]{11})/i
+const YOUTUBE_SHORT = /^(?:https?:\/\/)?youtu\.be\/([\w-]{11})/i
+const YOUTUBE_EMBED =
+	/^(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([\w-]{11})/i
+const VIMEO_URL =
+	/^(?:https?:\/\/)?(?:www\.)?vimeo\.com\/(\d+)(?:\/([a-zA-Z0-9]+))?/i
+const VIMEO_PLAYER = /^(?:https?:\/\/)?player\.vimeo\.com\/video\/(\d+)/i
+
+/**
+ * Build an embeddable iframe URL from a "Preview Video" value. Handles full
+ * YouTube and Vimeo URLs as well as legacy bare YouTube ids that the old
+ * backend normalization used to store.
+ *
+ * Lives here — and is re-exported from utils/index.js for its existing callers,
+ * the same way enablePlyr is — so getVideoPreview below can reuse it without
+ * pulling in index.js's heavy EditorJS/frappe-ui import chain (index.js already
+ * imports from this module, so the dependency only goes one way).
+ */
+export function getVideoEmbedURL(value: string | null | undefined): string {
+	if (!value) return ''
+	const url = String(value).trim()
+
+	if (YOUTUBE_EMBED.test(url)) return url
+	let m = url.match(YOUTUBE_WATCH) || url.match(YOUTUBE_SHORT)
+	if (m) return `https://www.youtube.com/embed/${m[1]}`
+
+	if (VIMEO_PLAYER.test(url)) return url
+	m = url.match(VIMEO_URL)
+	if (m) {
+		return m[2]
+			? `https://player.vimeo.com/video/${m[1]}?h=${m[2]}`
+			: `https://player.vimeo.com/video/${m[1]}`
+	}
+
+	// Legacy: a bare YouTube video id stored by the old normalization.
+	if (/^[\w-]{11}$/.test(url)) return `https://www.youtube.com/embed/${url}`
+
+	// Fallback: assume the value is already an embeddable URL.
+	return url
+}
+
 export function getYouTubeId(url: string | null | undefined): string | null {
 	if (!url) return null
 	const s = String(url).trim()
@@ -77,13 +121,20 @@ export function hasVideoContent(lesson: LessonLike | null | undefined): boolean 
 }
 
 export type VideoPreview = {
-	type: 'youtube' | 'file' | null
+	// 'youtube' and 'embed' both render as an <iframe>; only 'file' is a source
+	// a <video> element can play.
+	type: 'youtube' | 'embed' | 'file' | null
 	src: string
 }
 
 export function getVideoPreview(url: string | null | undefined): VideoPreview {
 	const id = getYouTubeId(url)
 	if (id) return { type: 'youtube', src: `https://www.youtube.com/embed/${id}` }
+	// A Vimeo link is an iframe embed, never a <video> source. Without this it
+	// would fall through to the 'file' branch below and render a <video> pointed
+	// at a Vimeo page, which fails to load and shows nothing at all. Matched with
+	// the anchored VIMEO_RE, so a half-typed value can't flip the type.
+	if (isVimeoLink(url)) return { type: 'embed', src: getVideoEmbedURL(url) }
 	if (url) {
 		const src = String(url)
 		// A bare filename (no scheme, no leading slash) is a legacy uploaded video

@@ -17,7 +17,6 @@
 				v-model="course"
 				:label="__('Course')"
 				:required="true"
-				:filters="{ published: 1 }"
 				variant="outline"
 				:onCreate="
 					(value, close) => {

@@ -36,6 +36,7 @@ from lms.command_palette import (
     can_access_course,
     can_access_batch,
     can_access_job,
+    can_create_batch,
 )
 
 
@@ -98,6 +99,71 @@ def get_members(start: int = 0, search: str = None, role: str = "All"):
             member.roles = (member.roles or []) + ["Valutatore"]
 
     return members
+
+
+# Roles the Members settings modal is allowed to grant: the four upstream LMS
+# roles plus the custom ones handled by `save_role` above.
+MANAGEABLE_ROLES = [
+    "LMS Student",
+    "Course Creator",
+    "Batch Evaluator",
+    "Moderator",
+] + EXTRA_LMS_ROLES
+
+
+@frappe.whitelist()
+def create_member(
+    email: str,
+    roles: list[str],
+    first_name: str | None = None,
+    last_name: str | None = None,
+) -> dict:
+    """Create a member carrying exactly the selected roles.
+
+    `lms.lms.user.add_lms_student_role` (a `before_insert` hook on User) grants
+    "LMS Student" to every new user, so adding a member with only, say,
+    "Valutatore" ticked used to leave them a student as well: the client only
+    ever added the ticked roles on top of that implicit one. The whole role set
+    is reconciled here, in the same request as the insert, so the new user ends
+    up with the selected roles and nothing else.
+    """
+    frappe.only_for("Moderator")
+
+    if isinstance(roles, str):
+        roles = frappe.parse_json(roles)
+    roles = [role for role in (roles or []) if role]
+    if not roles:
+        frappe.throw(frappe._("Select at least one role for the new member."))
+
+    unknown = [role for role in roles if role not in MANAGEABLE_ROLES]
+    if unknown:
+        frappe.throw(
+            frappe._("You do not have permission to grant this role: {0}").format(
+                ", ".join(unknown)
+            ),
+            frappe.PermissionError,
+        )
+
+    user = frappe.get_doc(
+        {
+            "doctype": "User",
+            "email": email,
+            "first_name": first_name or None,
+            "last_name": last_name or None,
+        }
+    ).insert()
+
+    # Grant what was selected and drop what was not — including the "LMS Student"
+    # role appended by the before_insert hook. save_role() is reused so the
+    # "Batch Evaluator" keeps its Course Evaluator record in sync.
+    for role in MANAGEABLE_ROLES:
+        save_role(user.name, role, 1 if role in roles else 0)
+
+    return {
+        "name": user.name,
+        "full_name": user.full_name,
+        "user_image": user.user_image,
+    }
 
 
 @frappe.whitelist()
@@ -193,26 +259,225 @@ def prepare_search_results_custom(result: dict):
 def get_grouped_results_custom(result):
     roles = frappe.get_roles()
     groups = {}
+    # Only learners need it, and only when a batch actually matched the query.
+    own_batches = (
+        get_own_batches()
+        if not can_create_batch(roles)
+        and any(r["doctype"] == "LMS Batch" for r in result["results"])
+        else set()
+    )
+    # A quiz result carries neither its course nor its lesson, so resolve both
+    # before filtering: the course decides who may see it, the lesson where the
+    # learner is sent.
+    quiz_placements = get_quiz_placements(
+        [r["name"] for r in result["results"] if r["doctype"] == "LMS Quiz"]
+    )
+    own_courses = (
+        get_own_courses()
+        if quiz_placements and not can_manage_assessments(roles)
+        else set()
+    )
+
     for r in result["results"]:
         doctype = r["doctype"]
         if doctype == "LMS Course" and can_access_course(r, roles):
             r["author_info"] = get_instructor_info(doctype, r)
             groups.setdefault("Courses", []).append(r)
-        elif doctype == "LMS Batch" and can_access_batch(r, roles):
+        elif doctype == "LMS Batch" and can_access_batch_custom(r, roles, own_batches):
             r["author_info"] = get_instructor_info(doctype, r)
             groups.setdefault("Batches", []).append(r)
         elif doctype == "Job Opportunity" and can_access_job(r, roles):
             r["author_info"] = get_instructor_info(doctype, r)
             groups.setdefault("Job Opportunities", []).append(r)
-        elif doctype == "LMS Program":
+        elif doctype == "LMS Program" and can_access_program(r, roles):
             groups.setdefault("Programs", []).append(r)
-        elif doctype == "LMS Quiz":
+        elif doctype == "LMS Quiz" and can_access_quiz(
+            quiz_placements.get(r["name"]), roles, own_courses
+        ):
+            r.update(quiz_placements.get(r["name"]) or {})
             groups.setdefault("Quizzes", []).append(r)
-        elif doctype == "LMS Assignment":
+        elif doctype == "LMS Assignment" and can_manage_assessments(roles):
             groups.setdefault("Assignments", []).append(r)
         elif doctype == "Course Lesson" and can_access_lesson(r, roles):
             groups.setdefault("Lessons", []).append(r)
+
+    add_lesson_positions(groups.get("Lessons"))
     return groups
+
+
+def get_lesson_positions(names):
+    """Map each lesson to its course and to the numbers its SPA route needs.
+
+    The route is /courses/:courseName/learn/:chapterNumber-:lessonNumber, where
+    both numbers are the 1-based idx of the child rows (same convention as
+    ``lms.lms.api.mark_lesson_progress``). Resolved in bulk so the endpoint keeps
+    a constant number of queries regardless of how many results matched.
+    """
+    names = [name for name in dict.fromkeys(names) if name]
+    if not names:
+        return {}
+
+    details = frappe.get_all(
+        "Course Lesson",
+        filters={"name": ["in", names]},
+        fields=["name", "course", "chapter"],
+    )
+    if not details:
+        return {}
+
+    chapters = [d.chapter for d in details if d.chapter]
+    chapter_rows = (
+        frappe.get_all(
+            "Chapter Reference",
+            filters={"chapter": ["in", chapters]},
+            fields=["parent", "chapter", "idx"],
+        )
+        if chapters
+        else []
+    )
+    chapter_idx = {}
+    for row in chapter_rows:
+        chapter_idx.setdefault((row.parent, row.chapter), row.idx)
+
+    lesson_idx = {}
+    for row in frappe.get_all(
+        "Lesson Reference",
+        filters={"lesson": ["in", names]},
+        fields=["parent", "lesson", "idx"],
+    ):
+        lesson_idx.setdefault((row.parent, row.lesson), row.idx)
+
+    return {
+        d.name: {
+            "course": d.course,
+            "chapter_number": chapter_idx.get((d.course, d.chapter)),
+            "lesson_number": lesson_idx.get((d.chapter, d.name)),
+        }
+        for d in details
+    }
+
+
+def add_lesson_positions(lessons):
+    """Attach to each lesson result the numbers its route needs."""
+    if not lessons:
+        return
+
+    positions = get_lesson_positions([lesson["name"] for lesson in lessons])
+    for lesson in lessons:
+        lesson.update(positions.get(lesson["name"]) or {})
+
+
+def get_quiz_placements(names):
+    """Course and hosting lesson of each quiz, with that lesson's route numbers.
+
+    Both are plain fields on LMS Quiz. The course decides whether a learner may
+    see the quiz at all, the lesson is where the learner is sent: opening the
+    quiz inside its lesson keeps the course rules — sequential unlocking
+    included — in force, which a direct link to the quiz page would bypass.
+    """
+    if not names:
+        return {}
+
+    quizzes = frappe.get_all(
+        "LMS Quiz",
+        filters={"name": ["in", list(dict.fromkeys(names))]},
+        fields=["name", "course", "lesson"],
+    )
+    positions = get_lesson_positions([q.lesson for q in quizzes])
+
+    placements = {}
+    for quiz in quizzes:
+        placement = {"course": quiz.course, "lesson": quiz.lesson}
+        placement.update(positions.get(quiz.lesson) or {})
+        # The lesson, when there is one, is the authority on the course.
+        placement["course"] = placement.get("course") or quiz.course
+        placements[quiz.name] = placement
+
+    return placements
+
+
+def can_manage_assessments(roles):
+    """Mirror the gate of the SPA pages a quiz or assignment result leads to.
+
+    ``QuizForm`` and ``Assignments`` bounce anyone who is not a moderator or an
+    instructor back to the course list, so those results have no destination for
+    a learner. They were also unfiltered until now, and the index stores an
+    assignment's *question text* as its content: without this check any logged
+    in user could read exam questions straight out of the search results.
+    "Docente" is the project's global instructor role (see get_user_info).
+    """
+    return "Moderator" in roles or "Course Creator" in roles or "Docente" in roles
+
+
+def can_access_quiz(placement, roles, own_courses):
+    """Managers see every quiz; a learner only the quizzes of their own courses.
+
+    A quiz with no course is a draft no lesson uses yet, so it stays with the
+    managers. For everyone else the enrolment is the criterion, mirroring the
+    lesson the quiz lives in: a learner who may open the lesson may find the
+    quiz it contains.
+    """
+    if can_manage_assessments(roles):
+        return True
+
+    course = (placement or {}).get("course")
+    return bool(course) and course in own_courses
+
+
+def get_own_courses():
+    """Courses the current user is enrolled in."""
+    return set(
+        frappe.get_all(
+            "LMS Enrollment", filters={"member": frappe.session.user}, pluck="course"
+        )
+    )
+
+
+def can_access_program(program, roles):
+    """Published programs are browsable by anyone; drafts stay with their authors."""
+    if can_manage_assessments(roles):
+        return True
+
+    return bool(program.get("published"))
+
+
+def get_own_batches():
+    """Batches the current user takes part in, as a learner or as their valutatore.
+
+    Same two memberships ``get_batch_details`` accepts to serve the batch page,
+    so search never offers a result the batch page would then refuse.
+    """
+    user = frappe.session.user
+    batches = set(
+        frappe.get_all("LMS Batch Enrollment", filters={"member": user}, pluck="batch")
+    )
+    batches.update(
+        frappe.get_all(
+            "LMS Batch Valutatore",
+            filters={"parenttype": "LMS Batch", "valutatore": user},
+            pluck="parent",
+        )
+    )
+    return batches
+
+
+def can_access_batch_custom(batch, roles, own_batches):
+    """Upstream's rule, minus the part that hides a batch from the people in it.
+
+    ``lms.command_palette.can_access_batch`` clears a batch for a learner only
+    while it is published and has not started yet, which is the rule for
+    *enrolling* in one. The batch page is far more permissive:
+    ``lms.lms.utils.get_batch_details`` serves it to enrolled students and to
+    the batch valutatori whatever the published flag and the start date say.
+    Search was therefore stricter than the page it links to, and the class a
+    student attends was unfindable by name — outright invisible while the batch
+    stayed unpublished. Mirror the page instead. A batch the user has nothing to
+    do with keeps upstream's behaviour.
+    """
+    if can_access_batch(batch, roles):
+        return True
+
+    return batch.get("name") in own_batches
 
 
 def can_access_lesson(lesson, roles):

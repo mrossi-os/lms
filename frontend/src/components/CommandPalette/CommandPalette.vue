@@ -66,19 +66,26 @@
 </template>
 <script setup lang="ts">
 import { createResource, debounce, Dialog } from 'frappe-ui'
-import { nextTick, onMounted, ref, computed, watch } from 'vue'
+import { nextTick, onMounted, ref, computed, inject, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { BookOpen, Users } from 'lucide-vue-next'
 import * as icons from 'lucide-vue-next'
 import { getSidebarLinks } from '@/utils'
 import { useSettings } from '@/stores/settings'
 import CommandPaletteGroup from './CommandPaletteGroup.vue'
+import { getSearchResultRoute } from '@/oslms/utils/searchRoutes'
 
 const { CornerDownLeft, FileSearch, MoveUp, MoveDown, Search } = icons
 const { sidebarSettings } = useSettings()
 
 const show = defineModel<boolean>({ required: true, default: false })
 const router = useRouter()
+const user = inject<any>('$user')
+// Moderators and instructors reach the management pages; everyone else gets the
+// learner route (same gate the target pages themselves apply).
+const isManager = computed(() =>
+	Boolean(user?.data?.is_moderator || user?.data?.is_instructor),
+)
 const query = ref<string>('')
 const searchResults = ref<Array<any>>([])
 
@@ -107,13 +114,7 @@ const generateSearchResults = () => {
 		let result: { title: string; items: any[] } = { title: '', items: [] }
 		result.title = type.title
 		type.items.forEach((item: any) => {
-			let paramName = item.doctype === 'LMS Course' ? 'courseName' : 'batchName'
-			item.route = {
-				name: item.doctype === 'LMS Course' ? 'CourseDetail' : 'BatchDetail',
-				params: {
-					[paramName]: item.name,
-				},
-			}
+			item.route = getSearchResultRoute(item, isManager.value)
 			item.isActive = false
 		})
 		result.items = type.items
@@ -214,11 +215,15 @@ const shortcutForEnter = () => {
 	}
 }
 
-const navigateTo = (route: {
-	name: string
-	params?: Record<string, any>
-	query?: Record<string, any>
-}) => {
+const navigateTo = (
+	route: {
+		name: string
+		params?: Record<string, any>
+		query?: Record<string, any>
+	} | null,
+) => {
+	// getSearchResultRoute returns null for a doctype with no page to open.
+	if (!route) return
 	show.value = false
 	query.value = ''
 	router.replace({ name: route.name, params: route.params, query: route.query })

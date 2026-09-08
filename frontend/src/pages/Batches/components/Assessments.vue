@@ -199,7 +199,8 @@ const getRowRoute = (row) => {
 
 const canAddAssessments = () => {
 	if (readOnlyMode) return false
-	return user.data?.is_moderator || user.data?.is_evaluator
+	// Kept in sync with the Courses tab: an evaluator cannot add batch content.
+	return user.data?.is_moderator
 }
 
 const getAssessmentColumns = () => {
