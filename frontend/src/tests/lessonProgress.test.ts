@@ -4,6 +4,7 @@ import {
 	isVideoComplete,
 	shouldStartDwellTimer,
 	shouldAttachVideoFallback,
+	shouldEngageFallbackOnPlayerError,
 } from '@/utils/lessonProgress'
 
 describe('resolveDwellSeconds', () => {
@@ -99,5 +100,46 @@ describe('shouldAttachVideoFallback', () => {
 	it('attaches only when both flags are true', () => {
 		expect(shouldAttachVideoFallback({ hasVideo: true, enforceVideo: true })).toBe(true)
 		expect(shouldAttachVideoFallback({ hasVideo: true, enforceVideo: 1 })).toBe(true)
+	})
+})
+
+describe('shouldEngageFallbackOnPlayerError', () => {
+	it('falls back when the player never loaded the video', () => {
+		expect(shouldEngageFallbackOnPlayerError({ playerReady: false })).toBe(true)
+		expect(
+			shouldEngageFallbackOnPlayerError({
+				playerReady: false,
+				detail: { message: 'The media could not be loaded' },
+			})
+		).toBe(true)
+	})
+
+	it('ignores an error raised after the player became ready', () => {
+		expect(shouldEngageFallbackOnPlayerError({ playerReady: true })).toBe(false)
+		expect(
+			shouldEngageFallbackOnPlayerError({
+				playerReady: true,
+				detail: { name: 'PrivacyError', method: 'getVideoUrl' },
+			})
+		).toBe(false)
+	})
+
+	it('ignores an SDK method error on an unlisted Vimeo video, ready or not', () => {
+		// Vimeo rejects getVideoUrl() with PrivacyError while the video plays fine.
+		expect(
+			shouldEngageFallbackOnPlayerError({
+				playerReady: false,
+				detail: {
+					name: 'PrivacyError',
+					method: 'getVideoUrl',
+					message: 'The URL is not available because of the video\u2019s privacy settings.',
+				},
+			})
+		).toBe(false)
+	})
+
+	it('treats a missing or empty detail as a load failure', () => {
+		expect(shouldEngageFallbackOnPlayerError({ playerReady: false, detail: null })).toBe(true)
+		expect(shouldEngageFallbackOnPlayerError({ playerReady: false, detail: {} })).toBe(true)
 	})
 })

@@ -389,6 +389,7 @@ import {
 	isVideoComplete,
 	shouldStartDwellTimer,
 	shouldAttachVideoFallback,
+	shouldEngageFallbackOnPlayerError,
 } from '@/utils/lessonProgress'
 import EditorJS from '@editorjs/editorjs'
 import LessonContent from '@/components/LessonContent.vue'
@@ -880,6 +881,15 @@ const getPlyrSource = async () => {
 				})
 				player.on('error', (event) => {
 					if (gen !== fallbackGeneration) return
+					// `player.ready` also covers a ready event that fired before this
+					// listener was attached, which readyFired alone would miss.
+					if (
+						!shouldEngageFallbackOnPlayerError({
+							playerReady: player.ready || readyFired,
+							detail: event?.detail,
+						})
+					)
+						return
 					fallbackToDwellTimer(
 						'plyr-error: ' + (event?.detail?.message || 'unknown'),
 					)
