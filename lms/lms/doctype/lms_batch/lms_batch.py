@@ -13,6 +13,7 @@ from frappe.model.document import Document
 from frappe.utils import add_days, cint, format_datetime, get_time, nowdate
 
 from lms.lms.utils import (
+	enroll_batch_students_in_courses,
 	generate_slug,
 	get_assignment_details,
 	get_instructors,
@@ -42,6 +43,24 @@ class LMSBatch(Document):
 	def on_update(self):
 		if self.has_value_changed("published") and self.published:
 			frappe.enqueue(send_notification_for_published_batch, batch=self)
+
+		self.enroll_students_in_added_courses()
+
+	def enroll_students_in_added_courses(self):
+		"""Enroll the students already in the batch in the courses this save added.
+
+		Without this, a course added to a running batch would only reach the
+		students enrolled after it: course enrollments are created when a student
+		joins the batch, and nothing revisits them afterwards.
+		"""
+		before_save = self.get_doc_before_save()
+		if not before_save:
+			return
+
+		known_courses = {row.course for row in before_save.courses}
+		added = [row.course for row in self.courses if row.course not in known_courses]
+
+		enroll_batch_students_in_courses(self.name, added)
 
 	def autoname(self):
 		if not self.name and self.title:

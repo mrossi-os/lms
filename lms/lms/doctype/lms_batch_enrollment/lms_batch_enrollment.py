@@ -11,6 +11,12 @@ from frappe.model.document import Document
 
 class LMSBatchEnrollment(Document):
 	def after_insert(self):
+		# Enrolling in the batch courses happens here, not in validate: LMS Enrollment
+		# grants a batch member access to a course by looking this record up in the
+		# database, so it has to be written first. Run from validate, the lookup found
+		# nothing and a student joining the batch on their own was refused every course
+		# that is not open to self-enrollment.
+		self.enroll_in_batch_courses()
 		send_confirmation_email(self)
 		self.add_member_to_live_class()
 
@@ -20,7 +26,6 @@ class LMSBatchEnrollment(Document):
 		self.validate_payment()
 		self.validate_self_enrollment()
 		self.validate_seat_availability()
-		self.validate_course_enrollment()
 
 	def validate_owner(self):
 		if self.owner == self.member:
@@ -73,7 +78,7 @@ class LMSBatchEnrollment(Document):
 		if seat_count and enrolled_count >= seat_count:
 			frappe.throw(_("There are no seats available in this batch."))
 
-	def validate_course_enrollment(self):
+	def enroll_in_batch_courses(self):
 		courses = frappe.get_all("Batch Course", filters={"parent": self.batch}, fields=["course"])
 
 		for course in courses:
@@ -85,7 +90,7 @@ class LMSBatchEnrollment(Document):
 				enrollment.course = course.course
 				enrollment.member = self.member
 				enrollment.enrollment_from_batch = self.batch
-				enrollment.save()
+				enrollment.save(ignore_permissions=True)
 
 	def add_member_to_live_class(self):
 		live_classes = frappe.get_all("LMS Live Class", {"batch_name": self.batch}, ["name", "event"])

@@ -42,13 +42,12 @@ class LMSEnrollment(Document):
 			as_dict=True,
 		)
 
-		if course_details.disable_self_learning and not is_admin():
-			frappe.throw(
-				_(
-					"You cannot enroll in this course as self-learning is disabled. Please contact the Administrator."
-				)
-			)
-
+		# A member of the batch is entitled to every course of that batch, so the
+		# batch check comes first: the restrictions below (self-learning, unpublished,
+		# paid) only govern enrolling in a course on one's own. Checking them first
+		# made the enrollment fail whenever it was created in the student's own
+		# session -- joining a batch, or opening a batch whose courses were added
+		# after the student enrolled.
 		if self.enrollment_from_batch:
 			if not frappe.db.exists(
 				"Batch Course", {"parent": self.enrollment_from_batch, "course": self.course}
@@ -59,6 +58,13 @@ class LMSEnrollment(Document):
 				"LMS Batch Enrollment", {"batch": self.enrollment_from_batch, "member": self.member}
 			):
 				return
+
+		if course_details.disable_self_learning and not is_admin():
+			frappe.throw(
+				_(
+					"You cannot enroll in this course as self-learning is disabled. Please contact the Administrator."
+				)
+			)
 
 		if not course_details.published and not is_admin():
 			frappe.throw(_("You cannot enroll in an unpublished course."))
