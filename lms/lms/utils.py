@@ -1555,6 +1555,53 @@ def ensure_batch_course_enrollments(batch: str, member: str):
 			enrollment.save(ignore_permissions=True)
 
 
+def enroll_batch_students_in_courses(batch: str, courses: list) -> int:
+	"""Enroll every student of the batch in the given courses, skipping the
+	enrollments that already exist. Returns the number of enrollments created.
+
+	Used when courses are added to a batch that already has students: course
+	enrollments are otherwise only created when a student joins the batch, which
+	would leave the courses added later out of the students' course list.
+	"""
+	if not courses:
+		return 0
+
+	members = frappe.get_all("LMS Batch Enrollment", {"batch": batch}, pluck="member")
+	if not members:
+		return 0
+
+	# Batch rows can outlive the course they point at (a course deleted outside
+	# delete_course leaves them behind), and enrolling in a course that no longer
+	# exists fails on link validation.
+	courses = frappe.get_all("LMS Course", {"name": ["in", courses]}, pluck="name")
+	if not courses:
+		return 0
+
+	existing = {
+		(row.member, row.course)
+		for row in frappe.get_all(
+			"LMS Enrollment",
+			filters={"member": ["in", members], "course": ["in", courses]},
+			fields=["member", "course"],
+		)
+	}
+
+	created = 0
+	for member in members:
+		for course in courses:
+			if (member, course) in existing:
+				continue
+
+			enrollment = frappe.new_doc("LMS Enrollment")
+			enrollment.course = course
+			enrollment.member = member
+			enrollment.enrollment_from_batch = batch
+			enrollment.save(ignore_permissions=True)
+			created += 1
+
+	return created
+
+
 def enroll_via_batch_if_eligible(course: str, member: str):
 	"""If the member belongs to a batch that includes this course, create the enrollment and return it."""
 	if member == "Guest":
