@@ -156,6 +156,7 @@
 							doctype="User"
 							url="lms.lms.api.search_users_by_role"
 							:searchParams="{ roles: JSON.stringify(['Batch Evaluator']) }"
+							:extraOptions="instructorOptions"
 							:label="__('Instructors')"
 							:placeholder="__('Select instructors')"
 							:required="true"
@@ -167,6 +168,7 @@
 							v-model="valutatori"
 							doctype="User"
 							url="os_lms.os_lms.api.search_non_student_users"
+							:extraOptions="valutatoreOptions"
 							:label="__('Valutatori')"
 							:placeholder="__('Select valutatori')"
 							variant="outline"
@@ -399,6 +401,97 @@ const instructors = ref<string[]>([])
 // Table MultiSelect custom field on LMS Batch (child: LMS Batch Valutatore);
 // its rows carry a `valutatore` user link. Not in the generated LMSBatch type.
 const valutatori = ref<string[]>([])
+
+// Both pickers are fed only by their search endpoint, which returns neither
+// disabled users, users who lost the role, nor deleted ones — and caps results
+// at a page anyway. Anyone already saved on the batch but missing from those
+// results was absent from the dropdown, and unticking there is the only way to
+// remove someone: they stayed on the batch for good. Resolve the saved values
+// separately and pass them as extra options, falling back to the raw user id
+// so an unresolvable one is still listed and removable.
+interface UserOption {
+	label: string
+	value: string
+	image: string
+	description: string
+}
+type RawUserHit = {
+	label?: string
+	value?: string
+	name?: string
+	user_image?: string
+	description?: string
+}
+
+const resolvedUsers = ref<Map<string, UserOption>>(new Map())
+
+const rememberUsers = (rows: RawUserHit[] | null): void => {
+	const next = new Map(resolvedUsers.value)
+	for (const u of rows || []) {
+		const value = u.value || u.name || ''
+		if (!value) continue
+		next.set(value, {
+			label: u.label || u.description || value,
+			value,
+			image: u.user_image || '',
+			description: u.description || value,
+		})
+	}
+	resolvedUsers.value = next
+}
+
+const instructorDetails = createResource({
+	url: 'lms.lms.api.search_users_by_role',
+	method: 'POST',
+	makeParams: () => ({
+		roles: JSON.stringify(['Batch Evaluator']),
+		names: JSON.stringify(instructors.value),
+	}),
+	onSuccess: rememberUsers,
+})
+
+const valutatoreDetails = createResource({
+	url: 'os_lms.os_lms.api.search_non_student_users',
+	method: 'POST',
+	makeParams: () => ({ names: JSON.stringify(valutatori.value) }),
+	onSuccess: rememberUsers,
+})
+
+const asOptions = (values: string[]): UserOption[] =>
+	values.map(
+		(v) =>
+			resolvedUsers.value.get(v) ?? {
+				label: v,
+				value: v,
+				image: '',
+				description: v,
+			},
+	)
+
+const instructorOptions = computed<UserOption[]>(() =>
+	asOptions(instructors.value),
+)
+const valutatoreOptions = computed<UserOption[]>(() =>
+	asOptions(valutatori.value),
+)
+
+watch(
+	instructors,
+	(vals) => {
+		if ((vals || []).some((v) => !resolvedUsers.value.has(v)))
+			instructorDetails.reload()
+	},
+	{ immediate: true },
+)
+watch(
+	valutatori,
+	(vals) => {
+		if ((vals || []).some((v) => !resolvedUsers.value.has(v)))
+			valutatoreDetails.reload()
+	},
+	{ immediate: true },
+)
+
 const app = getCurrentInstance()!
 const { $dialog } = app.appContext.config.globalProperties as {
 	$dialog: DialogFn
