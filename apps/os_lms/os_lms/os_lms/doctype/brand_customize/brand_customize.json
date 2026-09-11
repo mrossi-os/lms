@@ -42,10 +42,14 @@
 		"surface_elevation_1",
 		"column_break_layout",
 		"color_menu_bar",
-		"section_gradient_overlay",
-		"gradient_overlay_from",
-		"column_break_gradient_overlay",
-		"gradient_overlay_to"
+		"section_login",
+		"login_bg_from",
+		"login_bg_to",
+		"login_ink",
+		"column_break_login",
+		"login_input_bg",
+		"login_input_ink",
+		"login_button_bg"
 	],
 	"fields": [
 		{
@@ -260,32 +264,57 @@
 			"label": "Menu Bar"
 		},
 		{
-			"fieldname": "section_gradient_overlay",
+			"description": "Colors of the /login page and of the account pages that share its look. Leave a field empty to fall back to the Frappe default.",
+			"fieldname": "section_login",
 			"fieldtype": "Section Break",
-			"label": "Gradient Overlay"
+			"label": "Login Page"
 		},
 		{
-			"description": "CSS: --gradient-overlay-from",
-			"fieldname": "gradient_overlay_from",
+			"description": "CSS: --login-bg-from — left stop of the page background gradient",
+			"fieldname": "login_bg_from",
 			"fieldtype": "Color",
-			"label": "Gradient Overlay From"
+			"label": "Background From"
 		},
 		{
-			"fieldname": "column_break_gradient_overlay",
+			"description": "CSS: --login-bg-to — right stop of the page background gradient",
+			"fieldname": "login_bg_to",
+			"fieldtype": "Color",
+			"label": "Background To"
+		},
+		{
+			"description": "CSS: --login-ink — title and links sitting on the background",
+			"fieldname": "login_ink",
+			"fieldtype": "Color",
+			"label": "Text On Background"
+		},
+		{
+			"fieldname": "column_break_login",
 			"fieldtype": "Column Break"
 		},
 		{
-			"description": "CSS: --gradient-overlay-to",
-			"fieldname": "gradient_overlay_to",
+			"description": "CSS: --login-input-bg",
+			"fieldname": "login_input_bg",
 			"fieldtype": "Color",
-			"label": "Gradient Overlay To"
+			"label": "Input Background"
+		},
+		{
+			"description": "CSS: --login-input-ink",
+			"fieldname": "login_input_ink",
+			"fieldtype": "Color",
+			"label": "Input Text"
+		},
+		{
+			"description": "CSS: --login-button-bg — the Login / Sign up button",
+			"fieldname": "login_button_bg",
+			"fieldtype": "Color",
+			"label": "Button"
 		}
 	],
 	"grid_page_length": 50,
 	"index_web_pages_for_search": 1,
 	"issingle": 1,
 	"links": [],
-	"modified": "2026-06-11 12:00:00.000000",
+	"modified": "2026-09-11 12:16:35.276163",
 	"modified_by": "Administrator",
 	"module": "OS LMS",
 	"name": "Brand Customize",

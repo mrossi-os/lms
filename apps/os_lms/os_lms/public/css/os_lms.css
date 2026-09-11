@@ -1,15 +1,26 @@
+/* Client colors are not hardcoded in this file. Each instance sets its own in
+   the Brand Customize doctype, which serves them as :root custom properties
+   loaded after this stylesheet (see os_lms/branding.py). Every rule below
+   therefore reads a --login-* property and falls back to Frappe's own default,
+   so an instance that has not been branded yet renders a stock Frappe page. */
 :root,
 [data-theme="light"] {
 	--color-white: #ffffff;
 	--color-black: #000000;
 	--color-company-primary: #111d2e;
 	--color-company-secondary: #123456;
-	--color-company-tertiary: #124679;
 	--bg-light-gray: var(--color-company-primary);
 	--outline-gray-1: #344f6c;
 }
+
+/* Background of the login page and of the account pages that share its look
+   (/me, /update-password). Setting a single stop is enough for a flat fill. */
 body {
-	background: linear-gradient(to right, #0a2e5a, #1d5a9b);
+	background: linear-gradient(
+		to right,
+		var(--login-bg-from, var(--subtle-fg, #f4f5f6)),
+		var(--login-bg-to, var(--login-bg-from, var(--subtle-fg, #f4f5f6)))
+	);
 }
 
 .login-content {
@@ -17,17 +28,20 @@ body {
 	/* border-color: var(--outline-gray-1) !important; */
 }
 
-.btn-login {
-	/* background-color: var(--color-company-tertiary) !important; */
+.btn-login,
+.btn-login:hover,
+.btn-login:focus {
+	background-color: var(--login-button-bg, var(--btn-primary, #171717));
+	border-color: var(--login-button-bg, var(--btn-primary, #171717));
 }
 
 input {
-	background-color: var(--color-company-tertiary) !important;
-	color: white !important;
+	background-color: var(--login-input-bg, var(--control-bg, #f4f5f6)) !important;
+	color: var(--login-input-ink, var(--text-color, #383838)) !important;
 }
 
 .page-card-head h4 {
-	color: white;
+	color: var(--login-ink, var(--text-color, #383838));
 }
 
 .forgot-section {
