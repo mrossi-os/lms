@@ -30,6 +30,14 @@ from os_lms.os_lms.valutatore import (
 @rate_limit(limit=500, seconds=60 * 60)
 def get_course_details(course: str):
 	course_detail = _original_get_course_details(course)
+
+	# Upstream returns a plain {} when the course is not visible to the user or no
+	# longer exists (a stale deep link, a course just deleted). Setting attributes
+	# on it raises, turning a clean empty response into a 500. Same guard as
+	# get_batch_details below.
+	if not course_detail:
+		return course_detail
+
 	course_detail.feature_sections = get_course_feature_sections(course)
 
 	hero = (
