@@ -39,8 +39,14 @@ FIELD_TO_CSS_VAR = {
 	"color_sidebar_menu": "--color-sidebar-menu",
 	"surface_elevation_1": "--surface-elevation-1",
 	"color_menu_bar": "--color-menu-bar",
-	"gradient_overlay_from": "--gradient-overlay-from",
-	"gradient_overlay_to": "--gradient-overlay-to",
+	# Login page. Its stylesheet reads these with a Frappe default as the
+	# fallback, so an instance that leaves them empty renders a stock login.
+	"login_bg_from": "--login-bg-from",
+	"login_bg_to": "--login-bg-to",
+	"login_ink": "--login-ink",
+	"login_input_bg": "--login-input-bg",
+	"login_input_ink": "--login-input-ink",
+	"login_button_bg": "--login-button-bg",
 }
 
 CACHE_KEY = "brand_customize_css"

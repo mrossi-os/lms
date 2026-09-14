@@ -196,32 +196,39 @@
 					</div>
 				</div>
 			</div>
+			<!--
+				Courses only: members get their own dialogs (showMemberDialog and
+				showBatchDialog). This one used to serve both, switching on a
+				`currentForm` ref that a refactor removed while leaving the reads
+				behind — so it always took the member branch, titled itself "Enroll
+				Member", ran addMembers, and rendered no field at all.
+			-->
 			<Dialog
 				v-model:open="showFormDialog"
-				:title="
-					currentForm == 'course'
-						? __('Add Course to Program')
-						: __('Enroll Member to Program')
-				"
+				:title="__('Add Course to Program')"
 				:actions="[
 					{
 						label: __('Add'),
 						variant: 'solid',
-						onClick: ({ close }: { close: () => void }) =>
-							currentForm == 'course'
-								? addCourses(close)
-								: addMembers(close),
+						onClick: ({ close }: { close: () => void }) => addCourses(close),
 					},
 				]"
 			>
 				<template #default>
 					<div @click.stop>
-						<Link
-							v-if="currentForm == 'course'"
-							v-model="course"
+						<!--
+							MultiSelect, like the members field below: it binds an array,
+							supports :exclude and exposes cachedOptions — the three things
+							addCourses and this dialog rely on. A refactor swapped it for
+							the single-value Link bound to an undeclared `course` ref, so
+							selectedCourses stayed empty and adding always failed with
+							"select at least one course", while :exclude was silently
+							ignored.
+						-->
+						<MultiSelect
+							v-model="selectedCourses"
 							doctype="LMS Course"
 							:label="__('Courses')"
-							:autofocus="false"
 							ref="multiSelectRef"
 							:exclude="
 								(program.program_courses || []).map((c: any) => c.course)
@@ -799,7 +806,11 @@ const updateCounts = async (
 		},
 		{
 			onSuccess() {
-				setProgramData()
+				// Reload, don't just reset: setProgramData rebuilds the program from
+				// the list resource, which carries no child tables, so on its own it
+				// emptied the course and member lists right after a row was added or
+				// removed — leaving the counts right and the lists blank.
+				loadProgramData()
 			},
 			onError(err: any) {
 				toast.warning(__(err.messages?.[0] || err))

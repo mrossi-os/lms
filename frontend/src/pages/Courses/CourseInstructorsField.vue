@@ -128,10 +128,22 @@ watch(
 	{ immediate: true },
 )
 
+// Every selected instructor needs an option, resolved or not: the dropdown is
+// built from these, and deselecting there is the only way to remove one. An
+// instructor whose user account was deleted never comes back from the search,
+// so dropping it here left it stuck on the course — invisible in the list, yet
+// still in the model, failing every save on a broken link. Fall back to the
+// raw user id so it stays listed and can be removed.
 const resolvedSelected = computed<InstructorOption[]>(() =>
-	instructors.value
-		.map((v) => resolvedDetails.value.get(v))
-		.filter((o): o is InstructorOption => Boolean(o)),
+	instructors.value.map(
+		(v) =>
+			resolvedDetails.value.get(v) ?? {
+				label: v,
+				value: v,
+				image: '',
+				description: v,
+			},
+	),
 )
 
 const optionByValue = computed<Map<string, InstructorOption>>(() => {

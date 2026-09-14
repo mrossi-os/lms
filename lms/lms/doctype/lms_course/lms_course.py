@@ -83,6 +83,21 @@ class LMSCourse(Document):
 				)
 
 	def validate_certification(self):
+		# Evaluator and timezone belong to the paid certificate and are the only two
+		# fields that do (price and currency are shared with paid_course). Turning the
+		# certificate off used to leave them set but hidden from the form, and a stale
+		# evaluator whose Course Evaluator was later deleted then made the course
+		# impossible to save at all: link validation rejected it while the field was
+		# nowhere to be seen. Clear them with the toggle, and drop an evaluator that no
+		# longer exists — the checks below still demand a valid one while the paid
+		# certificate is actually enabled.
+		if not self.paid_certificate:
+			self.evaluator = None
+			self.timezone = None
+
+		if self.evaluator and not frappe.db.exists("Course Evaluator", self.evaluator):
+			self.evaluator = None
+
 		if self.enable_certification and self.paid_certificate:
 			frappe.throw(_("A course cannot have both paid certificate and certificate of completion."))
 
