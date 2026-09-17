@@ -32,14 +32,14 @@
 			"label": "Live Class"
 		},
 		{
-			"description": "Email di invito inviata ai partecipanti alla creazione della lezione. Variabili: student_name, title, date, time, duration, join_url, description, batch_name, google_url, outlook_url, ics_url (i tre link \"Aggiungi al calendario\": Google Calendar, Outlook.com e download .ics firmato; vedi guida sotto). Nessun .ics allegato all'email.",
+			"description": "Email di invito inviata ai partecipanti alla creazione della lezione. Variabili: student_name, title, date, time, duration, end_time (ora di fine calcolata dalla durata), host_name (nome dell'utente indicato come Host), batch_title, join_url, description, batch_name, google_url, outlook_url, ics_url (i tre link \"Aggiungi al calendario\": Google Calendar, Outlook.com e download .ics firmato; vedi guida sotto). Nessun .ics allegato all'email.",
 			"fieldname": "live_class_invitation_template",
 			"fieldtype": "Link",
 			"label": "Live Class Invitation",
 			"options": "Email Template"
 		},
 		{
-			"description": "Email inviata ai partecipanti quando la lezione viene modificata (titolo, data, ora, durata o fuso orario). Riporta tutti i dettagli aggiornati, non solo quelli cambiati. Stesse variabili dell'invito: student_name, title, date, time, duration, join_url, description, batch_name, google_url, outlook_url, ics_url.",
+			"description": "Email inviata ai partecipanti quando la lezione viene modificata (titolo, data, ora, durata o fuso orario). Riporta tutti i dettagli aggiornati, non solo quelli cambiati. Stesse variabili dell'invito: student_name, title, date, time, duration, end_time, host_name, batch_title, join_url, description, batch_name, google_url, outlook_url, ics_url. Questa email non usa l'intestazione standard di Frappe, perché il template ha la propria.",
 			"fieldname": "live_class_updated_template",
 			"fieldtype": "Link",
 			"label": "Live Class Updated",

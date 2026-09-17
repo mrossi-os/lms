@@ -266,10 +266,12 @@ class CustomLMSLiveClass(LMSLiveClass):
 		now (title, date, time, duration, description, join link, calendar
 		buttons), not a diff against the previous schedule.
 		"""
+		# No `header`: the template carries its own branded header, and Frappe's
+		# would print the same title again as a bare line above the design.
 		self._mail_participants(
 			template_key="live_class_updated",
 			subject=_("Lezione dal vivo aggiornata: {0}").format(self.title),
-			header=[_("Lezione dal vivo aggiornata"), "blue"],
+			header=None,
 			log_tag="send_update_email",
 		)
 
@@ -298,6 +300,18 @@ class CustomLMSLiveClass(LMSLiveClass):
 		# without letting the user choose. Exposed in `args` so any template (file-based
 		# or per-client desk Email Template) can render the buttons.
 		cal_links = get_calendar_links(self)
+		# Values the templates cannot compute on their own: the end of the class,
+		# the host's display name and the batch title (`batch_name` is the slug).
+		start_dt = get_datetime(f"{self.date} {self.time}")
+		end_time = (
+			format_time(start_dt + timedelta(minutes=cint(self.duration)), "HH:mm")
+			if cint(self.duration)
+			else None
+		)
+		host_name = frappe.db.get_value("User", self.host, "full_name") if self.host else None
+		batch_title = (
+			frappe.db.get_value("LMS Batch", self.batch_name, "title") if self.batch_name else None
+		)
 		sent = 0
 		failed = 0
 		for participant in participants:
@@ -317,6 +331,9 @@ class CustomLMSLiveClass(LMSLiveClass):
 						"date": self.date,
 						"time": self.time,
 						"duration": self.duration,
+						"end_time": end_time,
+						"host_name": host_name,
+						"batch_title": batch_title,
 						"join_url": join_url,
 						"description": self.description,
 						"batch_name": self.batch_name,
