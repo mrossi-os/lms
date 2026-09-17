@@ -57,7 +57,7 @@ class CustomLMSLiveClass(LMSLiveClass):
 		whole batch. Reminders re-arm themselves through the `before_save` hook
 		`os_lms.os_lms.live_class_reminders.reset_sent_at`.
 		"""
-		from os_lms.os_lms.api import normalize_live_class_value, update_zoom_meeting
+		from os_lms.os_lms.api import normalize_live_class_value
 
 		previous = self.get_doc_before_save()
 		if not previous:
@@ -74,6 +74,23 @@ class CustomLMSLiveClass(LMSLiveClass):
 			return
 
 		_lc_log(f"[_handle_class_update] {self.name} changed={changed}")
+
+		# Run the side effects AFTER the transaction commits, never inside it.
+		# Rescheduling on Zoom is two HTTP calls with a 10s timeout each, and the
+		# emails add a write per participant: doing that here kept a write lock on
+		# this row for the whole time, long enough for a second click (or the
+		# reminder / attendance scheduler) to hit it and fail the save with
+		# MariaDB 1020, "Record has changed since last read".
+		frappe.enqueue(
+			"os_lms.overrides.lms_live_class.apply_live_class_update",
+			queue="short",
+			enqueue_after_commit=True,
+			live_class=self.name,
+		)
+
+	def apply_update_side_effects(self):
+		"""Reschedule the meeting and tell the participants. Runs out of the save."""
+		from os_lms.os_lms.api import update_zoom_meeting
 
 		if self._is_zoom():
 			update_zoom_meeting(self)
@@ -375,3 +392,14 @@ class CustomLMSLiveClass(LMSLiveClass):
 			}
 		)
 		make_notification_logs(notification, students)
+
+
+def apply_live_class_update(live_class: str) -> None:
+	"""Background entry point for the side effects of an updated live class.
+
+	Enqueued with `enqueue_after_commit` by `_handle_class_update`, so it starts
+	only once the new schedule is safely stored and no row lock is held.
+	"""
+	doc = frappe.get_doc("LMS Live Class", live_class)
+	doc.apply_update_side_effects()
+	frappe.db.commit()

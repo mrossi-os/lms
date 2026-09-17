@@ -8,6 +8,7 @@
 				{
 					label: __('Submit'),
 					variant: 'solid',
+					loading: saving,
 					onClick: ({ close }) => submitLiveClass(close),
 				},
 			],
@@ -202,7 +203,7 @@ import {
 	FormControl,
 	toast,
 } from 'frappe-ui'
-import { computed, reactive, inject, onMounted } from 'vue'
+import { computed, reactive, ref, inject, onMounted } from 'vue'
 import { Plus, Trash2, AlertCircle } from 'lucide-vue-next'
 import { getTimezones, getUserTimezone } from '@/utils/'
 
@@ -226,6 +227,10 @@ const props = defineProps({
 })
 
 const isEdit = computed(() => !!props.liveClass)
+// Guards against a second submit while the first is still running: two saves in
+// flight on the same class make the loser fail with "Record has changed since
+// last read".
+const saving = ref(false)
 // Once the host has started the class its schedule is frozen, server-side too
 // (see `_validate_schedule_change`): only title, description and reminders stay
 // editable, because students are already being let in on the old slot.
@@ -331,6 +336,9 @@ const updateLiveClassResource = createResource({
 })
 
 const submitLiveClass = (close) => {
+	if (saving.value) {
+		return
+	}
 	if (isEdit.value) {
 		return submitUpdate(close)
 	}
@@ -338,18 +346,22 @@ const submitLiveClass = (close) => {
 }
 
 const submitCreate = (close) => {
+	const validation = validateFormFields()
+	if (validation) {
+		toast.error(validation)
+		return
+	}
 	const resource =
 		props.conferencingProvider === 'Google Meet'
 			? createGoogleMeetLiveClass
 			: createLiveClass
+	saving.value = true
 	return resource.submit(liveClass, {
-		validate() {
-			return validateFormFields()
-		},
 		onSuccess(data) {
 			persistRemindersAfterCreate(data, close)
 		},
 		onError(err) {
+			saving.value = false
 			toast.error(err.messages?.[0] || err)
 			console.error(err)
 		},
@@ -360,6 +372,7 @@ const persistRemindersAfterCreate = (created, close) => {
 	if (!liveClass.reminders.length) {
 		liveClasses.value.reload()
 		refreshForm()
+		saving.value = false
 		close()
 		return
 	}
@@ -377,9 +390,11 @@ const persistRemindersAfterCreate = (created, close) => {
 			onSuccess() {
 				liveClasses.value.reload()
 				refreshForm()
+				saving.value = false
 				close()
 			},
 			onError(err) {
+				saving.value = false
 				toast.error(err.messages?.[0] || err)
 			},
 		},
@@ -408,6 +423,7 @@ const submitUpdate = (close) => {
 		payload.duration = liveClass.duration
 		payload.timezone = liveClass.timezone
 	}
+	saving.value = true
 	updateLiveClassResource.submit(
 		{
 			name: props.liveClass.name,
@@ -417,9 +433,11 @@ const submitUpdate = (close) => {
 			onSuccess() {
 				toast.success(__('Live class updated'))
 				liveClasses.value.reload()
+				saving.value = false
 				close()
 			},
 			onError(err) {
+				saving.value = false
 				toast.error(err.messages?.[0] || err)
 			},
 		},
