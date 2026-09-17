@@ -8,11 +8,13 @@
 		class="border-2 rounded-md w-full md:min-w-80 max-w-sm card !p-0"
 		:class="{ 'md:mt-16': hideVideo }"
 	>
-		<!-- OSLMS-CUSTOM: hide the preview video when a hero banner already shows it -->
-		<iframe
+		<!-- OSLMS-CUSTOM: hide the preview video when a hero banner already shows it.
+		The player is VideoPreview, the same one a lesson uses (Plyr for YouTube /
+		Vimeo, VideoBlock for an uploaded file), so the card has no provider chrome. -->
+		<VideoPreview
 			v-if="course.data?.video_link && !hideVideo"
-			:src="video_link"
-			class="rounded-t-md min-h-56 w-full"
+			:video-link="course.data.video_link"
+			class="rounded-t-md w-full overflow-hidden"
 		/>
 		<div class="p-5">
 			<!-- <div class="text-2xl font-semibold text-ink-gray-9 mb-4">
@@ -178,9 +180,9 @@ import { Badge, Button, call, createResource, toast } from 'frappe-ui'
 import { useRouter } from 'vue-router'
 import CertificationLinks from '@/components/CertificationLinks.vue'
 import CourseOutline from '@/components/CourseOutline.vue'
+import VideoPreview from '@/components/VideoPreview.vue'
 // OSLMS-CUSTOM: route certificate opening through TrueSkills when enabled.
 import { useCertificateViewer } from '@/oslms/composables/useCertificateViewer'
-import { getVideoEmbedURL } from '@/utils/'
 import { useTelemetry } from 'frappe-ui/frappe'
 import type {
 	CertificationInfo,
@@ -210,12 +212,6 @@ const props = withDefaults(
 	}>(),
 	{ hideVideo: false, hideOutline: false, hideContinueCta: false },
 )
-
-const video_link = computed<string | undefined>(() => {
-	const link = props.course.data?.video_link
-	// Supports YouTube and Vimeo (and legacy bare YouTube ids).
-	return link ? getVideoEmbedURL(link) : undefined
-})
 
 function enrollStudent() {
 	if (!user.data) {
