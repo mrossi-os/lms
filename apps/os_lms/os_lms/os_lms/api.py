@@ -1878,7 +1878,11 @@ def unregister_push_token(token: str) -> dict:
 
 # ----- Live Class management -----
 
-LIVE_CLASS_EDITABLE_FIELDS = ("title", "description")
+LIVE_CLASS_EDITABLE_FIELDS = ("title", "description", "date", "time", "duration", "timezone")
+# Changing any of these moves the class for its participants, so they drive the
+# "class updated" email, the Zoom reschedule and the reminder re-arm. `description`
+# is deliberately out: correcting the text must not notify the whole batch.
+LIVE_CLASS_SCHEDULE_FIELDS = ("date", "time", "duration", "timezone")
 MIN_REMINDER_MINUTES = 15
 
 
@@ -1918,15 +1922,96 @@ def _validate_reminders(reminders) -> None:
 			frappe.throw(frappe._("Each reminder must be at least 15 minutes before the class."))
 
 
+def normalize_live_class_value(field: str, value):
+	"""Comparable form of a Live Class field value.
+
+	The same date reaches us as a string from the browser and as a `date` (or a
+	`timedelta`, for `time`) from the database, so a raw comparison would report
+	a change on every save. Used both here and by the doctype override that
+	decides whether the participants must be notified.
+	"""
+	if value in (None, ""):
+		return None
+	if field == "date":
+		return frappe.utils.getdate(value)
+	if field == "time":
+		return frappe.utils.get_time(value)
+	if field == "duration":
+		return frappe.utils.cint(value)
+	return str(value)
+
+
+def _changed_schedule_fields(doc, payload: dict) -> list:
+	return [
+		field
+		for field in LIVE_CLASS_SCHEDULE_FIELDS
+		if field in payload
+		and normalize_live_class_value(field, payload.get(field))
+		!= normalize_live_class_value(field, doc.get(field))
+	]
+
+
+def _validate_schedule_change(doc, payload: dict) -> None:
+	"""Guard a reschedule: a started class is frozen, a new slot must be ahead."""
+	if not _changed_schedule_fields(doc, payload):
+		return
+
+	if doc.get("started_at"):
+		frappe.throw(
+			frappe._(
+				"La lezione è già stata avviata: non è più possibile cambiarne data, ora o durata."
+			)
+		)
+
+	date = payload.get("date") or doc.date
+	time = payload.get("time") or doc.time
+	if frappe.utils.get_datetime(f"{date} {time}") <= frappe.utils.now_datetime():
+		frappe.throw(frappe._("La nuova data e ora della lezione devono essere nel futuro."))
+
+
+def _apply_reminders(doc, rows) -> None:
+	"""Replace the reminders table, carrying `sent_at` over from the stored rows.
+
+	`sent_at` is never taken from the client: it is matched server-side on the
+	(offset_value, offset_unit) pair, so a reminder whose offset was edited counts
+	as a new one and fires again, while untouched rows keep their history. A
+	change of date, time or duration clears every `sent_at` anyway — see
+	`os_lms.os_lms.live_class_reminders.reset_sent_at`.
+	"""
+	already_sent = {}
+	for row in doc.get("reminders") or []:
+		if row.sent_at:
+			key = (frappe.utils.cint(row.offset_value), row.offset_unit)
+			already_sent.setdefault(key, []).append(row.sent_at)
+
+	doc.set("reminders", [])
+	for row in rows or []:
+		key = (frappe.utils.cint(row.get("offset_value")), row.get("offset_unit"))
+		sent_at = already_sent[key].pop(0) if already_sent.get(key) else None
+		doc.append(
+			"reminders",
+			{
+				"offset_value": row.get("offset_value"),
+				"offset_unit": row.get("offset_unit"),
+				"sent_at": sent_at,
+			},
+		)
+
+
 @frappe.whitelist()
 def update_live_class(name: str, payload: dict) -> dict:
-	"""Update editable fields and the reminders child table on a Live Class."""
+	"""Update editable fields and the reminders child table on a Live Class.
+
+	Rescheduling is handled by the doctype override on `on_update`: it reschedules
+	the Zoom meeting (the join link does not change) and emails the participants.
+	"""
 	_ensure_live_class_admin()
 
 	if isinstance(payload, str):
 		payload = json.loads(payload)
 
 	doc = frappe.get_doc("LMS Live Class", name)
+	_validate_schedule_change(doc, payload)
 
 	for field in LIVE_CLASS_EDITABLE_FIELDS:
 		if field in payload:
@@ -1934,17 +2019,7 @@ def update_live_class(name: str, payload: dict) -> dict:
 
 	if "reminders" in payload:
 		_validate_reminders(payload.get("reminders"))
-		doc.set("reminders", [])
-		for row in payload.get("reminders") or []:
-			doc.append(
-				"reminders",
-				{
-					"offset_value": row.get("offset_value"),
-					"offset_unit": row.get("offset_unit"),
-					# preserve sent_at when row was already persisted
-					"sent_at": row.get("sent_at"),
-				},
-			)
+		_apply_reminders(doc, payload.get("reminders"))
 
 	doc.save()
 	frappe.db.commit()
@@ -2211,6 +2286,73 @@ def _notify_students_class_cancelled(live_class) -> None:
 			frappe.logger("os_lms_live_class", allow_site=True).exception(
 				f"Failed to send cancellation email to {student.member}"
 			)
+
+
+def zoom_start_time(date, time) -> str:
+	"""Zoom `start_time` for a local wall-clock slot ("yyyy-MM-ddTHH:mm:ss").
+
+	Paired with the meeting `timezone`, this is how Zoom expects a local time. A
+	trailing offset (or a literal "Z") would make Zoom read the value as GMT and
+	schedule the meeting shifted by the timezone offset.
+	"""
+	return frappe.utils.get_datetime(f"{date} {time}").strftime("%Y-%m-%dT%H:%M:%S")
+
+
+def update_zoom_meeting(doc) -> None:
+	"""Reschedule the existing Zoom meeting instead of creating a new one.
+
+	`PATCH /meetings/{id}` keeps the meeting id, `join_url`, `start_url` and
+	password untouched, so invitations already in the participants' inboxes stay
+	valid. Best-effort: a Zoom failure is logged but must not block the save.
+	"""
+	if not (doc.get("zoom_account") and doc.get("meeting_id")):
+		return
+
+	logger = frappe.logger("os_lms_live_class", allow_site=True)
+	try:
+		from lms.lms.doctype.lms_batch.lms_batch import authenticate
+
+		headers = {
+			"Authorization": "Bearer " + authenticate(doc.zoom_account),
+			"content-type": "application/json",
+		}
+		payload = {
+			"topic": doc.title,
+			"start_time": zoom_start_time(doc.date, doc.time),
+			"duration": frappe.utils.cint(doc.duration),
+			"timezone": doc.timezone,
+			"agenda": doc.description,
+		}
+		response = requests.patch(
+			f"https://api.zoom.us/v2/meetings/{doc.meeting_id}",
+			headers=headers,
+			data=json.dumps(payload),
+			timeout=10,
+		)
+		if response.status_code not in (200, 204):
+			logger.error(
+				f"Zoom reschedule of {doc.name} (meeting {doc.meeting_id}) failed: "
+				f"{response.status_code} {response.text}"
+			)
+			return
+
+		# The PATCH answers 204 with no body, so re-read the meeting to keep the
+		# stored links in sync with Zoom. They do not change on a reschedule, but
+		# Zoom stays the source of truth.
+		fetched = requests.get(
+			f"https://api.zoom.us/v2/meetings/{doc.meeting_id}",
+			headers=headers,
+			timeout=10,
+		)
+		if fetched.status_code != 200:
+			return
+		data = fetched.json()
+		values = {key: data[key] for key in ("join_url", "start_url") if data.get(key)}
+		if values:
+			frappe.db.set_value("LMS Live Class", doc.name, values, update_modified=False)
+			doc.update(values)
+	except Exception:
+		logger.exception(f"Failed to reschedule Zoom meeting {doc.get('meeting_id')}")
 
 
 def _delete_zoom_meeting(zoom_account: str, meeting_id: str) -> None:
