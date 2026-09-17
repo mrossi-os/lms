@@ -119,9 +119,19 @@ def get_lesson(course: str, chapter: int, lesson: int) -> dict:
 		if is_guest or is_admin:
 			lesson_details["lesson_access"] = {"allowed": True}
 			lesson_details["quiz_access"] = {"allowed": True}
+			# Whoever bypasses the sequential rule must not get the app's
+			# "next lesson" button disabled either.
+			lesson_details["enforce_lesson_order"] = 0
 		else:
 			lesson_details["lesson_access"] = evaluate_lesson_access(course, lesson_name)
 			lesson_details["quiz_access"] = evaluate_quiz_access(course, lesson_name)
+			# The mobile app mirrors the SPA's "Next" button and keeps it
+			# disabled until the lesson is complete, the way the web shows the
+			# following lesson as blocked. The flag is a course custom field and
+			# isn't part of get_course_fields(), so expose it here.
+			lesson_details["enforce_lesson_order"] = (
+				1 if frappe.db.get_value("LMS Course", course, "enforce_lesson_order") else 0
+			)
 
 		# Published simulation scenarios visible from this lesson. Returns the
 		# lesson-specific ones first (course_lesson == lesson_name) and falls
