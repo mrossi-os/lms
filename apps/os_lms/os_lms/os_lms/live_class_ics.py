@@ -85,6 +85,13 @@ def build_ics(doc) -> str:
 		description_parts.append(_("Partecipa: {0}").format(join_link))
 	description = "\n\n".join(description_parts)
 
+	# RFC 5545 SEQUENCE: with a stable UID, a calendar client replaces the event it
+	# already holds only if the sequence grew. Minutes since the epoch, taken from
+	# `modified`, grow at every save without needing a stored counter.
+	sequence = 0
+	if doc.get("modified"):
+		sequence = int(get_datetime(doc.modified).timestamp() // 60)
+
 	lines = [
 		"BEGIN:VCALENDAR",
 		"VERSION:2.0",
@@ -93,6 +100,7 @@ def build_ics(doc) -> str:
 		"METHOD:PUBLISH",
 		"BEGIN:VEVENT",
 		f"UID:{uid}",
+		f"SEQUENCE:{sequence}",
 		f"DTSTAMP:{now_utc.strftime('%Y%m%dT%H%M%SZ')}",
 		f"DTSTART:{start_utc.strftime('%Y%m%dT%H%M%SZ')}",
 		f"DTEND:{end_utc.strftime('%Y%m%dT%H%M%SZ')}",

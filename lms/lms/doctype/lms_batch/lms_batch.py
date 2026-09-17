@@ -10,7 +10,7 @@ import requests
 from frappe import _
 from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
 from frappe.model.document import Document
-from frappe.utils import add_days, cint, format_datetime, get_time, nowdate
+from frappe.utils import add_days, cint, get_datetime, get_time, nowdate
 
 from lms.lms.utils import (
 	enroll_batch_students_in_courses,
@@ -304,7 +304,10 @@ def create_live_class(
 
 	payload = {
 		"topic": title,
-		"start_time": format_datetime(f"{date} {time}", "yyyy-MM-ddTHH:mm:ssZ"),
+		# Local wall-clock time, read by Zoom in the `timezone` set below. The
+		# trailing "Z" of a Babel pattern is the RFC822 offset, not a literal "Z":
+		# it made Zoom read the slot as GMT and schedule the meeting shifted.
+		"start_time": get_datetime(f"{date} {time}").strftime("%Y-%m-%dT%H:%M:%S"),
 		"duration": duration,
 		"agenda": description,
 		"timezone": timezone,

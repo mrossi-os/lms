@@ -54,3 +54,18 @@ def save_course_feature_sections(course_name: str, feature_sections: list[dict])
 		update_modified=False,
 	)
 	frappe.db.commit()
+
+
+def set_job_language(*args, **kwargs) -> None:
+	"""Align a background job with the site language.
+
+	A worker starts with ``frappe.local.lang`` taken from ``conf.lang`` (not set
+	here), so it falls back to ``"en"``: ``frappe.set_user`` does not touch the
+	language, and only web requests resolve it from the user / System Settings.
+	Every ``_()`` evaluated inside a job therefore returns English, and when the
+	result is stored — e.g. the "Failed to send email with subject:" subject that
+	frappe's email queue bakes into a Notification Log — it stays English forever.
+
+	Resolve it the same way a request does: User.language, then System Settings.
+	"""
+	frappe.set_user_lang(frappe.session.user)

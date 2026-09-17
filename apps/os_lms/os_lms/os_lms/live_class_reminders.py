@@ -111,13 +111,25 @@ def _send_reminder_mail(live_class, student, cal_links=None) -> None:
 
 
 def reset_sent_at(doc, method=None):
-	"""When date/time/duration changes, clear sent_at on reminders so they fire again."""
+	"""When date/time/duration changes, clear sent_at on reminders so they fire again.
+
+	The comparison goes through `normalize_live_class_value` instead of
+	`has_value_changed`: the SPA sends the schedule back as strings, and a raw
+	"90" != 90 on `duration` would re-arm every reminder on a plain title edit.
+	"""
 	if not doc.get("reminders"):
 		return
-	if not (
-		doc.has_value_changed("date")
-		or doc.has_value_changed("time")
-		or doc.has_value_changed("duration")
+
+	from os_lms.os_lms.api import normalize_live_class_value
+
+	previous = doc.get_doc_before_save()
+	if not previous:
+		# Insert: the rows cannot carry a sent_at yet.
+		return
+	if not any(
+		normalize_live_class_value(field, previous.get(field))
+		!= normalize_live_class_value(field, doc.get(field))
+		for field in ("date", "time", "duration")
 	):
 		return
 	for row in doc.reminders:

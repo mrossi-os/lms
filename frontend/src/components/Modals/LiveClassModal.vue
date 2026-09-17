@@ -8,6 +8,7 @@
 				{
 					label: __('Submit'),
 					variant: 'solid',
+					loading: saving,
 					onClick: ({ close }) => submitLiveClass(close),
 				},
 			],
@@ -16,14 +17,27 @@
 		<template #default>
 			<div class="flex flex-col gap-4">
 				<div
-					v-if="isEdit"
+					v-if="isEdit && scheduleLocked"
 					class="flex items-start gap-2 bg-surface-amber-1 px-3 py-2 rounded-lg text-ink-amber-6 text-sm"
 				>
 					<AlertCircle class="size-4 shrink-0 stroke-1.5 mt-0.5" />
 					<span>
 						{{
 							__(
-								'Per cambiare data, ora o durata della lezione, eliminala e ricreala.',
+								'La lezione è già stata avviata: data, ora e durata non sono più modificabili.',
+							)
+						}}
+					</span>
+				</div>
+				<div
+					v-else-if="isEdit"
+					class="flex items-start gap-2 bg-surface-blue-1 px-3 py-2 rounded-lg text-ink-blue-3 text-sm"
+				>
+					<AlertCircle class="size-4 shrink-0 stroke-1.5 mt-0.5" />
+					<span>
+						{{
+							__(
+								'Se cambi titolo, data, ora o durata, gli iscritti ricevono un\'email con i dettagli aggiornati e i promemoria vengono riprogrammati.',
 							)
 						}}
 					</span>
@@ -41,14 +55,14 @@
 							type="date"
 							:label="__('Date')"
 							:required="true"
-							:disabled="isEdit"
+							:disabled="scheduleLocked"
 						/>
 						<FormControl
 							type="number"
 							v-model="liveClass.duration"
 							:label="__('Duration (in minutes)')"
 							:required="true"
-							:disabled="isEdit"
+							:disabled="scheduleLocked"
 						/>
 					</div>
 					<div class="space-y-4">
@@ -71,7 +85,7 @@
 								type="time"
 								:label="__('Time')"
 								:required="true"
-								:disabled="isEdit"
+								:disabled="scheduleLocked"
 								:use12Hour="false"
 							/>
 						</Tooltip>
@@ -87,7 +101,7 @@
 							<Combobox
 								:modelValue="liveClass.timezone"
 								:options="getTimezoneOptions()"
-								:disabled="isEdit"
+								:disabled="scheduleLocked"
 								@update:modelValue="(value) => (liveClass.timezone = value)"
 							/>
 						</div>
@@ -189,7 +203,7 @@ import {
 	FormControl,
 	toast,
 } from 'frappe-ui'
-import { computed, reactive, inject, onMounted } from 'vue'
+import { computed, reactive, ref, inject, onMounted } from 'vue'
 import { Plus, Trash2, AlertCircle } from 'lucide-vue-next'
 import { getTimezones, getUserTimezone } from '@/utils/'
 
@@ -213,6 +227,14 @@ const props = defineProps({
 })
 
 const isEdit = computed(() => !!props.liveClass)
+// Guards against a second submit while the first is still running: two saves in
+// flight on the same class make the loser fail with "Record has changed since
+// last read".
+const saving = ref(false)
+// Once the host has started the class its schedule is frozen, server-side too
+// (see `_validate_schedule_change`): only title, description and reminders stay
+// editable, because students are already being let in on the old slot.
+const scheduleLocked = computed(() => isEdit.value && !!props.liveClass?.started_at)
 
 const reminderUnitOptions = [
 	{ label: __('Minutes'), value: 'Minutes' },
@@ -243,7 +265,8 @@ onMounted(() => {
 		liveClass.title = props.liveClass.title || ''
 		liveClass.description = props.liveClass.description || ''
 		liveClass.date = props.liveClass.date || ''
-		liveClass.time = props.liveClass.time || ''
+		// Stored as HH:mm:ss, but the time field (and valideTime) work on HH:mm.
+		liveClass.time = (props.liveClass.time || '').slice(0, 5)
 		liveClass.duration = props.liveClass.duration || ''
 		liveClass.timezone = props.liveClass.timezone || getUserTimezone()
 		liveClass.auto_recording = props.liveClass.auto_recording || 'No Recording'
@@ -314,6 +337,9 @@ const updateLiveClassResource = createResource({
 })
 
 const submitLiveClass = (close) => {
+	if (saving.value) {
+		return
+	}
 	if (isEdit.value) {
 		return submitUpdate(close)
 	}
@@ -321,18 +347,22 @@ const submitLiveClass = (close) => {
 }
 
 const submitCreate = (close) => {
+	const validation = validateFormFields()
+	if (validation) {
+		toast.error(validation)
+		return
+	}
 	const resource =
 		props.conferencingProvider === 'Google Meet'
 			? createGoogleMeetLiveClass
 			: createLiveClass
+	saving.value = true
 	return resource.submit(liveClass, {
-		validate() {
-			return validateFormFields()
-		},
 		onSuccess(data) {
 			persistRemindersAfterCreate(data, close)
 		},
 		onError(err) {
+			saving.value = false
 			toast.error(err.messages?.[0] || err)
 			console.error(err)
 		},
@@ -343,6 +373,7 @@ const persistRemindersAfterCreate = (created, close) => {
 	if (!liveClass.reminders.length) {
 		liveClasses.value.reload()
 		refreshForm()
+		saving.value = false
 		close()
 		return
 	}
@@ -360,9 +391,11 @@ const persistRemindersAfterCreate = (created, close) => {
 			onSuccess() {
 				liveClasses.value.reload()
 				refreshForm()
+				saving.value = false
 				close()
 			},
 			onError(err) {
+				saving.value = false
 				toast.error(err.messages?.[0] || err)
 			},
 		},
@@ -375,50 +408,58 @@ const submitUpdate = (close) => {
 		toast.error(validation)
 		return
 	}
+	const payload = {
+		title: liveClass.title,
+		description: liveClass.description,
+		// `sent_at` is intentionally left out: the server matches each reminder
+		// against the stored ones, so an edited offset fires again on its own.
+		reminders: liveClass.reminders.map((r) => ({
+			offset_value: r.offset_value,
+			offset_unit: r.offset_unit,
+		})),
+	}
+	if (!scheduleLocked.value) {
+		payload.date = liveClass.date
+		payload.time = liveClass.time
+		payload.duration = liveClass.duration
+		payload.timezone = liveClass.timezone
+	}
+	saving.value = true
 	updateLiveClassResource.submit(
 		{
 			name: props.liveClass.name,
-			payload: {
-				title: liveClass.title,
-				description: liveClass.description,
-				reminders: liveClass.reminders.map((r) => ({
-					offset_value: r.offset_value,
-					offset_unit: r.offset_unit,
-					sent_at: r.sent_at || null,
-				})),
-			},
+			payload,
 		},
 		{
 			onSuccess() {
 				toast.success(__('Live class updated'))
 				liveClasses.value.reload()
+				saving.value = false
 				close()
 			},
 			onError(err) {
+				saving.value = false
 				toast.error(err.messages?.[0] || err)
 			},
 		},
 	)
 }
 
-const validateEditFields = () => {
-	if (!liveClass.title) {
-		return __('Please enter a title.')
-	}
-	for (const r of liveClass.reminders) {
-		if (!r.offset_value || r.offset_value < 1) {
-			return __('Reminders must have a positive offset value.')
-		}
-		if (offsetToMinutes(r.offset_value, r.offset_unit) < MIN_REMINDER_MINUTES) {
-			return __('Each reminder must be at least 15 minutes before the class.')
-		}
-	}
+const scheduleChanged = () => {
+	if (!props.liveClass) return true
+	// The stored time comes back as HH:mm:ss, the form holds HH:mm.
+	const sameTime =
+		String(liveClass.time || '').slice(0, 5) ===
+		String(props.liveClass.time || '').slice(0, 5)
+	return !(
+		liveClass.date === props.liveClass.date &&
+		sameTime &&
+		Number(liveClass.duration) === Number(props.liveClass.duration) &&
+		liveClass.timezone === props.liveClass.timezone
+	)
 }
 
-const validateFormFields = () => {
-	if (!liveClass.title) {
-		return __('Please enter a title.')
-	}
+const validateSchedule = (requireFuture) => {
 	if (!liveClass.date) {
 		return __('Please select a date.')
 	}
@@ -431,21 +472,26 @@ const validateFormFields = () => {
 	if (!valideTime()) {
 		return __('Please enter a valid time in the format HH:mm.')
 	}
-	const liveClassDateTime = dayjs(`${liveClass.date}T${liveClass.time}`).tz(
-		liveClass.timezone,
-		true,
-	)
-	if (
-		liveClassDateTime.isSameOrBefore(
-			dayjs().tz(liveClass.timezone, false),
-			'minute',
+	if (requireFuture) {
+		const liveClassDateTime = dayjs(`${liveClass.date}T${liveClass.time}`).tz(
+			liveClass.timezone,
+			true,
 		)
-	) {
-		return __('Please select a future date and time.')
+		if (
+			liveClassDateTime.isSameOrBefore(
+				dayjs().tz(liveClass.timezone, false),
+				'minute',
+			)
+		) {
+			return __('Please select a future date and time.')
+		}
 	}
 	if (!liveClass.duration) {
 		return __('Please select a duration.')
 	}
+}
+
+const validateReminders = () => {
 	for (const r of liveClass.reminders) {
 		if (!r.offset_value || r.offset_value < 1) {
 			return __('Reminders must have a positive offset value.')
@@ -456,9 +502,36 @@ const validateFormFields = () => {
 	}
 }
 
+const validateEditFields = () => {
+	if (!liveClass.title) {
+		return __('Please enter a title.')
+	}
+	if (!scheduleLocked.value) {
+		// A class left on its original slot may well be in the past already:
+		// only a real reschedule has to land in the future.
+		const scheduleError = validateSchedule(scheduleChanged())
+		if (scheduleError) {
+			return scheduleError
+		}
+	}
+	return validateReminders()
+}
+
+const validateFormFields = () => {
+	if (!liveClass.title) {
+		return __('Please enter a title.')
+	}
+	const scheduleError = validateSchedule(true)
+	if (scheduleError) {
+		return scheduleError
+	}
+	return validateReminders()
+}
+
 const valideTime = () => {
-	let time = liveClass.time.split(':')
-	if (time.length != 2) {
+	// Accept both HH:mm from the picker and HH:mm:ss as stored on the document.
+	let time = String(liveClass.time || '').split(':')
+	if (time.length < 2 || time.length > 3) {
 		return false
 	}
 	if (time[0] < 0 || time[0] > 23) {

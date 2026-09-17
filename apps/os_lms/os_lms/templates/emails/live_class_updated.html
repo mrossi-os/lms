@@ -1,0 +1,190 @@
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f4f4;padding:30px 0;font-family:Arial,sans-serif;">
+  <tr>
+    <td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+
+        <!-- HEADER -->
+        <tr>
+          <td style="background-color:#123456;padding:32px 40px;text-align:left;">
+            <img src="https://www.salescience.it/wp-content/uploads/2024/04/logo-salescience_bianco.png" alt="Salescience" width="160" style="display:block" />
+            <h1 style="margin:8px 0 0 0;font-size:22px;font-weight:700;color:#ffffff;line-height:1.3;">
+              Lezione aggiornata
+            </h1>
+            {% if batch_title %}
+            <p style="margin:6px 0 0 0;font-size:14px;color:#a8c4e0">{{ batch_title }}</p>
+            {% endif %}
+          </td>
+        </tr>
+
+        <!-- BODY -->
+        <tr>
+          <td style="padding:36px 40px 24px 40px;color:#333333;font-size:15px;line-height:1.7;">
+            <p style="margin:0 0 18px 0">Ciao {{ student_name }},</p>
+
+            <p style="margin:0 0 28px 0">
+              la lezione dal vivo <strong>{{ title }}</strong> è stata
+              <strong style="color:#256ab0">modificata</strong>. Qui sotto trovi i dettagli aggiornati:
+              controlla che il nuovo orario sia segnato nel tuo calendario.
+            </p>
+
+            <!-- SCHEDA DETTAGLI -->
+            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f0f5fb;border-radius:6px;margin-bottom:28px;overflow:hidden;">
+              <tr>
+                <td style="background-color:#256ab0;padding:12px 20px">
+                  <p style="margin:0;font-size:13px;font-weight:700;color:#ffffff;letter-spacing:0.5px;text-transform:uppercase;">
+                    Dettagli aggiornati
+                  </p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:20px 20px 16px 20px">
+
+                  <!-- Lezione -->
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:12px">
+                    <tr>
+                      <td width="28" valign="top" style="padding-top:1px"><span style="font-size:16px">&#128203;</span></td>
+                      <td style="font-size:14px;color:#333333;line-height:1.5;">
+                        <span style="color:#777777;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Lezione</span><br />
+                        <strong>{{ title }}</strong>
+                      </td>
+                    </tr>
+                  </table>
+
+                  {% if host_name %}
+                  <!-- Relatore -->
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:12px">
+                    <tr>
+                      <td width="28" valign="top" style="padding-top:1px"><span style="font-size:16px">&#128100;</span></td>
+                      <td style="font-size:14px;color:#333333;line-height:1.5;">
+                        <span style="color:#777777;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Relatore</span><br />
+                        <strong>{{ host_name }}</strong>
+                      </td>
+                    </tr>
+                  </table>
+                  {% endif %}
+
+                  <!-- Data -->
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:12px">
+                    <tr>
+                      <td width="28" valign="top" style="padding-top:1px"><span style="font-size:16px">&#128197;</span></td>
+                      <td style="font-size:14px;color:#333333;line-height:1.5;">
+                        <span style="color:#777777;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Data</span><br />
+                        <strong>{{ frappe.utils.format_date(date, "dd-MM-yyyy") }}</strong>
+                      </td>
+                    </tr>
+                  </table>
+
+                  <!-- Orario -->
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:12px">
+                    <tr>
+                      <td width="28" valign="top" style="padding-top:1px"><span style="font-size:16px">&#128336;</span></td>
+                      <td style="font-size:14px;color:#333333;line-height:1.5;">
+                        <span style="color:#777777;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Orario</span><br />
+                        {% if end_time %}
+                        <strong>dalle ore {{ frappe.utils.format_time(time, "HH:mm") }} alle ore {{ end_time }}</strong>
+                        {% else %}
+                        <strong>dalle ore {{ frappe.utils.format_time(time, "HH:mm") }}</strong>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  </table>
+
+                  <!-- Dove -->
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr>
+                      <td width="28" valign="top" style="padding-top:1px"><span style="font-size:16px">&#128205;</span></td>
+                      <td style="font-size:14px;color:#333333;line-height:1.5;">
+                        <span style="color:#777777;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Dove</span><br />
+                        <strong>Online</strong> &mdash; collegati dal pulsante qui sotto
+                      </td>
+                    </tr>
+                  </table>
+
+                </td>
+              </tr>
+            </table>
+
+            {% if description %}
+            <p style="margin:0 0 28px 0">{{ description }}</p>
+            {% endif %}
+
+            <!-- CTA -->
+            {% if join_url %}
+            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:12px">
+              <tr>
+                <td align="center">
+                  <a href="{{ join_url }}" style="display:inline-block;background-color:#256ab0;color:#ffffff;padding:13px 32px;border-radius:6px;font-size:15px;font-weight:700;text-decoration:none;">
+                    Partecipa alla lezione
+                  </a>
+                </td>
+              </tr>
+            </table>
+            {% endif %}
+
+            {% set batch_url = frappe.utils.get_url() + "/lms/batches/" + batch_name %}
+            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:24px">
+              <tr>
+                <td align="center">
+                  <a href="{{ batch_url }}" style="display:inline-block;background-color:#123456;color:#ffffff;padding:13px 32px;border-radius:6px;font-size:15px;font-weight:700;text-decoration:none;">
+                    Vai alla classe
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <!-- CALENDARIO -->
+            {% if google_url or outlook_url or ics_url %}
+            <p style="margin:0 0 10px 0;font-size:13px;color:#777777;text-align:center;font-weight:600;">
+              Aggiorna il tuo calendario:
+            </p>
+            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:28px">
+              <tr>
+                <td align="center">
+                  {% if google_url %}
+                  <a href="{{ google_url }}" target="_blank" style="display:inline-block;border:1px solid #256ab0;color:#256ab0;padding:9px 18px;border-radius:6px;font-size:13px;font-weight:700;text-decoration:none;margin:4px;">
+                    Google Calendar
+                  </a>
+                  {% endif %}
+                  {% if outlook_url %}
+                  <a href="{{ outlook_url }}" target="_blank" style="display:inline-block;border:1px solid #256ab0;color:#256ab0;padding:9px 18px;border-radius:6px;font-size:13px;font-weight:700;text-decoration:none;margin:4px;">
+                    Outlook
+                  </a>
+                  {% endif %}
+                  {% if ics_url %}
+                  <a href="{{ ics_url }}" style="display:inline-block;border:1px solid #256ab0;color:#256ab0;padding:9px 18px;border-radius:6px;font-size:13px;font-weight:700;text-decoration:none;margin:4px;">
+                    Scarica .ics
+                  </a>
+                  {% endif %}
+                </td>
+              </tr>
+            </table>
+            {% endif %}
+
+            <p style="margin:0 0 4px 0">Un saluto e a presto,</p>
+            <p style="margin:0"><strong>Il Team Salescience</strong></p>
+          </td>
+        </tr>
+
+        <!-- DIVIDER -->
+        <tr>
+          <td style="padding:0 40px">
+            <hr style="border:none;border-top:1px solid #e8e8e8;margin:0" />
+          </td>
+        </tr>
+
+        <!-- FOOTER -->
+        <tr>
+          <td style="padding:20px 40px;background-color:#f9f9f9;text-align:center;color:#999999;font-size:12px;line-height:1.6;border-radius:0 0 6px 6px;">
+            <p style="margin:0 0 4px 0">
+              Hai ricevuto questa email perché sei iscritto/a a
+              <strong style="color:#666666">{{ batch_title or title }}</strong>
+              su <a href="{{ frappe.utils.get_url() }}/lms" style="color:#256ab0;text-decoration:none">Salescience Academy</a>.
+            </p>
+            <p style="margin:0">&copy; {{ frappe.utils.nowdate()[:4] }} Salescience &mdash; Tutti i diritti riservati.</p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>

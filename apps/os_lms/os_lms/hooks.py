@@ -26,6 +26,10 @@ app_include_css = [
 # activate debug if needed
 before_request = ["os_lms.debug.active_debug"]
 
+# Background jobs start with lang = conf.lang (unset) -> "en", so every _()
+# evaluated in a worker returns English even though the site runs in Italian.
+before_job = ["os_lms.os_lms.utils.set_job_language"]
+
 # forse to set italian language
 after_migrate = [
     "os_lms.setup.ensure_italian_language",
