@@ -265,7 +265,8 @@ onMounted(() => {
 		liveClass.title = props.liveClass.title || ''
 		liveClass.description = props.liveClass.description || ''
 		liveClass.date = props.liveClass.date || ''
-		liveClass.time = props.liveClass.time || ''
+		// Stored as HH:mm:ss, but the time field (and valideTime) work on HH:mm.
+		liveClass.time = (props.liveClass.time || '').slice(0, 5)
 		liveClass.duration = props.liveClass.duration || ''
 		liveClass.timezone = props.liveClass.timezone || getUserTimezone()
 		liveClass.auto_recording = props.liveClass.auto_recording || 'No Recording'
@@ -528,8 +529,9 @@ const validateFormFields = () => {
 }
 
 const valideTime = () => {
-	let time = liveClass.time.split(':')
-	if (time.length != 2) {
+	// Accept both HH:mm from the picker and HH:mm:ss as stored on the document.
+	let time = String(liveClass.time || '').split(':')
+	if (time.length < 2 || time.length > 3) {
 		return false
 	}
 	if (time[0] < 0 || time[0] > 23) {

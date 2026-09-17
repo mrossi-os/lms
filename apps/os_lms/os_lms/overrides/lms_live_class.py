@@ -3,7 +3,7 @@ from datetime import timedelta
 import frappe
 from frappe import _
 from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
-from frappe.utils import cint, format_date, format_time, get_datetime
+from frappe.utils import cint, format_date, format_time, get_datetime, now_datetime
 
 from lms.lms.doctype.lms_live_class.lms_live_class import LMSLiveClass
 from lms.lms.utils import get_lms_route
@@ -71,6 +71,15 @@ class CustomLMSLiveClass(LMSLiveClass):
 			!= normalize_live_class_value(field, self.get(field))
 		]
 		if not changed:
+			return
+
+		# A class that is already over notifies nobody: correcting the title of last
+		# month's lesson must not email the whole batch, and there is nothing left
+		# to reschedule on Zoom. The check runs on the NEW schedule, so postponing
+		# a past class to a future slot does notify — which is the point of it.
+		end = get_datetime(f"{self.date} {self.time}") + timedelta(minutes=cint(self.duration))
+		if end <= now_datetime():
+			_lc_log(f"[_handle_class_update] {self.name} changed={changed} but already over, skipping")
 			return
 
 		_lc_log(f"[_handle_class_update] {self.name} changed={changed}")
