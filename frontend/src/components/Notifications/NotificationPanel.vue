@@ -184,7 +184,22 @@ const navigateToPage = (log) => {
 
 	let target = null
 	if (segments[0] === 'courses' && segments[1]) {
-		target = { name: 'CourseDetail', params: { courseName: segments[1] } }
+		// A lesson link is courses/<course>/learn/<chapter>-<lesson>, and the Lesson
+		// route splits that last segment into two params. Without this the link
+		// falls through to the course overview and the lesson is lost — which is
+		// where quiz score notifications point.
+		const [chapterNumber, lessonNumber] =
+			segments[2] === 'learn' && segments[3] ? segments[3].split('-') : []
+		target =
+			chapterNumber && lessonNumber
+				? {
+						name: 'Lesson',
+						params: { courseName: segments[1], chapterNumber, lessonNumber },
+					}
+				: { name: 'CourseDetail', params: { courseName: segments[1] } }
+	} else if (segments[0] === 'quiz' && segments[1]) {
+		// Standalone quizzes have no lesson to go back to.
+		target = { name: 'QuizPage', params: { quizID: segments[1] } }
 	} else if (segments[0] === 'batches') {
 		const batchName = segments[1] === 'details' ? segments[2] : segments[1]
 		if (batchName) target = { name: 'BatchDetail', params: { batchName } }

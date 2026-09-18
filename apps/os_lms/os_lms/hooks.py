@@ -204,6 +204,10 @@ doc_events = {
         "after_insert": "os_lms.os_lms.trueskills.emission.enqueue_issue",
     },
     "Notification Log": {
+        # Upstream ships the quiz-score alert with an empty link, which makes the
+        # notification a dead click. Fill the destination in before the log is
+        # written, so both the panel and the push below inherit it.
+        "before_insert": "os_lms.os_lms.notification_links.set_missing_link",
         # Mirror each in-app notification to the user's mobile devices via FCM.
         "after_insert": "os_lms.os_lms.push_notifications.on_notification_log_insert",
     },
