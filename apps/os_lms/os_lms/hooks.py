@@ -181,6 +181,8 @@ doc_events = {
     "Course Lesson": {
         "before_save": "os_lms.events.lesson.reset_index_status_on_content_change",
         "on_trash": "os_lms.events.lesson.cleanup_lesson_links",
+        # OSLMS-CUSTOM: re-index the AI tutor vectors when a lesson is renamed
+        "after_rename": "os_lms.events.lesson.reindex_after_rename",
     },
     "User": {
         "after_insert": "os_lms.auth.mark_first_login",

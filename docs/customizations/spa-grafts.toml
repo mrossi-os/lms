@@ -6713,3 +6713,31 @@ server restano quelli reali). Non esiste un flag is_gestore: il Gestore passa da
 
   [entries.checks]
   unit = "frontend/src/tests/studentViewOslmsRoles.test.ts"
+
+[[entries]]
+id = "lesson-rename-rag-reindex"
+title = "Rinomina di una lezione: indice dell'AI tutor ripulito e ricostruito"
+layer = "override-file"
+confidence = "high"
+intent = """
+v2.61.0 (bbab35054) aggiunge un job giornaliero che rinomina le lezioni «NNNN Untitled lesson»
+nel loro titolo reale, con frappe.rename_doc. I campi Link (anche quelli os_lms: LMSA Query Log,
+LMSA Simulation Scenario, LMSA Debrief Recommendation) seguono la rinomina, ma i vettori dell'AI
+tutor in Redis sono etichettati col nome della lezione: dopo la rinomina il tutor non trova più
+la lezione e i vecchi pezzi restano orfani. In produzione, al 2026-09-23, 9 lezioni indicizzate
+su 105 sarebbero state rinominate. Decisione del committente (2026-09-23): hook after_rename in
+os_lms che cancella i vettori col vecchio nome (IngestionService.remove_lesson, la stessa pulizia
+di on_trash) e rimette la lezione in coda (index_status = pending, ripresa da
+reindex_lesson_content); lezione in «processing» non rimessa in coda; mai bloccante."""
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/hooks.py"
+  anchor = "\"after_rename\": \"os_lms.events.lesson.reindex_after_rename\","
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/events/lesson.py"
+  anchor = "IngestionService().remove_lesson(doc.course, old)"
+  symbol = "reindex_after_rename"
+
+  [entries.checks]
+  unit = "apps/os_lms/os_lms/os_lms/tests/test_lesson_rename_reindex.py"

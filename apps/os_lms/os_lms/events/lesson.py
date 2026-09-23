@@ -71,3 +71,26 @@ def cleanup_lesson_links(doc, method=None):
         IngestionService().remove_lesson(doc.course, doc.name)
     except Exception:
         frappe.log_error(title="Lesson RAG cleanup failed")
+
+
+def reindex_after_rename(doc, method=None, old=None, new=None, merge=False):
+    """after_rename hook on Course Lesson: keep the RAG index in step with the name.
+
+    The AI tutor's vectors are tagged with the lesson name. Upstream (v2.61.0)
+    renames settled "NNNN Untitled lesson" docnames every day; Link fields follow
+    the rename, the Redis vectors do not, so the tutor would stop finding the
+    lesson and the old chunks would be orphaned. Drop the vectors under the old
+    name and queue the lesson for re-indexing under the new one. Best-effort, so
+    an AI/Redis problem never blocks the rename.
+    """
+    if not old or old == doc.name:
+        return
+    try:
+        from os_lms.os_lms.ai.ingestion.service import IngestionService
+
+        IngestionService().remove_lesson(doc.course, old)
+    except Exception:
+        frappe.log_error(title="Lesson RAG cleanup after rename failed")
+
+    if doc.index_status != "processing":
+        frappe.db.set_value("Course Lesson", doc.name, "index_status", "pending", update_modified=False)
