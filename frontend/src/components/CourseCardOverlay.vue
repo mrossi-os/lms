@@ -17,6 +17,7 @@
 			class="rounded-t-md w-full overflow-hidden"
 		/>
 		<div class="p-5">
+			<!-- OSLMS-CUSTOM: course price hidden on the course card -->
 			<!-- <div class="text-3xl-semibold text-ink-gray-9 mb-4">
 				{{ priceLabel }}
 			</div> -->

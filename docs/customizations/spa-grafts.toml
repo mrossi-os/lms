@@ -5159,3 +5159,42 @@ classe. Non concede modifica."""
   subject = "lettura dei quiz di corsi e classi valutati"
   allow = ["Valutatore (della classe)", "Moderator", "course-instructor", "Student (iscritto)"]
   deny = ["Valutatore (di altre classi)", "Guest"]
+
+[[entries]]
+id = "course-card-price-hidden"
+title = "Prezzo del corso nascosto sulla card laterale"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+La card laterale del corso non mostra il prezzo (blocco priceLabel commentato, commit 8fafc219c
+«Fix merge course», senza motivazione scritta). Motivo dedotto: la piattaforma non vende corsi
+dalla SPA (il gruppo Pagamenti è tolto dalle impostazioni, settings-payment-group-removed).
+Emerso senza voce né marcatore durante il merge di v2.59.0, che ha aggiornato la classe del
+blocco commentato (text-3xl-semibold)."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCardOverlay.vue"
+  anchor = "<!-- OSLMS-CUSTOM: course price hidden on the course card -->"
+
+[[entries]]
+id = "course-detail-valutatore-tabs"
+title = "Il Valutatore vede il corso a schede (Panoramica + Dashboard) in sola lettura"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il Valutatore di una classe che contiene il corso apre la vista a schede del dettaglio corso con
+Panoramica e Dashboard, per seguire i progressi degli studenti che valuta, ma senza le schede di
+editor e impostazioni né azioni di scrittura (commit 68a4a06e7). L'upstream mostra le schede solo
+agli amministratori (isAdmin). Il flag is_valutatore è iniettato dall'override os_lms di
+get_course_details; le API della dashboard lo ammettono lato server. Al merge di v2.59.0 tenuti
+v-if="!showTabs" e class="flex-1" senza min-h-0 (rimosso di proposito in ab9548b47)."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDetail.vue"
+  anchor = "() => isAdmin.value || isValutatore.value,"
+  symbol = "showTabs"
+
+  [entries.visibility]
+  subject = "vista a schede (Panoramica + Dashboard) del dettaglio corso"
+  allow = ["Valutatore (della classe)", "Moderator", "Docente", "course-instructor"]
+  deny = ["Student", "Guest"]

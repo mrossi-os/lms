@@ -432,7 +432,7 @@ const isAdmin = computed<boolean>(() => {
 	return Boolean(user.data?.is_moderator) || isInstructor()
 })
 
-// A valutatore of a batch containing this course gets a read-only tabbed view
+// OSLMS-CUSTOM: a valutatore of a batch containing this course gets a read-only tabbed view
 // (Overview + Dashboard), but not the admin editor/settings tabs.
 const isValutatore = computed<boolean>(() =>
 	Boolean(course.data?.is_valutatore),
