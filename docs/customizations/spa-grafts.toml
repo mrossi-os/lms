@@ -711,3 +711,527 @@ fino ad allora vale 0. Il test test_lms_quiz.py contiene i casi aggiunti con la 
   [entries.checks]
   backend = "lms/lms/doctype/lms_quiz/test_lms_quiz.py"
 
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 prima del merge di v2.59.0 — infrastruttura e controlli
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 — gruppo infra-controls (package.json, vite.config.js,
+# controlli e componenti trasversali) prima del merge di v2.59.0
+# ---------------------------------------------------------------------------
+
+# --- Build e dipendenze (vite.config.js, package.json) ---------------------
+
+[[entries]]
+id = "vite-override-theme-plugin"
+title = "Plugin osOverrideTheme per sostituire componenti senza fork"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Tutto il sistema di override (frontend/src/overrides/) dipende da questo plugin Vite: intercetta
+gli import .vue che risolvono dentro node_modules (frappe-ui) o dentro src/ e, se esiste un file
+allo stesso percorso sotto src/overrides/, usa quello. Serve a restilizzare e correggere
+componenti di frappe-ui e pagine upstream senza modificarli, riducendo i conflitti di merge.
+La guardia sull'importer (un import fatto DA un file di override non viene mai reindirizzato)
+impedisce la ricorsione infinita degli override «wrap» che reimportano l'originale (memoria
+frappe_ui_override_wrap_recursion). Se il plugin sparisce da plugins[], ogni override smette di
+applicarsi in silenzio: la build passa ma l'interfaccia torna quella upstream. Richiede che
+frappe-ui resti in optimizeDeps.exclude in sviluppo (riga upstream), altrimenti il plugin non
+vede gli import relativi interni. ATTENZIONE al merge di v2.59.0: frappe-ui passa a
+1.0.0-beta.24; ogni override sotto src/overrides/frappe-ui va ridiffato contro i nuovi
+originali (percorsi spostati = override ignorati senza errori)."""
+
+  [[entries.sites]]
+  file = "frontend/vite.config.js"
+  anchor = "osOverrideTheme(),"
+
+  [[entries.sites]]
+  file = "frontend/vite.config.js"
+  anchor = "if (importerPath.startsWith(overridesDir)) return null"
+  symbol = "osOverrideTheme"
+
+[[entries]]
+id = "vite-original-component-aliases"
+title = "Alias verso i componenti frappe-ui originali per gli override «wrap»"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Gli override di Switch, FileUploader e TextEditor avvolgono il componente originale invece di
+copiarlo; per importare l'originale senza ricadere sull'override stesso usano gli alias
+frappe-ui-*-original, che puntano direttamente al file in node_modules scavalcando plugin e
+«exports» del pacchetto. Per ospitarli resolve.alias è passato dalla forma oggetto upstream
+alla forma array: al merge, se l'upstream aggiunge alias nella forma oggetto, vanno riportati
+nell'array, non il contrario. ATTENZIONE al merge di v2.59.0 (frappe-ui beta.24): verificare
+che i tre percorsi node_modules/frappe-ui/src/components/{Switch,FileUploader,TextEditor}
+esistano ancora, altrimenti la build fallisce su un alias che non risolve."""
+
+  [[entries.sites]]
+  file = "frontend/vite.config.js"
+  anchor = "find: 'frappe-ui-switch-original',"
+
+  [[entries.sites]]
+  file = "frontend/vite.config.js"
+  anchor = "find: 'frappe-ui-fileuploader-original',"
+
+  [[entries.sites]]
+  file = "frontend/vite.config.js"
+  anchor = "find: 'frappe-ui-texteditor-original',"
+
+[[entries]]
+id = "vite-utils-alias-oslms"
+title = "@/utils risolto sul modulo utils di os_lms"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Ogni import di '@/utils' nell'app finisce su src/oslms/utils/index.js, che riesporta tutto
+src/utils/index.js e sostituisce timeAgo con una versione che passa i testi relativi («2 ore
+fa», «ieri»…) per __(), così le date relative escono in italiano senza toccare il file utils
+upstream. L'alias deve restare prima di quello generico '@' nell'array, altrimenti non scatta.
+Se si perde, le date relative tornano in inglese in tutta l'app."""
+
+  [[entries.sites]]
+  file = "frontend/vite.config.js"
+  anchor = "replacement: path.resolve(__dirname, 'src/oslms/utils/index.js'),"
+
+[[entries]]
+id = "vite-socketio-port-define"
+title = "Porta socket.io letta da common_site_config in fase di build"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nell'ambiente Docker di sviluppo (e in bench con porte non standard) la porta di socket.io non
+è quella predefinita: vite.config la legge da common_site_config.json (con ripiego sul file
+nella cartella superiore per la build locale) e la inietta come costante __SOCKETIO_PORT__,
+usata da main.js (opzioni socketio di FrappeUI) e da socket.js. Se la define sparisce, la build
+fallisce su __SOCKETIO_PORT__ non definito, oppure le notifiche in tempo reale non si
+connettono."""
+
+  [[entries.sites]]
+  file = "frontend/vite.config.js"
+  anchor = "__SOCKETIO_PORT__: configSite.socketio_port"
+
+  [[entries.sites]]
+  file = "frontend/vite.config.js"
+  anchor = "async function importConfigSite(isDev) {"
+
+[[entries]]
+id = "vite-toc-fallback-translation"
+title = "Traduzione del messaggio dell'indice senza titoli nel rendering salvato"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il blocco «indice» del TextEditor, quando il documento non ha titoli, scrive nel contenuto
+salvato un messaggio inglese cablato in un file .ts di frappe-ui, fuori dalla portata di
+osOverrideTheme (che gestisce solo .vue). Un piccolo plugin Vite sostituisce quella stringa con
+l'italiano, in coppia con l'override TocNodeView.vue (voce toc-node-translations) che copre la
+vista interattiva. La sostituzione è letterale: se frappe-ui cambia il testo o sposta il file,
+non fallisce ma smette di tradurre. ATTENZIONE al merge di v2.59.0: con frappe-ui beta.24
+verificare che toc-node-extension.ts contenga ancora esattamente la stringa cercata (in beta.7
+esiste anche una copia in src/molecules/editor/extensions/toc-node/toc-render.ts, non coperta)."""
+
+  [[entries.sites]]
+  file = "frontend/vite.config.js"
+  anchor = "osTranslateTocFallback(),"
+
+  [[entries.sites]]
+  file = "frontend/vite.config.js"
+  anchor = "'No headings found in this document.'"
+  symbol = "osTranslateTocFallback"
+
+[[entries]]
+id = "deps-tiptap-direct-deps"
+title = "@tiptap dichiarati come dipendenze dirette e deduplicati"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Gli override del TextEditor (MediaNodeView, InsertIframe, TocNodeView, IframeNodeView,
+SlashCommandsList) importano @tiptap/vue-3, @tiptap/core e @tiptap/pm con specificatori nudi.
+Sono solo dipendenze transitive di frappe-ui: in un'installazione pulita (Docker, bench build)
+restano annidate sotto frappe-ui e Rollup non le risolve («failed to resolve import
+@tiptap/vue-3»). Dichiararle dirette le rende sempre risolvibili; aggiungerle a resolve.dedupe
+garantisce un'unica copia condivisa con frappe-ui (copie doppie rompono i controlli instanceof
+di tiptap). ATTENZIONE al merge di v2.59.0: con frappe-ui beta.24 il lock upstream porta tiptap
+3.26.1, compatibile con ^3.26.0; se frappe-ui richiedesse una major diversa, allineare la
+versione qui."""
+
+  [[entries.sites]]
+  file = "frontend/package.json"
+  anchor = '"@tiptap/core":'
+
+  [[entries.sites]]
+  file = "frontend/package.json"
+  anchor = '"@tiptap/pm":'
+
+  [[entries.sites]]
+  file = "frontend/package.json"
+  anchor = '"@tiptap/vue-3":'
+
+  [[entries.sites]]
+  file = "frontend/vite.config.js"
+  anchor = "'@tiptap/pm',"
+
+[[entries]]
+id = "deps-prosemirror-resolutions"
+title = "Versione unica dei pacchetti prosemirror via resolutions"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Dichiarare @tiptap come dipendenze dirette aveva installato una seconda copia di
+prosemirror-model e prosemirror-view annidata sotto @tiptap/pm. Due istanze generano chiavi di
+plugin in collisione e ogni TextEditor va in crash con «Adding different instances of a keyed
+plugin (plugin$)» (le Discussioni restavano vuote). Le resolutions fissano una sola versione di
+model, view, state e transform per ogni installazione pulita, Docker compreso. Il blocco non
+esiste upstream: se il merge prende il package.json dell'upstream va riaggiunto. ATTENZIONE al
+merge di v2.59.0: dopo il salto a frappe-ui beta.24 rifare yarn install e verificare che
+node_modules contenga una sola versione di ciascun pacchetto (il lock upstream ne ha due di
+model e view); se una dipendenza nuova chiede una versione superiore, alzare i pin invece di
+toglierli."""
+
+  [[entries.sites]]
+  file = "frontend/package.json"
+  anchor = '"resolutions": {'
+
+  [[entries.sites]]
+  file = "frontend/package.json"
+  anchor = '"prosemirror-model":'
+
+[[entries]]
+id = "vite-prosemirror-optimizedeps"
+title = "Pre-bundle di tutti gli entrypoint tiptap/prosemirror in sviluppo"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+In sviluppo frappe-ui è escluso da optimizeDeps (serve a osOverrideTheme), quindi lo scanner di
+Vite non vede i sottopercorsi @tiptap/pm/* né i prosemirror-* nudi importati solo attraverso
+frappe-ui: vengono serviti grezzi da node_modules accanto alla copia ottimizzata, con due
+prosemirror-state e il crash «keyed plugin (plugin$)» su ogni pagina con TextEditor. Elencare
+l'insieme completo li mette in un unico passaggio di ottimizzazione che condivide una sola
+copia. resolve.dedupe non basta: governa la risoluzione, non la divisione ottimizzato/grezzo.
+Verifica senza browser (memoria prosemirror_plugin_dup_optimizedeps): dopo vite optimize
+--force il messaggio «Adding different instances of a keyed plugin» deve comparire in un solo
+chunk di node_modules/.vite/deps. ATTENZIONE al merge di v2.59.0: l'upstream toglie 'interactjs'
+dalla stessa lista include, subito sopra al nostro blocco (conflitto di contesto, accettare la
+rimozione); dopo il salto a beta.24 ricontrollare se @tiptap/pm esporta sottopercorsi nuovi e
+aggiungerli."""
+
+  [[entries.sites]]
+  file = "frontend/vite.config.js"
+  anchor = "'@tiptap/pm/changeset',"
+
+  [[entries.sites]]
+  file = "frontend/vite.config.js"
+  anchor = "'prosemirror-changeset',"
+
+[[entries]]
+id = "deps-editorjs-color-picker"
+title = "Dipendenza editorjs-color-picker per il colore del testo nelle lezioni"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Lo strumento di colore del testo nell'editor delle lezioni (ColorPickerInline in utils) usa
+editorjs-color-picker, dipendenza solo nostra: il package.json upstream non la conosce e un
+merge che prende la versione upstream la toglie, rompendo la build o lo strumento colore
+(memoria frappeui_1_0_beta_merge_2026_06). ATTENZIONE al merge di v2.59.0: la riga sta tra
+dompurify e editorjs-drag-drop, a ridosso di codemirror e feather-icons che l'upstream rimuove;
+nel conflitto conservare questa riga."""
+
+  [[entries.sites]]
+  file = "frontend/package.json"
+  anchor = '"editorjs-color-picker":'
+
+# --- Controllo Link (Controls/Link.vue) -------------------------------------
+
+[[entries]]
+id = "link-control-stale-combobox-events"
+title = "Controllo Link agganciato all'API del Combobox sovrascritto"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il Combobox realmente usato in tutta l'app è l'override in src/overrides/frappe-ui/.../Combobox,
+copia di una versione più vecchia: emette solo update:modelValue, update:selectedOption, focus,
+blur e input, e non gestisce size, loading né update:query/update:open. Link.vue deve quindi
+usare @input per la ricerca, @focus (onFocus) per caricare la lista la prima volta e
+:open-on-click per aprire il menu; con gli eventi nuovi dell'upstream ogni campo Link si apre
+vuoto e la ricerca non restituisce nulla (è già successo dopo un merge, memoria
+combobox_override_event_api). open-on-click invece di open-on-focus evita che il menu si
+riapra quando il Combobox rimette il fuoco sull'input dopo una scelta. Questi binding vanno
+riportati agli eventi nuovi solo quando l'override del Combobox verrà riallineato a frappe-ui.
+Il wrapper os-link (src/oslms/components/Controls/Link.vue) passa tutto a questo componente.
+ATTENZIONE al merge di v2.59.0: l'upstream aggiunge :open="isOpen", imposta isOpen dentro
+onOpen (che da noi non esiste, sostituito da onFocus: conflitto sicuro) e chiude il menu in
+handleCreate prima di aprire il modale di creazione. Con l'override attuale la prop open non
+viene letta, quindi quella chiusura non avrà effetto: tenere @input/@focus, e valutare a parte
+se servono chiusura del menu e prop open nell'override."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/Link.vue"
+  anchor = '@input="onQuery"'
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/Link.vue"
+  anchor = '@focus="onFocus"'
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/Link.vue"
+  anchor = ':open-on-click="true"'
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/Link.vue"
+  anchor = "function onFocus(): void {"
+  symbol = "onFocus"
+
+# --- Palette Cmd+K (CommandPalette.vue) -------------------------------------
+
+[[entries]]
+id = "command-palette-result-routes"
+title = "Risultati della palette Cmd+K aperti sulla pagina giusta secondo il ruolo"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+L'upstream instradava ogni risultato che non fosse un corso su BatchDetail, così lezioni, quiz,
+esercitazioni, percorsi finivano su una pagina classe inesistente. La mappatura doctype → rotta
+vive ora in un solo modulo condiviso con la pagina /search (src/oslms/utils/searchRoutes.ts):
+una lezione apre la lezione stessa, un quiz si apre nella lezione che lo ospita per lo studente
+e nell'editor per moderatore o docente (isManager: stesso controllo delle pagine di
+destinazione). Un risultato senza pagina da aprire restituisce una rotta nulla e navigateTo
+non fa nulla invece di andare in errore. Lato server l'override os_lms di search_sqlite filtra
+i risultati per permessi e aggiunge la posizione della lezione."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CommandPalette/CommandPalette.vue"
+  anchor = "item.route = getSearchResultRoute(item, isManager.value)"
+  symbol = "generateSearchResults"
+
+  [[entries.sites]]
+  file = "frontend/src/components/CommandPalette/CommandPalette.vue"
+  anchor = "Boolean(user?.data?.is_moderator || user?.data?.is_instructor)"
+  symbol = "isManager"
+
+  [[entries.sites]]
+  file = "frontend/src/components/CommandPalette/CommandPalette.vue"
+  anchor = "if (!route) return"
+  symbol = "navigateTo"
+
+[[entries]]
+id = "command-palette-search-page-entry"
+title = "Voce «Cerca …» della palette verso la pagina /search"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Mentre si digita, la palette mostra come prima voce «Search for "<testo>"», che apre la pagina
+/search con la query. L'upstream ha tolto questa voce e la pagina Search nel commit 46a356b08
+(già in v2.58.1); da noi la pagina è stata ripristinata perché una rotta custom la usa (rapporto
+di merge 2026-06) ed è uno dei due punti di ricerca allineati da searchRoutes.ts. Il codice
+della voce è quello upstream precedente alla rimozione, conservato nei merge. Motivazione
+dedotta: senza questa voce la pagina /search non è raggiungibile dalla palette. Il titolo del
+gruppo resta il letterale 'Jump to' perché CommandPaletteGroup lo traduce già in fase di
+rendering."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CommandPalette/CommandPalette.vue"
+  anchor = "name: 'Search',"
+  symbol = "appendSearchPage"
+
+[[entries]]
+id = "command-palette-jobs-removed"
+title = "Voce «Jobs» rimossa dalla palette Cmd+K"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+L'elenco «Jump to» della palette mostra solo Corsi e Classi: la voce Jobs dell'upstream (e la
+relativa icona Briefcase) è stata tolta (commit 7142c05ba). Motivazione non scritta nel commit;
+presumibilmente la sezione offerte di lavoro non fa parte del prodotto usato dal cliente. Se un
+merge reintroduce la voce Jobs nell'elenco, toglierla di nuovo."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CommandPalette/CommandPalette.vue"
+  anchor = "OSLMS-CUSTOM: Jobs entry removed from the Jump to list"
+
+[[entries]]
+id = "command-palette-i18n-labels"
+title = "Etichette della palette Cmd+K tradotte anche dopo il ricaricamento"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il segnaposto del campo di ricerca passa per __() e i titoli Corsi/Classi dell'elenco «Jump to»
+sono getter invece di stringhe: l'elenco è costruito una volta al setup, che al ricaricamento
+completo della pagina avviene prima che le traduzioni asincrone siano caricate, e un __()
+valutato lì resterebbe in inglese (memoria translation_baked_ref_freezes_english). Il getter
+ripete __() a ogni rendering."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CommandPalette/CommandPalette.vue"
+  anchor = ":placeholder=\"__('Search')\""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CommandPalette/CommandPalette.vue"
+  anchor = "return __('Courses')"
+
+  [[entries.sites]]
+  file = "frontend/src/components/CommandPalette/CommandPalette.vue"
+  anchor = "return __('Batches')"
+
+[[entries]]
+id = "command-palette-mark-theme-tokens"
+title = "Evidenziazione dei risultati di ricerca sui token del tema"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+L'evidenziazione <mark> delle corrispondenze usa i token del tema (bg-surface-amber-1,
+text-ink-gray-9) invece del colore fisso amber-100 dell'upstream: così si adatta al tema scuro
+e il testo resta leggibile (il <mark> predefinito rende il testo nero). Lo stile è globale (non
+scoped), come nell'upstream. ATTENZIONE al merge di v2.59.0 (frappe-ui beta.24):
+verificare che le classi bg-surface-amber-1 e text-ink-gray-9 esistano ancora, altrimenti la
+build fallisce su @apply."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CommandPalette/CommandPalette.vue"
+  anchor = "@apply bg-surface-amber-1 text-ink-gray-9;"
+
+# --- Stato vuoto (EmptyStateLayout.vue) -------------------------------------
+
+[[entries]]
+id = "empty-state-translated-name"
+title = "Nome dell'entità tradotto nei messaggi di stato vuoto"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Titolo e descrizione predefiniti dello stato vuoto («No {0} Found», «There are no {0}
+currently…») ricevono il nome dell'entità passato dalla pagina in inglese (es. «Courses»); lo
+traduciamo con __() prima di inserirlo, altrimenti la frase italiana contiene la parola inglese
+(«Nessun Courses trovato»)."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/EmptyStateLayout.vue"
+  anchor = "__('No {0} Found').format(__(props.name))"
+  symbol = "computedTitle"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/EmptyStateLayout.vue"
+  anchor = ".format(__(props.name)?.toLowerCase())"
+  symbol = "computedDescription"
+
+[[entries]]
+id = "empty-state-mobile-full-width"
+title = "Stato vuoto a tutta larghezza su telefono"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le larghezze fisse dell'upstream (2/12, 4/12, 8/12 dello schermo) su telefono comprimono
+icona e testo dello stato vuoto in una colonna strettissima. Sotto il breakpoint sm il blocco
+occupa tutta la larghezza; da sm in su valgono le frazioni originali. ATTENZIONE al merge di
+v2.59.0: l'upstream cambia le classi del contenitore radice (min-h-64, grow) e del titolo
+(text-lg-medium), ma non widthClass: accettare le sue e mantenere questi valori."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/EmptyStateLayout.vue"
+  anchor = "return 'w-full sm:w-2/12'"
+  symbol = "widthClass"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/EmptyStateLayout.vue"
+  anchor = "return 'w-full sm:w-8/12'"
+  symbol = "widthClass"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/EmptyStateLayout.vue"
+  anchor = "return 'w-full sm:w-4/12'"
+  symbol = "widthClass"
+
+# --- Pannello notifiche (NotificationPanel.vue) -----------------------------
+
+[[entries]]
+id = "notifications-tabs-translated"
+title = "Schede Da leggere/Lette del pannello notifiche tradotte"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le etichette delle schede sono getter che richiamano __() a ogni rendering, mentre value tiene
+la chiave logica 'Unread'/'Read' usata da filtro e stato vuoto. Un array costruito al setup
+valuta __() prima che le traduzioni asincrone siano caricate e, al ricaricamento completo della
+pagina, le schede resterebbero in inglese (TabButtons rende l'etichetta così com'è). ATTENZIONE
+al merge di v2.59.0: con frappe-ui beta.24 l'upstream passa da :buttons a :options su
+TabButtons; accettare il cambio e verificare che il nuovo TabButtons usi ancora value come
+chiave e legga label al rendering (così il getter continua a funzionare)."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Notifications/NotificationPanel.vue"
+  anchor = "return __('Unread')"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Notifications/NotificationPanel.vue"
+  anchor = "return __('Read')"
+
+[[entries]]
+id = "notifications-link-routing"
+title = "Clic su una notifica porta alla pagina giusta o avvisa"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+I link delle notifiche possono essere assoluti o relativi, con o senza prefisso /lms e con un
+frammento di scheda (#discussions); il parsing a indici fissi dell'upstream sbagliava parametri
+o finiva sulla pagina sbagliata. navigateToPage normalizza il percorso, porta il frammento
+nell'hash della rotta, apre direttamente la lezione per i link courses/<corso>/learn/<c>-<l>
+(dove puntano gli avvisi di punteggio dei quiz, il cui link è compilato dall'hook os_lms
+before_insert su Notification Log), apre QuizPage per i quiz autonomi, instrada ogni classe su
+BatchDetail e le consegne su AssignmentSubmission. Un link sconosciuto o non più valido
+(documento cancellato, rotta rimossa) mostra un avviso invece di lanciare un errore del router
+non gestito. ATTENZIONE al merge di v2.59.0: l'upstream riscrive il ramo «batches» della sua
+navigateToPage (sempre BatchDetail): conflitto sicuro, tenere la nostra funzione, che fa già
+lo stesso."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Notifications/NotificationPanel.vue"
+  anchor = "const notifyUnavailable = () =>"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Notifications/NotificationPanel.vue"
+  anchor = "segments[2] === 'learn' && segments[3]"
+  symbol = "navigateToPage"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Notifications/NotificationPanel.vue"
+  anchor = "target = { name: 'QuizPage', params: { quizID: segments[1] } }"
+  symbol = "navigateToPage"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Notifications/NotificationPanel.vue"
+  anchor = "router.push(target).catch(() => notifyUnavailable())"
+  symbol = "navigateToPage"
+
+# --- Modale evento di valutazione (Modals/Event.vue) ------------------------
+
+[[entries]]
+id = "event-modal-status-placeholder"
+title = "Segnaposto tradotto sullo stato della valutazione"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+La select Stato della valutazione nel modale dell'evento ha un segnaposto «Select option»
+passato per __(). Introdotto in un commit generico di traduzioni (e577585ca): motivazione
+dedotta, mostrare un invito in italiano quando lo stato non è ancora scelto invece di una
+select vuota o di un testo inglese. ATTENZIONE al merge di v2.59.0: l'upstream passa il Dialog
+a bare con slot #default e cambia la classe del titolo, fuori da questa riga."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/Event.vue"
+  anchor = ":placeholder=\"__('Select option')\""
+
+[[entries]]
+id = "event-modal-certificate-chrome-pdf"
+title = "Certificato dal modale evento scaricato con il generatore PDF Chrome"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+download_pdf usa wkhtmltopdf se non riceve pdf_generator, ignorando sia il campo del Print
+Format sia l'impostazione globale di stampa. Il modello di certificato custom usa
+transform:rotate, che solo il generatore Chrome rende: con il predefinito il PDF esce vuoto
+(memoria certificate_print_format_setup). Ogni URL di download del certificato nella SPA
+aggiunge quindi &pdf_generator=chrome; la stessa regola vive anche in CertificationLinks.vue,
+CourseCardOverlay.vue, CourseCertification.vue e ProfileCertificates.vue (commit 28976b969)."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/Event.vue"
+  anchor = "&pdf_generator=chrome"
+  symbol = "openCertificate"

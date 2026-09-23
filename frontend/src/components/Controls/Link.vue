@@ -6,6 +6,7 @@
 			:required="attrs.required"
 			class="mb-1.5"
 		/>
+		<!-- OSLMS-CUSTOM: bound to the stale Combobox override API (@input/@focus, open-on-click, no size/loading) -->
 		<Combobox
 			:modelValue="value"
 			:options="resolvedOptions"
@@ -205,6 +206,7 @@ function reload(txt: string = ''): void {
 	options.reload()
 }
 
+// OSLMS-CUSTOM: onFocus replaces upstream onOpen (override has no update:open)
 function onFocus(): void {
 	// Load the initial list the first time the field is focused. The dropdown
 	// itself opens via `open-on-click` (not `open-on-focus`): focusing keeps the

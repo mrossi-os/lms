@@ -93,6 +93,7 @@
 									:label="__('Rating')"
 									:disabled="!userIsEvaluator()"
 								/>
+								<!-- OSLMS-CUSTOM: translated placeholder on the evaluation Status select -->
 								<FormControl
 									type="select"
 									:options="statusOptions"
@@ -363,6 +364,7 @@ watch(show, () => {
 })
 
 const openCertificate = (certificate) => {
+	// OSLMS-CUSTOM: force the chrome PDF generator for certificates
 	window.open(
 		`/api/method/frappe.utils.print_format.download_pdf?doctype=LMS+Certificate&name=${
 			certificate.name

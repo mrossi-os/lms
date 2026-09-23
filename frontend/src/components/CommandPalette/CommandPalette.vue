@@ -4,6 +4,7 @@
 			<div class="text-base">
 				<div class="flex items-center gap-x-2 ps-4.5 border-b">
 					<span class="lucide-search size-4 text-ink-gray-4" />
+					<!-- OSLMS-CUSTOM: translatable search placeholder -->
 					<input
 						ref="inputRef"
 						type="text"
@@ -73,6 +74,7 @@ import * as icons from 'lucide-vue-next'
 import { getSidebarLinks } from '@/utils'
 import { useSettings } from '@/stores/settings'
 import CommandPaletteGroup from './CommandPaletteGroup.vue'
+// OSLMS-CUSTOM: shared doctype-to-route mapping for search results
 import { getSearchResultRoute } from '@/oslms/utils/searchRoutes'
 
 const { CornerDownLeft, FileSearch, MoveUp, MoveDown, Search } = icons
@@ -80,6 +82,7 @@ const { sidebarSettings } = useSettings()
 
 const show = defineModel<boolean>({ required: true, default: false })
 const router = useRouter()
+// OSLMS-CUSTOM: role-aware result routes (manager vs learner)
 const user = inject<any>('$user')
 // Moderators and instructors reach the management pages; everyone else gets the
 // learner route (same gate the target pages themselves apply).
@@ -114,6 +117,7 @@ const generateSearchResults = () => {
 		let result: { title: string; items: any[] } = { title: '', items: [] }
 		result.title = type.title
 		type.items.forEach((item: any) => {
+			// OSLMS-CUSTOM: route via the shared searchRoutes module
 			item.route = getSearchResultRoute(item, isManager.value)
 			item.isActive = false
 		})
@@ -125,6 +129,7 @@ const generateSearchResults = () => {
 watch(query, () => {
 	searchResults.value = []
 })
+// OSLMS-CUSTOM: "Search for" entry to the /search page, kept after upstream dropped it
 const appendSearchPage = () => {
 	let searchPage: { title: string; items: Array<any> } = {
 		title: '',
@@ -222,6 +227,7 @@ const navigateTo = (
 		query?: Record<string, any>
 	} | null,
 ) => {
+	// OSLMS-CUSTOM: null route = result with no page to open
 	// getSearchResultRoute returns null for a doctype with no page to open.
 	if (!route) return
 	show.value = false
@@ -229,11 +235,13 @@ const navigateTo = (
 	router.replace({ name: route.name, params: route.params, query: route.query })
 }
 
+// OSLMS-CUSTOM: Jobs entry removed from the Jump to list
 const jumpToOptions = ref([
 	{
 		title: __('Jump to'),
 		items: [
 			{
+				// OSLMS-CUSTOM: labels as getters so __() runs after translations load
 				get title() {
 					return __('Courses')
 				},
@@ -260,6 +268,7 @@ const jumpToOptions = ref([
 <style>
 /* Highlighted search match: use theme tokens so it adapts to dark mode and the
    text stays readable (the default <mark> renders black text). */
+/* OSLMS-CUSTOM: search highlight on theme tokens (dark mode, readable text) */
 mark {
 	@apply bg-surface-amber-1 text-ink-gray-9;
 	font-weight: 500;

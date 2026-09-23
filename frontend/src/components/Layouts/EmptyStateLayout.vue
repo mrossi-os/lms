@@ -33,6 +33,7 @@ const props = withDefaults(
 	}
 )
 
+// OSLMS-CUSTOM: translate the entity name inside the empty-state texts
 const computedTitle = computed(
 	() => props.title || __('No {0} Found').format(__(props.name))
 )
@@ -45,6 +46,7 @@ const computedDescription = computed(
 		).format(__(props.name)?.toLowerCase())
 )
 
+// OSLMS-CUSTOM: full width on mobile, fixed fraction from sm up
 const widthClass = computed(() => {
 	switch (props.width) {
 		case 'sm':

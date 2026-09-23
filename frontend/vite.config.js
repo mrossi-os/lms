@@ -7,15 +7,19 @@ import { readFileSync, existsSync } from 'fs'
 export default defineConfig(async ({ mode }) => {
 	const isDev = mode === 'development'
 	const frappeui = await importFrappeUIPlugin(isDev)
+	// OSLMS-CUSTOM: socket.io port read from common_site_config at build time
 	const configSite = await importConfigSite(isDev);
 
 	const config = {
 		define: {
 			__VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'false',
+			// OSLMS-CUSTOM: socket.io port injected as a compile-time constant
 			__SOCKETIO_PORT__: configSite.socketio_port
 		},
 		plugins: [
+			// OSLMS-CUSTOM: component override system (src/overrides)
 			osOverrideTheme(),
+			// OSLMS-CUSTOM: Italian fallback for the TOC block serialization
 			osTranslateTocFallback(),
 			frappeui({
 				frappeProxy: true,
@@ -69,6 +73,7 @@ export default defineConfig(async ({ mode }) => {
 		},
 		resolve: {
 			alias: [
+				// OSLMS-CUSTOM: alias array with escape hatches to the original frappe-ui components
 				// Direct path to the ORIGINAL frappe-ui Switch component, imported by its
 				// override at src/overrides/frappe-ui/src/components/Switch/Switch.vue.
 				// Importing `from 'frappe-ui'` there would make the osOverrideTheme plugin
@@ -108,12 +113,14 @@ export default defineConfig(async ({ mode }) => {
 				// in — including the resource layer, whose fetcher is then unconfigured.
 				// They import runtime code from the `frappe-ui` barrel and frappe-ui's
 				// internal modules by relative path instead.
+				// OSLMS-CUSTOM: @/utils resolves to the os_lms utils wrapper
 				{
 					find: /^@\/utils$/,
 					replacement: path.resolve(__dirname, 'src/oslms/utils/index.js'),
 				},
 				{ find: '@', replacement: path.resolve(__dirname, 'src') },
 			],
+			// OSLMS-CUSTOM: @tiptap packages added to dedupe (direct deps for the overrides)
 			// Force one copy of tiptap/prosemirror; duplicate copies break tiptap's
 			// instanceof checks and crash the list buttons. The @tiptap/* entries are
 			// also declared as direct deps in package.json so the bare imports in
@@ -136,6 +143,7 @@ export default defineConfig(async ({ mode }) => {
 				'interactjs',
 				'highlight.js',
 				'plyr',
+				// OSLMS-CUSTOM: pre-bundle all tiptap/prosemirror entrypoints (plugin$ crash)
 				// Pre-bundle EVERY tiptap/prosemirror entrypoint the editor touches.
 				// `frappe-ui` is excluded from optimization below (its source must be
 				// served raw for the osOverrideTheme plugin to intercept the relative
@@ -211,6 +219,7 @@ async function importFrappeUIPlugin(isDev) {
 }
 
 
+// OSLMS-CUSTOM: reads socketio_port for __SOCKETIO_PORT__
 async function importConfigSite(isDev) {
 	let relativePath = '../../../sites/common_site_config.json'
 	if (isDev) {
@@ -224,6 +233,7 @@ async function importConfigSite(isDev) {
 }
 
 
+// OSLMS-CUSTOM: TOC fallback string translation plugin
 // frappe-ui's tocNode extension lives in a `.ts` file, so it is out of reach of
 // osOverrideTheme (which only intercepts `.vue`). Its `renderHTML` serialization
 // path hardcodes an English empty-state string, shown in the read-only render of
@@ -251,6 +261,7 @@ function osTranslateTocFallback() {
 	}
 }
 
+// OSLMS-CUSTOM: osOverrideTheme plugin
 // Vite plugin that allows overriding Vue components from node_modules
 // (e.g. frappe-ui) with local versions placed in `src/overrides/`.
 //

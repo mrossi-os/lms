@@ -85,6 +85,7 @@
 	</Teleport>
 </template>
 <script setup>
+// OSLMS-CUSTOM: toast for notifications that cannot be opened
 import { Avatar, Button, TabButtons, Tooltip, toast } from 'frappe-ui'
 import { computed, inject, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
@@ -108,6 +109,7 @@ const { isMobile } = useScreenSize()
 
 const panelRef = ref(null)
 const activeTab = ref('Unread')
+// OSLMS-CUSTOM: tab labels as getters so __() runs after translations load
 // `value` keeps the logical key stable (the filter/empty-state code compares
 // against 'Unread'/'Read') while `label` is translated for display. `label` is a
 // getter so __() re-runs at render time: this array is built at setup, which on a
@@ -168,6 +170,7 @@ const onSelect = (n) => {
 	closeNotifications()
 }
 
+// OSLMS-CUSTOM: robust notification link routing (lesson, quiz, batch, hash, guard)
 const notifyUnavailable = () =>
 	toast.warning(__('Unable to open this notification.'))
 
