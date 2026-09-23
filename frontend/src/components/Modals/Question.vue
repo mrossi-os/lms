@@ -76,6 +76,7 @@
 									v-if="visibleOptionCount > 2"
 									variant="ghost"
 									size="sm"
+									:label="__('Remove option')"
 									@click="removeOption(n)"
 								>
 									<span class="lucide-trash-2 size-4" />
@@ -124,6 +125,7 @@
 								<Button
 									v-if="visiblePossibilityCount > 1"
 									variant="ghost"
+									:label="__('Remove possibility')"
 									@click="removePossibility(n)"
 								>
 									<span class="lucide-trash-2 size-4" />

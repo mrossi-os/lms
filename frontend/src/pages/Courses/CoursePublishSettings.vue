@@ -247,7 +247,7 @@ import NewMemberModal from '@/components/Modals/NewMemberModal.vue'
 // OSLMS-CUSTOM: TrueSkill certificate emission settings
 import TrueSkillsTemplateModal from '@/oslms/components/trueskills/TrueSkillsTemplateModal.vue'
 import { useSettings } from '@/stores/settings'
-import type { CourseFormContext, Resource } from '@/types/api'
+import type { CourseFormContext, Resource } from '@/types'
 
 const { resource, markDirty } = inject<CourseFormContext>('courseForm')!
 const dayjs = inject('$dayjs') as typeof import('dayjs')

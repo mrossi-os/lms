@@ -181,7 +181,7 @@ import {
 } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import type { RouteLocationRaw } from 'vue-router'
-import type { OutlineChapter, OutlineLesson, SessionUser } from '@/types/api'
+import type { OutlineChapter, OutlineLesson, SessionUser } from '@/types'
 
 interface DraggableEvent {
 	item: { __draggable_context: { element: OutlineChapter | OutlineLesson } }
@@ -294,8 +294,9 @@ function lessonRoute(lesson: OutlineLesson): RouteLocationRaw {
 		return {
 			name: 'CourseDetail',
 			params: { courseName: props.courseName },
+			// OSLMS-CUSTOM: the Editor tab hash is '#editor'; '#course editor' opened the wrong tab.
 			hash: '#editor',
-			query: { editLesson: lesson.number, lessonMode: 'edit' },
+			query: { editLesson: lesson.number },
 		}
 	}
 	return {

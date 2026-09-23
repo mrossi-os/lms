@@ -20,6 +20,11 @@ const state = vi.hoisted(() => ({
 vi.mock('pdfjs-dist/legacy/build/pdf.mjs', () => ({
 	getDocument: state.getDocument,
 	GlobalWorkerOptions: { workerPort: null },
+	// Since v2.61.0 PdfBlock wraps the shared port in its own PDFWorker (as in
+	// upstream's PdfBlock.test.ts mock); only the mock changed, not the assertions.
+	PDFWorker: class {
+		destroy = vi.fn()
+	},
 }))
 vi.mock('@/utils/pdfWorker', () => ({
 	createPdfWorker: () => ({ terminate: vi.fn(), postMessage: vi.fn() }),

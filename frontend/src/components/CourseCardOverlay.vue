@@ -191,7 +191,7 @@ import type {
 	CourseInstructorInfo,
 	Resource,
 	SessionUser,
-} from '@/types/api'
+} from '@/types'
 
 const router = useRouter()
 const user = inject<SessionUser>('$user')!

@@ -1,9 +1,16 @@
 <template>
-	<LayoutHeader>
-		<template #left-header>
-			<Breadcrumbs :items="breadcrumbs" />
-		</template>
-		<template #right-header>
+	<ListPage
+		:breadcrumbs="breadcrumbs"
+		:title="__('All Courses')"
+		:rows="courses.data || []"
+		:loading="courses.list.loading || reloading"
+		:has-next-page="courses.hasNextPage"
+		v-model:page-length="pageLength"
+		empty-name="Courses"
+		empty-icon="lucide-book-open"
+		@load-more="courses.next()"
+	>
+		<template #actions>
 			<Dropdown
 				placement="right"
 				side="bottom"
@@ -28,87 +35,61 @@
 				</template>
 			</Dropdown>
 		</template>
-	</LayoutHeader>
-	<div class="flex min-h-0 flex-1 flex-col p-5 pb-10">
-		<div
-			class="mb-5 flex flex-col justify-between space-y-4 lg:flex-row lg:items-center lg:space-y-0"
-		>
-			<div class="text-lg-semibold text-ink-gray-9">
-				{{ __('All Courses') }}
-			</div>
-			<div
-				class="flex flex-col space-y-4 lg:flex-row lg:items-center lg:gap-x-4 lg:space-y-0"
+
+		<template #tabs>
+			<!-- OSLMS-CUSTOM: students only have the Enrolled tab, so the switcher is hidden when a single tab is left -->
+			<TabButtons
+				v-if="courseTabs.length > 1"
+				:options="courseTabs"
+				v-model="currentTab"
+				class="w-fit"
+			/>
+		</template>
+
+		<template #filters>
+			<!-- OSLMS-CUSTOM: reload on update:modelValue so the search reads the current value and clearing it clears the filter -->
+			<FormControl
+				v-model="title"
+				:placeholder="__('Search')"
+				:aria-label="__('Search')"
+				type="text"
+				class="w-full sm:min-w-40 lg:w-32 lg:min-w-0 xl:w-40"
+				@update:modelValue="updateCourses()"
 			>
-				<!-- OSLMS-CUSTOM: students only have the Enrolled tab, so the switcher is hidden when a single tab is left -->
-				<TabButtons
-					v-if="courseTabs.length > 1"
-					:options="courseTabs"
-					v-model="currentTab"
-					class="w-fit"
-				/>
+				<template #prefix>
+					<span class="lucide-search size-4 text-ink-gray-5" />
+				</template>
+			</FormControl>
+			<!-- OSLMS-CUSTOM: category options scoped to the active tab; hidden when the tab has no categories -->
+			<ClearableCombobox
+				v-if="categoryOptions.length"
+				v-model="currentCategory"
+				:options="categoryOptions"
+				:placeholder="__('Category')"
+				@update:modelValue="updateCourses()"
+				class="w-full sm:w-auto"
+			/>
+		</template>
 
-				<!-- OSLMS-CUSTOM: reload on update:modelValue so the search reads the current value and clearing it clears the filter -->
-				<FormControl
-					v-model="title"
-					:placeholder="__('Search')"
-					type="text"
-					class="w-full lg:w-40"
-					@update:modelValue="updateCourses()"
-				>
-					<template #prefix>
-						<span class="lucide-search size-4 text-ink-gray-5" />
-					</template>
-				</FormControl>
+		<template #toggles>
+			<ToggleFilter
+				:modelValue="certification"
+				:label="__('Certification')"
+				:mobileLabel="__('Certification available')"
+				:tooltip="__('Only show courses that offer a certificate')"
+				@update:modelValue="setCertification"
+			/>
+		</template>
 
-				<!-- OSLMS-CUSTOM: category options scoped to the active tab; hidden when the tab has no categories -->
-				<ClearableCombobox
-					v-if="categoryOptions.length"
-					v-model="currentCategory"
-					:options="categoryOptions"
-					:placeholder="__('Category')"
-					@update:modelValue="updateCourses()"
-					class="w-full lg:w-40"
-				/>
-
-				<!-- OSLMS-CUSTOM: certification checkbox reloads on update:modelValue (applies on the first click) -->
-				<Tooltip :text="__('Only show courses that offer a certificate')">
-					<FormControl
-						type="checkbox"
-						v-model="certification"
-						:label="__('Certification')"
-						@update:modelValue="updateCourses()"
-					/>
-				</Tooltip>
-			</div>
-		</div>
-		<SkeletonLoader
-			v-if="courses.list.loading && !courses.data"
-			variant="cards"
-			:count="8"
-		/>
-		<div
-			v-else-if="courses.data?.length"
-			class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
-		>
+		<template #card="{ row }">
 			<router-link
-				v-for="course in courses.data"
-				:to="{ name: 'CourseDetail', params: { courseName: course.name } }"
+				:to="{ name: 'CourseDetail', params: { courseName: row.name } }"
 			>
-				<CourseCard :course="course" />
+				<CourseCard :course="row" />
 			</router-link>
-		</div>
-		<div v-else-if="!courses.list.loading" class="flex-1">
-			<EmptyStateLayout name="Courses" icon="lucide-book-open" />
-		</div>
-		<div
-			v-if="!courses.list.loading && courses.hasNextPage"
-			class="flex justify-center mt-5"
-		>
-			<Button @click="courses.next()">
-				{{ __('Load More') }}
-			</Button>
-		</div>
-	</div>
+		</template>
+	</ListPage>
+
 	<NewCourseModal
 		v-if="showCourseModal"
 		v-model="showCourseModal"
@@ -122,26 +103,22 @@
 </template>
 <script setup>
 import {
-	Breadcrumbs,
 	Button,
-	call,
 	createListResource,
 	createResource,
 	Dropdown,
 	FormControl,
 	TabButtons,
-	Tooltip,
 	usePageMeta,
 } from 'frappe-ui'
 import ClearableCombobox from '@/components/Controls/ClearableCombobox.vue'
+import ToggleFilter from '@/components/Controls/ToggleFilter.vue'
+import ListPage from '@/components/Layouts/ListPage.vue'
 import { computed, inject, onMounted, provide, ref, watch } from 'vue'
 import { sessionStore } from '@/stores/session'
 import { canCreateCourse, searchLikeFilter } from '@/utils'
 import { useLocalStorage } from '@/utils/composables'
 import CourseCard from '@/components/CourseCard.vue'
-import SkeletonLoader from '@/components/SkeletonLoader.vue'
-import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
-import LayoutHeader from '@/components/Layouts/LayoutHeader.vue'
 import { useRouter } from 'vue-router'
 import NewCourseModal from '@/pages/Courses/NewCourseModal.vue'
 import CourseImportModal from '@/pages/Courses/CourseImportModal.vue'
@@ -149,16 +126,19 @@ import CourseImportModal from '@/pages/Courses/CourseImportModal.vue'
 const user = inject('$user')
 const dayjs = inject('$dayjs')
 const start = ref(0)
-const pageLength = ref(30)
 const currentCategory = ref(null)
 const title = ref('')
 const certification = ref(false)
+
+const setCertification = (value) => {
+	certification.value = value
+	updateCourses()
+}
 const filters = ref({})
 // OSLMS-CUSTOM: persisted tab selection
 // Persist the selected tab so it survives leaving and returning to the list.
 const currentTab = useLocalStorage('lms_courses_tab', 'live')
 const { brand } = sessionStore()
-const courseCount = ref(0)
 const router = useRouter()
 const showCourseModal = ref(false)
 const showCourseImportModal = ref(false)
@@ -198,14 +178,14 @@ onMounted(() => {
 	setFiltersFromQuery()
 	updateCourses()
 	reloadCategories()
-	getCourseCount()
 })
 
 const setFiltersFromQuery = () => {
 	let queries = new URLSearchParams(location.search)
 	title.value = queries.get('title') || ''
 	currentCategory.value = queries.get('category') || null
-	certification.value = queries.get('certification') || false
+	// `|| false` would keep the raw string, so ?certification=false read as on.
+	certification.value = queries.get('certification') === 'true'
 	const tab = queries.get('tab')
 	// OSLMS-CUSTOM: ignore a ?tab= the user is not allowed to see
 	// Only honor tabs the current user is actually allowed to see, so a stale
@@ -222,8 +202,32 @@ const courses = createListResource({
 	doctype: 'LMS Course',
 	url: 'lms.lms.utils.get_courses',
 	cache: ['courses', user.data?.name],
-	pageLength: pageLength.value,
+	pageLength: 24,
 	start: start.value,
+})
+
+// `list.loading` goes false mid-request: the aborted fetch's tail resolves
+// after the new reload() has started and clears the flag for it, so the empty
+// state flashes until the reload lands.
+const reloading = ref(false)
+
+const reloadCourses = async () => {
+	reloading.value = true
+	try {
+		await courses.reload()
+	} finally {
+		reloading.value = false
+	}
+}
+
+const pageLength = computed({
+	get: () => courses.pageLength,
+	set: (value) => {
+		// reload() refetches only the rows already loaded when start > 0, so
+		// without rewinding to the first page a bigger page size changes nothing.
+		courses.update({ pageLength: value, start: 0 })
+		reloadCourses()
+	},
 })
 
 // OSLMS-CUSTOM: tab-scoped category options loaded with a plain resource
@@ -252,22 +256,17 @@ const reloadCategories = () => {
 	categories.reload({ filters: filters.value })
 }
 
-const getCourseCount = () => {
-	if (!user.data) return
-	if (!user.data.is_moderator) return
-	call('frappe.client.get_count', {
-		doctype: 'LMS Course',
-	}).then((data) => {
-		courseCount.value = data
-	})
-}
-
 const updateCourses = () => {
 	updateFilters()
+	// createResource keeps no request sequence: every response assigns
+	// `data`, so a slow fetch for filters the user has already left repaints
+	// the list with the wrong courses seconds later. Cancel it first — an
+	// aborted fetch is swallowed and never reaches the list.
+	courses.list.abort()
 	courses.update({
 		filters: filters.value,
 	})
-	courses.reload()
+	reloadCourses()
 }
 
 const updateFilters = () => {

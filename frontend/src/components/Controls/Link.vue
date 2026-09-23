@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div :class="attrs.class as any" :style="attrs.style as any">
 		<FormLabel
 			v-if="attrs.label"
 			:label="attrs.label"
@@ -13,6 +13,7 @@
 			:options="resolvedOptions"
 			:placeholder="attrs.placeholder as string"
 			:disabled="attrs.readonly as boolean"
+			:aria-label="attrs['aria-label'] as string"
 			:variant="attrs.variant as ComboboxVariant"
 			:open-on-click="true"
 			@update:modelValue="onSelect"
@@ -89,7 +90,7 @@ import {
 import { useDebounceFn, watchDebounced } from '@vueuse/core'
 import { useAttrs, computed, ref, watch } from 'vue'
 import { useSettings } from '@/stores/settings'
-import type { Resource } from '@/types/api'
+import type { Resource } from '@/types'
 
 type ComboboxVariant = 'subtle' | 'outline' | 'ghost'
 
@@ -118,6 +119,8 @@ const emit = defineEmits<{
 	(e: 'update:modelValue', value: string): void
 	(e: 'change', value: string): void
 }>()
+
+defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 const valuePropPassed = computed<boolean>(() => 'value' in attrs)

@@ -68,7 +68,9 @@
 										{{ fileName(data[field.name]) }}
 									</span>
 								</div>
-								<span
+								<button
+									type="button"
+									:aria-label="__('Remove image')"
 									@click="data[field.name] = null"
 									class="lucide-x border text-ink-gray-7 border-outline-elevation-2 rounded-md cursor-pointer w-5 h-5 p-1 ms-4"
 								/>
@@ -107,6 +109,7 @@
 							:rows="field.rows || 3"
 							v-model="data[field.name]"
 							:required="field.reqd"
+							:aria-label="__(field.label)"
 							:placeholder="field.placeholder || __(field.label)"
 						/>
 					</div>
@@ -131,6 +134,7 @@
 								v-model="data[field.name]"
 								:doctype="field.doctype"
 								:required="field.reqd"
+								:aria-label="__(field.label)"
 								class="w-48"
 							/>
 							<Select
@@ -138,6 +142,7 @@
 								v-model="data[field.name]"
 								:options="field.options"
 								:placeholder="__('Select option')"
+								:aria-label="__(field.label)"
 								class="w-48"
 							/>
 							<FormControl
@@ -150,6 +155,7 @@
 								:required="field.reqd"
 								:min="field.min"
 								class="w-48"
+								:aria-label="__(field.label)"
 								:placeholder="field.placeholder || __(field.label)"
 							/>
 						</div>

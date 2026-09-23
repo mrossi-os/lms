@@ -13,12 +13,9 @@
 				>
 					<ChevronLeft :size="18" :stroke-width="1.5" />
 				</button>
-				<span class="pdf-page-indicator">
-					<template v-if="numPages"
-						>{{ currentPage }} / {{ numPages }}</template
-					>
-					<template v-else>—</template>
-				</span>
+				<span class="pdf-page-indicator">{{
+					numPages ? currentPage + ' / ' + numPages : '—'
+				}}</span>
 				<button
 					type="button"
 					class="pdf-btn"
@@ -105,6 +102,7 @@
 <script setup>
 import { computed, ref, onBeforeUnmount } from 'vue'
 import { createPdfWorker } from '@/utils/pdfWorker'
+import { encodePdfURL } from '@/utils/pdfViewer'
 import {
 	ChevronLeft,
 	ChevronRight,
@@ -123,16 +121,9 @@ const props = defineProps({
 // app, e.g. in unit tests, they fall back to the English text.
 const __ = (text) => (window.__ ? window.__(text) : text)
 
-// OSLMS-CUSTOM: private lesson files already come percent-encoded through the
-// access-gated serve_resource endpoint (see rewrite_private_media); encoding them
-// again would escape the percent signs (%20 -> %2520) and break the fetch. Only
-// raw paths from fresh editor uploads still need encoding.
-const fileURL = computed(() => {
-	const file = props.file || ''
-	const alreadyEncoded =
-		file.includes('serve_resource') || /%[0-9A-Fa-f]{2}/.test(file)
-	return alreadyEncoded ? file : encodeURI(file)
-})
+// OSLMS-CUSTOM: private serve_resource URLs are already percent-encoded and are
+// not encoded again (rule in utils/pdfViewer encodePdfURL).
+const fileURL = computed(() => encodePdfURL(props.file || ''))
 
 // iOS Safari blanks a canvas past its area/memory limit — pdf.js's own failure
 // mode on large or high-DPI pages. Cap the backing store to pdf.js's default.
@@ -156,6 +147,7 @@ let canvasEls = []
 let renderTasks = [] // active RenderTask per page index
 let rendered = [] // bool per page index
 let rafId = null
+let task = null // in-flight PDFDocumentLoadingTask
 
 // --- shared, ref-counted worker (multi-instance safe; terminated on last unmount) ---
 // A leaked pdf.js worker is worse than a leaked <audio>, so we always release it.
@@ -177,16 +169,27 @@ async function load() {
 		// fold ~144kB gzip of pdf.js into the main entry that every LMS page pays.
 		pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs')
 		if (disposed) return
-		if (sharedWorker) pdfjsLib.GlobalWorkerOptions.workerPort = sharedWorker
+		// Wrap the raw port in our own PDFWorker and pass it explicitly. Via
+		// GlobalWorkerOptions.workerPort, pdf.js hands each loading task
+		// ownership of the shared worker, so one viewer's pdfDoc.destroy()
+		// tears down the port-level message handler every *sibling* viewer is
+		// still listening on — their getDocument() then never settles and the
+		// spinner runs forever. Passing `worker` keeps ownership here.
+		if (sharedWorker && !sharedPdfWorker) {
+			sharedPdfWorker = new pdfjsLib.PDFWorker({ port: sharedWorker })
+		}
 
 		const base = import.meta.env.BASE_URL || '/'
 		const loadingTask = pdfjsLib.getDocument({
 			url: fileURL.value,
+			worker: sharedPdfWorker || undefined,
 			cMapUrl: `${base}pdfjs/cmaps/`,
 			cMapPacked: true,
 			standardFontDataUrl: `${base}pdfjs/standard_fonts/`,
 		})
+		task = loadingTask
 		pdfDoc = await loadingTask.promise
+		task = null
 		if (disposed) return
 		numPages.value = pdfDoc.numPages
 
@@ -239,10 +242,14 @@ function releaseWorker() {
 	if (!heldWorker) return
 	heldWorker = false
 	sharedWorkerRefs = Math.max(0, sharedWorkerRefs - 1)
-	if (sharedWorkerRefs === 0 && sharedWorker) {
-		sharedWorker.terminate()
+	// Not guarded on the per-instance `pdfjsLib`: an instance that unmounts
+	// before its dynamic import resolves would otherwise strand a terminated
+	// worker in module scope.
+	if (sharedWorkerRefs === 0) {
+		sharedPdfWorker?.destroy()
+		sharedPdfWorker = null
+		sharedWorker?.terminate()
 		sharedWorker = null
-		if (pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerPort = null
 	}
 }
 
@@ -392,10 +399,13 @@ onBeforeUnmount(() => {
 	renderTasks = []
 	try {
 		pdfDoc?.destroy()
+		// A load that never resolved leaves pdfDoc null, so cancel the task too.
+		task?.destroy()
 	} catch (e) {
 		/* noop */
 	}
 	pdfDoc = null
+	task = null
 	releaseWorker()
 })
 
@@ -406,6 +416,9 @@ defineExpose({ fitWidth, goToPage })
 // Module-scoped so every PdfBlock instance shares one pdf.js worker.
 let sharedWorker = null
 let sharedWorkerRefs = 0
+// The pdf.js-side wrapper for `sharedWorker`. Owned here, never by a loading
+// task, so one document's destroy() can't tear it out from under another's.
+let sharedPdfWorker = null
 </script>
 
 <style scoped>

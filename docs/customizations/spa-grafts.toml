@@ -92,7 +92,8 @@ Per i corsi con emissione TrueSkills il certificato di completamento è l'immagi
 openbadge TrueSkills (aperta in linea), non il PDF del Print Format interno. Vale sulla
 card corso e nella pagina certificati del profilo; i certificati interni o di batch
 continuano ad aprire il PDF. TrueSkills è alternativo al certificato interno, quindi il
-pulsante si abilita anche con enable_certification spento."""
+pulsante si abilita anche con enable_certification spento.
+Merge di v2.61.0 (2026-09-23): l'upstream trasforma la scheda certificato del profilo in <a :href=PDF>; tenuta la nostra div cliccabile (il clic passa da useCertificateViewer e la scheda contiene i pulsanti openbadge, che non possono stare dentro un link). Accessibilità da tastiera (role=button, tabindex) da valutare a parte."""
 
   [[entries.sites]]
   file = "frontend/src/components/CourseCardOverlay.vue"
@@ -111,6 +112,10 @@ pulsante si abilita anche con enable_certification spento."""
   [[entries.sites]]
   file = "frontend/src/types/lms/LMSCourse.ts"
   anchor = "trueskills_certificate_enabled?: 0 | 1"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProfileCertificates.vue"
+  anchor = "<!-- OSLMS-CUSTOM: a clickable div, not upstream's <a href> to the PDF"
 
 [[entries]]
 id = "course-card-outline"
@@ -644,28 +649,35 @@ Il pulsante di modifica di una lezione nel programma del corso porta al corso co
 '#editor', che è quello della scheda Editor; l'upstream usava '#course editor', che non
 corrisponde a nessuna scheda, e l'editor della lezione si apriva sulla scheda sbagliata.
 Se l'upstream corregge da sé l'hash in modo equivalente, accettare la sua versione e marcare
-la voce come accepted-drift."""
+la voce come accepted-drift.
+Merge di v2.61.0 (2026-09-23): la stessa regola viveva non censita in ChapterRow.vue (link alla lezione dall'indice dell'editor): marcata e aggiunta come sito; la query upstream non porta più lessonMode."""
 
   [[entries.sites]]
   file = "frontend/src/components/CourseOutline.vue"
   anchor = "hash: '#editor',"
   symbol = "navigateToLesson"
 
+  [[entries.sites]]
+  file = "frontend/src/components/ChapterRow.vue"
+  anchor = "// OSLMS-CUSTOM: the Editor tab hash is '#editor'; '#course editor' opened the wrong tab."
+
 [[entries]]
 id = "profile-own-without-lms-role"
 title = "Il proprio profilo è visibile anche senza ruolo LMS"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 Un utente vede sempre il proprio profilo, anche senza un ruolo LMS (per esempio un account
 appena creato a cui non è ancora stato assegnato LMS Student); per vedere il profilo di altri
 serve ancora un ruolo LMS. Un username inesistente restituisce "non trovato" invece di un
 errore generico. Senza questa regola, un nuovo utente che apre il proprio profilo riceve un
-errore di permesso."""
+errore di permesso.
+accepted-drift (2026-09-23, merge di v2.61.0, decisione del committente): get_profile_details upstream consente il proprio profilo senza ruolo LMS e rifiuta il permesso PRIMA del controllo di esistenza (nessuna enumerazione dei nomi utente, test lms/tests/security/test_profile_details.py). Differenza rispetto alla nostra: chi non ha ruoli e chiede un utente inesistente riceve PermissionError, non DoesNotExistError. Codice e commento ora identici all'upstream, marcatore tolto."""
 
   [[entries.sites]]
   file = "lms/lms/api.py"
-  anchor = "if details.name != frappe.session.user and not has_lms_role():"
+  anchor = "if not is_own_profile and not has_lms_role():"
   symbol = "get_profile_details"
 
 [[entries]]
@@ -1977,7 +1989,8 @@ Gemella di course-outline-editor-hash: il pulsante Modifica nella pagina lezione
 corso con hash '#editor', che è l'id della scheda Editor; l'upstream usava '#course editor',
 che non corrisponde a nessuna scheda, e l'amministratore finiva sull'anteprima del corso
 invece che nell'editor della lezione. Se l'upstream corregge da sé l'hash in modo
-equivalente, accettare la sua versione e marcare la voce come accepted-drift."""
+equivalente, accettare la sua versione e marcare la voce come accepted-drift.
+Merge di v2.61.0 (2026-09-23): il nostro pulsante «Modifica» accanto al titolo non esiste più (rimosso anche upstream); la regola vive ora sul link «Editor View» nell'intestazione di Lesson.vue, con il gate upstream canEditLesson (moderatore o istruttore reale) al posto di isAdmin && !embedded. Ancora invariata."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Lesson.vue"
@@ -2155,7 +2168,7 @@ text-lg-semibold): prendere la classe upstream e riaggiungere break-words."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Lesson.vue"
-  anchor = '<div class="text-4xl-semibold text-ink-gray-9 break-words">'
+  anchor = '<h1 class="text-4xl-semibold text-ink-gray-9 break-words">'
 
   [[entries.sites]]
   file = "frontend/src/pages/Lesson.vue"
@@ -2362,12 +2375,37 @@ codificati attraverso serve_resource, passati a pdf.js e al link di riserva senz
 (%20 diventerebbe %2520 e il PDF non si caricherebbe), mentre i percorsi grezzi dei caricamenti
 nuovi si codificano; (2) i testi del visualizzatore tradotti tramite window.__; (3) nel blocco
 upload dell'editor, il PDF riconosciuto anche dall'estensione dell'URL quando manca file_type.
-Parte della stessa correzione di lesson-pdf-inline-filename."""
+Parte della stessa correzione di lesson-pdf-inline-filename.
+Merge di v2.61.0 (2026-09-23, decisione del committente «gate allargato»): l'upstream (4ba152155)
+serve pdf.js solo su WebKit (Safari, iOS) e un iframe nativo altrove, riportando il segnaposto
+di download su Android e ricodificando gli URL privati nell'iframe (encodeURI). Nostro: (4)
+usesInlinePdfViewer in utils/pdfViewer.ts = gate WebKit upstream OPPURE browser mobile/Android,
+usato in upload.js e LessonContent.vue; desktop non-Safari tiene l'iframe nativo upstream; (5) la
+regola (1) vive ora in encodePdfURL (utils/pdfViewer.ts), usata da PdfBlock e dall'iframe di
+upload.js. Test dell'allargamento: frontend/src/tests/pdfInlineViewerMobile.test.ts. Il mock di
+pdfBlockPrivateUrl.test.ts ha ricevuto PDFWorker (come quello upstream), asserzioni invariate."""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/pdfViewer.ts"
+  anchor = "file.includes('serve_resource') || /%[0-9A-Fa-f]{2}/.test(file)"
+  symbol = "encodePdfURL"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/pdfViewer.ts"
+  anchor = "return usesWebkitPdfViewer(nav) || /Android|Mobi/i.test(nav.userAgent || '')"
+  symbol = "usesInlinePdfViewer"
 
   [[entries.sites]]
   file = "frontend/src/components/PdfBlock.vue"
-  anchor = "file.includes('serve_resource') || /%[0-9A-Fa-f]{2}/.test(file)"
-  symbol = "fileURL"
+  anchor = "const fileURL = computed(() => encodePdfURL(props.file || ''))"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/upload.js"
+  anchor = "if (!usesInlinePdfViewer()) {"
+
+  [[entries.sites]]
+  file = "frontend/src/components/LessonContent.vue"
+  anchor = "const inlinePdf = usesInlinePdfViewer()"
 
   [[entries.sites]]
   file = "frontend/src/components/PdfBlock.vue"
@@ -2462,16 +2500,18 @@ id = "editor-header-inline-toolbar"
 title = "Barra inline anche sui titoli delle lezioni"
 layer = "spa-graft"
 confidence = "low"
+status = "accepted-drift"
 intent = """
 I blocchi titolo dell'editor hanno la stessa barra inline dei paragrafi (colore,
 allineamento, grassetto…): senza la chiave inlineToolbar EditorJS non apre la barra sui
 titoli. Aggiunta nel merge-fix af167dc5a senza motivazione esplicita; il motivo è dedotto.
 v2.63.0 aggiunge da sé inlineToolbar: INLINE_TOOLBAR_ORDER sul nuovo tool Heading: in quel
-merge accettare la versione upstream e marcare la voce come accepted-drift."""
+merge accettare la versione upstream e marcare la voce come accepted-drift.
+accepted-drift (2026-09-23, merge di v2.61.0, decisione del committente): il componente Heading upstream imposta da sé inlineToolbar: INLINE_TOOLBAR_ORDER (arrivato in v2.61.0, non in v2.63.0 come previsto). Tolto il marcatore; ancora = riga upstream."""
 
   [[entries.sites]]
   file = "frontend/src/utils/index.js"
-  anchor = "class: Header,\n\t\t\tinlineToolbar: INLINE_TOOLBAR_ORDER,"
+  anchor = "class: Heading,"
   symbol = "getEditorTools"
 
 [[entries]]
@@ -2960,11 +3000,11 @@ sotto le nostre (text-xl-semibold → text-lg-semibold): tenerle entrambe."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Programs/Programs.vue"
-  anchor = "class=\"border rounded-md p-3 hover:border-outline-gray-3 cursor-pointer space-y-2 card\""
+  anchor = 'class="block w-full cursor-pointer space-y-2 rounded-md border p-3 text-start hover:border-outline-gray-3 card"'
 
   [[entries.sites]]
   file = "frontend/src/pages/Programs/StudentPrograms.vue"
-  anchor = "class=\"border rounded-md p-3 hover:border-outline-gray-3 cursor-pointer card\""
+  anchor = 'class="block w-full border rounded-md p-3 hover:border-outline-gray-3 cursor-pointer text-start card"'
 
 # --- Pagina e modulo del corso -----------------------------------------------
 
@@ -3139,7 +3179,7 @@ programmazione (fuori da questo gruppo)."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Courses/Courses.vue"
-  anchor = "class=\"w-full lg:w-40\"\n\t\t\t\t\t@update:modelValue=\"updateCourses()\""
+  anchor = "class=\"w-full sm:min-w-40 lg:w-32 lg:min-w-0 xl:w-40\"\n\t\t\t\t@update:modelValue=\"updateCourses()\""
 
   [[entries.sites]]
   file = "frontend/src/pages/Programs/Programs.vue"
@@ -3148,23 +3188,25 @@ programmazione (fuori da questo gruppo)."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Programs/Programs.vue"
-  anchor = "@update:modelValue=\"updatePrograms()\""
+  anchor = '@update:modelValue="debouncedUpdatePrograms()"'
 
 [[entries]]
 id = "courses-list-certification-first-click"
 title = "Il filtro Certificazione dell'elenco corsi si applica al primo clic"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 La casella "Certificazione" usava @change, che scatta prima che il Checkbox di frappe-ui
 aggiorni il modello: il filtro si applicava con un clic di ritardo. Con update:modelValue
 legge il valore aggiornato. Il filtro di certificazione include anche i corsi con solo
 certificato TrueSkills (update_course_filters lato server). L'ancora è su due righe perché
-l'evento da solo compare tre volte nel file."""
+l'evento da solo compare tre volte nel file.
+accepted-drift (2026-09-23, merge di v2.61.0, decisione del committente): l'upstream sostituisce la casella con ToggleFilter + setCertification (valore impostato prima del ricaricamento: filtro al primo clic, chip su mobile, niente doppia emissione). La parte TrueSkills della regola è lato server e non cambia."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Courses/Courses.vue"
-  anchor = ":label=\"__('Certification')\"\n\t\t\t\t\t\t@update:modelValue=\"updateCourses()\""
+  anchor = '@update:modelValue="setCertification"'
 
 [[entries]]
 id = "courses-list-gestore-no-import"
@@ -3723,16 +3765,13 @@ tabella non entra nello schermo. ATTENZIONE al merge di v2.59.0: l'upstream risc
 template #prefix delle intestazioni (FeatherIcon → span con classe lucide-*) su cui sta il
 nostro v-if="!isMobile", e cambia le icone delle colonne in quizColumns: tenere il v-if sulla
 nuova versione e il filtro mobileKeys. v2.63.0 ricostruisce le pagine dei quiz: riapplicare
-sulla nuova lista."""
+sulla nuova lista.
+Merge di v2.61.0 (2026-09-23): la pagina passa al ListPage upstream, che su telefono disegna schede (ResponsiveListView) e non la riga di intestazione: il v-if="!isMobile" sulle icone non ha più oggetto, sito tolto (coperto dall'upstream). Resta il filtro mobileKeys, che ora limita i campi delle schede."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Quizzes.vue"
   anchor = "const mobileKeys = ['title', 'passing_percentage', 'modified']"
   symbol = "quizColumns"
-
-  [[entries.sites]]
-  file = "frontend/src/pages/Quizzes.vue"
-  anchor = '<template v-if="!isMobile" #prefix="{ item }">'
 
 [[entries]]
 id = "quiz-list-style"
@@ -3747,11 +3786,8 @@ FeatherIcon dagli import di frappe-ui, ma la nostra spunta usa ancora <FeatherIc
 senza import la spunta sparisce; sostituirla con <span class="lucide-check …"> o tenere
 l'import. Il contatore «{0} Quizzes» con quizzes.data?.length è un nostro vecchio controllo
 contro il crash, superato: l'upstream usa totalQuizzes.data (totale reale) e va preso il suo.
-v2.63.0 ricostruisce le pagine dei quiz."""
-
-  [[entries.sites]]
-  file = "frontend/src/pages/Quizzes.vue"
-  anchor = 'class="px-2 sm:px-5 os-list-view !w-auto md:w-max"'
+v2.63.0 ricostruisce le pagine dei quiz.
+Merge di v2.61.0 (2026-09-23, decisione del committente): la pagina passa al ListPage upstream, che disegna da sé la tabella; la classe os-list-view (e padding/larghezza) non si può più impostare dalla pagina. Si usa l'aspetto upstream, DA VERIFICARE nell'app: poi si decide se riportare lo stile (es. prop listClass su ListPage). Sito os-list-view tolto; restano spunta verde e celle text-sm nello slot #cell."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Quizzes.vue"
@@ -4125,7 +4161,7 @@ prop OSLMS-CUSTOM excludeItems di RichTextEditor.vue e nella lista discussionExc
 
   [[entries.sites]]
   file = "frontend/src/components/DiscussionReplies.vue"
-  anchor = ":fixedMenu=\"reply.editable || false\"\n\t\t\t\t\t:excludeItems=\"discussionExcludedItems\""
+  anchor = ":fixedMenu=\"reply.editable || false\"\n\t\t\t\t\t\t:excludeItems=\"discussionExcludedItems\""
 
   [[entries.sites]]
   file = "frontend/src/components/DiscussionReplies.vue"
@@ -4169,7 +4205,7 @@ order-1 e le classi order-2/order-4 sul nuovo componente."""
 
   [[entries.sites]]
   file = "frontend/src/components/DiscussionReplies.vue"
-  anchor = '<div v-for="(reply, index) in orderedReplies" class="order-3">'
+  anchor = "<ul class=\"order-3 list-none\">\n\t\t\t<li v-for=\"(reply, index) in orderedReplies\" :key=\"reply.name\">"
 
 [[entries]]
 id = "discussion-reply-null-user"
@@ -4233,11 +4269,8 @@ intent = """
 La lista dei compiti usa la classe os-list-view del tema, con padding ridotto e testo delle
 celle più piccolo su telefono, come le altre liste del fork. v2.59.0 cambia le icone delle
 intestazioni (FeatherIcon → span lucide-*) poche righe sotto: nessuna sovrapposizione con le
-nostre righe."""
-
-  [[entries.sites]]
-  file = "frontend/src/pages/Assignments.vue"
-  anchor = 'class="!w-auto px-2 sm:px-5 os-list-view"'
+nostre righe.
+Merge di v2.61.0 (2026-09-23, decisione del committente): la pagina passa al ListPage upstream; os-list-view e padding non impostabili dalla pagina, si usa l'aspetto upstream DA VERIFICARE nell'app (anche text-xs dello slot #cell, che su telefono ora rimpicciolisce le schede). Sito os-list-view tolto."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Assignments.vue"
@@ -4512,7 +4545,8 @@ La casella "Certificazione" (solo classi che rilasciano un certificato) è tolta
 della lista; la logica del filtro resta e si può ancora attivare con ?certification=1
 nell'URL. Il commit non dice perché: motivazione dedotta, il cliente non usa i certificati di
 classe come criterio di ricerca (le certificazioni passano da TrueSkill sui corsi). La
-personalizzazione consiste nella rimozione, quindi l'ancora è il commento."""
+personalizzazione consiste nella rimozione, quindi l'ancora è il commento.
+Merge di v2.61.0 (2026-09-23): la pagina passa al ListPage upstream; il filtro upstream è ora un ToggleFilter nello slot #toggles, lasciato fuori (ListPageHeader disegna la striscia solo se lo slot esiste). L'URL upstream legge certification === 'true': il filtro resta raggiungibile con ?certification=true (non più =1)."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/Batches.vue"
@@ -4951,7 +4985,8 @@ intent = """
 La scheda Annunci mostra 10 annunci per pagina con Precedente/Successivo invece di caricarli
 tutti. Dipende dall'override os_lms di lms.lms.api.get_announcements (hooks.py,
 override_whitelisted_methods), che accetta start/page_length e restituisce {data, total}: se
-l'override sparisce, la risposta upstream è una lista e la scheda risulta vuota."""
+l'override sparisce, la risposta upstream è una lista e la scheda risulta vuota.
+Merge di v2.61.0 (2026-09-23): l'upstream mette gli annunci in <ul>/<li :key=comm.name>; il nostro override get_announcements (apps/os_lms/os_lms/os_lms/override_api.py) non seleziona name, quindi la chiave resta l'indice. Paginazione dopo la <ul>."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/Announcements.vue"
@@ -4960,6 +4995,10 @@ l'override sparisce, la risposta upstream è una lista e la scheda risulta vuota
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/Announcements.vue"
   anchor = "const announcements = computed(() => communications.data?.data || [])"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/Announcements.vue"
+  anchor = "<!-- OSLMS-CUSTOM: keyed by index, the os_lms get_announcements override returns no `name` -->"
 
 [[entries]]
 id = "announcement-modal-in-tab"
@@ -5355,10 +5394,12 @@ frontend/src/types/notes.ts (esportato dal barrel '@/types'); gli import in Note
 InlineLessonMenu.vue passano a '@/types'. Sarà un conflitto modifica/cancellazione:
 accettare la cancellazione, aggiungere `text_offset?: number | null` (con il marcatore) al
 tipo Note in frontend/src/types/notes.ts e controllare che InlineLessonMenu.vue, che ha
-nostre modifiche, importi Note/Notes da '@/types'."""
+nostre modifiche, importi Note/Notes da '@/types'.
+Esito del merge di v2.61.0 (2026-09-23): git ha riconosciuto lo spostamento come rinomina e ha
+portato da sé il campo e il marcatore in frontend/src/types/notes.ts; sito aggiornato lì."""
 
   [[entries.sites]]
-  file = "frontend/src/components/Notes/types.ts"
+  file = "frontend/src/types/notes.ts"
   anchor = "text_offset?: number | null"
 
 # --- Coupon (Settings/Coupons) ------------------------------------------------
@@ -6045,6 +6086,7 @@ id = "legacy-style-css-formatting"
 title = "Foglio di stile legacy lms/public/css/style.css: solo formattazione"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 Rispetto a v2.60.1 il file differisce solo per formattazione (commit b1d2b4156 «Changes for set
 default styles color», passato da Prettier: punti e virgola finali, esadecimali in minuscolo,
@@ -6052,7 +6094,8 @@ selettori multipli su più righe, virgolette in input[type="checkbox"]); nessuna
 Nessun marcatore. ATTENZIONE al merge di v2.61.0: l'upstream elimina il file insieme a
 lms.bundle.less e a web_include_css = "lms.bundle.css" in hooks.py (commit cad3692f1 «remove
 unused legacy css bundle»): conflitto modifica/eliminazione. Accettare l'eliminazione (git rm)
-e togliere questa voce dall'inventario."""
+e togliere questa voce dall'inventario.
+accepted-drift (2026-09-23, merge di v2.61.0, decisione del committente): file eliminato upstream (cad3692f1) e accettata l'eliminazione; nessuna pagina lo usava, la voce copriva solo formattazione. Voce conservata come storico, non cancellata."""
 
   [[entries.sites]]
   file = "lms/public/css/style.css"
@@ -6472,7 +6515,8 @@ syncSelectedToUrl, watch legacy di lessonMode e, in v2.61.0, anche il nuovo link
 di Lesson.vue, fuori da questo gruppo). La prima ancora (hash '#editor' seguito da `const STORAGE_KEY`) oggi
 colpisce syncModeToUrl e, dopo un merge risolto bene, colpirà syncSelectedToUrl, che resta
 l'ultima funzione prima di STORAGE_KEY; la seconda è la lezione eliminata. Verificare anche che CourseDetail (fuori
-gruppo) non rimandi più a preview/mode dell'editor."""
+gruppo) non rimandi più a preview/mode dell'editor.
+Merge di v2.61.0 (2026-09-23): preso CourseEditor upstream (sparisce l'anteprima incorporata e lessonMode); la regola vale sui tre siti, incluso il nuovo watch upstream che ripulisce il vecchio ?lessonMode. Per il controllo contare solo il codice (es. `hash: route.hash || '#course editor'`): i nostri commenti OSLMS-CUSTOM citano la stringa '#course editor'."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Courses/CourseEditor.vue"
@@ -6483,6 +6527,10 @@ gruppo) non rimandi più a preview/mode dell'editor."""
   anchor = "hash: route.hash || '#editor',\n\t\t\t\t})"
 
 # --- Modulo corso: campo Istruttori (CourseInstructorsField.vue) ----------------
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseEditor.vue"
+  anchor = "router.replace({ query, hash: route.hash || '#editor' })"
 
 [[entries]]
 id = "course-instructors-theme-hook"
@@ -6611,3 +6659,24 @@ rimettere __() sui due stati nei badge."""
   [[entries.sites]]
   file = "frontend/src/pages/Courses/StudentCourseProgress.vue"
   anchor = ":class=\"hasAssessmentData ? 'grid-cols-1 md:grid-cols-2' : ''\""
+
+# ---------------------------------------------------------------------------
+# Merge di v2.61.0 (2026-09-23) — nuove regole decise durante la risoluzione
+
+[[entries]]
+id = "settings-raven-admin-only"
+title = "Scheda Raven delle impostazioni solo per gli amministratori"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+v2.61.0 aggiunge il gruppo «Integrations» con la scheda Raven (sincronizzazione di workspace e
+canali Raven), visibile a chiunque apra le Impostazioni (Moderator compreso, upstream f020f366f).
+Raven non è installato da noi. Decisione del committente (2026-09-23): scheda visibile solo agli
+amministratori (condition: isAdministrator), coerente con settings-admin-only-tabs per le
+integrazioni di piattaforma; il gruppo vuoto sparisce per gli altri ruoli (filtro dei gruppi
+vuoti di Settings.vue)."""
+visibility = { allow = ["Administrator", "System Manager"], deny = ["Moderator", "Gestore"] }
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = "// OSLMS-CUSTOM: Raven is a platform-wide integration, administrators only"

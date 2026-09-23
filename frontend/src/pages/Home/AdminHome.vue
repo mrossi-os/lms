@@ -6,10 +6,17 @@
 					{{ __('Upcoming Evaluations') }}
 				</div>
 				<div class="grid grid-cols-1 md:grid-cols-4 gap-5">
-					<div
+					<component
+						:is="user.data?.username ? 'router-link' : 'div'"
 						v-for="evaluation in evals?.data"
-						class="border hover:border-outline-gray-3 rounded-md p-3 flex flex-col h-full cursor-pointer"
-						@click="redirectToProfile()"
+						:key="evaluation.name"
+						:to="profileRoute(user.data?.username, 'ProfileEvaluationSchedule')"
+						class="border rounded-md p-3 flex flex-col h-full"
+						:class="
+							user.data?.username
+								? 'cursor-pointer hover:border-outline-gray-3'
+								: ''
+						"
 					>
 						<div class="text-ink-gray-9 text-lg-semibold leading-5 mb-3">
 							{{ evaluation.course_title }}
@@ -34,7 +41,7 @@
 								</span>
 							</div>
 						</div>
-					</div>
+					</component>
 				</div>
 			</div>
 			<div v-if="liveClasses?.data?.length">
@@ -104,6 +111,7 @@
 			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
 				<router-link
 					v-for="course in createdCourses.data"
+					:key="course.name"
 					:to="{ name: 'CourseDetail', params: { courseName: course.name } }"
 				>
 					<CourseCard :course="course" />
@@ -132,6 +140,7 @@
 			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
 				<router-link
 					v-for="batch in createdBatches.data"
+					:key="batch.name"
 					:to="{ name: 'BatchDetail', params: { batchName: batch.name } }"
 				>
 					<BatchCard :batch="batch" />
@@ -178,7 +187,6 @@
 <script setup lang="ts">
 import { Button, createResource } from 'frappe-ui'
 import { inject } from 'vue'
-import { useRouter } from 'vue-router'
 import {
 	Calendar,
 	Clock,
@@ -187,6 +195,7 @@ import {
 	Plus,
 } from 'lucide-vue-next'
 import { formatTime } from '@/utils'
+import { profileRoute } from '@/utils/routes'
 import CourseCard from '@/components/CourseCard.vue'
 import BatchCard from '@/pages/Batches/components/BatchCard.vue'
 // OSLMS-CUSTOM: shared live class card
@@ -194,7 +203,6 @@ import LiveClassCard from '@/components/LiveClassCard.vue'
 
 const user = inject<any>('$user')
 const dayjs = inject<any>('$dayjs')
-const router = useRouter()
 
 const props = defineProps<{
 	liveClasses?: { data?: any[] }
@@ -218,11 +226,4 @@ const evaluationBatches = createResource({
 	url: 'os_lms.os_lms.api.get_evaluation_batches',
 	auto: user.data?.is_valutatore ? true : false,
 })
-
-const redirectToProfile = () => {
-	router.push({
-		name: 'ProfileEvaluationSchedule',
-		params: { username: user.data?.username },
-	})
-}
 </script>

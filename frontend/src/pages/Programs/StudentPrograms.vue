@@ -1,22 +1,24 @@
 <template>
 	<div class="py-5 px-5 w-full lg:w-3/4 lg:px-0 mx-auto">
 		<div class="flex items-center justify-between mb-5">
-			<div class="text-lg-semibold text-ink-gray-9">
+			<h1 class="text-lg-semibold text-ink-gray-9">
 				{{ __('All Programs') }}
-			</div>
+			</h1>
 			<TabButtons v-model="currentTab" :options="tabs" class="w-fit" />
 		</div>
-		<div v-for="(data, category) in programs.data">
+		<div v-for="(data, category) in programs.data" :key="category">
 			<div v-if="category == currentTab">
 				<div
 					v-if="data.length > 0"
 					class="grid grid-cols-1 lg:grid-cols-3 gap-5"
 				>
 					<!-- OSLMS-CUSTOM: "card" class is the elite theme card style hook -->
-					<div
+					<button
+						type="button"
 						v-for="program in data"
+						:key="program.name"
 						@click="openDetails(program.name, category)"
-						class="border rounded-md p-3 hover:border-outline-gray-3 cursor-pointer card"
+						class="block w-full border rounded-md p-3 hover:border-outline-gray-3 cursor-pointer text-start card"
 					>
 						<div class="text-lg-semibold text-ink-gray-9 mb-2">
 							{{ program.name }}
@@ -45,7 +47,7 @@
 								{{ Math.ceil(program.progress) }}% {{ __('completed') }}
 							</div>
 						</div>
-					</div>
+					</button>
 				</div>
 				<div v-else class="flex-1">
 					<EmptyStateLayout

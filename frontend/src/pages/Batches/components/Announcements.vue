@@ -1,38 +1,41 @@
 <template>
 	<div class="w-[90%] lg:w-[75%] mx-auto mt-5">
-		<div class="text-ink-gray-9 text-lg-semibold mb-5">
+		<h2 class="text-ink-gray-9 text-lg-semibold mb-5">
 			{{ __('Announcements') }}
-		</div>
+		</h2>
 		<div v-if="announcements.length">
-			<div v-for="(comm, idx) in announcements" :key="idx">
-				<div class="mb-8">
-					<div class="flex items-center justify-between mb-2">
-						<div class="flex items-center">
-							<Avatar :label="comm.sender_full_name" size="lg" />
-							<div class="ms-2 text-ink-gray-7">
-								{{ comm.sender_full_name }}
+			<ul class="list-none">
+				<!-- OSLMS-CUSTOM: keyed by index, the os_lms get_announcements override returns no `name` -->
+				<li v-for="(comm, idx) in announcements" :key="idx">
+					<div class="mb-8">
+						<div class="flex items-center justify-between mb-2">
+							<div class="flex items-center">
+								<Avatar :label="comm.sender_full_name" size="lg" />
+								<div class="ms-2 text-ink-gray-7">
+									{{ comm.sender_full_name }}
+								</div>
+							</div>
+
+							<div class="text-sm text-ink-gray-9">
+								{{ timeAgo(comm.communication_date) }}
 							</div>
 						</div>
-
-						<div class="text-sm text-ink-gray-9">
-							{{ timeAgo(comm.communication_date) }}
+						<!-- OSLMS-CUSTOM: announcement subject shown above the body -->
+						<div class="ml-3 font-bold text-ink-gray-9 prose">
+							{{ comm.subject }}
 						</div>
+						<!-- OSLMS-CUSTOM: email-template HTML rendered in an isolated iframe, plain notifications on the themed card -->
+						<!-- Rich email/template HTML mirrors the email in an isolated
+						     iframe; a plain notification keeps the app's themed card. -->
+						<div
+							v-if="isPlainNotification(comm.content)"
+							class="announcement-card prose prose-sm bg-surface-sidebar !min-w-full px-4 py-2 rounded-md"
+							v-html="sanitizeRichHTML(comm.content)"
+						></div>
+						<AnnouncementContent v-else :content="comm.content" />
 					</div>
-					<!-- OSLMS-CUSTOM: announcement subject shown above the body -->
-					<div class="ml-3 font-bold text-ink-gray-9 prose">
-						{{ comm.subject }}
-					</div>
-					<!-- OSLMS-CUSTOM: email-template HTML rendered in an isolated iframe, plain notifications on the themed card -->
-					<!-- Rich email/template HTML mirrors the email in an isolated
-					     iframe; a plain notification keeps the app's themed card. -->
-					<div
-						v-if="isPlainNotification(comm.content)"
-						class="announcement-card prose prose-sm bg-surface-sidebar !min-w-full px-4 py-2 rounded-md"
-						v-html="sanitizeRichHTML(comm.content)"
-					></div>
-					<AnnouncementContent v-else :content="comm.content" />
-				</div>
-			</div>
+				</li>
+			</ul>
 			<!-- OSLMS-CUSTOM: announcements paginated 10 per page -->
 			<div
 				v-if="totalPages > 1"

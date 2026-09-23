@@ -309,6 +309,11 @@ const routes = [
 		name: 'StudentStatsExport',
 		component: () => import('@/oslms/pages/StudentStatsExport.vue'),
 	},
+	{
+		path: '/:pathMatch(.*)*',
+		name: 'NotFound',
+		component: () => import('@/pages/NotFound.vue'),
+	},
 ]
 
 let router = createRouter({

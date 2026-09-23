@@ -7,6 +7,7 @@ import UploadPlugin from '@/components/UploadPlugin.vue'
 import { h, createApp } from 'vue'
 import { Upload as UploadIcon } from 'lucide-vue-next'
 import { createDialog } from '@/utils/dialogs'
+import { encodePdfURL, usesInlinePdfViewer } from '@/utils/pdfViewer'
 import translationPlugin from '../translation'
 
 export class Upload {
@@ -84,9 +85,19 @@ export class Upload {
 			return
 		} else if (fileType.toLowerCase() == 'pdf') {
 			// OSLMS-CUSTOM: PDF detected from the derived type (file_type or URL extension)
-			// iOS Safari (all WebKit browsers) refuses to scroll a PDF in an
-			// <iframe>, so render it inline via pdf.js. mount()/unmount() is tracked
-			// so destroy() can tear the pdf.js worker + render tasks down.
+			// WebKit refuses to scroll a PDF in an <iframe>, so it gets the inline
+			// pdf.js viewer. mount()/unmount() is tracked so destroy() can tear the
+			// pdf.js worker + render tasks down. Everywhere else keeps the native
+			// plugin. See utils/pdfViewer.
+			// OSLMS-CUSTOM: Android/mobile browsers get the inline viewer too, and the iframe URL is not re-encoded
+			if (!usesInlinePdfViewer()) {
+				this.wrapper.innerHTML = `<iframe src="${
+					window.location.origin
+				}${encodePdfURL(
+					file.file_url
+				)}" width='100%' height='700px' class="mb-4" type="application/pdf"></iframe>`
+				return
+			}
 			this.app = createApp(PdfBlock, {
 				file: file.file_url,
 			})

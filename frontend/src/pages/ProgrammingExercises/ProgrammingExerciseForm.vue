@@ -123,7 +123,7 @@ import {
 	FormControl,
 	toast,
 } from 'frappe-ui'
-import { ProgrammingExercise, ProgrammingExercises, TestCase } from './types'
+import { ProgrammingExercise, ProgrammingExercises, TestCase } from '@/types'
 import ChildTable from '@/components/Controls/ChildTable.vue'
 import RichTextEditor from '@/components/RichTextEditor.vue'
 

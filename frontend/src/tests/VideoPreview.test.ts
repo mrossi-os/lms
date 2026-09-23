@@ -19,11 +19,13 @@ vi.mock('@/components/VideoBlock.vue', () => ({
 import VideoPreview from '@/components/VideoPreview.vue'
 
 const player = (w: ReturnType<typeof mount>) => w.find('.video-player')
+const global = { mocks: { __: (s: string) => s } }
 
 describe('VideoPreview', () => {
 	it('hands a youtube link to the lesson player (not a <video>)', () => {
 		const w = mount(VideoPreview, {
 			props: { videoLink: 'https://youtu.be/O7FIiYsVy3U?si=22FPigXQedh7jAlz' },
+			global,
 		})
 		expect(player(w).attributes('data-plyr-provider')).toBe('youtube')
 		expect(player(w).attributes('src')).toBe(
@@ -33,9 +35,15 @@ describe('VideoPreview', () => {
 		expect(w.find('[data-testid="video-block"]').exists()).toBe(false)
 	})
 
-	it('renders VideoBlock for an uploaded file path', () => {
-		const w = mount(VideoPreview, { props: { videoLink: '/files/intro.mp4' } })
-		const video = w.find('[data-testid="video-block"]')
+	it('renders VideoBlock (a <video>) for an uploaded file path', () => {
+		const w = mount(VideoPreview, {
+			props: { videoLink: '/files/intro.mp4' },
+			global,
+		})
+		const block = w.find('[data-testid="video-block"]')
+		expect(block.exists()).toBe(true)
+		expect(block.attributes('src')).toBe('/files/intro.mp4')
+		const video = w.find('video')
 		expect(video.exists()).toBe(true)
 		expect(video.attributes('src')).toBe('/files/intro.mp4')
 		expect(player(w).exists()).toBe(false)
@@ -47,6 +55,7 @@ describe('VideoPreview', () => {
 				videoLink: '/files/intro.mov',
 				fallbackImage: '/files/thumb.jpg',
 			},
+			global,
 		})
 		await w.find('[data-testid="video-block"]').trigger('error')
 		expect(w.find('[data-testid="video-block"]').exists()).toBe(false)
@@ -56,9 +65,14 @@ describe('VideoPreview', () => {
 	})
 
 	it('renders nothing without a link', () => {
-		const w = mount(VideoPreview, { props: { videoLink: null } })
+		const w = mount(VideoPreview, {
+			props: { videoLink: null },
+			global,
+		})
 		expect(player(w).exists()).toBe(false)
 		expect(w.find('[data-testid="video-block"]').exists()).toBe(false)
+		expect(w.find('iframe').exists()).toBe(false)
+		expect(w.find('video').exists()).toBe(false)
 		expect(w.find('img').exists()).toBe(false)
 	})
 
@@ -68,6 +82,7 @@ describe('VideoPreview', () => {
 		// survive in the src — Plyr reads it from there for unlisted videos.
 		const w = mount(VideoPreview, {
 			props: { videoLink: 'https://vimeo.com/1209911974/d7e7b74dda' },
+			global,
 		})
 		expect(player(w).attributes('data-plyr-provider')).toBe('vimeo')
 		expect(player(w).attributes('src')).toBe(
@@ -77,7 +92,10 @@ describe('VideoPreview', () => {
 	})
 
 	it('draws no frame when an unplayable file has no image to fall back on', async () => {
-		const w = mount(VideoPreview, { props: { videoLink: '/files/intro.mov' } })
+		const w = mount(VideoPreview, {
+			props: { videoLink: '/files/intro.mov' },
+			global,
+		})
 		await w.find('[data-testid="video-block"]').trigger('error')
 		expect(w.find('div').exists()).toBe(false)
 	})

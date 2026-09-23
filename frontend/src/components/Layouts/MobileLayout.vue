@@ -1,24 +1,34 @@
 <template>
 	<div class="relative flex h-screen flex-col bg-surface-base">
 		<!-- OSLMS-CUSTOM: root carries bg-surface-base (mobile body background) -->
-		<div
-			class="flex flex-1 flex-col overflow-y-auto pb-10"
+		<a
+			href="#scrollContainer"
+			@click.prevent="skipToContent('scrollContainer')"
+			class="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-50 focus:rounded focus:bg-surface-base focus:px-4 focus:py-2 focus:text-ink-gray-9 focus:shadow-md focus:outline-none focus:ring-2 focus:ring-outline-gray-3"
+		>
+			{{ __('Skip to main content') }}
+		</a>
+		<main
+			class="flex flex-1 flex-col overflow-y-auto pb-10 focus:outline-none"
 			id="scrollContainer"
+			tabindex="-1"
 		>
 			<slot />
-		</div>
+		</main>
 
 		<div class="relative z-20">
 			<!-- Dropdown menu -->
 			<div
+				id="mobileMoreMenu"
 				class="fixed bottom-16 end-2 w-[80%] space-y-4 rounded-md bg-surface-base p-5 text-base shadow-md"
-				v-if="showMenu"
+				v-show="showMenu"
 				ref="menu"
 			>
-				<div
+				<button
 					v-for="link in otherLinks"
 					:key="link.label"
-					class="flex cursor-pointer items-center gap-x-2"
+					type="button"
+					class="flex w-full cursor-pointer items-center gap-x-2"
 					@click="handleClick(link)"
 				>
 					<component
@@ -27,18 +37,22 @@
 					/>
 					<!-- OSLMS-CUSTOM: menu labels translated and themed -->
 					<div class="text-ink-gray-9">{{ __(link.label) }}</div>
-				</div>
+				</button>
 			</div>
 
 			<!-- Fixed menu -->
 			<!-- OSLMS-CUSTOM: bottom bar on bg-surface-gray-1 -->
-			<div
+			<nav
 				v-if="sidebarSettings.data"
+				:aria-label="__('Primary')"
 				class="standalone:pb-4 fixed bottom-0 start-0 z-10 flex w-full items-center justify-around border-t border-outline-gray-2 bg-surface-gray-1"
 			>
 				<button
 					v-for="tab in sidebarLinks"
 					:key="tab.label"
+					type="button"
+					:aria-label="__(tab.label)"
+					:aria-current="isActive(tab) ? 'page' : undefined"
 					:class="isVisible(tab) ? 'block' : 'hidden'"
 					class="flex flex-col items-center justify-center py-3 transition active:scale-95"
 					@click="handleClick(tab)"
@@ -49,13 +63,19 @@
 						:class="[isActive(tab) ? 'text-ink-gray-9' : 'text-ink-gray-5']"
 					/>
 				</button>
-				<button @click="toggleMenu">
+				<button
+					type="button"
+					:aria-label="__('More')"
+					:aria-expanded="showMenu"
+					aria-controls="mobileMoreMenu"
+					@click="toggleMenu"
+				>
 					<component
 						:is="icons['List']"
 						class="h-6 w-6 stroke-1.5 text-ink-gray-5"
 					/>
 				</button>
-			</div>
+			</nav>
 		</div>
 
 		<!-- OSLMS-CUSTOM: floating AI coach/tutor buttons on mobile too -->
@@ -63,6 +83,7 @@
 	</div>
 </template>
 <script setup>
+import { skipToContent } from '@/utils/a11y'
 import { getSidebarLinks } from '@/utils'
 import { useRouter } from 'vue-router'
 import { ref, watch } from 'vue'
@@ -76,7 +97,7 @@ import AiFixedButtons from '@/oslms/components/AiFixedButtons.vue'
 
 const { logout, user } = sessionStore()
 let { isLoggedIn } = sessionStore()
-const { sidebarSettings } = useSettings()
+const { sidebarSettings, loadSidebarSettings } = useSettings()
 const router = useRouter()
 let { userResource } = usersStore()
 const sidebarLinks = ref([])
@@ -152,23 +173,20 @@ const addLink = (label, icon, to = '') => {
 const updateSidebarLinks = () => {
 	sidebarLinks.value = getSidebarLinks(true)
 	destructureSidebarLinks()
-	sidebarSettings.reload(
-		{},
-		{
-			onSuccess: async (data) => {
-				filterLinksToShow(data)
-				// OSLMS-CUSTOM: no Programs entry in the mobile nav
-				// Programs are intentionally hidden on mobile
-				if (isModerator.value || isInstructor.value) {
-					// OSLMS-CUSTOM: instructor links gated on the sidebar settings
-					if (isLinkEnabled('Quizzes')) addLink('Quizzes', 'CircleHelp', 'Quizzes')
-					if (isLinkEnabled('Assignments')) addLink('Assignments', 'Pencil', 'Assignments')
-					if (isLinkEnabled('Programming Exercises')) addLink('Programming Exercises', 'Code', 'ProgrammingExercises')
-				}
-				addOtherLinks()
-			},
-		},
-	)
+	loadSidebarSettings().then(async () => {
+		const data = sidebarSettings.data
+		if (!data) return
+		filterLinksToShow(data)
+		// OSLMS-CUSTOM: no Programs entry in the mobile nav
+		// Programs are intentionally hidden on mobile
+		if (isModerator.value || isInstructor.value) {
+			// OSLMS-CUSTOM: instructor links gated on the sidebar settings
+			if (isLinkEnabled('Quizzes')) addLink('Quizzes', 'CircleHelp', 'Quizzes')
+			if (isLinkEnabled('Assignments')) addLink('Assignments', 'Pencil', 'Assignments')
+			if (isLinkEnabled('Programming Exercises')) addLink('Programming Exercises', 'Code', 'ProgrammingExercises')
+		}
+		addOtherLinks()
+	})
 }
 
 watch(
@@ -183,6 +201,8 @@ watch(
 	},
 	{ immediate: true },
 )
+
+watch(() => sidebarSettings.data, updateSidebarLinks, { deep: true })
 
 let isActive = (tab) => {
 	return tab.activeFor?.includes(router.currentRoute.value.name)

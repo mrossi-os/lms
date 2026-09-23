@@ -2,9 +2,9 @@
 	<div class="m-5 pb-10">
 		<div class="flex justify-between w-full">
 			<div class="w-full md:w-2/3">
-				<div class="text-4xl-semibold text-ink-gray-9">
+				<h1 class="text-4xl-semibold text-ink-gray-9">
 					{{ batch.data.title }}
-				</div>
+				</h1>
 				<!-- OSLMS-CUSTOM: description is a Small Text field, so authors can
 				type multi-line descriptions. HTML collapses those newlines, so keep
 				them with whitespace-pre-line (blank lines and line breaks are
@@ -33,6 +33,7 @@
 					>
 						<UserAvatar
 							v-for="instructor in batch.data.instructors"
+							:key="instructor.name"
 							:user="instructor"
 						/>
 					</div>
@@ -55,9 +56,9 @@
 		</div>
 		<div v-if="courses.data?.length">
 			<div class="flex items-center mt-10">
-				<div class="text-3xl-semibold text-ink-gray-9">
+				<h2 class="text-3xl-semibold text-ink-gray-9">
 					{{ __('Courses') }}
-				</div>
+				</h2>
 			</div>
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-5">
 				<div

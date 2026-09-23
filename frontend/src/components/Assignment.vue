@@ -125,8 +125,10 @@
 									</span>
 								</div>
 							</a>
-							<span
+							<button
 								v-if="canModifyAssignment"
+								type="button"
+								:aria-label="__('Remove submission')"
 								@click="removeSubmission()"
 								class="lucide-x bg-surface-gray-3 rounded-md cursor-pointer w-5 h-5 p-1 ms-4"
 							/>
@@ -138,7 +140,12 @@
 						{{ __('Enter a URL') }}
 					</div>
 					<!-- OSLMS-CUSTOM: whoever grades sees the learner's answer read-only -->
-					<FormControl v-model="answer" type="text" :readonly="answerReadOnly" />
+					<FormControl
+						v-model="answer"
+						type="text"
+						:aria-label="__('Enter a URL')"
+						:readonly="answerReadOnly"
+					/>
 				</div>
 				<div v-else>
 					<div class="text-sm mb-2 text-ink-gray-7">

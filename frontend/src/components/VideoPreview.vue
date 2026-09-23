@@ -27,6 +27,7 @@
 		<img
 			v-else-if="fallbackImage"
 			:src="fallbackImage"
+			:alt="__('Video preview')"
 			class="aspect-video w-full object-cover"
 		/>
 	</div>

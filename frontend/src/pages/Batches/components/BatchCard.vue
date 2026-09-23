@@ -65,6 +65,7 @@
 			>
 				<UserAvatar
 					v-for="instructor in batch.instructors"
+					:key="instructor.name"
 					:user="instructor"
 				/>
 			</div>

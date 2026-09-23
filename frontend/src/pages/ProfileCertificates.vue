@@ -7,6 +7,7 @@
 			v-if="certificates.data?.length"
 			class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
 		>
+			<!-- OSLMS-CUSTOM: a clickable div, not upstream's <a href> to the PDF: the click goes through useCertificateViewer (TrueSkills openbadge image or internal PDF) and the card holds the openbadge download buttons, which cannot be nested inside a link -->
 			<div
 				v-for="certificate in certificates.data"
 				:key="certificate.name"

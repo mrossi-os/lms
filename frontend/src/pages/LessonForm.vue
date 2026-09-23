@@ -7,9 +7,11 @@
 				ref="titleRef"
 				v-model="lesson.title"
 				:placeholder="__('Lesson title')"
+				:aria-label="__('Lesson title')"
 				rows="1"
 				class="lesson-title w-full resize-none overflow-hidden border-0 !bg-transparent p-0 text-2xl font-bold leading-tight text-ink-gray-9 placeholder:text-ink-gray-4 focus:outline-none focus:ring-0"
 				@input="onTitleInput"
+				@keydown.enter="onTitleEnter"
 			/>
 
 			<!-- OSLMS-CUSTOM: OsLessonForm replaces the upstream include_in_preview switch (adds duration, tags, AI ingestion) -->
@@ -56,7 +58,7 @@
 	</div>
 </template>
 <script setup>
-import { Badge, Button, createResource, toast } from 'frappe-ui'
+import { Badge, Button, call, createResource, toast } from 'frappe-ui'
 import {
 	reactive,
 	computed,
@@ -69,7 +71,11 @@ import {
 import { ChevronRight, NotebookPen } from 'lucide-vue-next'
 import { useDebounceFn } from '@vueuse/core'
 import { enablePlyr, sanitizeEditorJs } from '@/utils'
-import { hasEditorContent, shouldSkipLessonSave } from '@/utils/lessonForm'
+import {
+	hasEditorContent,
+	shouldSkipLessonSave,
+	toSingleLineTitle,
+} from '@/utils/lessonForm'
 import { convertBodyToBlocks as convertToJSON } from '@/utils/lessonMacros'
 import { hasVideoContent } from '@/utils/video'
 import BlockEditor from '@/components/BlockEditor.vue'
@@ -89,7 +95,17 @@ const titleRef = ref(null)
 // OSLMS-CUSTOM: AI tutor context: the floating tutor knows which lesson is being edited
 const aiContext = useAiContext()
 
+// A lesson title is one line. The field stays a textarea so a long title wraps
+// and grows; only the explicit break is refused.
+function onTitleEnter(event) {
+	// Enter also confirms an IME candidate — never swallow that one.
+	if (event.isComposing) return
+	event.preventDefault()
+}
+
 function onTitleInput() {
+	// Enter is refused on keydown, but a paste or a drop can still carry breaks.
+	lesson.title = toSingleLineTitle(lesson.title)
 	autoGrowTitle()
 	markDirty({ fromTitle: true })
 }
@@ -209,6 +225,8 @@ const lessonDetails = createResource({
 			Object.keys(data.lesson).forEach((key) => {
 				lesson[key] = data.lesson[key]
 			})
+			// Titles saved before Enter was refused still hold breaks.
+			lesson.title = toSingleLineTitle(lesson.title)
 			lesson.include_in_preview = data?.lesson?.include_in_preview
 				? true
 				: false
@@ -448,7 +466,7 @@ const createNewLesson = () => {
 	)
 }
 
-const editCurrentLesson = () => {
+const editCurrentLesson = (isRetry = false) => {
 	// Catch the re-thrown rejection: a save racing a delete 404s harmlessly.
 	editLesson
 		.submit(
@@ -472,9 +490,36 @@ const editCurrentLesson = () => {
 		)
 		.catch((err) => {
 			if (lessonDeleted) return
+			// The daily untitled-lesson rename can move the docname under an open
+			// editor; re-resolve it by index and retry once (a plain reload would
+			// drop the unsaved edits we're saving).
+			if (!isRetry && err?.exc_type === 'DoesNotExistError') {
+				resolveLessonName().then((name) => {
+					if (name) editCurrentLesson(true)
+					else toast.error(err.messages?.[0] || err.message || err)
+				})
+				return
+			}
 			toast.error(err.messages?.[0] || err.message || err)
 		})
 }
+
+const resolveLessonName = () =>
+	call('lms.lms.utils.get_lesson_creation_details', {
+		course: props.courseName,
+		chapter: props.chapterNumber,
+		lesson: props.lessonNumber,
+	})
+		.then((data) => {
+			const name = data?.lesson?.name
+			if (name) {
+				lessonDetails.data.lesson.name = name
+				contentUploadContext.docname = name
+				instructorUploadContext.docname = name
+			}
+			return name || null
+		})
+		.catch(() => null)
 
 const validateLesson = () => {
 	if (!lesson.title) {

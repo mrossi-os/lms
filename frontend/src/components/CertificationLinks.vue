@@ -60,7 +60,7 @@
 <script setup lang="ts">
 import { Button, createResource } from 'frappe-ui'
 import { inject } from 'vue'
-import type { CertificationInfo, Resource, SessionUser } from '@/types/api'
+import type { CertificationInfo, Resource, SessionUser } from '@/types'
 
 const user = inject<SessionUser>('$user')!
 

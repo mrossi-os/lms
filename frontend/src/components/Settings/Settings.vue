@@ -80,6 +80,7 @@ import ZoomSettings from '@/components/Settings/ZoomSettings.vue'
 import GoogleMeetSettings from '@/components/Settings/GoogleMeetSettings.vue'
 import GoogleCalendarSettings from '@/components/Settings/GoogleCalendarSettings.vue'
 import Badges from '@/components/Settings/Badges/Badges.vue'
+import RavenSettings from '@/components/Settings/Raven/RavenSettings.vue'
 import { buildOslmsSettingsTabs } from '@/oslms/utils/settings'
 import * as lucideIcons from 'lucide-vue-next'
 
@@ -480,6 +481,24 @@ const tabsStructure = computed(() => {
 					icon: 'lucide-calendar',
 					template: markRaw(GoogleCalendarSettings),
 					condition: canManageGoogleCalendars,
+				},
+			],
+		},
+		{
+			key: 'Integrations',
+			label: __('Integrations'),
+			hideLabel: false,
+			items: [
+				{
+					key: 'Raven',
+					label: __('Raven'),
+					description: __(
+						'Automatically sync Raven workspace and channel membership from your students and staff',
+					),
+					icon: 'lucide-messages-square',
+					// OSLMS-CUSTOM: Raven is a platform-wide integration, administrators only
+					condition: isAdministrator,
+					template: markRaw(RavenSettings),
 				},
 			],
 		},

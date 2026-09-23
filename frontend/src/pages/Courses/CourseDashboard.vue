@@ -48,6 +48,7 @@
 							v-model="searchFilter"
 							class="small-form"
 							:placeholder="__('Search by name')"
+							:aria-label="__('Search students')"
 							type="text"
 						>
 							<template #prefix>
@@ -171,11 +172,12 @@
 					<div
 						class="grid grid-cols-1 sm:grid-cols-[2fr_1fr] gap-4 sm:gap-0 items-center justify-between text-ink-gray-9"
 					>
-						<div class="flex flex-col space-y-4 flex-1 text-sm">
+						<ul class="flex flex-col space-y-4 flex-1 text-sm list-none">
 							<!-- OSLMS-CUSTOM: legend color by row position, because the labels are translated to Italian -->
-							<div
+							<li
 								class="flex items-center text-ink-gray-7"
 								v-for="(row, idx) in chartDetails.data?.progress_distribution"
+								:key="row.name"
 							>
 								<div
 									class="size-2 rounded"
@@ -201,8 +203,8 @@
 										}}%
 									</div>
 								</Tooltip>
-							</div>
-						</div>
+							</li>
+						</ul>
 						<ECharts
 							class="w-40 h-20 justify-self-center sm:justify-self-auto"
 							:options="{
@@ -252,11 +254,12 @@
 							class="!w-32"
 						/>
 					</div>
-					<div
-						class="divide-y max-h-[40vh] divide-outline-elevation-2 text-ink-gray-7 overflow-y-auto"
+					<ul
+						class="divide-y max-h-[40vh] divide-outline-elevation-2 text-ink-gray-7 overflow-y-auto list-none"
 					>
-						<div
+						<li
 							v-for="progress in lessonProgress.data"
+							:key="`${progress.chapter_idx}-${progress.idx}`"
 							class="flex justify-between text-sm py-2 my-1 text-ink-gray-9"
 						>
 							<div class="">
@@ -277,8 +280,8 @@
 									}}%
 								</div>
 							</Tooltip>
-						</div>
-					</div>
+						</li>
+					</ul>
 				</div>
 			</div>
 		</div>
@@ -324,7 +327,7 @@ import NumberChartGraph from '@/components/NumberChartGraph.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
 import StudentCourseProgress from '@/pages/Courses/StudentCourseProgress.vue'
 
-import type { CourseDetails, Resource } from '@/types/api'
+import type { CourseDetails, Resource } from '@/types'
 
 const props = defineProps<{
 	course: Resource<CourseDetails | null>

@@ -20,7 +20,7 @@
 					<Badge v-if="childRef?.isDirty" theme="orange">
 						{{ __('Not Saved') }}
 					</Badge>
-					<Button @click="childRef.deleteBatch()">
+					<Button :label="__('Delete batch')" @click="childRef.deleteBatch()">
 						<template #icon>
 							<span class="lucide-trash-2 w-4 h-4" />
 						</template>
@@ -38,7 +38,11 @@
 					side="left"
 				>
 					<template v-slot="{ open }">
-						<Button variant="ghost">
+						<Button
+							variant="ghost"
+							:label="__('Batch options')"
+							:aria-expanded="open"
+						>
 							<template #icon>
 								<span class="lucide-ellipsis-vertical w-4 h-4" />
 							</template>
@@ -86,8 +90,9 @@
 						{{ __('Make Announcement') }}
 					</Button>
 				</Tooltip>
+				<!-- OSLMS-CUSTOM: upstream's "publish only on Settings" rule, checked on the tab key (labels are translated) -->
 				<Button
-					v-if="isAdmin"
+					v-if="isAdmin && currentTabKey === 'Settings'"
 					variant="solid"
 					:theme="batch.data?.published ? 'red' : 'gray'"
 					:loading="publishToggle.loading"
