@@ -11,7 +11,12 @@ from lms.lms.utils import get_course_outline as _original_get_course_outline
 from lms.lms.utils import get_courses as _orginal_get_courses
 from lms.lms.utils import get_lesson as _original_get_lesson
 from lms.lms.utils import get_lesson_details as _original_get_lesson_details
-from lms.lms.utils import get_lesson_icon, get_progress, is_course_valutatore
+from lms.lms.utils import (
+	get_lesson_icon,
+	get_progress,
+	is_course_in_member_program,
+	is_course_valutatore,
+)
 from os_lms.os_lms.api import (
 	_find_adjacent_video_lessons,
 	evaluate_lesson_access,
@@ -69,6 +74,12 @@ def get_course_details(course: str):
 	# Read-only access flag for a "Valutatore" of a batch containing this course:
 	# the SPA uses it to skip the "unpublished → redirect to Courses" guard.
 	course_detail.is_valutatore = is_course_valutatore(course)
+
+	# Same guard skip for a member of a program holding this course: program
+	# courses are visible whether or not they are published on their own.
+	course_detail.in_member_program = (
+		0 if course_detail.published else int(is_course_in_member_program(course))
+	)
 
 	return course_detail
 

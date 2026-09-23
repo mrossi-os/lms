@@ -1005,8 +1005,13 @@ def get_course_details(course: str):
 	if not membership and not is_course_published and not can_modify_course(course):
 		membership = enroll_via_batch_if_eligible(course, frappe.session.user)
 		# A "Valutatore" of a batch containing this course gets read-only access
-		# to it even when unpublished (no enrolment).
-		if not membership and not is_course_valutatore(course):
+		# to it even when unpublished (no enrolment). A member of a program holding
+		# this course sees it too, published or not.
+		if (
+			not membership
+			and not is_course_valutatore(course)
+			and not is_course_in_member_program(course)
+		):
 			return {}
 
 	fields = get_course_fields()
@@ -2787,6 +2792,27 @@ def is_course_valutatore(course: str, user: str = None) -> bool:
 			},
 		)
 	)
+
+
+def is_course_in_member_program(course: str, user: str = None) -> bool:
+	"""True if the user is a member of a program that contains this course.
+
+	A program is published as a whole: its members see and take every course in
+	it, whether or not the course itself is published on its own.
+	"""
+	if not course:
+		return False
+	user = user or frappe.session.user
+	if user == "Guest":
+		return False
+	programs = frappe.get_all(
+		"LMS Program Course",
+		{"parenttype": "LMS Program", "course": course},
+		pluck="parent",
+	)
+	if not programs:
+		return False
+	return bool(frappe.db.exists("LMS Program Member", {"parent": ["in", programs], "member": user}))
 
 
 def has_lms_role():

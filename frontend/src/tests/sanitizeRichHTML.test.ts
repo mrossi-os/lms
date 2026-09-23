@@ -38,6 +38,19 @@ describe('sanitizeRichHTML', () => {
 		expect(out).toMatch(/<img src="https:\/\/example\.test\/a\.png">/)
 	})
 
+	it('preserves TextEditor text color, highlight and strikethrough', () => {
+		const marked =
+			'<p><span style="color: var(--prose-color-red)">red</span> ' +
+			'<mark style="background-color: var(--prose-highlight-yellow)">hl</mark> ' +
+			'<s>struck</s></p>'
+		const out = sanitizeRichHTML(marked)
+		expect(out).toContain('<span style="color: var(--prose-color-red)">red</span>')
+		expect(out).toContain(
+			'<mark style="background-color: var(--prose-highlight-yellow)">hl</mark>',
+		)
+		expect(out).toContain('<s>struck</s>')
+	})
+
 	it('handles empty/null input', () => {
 		expect(sanitizeRichHTML('')).toBe('')
 		// @ts-expect-error null tolerated at runtime

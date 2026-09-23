@@ -63,6 +63,9 @@ export interface CourseDetails
 	// OSLMS-CUSTOM: read-only access flag for a "Valutatore" of a batch holding
 	// this course, injected by the os_lms get_course_details override.
 	is_valutatore?: 0 | 1
+	// OSLMS-CUSTOM: the viewer is a member of a program holding this course, so
+	// they may open it even when it is unpublished.
+	in_member_program?: 0 | 1
 }
 
 export interface BatchDetails extends Omit<LMSBatch, 'instructors'> {

@@ -382,6 +382,7 @@ import { computed, ref, watch, getCurrentInstance } from 'vue'
 
 import { Programs, Program } from './types'
 import { sanitizeHTML, openSettings } from '@/utils'
+import { sanitizeRichHTML } from '@/utils/sanitizeRichHTML'
 import { Plus, Trash2, TrendingUp } from 'lucide-vue-next'
 import Link from '@/components/Controls/Link.vue'
 import Draggable from 'vuedraggable'
@@ -567,7 +568,9 @@ const validateTitle = () => {
 
 const saveProgram = (close: () => void) => {
 	validateTitle()
-	program.value.description = sanitizeHTML(program.value.description)
+	// Rich sanitizer: the allowlist one drops the span/mark/s tags and style
+	// attributes the editor uses for text color, highlight and strikethrough.
+	program.value.description = sanitizeRichHTML(program.value.description)
 	if (props.programName === 'new') createNewProgram(close)
 	else updateProgram(close)
 	dirty.value = false

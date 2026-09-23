@@ -66,7 +66,16 @@ class LMSEnrollment(Document):
 				)
 			)
 
-		if not course_details.published and not is_admin():
+		# Local import: lms.lms.utils imports this module at load time.
+		from lms.lms.utils import is_course_in_member_program
+
+		# A program is published as a whole, so its members may take its courses
+		# even when a course is not published on its own.
+		if (
+			not course_details.published
+			and not is_admin()
+			and not is_course_in_member_program(self.course, self.member)
+		):
 			frappe.throw(_("You cannot enroll in an unpublished course."))
 
 		if course_details.paid_course and not is_admin():
