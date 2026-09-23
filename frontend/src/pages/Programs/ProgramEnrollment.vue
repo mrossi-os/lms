@@ -7,6 +7,12 @@
 		</template>
 		<template #default>
 			<div v-if="program.data" class="text-base text-ink-gray-9">
+				<!-- OSLMS-CUSTOM: program description (os_lms custom field). -->
+				<CourseDescription
+					v-if="hasRichContent(program.data.description)"
+					:description="sanitizeRichHTML(program.data.description)"
+					class="mb-5 text-ink-gray-7"
+				/>
 				<div class="bg-surface-blue-2 text-ink-blue-6 p-2 rounded-md leading-5">
 					<span>
 						{{
@@ -104,6 +110,8 @@ import { inject, watch } from 'vue'
 
 import { useRouter } from 'vue-router'
 import CourseInstructors from '@/components/CourseInstructors.vue'
+import CourseDescription from '@/oslms/components/CourseDescription.vue'
+import { hasRichContent, sanitizeRichHTML } from '@/utils/sanitizeRichHTML'
 
 const show = defineModel()
 const user = inject<any>('$user')

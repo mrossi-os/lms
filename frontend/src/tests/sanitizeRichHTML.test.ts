@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { sanitizeRichHTML } from '@/utils/sanitizeRichHTML'
+import { hasRichContent, sanitizeRichHTML } from '@/utils/sanitizeRichHTML'
 
 describe('sanitizeRichHTML', () => {
 	it('strips phishing form elements', () => {
@@ -55,5 +55,19 @@ describe('sanitizeRichHTML', () => {
 		expect(sanitizeRichHTML('')).toBe('')
 		// @ts-expect-error null tolerated at runtime
 		expect(sanitizeRichHTML(null)).toBe('')
+	})
+})
+
+describe('hasRichContent', () => {
+	it('treats an emptied editor field as empty', () => {
+		expect(hasRichContent('')).toBe(false)
+		expect(hasRichContent(null)).toBe(false)
+		expect(hasRichContent('<p></p>')).toBe(false)
+		expect(hasRichContent('<p>&nbsp; </p>')).toBe(false)
+	})
+
+	it('detects text and media', () => {
+		expect(hasRichContent('<p><s>struck</s></p>')).toBe(true)
+		expect(hasRichContent('<p><img src="a.png"></p>')).toBe(true)
 	})
 })

@@ -11,6 +11,7 @@ from lms.lms.utils import get_course_outline as _original_get_course_outline
 from lms.lms.utils import get_courses as _orginal_get_courses
 from lms.lms.utils import get_lesson as _original_get_lesson
 from lms.lms.utils import get_lesson_details as _original_get_lesson_details
+from lms.lms.utils import get_program_details as _original_get_program_details
 from lms.lms.utils import (
 	get_lesson_icon,
 	get_progress,
@@ -374,3 +375,15 @@ def get_roles(name: str) -> dict:
 	base["instructor"] = _has_role(name, "Docente")
 	base["valutatore"] = _has_role(name, "Valutatore")
 	return base
+
+
+@frappe.whitelist()
+def get_program_details(program_name: str) -> dict:
+	"""Add the program description (an os_lms custom field) to the upstream payload.
+
+	Upstream reads a fixed field list, so the description written in ProgramForm
+	never reached the learner's program page or the enrollment dialog.
+	"""
+	program = _original_get_program_details(program_name)
+	program.description = frappe.db.get_value("LMS Program", program_name, "description") or ""
+	return program

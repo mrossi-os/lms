@@ -26,6 +26,12 @@
 				<span class="lucide-info size-3 cursor-pointer" />
 			</Tooltip>
 		</div>
+		<!-- OSLMS-CUSTOM: program description (os_lms custom field). -->
+		<CourseDescription
+			v-if="hasRichContent(program.data.description)"
+			:description="sanitizeRichHTML(program.data.description)"
+			class="mb-5 text-ink-gray-7"
+		/>
 		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-5">
 			<div
 				v-for="course in program.data.courses"
@@ -72,6 +78,8 @@ import { sessionStore } from '@/stores/session'
 
 import { useRouter } from 'vue-router'
 import CourseCard from '@/components/CourseCard.vue'
+import CourseDescription from '@/oslms/components/CourseDescription.vue'
+import { hasRichContent, sanitizeRichHTML } from '@/utils/sanitizeRichHTML'
 
 const { brand } = sessionStore()
 const router = useRouter()

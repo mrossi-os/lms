@@ -32,12 +32,14 @@ class TestProgramCourseAccess(BaseTestUtils):
 			{
 				"title": "Program Access Test Program",
 				"published": 0,
+				"description": "<p><s>struck</s></p>",
 				"program_courses": [{"course": self.course.name}],
 				"program_members": [{"member": STUDENT}],
 			}
 		)
 		program.insert(ignore_permissions=True)
 		self.cleanup_items.append(("LMS Program", program.name))
+		self.program = program.name
 
 	def tearDown(self):
 		frappe.set_user("Administrator")
@@ -73,3 +75,11 @@ class TestProgramCourseAccess(BaseTestUtils):
 		enrollment.update({"course": self.course.name, "member": OUTSIDER})
 		with self.assertRaises(frappe.ValidationError):
 			enrollment.insert(ignore_permissions=True)
+
+	def test_member_program_page_lists_course_and_description(self):
+		from os_lms.os_lms.override_utils import get_program_details
+
+		frappe.set_user(STUDENT)
+		details = get_program_details(self.program)
+		self.assertEqual([c.name for c in details.courses], [self.course.name])
+		self.assertEqual(details.description, "<p><s>struck</s></p>")

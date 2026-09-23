@@ -25,3 +25,16 @@ export const sanitizeRichHTML = (html?: string | null): string => {
 		FORBID_ATTR: ['formaction', 'formmethod', 'formenctype'],
 	})
 }
+
+// True when rich HTML shows something: the editor saves an emptied field as
+// "<p></p>", which must not render as a blank block. Media counts as content.
+export const hasRichContent = (html?: string | null): boolean => {
+	if (!html) return false
+	if (/<(img|video|iframe|table)\b/i.test(html)) return true
+	return (
+		html
+			.replace(/<[^>]*>/g, '')
+			.replace(/&nbsp;/g, ' ')
+			.trim() !== ''
+	)
+}

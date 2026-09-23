@@ -54,6 +54,57 @@
 			</div>
 		</div>
 
+		<!-- OSLMS-CUSTOM: the learner's programs; published ones as a fallback
+		     when they are enrolled in none (same pattern as the batches row). -->
+		<div v-if="homePrograms.length" class="mt-10">
+			<div class="flex items-center justify-between mb-3">
+				<span class="font-semibold text-lg text-ink-gray-9">
+					{{
+						hasEnrolledPrograms ? __('My Programs') : __('Available Programs')
+					}}
+				</span>
+				<router-link :to="{ name: 'Programs' }">
+					<span class="flex items-center gap-x-1 text-ink-gray-5 text-xs">
+						<span>
+							{{ __('See all') }}
+						</span>
+						<MoveRight class="size-3 stroke-1.5 rtl:rotate-180" />
+					</span>
+				</router-link>
+			</div>
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+				<div
+					v-for="program in homePrograms"
+					:key="program.name"
+					class="border rounded-md p-3 hover:border-outline-gray-3 cursor-pointer card"
+					@click="openProgram(program.name)"
+				>
+					<div class="text-xl-semibold text-ink-gray-9 mb-2">
+						{{ program.name }}
+					</div>
+					<div class="flex items-center gap-x-5 text-sm text-ink-gray-7">
+						<div class="flex items-center gap-x-1">
+							<span class="lucide-book-open size-3" />
+							<span>
+								{{ program.course_count }}
+								{{ program.course_count == 1 ? __('course') : __('courses') }}
+							</span>
+						</div>
+					</div>
+					<div v-if="hasEnrolledPrograms" class="mt-5">
+						<ProgressBar :progress="program.progress" />
+						<div class="text-sm text-ink-gray-7 mt-1">
+							{{ Math.ceil(program.progress || 0) }}% {{ __('completed') }}
+						</div>
+					</div>
+				</div>
+			</div>
+			<ProgramEnrollment
+				v-model="showProgramEnrollment"
+				:programName="enrollmentProgram"
+			/>
+		</div>
+
 		<div v-if="newCourses.data?.length" class="mt-10">
 			<div class="flex items-center justify-between mb-3">
 				<span class="font-semibold text-lg text-ink-gray-9">
@@ -142,7 +193,8 @@
 	</div>
 </template>
 <script setup lang="ts">
-import { inject } from 'vue'
+import { computed, inject, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { createResource } from 'frappe-ui'
 import { MoveRight } from 'lucide-vue-next'
 import CourseCard from '@/components/CourseCard.vue'
@@ -150,6 +202,9 @@ import BatchCard from '@/pages/Batches/components/BatchCard.vue'
 import UpcomingEvaluations from '@/components/UpcomingEvaluations.vue'
 import WelcomeWithOverallProgress from '@/oslms/components/Home/WelcomeWithOverallProgress.vue'
 import LiveClassCard from '@/components/LiveClassCard.vue'
+import ProgressBar from '@/components/ProgressBar.vue'
+import ProgramEnrollment from '@/pages/Programs/ProgramEnrollment.vue'
+import { useSettings } from '@/stores/settings'
 
 const user = inject<any>('$user')
 
@@ -188,4 +243,34 @@ const myBatches = createResource({
 	url: 'lms.lms.api.get_my_batches',
 	auto: true,
 })
+// OSLMS-CUSTOM: programs row. Reuses the settings-store resource the sidebar
+// already loads (get_programs) instead of a second request; fetched here only
+// when nothing has loaded it yet (e.g. the mobile layout has no sidebar).
+const router = useRouter()
+const { programs } = useSettings()
+const showProgramEnrollment = ref(false)
+const enrollmentProgram = ref<string | null>(null)
+
+onMounted(() => {
+	if (!programs.data && !programs.loading) programs.reload()
+})
+
+const hasEnrolledPrograms = computed(
+	() => (programs.data?.enrolled?.length ?? 0) > 0,
+)
+
+const homePrograms = computed<any[]>(() =>
+	hasEnrolledPrograms.value
+		? programs.data.enrolled
+		: (programs.data?.published ?? []),
+)
+
+const openProgram = (programName: string) => {
+	if (hasEnrolledPrograms.value) {
+		router.push({ name: 'ProgramDetail', params: { programName } })
+	} else {
+		enrollmentProgram.value = programName
+		showProgramEnrollment.value = true
+	}
+}
 </script>
