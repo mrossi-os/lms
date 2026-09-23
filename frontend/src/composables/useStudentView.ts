@@ -31,6 +31,9 @@ const INSTRUCTOR_FLAGS = [
 	'is_instructor',
 	'is_evaluator',
 	'is_system_manager',
+	// OSLMS-CUSTOM: os_lms role flags (Docente = global instructor, Valutatore = batch grader)
+	'is_docente',
+	'is_valutatore',
 ] as const
 
 const INSTRUCTOR_ROLES = [
@@ -38,6 +41,10 @@ const INSTRUCTOR_ROLES = [
 	'Course Creator',
 	'Batch Evaluator',
 	'System Manager',
+	// OSLMS-CUSTOM: os_lms custom roles are stripped too, so the preview hides their affordances
+	'Valutatore',
+	'Docente',
+	'Gestore',
 ]
 
 type UserResource = {

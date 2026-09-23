@@ -6685,3 +6685,31 @@ visibility = { allow = ["Administrator", "System Manager"], deny = ["Moderator",
   [[entries.sites]]
   file = "frontend/src/components/Settings/Settings.vue"
   anchor = "// OSLMS-CUSTOM: Raven is a platform-wide integration, administrators only"
+
+[[entries]]
+id = "student-view-oslms-roles"
+title = "La vista studente spegne anche i ruoli os_lms (Valutatore, Docente, Gestore)"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+v2.61.0 introduce la «vista studente» (useStudentView: $user simulato per il sottoalbero della
+lezione in anteprima), che spegne solo flag e ruoli upstream (is_moderator, is_instructor,
+is_evaluator, is_system_manager; Moderator, Course Creator, Batch Evaluator, System Manager).
+I nostri is_docente/is_valutatore e i ruoli Valutatore/Docente/Gestore restavano accesi: un
+Valutatore in vista studente vedeva ancora il pannello di correzione dei compiti (proprio la
+perdita che l'upstream a67bf3633 voleva chiudere). Decisione del committente (2026-09-23):
+spegnerli anche loro. È fedeltà di presentazione, non un confine di sicurezza (i permessi lato
+server restano quelli reali). Non esiste un flag is_gestore: il Gestore passa dai ruoli."""
+
+  [[entries.sites]]
+  file = "frontend/src/composables/useStudentView.ts"
+  anchor = "// OSLMS-CUSTOM: os_lms role flags (Docente = global instructor, Valutatore = batch grader)"
+  symbol = "INSTRUCTOR_FLAGS"
+
+  [[entries.sites]]
+  file = "frontend/src/composables/useStudentView.ts"
+  anchor = "// OSLMS-CUSTOM: os_lms custom roles are stripped too, so the preview hides their affordances"
+  symbol = "INSTRUCTOR_ROLES"
+
+  [entries.checks]
+  unit = "frontend/src/tests/studentViewOslmsRoles.test.ts"
