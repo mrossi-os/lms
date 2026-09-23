@@ -186,6 +186,8 @@ defineExpose({ openAnnouncementModal })
 	--prose-color-gray: #717171;
 	--prose-color-teal: #219c8f;
 	--prose-color-cyan: #2b8dab;
+	/* indigo: added by the v2.59.0 RichTextEditor palette (violet hue) */
+	--prose-color-indigo: #6c4dd5;
 
 	/*
 	 * Highlight (text background) colors. The editor serializes highlights as
@@ -204,6 +206,7 @@ defineExpose({ openAnnouncementModal })
 	--prose-highlight-gray: #f3f3f3;
 	--prose-highlight-teal: #e6f7f4;
 	--prose-highlight-cyan: #ddf7ff;
+	--prose-highlight-indigo: #eee8ff;
 }
 
 [data-theme='dark'] .announcement-card {
@@ -217,6 +220,7 @@ defineExpose({ openAnnouncementModal })
 	--prose-highlight-gray: #242424;
 	--prose-highlight-teal: #0b3a35;
 	--prose-highlight-cyan: #0d3b49;
+	--prose-highlight-indigo: #3c2a92;
 }
 
 /*
