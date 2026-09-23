@@ -1,6 +1,7 @@
 @import 'frappe-ui/style.css';
 @import './styles/codemirror.css';
 @import './styles/blockEditor.css';
+/* OSLMS-CUSTOM: load the client's Elite theme on top of frappe-ui */
 @import './styles/theme/elite/main.css';
 
 /* This build makes --surface-sidebar transparent in dark mode; point it at
@@ -33,6 +34,7 @@ label.block:not([data-slot='label']) {
 	z-index: 1;
 }
 
+/* OSLMS-CUSTOM: popovers above the AI floating buttons and local z-50 layers */
 /*
  * Radix Vue popper wrappers (used by frappe-ui Dropdown, Select, Tooltip,
  * Popover) are teleported to <body> without an explicit z-index. Local
@@ -49,6 +51,7 @@ label.block:not([data-slot='label']) {
 	--tw-prose-bullets: var(--ink-gray-4);
 }
 
+/* OSLMS-CUSTOM: rich-text <hr> follows the text colour */
 /* Match the <hr> separator in rich-text descriptions to the surrounding text
    color (renders white wherever the description text is white) instead of
    prose's default gray. Higher specificity than prose's :where(hr) rule. */
@@ -56,11 +59,13 @@ label.block:not([data-slot='label']) {
 	border-top-color: currentColor;
 }
 
+/* OSLMS-CUSTOM: visible table borders in rich-text content */
 .ProseMirror .tableWrapper table td,
 .ProseMirror .tableWrapper table th {
 	border-color: var(--ink-gray-9);
 }
 
+/* OSLMS-CUSTOM: classic radio look (white circle, black dot) for quiz options */
 /* @tailwindcss/forms repaints checked radios as a filled colored circle with a
    white center dot. Restore the classic look instead — a white circle with a
    black center dot — for every native radio (quiz options, forms). The plugin's
@@ -75,6 +80,7 @@ input[type='radio']:checked:focus {
 	background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='black' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='4.5'/%3e%3c/svg%3e");
 }
 
+/* OSLMS-CUSTOM: no focus ring on radios */
 /* Drop the @tailwindcss/forms focus ring (box-shadow) and its blue focus border
    on radios — no focus outline wanted. Keep the plain gray border. */
 input[type='radio']:focus {

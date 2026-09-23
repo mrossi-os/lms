@@ -12,6 +12,7 @@
 				>
 					<div class="flex items-center gap-x-2">
 						<div class="flex-1">
+							<!-- OSLMS-CUSTOM: search placeholder and Upload Image label wrapped in __() -->
 							<TextInput
 								type="text"
 								:placeholder="__('search by keyword')"
@@ -62,6 +63,7 @@
 
 <script>
 // import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
+// OSLMS-CUSTOM: TextInput was used in the template but never imported
 import { Popover, FileUploader, Button, TextInput } from 'frappe-ui'
 
 export default {

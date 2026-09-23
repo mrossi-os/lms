@@ -1,6 +1,8 @@
 import AudioBlock from '@/components/AudioBlock.vue'
 import VideoBlock from '@/components/VideoBlock.vue'
+// OSLMS-CUSTOM: non-media uploads render as a download card
 import FileBlock from '@/components/FileBlock.vue'
+// OSLMS-CUSTOM: PDFs render through PdfBlock (open-in-new-tab card on mobile)
 import PdfBlock from '@/components/PdfBlock.vue'
 import UploadPlugin from '@/components/UploadPlugin.vue'
 import { h, createApp } from 'vue'
@@ -21,6 +23,7 @@ export class Upload {
 				h(UploadIcon, {
 					size: 18,
 					strokeWidth: 1.5,
+					// OSLMS-CUSTOM: toolbox icon follows the theme instead of hard-coded black
 					color: 'currentColor',
 				}),
 		})
@@ -42,6 +45,7 @@ export class Upload {
 		this.wrapper = document.createElement('div')
 
 		if (this.data && this.data.file_url) {
+			// OSLMS-CUSTOM: backfill a missing file_type from the URL extension
 			// Some uploads (e.g. certain archive types) come back from the
 			// server without a file_type. Backfill it from the URL extension so
 			// the block validates, renders, and re-saves with a valid type.
@@ -57,6 +61,7 @@ export class Upload {
 	}
 
 	renderFile(file) {
+		// OSLMS-CUSTOM: route by derived type: video/audio/pdf/image/other file
 		const fileType = this.getFileType(file)
 		if (this.isVideo(fileType)) {
 			const app = createApp(VideoBlock, {
@@ -79,6 +84,7 @@ export class Upload {
 			app.mount(this.wrapper)
 			return
 		} else if (fileType.toLowerCase() == 'pdf') {
+			// OSLMS-CUSTOM: PdfBlock instead of the raw iframe (mobile browsers cannot render it)
 			const app = createApp(PdfBlock, {
 				file: file.file_url,
 			})
@@ -91,6 +97,7 @@ export class Upload {
 			)} width='100%'>`
 			return
 		} else {
+			// OSLMS-CUSTOM: any other file type becomes a download card, not a broken <img>
 			const app = createApp(FileBlock, {
 				file: file.file_url,
 			})
@@ -115,6 +122,7 @@ export class Upload {
 	}
 
 	validate(savedData) {
+		// OSLMS-CUSTOM: blocks without file_type stay valid
 		// Only file_url is required; file_type can be derived from it when the
 		// server didn't provide one, so blocks with an empty file_type are
 		// still valid instead of being silently dropped.
@@ -132,6 +140,7 @@ export class Upload {
 		}
 	}
 
+	// OSLMS-CUSTOM: file type fallback from the URL extension
 	getFileType(file) {
 		if (file.file_type) {
 			return file.file_type
@@ -149,6 +158,7 @@ export class Upload {
 		return ['mp3', 'wav', 'ogg'].includes(type.toLowerCase())
 	}
 
+	// OSLMS-CUSTOM: explicit image check so non-images are not rendered as <img>
 	isImage(type) {
 		return [
 			'jpg',

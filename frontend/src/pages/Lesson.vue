@@ -79,6 +79,7 @@
 						<div
 							class="flex flex-col space-y-3 md:space-y-0 md:flex-row md:items-center justify-between"
 						>
+							<!-- OSLMS-CUSTOM: min-w-0 + break-words stop long lesson titles from overflowing the 70/30 grid -->
 							<div class="flex flex-col min-w-0">
 								<div class="text-5xl-semibold text-ink-gray-9 break-words">
 									{{ lesson.data.title }}
@@ -106,6 +107,7 @@
 								v-if="!zenModeEnabled"
 								class="flex items-center gap-x-2 mt-2 md:mt-0"
 							>
+								<!-- OSLMS-CUSTOM: Edit deep-links with hash '#editor' (the tab id); upstream '#course editor' matched no tab -->
 								<router-link
 									v-if="isAdmin && !embedded"
 									:to="{
@@ -205,6 +207,7 @@
 							v-if="!zenModeEnabled && isAdmin"
 							class="flex items-center mt-4 md:mt-2"
 						>
+							<!-- OSLMS-CUSTOM: instructors row gated on isAdmin: hidden from students -->
 							<span
 								class="h-6 me-1"
 								:class="{
@@ -229,6 +232,7 @@
 							v-if="lessonBlocked"
 							class="flex flex-col items-center justify-center mt-16 text-center"
 						>
+							<!-- OSLMS-CUSTOM: sequential access: locked-lesson screen replaces the lesson body -->
 							<span class="lucide-lock-keyhole size-12 text-ink-gray-4 mb-4" />
 							<div class="text-lg font-semibold text-ink-gray-7 mb-2">
 								{{ __('Lezione bloccata') }}
@@ -266,6 +270,7 @@
 							@mouseup="toggleInlineMenu"
 							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
 						>
+							<!-- OSLMS-CUSTOM: sequential access: locked-quiz screen for a quiz block inside EditorJS content -->
 							<div
 								v-if="quizBlocked && contentHasQuiz"
 								class="flex flex-col items-center justify-center mt-8 mb-8 text-center"
@@ -286,6 +291,7 @@
 							v-else-if="!lessonBlocked"
 							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
 						>
+							<!-- OSLMS-CUSTOM: sequential access: locked-quiz screen for a legacy body/quiz_id lesson -->
 							<div
 								v-if="quizBlocked && lesson.data?.quiz_id"
 								class="flex flex-col items-center justify-center mt-8 mb-8 text-center"
@@ -317,6 +323,7 @@
 						"
 						class="mt-10 pb-20 pt-5 border-t px-5"
 					>
+						<!-- OSLMS-CUSTOM: Community/Discussions tab removed; only the students' Notes panel remains -->
 						<Notes
 							:lesson="lesson.data?.name"
 							v-model:notes="notes"
@@ -424,6 +431,7 @@ const plyrSources = ref([])
 const showInlineMenu = ref(false)
 const currentTab = ref(null)
 const completedLesson = ref(null)
+// OSLMS-CUSTOM: sequential lesson/quiz lock state, fed by the os_lms get_lesson override
 // Sequential access rules: `lesson_access` and `quiz_access` are computed
 // server-side by the os_lms override of `get_lesson`, out of the course
 // flags `enforce_lesson_order` and `enforce_quiz_on_completion`.
@@ -432,6 +440,7 @@ const blockedReason = ref('')
 const quizBlocked = ref(false)
 const quizBlockedReason = ref('')
 const settingsStore = useSettings()
+// OSLMS-CUSTOM: AI tutor context: the floating tutor knows which lesson is open
 const aiContext = useAiContext()
 let timerInterval = null
 
@@ -546,6 +555,7 @@ const setupLesson = (data) => {
 			},
 		})
 	}
+	// OSLMS-CUSTOM: AI tutor context: publish the current lesson to the tutor
 	if (data.name) aiContext.setLesson(data.name)
 	lessonProgress.value = data.membership?.progress
 	if (data.content) editor.value = renderEditor('editor', data.content)
@@ -584,6 +594,7 @@ const renderEditor = (holder, content) => {
 		data: sanitizeEditorJs(JSON.parse(content)),
 		readOnly: true,
 		defaultBlock: 'embed',
+		// OSLMS-CUSTOM: translated EditorJS UI labels
 		i18n: getEditorI18n(),
 	})
 }
@@ -595,6 +606,7 @@ const renderEditor = (holder, content) => {
 let progressSubmitting = false
 const markProgress = () => {
 	if (progressSubmitting) return
+	// OSLMS-CUSTOM: sequential access: a locked lesson is never marked complete
 	// A lesson locked by the sequential-access rule must not be marked
 	// complete: the dwell timer keeps running behind the locked screen and
 	// would otherwise unlock the next lesson without the content being read.
@@ -651,6 +663,7 @@ const notes = createListResource({
 		lesson: lesson.data?.name,
 		member: user.data?.name,
 	},
+	// OSLMS-CUSTOM: text_offset lets a highlight land on the selected occurrence
 	fields: ['name', 'color', 'highlighted_text', 'text_offset', 'note'],
 	cache: ['notes', lesson.data?.name, user.data?.name],
 	onSuccess(data) {
@@ -732,6 +745,7 @@ const resetLessonState = (newChapterNumber, newLessonNumber) => {
 		chapter: newChapterNumber,
 		lesson: newLessonNumber,
 	})
+	// OSLMS-CUSTOM: sequential access: reset lock state when switching lesson
 	lessonBlocked.value = false
 	blockedReason.value = ''
 	quizBlocked.value = false
@@ -787,6 +801,7 @@ const cleanYouTubeUrl = (url) => {
 	return urlObj.toString()
 }
 
+// OSLMS-CUSTOM: sequential access: read lesson_access/quiz_access from get_lesson
 const applyAccessFromLesson = (data) => {
 	const lessonAccess = data?.lesson_access || { allowed: true }
 	const quizAccess = data?.quiz_access || { allowed: true }
@@ -881,6 +896,7 @@ const getPlyrSource = async () => {
 				})
 				player.on('error', (event) => {
 					if (gen !== fallbackGeneration) return
+					// OSLMS-CUSTOM: a non-fatal player error (e.g. Vimeo PrivacyError) must not disable video enforcement
 					// `player.ready` also covers a ready event that fired before this
 					// listener was attached, which readyFired alone would miss.
 					if (
@@ -1097,6 +1113,7 @@ const showVideoStats = () => {
 	showStatsDialog.value = true
 }
 
+// OSLMS-CUSTOM: hide Zen Mode where the Fullscreen API is missing (iOS)
 // Zen mode is driven by the browser Fullscreen API, which iPhone does not
 // expose for non-video elements (every iOS browser runs on WebKit). Feature-
 // detect it so the Zen affordance is hidden where it can't work — a dead button
@@ -1141,6 +1158,7 @@ const updateNotes = () => {
 	notes.reload()
 }
 
+// OSLMS-CUSTOM: Community tab never added; students get Notes only, admins no tab
 watch(allowDiscussions, () => {
 	// Community/discussions are hidden for all users and roles; only the
 	// students' Notes tab remains in the lesson view.
@@ -1231,6 +1249,7 @@ usePageMeta(() => {
 	max-width: unset;
 }
 
+/* OSLMS-CUSTOM: wrap long unbreakable strings in lesson content */
 /* Long unbreakable strings (URLs, long single words) in lesson text must wrap
    instead of overflowing the column and shoving the whole page sideways — the
    cause of a lesson looking "shifted right" in courses whose content holds such

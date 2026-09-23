@@ -16,6 +16,7 @@ import { onMounted, ref, nextTick, computed } from 'vue'
 const fileUploader = ref(null)
 const emit = defineEmits(['fileUploaded'])
 
+// OSLMS-CUSTOM: accept documents and archives in lesson uploads, not only media + PDF
 // Media types get an inline player/preview (see the isVideo/isAudio/isImage +
 // PDF branches in utils/upload.js). Everything else is offered as a download
 // link via FileBlock, so we allow a broader set of document/archive types.
@@ -79,6 +80,7 @@ const props = defineProps({
 	},
 })
 
+// OSLMS-CUSTOM: upload unattached while the lesson has no docname yet (417 on newer Frappe)
 const uploadArgs = computed(() => {
 	// Only attach the file to the lesson record once it exists. A brand-new,
 	// unsaved lesson has no docname yet; sending doctype without a valid docname
@@ -104,6 +106,7 @@ onMounted(async () => {
 })
 
 const addFile = (file) => {
+	// OSLMS-CUSTOM: derive file_type from the extension when Frappe omits it
 	// Frappe doesn't populate file_type for every extension (e.g. some archive
 	// types). Fall back to the extension from the file name/URL so the block
 	// always has a valid type for validation and rendering.
@@ -115,6 +118,7 @@ const addFile = (file) => {
 	})
 }
 
+// OSLMS-CUSTOM: toast upload failures instead of leaving an empty block
 // Surface upload failures (e.g. file too large for the site's max_file_size)
 // instead of leaving the block silently empty and invalid on reload.
 const onFailure = (error) => {
@@ -139,6 +143,7 @@ const onFailure = (error) => {
 
 const validateFile = (file) => {
 	let extension = file.name.split('.').pop().toLowerCase()
+	// OSLMS-CUSTOM: validate against the broadened extension list, translated message
 	if (!allowedExtensions.includes(extension)) {
 		return __('File type .{0} is not supported.').format(extension)
 	}

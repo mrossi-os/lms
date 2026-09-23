@@ -1,5 +1,6 @@
 <template>
 	<div class="py-10">
+		<!-- OSLMS-CUSTOM: narrow mobile padding and transparent title background (style tweaks) -->
 		<div class="space-y-6 px-3 sm:mx-10 sm:px-20">
 			<!-- Inline-editable lesson title -->
 			<textarea
@@ -11,6 +12,7 @@
 				@input="onTitleInput"
 			/>
 
+			<!-- OSLMS-CUSTOM: OsLessonForm replaces the upstream include_in_preview switch (adds duration, tags, AI ingestion) -->
 			<!-- Custom os_lms settings panel: include_in_preview, duration,
 			     tags and AI ingestion controls. -->
 			<OsLessonForm :lesson="lesson" @dirty="markDirty" />
@@ -76,12 +78,14 @@ import {
 	saveShortcut,
 } from '@/composables/useKeyboardShortcuts'
 import { useAiContext } from '@/stores/aiContext'
+// OSLMS-CUSTOM: os_lms lesson settings panel
 import OsLessonForm from '@/oslms/pages/OsLessonForm.vue'
 
 const editor = ref(null)
 const instructorEditor = ref(null)
 const user = inject('$user')
 const titleRef = ref(null)
+// OSLMS-CUSTOM: AI tutor context: the floating tutor knows which lesson is being edited
 const aiContext = useAiContext()
 
 function onTitleInput() {
@@ -206,6 +210,7 @@ const lessonDetails = createResource({
 			lesson.include_in_preview = data?.lesson?.include_in_preview
 				? true
 				: false
+			// OSLMS-CUSTOM: AI tutor context: publish the edited lesson to the tutor
 			if (data.lesson.name) aiContext.setLesson(data.lesson.name)
 			contentUploadContext.docname = data.lesson.name
 			instructorUploadContext.docname = data.lesson.name
@@ -289,6 +294,7 @@ const newLessonResource = createResource({
 	},
 })
 
+// OSLMS-CUSTOM: save only editable fields so autosave never overwrites AI index_status/indexed_at
 // Fields the editor is allowed to write. Server-managed fields like
 // index_status/indexed_at (AI ingestion) must NOT be echoed back, otherwise
 // every save/autosave overwrites them with the values loaded at form open.

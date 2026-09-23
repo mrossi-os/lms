@@ -1,6 +1,7 @@
 <template>
 	<div class="flex flex-col h-full">
 		<div class="bg-surface-gray-1 px-5 py-5 border-b">
+			<!-- OSLMS-CUSTOM: break-words: a long course title must not overflow the sidebar -->
 			<div class="text-xl-semibold text-ink-gray-9 leading-snug break-words">
 				{{ courseTitle }}
 			</div>
@@ -19,6 +20,7 @@
 		</div>
 
 		<div class="flex-1 overflow-y-auto px-2 py-3">
+			<!-- OSLMS-CUSTOM: key includes the active-lesson flag so the chapter entered via Next re-opens -->
 			<Disclosure
 				v-for="chapter in outline.data || []"
 				:key="`${chapter.name}:${chapterHasActiveLesson(chapter)}`"
@@ -189,6 +191,7 @@ function chapterDefaultOpen(chapter) {
 	)
 }
 
+// OSLMS-CUSTOM: auto-expand the chapter that holds the active lesson
 // Whether this chapter holds the currently selected lesson. Used in the
 // Disclosure :key so that the chapter which *becomes* active on navigation
 // re-mounts and re-applies defaultOpen — headlessui's defaultOpen is only read

@@ -16,6 +16,7 @@ import { Underline } from '@/utils/inline/Underline'
 import { Strikethrough } from '@/utils/inline/Strikethrough'
 import { AlignLeft, AlignCenter, AlignRight } from '@/utils/inline/TextAlign'
 import { Color } from '@/utils/inline/Color'
+// OSLMS-CUSTOM: Vimeo share links pasted in lessons are resolved server-side
 import { VIMEO_SHARE_RE } from '@/utils/video'
 import {
 	clipboardTunes,
@@ -25,8 +26,10 @@ import dayjs from '@/utils/dayjs'
 import Embed from '@editorjs/embed'
 import SimpleImage from '@editorjs/simple-image'
 import Table from '@editorjs/table'
+// OSLMS-CUSTOM: editorjs-color-picker text colour tool (custom dependency)
 import ColorPicker from 'editorjs-color-picker'
 
+// OSLMS-CUSTOM: colour picker adapted to behave as an inline tool
 class ColorPickerInline extends ColorPicker {
 	checkState() {
 		return false
@@ -182,6 +185,7 @@ const INLINE_TOOLBAR_ORDER = [
 	'color',
 ]
 
+// OSLMS-CUSTOM: embed tool that resolves Vimeo share links via os_lms resolve_vimeo_share
 // Vimeo's "Copy link" button yields vimeo.com/share/<uuid>, which holds no video
 // id: it doesn't redirect and Vimeo's own oEmbed API rejects it, so only the
 // backend can resolve it (by reading the share page — the browser can't, no
@@ -251,6 +255,7 @@ class VideoEmbed extends Embed {
 export function getEditorTools(isInstructorEditor = false, uploadContext = {}) {
 	return {
 		header: {
+			// OSLMS-CUSTOM: headings get the same inline toolbar as paragraphs (colour, alignment)
 			class: Header,
 			inlineToolbar: INLINE_TOOLBAR_ORDER,
 			config: {
@@ -306,6 +311,7 @@ export function getEditorTools(isInstructorEditor = false, uploadContext = {}) {
 		copyBlock: clipboardTunes.copyBlock,
 		cutBlock: clipboardTunes.cutBlock,
 		pasteBlock: clipboardTunes.pasteBlock,
+		// OSLMS-CUSTOM: register the editorjs-color-picker tool
 		ColorPicker: {
 			class: ColorPickerInline,
 			config: {
@@ -329,6 +335,7 @@ export function getEditorTools(isInstructorEditor = false, uploadContext = {}) {
 			},
 		},
 		embed: {
+			// OSLMS-CUSTOM: VideoEmbed instead of the stock Embed (Vimeo share links)
 			class: VideoEmbed,
 			inlineToolbar: false,
 			config: {
@@ -347,6 +354,7 @@ export function getEditorTools(isInstructorEditor = false, uploadContext = {}) {
 						html: `<div class="video-player" data-plyr-provider="vimeo"></div>`,
 						id: ([id, hash]) => (hash ? `${id}?h=${hash}` : id),
 					},
+					// OSLMS-CUSTOM: vimeoShare service only catches the paste; never saved
 					// A share link carries no video id, so this service only exists to
 					// catch the paste — VideoEmbed resolves it and rewrites the block
 					// as a plain `vimeo` one. It never survives in saved content.
@@ -428,6 +436,7 @@ export function getEditorTools(isInstructorEditor = false, uploadContext = {}) {
 	}
 }
 
+// OSLMS-CUSTOM: EditorJS UI labels routed through __() (Italian UI)
 // EditorJS only renders its block menu, inline toolbar and block tunes in
 // English unless given an i18n dictionary. We route every label through __()
 // so the editor follows the user's language (translations live in the app
@@ -849,6 +858,7 @@ const getSidebarItems = (forMobile = false) => {
 					],
 				},
 				{
+					// OSLMS-CUSTOM: sidebar entry for the os_lms student statistics export (can_export_stats)
 					label: 'Export Statistics',
 					icon: 'Download',
 					to: 'StudentStatsExport',
@@ -930,6 +940,7 @@ export function singularize(word) {
 	)
 }
 
+// OSLMS-CUSTOM: multi-word list search: each word matched independently
 /**
  * Builds a `["like", ...]` filter value for a free-text search box.
  *
@@ -1007,6 +1018,7 @@ const sanitizeJSON = (node) => {
 		typeof node === 'string' &&
 		(node.includes('<') || node.includes('>'))
 	) {
+		// OSLMS-CUSTOM: keep <lms-inline-color> when sanitizing EditorJS content on load
 		// Whitelist the Color inline tool's custom element; DOMPurify's default
 		// config drops unknown tags, which would strip the text/highlight colors
 		// (and the tag) every time content is loaded or rendered.
@@ -1026,6 +1038,7 @@ export const sanitizeEditorJs = (data) => {
 }
 
 export const sanitizeHTML = (text) => {
+	// OSLMS-CUSTOM: keep iframes (YouTube embeds) and video tags through sanitizeHTML
 	const iframes = {}
 
 	const textWithoutIframes = text.replace(
@@ -1098,6 +1111,7 @@ export const sanitizeHTML = (text) => {
 		ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder'],
 	})
 
+	// OSLMS-CUSTOM: re-insert the iframes extracted before sanitizing
 	Object.entries(iframes).forEach(([id, iframe]) => {
 		console.log('--- replacing placeholder:', id)
 		sanitized = sanitized.replace(
@@ -1126,6 +1140,7 @@ export const canCreateCourse = () => {
 // EditorJS/frappe-ui import chain. Re-exported here for existing callers.
 export { enablePlyr } from './plyr'
 
+// OSLMS-CUSTOM: getVideoEmbedURL re-export used by os_lms CourseHero
 // Preview-video URL handling lives in ./video (a lean module with no heavy
 // imports) so it can be shared by the preview components and unit-tested on its
 // own. Re-exported here for existing callers.
@@ -1216,6 +1231,7 @@ const getRootNode = (selector = '#editor') => {
 	return root
 }
 
+// OSLMS-CUSTOM: highlights resolved by character offset, not first text match
 /*
  * A highlight is stored as its text plus the character offset of that text
  * within the lesson body, because the text alone is ambiguous: searching for
@@ -1280,6 +1296,7 @@ const getRootText = (root) => {
 	return text
 }
 
+// OSLMS-CUSTOM: text-search fallback picks the occurrence closest to the offset
 /*
  * Search fallback, used for notes saved before the offset existed and when the
  * offset no longer points at the highlighted text (the lesson was edited). An
@@ -1322,6 +1339,7 @@ const createHighlightSpan = (color, name, scrollIntoView) => {
 	return span
 }
 
+// OSLMS-CUSTOM: multi-node selections wrapped one span per text node
 // One span per segment: surroundContents() throws when a range crosses element
 // boundaries, so a multi-node selection is wrapped piece by piece. Wrapping a
 // segment splits its own text node only, leaving the other segments intact.
@@ -1350,6 +1368,7 @@ export const highlightText = (note, scrollIntoView = false) => {
 	const root = getRootNode()
 	if (!root) return
 
+	// OSLMS-CUSTOM: skip notes already drawn (no nested spans)
 	// The note list is reloaded after every change and re-highlights everything;
 	// without this a second span would be nested inside the existing one.
 	if (findHighlightSpans(note.name).length) return
@@ -1383,6 +1402,7 @@ export const highlightText = (note, scrollIntoView = false) => {
 	}
 }
 
+// OSLMS-CUSTOM: removeHighlight unwraps the spans of a deleted note
 // Unwrap instead of just clearing the background: a leftover span would make
 // the same text impossible to highlight again without nesting.
 export const removeHighlight = (name) => {

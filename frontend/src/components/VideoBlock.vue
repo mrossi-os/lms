@@ -20,6 +20,7 @@
 			ref="videoContainer"
 			class="video-block relative group"
 		>
+			<!-- OSLMS-CUSTOM: dead @timeupdate binding removed: updateTime no longer exists (time tracked via videoRef.ontimeupdate) -->
 			<video
 				@ended="videoEnded"
 				@click="togglePlay"

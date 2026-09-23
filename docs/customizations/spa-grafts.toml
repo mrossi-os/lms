@@ -1886,3 +1886,783 @@ su un sito quando si segnala un problema. Il numero si aggiorna, l'elemento deve
   [[entries.sites]]
   file = "frontend/src/components/Sidebar/AppSidebar.vue"
   anchor = '<span id="versionApp" class="text-xs text-ink-gray-5">'
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 prima del merge di v2.59.0 — lezioni, editor e media
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 — gruppo "lessons-media" (pagina lezione, editor lezione,
+# upload e media, utils/index.js, index.css) prima del merge di v2.59.0
+# ---------------------------------------------------------------------------
+
+[[entries]]
+id = "lesson-sequential-access-lock"
+title = "Blocco sequenziale di lezioni e quiz nella pagina lezione"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Quando il corso ha attivi enforce_lesson_order o enforce_quiz_on_completion (impostazioni
+os_lms del corso, OsCourseSettings), lo studente non può aprire una lezione finché la
+precedente non è completata, né il quiz finché la lezione non è completata. I flag
+lesson_access e quiz_access li calcola l'override os_lms di get_lesson; la pagina mostra la
+schermata «Lezione bloccata» al posto del corpo, le due schermate «Quiz bloccato» (quiz
+dentro il contenuto EditorJS e quiz legacy body/quiz_id), disabilita i pulsanti Next e
+nasconde il pannello Note. markProgress non segna mai completa una lezione bloccata:
+altrimenti il timer di permanenza, che gira dietro la schermata di blocco, sbloccherebbe
+da solo la lezione successiva e il blocco diventerebbe decorativo. Già perso una volta
+con il merge upstream 1f5978236 (04/06/2026) e ripristinato in d88fc97f4: senza questo
+innesto i due interruttori restano configurabili ma non hanno alcun effetto. Le condizioni
+sono innestate sulle catene v-if esistenti (non un <template> che avvolge il corpo) per
+tenere piccola la superficie di conflitto. ATTENZIONE: v2.63.0 riscrive profondamente
+Lesson.vue; ricollocare schermate, guardie e pulsanti disabilitati nella nuova struttura."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "v-if=\"lessonBlocked\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "v-if=\"quizBlocked && contentHasQuiz\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "v-if=\"quizBlocked && lesson.data?.quiz_id\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "if (lessonBlocked.value) return"
+  symbol = "markProgress"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "const applyAccessFromLesson = (data) => {"
+  symbol = "applyAccessFromLesson"
+
+[[entries]]
+id = "lesson-instructors-hidden-from-students"
+title = "Istruttori nascosti agli studenti nell'intestazione della lezione"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Stessa regola di course-instructors-hidden-from-students (pagina corso), applicata
+all'intestazione della lezione: avatar e nomi degli istruttori li vedono solo moderatori e
+istruttori della lezione (isAdmin), non gli studenti. Introdotta con lo stesso commit
+1cf84e356; se l'upstream riscrive l'intestazione, rimettere il gate isAdmin sulla riga
+degli istruttori."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "v-if=\"!zenModeEnabled && isAdmin\""
+
+  [entries.visibility]
+  subject = "istruttori nell'intestazione della lezione"
+  allow = ["Moderator", "course-instructor"]
+  deny = ["Student", "Guest"]
+
+[[entries]]
+id = "lesson-edit-button-editor-hash"
+title = "Il pulsante Modifica della lezione apre la scheda Editor"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Gemella di course-outline-editor-hash: il pulsante Modifica nella pagina lezione porta al
+corso con hash '#editor', che è l'id della scheda Editor; l'upstream usava '#course editor',
+che non corrisponde a nessuna scheda, e l'amministratore finiva sull'anteprima del corso
+invece che nell'editor della lezione. Se l'upstream corregge da sé l'hash in modo
+equivalente, accettare la sua versione e marcare la voce come accepted-drift."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "hash: '#editor',"
+
+[[entries]]
+id = "lesson-discussions-removed"
+title = "Discussioni/Community rimosse dalla lezione; restano solo le Note dello studente"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il cliente non usa la community: la scheda Community (Discussions) e il pulsante delle
+domande in modalità Zen sono rimossi per tutti i ruoli. Sotto la lezione resta solo il
+pannello Note, visibile allo studente iscritto; moderatori e istruttori non vedono nessuna
+scheda (currentTab resta null). Rimossi anche TabButtons e l'import di Discussions.
+ATTENZIONE al merge di v2.59.0: l'upstream cambia :buttons in :options proprio sui
+TabButtons che abbiamo tolto; mantenere la rimozione, non reintrodurre il componente."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "currentTab === 'Notes'"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "// Community/discussions are hidden for all users and roles; only the"
+
+  [entries.visibility]
+  subject = "pannello Note sotto la lezione"
+  allow = ["Student"]
+  deny = ["Moderator", "course-instructor"]
+
+[[entries]]
+id = "lesson-ai-tutor-context"
+title = "Il tutor AI conosce la lezione aperta o in modifica"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il tutor AI os_lms (pulsanti flottanti AiFixedButtons) risponde nel contesto della lezione
+corrente: la pagina lezione e l'editor della lezione pubblicano il nome della lezione nello
+store aiContext appena caricata. Senza, il tutor riceve solo il corso e perde il contesto
+della lezione, sia per lo studente sia per l'autore."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "if (data.name) aiContext.setLesson(data.name)"
+  symbol = "setupLesson"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/LessonForm.vue"
+  anchor = "if (data.lesson.name) aiContext.setLesson(data.lesson.name)"
+
+[[entries]]
+id = "lesson-zen-mode-fullscreen-only"
+title = "Modalità Zen nascosta dove manca la Fullscreen API (iPhone)"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La modalità Zen usa la Fullscreen API, che su iPhone (tutti i browser iOS sono WebKit) non
+esiste per elementi non video: il pulsante non faceva nulla. canGoZen() rileva il supporto
+e nasconde il comando dove non può funzionare (intestazione, controlli in lezione,
+anteprima del CourseEditor); resta su desktop, Android e iPad."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "if (!fullscreenSupported) return false"
+  symbol = "canGoZen"
+
+[[entries]]
+id = "lesson-video-error-keeps-enforcement"
+title = "Un errore non fatale del player non disattiva l'obbligo di vedere il video"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Con enforce_video_completion attivo, un errore del player fa ripiegare il completamento
+sul timer di permanenza. Plyr inoltra però anche errori non legati alla riproduzione: Vimeo
+risponde con PrivacyError alla chiamata di metadati getVideoUrl() sui video non in elenco,
+mentre il video funziona. Il ripiego scatta solo se il player non è mai diventato pronto e
+l'errore non nomina il metodo SDK da cui arriva (shouldEngageFallbackOnPlayerError in
+utils/lessonProgress.ts); il timeout di 15 s senza ready resta invariato. Senza, un video
+Vimeo non in elenco disattiva silenziosamente l'obbligo di completamento."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "!shouldEngageFallbackOnPlayerError({"
+  symbol = "getPlyrSource"
+
+  [entries.checks]
+  unit = "frontend/src/tests/lessonProgress.test.ts"
+
+[[entries]]
+id = "lesson-highlight-offset"
+title = "Evidenziazioni dello studente sull'occorrenza selezionata"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Un'evidenziazione salvata solo come testo si ripristinava sempre sulla prima occorrenza
+(evidenziando il terzo «con» si illuminava il primo). Ora la nota salva anche text_offset
+(campo custom os_lms su LMS Lesson Note, creato in apps/os_lms/os_lms/setup.py) e il
+ripristino usa l'offset, con la ricerca testuale come ripiego per le note vecchie che
+sceglie l'occorrenza più vicina all'offset. Nello stesso percorso: uno span per nodo di
+testo (surroundContents falliva sulle selezioni che attraversano elementi), niente span
+annidati quando la lista note si ricarica, il menu abbina la nota per testo+offset (prima
+cancellava la nota sbagliata) e la rimozione scarta gli span invece di azzerare lo sfondo.
+ATTENZIONE al merge di v2.59.0: l'upstream elimina frontend/src/utils/frappe-ui-colors.json,
+l'import colorsJSON e getColor da utils/index.js e passa createHighlightSpan e il menu a
+var(--<colore>-200/400); utils/index.js importa ancora quel JSON, quindi accettare la
+rimozione upstream e togliere getColor dal nostro import multiriga in InlineLessonMenu,
+tenendo getRangeOffset e removeHighlight."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "'text_offset', 'note'"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Notes/InlineLessonMenu.vue"
+  anchor = "selectionOffset.value = getRangeOffset(range)"
+  symbol = "updateMenuPosition"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Notes/InlineLessonMenu.vue"
+  anchor = "const noteForSelection = () => {"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Notes/InlineLessonMenu.vue"
+  anchor = "removeHighlight(notesToDelete.name)"
+  symbol = "deleteHighlight"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = "export const getRangeOffset = (range, selector = '#editor') => {"
+  symbol = "getRangeOffset"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = "findSegmentsAtOffset(root, note.text_offset, phrase) ||"
+  symbol = "highlightText"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = "export const removeHighlight = (name) => {"
+  symbol = "removeHighlight"
+
+  [entries.checks]
+  unit = "frontend/src/tests/lessonHighlight.test.ts"
+
+[[entries]]
+id = "lesson-highlight-menu-ink"
+title = "Ritocco di stile: etichette del menu evidenziazione leggibili nel tema"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il menu che compare selezionando testo nella lezione non aveva un colore di inchiostro:
+nomi dei colori e azioni restavano neri e ignoravano il tema (illeggibili in scuro).
+text-ink-gray-9 sul contenitore li fa ereditare; l'intestazione «Highlight» mantiene il
+suo text-ink-gray-5."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Notes/InlineLessonMenu.vue"
+  anchor = "class=\"text-sm text-ink-gray-9 absolute bg-surface-elevation-2 border rounded-md z-10 w-44\""
+
+[[entries]]
+id = "lesson-long-strings-wrap"
+title = "Stringhe lunghe nella lezione vanno a capo invece di spostare la pagina"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Una lezione con un token lungo senza spazi (per esempio un URL Cloudflare/Bunny incollato
+come testo) sforava la colonna e spingeva tutta la pagina a destra. overflow-wrap sul
+contenuto (.ProseMirror e .ce-paragraph, per battere i default di EditorJS), min-w-0 sulle
+colonne della griglia 70/30 e sul contenitore del titolo, break-words sul titolo della
+lezione e sul titolo del corso nella barra laterale. ATTENZIONE al merge di v2.59.0:
+l'upstream cambia la stessa riga del titolo in Lesson.vue (text-5xl-semibold ->
+text-4xl-semibold) e del titolo corso in StudentLessonSidebar (text-xl-semibold ->
+text-lg-semibold): prendere la classe upstream e riaggiungere break-words."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "<div class=\"text-5xl-semibold text-ink-gray-9 break-words\">"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "overflow-wrap: break-word;"
+
+  [[entries.sites]]
+  file = "frontend/src/components/StudentLessonSidebar.vue"
+  anchor = "text-ink-gray-9 leading-snug break-words"
+
+[[entries]]
+id = "lesson-sidebar-open-active-chapter"
+title = "La barra laterale apre il capitolo della lezione attiva"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il Disclosure di headlessui legge defaultOpen solo al mount e la barra laterale non si
+rimonta tra una lezione e l'altra: passando con «Next» a una lezione del capitolo
+successivo, quel capitolo restava chiuso. La chiave del Disclosure include se il capitolo
+contiene la lezione attiva, così il capitolo che diventa attivo si rimonta e si apre,
+mentre gli altri conservano lo stato scelto a mano. ATTENZIONE: v2.63.0 riscrive
+StudentLessonSidebar; verificare che la nuova versione apra da sé il capitolo attivo,
+altrimenti reinnestare la chiave."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/StudentLessonSidebar.vue"
+  anchor = ':key="`${chapter.name}:${chapterHasActiveLesson(chapter)}`"'
+
+  [[entries.sites]]
+  file = "frontend/src/components/StudentLessonSidebar.vue"
+  anchor = "function chapterHasActiveLesson(chapter) {"
+  symbol = "chapterHasActiveLesson"
+
+[[entries]]
+id = "editor-i18n-labels"
+title = "Etichette dell'editor EditorJS tradotte"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+EditorJS mostra menu dei blocchi, barra inline e block tune in inglese se non riceve un
+dizionario i18n. getEditorI18n() passa ogni etichetta per __() così l'editor segue la
+lingua dell'utente (traduzioni in lms/translations/it.csv); le chiavi devono restare le
+stringhe inglesi esatte che EditorJS e i suoi tool cercano. La usano la pagina lezione
+(renderer in sola lettura) e BlockEditor.vue (editor dell'autore, file fuori da questo
+gruppo)."""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = "export function getEditorI18n() {"
+  symbol = "getEditorI18n"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "i18n: getEditorI18n(),"
+  symbol = "renderEditor"
+
+[[entries]]
+id = "lesson-form-os-settings-panel"
+title = "Pannello impostazioni os_lms nell'editor della lezione"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Al posto dell'interruttore upstream «Include in preview» l'editor della lezione monta
+OsLessonForm, che raccoglie le impostazioni volute dal cliente: include_in_preview, durata
+(usata per la durata del corso), tag della lezione e controlli dell'indicizzazione per il
+tutor AI. Se un merge riscrive LessonForm e lo perde, i campi restano nel database ma
+nessuno può più modificarli. ATTENZIONE: v2.63.0 riscrive LessonForm; rimontare il
+componente nella nuova struttura."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/LessonForm.vue"
+  anchor = "<OsLessonForm :lesson=\"lesson\" @dirty=\"markDirty\" />"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/LessonForm.vue"
+  anchor = "import OsLessonForm from '@/oslms/pages/OsLessonForm.vue'"
+
+[[entries]]
+id = "lesson-form-editable-fields"
+title = "Il salvataggio della lezione scrive solo i campi modificabili"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+L'upstream salvava con set_value l'intero oggetto lesson caricato all'apertura; così ogni
+salvataggio o autosave riscriveva anche i campi gestiti dal server, in particolare
+index_status e indexed_at dell'indicizzazione AI (RAG os_lms), riportandoli ai valori
+vecchi. Ora si inviano solo i campi dell'elenco EDITABLE_LESSON_FIELDS (che include i
+campi custom duration e tags). Un nuovo campo modificabile dall'editor va aggiunto
+all'elenco, altrimenti non si salva. ATTENZIONE: v2.63.0 dichiara «fix(lesson)!: stop
+lesson content being destroyed on save» e riscrive il percorso di salvataggio: verificare
+che la nuova versione non reinvii i campi del server e reinnestare il filtro se serve."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/LessonForm.vue"
+  anchor = "for (const key of EDITABLE_LESSON_FIELDS) {"
+
+[[entries]]
+id = "lesson-form-style-tweaks"
+title = "Ritocchi di stile nell'editor della lezione"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Su telefono l'editor perde il margine orizzontale e il padding di 20 unità (resta px-3),
+così non è schiacciato in una colonna stretta (commit a1437f5fa). Il titolo ha
+!bg-transparent (probabilmente per non ereditare lo sfondo dei campi dal tema Elite) e
+le note dell'istruttore un mb-2. ATTENZIONE al merge di v2.59.0: l'upstream cambia la
+stessa riga di classi del titolo (text-3xl -> text-2xl): prendere la sua e riaggiungere
+!bg-transparent."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/LessonForm.vue"
+  anchor = "class=\"space-y-6 px-3 sm:mx-10 sm:px-20\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/LessonForm.vue"
+  anchor = "!bg-transparent"
+
+[[entries]]
+id = "upload-documents-and-archives"
+title = "Documenti e archivi caricabili nelle lezioni"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Gli autori allegano alle lezioni anche documenti e archivi (doc/xls/ppt/odt, csv, txt,
+zip, rar, 7z…), non solo immagini, video, audio e PDF; prima tutto il resto veniva
+rifiutato o mostrato come immagine rotta. I file non multimediali diventano una scheda di
+download (FileBlock). Quando Frappe non restituisce file_type (alcuni archivi) il tipo si
+ricava dall'estensione, sia all'upload sia al caricamento, e il blocco resta valido
+invece di sparire al salvataggio. Gli errori di upload (per esempio file oltre
+max_file_size) compaiono in un toast invece di lasciare il blocco vuoto."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/UploadPlugin.vue"
+  anchor = ":fileTypes=\"acceptedFileTypes\""
+
+  [[entries.sites]]
+  file = "frontend/src/components/UploadPlugin.vue"
+  anchor = "const documentExtensions = ["
+
+  [[entries.sites]]
+  file = "frontend/src/components/UploadPlugin.vue"
+  anchor = "file_type: file.file_type || extension,"
+  symbol = "addFile"
+
+  [[entries.sites]]
+  file = "frontend/src/components/UploadPlugin.vue"
+  anchor = "const onFailure = (error) => {"
+  symbol = "onFailure"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/upload.js"
+  anchor = "const app = createApp(FileBlock, {"
+  symbol = "Upload.renderFile"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/upload.js"
+  anchor = "if (!savedData || !savedData.file_url) {"
+  symbol = "Upload.validate"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/upload.js"
+  anchor = "getFileType(file) {"
+  symbol = "Upload.getFileType"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/upload.js"
+  anchor = "isImage(type) {"
+  symbol = "Upload.isImage"
+
+[[entries]]
+id = "upload-unattached-new-lesson"
+title = "Upload senza allegato finché la lezione non è salvata"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Una lezione nuova non ha ancora un docname; inviare doctype senza un docname valido fa
+rifiutare l'upload da Frappe recente (417 «Attached To Name must be a string or an
+integer»). Finché il docname manca il file si carica senza allegarlo. ATTENZIONE al merge
+di v2.59.0: l'upstream risolve lo stesso problema nello stesso computed (nuova prop
+uploadContext, contesti reattivi in LessonForm e upload.js che passa uploadContext);
+accettare la versione upstream, tenere intorno le nostre aggiunte di
+upload-documents-and-archives e marcare questa voce come accepted-drift."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/UploadPlugin.vue"
+  anchor = "if (props.docname) {"
+  symbol = "uploadArgs"
+
+[[entries]]
+id = "upload-pdf-block-mobile"
+title = "PDF delle lezioni leggibili su mobile"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+I browser mobili non mostrano un PDF in un iframe (Chrome Android mostra un segnaposto di
+download, Safari iOS una prima pagina statica). I blocchi PDF caricati nella lezione
+passano quindi per PdfBlock, che sotto i 640px mostra una scheda che apre il file in una
+nuova scheda e su desktop tiene il frame incorporato. Parte della stessa correzione di
+lesson-pdf-inline-filename (nome del file nel Content-Disposition); PdfBlock si usa anche
+in LessonContent.vue per le lezioni markdown."""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/upload.js"
+  anchor = "const app = createApp(PdfBlock, {"
+  symbol = "Upload.renderFile"
+
+  [entries.checks]
+  unit = "frontend/src/tests/pdfBlock.test.ts"
+
+[[entries]]
+id = "upload-toolbox-icon-theme"
+title = "Ritocco di stile: icona Upload dell'editor segue il tema"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+L'icona del tool Upload nel menu dei blocchi era nera fissa, invisibile nel tema scuro;
+con currentColor segue il colore del testo del menu. Commit «fix color» (75ded9ac6), il
+motivo è dedotto dal codice."""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/upload.js"
+  anchor = "color: 'currentColor',"
+  symbol = "Upload.toolbox"
+
+[[entries]]
+id = "video-block-dead-timeupdate"
+title = "Rimosso il binding @timeupdate orfano dal VideoBlock"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il template legava @timeupdate="updateTime" a una funzione che non esiste più (il player
+traccia il tempo con videoRef.ontimeupdate): il gestore era un no-op che generava un
+avviso di Vue. La personalizzazione consiste nella rimozione della riga, quindi l'ancora è
+il commento. Se l'upstream toglie o ridefinisce da sé il binding, marcare la voce come
+accepted-drift."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/VideoBlock.vue"
+  anchor = "OSLMS-CUSTOM: dead @timeupdate binding removed"
+
+[[entries]]
+id = "editor-color-picker-tool"
+title = "Tool colore editorjs-color-picker nell'editor della lezione"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Aggiunto il 20/05/2026 (6804b7d1d) per colorare il testo delle lezioni con la dipendenza
+editorjs-color-picker, adattata a tool inline da ColorPickerInline. Da allora l'upstream ha
+introdotto il proprio tool colore (utils/inline/Color.ts, <lms-inline-color>) e il nostro
+«ColorPicker» è ancora registrato ma non compare in INLINE_TOOLBAR_ORDER: non è chiaro se
+serva ancora (per esempio per rendere correttamente contenuti colorati salvati con il
+vecchio tool) o sia codice morto. ATTENZIONE: v2.63.0 rimuove il tool colore inline
+upstream; decidere con il committente prima di quel merge se questo tool deve tornare lo
+strumento colore delle lezioni o essere eliminato. Resta anche la dipendenza in
+package.json (memoria frappeui_1_0_beta_merge_2026_06)."""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = "class ColorPickerInline extends ColorPicker {"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = "class: ColorPickerInline,"
+  symbol = "getEditorTools"
+
+[[entries]]
+id = "editor-inline-color-persist"
+title = "Il colore del testo delle lezioni sopravvive al caricamento"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il tool colore inline avvolge la selezione in <lms-inline-color style=…>; DOMPurify con la
+configurazione di default scarta i tag sconosciuti, quindi a ogni caricamento o
+visualizzazione il colore spariva. sanitizeJSON ammette quel tag. È la metà client della
+correzione: la metà server è l'allowlist EDITORJS_CUSTOM_TAGS in lms/lms/utils.py (memoria
+lesson_editorjs_custom_tags_server_strip). Lacuna nota: <lms-align> (allineamento) non è
+nell'ADD_TAGS client e si perde al caricamento. ATTENZIONE: v2.63.0 rimuove il tool colore
+inline (utils/inline/Color.ts) e riscrive il salvataggio del contenuto; i contenuti già
+salvati con <lms-inline-color> vanno comunque mostrati, decidere con il committente come."""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = "ADD_TAGS: ['lms-inline-color']"
+  symbol = "sanitizeJSON"
+
+[[entries]]
+id = "editor-header-inline-toolbar"
+title = "Barra inline anche sui titoli delle lezioni"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+I blocchi titolo dell'editor hanno la stessa barra inline dei paragrafi (colore,
+allineamento, grassetto…): senza la chiave inlineToolbar EditorJS non apre la barra sui
+titoli. Aggiunta nel merge-fix af167dc5a senza motivazione esplicita; il motivo è dedotto.
+v2.63.0 aggiunge da sé inlineToolbar: INLINE_TOOLBAR_ORDER sul nuovo tool Heading: in quel
+merge accettare la versione upstream e marcare la voce come accepted-drift."""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = "class: Header,\n\t\t\tinlineToolbar: INLINE_TOOLBAR_ORDER,"
+  symbol = "getEditorTools"
+
+[[entries]]
+id = "embed-vimeo-share-links"
+title = "Link di condivisione Vimeo incollati nelle lezioni"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il pulsante «Copia link» di Vimeo dà vimeo.com/share/<uuid>, che non contiene l'id del
+video, non reindirizza e che l'oEmbed di Vimeo rifiuta: gli autori ottenevano testo invece
+del video. Il servizio vimeoShare intercetta solo l'incolla; VideoEmbed (sottoclasse di
+Embed registrata come embed.class) chiede a os_lms resolve_vimeo_share la forma canonica e
+riscrive il blocco come un normale blocco vimeo; se la risoluzione fallisce lascia l'URL
+come testo con un toast. Invariante: vimeoShare non deve mai essere salvato (il backend
+legge source/embed dei blocchi vimeo per l'audio HLS e il trascrittore AI). Memoria
+vimeo_share_link_server_resolution; l'altra metà è VideoPreviewField.vue."""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = "class VideoEmbed extends Embed {"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = "class: VideoEmbed,"
+  symbol = "getEditorTools"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = "regex: VIMEO_SHARE_RE,"
+  symbol = "getEditorTools"
+
+  [entries.checks]
+  unit = "frontend/src/tests/vimeoShareEmbed.test.ts"
+
+[[entries]]
+id = "video-embed-url-reexport"
+title = "getVideoEmbedURL riesportata da utils per l'hero del corso"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+getVideoEmbedURL (YouTube e Vimeo, incluse le forme con hash) vive in utils/video.ts ed è
+riesportata da utils/index.js per i chiamanti esistenti, in particolare l'hero os_lms del
+corso (oslms/components/CourseHero.vue importa da '@/utils/'). Se il merge toglie la
+riesportazione, il video dell'hero smette di compilare/funzionare."""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = "export { getVideoEmbedURL } from './video'"
+
+[[entries]]
+id = "sidebar-export-statistics"
+title = "Voce «Export Statistics» nella barra laterale"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Voce di menu verso la pagina os_lms di esportazione delle statistiche studenti
+(StudentStatsExport, CSV/XLSX). Compare solo se get_user_info restituisce can_export_stats,
+calcolato da can_export_student_stats() in os_lms (System Manager e Gestore), e mai nel
+menu mobile."""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = "return !forMobile && userResource?.data?.can_export_stats"
+  symbol = "getSidebarItems"
+
+  [entries.visibility]
+  subject = "voce Export Statistics nella barra laterale"
+  allow = ["System Manager", "Gestore"]
+  deny = ["Moderator", "Docente", "Student", "Guest"]
+
+[[entries]]
+id = "search-like-filter-words"
+title = "Ricerca nelle liste per parole indipendenti"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La casella di ricerca delle liste costruiva un unico LIKE contiguo ("%Corso p%"): aggiungere
+una seconda parola azzerava i risultati. searchLikeFilter() unisce le parole con %
+("%Corso%p%"), così ogni parola aggiunta restringe invece di svuotare. La usano le liste di
+corsi, batch, programmi, quiz, assegnazioni ed esercizi di programmazione (file fuori da
+questo gruppo)."""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = "export function searchLikeFilter(text) {"
+  symbol = "searchLikeFilter"
+
+[[entries]]
+id = "sanitize-html-keep-iframes"
+title = "sanitizeHTML conserva i video YouTube incorporati"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nata per non perdere i video YouTube incorporati nella descrizione del corso (commit
+514f89cf0): sanitizeHTML estrae gli iframe prima di DOMPurify e li reinserisce dopo, e
+ammette tag video/source/div con i relativi attributi. La usano i moduli che ripuliscono i
+testi (nuovo corso, profilo, assegnazioni, quiz, lavori, programmi, esercizi) e il pannello
+notifiche. Nota di sicurezza da valutare col committente: gli iframe estratti tornano nel
+testo senza passare da DOMPurify, con tutti i loro attributi; restano anche due
+console.log di debug."""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = '/<iframe[\s\S]*?<\/iframe>/gi,'
+  symbol = "sanitizeHTML"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = "ADD_TAGS: ['iframe'],"
+  symbol = "sanitizeHTML"
+
+[[entries]]
+id = "theme-elite-import"
+title = "Tema Elite del cliente caricato sopra frappe-ui"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il foglio di stile globale importa il tema Elite del cliente (styles/theme/elite/main.css,
+nostro), che ridefinisce colori e componenti per l'identità visiva della piattaforma. Senza
+questo import l'intera SPA torna allo stile upstream. ATTENZIONE al merge di v2.59.0:
+l'upstream toglie la riga adiacente @import './styles/codemirror.css'; accettare la
+rimozione e tenere l'import del tema."""
+
+  [[entries.sites]]
+  file = "frontend/src/index.css"
+  anchor = "@import './styles/theme/elite/main.css';"
+
+[[entries]]
+id = "popover-above-floating-buttons"
+title = "Menu e popover sopra i pulsanti flottanti del tutor AI"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+I wrapper popper di Radix Vue (Dropdown, Select, Tooltip, Popover di frappe-ui) sono
+teletrasportati nel body senza z-index; gli elementi fissi locali, come i pulsanti
+flottanti del tutor AI e le modali a z-50, li coprivano. z-index 200 li porta sopra.
+Introdotto insieme al pulsante fisso del tutor AI (e1aa5e126)."""
+
+  [[entries.sites]]
+  file = "frontend/src/index.css"
+  anchor = "[data-radix-popper-content-wrapper] {"
+
+[[entries]]
+id = "prose-hr-table-colors"
+title = "Ritocchi di stile del testo ricco: separatori e bordi delle tabelle"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Nei testi ricchi (descrizioni) il separatore <hr> prende il colore del testo circostante
+invece del grigio di prose, così resta visibile dove il testo è bianco (per esempio su un
+banner scuro); i bordi delle tabelle ProseMirror usano --ink-gray-9 per essere visibili.
+Commit «fix: style» e «fix color»: dove si vedeva il problema è dedotto dal commento."""
+
+  [[entries.sites]]
+  file = "frontend/src/index.css"
+  anchor = ".ProseMirror hr {"
+
+  [[entries.sites]]
+  file = "frontend/src/index.css"
+  anchor = ".ProseMirror .tableWrapper table td,"
+
+[[entries]]
+id = "quiz-radio-classic"
+title = "Radio button classici nei quiz"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+@tailwindcss/forms ridisegna i radio selezionati come cerchio pieno colorato con puntino
+bianco; il cliente vuole l'aspetto classico (cerchio bianco con puntino nero) per le
+opzioni dei quiz e per ogni radio nativo, e nessun anello di focus. Le regole del plugin
+usano :where() (specificità 0), quindi bastano selettori semplici, con le varianti
+:hover/:focus perché il plugin riafferma lo sfondo in quegli stati. Memoria
+frappeui_tokens_raw_rgb_channels: accent-color è inerte con appearance:none."""
+
+  [[entries.sites]]
+  file = "frontend/src/index.css"
+  anchor = "input[type='radio']:checked:hover,"
+
+  [[entries.sites]]
+  file = "frontend/src/index.css"
+  anchor = "input[type='radio']:focus {"
+
+[[entries]]
+id = "image-upload-translations"
+title = "Ritocchi di traduzione nei selettori di immagine"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nei selettori di immagine di copertina (EditCoverImage) e Unsplash il segnaposto della
+ricerca e l'etichetta «Upload Image» passano per __(), così compaiono in italiano. In
+UnsplashImageBrowser si importa anche TextInput, usato nel template ma mai importato (il
+campo di ricerca non veniva risolto). v2.59.0 cambia l'API del Popover in cima agli stessi
+file, fuori dalle nostre righe."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/EditCoverImage.vue"
+  anchor = ":placeholder=\"__('search by keyword')\""
+
+  [[entries.sites]]
+  file = "frontend/src/components/UnsplashImageBrowser.vue"
+  anchor = ":placeholder=\"__('search by keyword')\""
+
+  [[entries.sites]]
+  file = "frontend/src/components/UnsplashImageBrowser.vue"
+  anchor = "import { Popover, FileUploader, Button, TextInput } from 'frappe-ui'"
+
+[[entries]]
+id = "video-statistics-tab-label"
+title = "Ritocco di traduzione: etichetta delle schede nelle statistiche video"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+L'etichetta delle schede «Video N» usava __() su un template literal, che non è
+traducibile (la chiave cambia a ogni indice); ora è __('Video {0}').format(n)."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/VideoStatistics.vue"
+  anchor = "label: __('Video {0}').format(index + 1),"

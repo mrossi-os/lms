@@ -7,6 +7,7 @@
 			insetInlineStart: left + 'px',
 		}"
 	>
+		<!-- OSLMS-CUSTOM: text-ink-gray-9 on the menu root so labels follow the theme -->
 		<div class="space-y-2 py-2">
 			<div class="text-xs-medium text-ink-gray-5 px-3">
 				{{ __('Highlight') }}
@@ -70,6 +71,7 @@ const top = ref(0)
 const left = ref(0)
 const currentSelection = ref<Selection | null>(null)
 const selectedText = ref('')
+// OSLMS-CUSTOM: offset of the selection, so a highlight targets the selected occurrence
 const selectionOffset = ref<number | null>(null)
 const emit = defineEmits<{
 	(e: 'updateNotes'): void
@@ -98,6 +100,7 @@ const updateMenuPosition = () => {
 		: null
 	if (!range) return
 
+	// OSLMS-CUSTOM: capture text and offset from the same Range
 	// Range.toString() rather than Selection.toString(): the latter can insert
 	// newlines at block boundaries, which would desync the text from the offset.
 	selectedText.value = range.toString()
@@ -122,6 +125,7 @@ const colors = computed(() => {
 	return ['Red', 'Blue', 'Green', 'Yellow', 'Purple']
 })
 
+// OSLMS-CUSTOM: match notes by text + offset (same word highlighted twice)
 // Match on the offset too, otherwise a second highlight of the same word would
 // resolve to the first note and delete the wrong one. Notes saved before the
 // offset existed carry 0 and can only be matched on their text.
@@ -146,6 +150,7 @@ const saveHighLight = (color: string) => {
 			lesson: props.lesson,
 			member: user?.data?.name,
 			highlighted_text: selectedText.value,
+			// OSLMS-CUSTOM: persist text_offset (os_lms custom field on LMS Lesson Note)
 			text_offset: offset ?? 0,
 			color: color,
 			name: '',
@@ -170,6 +175,7 @@ const deleteHighlight = () => {
 	notes.value?.delete.submit(notesToDelete.name, {
 		onSuccess() {
 			resetStates()
+			// OSLMS-CUSTOM: unwrap the spans instead of clearing their background
 			removeHighlight(notesToDelete.name)
 		},
 		onError(err: any) {

@@ -219,6 +219,7 @@ const embedURL = computed(() => {
 
 const tabs = computed(() => {
 	return Object.keys(statisticsData.value).map((source, index) => ({
+		// OSLMS-CUSTOM: translatable tab label with placeholder instead of a template literal
 		label: __('Video {0}').format(index + 1),
 		value: source,
 	}))
