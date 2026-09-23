@@ -2370,7 +2370,7 @@ in LessonContent.vue per le lezioni markdown."""
   anchor = "<PdfBlock :file=\"getId(block)\" :toolbar=\"false\" />"
 
   [entries.checks]
-  unit = "frontend/src/tests/pdfBlock.test.ts"
+  unit = "frontend/src/tests/pdfBlockMobile.test.ts"
 
 [[entries]]
 id = "upload-toolbox-icon-theme"
