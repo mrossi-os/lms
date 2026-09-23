@@ -13,8 +13,10 @@ import { FrappeUIProvider } from 'frappe-ui'
 import { Dialogs } from '@/utils/dialogs'
 import { computed, watch } from 'vue'
 import { useScreenSize } from './utils/composables'
+// OSLMS-CUSTOM: AI tutor course context store (os_lms)
 import { useAiContext } from '@/stores/aiContext'
 import { useSettings } from '@/stores/settings'
+// OSLMS-CUSTOM: theme is forced by the admin (Brand Customize), see watcher below
 import { applyTheme } from '@/utils/theme'
 import { useRouter, useRoute } from 'vue-router'
 import DesktopLayout from './components/Layouts/DesktopLayout.vue'
@@ -30,6 +32,7 @@ const aiContext = useAiContext()
 const { settings } = useSettings()
 
 // Backend-driven theme: LMSA Settings → theme overrides any local preference.
+// OSLMS-CUSTOM: apply the admin-chosen theme from get_lms_settings on every load
 watch(
 	() => settings.data?.theme,
 	(value) => {
@@ -49,6 +52,7 @@ const noSidebar = computed(
 	() => Boolean(route.query.fromLesson) || route.path === '/persona'
 )
 
+// OSLMS-CUSTOM: keep the AI tutor course context in sync with the current route
 router.afterEach((to) => {
 	aiContext.syncFromRoute(to)
 })

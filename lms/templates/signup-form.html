@@ -5,6 +5,7 @@
 	.signup-form .terms-and-conditions {
 		text-align: left;
 	}
+	/* OSLMS-CUSTOM: terms notice in a scrollable box, short acceptance label */
 	.signup-form .terms-and-conditions-content {
 		max-height: 140px;
 		overflow-y: auto;
@@ -66,6 +67,7 @@
 			/>
 		</div>
 
+		<!-- OSLMS-CUSTOM: no user category select; terms = short checkbox label + scrollable notice -->
 		{% if custom_signup_content %}
 		<div class="form-group terms-and-conditions">
 			<label class="terms-and-conditions-check" for="signup-terms">
@@ -128,6 +130,7 @@
 				email: email,
 				full_name: full_name,
 				verify_terms: $("#signup-terms").prop("checked") ? 1 : 0,
+				// OSLMS-CUSTOM: user category select removed, always send an empty value
 				user_category: "",
 			},
 			statusCode: login.login_handlers,

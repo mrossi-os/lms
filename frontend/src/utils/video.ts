@@ -17,6 +17,7 @@ const BARE_ID_RE = /^([\w-]{11})(?:[?&].*)?$/
 // can't be embedded as-is: only os_lms.os_lms.api.resolve_vimeo_share can turn
 // it into a playable vimeo.com/<id>/<hash> URL. Lives here so the lesson editor
 // and the preview field match it the same way.
+// OSLMS-CUSTOM: Vimeo share links, resolved server-side by os_lms before embedding
 export const VIMEO_SHARE_RE =
 	/^(?:https?:\/\/)?(?:www\.)?vimeo\.com\/share\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?(?:\?\S*)?$/i
 
@@ -26,6 +27,7 @@ export const VIMEO_SHARE_RE =
 const VIMEO_RE =
 	/^(?:https?:\/\/)?(?:www\.)?(?:player\.)?vimeo\.com\/(?:video\/)?\d+/i
 
+// OSLMS-CUSTOM: Vimeo support for preview videos and the course hero
 export function isVimeoLink(url: string | null | undefined): boolean {
 	return VIMEO_RE.test(String(url ?? '').trim())
 }
@@ -41,6 +43,7 @@ const VIMEO_URL =
 	/^(?:https?:\/\/)?(?:www\.)?vimeo\.com\/(\d+)(?:\/([a-zA-Z0-9]+))?/i
 const VIMEO_PLAYER = /^(?:https?:\/\/)?player\.vimeo\.com\/video\/(\d+)/i
 
+// OSLMS-CUSTOM: getVideoEmbedURL moved here from utils/index.js (YouTube + Vimeo)
 /**
  * Build an embeddable iframe URL from a "Preview Video" value. Handles full
  * YouTube and Vimeo URLs as well as legacy bare YouTube ids that the old
@@ -123,6 +126,7 @@ export function hasVideoContent(lesson: LessonLike | null | undefined): boolean 
 export type VideoPreview = {
 	// 'youtube' and 'embed' both render as an <iframe>; only 'file' is a source
 	// a <video> element can play.
+	// OSLMS-CUSTOM: 'embed' preview type for Vimeo iframes
 	type: 'youtube' | 'embed' | 'file' | null
 	src: string
 }
@@ -134,6 +138,7 @@ export function getVideoPreview(url: string | null | undefined): VideoPreview {
 	// would fall through to the 'file' branch below and render a <video> pointed
 	// at a Vimeo page, which fails to load and shows nothing at all. Matched with
 	// the anchored VIMEO_RE, so a half-typed value can't flip the type.
+	// OSLMS-CUSTOM: Vimeo preview renders as an iframe, not a <video>
 	if (isVimeoLink(url)) return { type: 'embed', src: getVideoEmbedURL(url) }
 	if (url) {
 		const src = String(url)

@@ -5,6 +5,7 @@ import { ref } from 'vue'
 // localStorage acts only as a cache to avoid the initial flash.
 const theme = ref<'light' | 'dark'>(localStorage.getItem('theme') as 'light' | 'dark' || 'light')
 
+// OSLMS-CUSTOM: users cannot switch theme; it is fixed by the admin
 const toggleTheme = () => {
 	// no-op: theme is fixed by the sysadmin via LMSA Settings.
 }
@@ -15,4 +16,5 @@ const applyTheme = (value: 'light' | 'dark') => {
 	theme.value = value
 }
 
+// OSLMS-CUSTOM: applyTheme stays exported for the admin-theme watcher in App.vue
 export { applyTheme, toggleTheme, theme }

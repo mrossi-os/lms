@@ -7540,3 +7540,387 @@ due modifiche va riapplicata, salvo che il committente voglia «Iscrivi» al pos
   [[entries.sites]]
   file = "frontend/src/pages/Courses/CourseEnrollmentModal.vue"
   anchor = "{{ __('Iscrivi') }}"
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 prima del merge di v2.62.0 — guscio dell'app, tema, menu utente, registrazione
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 prima del merge di v2.62.0 — gruppo "shell"
+# (App.vue, main.js, utils/theme.ts, utils/video.ts, tsconfig.json,
+# UserDropdown.vue, LayoutHeader.vue, lms/templates/signup-form.html).
+# Base P = v2.61.0, obiettivo T = v2.62.0.
+# ---------------------------------------------------------------------------
+
+# --- Tema fissato dall'amministratore ----------------------------------------
+
+[[entries]]
+id = "admin-forced-theme"
+title = "Tema chiaro/scuro deciso dall'amministratore, non dall'utente"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il tema (chiaro o scuro) è una scelta di piattaforma, non dell'utente: lo imposta
+l'amministratore nel campo theme del doctype os_lms «Brand Customize», che
+override_api.get_lms_settings aggiunge alla risposta come settings.data.theme (i commenti nel
+codice dicono ancora «LMSA Settings», ma la fonte reale è Brand Customize). App.vue osserva
+settings.data?.theme con immediate e chiama applyTheme, che scrive data-theme e la cache
+localStorage 'theme' (serve solo a evitare il lampo del tema sbagliato al primo paint).
+Di conseguenza l'utente non può cambiarlo: toggleTheme in utils/theme.ts è un no-op e la voce
+«Toggle Theme» del menu utente (UserDropdown) è stata tolta (commit a6a81a7f2, poi
+2b3b61c7d «refactoring simulations page» per il watcher e il no-op), per tutti i ruoli.
+UserDropdown non importa più toggleTheme ma conserva l'onMounted upstream applyTheme(theme.value).
+ATTENZIONE al merge di v2.62.0, conflitto su tre file:
+(1) utils/theme.ts è riscritto dall'upstream (ThemePreference 'light'|'dark'|'system', chiavi
+localStorage themePreference + theme, paint() a livello di modulo, ascolto di
+prefers-color-scheme, setThemePreference/themePreference esportati, applyTheme NON più
+esportato, toggleTheme reale). Prendere il file upstream e riapplicare: toggleTheme no-op
+(o comunque nessun punto dell'interfaccia che lo chiami) e un'esportazione che App.vue possa
+usare per forzare il valore dell'amministratore (es. riesportare paint come applyTheme, oppure
+chiamare setThemePreference(value) dal watcher, che scrive anche themePreference). Con il
+default upstream 'system' un utente con il sistema operativo scuro vedrebbe il tema scuro
+finché get_lms_settings non risponde: il watcher di App.vue lo corregge subito dopo.
+(2) App.vue: la riga import { applyTheme } non compila più contro il nuovo theme.ts:
+adeguarla alla funzione scelta al punto (1).
+(3) UserDropdown.vue: l'upstream tiene la voce «Toggle Theme» e cambia l'import in
+{ toggleTheme, theme } e toglie l'onMounted con applyTheme: prendere la rimozione
+dell'onMounted, NON reintrodurre la voce Toggle Theme, importare solo ciò che serve.
+Inoltre v2.62.0 porta sul telefono la pagina «You» (pages/MobileYou.vue +
+components/Settings/youRows.ts, mobileSettings.ts) con una riga «Colour mode»
+(colourModeRow → setThemePreference): va nascosta anche lì, altrimenti lo studente torna a
+poter cambiare tema dal telefono (file di altri gruppi, da riapplicare nel merge)."""
+
+  [[entries.sites]]
+  file = "frontend/src/App.vue"
+  anchor = "() => settings.data?.theme,"
+
+  [[entries.sites]]
+  file = "frontend/src/App.vue"
+  anchor = "import { applyTheme } from '@/utils/theme'"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/theme.ts"
+  anchor = "// no-op: theme is fixed by the sysadmin via LMSA Settings."
+  symbol = "toggleTheme"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/theme.ts"
+  anchor = "export { applyTheme, toggleTheme, theme }"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Sidebar/UserDropdown.vue"
+  anchor = "import { applyTheme, theme } from '@/utils/theme'"
+
+  [entries.visibility]
+  subject = "commutatore di tema (voce «Toggle Theme» del menu utente, riga «Colour mode» su telefono)"
+  allow = []
+  deny = ["Student", "Docente", "Moderator", "Gestore", "Valutatore", "System Manager", "Guest"]
+
+# --- Contesto del tutor AI ------------------------------------------------------
+
+[[entries]]
+id = "app-ai-tutor-route-context"
+title = "Contesto del corso per il tutor AI sincronizzato con la rotta"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il pulsante fisso del tutor AI (oslms/components/AiFixedButtons, commit e1aa5e126 «add tutor
+ai fixed button, add course context to tutor») deve sapere in quale corso si trova lo
+studente per interrogare il RAG con il contesto giusto. Lo store os_lms aiContext tiene corso
+e lezione; App.vue, a ogni navigazione (router.afterEach), chiama aiContext.syncFromRoute(to):
+se la rotta ha il parametro courseName imposta il corso e azzera la lezione, altrimenti pulisce
+il contesto. La lezione la imposta poi Lesson.vue (voce lesson-ai-tutor-context). Senza,
+il tutor risponde senza contesto di corso o con quello di una pagina precedente.
+v2.62.0 non tocca queste righe (cambia solo la punteggiatura del commento sul layout, a una
+riga di distanza: merge atteso pulito). Il parametro :courseName resta nelle rotte corso della
+nuova routes.js upstream; se un merge futuro lo rinomina, adeguare syncFromRoute."""
+
+  [[entries.sites]]
+  file = "frontend/src/App.vue"
+  anchor = "aiContext.syncFromRoute(to)"
+
+  [[entries.sites]]
+  file = "frontend/src/App.vue"
+  anchor = "import { useAiContext } from '@/stores/aiContext'"
+
+# --- main.js --------------------------------------------------------------------
+
+[[entries]]
+id = "main-brand-customize-css"
+title = "Foglio di stile «Brand Customize» caricato per ultimo"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+L'amministratore personalizza i colori della piattaforma dal doctype os_lms «Brand Customize»
+(commit 55c34f1a7); os_lms.os_lms.branding.brand_css restituisce il CSS con quei valori.
+main.js lo aggiunge a runtime come ultimo <link> di <head>, così vince sul tema statico
+(elite): va fatto a runtime perché in sviluppo Vite inietta il CSS importato dopo i <link>
+statici, e un <link> nel template HTML perderebbe la cascata. Senza, i colori scelti
+dall'amministratore non si applicano alla SPA. v2.62.0 aggiunge in main.js solo
+registerDirectives (import e chiamata), lontano da queste righe: merge atteso pulito."""
+
+  [[entries.sites]]
+  file = "frontend/src/main.js"
+  anchor = "brandLink.href = '/api/method/os_lms.os_lms.branding.brand_css'"
+
+[[entries]]
+id = "main-frappeui-socketio-port"
+title = "FrappeUI inizializzato con la porta socket.io della build"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+FrappeUI riceve socketio.port = __SOCKETIO_PORT__, la costante che vite.config legge da
+common_site_config (voce vite-socketio-port-define, commit eb04db67c «docker development
+environment and improve socket.io configuration»): nell'ambiente Docker e con porte non
+standard la porta predefinita non è quella giusta e le notifiche in tempo reale non si
+connetterebbero. Le due metà vanno tenute insieme: senza la define la build fallisce su
+__SOCKETIO_PORT__, senza questa opzione la define non serve. Merge di v2.62.0 atteso pulito
+(registerDirectives(app) arriva quattro righe più sotto)."""
+
+  [[entries.sites]]
+  file = "frontend/src/main.js"
+  anchor = "port:__SOCKETIO_PORT__"
+
+# --- utils/video.ts ---------------------------------------------------------------
+
+[[entries]]
+id = "video-utils-vimeo-embed"
+title = "Supporto Vimeo nelle utilità video (share link, embed URL, anteprima)"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Lezioni, anteprime di corsi e batch e hero del corso devono riprodurre anche video Vimeo,
+mentre le utilità upstream conoscono solo YouTube e i file caricati. utils/video.ts ospita: VIMEO_SHARE_RE, il riconoscitore dei link
+vimeo.com/share/<uuid> (non incorporabili: li risolve os_lms resolve_vimeo_share, usato
+dall'editor delle lezioni e dal campo video di anteprima: voci embed-vimeo-share-links e
+video-preview-field-vimeo; memoria vimeo_share_link_server_resolution); isVimeoLink, usato
+anche dall'hero os_lms del corso; getVideoEmbedURL (YouTube e Vimeo, con hash privato ?h=),
+spostata qui da utils/index.js e da lì riesportata (voce video-embed-url-reexport) per non
+tirarsi dietro la catena di import di EditorJS; il tipo 'embed' di VideoPreview e il ramo
+di getVideoPreview che classifica un link Vimeo come iframe e non come <video> (commit
+0a61c2f10, video di anteprima del batch che non si vedeva; 10395cec9 per i link di
+condivisione). Senza, un link Vimeo finisce in un <video> che non carica nulla.
+v2.62.0 cambia solo trattini nei commenti e va a capo in hasVideoContent, fuori dalle nostre
+righe: merge atteso pulito."""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/video.ts"
+  anchor = "export const VIMEO_SHARE_RE ="
+
+  [[entries.sites]]
+  file = "frontend/src/utils/video.ts"
+  anchor = "export function isVimeoLink(url: string | null | undefined): boolean {"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/video.ts"
+  anchor = "export function getVideoEmbedURL(value: string | null | undefined): string {"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/video.ts"
+  anchor = "type: 'youtube' | 'embed' | 'file' | null"
+  symbol = "VideoPreview"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/video.ts"
+  anchor = "if (isVimeoLink(url)) return { type: 'embed', src: getVideoEmbedURL(url) }"
+  symbol = "getVideoPreview"
+
+  [entries.checks]
+  unit = "frontend/src/tests/video.test.ts"
+
+# --- tsconfig.json ----------------------------------------------------------------
+
+[[entries]]
+id = "tsconfig-allowjs-ignore-deprecations"
+title = "tsconfig: file .js inclusi nel controllo e deprecazioni di TypeScript 6 silenziate"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Commit 6d6d2af78 (Gabriele Pagnotta, «fix merge problems on course and lesson form»):
+"allowJs": true e "src/**/*.js" in include fanno entrare nel progetto TypeScript i moduli .js
+(store pinia, utils/index.js, router.js…) importati dai componenti <script lang="ts">, così
+l'editor e vue-tsc ne ricavano i tipi invece di segnalare moduli non tipizzati.
+"ignoreDeprecations": "6.0" è stato aggiunto quando il file aveva ancora baseUrl e
+moduleResolution Node, deprecati da TypeScript 6 (l'editor usava quel TypeScript); oggi baseUrl
+non c'è più e il pacchetto installato è typescript 5.7.2, che per ignoreDeprecations accetta
+solo "5.0": l'opzione potrebbe essere inutile o dare errore TS5103 in vue-tsc. Motivazione
+dedotta, confidence bassa. File JSON: nessun marcatore possibile.
+ATTENZIONE al merge di v2.62.0: l'upstream cambia "types": [] in "types": ["vite/client"],
+riga adiacente al nostro "ignoreDeprecations": conflitto. Risolvere con "types":
+["vite/client"] (upstream) e tenere allowJs, l'include di src/**/*.js e, se il committente lo
+conferma, ignoreDeprecations."""
+
+  [[entries.sites]]
+  file = "frontend/tsconfig.json"
+  anchor = '"allowJs": true,'
+
+  [[entries.sites]]
+  file = "frontend/tsconfig.json"
+  anchor = '"ignoreDeprecations": "6.0",'
+
+  [[entries.sites]]
+  file = "frontend/tsconfig.json"
+  anchor = '"src/**/*.vue", "src/**/*.js", "src/*.d.ts"'
+
+# --- Menu utente (UserDropdown.vue) ---------------------------------------------
+
+[[entries]]
+id = "user-dropdown-italian-labels-icons"
+title = "Menu utente con etichette in italiano e icone lucide come componenti"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le voci del menu utente sono scritte direttamente in italiano dentro __() («Il mio profilo»,
+«Impostazioni», «Cancella dati demo», «Accedi a Frappe Cloud», «Esci», «Accedi», dialoghi di
+conferma e toast della cancellazione dei dati demo; commit e577585ca, 175b0a754, 8d417b557,
+4e323604f): l'interfaccia è solo in italiano e le etichette upstream erano letterali inglesi
+senza __(). Nota: sono msgid italiani, fuori dal flusso it.po/it.csv (memoria
+it_translations_workflow); un utente in inglese le vede in italiano. Le icone sono componenti
+lucide-vue-next (User, Settings, Upload, Trash2, LogOut, LogIn) invece delle stringhe
+'lucide-*': motivazione dedotta (confidence della parte icone bassa), il fork allora girava su
+frappe-ui 0.1.x che non risolveva le icone 'lucide-*' nel Dropdown. Il resto del diff è
+formattazione Prettier (virgole finali, rientro dei ternari).
+ATTENZIONE al merge di v2.62.0: l'upstream sostituisce i componenti Apps e Configuration
+(file Sidebar/Apps.vue e Sidebar/Configuration.vue CANCELLATI) con voci submenu
+(__('Apps') con icona 'lucide-layout-grid', __('Configuration') con sottovoce __('Import') →
+DataImportList), cambia l'import di vue (h al posto di markRaw/onMounted), aggiunge
+createResource, safeUrl e openExternal e tiene import { Moon, Sun }: conflitti sugli import
+e sulle voci Apps/Configuration. Prendere le voci e gli import upstream (togliere gli import di
+Apps.vue/Configuration.vue), tenere le nostre etichette italiane e le icone a componente sulle
+voci che restano, e tradurre in it.po/it.csv le nuove stringhe upstream (Apps, Configuration,
+Import)."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Sidebar/UserDropdown.vue"
+  anchor = "label: __('Il mio profilo'),"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Sidebar/UserDropdown.vue"
+  anchor = "icon: User,"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Sidebar/UserDropdown.vue"
+  anchor = "label: __('Esci'),"
+
+[[entries]]
+id = "user-dropdown-file-upload-item"
+title = "Voce «Importa» del menu utente verso la pagina Carica file"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La voce «Importa» (icona Upload) porta alla nostra pagina FileUpload (pages/FileUpload.vue,
+rotta router-file-upload-route, commit f546fed1c e 5fc238264), dove si caricano file riusabili
+nei contenuti. È visibile solo a chi ha is_moderator (quindi anche ai Gestore, che hanno sempre
+Moderator; memoria gestore_role_bundle). Senza, la pagina resta irraggiungibile dal menu.
+ATTENZIONE al merge di v2.62.0: la voce precedente, component: markRaw(Configuration), diventa
+nell'upstream un submenu «Configuration» con la sottovoce «Import» (DataImportList):
+conflitto adiacente. Tenere il submenu upstream e la nostra voce separata con
+router.push({ name: 'FileUpload' }) e la condizione is_moderator. Con la traduzione italiana
+«Import» → «Importa» ci sarebbero due voci «Importa» (import dati upstream e carica file
+nostro): chiedere al committente se rinominare la nostra (es. «Carica file») o spostarla nel
+submenu Configurazione. Su telefono v2.62.0 porta le voci del menu nella pagina «You»: valutare
+se servono anche lì."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Sidebar/UserDropdown.vue"
+  anchor = "router.push({ name: 'FileUpload' })"
+
+  [entries.visibility]
+  subject = "voce «Importa» (pagina Carica file) del menu utente"
+  allow = ["Moderator", "Gestore"]
+  deny = ["Student", "Valutatore", "Guest"]
+
+[[entries]]
+id = "user-dropdown-placement-leftover"
+title = "Valore placement non valido sul Dropdown del menu utente"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Il Dropdown del menu utente porta placement="asdaaaaaaaa" (commit 175b0a754 «Modify css and add
+translations», conservato nel merge f4b2fa37d). Con il frappe-ui installato un valore diverso da
+'right'/'center' ricade su align 'start', cioè lo stesso comportamento di nessun placement:
+sembra un residuo di prova senza effetto, ma non è certo che non servisse con la versione di
+frappe-ui di allora. placement è deprecato a favore di align. Nessun conflitto atteso in
+v2.62.0 (l'upstream cambia la classe del <button> tre righe sotto, non questa). Domanda al
+committente: si può togliere?"""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Sidebar/UserDropdown.vue"
+  anchor = '<Dropdown :options="userDropdownOptions" placement="asdaaaaaaaa">'
+
+# --- LayoutHeader.vue ---------------------------------------------------------------
+
+[[entries]]
+id = "layout-header-gray-background"
+title = "Intestazione di pagina con sfondo grigio del tema"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+LayoutHeader usa bg-surface-gray-1 al posto dello sfondo di base (bg-surface-white, poi
+bg-surface-base nell'upstream) per l'intestazione sticky delle pagine elenco (commit 81e2c2db8
+«fix style icon»): motivazione dedotta, staccare l'intestazione dal contenuto con il grigio del
+tema elite, come la barra inferiore mobile (voce mobile-layout-theme-labels).
+ATTENZIONE al merge di v2.62.0: l'upstream CANCELLA LayoutHeader.vue (sostituito da
+Layouts/PageHeader.vue con la classe .header-frame di index.css, che fa @apply bg-surface-base):
+conflitto modifica/cancellazione. Le nostre pagine os_lms oslms/pages/Simulation/
+EvaluationSchemas.vue e InstructorReports.vue importano LayoutHeader (slot left-header e
+right-header), come ogni pagina upstream il cui conflitto venga risolto tenendo la nostra
+versione: se si accetta la cancellazione, quelle pagine non compilano. Scelte possibili: tenere
+il file come nostro (diventa di fatto override-file) oppure portare le due pagine su PageHeader
+(slot actions, breadcrumbs). Se il grigio serve ancora, riesprimerlo nel CSS del tema su
+.header-frame invece di toccare PageHeader. Da decidere con il committente."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/LayoutHeader.vue"
+  anchor = "border-b bg-surface-gray-1 px-3 py-2.5 sm:px-5"
+
+# --- Modulo di registrazione (lms/templates/signup-form.html) --------------------------
+
+[[entries]]
+id = "signup-form-terms-no-category"
+title = "Registrazione: niente categoria utente, termini in riquadro scorrevole con casella breve"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Modulo di registrazione pubblico (/login#signup, ospiti). Due regole:
+(1) Termini e condizioni: custom_signup_content (testo lungo delle LMS Settings) sta in un
+riquadro scorrevole .terms-and-conditions-content (max-height 140px) e la casella obbligatoria
+ha un'etichetta breve {{ _("I agree to the Terms and Conditions") }} (tradotta in it.csv).
+Prima l'intero testo era l'etichetta della casella, dentro <label> annidati: leggere o
+selezionare il testo spuntava la casella e il markup non era valido (commit cb8ad4e01,
+096a62543 per overflow-x, h1 del testo a 2.5rem e ordine casella → riquadro). La casella è
+tornata required in a4d44b72a dopo la rimozione per errore in f2cb82cc7; l'etichetta ha
+style="color: black" (dal commit f2cb82cc7, prima var(--text-dark): leggibilità sul tema,
+dedotto).
+(2) Niente select «User Category»: tolti markup, gestore change e style_category; si invia
+sempre user_category: "" (commit a4d44b72a), cioè lo stesso percorso di quando il flag
+user_category delle LMS Settings è spento. Il resto del diff è formattazione (tab, set su due
+righe).
+ATTENZIONE al merge di v2.62.0: l'upstream riscrive tutto il file (alert_banner, etichette
+visibili, errori per campo con login.show_field_error, form novalidate, pulsante es-button
+disabilitato finché nome ed email non sono pieni, signup_handlers/show_signup_error, select
+categoria ridisegnata e validata, casella dei termini con custom_signup_content come
+etichetta in <span>). Conflitto totale: prendere il file upstream e riapplicare (1) etichetta
+breve tradotta sulla casella + riquadro scorrevole con il nostro CSS sotto la casella, id
+signup-terms invariato (la validazione upstream «Please accept the terms to continue.» lo usa
+e sostituisce il required nativo reso inerte da novalidate); (2) togliere il blocco
+{% if user_category %}: il JS upstream salta validazione e invio della categoria se
+#user_category non esiste, quindi basta rimuovere il markup. Tradurre le nuove stringhe
+upstream (Full name is required., Please enter a valid email., Please accept the terms to
+continue., You are already registered. {0} instead., Success)."""
+
+  [[entries.sites]]
+  file = "lms/templates/signup-form.html"
+  anchor = '{{ _("I agree to the Terms and Conditions") }}'
+
+  [[entries.sites]]
+  file = "lms/templates/signup-form.html"
+  anchor = '<div class="terms-and-conditions-content">'
+
+  [[entries.sites]]
+  file = "lms/templates/signup-form.html"
+  anchor = "max-height: 140px;"
+
+  [[entries.sites]]
+  file = "lms/templates/signup-form.html"
+  anchor = 'user_category: "",'

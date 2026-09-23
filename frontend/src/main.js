@@ -4,6 +4,7 @@ import { createApp, watch } from 'vue'
 // Append Brand Customize CSS as the last <link> in <head> so user-defined
 // values override the static theme. Done at runtime because Vite (dev mode)
 // injects imported CSS dynamically after static <link> tags.
+// OSLMS-CUSTOM: runtime Brand Customize stylesheet (os_lms branding.brand_css)
 const brandLink = document.createElement('link')
 brandLink.rel = 'stylesheet'
 brandLink.href = '/api/method/os_lms.os_lms.branding.brand_css'
@@ -23,6 +24,7 @@ let pinia = createPinia()
 let app = createApp(App)
 setConfig('resourceFetcher', frappeRequest)
 
+// OSLMS-CUSTOM: socket.io port injected by vite.config (__SOCKETIO_PORT__)
 app.use(FrappeUI,{socketio:{
 	port:__SOCKETIO_PORT__
 }})

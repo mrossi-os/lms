@@ -1,5 +1,6 @@
 <template>
 	<div class="p-2">
+		<!-- OSLMS-CUSTOM: placement="asdaaaaaaaa" is an invalid leftover (falls back to align start) -->
 		<Dropdown :options="userDropdownOptions" placement="asdaaaaaaaa">
 			<template v-slot="{ open, close }">
 				<button
@@ -68,6 +69,7 @@ import { sessionStore } from '@/stores/session'
 import { call, Dropdown, toast } from 'frappe-ui'
 import { useRouter } from 'vue-router'
 import { convertToTitleCase } from '@/utils'
+// OSLMS-CUSTOM: no toggleTheme import, users cannot switch theme (fixed by the admin)
 import { applyTheme, theme } from '@/utils/theme'
 import { usersStore } from '@/stores/user'
 import { useSettings } from '@/stores/settings'
@@ -78,6 +80,7 @@ import Configuration from '@/components/Sidebar/Configuration.vue'
 import FrappeCloudIcon from '@/components/Icons/FrappeCloudIcon.vue'
 import LMSLogo from '@/components/Icons/LMSLogo.vue'
 import SettingsModal from '@/components/Settings/Settings.vue'
+// OSLMS-CUSTOM: lucide components as menu icons instead of 'lucide-*' strings
 import {
 	ChevronDown,
 	LogIn,
@@ -125,6 +128,7 @@ const userDropdownOptions = computed(() => {
 			group: '',
 			items: [
 				{
+					// OSLMS-CUSTOM: menu labels written directly in Italian
 					icon: User,
 					label: __('Il mio profilo'),
 					onClick: () => {
@@ -134,6 +138,7 @@ const userDropdownOptions = computed(() => {
 						return isLoggedIn
 					},
 				},
+				// OSLMS-CUSTOM: "Toggle Theme" item removed here (theme fixed by the admin)
 				{
 					component: markRaw(Apps),
 					condition: () => {
@@ -161,6 +166,7 @@ const userDropdownOptions = computed(() => {
 						return userResource.data?.is_moderator
 					},
 				},
+				// OSLMS-CUSTOM: moderator-only link to our FileUpload page
 				{
 					label: __('Importa'),
 					icon: Upload,
