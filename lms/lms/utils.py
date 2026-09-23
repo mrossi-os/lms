@@ -1004,6 +1004,7 @@ def get_course_details(course: str):
 
 	if not membership and not is_course_published and not can_modify_course(course):
 		membership = enroll_via_batch_if_eligible(course, frappe.session.user)
+		# OSLMS-CUSTOM: program members bypass this gate (is_course_in_member_program).
 		# A "Valutatore" of a batch containing this course gets read-only access
 		# to it even when unpublished (no enrolment). A member of a program holding
 		# this course sees it too, published or not.
@@ -2794,6 +2795,7 @@ def is_course_valutatore(course: str, user: str = None) -> bool:
 	)
 
 
+# OSLMS-CUSTOM: program members see every course of their program; used by three gates.
 def is_course_in_member_program(course: str, user: str = None) -> bool:
 	"""True if the user is a member of a program that contains this course.
 

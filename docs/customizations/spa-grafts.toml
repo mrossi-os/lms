@@ -504,7 +504,9 @@ confidence = "high"
 intent = """
 La descrizione del programma (campo custom os_lms) si mostra sia nel dettaglio del
 programma sia nel dialogo di iscrizione, con la formattazione conservata e sanificata
-con sanitizeRichHTML."""
+con sanitizeRichHTML. hasRichContent, aggiunta al file upstream sanitizeRichHTML.ts,
+nasconde la descrizione svuotata che l'editor salva come <p></p>: senza, lo studente
+vedrebbe un blocco vuoto."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Programs/ProgramDetail.vue"
@@ -513,6 +515,11 @@ con sanitizeRichHTML."""
   [[entries.sites]]
   file = "frontend/src/pages/Programs/ProgramEnrollment.vue"
   anchor = ":description=\"sanitizeRichHTML(program.data.description)\""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/sanitizeRichHTML.ts"
+  anchor = "export const hasRichContent"
+  symbol = "hasRichContent"
 
 [[entries]]
 id = "home-programs-row"
@@ -540,13 +547,41 @@ title = "Membri del programma vedono i corsi non pubblicati"
 layer = "spa-graft"
 confidence = "high"
 intent = """
-Chi è membro di un programma che contiene un corso può aprirlo anche se il corso non è
-pubblicato. Il flag in_member_program è iniettato dall'override os_lms di
-get_course_details; qui è censito solo il tipo, le guardie server-side sono os_lms."""
+Un programma si pubblica nel suo insieme: chi ne è membro vede, apre e si iscrive a ogni
+corso del programma anche se il corso da solo non è pubblicato. La regola vive in tre
+guardie, due delle quali in file upstream: get_course_details e la validazione
+dell'iscrizione di LMSEnrollment, entrambe tramite is_course_in_member_program (definita in
+lms/lms/utils.py accanto a is_course_valutatore); la terza è la guardia di redirect di
+CourseDetail.vue, che legge il flag in_member_program esposto dall'override os_lms di
+get_course_details. Se sparisce una delle guardie server, lo studente del programma non
+vede il corso o non può iscriversi; se sparisce quella della pagina, viene rimandato alla
+lista corsi. Decisione del cliente del 2026-09-23."""
+
+  [[entries.sites]]
+  file = "lms/lms/utils.py"
+  anchor = "def is_course_in_member_program(course: str, user: str = None) -> bool:"
+  symbol = "is_course_in_member_program"
+
+  [[entries.sites]]
+  file = "lms/lms/utils.py"
+  anchor = "and not is_course_in_member_program(course)"
+  symbol = "get_course_details"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_enrollment/lms_enrollment.py"
+  anchor = "and not is_course_in_member_program(self.course, self.member)"
+  symbol = "LMSEnrollment.validate_course_enrollment_eligibility"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDetail.vue"
+  anchor = "!course.data?.in_member_program &&"
 
   [[entries.sites]]
   file = "frontend/src/types/api.ts"
   anchor = "in_member_program?: 0 | 1"
+
+  [entries.checks]
+  backend = "apps/os_lms/os_lms/os_lms/tests/test_program_course_access.py"
 
 # ---------------------------------------------------------------------------
 # Override di componenti frappe-ui

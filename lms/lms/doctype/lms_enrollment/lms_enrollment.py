@@ -66,6 +66,7 @@ class LMSEnrollment(Document):
 				)
 			)
 
+		# OSLMS-CUSTOM: program members may enroll in unpublished courses of their program.
 		# Local import: lms.lms.utils imports this module at load time.
 		from lms.lms.utils import is_course_in_member_program
 

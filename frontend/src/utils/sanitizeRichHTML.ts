@@ -26,6 +26,7 @@ export const sanitizeRichHTML = (html?: string | null): string => {
 	})
 }
 
+// OSLMS-CUSTOM: added for the program description; hides emptied rich fields.
 // True when rich HTML shows something: the editor saves an emptied field as
 // "<p></p>", which must not render as a blank block. Media counts as content.
 export const hasRichContent = (html?: string | null): boolean => {

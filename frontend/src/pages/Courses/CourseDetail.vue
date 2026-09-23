@@ -401,7 +401,7 @@ watch(course, () => {
 	// when unpublished (course.data.is_valutatore is set by get_course_details).
 	// An enrolled student (course.data.membership set by get_course_details) may
 	// access the course even when it is not published (e.g. private enrolment).
-	// So may a member of a program holding the course (in_member_program).
+	// OSLMS-CUSTOM: so may a member of a program holding the course (in_member_program).
 	if (
 		!isAdmin.value &&
 		!course.data?.is_valutatore &&
