@@ -15,6 +15,7 @@
 	>
 		<template #default>
 			<div class="flex flex-col gap-4">
+				<!-- OSLMS-CUSTOM: optional email toggle + announcement email template picker -->
 				<div class="flex items-end gap-8">
 					<div class="shrink-0 pb-2">
 						<FormControl
@@ -39,12 +40,14 @@
 					v-model="announcement.subject"
 					:required="true"
 				/>
+				<!-- OSLMS-CUSTOM: Reply To removed: os_lms send_batch_announcement needs no reply-to -->
 				<!-- <FormControl
 					:label="__('Reply To')"
 					type="text"
 					v-model="announcement.replyTo"
 					:required="true"
 				/> -->
+				<!-- OSLMS-CUSTOM: send to the whole class or to hand-picked students -->
 				<FormControl
 					:label="__('Send To')"
 					type="select"
@@ -94,6 +97,7 @@
 						</div>
 					</div>
 				</div>
+				<!-- OSLMS-CUSTOM: three editor branches (template with {{ message }} / raw-HTML template / plain rich editor) so styled email HTML is never re-serialized by TextEditor -->
 				<div
 					v-if="sendEmail && isHtmlMode && hasMessagePlaceholder"
 					class="mb-4 flex flex-col gap-3"
@@ -211,6 +215,7 @@ const show = defineModel()
  * light-mode shades, which read well on the email's light background) before
  * the content is previewed or sent, so the chosen color is preserved everywhere.
  */
+// OSLMS-CUSTOM: bake editor named colors/highlights to hex for preview and email
 const NAMED_COLOR_HEX = {
 	red: '#CC2929',
 	blue: '#007BE0',
@@ -278,8 +283,10 @@ const selectedStudents = ref([])
 const sendEmail = ref(false)
 const studentSearch = ref('')
 
+// OSLMS-CUSTOM: default announcement email template preselected
 const DEFAULT_TEMPLATE_NAME = 'Announcement Email Template'
 
+// OSLMS-CUSTOM: template with {{ message }} placeholder edits only the message
 const hasMessagePlaceholder = computed(() =>
 	/\{\{\s*message\s*\}\}/.test(announcement.announcement || ''),
 )
@@ -303,6 +310,7 @@ const previewHtml = computed(() => {
 	return inlineNamedColors(html)
 })
 
+// OSLMS-CUSTOM: student names for the specific-recipients picker
 const studentsInfo = createResource({
 	url: 'frappe.client.get_list',
 	makeParams() {
@@ -384,6 +392,7 @@ const emailTemplates = createResource({
 	auto: true,
 })
 
+// OSLMS-CUSTOM: templates flagged custom_available_for_announcements first
 // Prefer templates explicitly flagged for announcements so the list stays clean.
 // If none are flagged (e.g. a fresh install where no admin has opted any in yet),
 // fall back to every template so the picker is never empty.
@@ -418,6 +427,7 @@ const applyTemplate = async (option) => {
 }
 
 const announcementResource = createResource({
+	// OSLMS-CUSTOM: send via os_lms: in-app notification + optional email to chosen recipients
 	url: 'os_lms.os_lms.api.send_batch_announcement',
 	makeParams() {
 		const recipients =

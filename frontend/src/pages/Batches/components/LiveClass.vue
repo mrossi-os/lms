@@ -19,6 +19,7 @@
 				{{ __('Live Class') }}
 			</div>
 			<div class="flex items-center gap-2">
+				<!-- OSLMS-CUSTOM: sort by creation or lesson date with a direction toggle -->
 				<FormControl
 					v-model="sortField"
 					type="select"
@@ -57,6 +58,7 @@
 			v-if="liveClasses.data?.length"
 			class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-5"
 		>
+			<!-- OSLMS-CUSTOM: shared LiveClassCard; a batch Valutatore joins as observer -->
 			<LiveClassCard
 				v-for="cls in liveClasses.data"
 				:key="cls.name"
@@ -68,6 +70,7 @@
 				@started="liveClasses.reload()"
 			>
 				<template v-if="isAdmin()" #actions>
+					<!-- OSLMS-CUSTOM: edit/delete menu on each class for batch admins -->
 					<Dropdown
 						:options="[
 							{
@@ -100,6 +103,7 @@
 			v-if="totalPages > 1"
 			class="flex items-center justify-between border-t pt-3 mt-5"
 		>
+			<!-- OSLMS-CUSTOM: live classes paginated 20 per page -->
 			<div class="text-sm text-ink-gray-5">
 				{{ __('Page {0} of {1}').format(currentPage, totalPages) }}
 			</div>
@@ -120,6 +124,7 @@
 		</div>
 	</div>
 
+	<!-- OSLMS-CUSTOM: modal reused to edit an existing class (liveClass prop) -->
 	<LiveClassModal
 		v-if="showLiveClassModal"
 		v-model="showLiveClassModal"
@@ -157,6 +162,7 @@
 		}"
 	>
 		<template #body-content>
+			<!-- OSLMS-CUSTOM: delete confirmation with optional student notification -->
 			<div class="space-y-3 text-ink-gray-7 text-sm leading-5">
 				<p>
 					{{
@@ -207,6 +213,7 @@ import LiveClassModal from '@/components/Modals/LiveClassModal.vue'
 import LiveClassAttendance from '@/components/Modals/LiveClassAttendance.vue'
 import LiveClassCard from '@/components/LiveClassCard.vue'
 
+// OSLMS-CUSTOM: server-side pagination of the class list
 const PAGE_SIZE = 20
 
 const user = inject('$user')
@@ -230,6 +237,7 @@ const currentPage = ref(1)
 const sortField = ref('creation')
 const sortOrder = ref('desc')
 
+// OSLMS-CUSTOM: sort options (creation date / lesson date)
 const sortFieldOptions = [
 	{ label: __('Data creazione'), value: 'creation' },
 	{ label: __('Data lezione'), value: 'date' },
@@ -332,6 +340,7 @@ const fetchLiveClassDetails = createResource({
 	},
 })
 
+// OSLMS-CUSTOM: delete through os_lms (Zoom/calendar cleanup + notification)
 const deleteLiveClass = createResource({
 	url: 'os_lms.os_lms.api.delete_live_class',
 })
@@ -341,6 +350,7 @@ const openCreateModal = () => {
 	showLiveClassModal.value = true
 }
 
+// OSLMS-CUSTOM: edit loads the full class document
 const openEditModal = async (cls) => {
 	const full = await fetchLiveClassDetails.submit({ name: cls.name })
 	editingClass.value = full
@@ -353,6 +363,7 @@ const openDeleteModal = (cls) => {
 	showDeleteDialog.value = true
 }
 
+// OSLMS-CUSTOM: delete with notify_students flag
 const confirmDelete = (close) => {
 	deleteLiveClass.submit(
 		{

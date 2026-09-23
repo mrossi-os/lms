@@ -23,6 +23,7 @@
 							variant="outline"
 							:onCreate="createCategory"
 						/>
+						<!-- OSLMS-CUSTOM: translated date/time placeholders and os-input brand styling on pickers -->
 						<FormControl
 							v-model="batchDetail.doc.start_date"
 							:label="__('Batch Start Date')"
@@ -151,6 +152,7 @@
 						{{ __('Batch overview') }}
 					</div>
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+						<!-- OSLMS-CUSTOM: saved instructors passed as extraOptions so a gone user stays removable -->
 						<MultiLink
 							v-model="instructors"
 							doctype="User"
@@ -164,6 +166,7 @@
 							:onCreate="() => (showMemberModal = true)"
 							class="os-input"
 						/>
+						<!-- OSLMS-CUSTOM: per-batch Valutatore picker (os_lms valutatori child table) -->
 						<MultiLink
 							v-model="valutatori"
 							doctype="User"
@@ -228,6 +231,7 @@
 						</div>
 					</div>
 					<div>
+						<!-- OSLMS-CUSTOM: feature sections editor for the batch (custom_feature_sections) -->
 						<FeatureSectionEditor
 							:modelValue="batchDetail.doc"
 							fieldName="custom_feature_sections"
@@ -367,6 +371,7 @@ import { useRouter } from 'vue-router'
 import Uploader from '@/components/Controls/Uploader.vue'
 import VideoPreviewField from '@/components/Controls/VideoPreviewField.vue'
 import MultiLink from '@/components/Controls/MultiLink.vue'
+// OSLMS-CUSTOM: os-link wrapper restyles Link without editing the upstream control
 import Link from '@/oslms/components/Controls/Link.vue'
 import Select from '@/components/Controls/Select.vue'
 import BatchCourses from '@/pages/Batches/components/BatchCourses.vue'
@@ -397,11 +402,13 @@ const props = defineProps<{
 const router = useRouter()
 const user = inject<SessionUser>('$user')!
 const instructors = ref<string[]>([])
+// OSLMS-CUSTOM: per-batch Valutatore list edited alongside instructors
 // Per-batch "Valutatore" evaluators (custom os_lms feature). Backed by a
 // Table MultiSelect custom field on LMS Batch (child: LMS Batch Valutatore);
 // its rows carry a `valutatore` user link. Not in the generated LMSBatch type.
 const valutatori = ref<string[]>([])
 
+// OSLMS-CUSTOM: resolve saved instructors/valutatori so they stay listed and removable
 // Both pickers are fed only by their search endpoint, which returns neither
 // disabled users, users who lost the role, nor deleted ones — and caps results
 // at a page anyway. Anyone already saved on the batch but missing from those
@@ -594,6 +601,7 @@ watch(
 	{ deep: true },
 )
 
+// OSLMS-CUSTOM: picker edits mark the form dirty and autosave
 // The instructors/valutatori pickers use standalone refs (not batchDetail.doc),
 // so the deep doc watcher above never sees their edits. Mark the form dirty and
 // autosave when they diverge from the rows currently loaded in the doc.
@@ -626,6 +634,7 @@ const updateBatchData = (): void => {
 			doc.instructors?.forEach((instructor: CourseInstructor) => {
 				if (instructor.instructor) instructors.value.push(instructor.instructor)
 			})
+		// OSLMS-CUSTOM: load valutatori rows into the picker
 		} else if (key == 'valutatori') {
 			valutatori.value = []
 			const rows = (doc as Record<string, unknown>).valutatori as
@@ -676,6 +685,7 @@ const updateBatch = (opts: { silent?: boolean } = {}): void => {
 			instructors: instructors.value.map((instructor) => ({
 				instructor: instructor,
 			})),
+			// OSLMS-CUSTOM: save valutatori rows with the batch
 			valutatori: valutatori.value.map((valutatore) => ({
 				valutatore: valutatore,
 			})),

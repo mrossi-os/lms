@@ -19,6 +19,7 @@
 						<div class="text-ink-gray-9 font-semibold mb-4">
 							{{ __('Courses') }}
 						</div>
+						<!-- OSLMS-CUSTOM: os-list-view class for the os theme -->
 						<ListView
 							v-if="batch.data?.courses?.length"
 							:columns="courseColumns"
@@ -73,6 +74,7 @@
 						:courses="batch.data.courses"
 					/>
 				</div>
+				<!-- OSLMS-CUSTOM: upstream BatchFeedback section removed from the student batch dashboard -->
 			</div>
 		</div>
 	</div>

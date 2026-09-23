@@ -55,6 +55,7 @@
 			<div
 				class="flex flex-col space-y-3 lg:flex-row lg:items-center lg:gap-x-4 lg:space-y-0"
 			>
+				<!-- OSLMS-CUSTOM: students get no tab bar; their batch list is pinned to Enrolled -->
 				<TabButtons
 					v-if="user.data && !is_student"
 					:buttons="batchTabs"
@@ -62,6 +63,7 @@
 					class="w-fit"
 				/>
 				<div class="grid grid-cols-2 gap-2">
+					<!-- OSLMS-CUSTOM: search matches words independently and reloads on update:modelValue -->
 					<FormControl
 						v-model="title"
 						:placeholder="__('Search')"
@@ -73,6 +75,7 @@
 							<span class="lucide-search size-4 text-ink-gray-5" />
 						</template>
 					</FormControl>
+					<!-- OSLMS-CUSTOM: category options start with an "All" entry that clears the filter -->
 					<ClearableCombobox
 						v-if="categories.length"
 						v-model="currentCategory"
@@ -81,6 +84,7 @@
 						@update:modelValue="updateBatches()"
 					/>
 				</div>
+				<!-- OSLMS-CUSTOM: upstream "Certification" filter checkbox removed (still reachable via ?certification=1) -->
 			</div>
 		</div>
 		<SkeletonLoader
@@ -147,6 +151,7 @@ const start = ref(0)
 const pageLength = ref(20)
 const categories = ref([])
 const currentCategory = ref(null)
+// OSLMS-CUSTOM: All sentinel lets the user clear the category filter
 // Sentinel for the "All" category option. There's otherwise no way to clear a
 // selected category from the dropdown, so selecting "All" resets the filter and
 // shows every batch, with or without a category.
@@ -159,6 +164,7 @@ const title = ref('')
 const certification = ref(false)
 const filters = ref({})
 const is_student = computed(() => user.data?.is_student)
+// OSLMS-CUSTOM: role-based default tab (Valutatore falls back to All)
 // Managers default to the "Upcoming" tab; students to "Enrolled". Other roles
 // (e.g. a scoped Valutatore) don't get those tabs, so they default to "All".
 const isListManager = computed(
@@ -172,6 +178,7 @@ const defaultTab = is_student.value
 	: isListManager.value
 		? 'upcoming'
 		: 'all'
+// OSLMS-CUSTOM: selected tab persisted per browser, never for students
 // Persist the selected tab so it survives leaving and returning to the list.
 // Students are deliberately kept out of that: they have no tab bar (see the
 // TabButtons v-if) and always see their own batches, while `lms_batches_tab` is
@@ -187,6 +194,7 @@ const router = useRouter()
 const showBatchModal = ref(false)
 
 onMounted(() => {
+	// OSLMS-CUSTOM: discard a persisted tab not valid for the current role
 	// Fall back to the default tab if the persisted value isn't available for
 	// this user's role (e.g. role changed since it was stored).
 	const validTabs = batchTabs.value.map((tab) => tab.value)
@@ -249,6 +257,7 @@ const updateFilters = () => {
 }
 
 const updateCategoryFilter = () => {
+	// OSLMS-CUSTOM: All sentinel means no category filter
 	if (currentCategory.value && currentCategory.value !== ALL_CATEGORIES) {
 		filters.value['category'] = currentCategory.value
 	} else {
@@ -257,6 +266,7 @@ const updateCategoryFilter = () => {
 }
 
 const updateTitleFilter = () => {
+	// OSLMS-CUSTOM: word-by-word LIKE search
 	const titleFilter = searchLikeFilter(title.value)
 	if (titleFilter) {
 		filters.value['title'] = titleFilter
@@ -278,6 +288,7 @@ const updateTabFilter = () => {
 	if (!user.data) {
 		return
 	}
+	// OSLMS-CUSTOM: Enrolled tab filters by enrollment for every member, not only students
 	if (currentTab.value == 'enrolled') {
 		// The "Enrolled" tab is offered to every non-admin user (students AND, e.g.,
 		// a Valutatore who is also enrolled). Don't gate the filter on is_student,
@@ -303,6 +314,7 @@ const updateTabFilter = () => {
 			filters.value['published'] = 1
 			orderBy.value = 'start_date'
 		} else if (currentTab.value == 'archived') {
+			// OSLMS-CUSTOM: archived = batches already ended (end_date), not started
 			filters.value['end_date'] = ['<=', dayjs().format('YYYY-MM-DD')]
 		} else if (currentTab.value == 'unpublished') {
 			filters.value['published'] = 0
@@ -360,6 +372,7 @@ watch(currentTab, () => {
 })
 
 const batchTabs = computed(() => {
+	// OSLMS-CUSTOM: Enrolled is the only tab offered to a student
 	// A student's tab is pinned to "Enrolled" (see currentTab), so that's the
 	// only valid value for them. Mirrors courseTabs on the Courses page.
 	if (is_student.value) {

@@ -11,6 +11,7 @@ from frappe.model.document import Document
 
 class LMSBatchEnrollment(Document):
 	def after_insert(self):
+		# OSLMS-CUSTOM: course enrollments created after the batch enrollment is written
 		# Enrolling in the batch courses happens here, not in validate: LMS Enrollment
 		# grants a batch member access to a course by looking this record up in the
 		# database, so it has to be written first. Run from validate, the lookup found
@@ -78,6 +79,7 @@ class LMSBatchEnrollment(Document):
 		if seat_count and enrolled_count >= seat_count:
 			frappe.throw(_("There are no seats available in this batch."))
 
+	# OSLMS-CUSTOM: renamed from validate_course_enrollment and moved to after_insert
 	def enroll_in_batch_courses(self):
 		courses = frappe.get_all("Batch Course", filters={"parent": self.batch}, fields=["course"])
 
@@ -90,6 +92,7 @@ class LMSBatchEnrollment(Document):
 				enrollment.course = course.course
 				enrollment.member = self.member
 				enrollment.enrollment_from_batch = self.batch
+				# OSLMS-CUSTOM: written system-side, not with the joining student's permissions
 				enrollment.save(ignore_permissions=True)
 
 	def add_member_to_live_class(self):

@@ -18,9 +18,11 @@
 							{{ timeAgo(comm.communication_date) }}
 						</div>
 					</div>
+					<!-- OSLMS-CUSTOM: announcement subject shown above the body -->
 					<div class="ml-3 font-bold text-ink-gray-9 prose">
 						{{ comm.subject }}
 					</div>
+					<!-- OSLMS-CUSTOM: email-template HTML rendered in an isolated iframe, plain notifications on the themed card -->
 					<!-- Rich email/template HTML mirrors the email in an isolated
 					     iframe; a plain notification keeps the app's themed card. -->
 					<div
@@ -31,6 +33,7 @@
 					<AnnouncementContent v-else :content="comm.content" />
 				</div>
 			</div>
+			<!-- OSLMS-CUSTOM: announcements paginated 10 per page -->
 			<div
 				v-if="totalPages > 1"
 				class="flex items-center justify-between border-t pt-3 mt-2"
@@ -98,6 +101,7 @@ const canMakeAnnouncement = computed(() => {
  * card. Richer email-template HTML is detected here and rendered in the isolated
  * iframe instead, mirroring the email the recipient receives.
  */
+// OSLMS-CUSTOM: choose iframe vs themed card per announcement
 const isPlainNotification = (html) => {
 	const s = String(html || '').trim()
 	if (!s) return true
@@ -114,6 +118,7 @@ const communications = createResource({
 	makeParams() {
 		return {
 			batch: props.batch.data?.name,
+			// OSLMS-CUSTOM: paginated announcements (os_lms get_announcements override)
 			start: (currentPage.value - 1) * pageSize,
 			page_length: pageSize,
 		}
@@ -126,6 +131,7 @@ watch(currentPage, () => {
 })
 
 watch(
+	// OSLMS-CUSTOM: reload the list after sending from the modal
 	() => showAnnouncementModal.value,
 	(isOpen, wasOpen) => {
 		if (wasOpen && !isOpen) {
@@ -141,6 +147,7 @@ const totalPages = computed(() =>
 	Math.max(1, Math.ceil(totalAnnouncements.value / pageSize)),
 )
 
+// OSLMS-CUSTOM: composer hosted here and opened from the BatchDetail header via childRef
 // Opened from the batch header's "Make Announcement" button via the tab's
 // childRef (see BatchDetail).
 const openAnnouncementModal = () => {
@@ -157,10 +164,12 @@ defineExpose({ openAnnouncementModal })
  * Preserve blank lines (empty paragraphs from pressing Enter twice), which
  * otherwise have no content, collapse, and disappear.
  */
+/* OSLMS-CUSTOM: keep blank lines in the themed card */
 .announcement-card p:empty::before {
 	content: '\00a0';
 }
 
+/* OSLMS-CUSTOM: named text/highlight colors resolved on the themed card (light + dark) */
 /*
  * Plain notification card sits on the dark theme, so map the editor's named
  * colors to the dark-mode shades (lighter) for readable contrast on the dark

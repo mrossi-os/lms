@@ -4202,3 +4202,877 @@ nostre righe."""
   [[entries.sites]]
   file = "frontend/src/pages/Assignments.vue"
   anchor = '<div v-else class="text-xs sm:text-sm">'
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 prima del merge di v2.59.0 — classi
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 — gruppo "batches" (classi), prima del merge di v2.59.0
+# ---------------------------------------------------------------------------
+
+# --- Modulo impostazioni della classe (BatchForm.vue) ----------------------
+
+[[entries]]
+id = "batch-form-valutatori"
+title = "Valutatori della classe nel modulo impostazioni"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il Valutatore è un ruolo os_lms limitato a una sola classe: si assegna dentro la classe, nel
+campo custom valutatori (Table MultiSelect, figlio LMS Batch Valutatore), scegliendo fra tutti
+gli utenti non studenti (os_lms.os_lms.api.search_non_student_users). Chi gestisce la classe
+(Moderator, Batch Evaluator, Docente) lo assegna accanto agli istruttori; il salvataggio della
+classe concede o revoca il ruolo in automatico (sync_batch_valutatore_roles su on_update).
+Senza questo campo nel modulo SPA i valutatori si potrebbero assegnare solo dal desk, che la
+maggior parte dei gestori non raggiunge. Il campo non è nel tipo LMSBatch generato: si legge e
+si scrive a mano in updateBatchData e updateBatch."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchForm.vue"
+  anchor = "url=\"os_lms.os_lms.api.search_non_student_users\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchForm.vue"
+  anchor = "} else if (key == 'valutatori') {"
+  symbol = "updateBatchData"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchForm.vue"
+  anchor = "valutatori: valutatori.value.map((valutatore) => ({"
+  symbol = "updateBatch"
+
+[[entries]]
+id = "batch-form-people-dirty-autosave"
+title = "Modificare istruttori o valutatori attiva il salvataggio"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+I selettori di istruttori e valutatori usano ref separate, non batchDetail.doc, quindi il
+watcher profondo del documento non vede le loro modifiche: senza questo watcher il modulo non
+diventava "modificato", il pulsante Salva non compariva e l'autosalvataggio non partiva.
+Il watcher confronta le ref con le righe caricate nel documento e, se divergono, marca il
+modulo come modificato e salva."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchForm.vue"
+  anchor = "watch([instructors, valutatori], () => {"
+
+[[entries]]
+id = "batch-form-saved-people-removable"
+title = "Istruttori e valutatori non più attivi restano rimovibili dalla classe"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+I due selettori ricevono opzioni solo dall'endpoint di ricerca, che esclude utenti disattivati,
+utenti che hanno perso il ruolo e utenti cancellati, e restituisce una sola pagina di risultati.
+Chi era già salvato sulla classe ma non compare in quei risultati spariva dal menu, e togliere
+la spunta lì è l'unico modo di rimuoverlo: restava sulla classe per sempre, e il riepilogo
+mostrava id utente grezzi. I valori salvati vengono risolti a parte con gli stessi endpoint e
+passati come extraOptions, con ripiego sull'id grezzo, così restano elencati e rimovibili.
+Stessa correzione del campo istruttori del corso."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchForm.vue"
+  anchor = ":extraOptions=\"instructorOptions\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchForm.vue"
+  anchor = ":extraOptions=\"valutatoreOptions\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchForm.vue"
+  anchor = "const resolvedUsers = ref<Map<string, UserOption>>(new Map())"
+
+[[entries]]
+id = "batch-form-feature-sections"
+title = "Editor delle sezioni in evidenza nelle impostazioni della classe"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La classe ha sezioni in evidenza (campo custom custom_feature_sections su LMS Batch) mostrate in
+sola lettura nella pagina della classe; l'editor os_lms FeatureSectionEditor, montato dopo i
+Dettagli della classe, è l'unico modo di modificarle fuori dal desk. Era già stato perso in un
+merge upstream (3caf07639, file preso dalla versione upstream) e ripristinato: il lato backend
+(campo, deserializzazione in get_batch_details, rendering in BatchOverview) non era mai stato
+tolto. Il documento si passa come modelValue perché il componente lo modifica sul posto;
+courseName si omette così il pulsante di reindicizzazione AI, solo per i corsi, resta nascosto.
+ATTENZIONE al merge di v2.59.0: l'upstream sostituisce TextEditor con RichTextEditor nel blocco
+Dettagli della classe subito sopra; l'editor delle sezioni deve restare dopo quel blocco."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchForm.vue"
+  anchor = "fieldName=\"custom_feature_sections\""
+
+[[entries]]
+id = "batch-form-os-link"
+title = "Campi Link del modulo classe con lo stile del tema"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+I campi Link del modulo classe (categoria, template email, account Zoom/Meet) usano il wrapper
+os_lms Controls/Link.vue, che avvolge il Link upstream in un div os-link solo per restilizzarlo
+con i colori del cliente senza modificare il componente base. Dopo un merge l'import può
+tornare al percorso upstream '@/components/Controls/Link.vue': va ripuntato al wrapper. Se
+l'upstream cambia props o metodi esposti del Link base (onCreate, reload), va aggiornato anche
+il wrapper."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchForm.vue"
+  anchor = "import Link from '@/oslms/components/Controls/Link.vue'"
+
+[[entries]]
+id = "batch-form-style-i18n"
+title = "Ritocchi di stile e traduzioni nel modulo classe"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Ritocchi cosmetici: i segnaposto dei selettori di data e ora passano da __() ("Select date",
+"Select time"), perché i default di frappe-ui sono letterali inglesi; i selettori (fuso orario,
+istruttori, valutatori, modalità, provider di videoconferenza) portano la classe os-input del
+tema. Nessuna regola di comportamento."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchForm.vue"
+  anchor = ":label=\"__('Batch Start Date')\"\n\t\t\t\t\t\t\ttype=\"date\"\n\t\t\t\t\t\t\t:placeholder=\"__('Select date')\""
+
+# --- Lista delle classi (Batches.vue) ----------------------------------------
+
+[[entries]]
+id = "batch-list-student-enrolled-only"
+title = "Lo studente vede solo le proprie classi, senza schede"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Allo studente la lista delle classi mostra solo quelle a cui è iscritto: niente barra delle
+schede e scheda fissa su "Iscritto". La scheda non si legge dalla chiave per browser
+lms_batches_tab: un "all" lasciato lì da un altro utente dello stesso browser portava lo
+studente su una lista vuota (il filtro studente restringe alle classi pubblicate future) senza
+schede visibili per tornare indietro. Stesso schema di courseTabs nella pagina Corsi.
+ATTENZIONE al merge di v2.59.0: l'upstream rinomina la prop di TabButtons da :buttons a
+:options proprio sotto il nostro v-if; tenere la condizione !is_student con la prop nuova."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/Batches.vue"
+  anchor = "v-if=\"user.data && !is_student\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/Batches.vue"
+  anchor = "? ref('enrolled')"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/Batches.vue"
+  anchor = "return [{ label: __('Enrolled'), value: 'enrolled' }]"
+  symbol = "batchTabs"
+
+  [entries.visibility]
+  subject = "barra delle schede nella lista classi"
+  allow = ["Moderator", "Docente", "Batch Evaluator", "Valutatore"]
+  deny = ["Student"]
+
+[[entries]]
+id = "batch-list-default-tab-persist"
+title = "Scheda iniziale per ruolo e ricordata fra una visita e l'altra"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Chi gestisce le classi (Moderator, istruttore, Batch Evaluator) parte da "Prossime"; chi non ha
+quelle schede, come un Valutatore limitato a una classe, parte da "Tutte". La scheda scelta si
+ricorda nel browser (lms_batches_tab) così tornando alla lista non si riparte da capo; se il
+valore salvato non è fra le schede del ruolo attuale (ruolo cambiato) si torna al default. Gli
+studenti restano fuori dalla persistenza (vedi batch-list-student-enrolled-only)."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/Batches.vue"
+  anchor = "const isListManager = computed("
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/Batches.vue"
+  anchor = "useLocalStorage('lms_batches_tab', defaultTab)"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/Batches.vue"
+  anchor = "if (!validTabs.includes(currentTab.value)) {"
+
+[[entries]]
+id = "batch-list-enrolled-tab-members"
+title = "La scheda Iscritto filtra per iscrizione per ogni membro"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La scheda "Iscritto" è offerta a ogni utente non gestore, compreso un Valutatore che è anche
+iscritto (per lui is_student è falso). Il filtro upstream era legato a is_student, quindi quei
+membri vedevano tutte le classi invece delle proprie. Il filtro vale per chiunque sia sulla
+scheda, e lasciandola il filtro di iscrizione viene tolto, altrimenti passando a Tutte la
+lista restava filtrata."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/Batches.vue"
+  anchor = "if (currentTab.value == 'enrolled') {"
+  symbol = "updateTabFilter"
+
+[[entries]]
+id = "batch-list-archived-end-date"
+title = "Archiviate = classi già finite"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La scheda "Archiviate" mostra le classi con data di fine passata; l'upstream usava la data di
+inizio, così una classe appena iniziata e ancora in corso finiva fra le archiviate."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/Batches.vue"
+  anchor = "filters.value['end_date'] = ['<=', dayjs().format('YYYY-MM-DD')]"
+  symbol = "updateTabFilter"
+
+[[entries]]
+id = "batch-list-category-all"
+title = "Opzione Tutte per azzerare il filtro categoria"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Scelta una categoria non c'era modo di toglierla dal menu (il pulsante di pulizia del
+combobox è inaffidabile) e bisognava ricaricare la pagina. La voce "Tutte" azzera il filtro e
+mostra ogni classe, con o senza categoria; il valore sentinella resta fuori dall'URL."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/Batches.vue"
+  anchor = "const ALL_CATEGORIES = '__all__'"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/Batches.vue"
+  anchor = ":options=\"categoryOptions\""
+
+[[entries]]
+id = "batch-list-search-words"
+title = "Ricerca classi per parole indipendenti"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La casella di ricerca costruiva un solo LIKE sull'intera frase, quindi aggiungere una seconda
+parola (anche una lettera) azzerava i risultati. searchLikeFilter divide la ricerca in parole
+(in ordine, con spazi in mezzo ammessi) così ogni parola in più restringe invece di svuotare.
+Il ricaricamento parte da update:modelValue e non dall'evento input del DOM, che arrivava prima
+dell'aggiornamento del v-model: la ricerca era sempre indietro di un carattere e svuotare la
+casella non toglieva il filtro. Stessa correzione su Corsi, Programmi, Quiz, Compiti ed
+Esercizi."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/Batches.vue"
+  anchor = "const titleFilter = searchLikeFilter(title.value)"
+  symbol = "updateTitleFilter"
+
+[[entries]]
+id = "batch-list-certification-filter-hidden"
+title = "Casella Certificazione tolta dai filtri della lista classi"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+La casella "Certificazione" (solo classi che rilasciano un certificato) è tolta dai filtri
+della lista; la logica del filtro resta e si può ancora attivare con ?certification=1
+nell'URL. Il commit non dice perché: motivazione dedotta, il cliente non usa i certificati di
+classe come criterio di ricerca (le certificazioni passano da TrueSkill sui corsi). La
+personalizzazione consiste nella rimozione, quindi l'ancora è il commento."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/Batches.vue"
+  anchor = 'OSLMS-CUSTOM: upstream "Certification" filter checkbox removed'
+
+# --- Dashboard della classe (AdminBatchDashboard.vue, BatchDashboard.vue) ---
+
+[[entries]]
+id = "batch-dashboard-export-statistics"
+title = "Esportazione delle statistiche della classe"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Dalla dashboard della classe il gestore scarica i progressi degli studenti in due formati da un
+solo endpoint (os_lms.os_lms.api.export_batch_progress): Excel leggibile (una riga per studente
+e corso iniziato) e CSV grezzo (studente x corso x lezione) pensato per l'analisi con l'AI. Il
+Valutatore legge la dashboard ma non può esportarla: il menu compare solo con isFullAdmin
+(Moderator, Batch Evaluator, Docente) e il backend applica la stessa restrizione."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+  anchor = ":options=\"exportMenu\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+  anchor = "/api/method/os_lms.os_lms.api.export_batch_progress?batch="
+  symbol = "exportProgress"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+  anchor = "const isFullAdmin = computed("
+
+  [entries.visibility]
+  subject = "menu Esporta statistiche nella dashboard classe"
+  allow = ["Moderator", "Batch Evaluator", "Docente"]
+  deny = ["Valutatore"]
+
+[[entries]]
+id = "batch-dashboard-remove-students"
+title = "Rimozione di studenti dalla classe"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il gestore seleziona uno o più studenti nella lista della dashboard e li toglie dalla classe
+(cancellazione delle LMS Batch Enrollment). La selezione è attiva solo con isFullAdmin: il
+Valutatore vede la dashboard in sola lettura, senza iscrizione, importazione né rimozione."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+  anchor = "selectable: isFullAdmin,"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+  anchor = "removeStudents(selections, unselectAll)"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+  anchor = "const removeStudents = async ("
+
+  [entries.visibility]
+  subject = "selezione e rimozione studenti nella dashboard classe"
+  allow = ["Moderator", "Batch Evaluator", "Docente"]
+  deny = ["Valutatore"]
+
+[[entries]]
+id = "batch-dashboard-import-students"
+title = "Importazione degli studenti nella classe dalla dashboard"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il pulsante Importa nell'intestazione della classe (BatchDetail, via childRef) apre
+un'importazione dati di LMS Batch Enrollment già nominata, per iscrivere molti studenti in
+una volta senza passare dal desk. goToImport vive nella dashboard ed è esposto insieme a
+openEnrollModal; se sparisce da defineExpose il pulsante dell'intestazione non fa nulla."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+  anchor = "defineExpose({ openEnrollModal, goToImport })"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+  anchor = "function goToImport() {"
+
+[[entries]]
+id = "batch-dashboard-student-progress"
+title = "Progresso di ogni studente nella dashboard della classe"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La lista studenti della dashboard ha una colonna Progresso (barra + percentuale): la media dei
+progressi dello studente sui corsi della classe. Dati e conteggio dei certificati arrivano da
+una sola chiamata os_lms (get_batch_certified_count), secondo la regola del progetto di una
+chiamata per pagina al caricamento; il Certificati upstream contava con frappe.client.get_count.
+Il progresso è derivato lato client, non è una colonna del database."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+  anchor = "url: 'os_lms.os_lms.api.get_batch_certified_count',"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+  anchor = ":value=\"batchStats.data?.certified_count || 0\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+  anchor = "key: 'progress',"
+  symbol = "studentColumns"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+  anchor = "const getStudentProgress = (member: string) =>"
+
+[[entries]]
+id = "batch-dashboard-sortable-students"
+title = "Lista studenti ordinabile per colonna"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le intestazioni della lista studenti (nome, progresso, data di iscrizione) sono cliccabili e
+ordinano in modo crescente/decrescente, come nella dashboard del corso. Nome e data si
+ordinano lato server (orderBy della risorsa, corretto anche con "Carica altri"); il progresso
+non ha colonna nel database e si ordina lato client sulle righe caricate."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+  anchor = "@click=\"toggleSort(item.key)\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+  anchor = "const toggleSort = (key: string) => {"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+  anchor = "const sortedStudents = computed(() => {"
+
+[[entries]]
+id = "batch-dashboard-progress-panel"
+title = "Riepilogo progressi e progresso per corso nella dashboard della classe"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Al posto del grafico a barre upstream "Batch Summary" la dashboard ha una sola card con: un
+anello "Riepilogo progressi" che divide gli studenti in Appena iniziato / In corso / Avanzato /
+Completato (stesse fasce della dashboard del corso, calcolato lato client senza chiamate in
+più) e un pannello "Progresso corsi" con selettore: senza corso, media per corso fra gli
+studenti della classe; con un corso, completamento per lezione. Il pannello usa
+os_lms.os_lms.api.get_batch_progress_stats, che limita numeratore e denominatore agli studenti
+della classe, così le percentuali sono relative alla classe e non a tutti gli iscritti del
+corso. Anche il Valutatore della classe lo vede. La chiamata upstream get_batch_chart_data non
+si fa più."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+  anchor = "v-if=\"progressSummaryTotal || batch.data?.courses?.length\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+  anchor = "url: 'os_lms.os_lms.api.get_batch_progress_stats',"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+  anchor = "const progressSummary = computed(() => {"
+
+[[entries]]
+id = "batch-feedback-removed"
+title = "Feedback della classe tolto dalle dashboard"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+La sezione Feedback della classe (BatchFeedback) non compare più: tolta dalla dashboard dello
+studente già a marzo 2026 insieme alle schede Annunci/Discussioni (poi reintrodotte), e
+commentata nella dashboard del gestore quando è arrivato il pannello dei progressi. I commit
+non dicono perché: motivazione dedotta, il cliente non raccoglie il feedback di classe da
+questa sezione. Le personalizzazioni consistono nella rimozione, quindi le ancore sono i
+commenti; il componente BatchFeedback resta nel codice (e ancora importato nella dashboard del
+gestore)."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+  anchor = "<!-- <div class=\"card\">"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/BatchDashboard.vue"
+  anchor = "OSLMS-CUSTOM: upstream BatchFeedback section removed from the student batch dashboard"
+
+[[entries]]
+id = "batch-admin-dashboard-style"
+title = "Ritocchi di stile nella dashboard del gestore della classe"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Ritocco cosmetico: il riquadro della lista studenti porta la classe card del tema. Nessuna
+regola di comportamento."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+  anchor = "class=\"border rounded-lg py-3 px-4 order-2 lg:order-1 card\""
+
+[[entries]]
+id = "batch-student-dashboard-style"
+title = "Ritocchi di stile nella dashboard dello studente della classe"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Ritocco cosmetico: la tabella dei corsi della classe porta la classe os-list-view del tema.
+Nessuna regola di comportamento."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/BatchDashboard.vue"
+  anchor = "class=\"border rounded-lg os-list-view\""
+
+[[entries]]
+id = "batch-student-progress-lesson-drilldown"
+title = "Dettaglio per lezione nel riquadro progressi dello studente"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nel riquadro che si apre cliccando uno studente nella dashboard della classe, un selettore di
+corso passa dalla media per corso ("Tutti i corsi") al dettaglio per lezione di quello studente
+nel corso scelto (capitolo.lezione, titolo, completata/da fare), caricato solo a richiesta.
+Passa dall'endpoint os_lms.os_lms.api.get_batch_student_course_progress, autorizzato per
+classe, perché il Valutatore non può leggere direttamente LMS Course Progress. Decisione del
+committente (2026-07-31): la lista delle valutazioni (quiz ed elaborati) nello stesso riquadro
+resta visibile anche al Valutatore, è il suo punto d'ingresso ai risultati; non reintrodurre
+il filtro tolto con 65d736aed."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/BatchStudentProgress.vue"
+  anchor = "url: 'os_lms.os_lms.api.get_batch_student_course_progress',"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/BatchStudentProgress.vue"
+  anchor = ":options=\"courseSelectOptions\""
+
+[[entries]]
+id = "batch-student-progress-i18n"
+title = "Traduzioni nel riquadro progressi dello studente"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Ritocchi di traduzione: intestazioni di colonna e stato dei compiti passano da __(), e il
+badge di completamento usa il letterale italiano "Completato" dentro __() (motivazione
+dedotta: la chiave "Complete" è tradotta come verbo altrove e qui serve l'aggettivo). Nessuna
+regola di comportamento."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/BatchStudentProgress.vue"
+  anchor = "{{ __('Completato') }}"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/BatchStudentProgress.vue"
+  anchor = "label: __('Percentage/Status')"
+
+[[entries]]
+id = "batch-card-style"
+title = "Ritocchi di stile nella card della classe"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Ritocco cosmetico: la card della classe (lista classi e home) porta la classe card del tema.
+Nessuna regola di comportamento. ATTENZIONE al merge di v2.59.0: l'upstream cambia la riga del
+titolo (text-xl-semibold -> text-lg-semibold) subito sotto il marcatore; conflitto banale."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/BatchCard.vue"
+  anchor = "class=\"flex flex-col border hover:border-outline-gray-3 rounded-md p-4 h-full card\""
+
+[[entries]]
+id = "batch-feedback-card-style"
+title = "Ritocchi di stile nel riquadro feedback della classe"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Ritocco cosmetico: il riquadro BatchFeedback ha padding, bordo e classe card propri, perché è
+stato tolto dal contenitore che li forniva. Oggi il componente non è montato da nessuna parte
+(vedi batch-feedback-removed). Nessuna regola di comportamento."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/BatchFeedback.vue"
+  anchor = "<div class=\"p-4 border rounded-lg card\">"
+
+[[entries]]
+id = "batch-overlay-meta-image"
+title = "Anteprima della classe: immagine di ripiego da meta_image"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+LMS Batch non ha un campo image, quindi il ripiego upstream sull'immagine (quando manca il
+video) non poteva mai comparire: si usa meta_image. Il video è ritagliato con gli angoli
+superiori arrotondati della card. BatchOverlay oggi non è montato (commentato in BatchOverview
+da marzo 2026, il video di anteprima si mostra da solo: vedi batch-preview-video); la
+correzione conta se l'overlay torna in uso."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/BatchOverlay.vue"
+  anchor = ":fallback-image=\"batch.data.meta_image\""
+
+# --- Annunci (AnnouncementModal.vue, Announcements.vue) ---------------------
+
+[[entries]]
+id = "announcement-send-os-lms"
+title = "Annunci inviati come notifica in piattaforma con email facoltativa"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Un annuncio della classe non passa più da frappe.core...communication.email.make (email in
+Ccn con Rispondi-a obbligatorio) ma da os_lms.os_lms.api.send_batch_announcement, che crea la
+notifica in piattaforma per i destinatari scelti e, se richiesto, invia anche l'email. Il
+campo Rispondi-a è stato tolto perché l'endpoint non lo usa. L'endpoint richiede subject,
+batch, recipients, content (più message e send_email facoltativi): il frontend li deve
+mandare tutti. Chi può inviare annunci lo decide l'intestazione di BatchDetail (gestori), il
+Valutatore li legge soltanto."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AnnouncementModal.vue"
+  anchor = "url: 'os_lms.os_lms.api.send_batch_announcement',"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AnnouncementModal.vue"
+  anchor = "<!-- <FormControl"
+
+[[entries]]
+id = "announcement-email-template-composer"
+title = "Composizione degli annunci con template email"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Con "Invia email insieme alla notifica" si sceglie un Email Template (prima quelli marcati
+custom_available_for_announcements; se nessuno è marcato, tutti; preselezionato "Announcement
+Email Template" se esiste). L'editor ricco di frappe-ui non conserva l'HTML delle email (stili
+in linea, pulsanti, tabelle), quindi ci sono tre rami: template HTML con {{ message }} ->
+l'editor ricco scrive solo il messaggio, inserito nel template fisso, con anteprima e HTML
+avanzato; template HTML senza segnaposto -> anteprima fedele in iframe + textarea di HTML
+grezzo; template non HTML o solo notifica -> editor ricco normale. Il template scelto si carica
+solo per questo annuncio, il documento Email Template non viene mai riscritto. Il ramo era già
+stato perso in un merge upstream (3caf07639) e ripristinato. ATTENZIONE al merge di v2.59.0:
+l'upstream sostituisce TextEditor con RichTextEditor nel ramo editor e nell'import; qui
+TextEditor serve in due rami e la cottura dei colori (announcement-named-colors) si basa sulla
+sua serializzazione var(--prose-color-*): verificarla prima di passare a RichTextEditor."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AnnouncementModal.vue"
+  anchor = "v-model=\"sendEmail\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AnnouncementModal.vue"
+  anchor = "const DEFAULT_TEMPLATE_NAME = 'Announcement Email Template'"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AnnouncementModal.vue"
+  anchor = "const flagged = all.filter((t) => t.custom_available_for_announcements)"
+  symbol = "templateOptions"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AnnouncementModal.vue"
+  anchor = "v-if=\"sendEmail && isHtmlMode && hasMessagePlaceholder\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AnnouncementModal.vue"
+  anchor = "v-else-if=\"sendEmail && isHtmlMode\""
+
+[[entries]]
+id = "announcement-specific-recipients"
+title = "Annuncio a tutta la classe o a studenti scelti"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+"Invia a" permette di mandare l'annuncio a tutta la classe o solo a studenti scelti da un
+elenco con ricerca (nome completo ed email); con "Studenti specifici" serve almeno una
+selezione. L'upstream mandava sempre a tutti gli studenti."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AnnouncementModal.vue"
+  anchor = "v-if=\"recipientMode === 'specific'\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AnnouncementModal.vue"
+  anchor = "const toggleStudent = (email, checked) => {"
+
+[[entries]]
+id = "announcement-named-colors"
+title = "Colori e evidenziazioni degli annunci visibili ovunque"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+L'editor di frappe-ui salva i colori con nome come var(--prose-color-<nome>) e le
+evidenziazioni come var(--prose-highlight-<nome>), variabili definite solo dentro l'editor
+(.ProseMirror). Fuori (anteprima, annuncio pubblicato, email ricevuta) il colore si perdeva, o
+compariva solo a volte. Nel composer i colori si "cuociono" in esadecimale per anteprima ed
+email (sfondo chiaro); la notifica senza email tiene le variabili, che la card a tema della
+lista risolve con tonalità leggibili sia in chiaro sia in scuro, più la regola mark che
+mantiene il colore del testo evidenziato."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AnnouncementModal.vue"
+  anchor = "const inlineNamedColors = (html) =>"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/Announcements.vue"
+  anchor = "--prose-color-red: #e43838;"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/Announcements.vue"
+  anchor = "--prose-highlight-red: #742a2a;"
+
+[[entries]]
+id = "announcement-rich-render"
+title = "Annunci con template email mostrati come l'email ricevuta"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nella scheda Annunci ogni annuncio mostra l'oggetto sopra il corpo. Un annuncio con HTML da
+template email (documento, tabelle, sfondi, larghezze) si mostra in un iframe isolato
+(AnnouncementContent) che riproduce l'email ricevuta; una notifica semplice scritta
+nell'editor resta sulla card a tema dell'app. Le righe vuote (paragrafi vuoti) si conservano
+in entrambi i rendering invece di collassare."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/Announcements.vue"
+  anchor = "v-if=\"isPlainNotification(comm.content)\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/Announcements.vue"
+  anchor = "{{ comm.subject }}"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/Announcements.vue"
+  anchor = ".announcement-card p:empty::before {"
+
+[[entries]]
+id = "announcement-list-pagination"
+title = "Annunci della classe paginati"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La scheda Annunci mostra 10 annunci per pagina con Precedente/Successivo invece di caricarli
+tutti. Dipende dall'override os_lms di lms.lms.api.get_announcements (hooks.py,
+override_whitelisted_methods), che accetta start/page_length e restituisce {data, total}: se
+l'override sparisce, la risposta upstream è una lista e la scheda risulta vuota."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/Announcements.vue"
+  anchor = "page_length: pageSize,"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/Announcements.vue"
+  anchor = "const announcements = computed(() => communications.data?.data || [])"
+
+[[entries]]
+id = "announcement-modal-in-tab"
+title = "Il composer degli annunci vive nella scheda Annunci"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il pulsante "Fai un annuncio" è nell'intestazione della classe, visibile solo sulla scheda
+Annunci e ai gestori (BatchDetail). Il composer è montato dalla scheda stessa, che espone
+openAnnouncementModal via childRef, così alla chiusura può tornare alla prima pagina e
+ricaricare la lista mostrando subito l'annuncio appena inviato."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/Announcements.vue"
+  anchor = "defineExpose({ openAnnouncementModal })"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/Announcements.vue"
+  anchor = "() => showAnnouncementModal.value,"
+
+# --- Lezioni live della classe (LiveClass.vue) --------------------------------
+
+[[entries]]
+id = "live-class-batch-card-observer"
+title = "Card unica delle lezioni live e accesso da osservatore per il Valutatore"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le lezioni live della classe usano LiveClassCard, la stessa card della home: finestra di
+accesso di 15 minuti, Avvia per l'host, "in attesa dell'host" finché la lezione non è
+avviata, badge Terminata, link Partecipa interno e controllato lato server (join_live_class).
+Il Valutatore della classe è passato come observer: vede Partecipa per tutta la lezione senza
+aspettare started_at, perché spesso l'host apre la riunione direttamente su Zoom/Meet e
+started_at resta vuoto. Il menu di modifica/eliminazione arriva nello slot actions."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/LiveClass.vue"
+  anchor = ":observer=\"Boolean(batch.data?.is_valutatore)\""
+
+  [entries.visibility]
+  subject = "pulsante Partecipa (osservatore) nelle lezioni live della classe"
+  allow = ["Valutatore"]
+  deny = []
+
+[[entries]]
+id = "live-class-edit-delete"
+title = "Modifica ed eliminazione delle lezioni live dalla classe"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il gestore della classe (Moderator, Batch Evaluator) modifica una lezione live dallo stesso
+modal di creazione (carica il documento completo) e la elimina con conferma; l'eliminazione
+passa da os_lms.os_lms.api.delete_live_class e può avvisare gli studenti della classe via email
+e notifica in piattaforma (casella attiva di default). Una modifica di titolo, data, ora, durata
+o fuso riprogramma la riunione Zoom e avvisa gli studenti (lato backend)."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/LiveClass.vue"
+  anchor = ":liveClass=\"editingClass\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/LiveClass.vue"
+  anchor = "url: 'os_lms.os_lms.api.delete_live_class',"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/LiveClass.vue"
+  anchor = "notify_students: notifyStudentsOnDelete.value ? 1 : 0,"
+  symbol = "confirmDelete"
+
+  [entries.visibility]
+  subject = "modifica/eliminazione lezioni live nella classe"
+  allow = ["Moderator", "Batch Evaluator"]
+  deny = ["Valutatore", "Student"]
+
+[[entries]]
+id = "live-class-pagination-sort"
+title = "Lezioni live della classe paginate e ordinabili"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Una classe accumula molte lezioni live: la scheda ne mostra 20 per pagina (conteggio a parte
+con get_count) e si ordina per data di creazione (default, più recenti prima) o per data della
+lezione, in senso crescente o decrescente. Aprire e chiudere il modal riporta alla prima
+pagina e ricarica il conteggio."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/LiveClass.vue"
+  anchor = "const PAGE_SIZE = 20"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/LiveClass.vue"
+  anchor = "const computedOrderBy = computed(() => {"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/LiveClass.vue"
+  anchor = ":options=\"sortFieldOptions\""
+
+# --- Nuova classe (NewBatchModal.vue) -----------------------------------------
+
+[[entries]]
+id = "batch-new-modal-required-warnings"
+title = "Avvisi sui campi obbligatori nella creazione di una classe"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Prima di creare la classe il modal controlla uno per uno i campi obbligatori (titolo, date,
+orari, fuso, descrizione, istruttori, dettagli) e mostra un avviso che nomina il campo
+mancante, invece di lasciare all'utente l'errore generico del server."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/NewBatchModal.vue"
+  anchor = "toast.warning(__('{0} is required').format(__('Title')))"
+  symbol = "saveBatch"
+
+[[entries]]
+id = "batch-new-modal-i18n"
+title = "Traduzioni nel modal Nuova classe"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Ritocchi di traduzione: il titolo del dialog e i segnaposto dei selettori di data e ora
+passano da __() (i default di frappe-ui sono letterali inglesi). Nessuna regola di
+comportamento."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/NewBatchModal.vue"
+  anchor = ":title=\"__('New Batch')\""
+
+# --- Iscrizione alla classe (lms_batch_enrollment.py) -------------------------
+
+[[entries]]
+id = "batch-enrollment-courses-after-insert"
+title = "Iscrizione ai corsi della classe dopo aver scritto l'iscrizione alla classe"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Iscrivendosi a una classe lo studente viene iscritto ai suoi corsi. LMS Enrollment concede
+l'accesso a un membro della classe cercando nel database proprio questa LMS Batch Enrollment
+(bypass enrollment_from_batch), quindi le iscrizioni ai corsi vanno create in after_insert,
+quando il record esiste già: da validate la ricerca non trovava nulla e uno studente che si
+iscriveva da solo veniva respinto da ogni corso non aperto all'autoiscrizione. Il salvataggio
+è con ignore_permissions perché lo crea il sistema, non lo studente. Fa parte di una correzione
+in più file (commit a7cd6d837): in lms_enrollment.py il bypass di classe viene prima dei
+controlli di autoiscrizione, in lms_batch.py un corso aggiunto a una classe in corso iscrive
+gli studenti già presenti, e una patch v2_0 ha sistemato le classi esistenti. Il metodo è
+rinominato da validate_course_enrollment a enroll_in_batch_courses."""
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.py"
+  anchor = "self.enroll_in_batch_courses()"
+  symbol = "after_insert"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.py"
+  anchor = "enrollment.save(ignore_permissions=True)"
+  symbol = "enroll_in_batch_courses"

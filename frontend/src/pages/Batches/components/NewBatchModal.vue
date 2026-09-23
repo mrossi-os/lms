@@ -10,6 +10,7 @@
 						variant="outline"
 						autocomplete="off"
 					/>
+					<!-- OSLMS-CUSTOM: translated date/time placeholders (and dialog title) -->
 					<FormControl
 						v-model="batch.start_date"
 						:label="__('Start Date')"
@@ -232,6 +233,7 @@ const validateFields = () => {
 
 const saveBatch = (close: () => void = () => {}) => {
 	validateFields()
+	// OSLMS-CUSTOM: required-field warnings before creating the batch
 	if (!batch.value.title) {
 		toast.warning(__('{0} is required').format(__('Title')))
 		return

@@ -1,5 +1,6 @@
 <template>
 	<div v-if="batch.data" class="border-2 rounded-md lg:w-72">
+		<!-- OSLMS-CUSTOM: poster falls back to meta_image (LMS Batch has no image field); rounded top clip -->
 		<VideoPreview
 			:video-link="batch.data.video_link"
 			:fallback-image="batch.data.meta_image"

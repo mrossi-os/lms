@@ -1,5 +1,6 @@
 <template>
 	<div class="p-4 border rounded-lg card">
+		<!-- OSLMS-CUSTOM: card styling on the root (padding, border, card class) -->
 		<div class="flex justify-between mb-5">
 			<div class="space-y-1">
 				<div class="text-xl-semibold text-ink-gray-9">

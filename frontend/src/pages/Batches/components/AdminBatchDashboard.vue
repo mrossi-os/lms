@@ -6,6 +6,7 @@
 				:value="formatAmount(batch.data?.students?.length) || 0"
 			/>
 
+			<!-- OSLMS-CUSTOM: certified count comes from the single os_lms batch stats call -->
 			<NumberChartGraph
 				:title="__('Certified')"
 				:value="batchStats.data?.certified_count || 0"
@@ -40,6 +41,7 @@
 			v-else
 			class="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-5 items-start"
 		>
+			<!-- OSLMS-CUSTOM: card class for the os theme -->
 			<div class="border rounded-lg py-3 px-4 order-2 lg:order-1 card">
 				<div class="flex items-center justify-between gap-x-2 mb-3">
 					<div class="text-xl-semibold text-ink-gray-9">
@@ -55,6 +57,7 @@
 								<span class="lucide-search size-4 text-ink-gray-5" />
 							</template>
 						</FormControl>
+						<!-- OSLMS-CUSTOM: statistics export (xlsx/csv), hidden from a Valutatore -->
 						<Dropdown
 							v-if="isFullAdmin"
 							:options="exportMenu"
@@ -70,6 +73,7 @@
 					</div>
 				</div>
 				<div class="max-h-[63vh] overflow-y-auto">
+					<!-- OSLMS-CUSTOM: sortable rows with a progress column; row selection (removal) only for full admins -->
 					<ListView
 						v-if="students.loading || students.data?.length"
 						:columns="studentColumns"
@@ -87,6 +91,7 @@
 						<ListHeader
 							class="mb-2 grid items-center gap-x-4 rounded bg-surface-gray-2 p-2"
 						>
+							<!-- OSLMS-CUSTOM: clickable headers toggle column sorting -->
 							<ListHeaderItem
 								:item="item"
 								v-for="item in studentColumns"
@@ -146,6 +151,7 @@
 								</template>
 							</ListRow>
 						</ListRows>
+						<!-- OSLMS-CUSTOM: bulk removal of selected students from the batch -->
 						<ListSelectBanner class="!min-w-0">
 							<template #actions="{ unselectAll, selections }">
 								<div class="flex gap-2">
@@ -187,10 +193,12 @@
 			</div>
 
 			<div class="order-1 lg:order-2 space-y-5">
+				<!-- OSLMS-CUSTOM: batch feedback card hidden from the dashboard -->
 				<!-- <div class="card">
 					<BatchFeedback v-if="batch.data" :batch="batch.data.name" />
 				</div> -->
 
+				<!-- OSLMS-CUSTOM: progress summary donut + batch-scoped course/lesson progress panel (replaces the upstream Batch Summary bar chart) -->
 				<div
 					v-if="progressSummaryTotal || batch.data?.courses?.length"
 					class="border rounded-lg pt-4 px-4 card"
@@ -364,6 +372,7 @@ const dayjs = inject<typeof dayjsType>('$dayjs')!
 const user = inject<{ data?: Record<string, any> }>('$user')
 const router = useRouter()
 
+// OSLMS-CUSTOM: Valutatore gets a read-only dashboard
 // A "Valutatore" of this batch sees the dashboard read-only: hide enroll/import,
 // student removal and the statistics export, which require full batch-admin
 // rights.
@@ -375,6 +384,7 @@ const isFullAdmin = computed(
 )
 const searchFilter = ref<string | null>(null)
 
+// OSLMS-CUSTOM: sortable students list
 // Column sorting for the students list. `member_name` and `creation` are real
 // LMS Batch Enrollment fields sorted server-side (correct across the paginated
 // "Load More" pages); `progress` is derived client-side from `batchStats` (see
@@ -391,6 +401,7 @@ function openEnrollModal() {
 	showEnrollmentModal.value = true
 }
 
+// OSLMS-CUSTOM: expose goToImport for the batch header import button
 defineExpose({ openEnrollModal, goToImport })
 
 const props = defineProps<{
@@ -403,6 +414,7 @@ function goToImport() {
 	router.push(`/data-import/${encodeURIComponent(importName)}`)
 }
 
+// OSLMS-CUSTOM: one os_lms call for certified count and per-student progress
 // Single call for the dashboard summary: certified count + per-student average
 // course progress. Keeps one network round-trip on page load.
 const batchStats = createResource({
@@ -448,6 +460,7 @@ const sortedStudents = computed(() => {
 	)
 })
 
+// OSLMS-CUSTOM: batch-scoped course/lesson progress panel
 // Course-progress panel: no course selected -> per-course averages across the
 // batch's students; a course selected -> per-lesson completion for that course,
 // scoped to the batch (see os_lms.os_lms.api.get_batch_progress_stats).
@@ -504,6 +517,7 @@ const chartHues = [
 const sliceColor = (idx: number) =>
 	colors[theme.value][chartHues[idx % chartHues.length]][400]
 
+// OSLMS-CUSTOM: progress summary donut derived client-side
 // Progress summary: how the batch's students spread over the same buckets the
 // course dashboard uses (see get_progress_distribution in lms.lms.api). It is
 // derived client-side from `batchStats.students_progress` — which already holds
@@ -629,6 +643,7 @@ const progressChartOptions = computed(() => ({
 	],
 }))
 
+// OSLMS-CUSTOM: statistics export download
 // Stream the progress report from the backend; the content-disposition response
 // makes the browser download it without leaving the SPA. "xlsx" is the
 // human-readable summary, "csv" the raw per-lesson dataset for AI analysis.
@@ -667,6 +682,7 @@ watch(searchFilter, () => {
 	students.reload()
 })
 
+// OSLMS-CUSTOM: column sort toggle
 // Toggle sorting on a students-list column. Clicking the active column flips its
 // direction; clicking a different column starts ascending. `member_name` and
 // `creation` sort server-side via `orderBy` (`update` merges only `orderBy`,
@@ -693,6 +709,7 @@ const studentColumns = computed(() => {
 			width: '40%',
 		},
 		{
+			// OSLMS-CUSTOM: progress column in the students list
 			label: __('Progress'),
 			key: 'progress',
 			width: '30%',
@@ -705,6 +722,7 @@ const studentColumns = computed(() => {
 	]
 })
 
+// OSLMS-CUSTOM: remove the selected students from the batch
 const removeStudents = async (
 	selections: string[],
 	unselectAll: () => void,

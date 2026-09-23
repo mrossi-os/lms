@@ -19,6 +19,7 @@
 							<div class="text-3xl-semibold text-ink-gray-9">
 								{{ studentDetails.data.full_name }}
 							</div>
+							<!-- OSLMS-CUSTOM: Italian label for the completion badge -->
 							<Badge
 								v-if="
 									Object.keys(studentDetails.data.assessments).length ||
@@ -79,6 +80,7 @@
 					</ListView>
 
 					<!-- Courses -->
+					<!-- OSLMS-CUSTOM: course selector with per-lesson drill-down for this student -->
 					<div class="space-y-3">
 						<div class="flex items-center justify-between gap-x-2">
 							<div class="text-ink-gray-5">
@@ -221,6 +223,7 @@ const studentDetails = createResource({
 	auto: true,
 })
 
+// OSLMS-CUSTOM: per-course lesson drill-down
 // Course drill-down. Empty value = "All courses" (the per-course summary list);
 // a course value switches to this student's per-lesson detail for that course.
 const selectedCourse = ref('')
@@ -237,6 +240,7 @@ const courseSelectOptions = computed(() => [
 // batch-authorized endpoint so valutatori can see it too. Fetched on demand only
 // when a specific course is selected (no `auto`).
 const courseLessonProgress = createResource({
+	// OSLMS-CUSTOM: batch-authorized endpoint so a Valutatore can see it too
 	url: 'os_lms.os_lms.api.get_batch_student_course_progress',
 	makeParams() {
 		return {
@@ -289,6 +293,7 @@ const redirectToCourse = (row: any) => {
 	})
 }
 
+// OSLMS-CUSTOM: column labels wrapped in __() for translation
 const assessmentColumns = [
 	{ key: 'title', label: __('Assessment'), align: 'left', width: '60%' },
 	{ key: 'status', label: __('Percentage/Status'), align: 'right' },

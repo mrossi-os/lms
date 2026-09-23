@@ -3,6 +3,7 @@
 		class="flex flex-col border hover:border-outline-gray-3 rounded-md p-4 h-full card"
 		style="min-height: 150px"
 	>
+		<!-- OSLMS-CUSTOM: card class on the root for the os theme -->
 		<div class="text-xl-semibold leading-5 mb-2 text-ink-gray-9">
 			{{ batch.title }}
 		</div>
