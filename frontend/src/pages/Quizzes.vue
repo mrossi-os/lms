@@ -40,6 +40,7 @@
 			:options="{ showTooltip: false, selectable: true }"
 			class="px-2 sm:px-5 os-list-view !w-auto md:w-max"
 		>
+			<!-- OSLMS-CUSTOM: os-list-view theme class on the list; column icons hidden on phones -->
 			<ListHeader class="mb-2 grid items-center rounded bg-surface-gray-2 p-2">
 				<ListHeaderItem :item="item" v-for="item in quizColumns">
 					<template v-if="!isMobile" #prefix="{ item }">
@@ -61,6 +62,7 @@
 						<template #default="{ column, item }">
 							<ListRowItem :item="row[column.key]" :align="column.align">
 								<div v-if="column.key == 'show_answers'">
+									<!-- OSLMS-CUSTOM: green check icon instead of a disabled checkbox for Show Answers -->
 									<FeatherIcon
 										v-if="row[column.key]"
 										name="check"
@@ -174,6 +176,7 @@ onMounted(() => {
 })
 
 watch(search, () => {
+	// OSLMS-CUSTOM: multi-word search: each word must match (in order), empty box clears the filter
 	const titleFilter = searchLikeFilter(search.value)
 	if (titleFilter) {
 		quizFilters.value['title'] = titleFilter
@@ -311,6 +314,7 @@ const quizColumns = computed(() => {
 			icon: 'clock',
 		},
 	]
+	// OSLMS-CUSTOM: only title, passing percentage and updated-on columns on phones
 	if (isMobile.value) {
 		const mobileKeys = ['title', 'passing_percentage', 'modified']
 		return columns.filter((col) => mobileKeys.includes(col.key))

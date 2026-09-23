@@ -3458,3 +3458,747 @@ segnaposto compare due volte nel file."""
   [[entries.sites]]
   file = "frontend/src/pages/JobForm.vue"
   anchor = ":placeholder=\"__('Select option')\"\n\t\t\t\t\t\t\t:options=\"jobTypes\""
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 prima del merge di v2.59.0 — quiz, compiti, esercizi e discussioni
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 — gruppo "assessments-discussions"
+# (quiz, compiti, esercizi di programmazione, discussioni) prima del merge di v2.59.0
+# ---------------------------------------------------------------------------
+
+[[entries]]
+id = "quiz-skip-unanswered-ui"
+title = "Nel player del quiz si può saltare una domanda e consegnare da qualunque domanda"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Metà frontend della regola quiz-submit-unanswered (quella voce copre solo process_results in
+lms_quiz.py). Lo studente deve poter lasciare una domanda senza risposta e consegnare il quiz
+da qualunque domanda: Check, Next e «Submit Quiz» stanno affiancati anche in modalità
+show_answers (prima Submit compariva solo sull'ultima domanda), la conferma di consegna si apre
+in entrambe le modalità e avvisa quante domande restano senza risposta. Una risposta vuota
+(editor Open Ended intatto che emette «<p></p>», textarea User Input vuota) non è una
+risposta: non va inviata, altrimenti submit_quiz riceveva [null] e l'intera consegna falliva,
+e la domanda risultava «tentata». Next registra la risposta scritta ma non verificata.
+v2.59.0 non tocca questa zona, ma passa l'editor Open Ended a RichTextEditor: verificare che
+l'editor vuoto continui a essere riconosciuto da isBlankAnswer. v2.63.0 ricostruisce le pagine
+dei quiz attorno alla banca domande: se riscrive anche il player, riapplicare la regola."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Quiz.vue"
+  anchor = "const isBlankAnswer = (value) => {"
+  symbol = "isBlankAnswer"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Quiz.vue"
+  anchor = "} else if (!isBlankAnswer(possibleAnswer.value)) {"
+  symbol = "getAnswers"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Quiz.vue"
+  anchor = "quiz.data.show_answers && activeQuestion != questions.length"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Quiz.vue"
+  anchor = 'v-if="unattemptedCount"'
+
+  [[entries.sites]]
+  file = "frontend/src/components/Quiz.vue"
+  anchor = "Math.max(0, questions.value.length - attemptedQuestions.value.length),"
+  symbol = "unattemptedCount"
+
+[[entries]]
+id = "quiz-cached-remount"
+title = "Un quiz riaperto dalla cache non perde le domande"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La risorsa del quiz è in cache per nome e frappe-ui restituisce lo stesso oggetto ai mount
+successivi, tenendo il transform del primo componente: la mappa delle domande in un ref locale
+restava vuota e il quiz riaperto (per esempio tornando alla lezione) diceva di non avere
+domande finché non si ricaricava la pagina. La mappa viaggia quindi dentro il documento in
+cache, e al mount di una risorsa già risolta si popolano subito domande, timer e tentativi
+(altrimenti lampeggia lo stato vuoto sopra il pulsante Start). Vale per tutti gli studenti che
+aprono un quiz dentro una lezione. v2.59.0 non tocca questa zona; se v2.63.0 riscrive il
+caricamento del quiz, verificare lo stesso scenario con il test di regressione."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Quiz.vue"
+  anchor = "quizDoc._questions_by_name = data?.questions_by_name || {}"
+  symbol = "quiz"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Quiz.vue"
+  anchor = "const questionsByName = computed(() => quiz.data?._questions_by_name || {})"
+
+  [entries.checks]
+  unit = "frontend/src/tests/quizCachedRemount.test.ts"
+
+[[entries]]
+id = "quiz-timer-wall-clock"
+title = "Timer del quiz ancorato all'orologio e consegna una sola volta"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il conto alla rovescia dei quiz a tempo si calcola da una scadenza reale (Date.now) invece di
+decrementare un contatore: setInterval rallenta molto nelle schede in background, il contatore
+sforava e la consegna automatica allo scadere non partiva mai. Consegna manuale e scadenza del
+timer possono arrivare insieme: un flag impedisce la doppia consegna, il timer si ferma e si
+azzera a ogni nuovo tentativo e allo smontaggio, e un errore generico di consegna ora mostra un
+avviso invece di fallire in silenzio. Il timer non si reimposta mentre un tentativo è in corso
+(la risorsa in cache può ricaricarsi). Introdotto nel commit 96c6c73cb, il cui messaggio («fix
+mobile layout») non lo descrive. v2.59.0 non tocca questa zona."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Quiz.vue"
+  anchor = "timerDeadline = Date.now() + quiz.data.duration * 60 * 1000"
+  symbol = "startTimer"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Quiz.vue"
+  anchor = "if (submitting || quizSubmission.data) return"
+  symbol = "createSubmission"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Quiz.vue"
+  anchor = "toast.error(__('Your quiz could not be submitted. Please try again.'))"
+  symbol = "createSubmission"
+
+[[entries]]
+id = "quiz-player-style-translations"
+title = "Ritocchi di stile, layout mobile e traduzioni del player del quiz"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Testi delle istruzioni leggibili (text-ink-gray-9 al posto del blu), classe card del tema sui
+riquadri, riga delle azioni impilata su telefono (checkbox di revisione, paginazione e pulsanti
+non stanno in una riga), pulsante «Submit Quiz» con etichetta esplicita, «Try Again» solid,
+plurali tradotti (1 volta / {0} volte, punto / punti) e intestazioni della tabella tentativi
+tradotte. Nota: la classe del riquadro istruzioni contiene il refuso «text-ink-grey-9» (grey),
+che non esiste; il colore arriva comunque dalle classi sui figli. Il titolo del quiz con
+«font-semibold text-lg» non è nostro (residuo di una vecchia versione upstream): al merge di
+v2.59.0 prendere text-lg-semibold dell'upstream."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Quiz.vue"
+  anchor = "text-ink-grey-9 space-y-2"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Quiz.vue"
+  anchor = "quiz.data.marks_to_cut == 1 ? __('mark') : __('marks'),"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Quiz.vue"
+  anchor = "{{ __('Submit Quiz') }}"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Quiz.vue"
+  anchor = "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-8"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Quiz.vue"
+  anchor = "label: __('No.'),"
+  symbol = "getSubmissionColumns"
+
+[[entries]]
+id = "quiz-form-mobile-layout"
+title = "Modulo del quiz usabile su telefono e pulsanti in stile del tema"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il modulo di authoring del quiz (Docente, Moderator, istruttori) sotto lg passa a una colonna:
+le impostazioni finiscono sotto l'elenco delle domande invece di restare in una colonna
+laterale illeggibile. L'elenco delle domande usa la classe os-list-view del tema; «Test Quiz» e
+«Check Submissions» sono solid e l'eliminazione ghost, come nel resto delle pagine del tema.
+v2.59.0 tocca solo il titolo «Questions» (non nostro). v2.63.0 SOSTITUISCE tutta quest'area
+(«rebuild quiz authoring around a shared question bank»): dopo quel merge riapplicare solo
+l'impilamento su telefono e lo stile dei pulsanti sulla nuova pagina, se servono ancora."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/QuizForm.vue"
+  anchor = "grid min-h-0 flex-1 grid-cols-1 max-lg:overflow-y-auto lg:grid-cols-[7fr,3fr]"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/QuizForm.vue"
+  anchor = "space-y-8 overflow-y-auto border-t p-5 lg:border-l lg:border-t-0"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/QuizForm.vue"
+  anchor = 'class="flex overflow-y-auto px-5 os-list-view"'
+
+[[entries]]
+id = "quiz-submission-valutatore-readonly"
+title = "Il Valutatore vede le consegne dei quiz in sola lettura"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il Valutatore di un batch deve poter leggere le risposte ai quiz dei propri studenti,
+arrivandoci dalla dashboard della classe (Dashboard → studente → riga del quiz): decisione del
+committente del 2026-07-31, da non annullare. Le pagine di elenco e dettaglio lo ammettono
+invece di rimandarlo a Courses; la correzione dei quiz resta a istruttori e Moderator (il ruolo
+ha DocPerm di sola lettura su LMS Quiz Submission), quindi nel dettaglio Save, i campi Marks e
+la scorciatoia Mod+S sono disattivati per lui. Il flag is_valutatore apre solo l'ingresso: il
+filtro per batch è lato server (submission_has_permission e query conditions in os_lms).
+v2.59.0 tocca solo i titoli (non nostri). v2.63.0 ricostruisce le pagine dei quiz: riapplicare
+l'accesso in sola lettura sulle nuove pagine di consegna."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/QuizSubmission.vue"
+  anchor = "() => user.data?.is_instructor || user.data?.is_moderator,"
+  symbol = "canGrade"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/QuizSubmission.vue"
+  anchor = "if (!canGrade.value && !user.data?.is_valutatore)"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/QuizSubmission.vue"
+  anchor = ':disabled="!canGrade"'
+
+  [[entries.sites]]
+  file = "frontend/src/pages/QuizSubmission.vue"
+  anchor = '<div v-if="canGrade" class="flex gap-2 items-center">'
+
+  [[entries.sites]]
+  file = "frontend/src/pages/QuizSubmission.vue"
+  anchor = "canGrade.value && !e.target?.classList?.contains('ProseMirror'),"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/QuizSubmissionList.vue"
+  anchor = "!user.data?.is_valutatore"
+
+  [entries.visibility]
+  subject = "pagine delle consegne dei quiz (elenco e dettaglio); correzione esclusa per il Valutatore"
+  allow = ["Moderator", "Docente", "course-instructor", "Valutatore"]
+  deny = ["Student", "Guest"]
+
+[[entries]]
+id = "quiz-submission-list-style"
+title = "Tema della lista consegne del quiz"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La lista delle consegne di un quiz usa la classe os-list-view del tema, come le altre liste.
+v2.59.0 tocca solo il titolo della pagina (non nostro)."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/QuizSubmissionList.vue"
+  anchor = 'class="os-list-view"'
+
+[[entries]]
+id = "quiz-list-mobile-columns"
+title = "Lista dei quiz ridotta su telefono"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Su telefono la lista dei quiz (Moderator, Docente, istruttori) mostra solo titolo, percentuale
+di superamento e data di aggiornamento, senza icone nelle intestazioni: con tutte le colonne la
+tabella non entra nello schermo. ATTENZIONE al merge di v2.59.0: l'upstream riscrive proprio il
+template #prefix delle intestazioni (FeatherIcon → span con classe lucide-*) su cui sta il
+nostro v-if="!isMobile", e cambia le icone delle colonne in quizColumns: tenere il v-if sulla
+nuova versione e il filtro mobileKeys. v2.63.0 ricostruisce le pagine dei quiz: riapplicare
+sulla nuova lista."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Quizzes.vue"
+  anchor = "const mobileKeys = ['title', 'passing_percentage', 'modified']"
+  symbol = "quizColumns"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Quizzes.vue"
+  anchor = '<template v-if="!isMobile" #prefix="{ item }">'
+
+[[entries]]
+id = "quiz-list-style"
+title = "Ritocchi di stile della lista dei quiz"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Lista dei quiz con la classe os-list-view del tema, testo delle celle in text-sm, segnaposto
+della ricerca tradotto e, nella colonna Show Answers, una spunta verde al posto di una checkbox
+disabilitata (illeggibile nel tema). ATTENZIONE al merge di v2.59.0: l'upstream rimuove
+FeatherIcon dagli import di frappe-ui, ma la nostra spunta usa ancora <FeatherIcon name="check">:
+senza import la spunta sparisce; sostituirla con <span class="lucide-check …"> o tenere
+l'import. Il contatore «{0} Quizzes» con quizzes.data?.length è un nostro vecchio controllo
+contro il crash, superato: l'upstream usa totalQuizzes.data (totale reale) e va preso il suo.
+v2.63.0 ricostruisce le pagine dei quiz."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Quizzes.vue"
+  anchor = 'class="px-2 sm:px-5 os-list-view !w-auto md:w-max"'
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Quizzes.vue"
+  anchor = 'class="h-4 w-4 text-ink-green-3"'
+
+[[entries]]
+id = "assessment-list-search-words"
+title = "Ricerca per parole nelle liste di quiz, compiti ed esercizi"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nelle caselle di ricerca delle liste il filtro costruiva un unico LIKE contiguo («%Corso p%»):
+aggiungere una seconda parola, anche una sola lettera, azzerava i risultati. Con
+searchLikeFilter ogni parola deve comparire nell'ordine, con spazi liberi («%Corso%p%»), quindi
+più parole restringono invece di svuotare; una casella vuota toglie il filtro. Lo stesso helper
+è applicato anche a Courses, Batches e Programs (fuori da questo gruppo). v2.59.0 non tocca
+queste righe."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Quizzes.vue"
+  anchor = "const titleFilter = searchLikeFilter(search.value)"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Assignments.vue"
+  anchor = "const titleLike = searchLikeFilter(titleFilter.value)"
+  symbol = "assignmentFilter"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProgrammingExercises/ProgrammingExercises.vue"
+  anchor = "const titleLike = searchLikeFilter(titleFilter.value)"
+  symbol = "getFilters"
+
+[[entries]]
+id = "quiz-question-type-translated"
+title = "Tipi di domanda tradotti nel modale della domanda"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nel modale di creazione della domanda la select del tipo mostra etichette tradotte (Scelta
+multipla, Risposta breve, Risposta aperta…) mantenendo i valori inglesi salvati nel database, e
+ha un segnaposto tradotto. v2.59.0 tocca solo Dialog e l'editor. v2.63.0 SOSTITUISCE il modale
+della domanda con la banca domande condivisa: riapplicare le etichette tradotte sulla nuova
+select del tipo."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/Question.vue"
+  anchor = "{ label: __('User Input'), value: 'User Input' },"
+
+[[entries]]
+id = "quiz-question-radio-style-removed"
+title = "Rimosso lo stile globale dei radio del modale domanda"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il modale della domanda portava un blocco <style> non scoped che forzava in gray-900 ogni radio
+selezionato di tutta l'applicazione, sovrascrivendo il colore dei radio del tema (commit
+«Fix css for radio button»). Il blocco è stato tolto; il marcatore in fondo allo script
+ricorda che l'assenza è voluta. Se un merge lo reintroduce, toglierlo di nuovo. v2.63.0
+sostituisce il modale: verificare che il nuovo non reintroduca stili globali sui radio."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/Question.vue"
+  anchor = "OSLMS-CUSTOM: upstream unscoped style block forcing every checked radio app-wide to gray-900 was removed on purpose"
+
+[[entries]]
+id = "questionnaire-surface-base-token"
+title = "Questionario con bg-surface-base al posto di bg-surface-white"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le opzioni e i pulsanti di navigazione del questionario usano bg-surface-base perché
+bg-surface-white non esiste nella versione di frappe-ui/preset Tailwind del fork e rompeva la
+build («fix error build»). Se dopo un aggiornamento di frappe-ui il token esiste, si può
+accettare la versione upstream. v2.59.0 tocca solo il legend del titolo."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Questionnaire.vue"
+  anchor = ": 'border-outline-gray-2 bg-surface-base text-ink-gray-8 hover:border-outline-gray-3 hover:bg-surface-gray-2'"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Questionnaire.vue"
+  anchor = "absolute right-full top-1/3 mr-4 -translate-y-1/2 inline-flex items-center gap-1 rounded-lg border border-outline-gray-2 bg-surface-base"
+
+[[entries]]
+id = "assignment-valutatore-grading"
+title = "Il Valutatore corregge i compiti degli studenti del proprio batch"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il Valutatore di un batch vede, corregge e invia la valutazione dei compiti («elaborati») dei
+soli studenti del proprio batch. Frontend: canGradeSubmission lo ammette al riquadro di
+correzione e la lista consegne dei compiti lo lascia entrare. Backend: enforce_member_ownership
+solleva un 403 su frappe.client.set_value per chi salva una consegna non sua senza uno dei
+PRIVILEGED_ROLES, quindi «Valutatore» è aggiunto a quell'insieme; non allarga l'ambito, perché
+Document.save controlla prima il permesso di scrittura (e il veto per batch di
+os_lms.valutatore.submission_has_permission) e solo dopo esegue validate.
+ATTENZIONE al merge di v2.59.0: l'upstream sposta PRIVILEGED_ROLES in lms/lms/utils.py e lo
+importa anche in LMS Certificate Request e LMS Course Progress; NON aggiungere Valutatore
+all'insieme condiviso (gli darebbe poteri su certificati e progressi), ma usare in questo
+modulo un insieme locale, ad esempio PRIVILEGED_ROLES | {"Valutatore"}. Lo stesso insieme
+serve al nuovo enforce_grading_permission: senza Valutatore riporterebbe in silenzio status,
+comments ed evaluator ai valori salvati, cioè la correzione del Valutatore non verrebbe salvata.
+L'upstream toglie anche :readonly="!canModifyAssignment" dai campi della risposta: verificare
+che chi corregge non possa modificare la risposta dello studente."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Assignment.vue"
+  anchor = "user.data?.is_valutatore) &&"
+  symbol = "canGradeSubmission"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_assignment_submission/lms_assignment_submission.py"
+  anchor = '"System Manager", "Valutatore"}'
+  symbol = "PRIVILEGED_ROLES"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/AssignmentSubmissionList.vue"
+  anchor = "!user.data?.is_valutatore"
+
+  [entries.visibility]
+  subject = "correzione delle consegne dei compiti (solo studenti del proprio batch per il Valutatore)"
+  allow = ["Moderator", "Batch Evaluator", "Docente", "course-instructor", "Valutatore"]
+  deny = ["Student", "Guest"]
+
+[[entries]]
+id = "assignment-mobile-single-column"
+title = "Pagina del compito a una colonna su telefono"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Su telefono consegna e testo del compito stanno in colonna: affiancati ogni riquadro era largo
+circa 190px e Save e la barra dell'editor uscivano dallo schermo; l'altezza fissa e lo
+scroll interno valgono solo da md in su. Riga dell'intestazione «Submission» con flex-wrap.
+ATTENZIONE al merge di v2.59.0: l'upstream cambia la riga subito sotto (titolo
+text-xl-semibold → text-lg-semibold) e aggiunge isSubmitting al pulsante Save: probabile
+conflitto sulle prime righe del template; tenere le nostre classi responsive e prendere il
+resto dall'upstream."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Assignment.vue"
+  anchor = 'class="grid grid-cols-1 md:grid-cols-2 h-full"'
+
+  [[entries.sites]]
+  file = "frontend/src/components/Assignment.vue"
+  anchor = "border-b md:border-b-0 md:border-e p-5 md:overflow-y-auto md:h-[calc(100vh-3.2rem)]"
+
+[[entries]]
+id = "assignment-style-translations"
+title = "Ritocchi di stile e traduzioni della pagina del compito"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Stato della consegna tradotto nel badge e nella select di correzione (Non valutato, Superato,
+Non superato) con valori inglesi invariati, tipo di file tradotto nel testo «You can only upload
+{0} files», segnaposto tradotto, classe card e testo scuro sul riquadro di caricamento.
+v2.59.0 non tocca queste righe."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Assignment.vue"
+  anchor = "{{ __(submissionResource.doc?.status) }}"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Assignment.vue"
+  anchor = "{ label: __('Not Graded'), value: 'Not Graded' },"
+  symbol = "submissionStatusOptions"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Assignment.vue"
+  anchor = '<div v-if="showUploader()" class="border rounded-lg p-3 card">'
+
+[[entries]]
+id = "assignment-form-required-warnings"
+title = "Avviso sui campi obbligatori nel modulo del compito"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Salvando un compito senza titolo, tipo di consegna o testo della domanda, chi crea il compito
+(Moderator, Docente, istruttori) riceve un avviso tradotto «{0} is required» sul campo mancante
+invece di un errore generico o di un salvataggio fallito in silenzio. v2.59.0 tocca solo Dialog
+ed editor del modulo."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/AssignmentForm.vue"
+  anchor = "toast.warning(__('{0} is required').format(__('Submission Type')))"
+  symbol = "saveAssignment"
+
+[[entries]]
+id = "assignment-form-translations"
+title = "Tipi di consegna e segnaposto tradotti nel modulo del compito"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nel modulo del compito le etichette dei tipi di consegna (PDF, Immagine, Documento, Testo, URL)
+sono tradotte con valori inglesi invariati, e i campi hanno segnaposto tradotti invece del
+vuoto. v2.59.0 non tocca queste righe."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/AssignmentForm.vue"
+  anchor = "{ label: __('Image'), value: 'Image' },"
+  symbol = "assignmentOptions"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/AssignmentForm.vue"
+  anchor = ":placeholder=\"__('Insert title')\""
+
+[[entries]]
+id = "assignment-submission-list-style"
+title = "Ritocchi di stile e traduzioni della lista consegne dei compiti"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La lista delle consegne dei compiti ha filtri impilati su telefono, la classe os-list-view del
+tema, e stato, colonne, filtro di stato e breadcrumb tradotti (i valori restano inglesi).
+v2.59.0 tocca solo lo stato vuoto."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/AssignmentSubmissionList.vue"
+  anchor = '<div class="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-5 mb-5">'
+
+  [[entries.sites]]
+  file = "frontend/src/pages/AssignmentSubmissionList.vue"
+  anchor = "{{ __(row[column.key]) }}"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/AssignmentSubmissionList.vue"
+  anchor = "label: __('Assignment Submissions'),"
+
+[[entries]]
+id = "assignment-submission-list-header"
+title = "Intestazione a tema della lista consegne dei compiti"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+La pagina usa un <header> sticky con la classe main-page-header del tema invece del
+LayoutHeader dell'upstream. La classe è stata messa da un commit di tema (e9b6577b7), ma la
+struttura <header> è quella di una vecchia versione upstream, poi passata a LayoutHeader: il
+merge ha tenuto la nostra. Non è chiaro se main-page-header serva ancora (non compare nei fogli
+di stile del tema) né se LayoutHeader dia già lo stesso aspetto: da confermare con il
+committente prima di decidere se tenere questa intestazione o prendere LayoutHeader."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/AssignmentSubmissionList.vue"
+  anchor = "border-b main-page-header px-3 py-2.5 sm:px-5"
+
+[[entries]]
+id = "assignment-block-empty-placeholder"
+title = "Blocco compito nella lezione: segnaposto e etichetta tradotti"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nell'editor della lezione, salvare il modale del blocco compito senza scegliere un compito
+passava null e il blocco mostrava «Assignment: undefined»: ora mostra un segnaposto tradotto
+«No assignment selected». Anche l'etichetta «Assignment:» del blocco è tradotta.
+ATTENZIONE al merge di v2.59.0: l'upstream riscrive il ramo readOnly subito sotto il nostro
+controllo (get_own_assignment_submission al posto di get_value): probabile conflitto sulle
+righe adiacenti; il nostro «if (!assignment)» deve restare prima del ramo readOnly."""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/assignment.js"
+  anchor = "${__('No assignment selected')}"
+  symbol = "renderAssignment"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/assignment.js"
+  anchor = "${__('Assignment')}: ${data.title}"
+  symbol = "renderAssignment"
+
+[[entries]]
+id = "assignment-block-iframe-height"
+title = "Consegna del compito nella lezione a tutta altezza"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Lo studente consegna il compito dentro la lezione attraverso un iframe: con l'altezza fissa di
+500px dell'upstream editor e pulsanti restavano tagliati. La classe os-frame (in
+styles/theme/elite/main.css) porta l'iframe a 100vh. ATTENZIONE al merge di v2.59.0:
+l'upstream riscrive la riga dell'iframe dentro la nuova funzione renderSubmission: riaggiungere
+os-frame alla classe dell'iframe nella nuova versione."""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/assignment.js"
+  anchor = 'class="w-full h-[500px] os-frame"'
+  symbol = "renderAssignment"
+
+[[entries]]
+id = "exercise-list-search-clear"
+title = "La ricerca degli esercizi si azzera svuotando la casella"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La casella di ricerca degli esercizi di programmazione ricaricava la lista sull'evento DOM
+@input, che arriva prima che frappe-ui aggiorni il v-model: la ricerca era sempre indietro di
+un carattere e svuotando la casella il filtro (e la query nell'URL) restava sull'ultimo valore.
+Ricaricare su update:modelValue legge il valore aggiornato. Stessa correzione su Courses,
+Batches e Programs (fuori gruppo). v2.59.0 non tocca questa riga."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProgrammingExercises/ProgrammingExercises.vue"
+  anchor = '@update:modelValue="updateList()"'
+
+[[entries]]
+id = "exercise-list-dayjs-locale"
+title = "Date della lista esercizi con il dayjs localizzato in italiano"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La colonna «Updated On» della lista esercizi formatta le date con il dayjs dell'app
+(@/utils/dayjs, locale italiano) per avere i mesi in italiano; in origine il file prendeva dayjs
+da frappe-ui, non localizzato («Fix traduction for days»). Oggi l'inject('$dayjs') dell'upstream
+fornisce la stessa istanza (main.js la registra da @/utils/dayjs), quindi le due forme sono
+equivalenti: se un merge riporta l'inject, si può accettare purché non restino due dichiarazioni
+di dayjs (causavano un crash di build). v2.59.0 non tocca questa riga."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProgrammingExercises/ProgrammingExercises.vue"
+  anchor = "import dayjs from '@/utils/dayjs'"
+
+[[entries]]
+id = "exercise-form-translations"
+title = "Traduzioni del modulo esercizio di programmazione"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nel modulo dell'esercizio di programmazione la select del linguaggio ha un segnaposto tradotto e
+le intestazioni della tabella dei casi di test (Input, Expected Output) sono tradotte.
+v2.59.0 tocca solo gli slot del Dialog e l'editor del testo del problema."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProgrammingExercises/ProgrammingExerciseForm.vue"
+  anchor = "return [__('Input'), __('Expected Output')]"
+  symbol = "testCaseColumns"
+
+[[entries]]
+id = "exercise-submission-commented-icons"
+title = "Icone rinominate in un blocco commentato della consegna esercizio"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Nessun effetto a runtime: dentro un blocco che l'upstream tiene commentato, le icone Check e X
+sono state rinominate LucideCheck e LucideX durante una correzione di merge (commit 027c0c56f,
+«fix merge: Batch components»), presumibilmente per allinearle all'auto-import delle icone nel
+caso il blocco venga riattivato. Il resto del diff del file sono solo virgole finali. Al merge si
+può prendere liberamente la versione upstream; la voce esiste solo perché il file compaia
+nell'inventario."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProgrammingExercises/ProgrammingExerciseSubmission.vue"
+  anchor = '<LucideCheck class="size-4 text-ink-green-3" />'
+
+[[entries]]
+id = "discussion-no-embed-toolbar"
+title = "Niente pulsante Embed (iframe) nell'editor delle discussioni"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Negli editor delle discussioni del batch (risposta, modifica della risposta, nuovo argomento)
+gli studenti non devono poter incorporare iframe: la barra fissa è quella di frappe-ui senza il
+pulsante «Iframe» (etichetta «Embed»), definita in @/utils/discussionToolbar. Gli altri editor
+non cambiano. ATTENZIONE al merge di v2.59.0: l'upstream sostituisce TextEditor con
+RichTextEditor in DiscussionReplies e DiscussionModal; lì fixedMenu è un booleano e la barra è
+fissa e INCLUDE InsertIframe, quindi il nostro array diventerebbe solo «true» e il pulsante Embed
+tornerebbe in silenzio. Serve un modo per passare a RichTextEditor una barra senza InsertIframe
+(prop dedicata o variante del componente)."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/DiscussionReplies.vue"
+  anchor = ':fixedMenu="reply.editable ? discussionFixedMenu : false"'
+
+  [[entries.sites]]
+  file = "frontend/src/components/DiscussionReplies.vue"
+  anchor = ':fixedMenu="discussionFixedMenu"'
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/DiscussionModal.vue"
+  anchor = ':fixedMenu="discussionFixedMenu"'
+
+[[entries]]
+id = "discussion-batch-chat-newest-first"
+title = "Chat del batch con i messaggi più recenti in alto"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nella discussione del batch a thread unico (tab Discussions di BatchDetail, singleThread) i
+messaggi più recenti stanno in alto e l'editor sopra di loro, come in una chat; le discussioni
+per argomento restano in ordine cronologico con l'editor in fondo. L'ordine visivo è dato dalle
+classi order-* dentro un contenitore flex-col. ATTENZIONE al merge di v2.59.0: l'upstream
+cambia la classe del titolo (text-xl-semibold → text-lg-semibold) sulla stessa riga dove
+abbiamo aggiunto order-1, e sostituisce il TextEditor dell'editor con RichTextEditor: tenere
+order-1 e le classi order-2/order-4 sul nuovo componente."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/DiscussionReplies.vue"
+  anchor = "return props.singleThread ? [...replies.data].reverse() : replies.data"
+  symbol = "orderedReplies"
+
+  [[entries.sites]]
+  file = "frontend/src/components/DiscussionReplies.vue"
+  anchor = ":class=\"['mt-5', singleThread ? 'order-2' : 'order-4']\""
+
+  [[entries.sites]]
+  file = "frontend/src/components/DiscussionReplies.vue"
+  anchor = '<div v-for="(reply, index) in orderedReplies" class="order-3">'
+
+[[entries]]
+id = "discussion-reply-null-user"
+title = "Risposta di un utente senza profilo senza crash"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Una risposta il cui utente non viene risolto (reply.user nullo, per esempio utente eliminato o
+disattivato) faceva fallire il rendering dell'intero thread; ora mostra l'owner della risposta
+al posto del nome completo. v2.59.0 non tocca questa riga."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/DiscussionReplies.vue"
+  anchor = "{{ reply.user?.full_name || reply.owner }}"
+
+[[entries]]
+id = "discussion-replies-style"
+title = "Ritocchi di stile e traduzioni delle risposte alle discussioni"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Risposte e editor su sfondo bg-surface-gray-2, editor della nuova risposta con altezza massima
+e scroll, icona del menu della risposta scura e segnaposto «Type your reply here...» tradotto.
+ATTENZIONE al merge di v2.59.0: il TextEditor diventa RichTextEditor, che ha un editorClass di
+default diverso: riportare le nostre classi sul nuovo componente."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/DiscussionReplies.vue"
+  anchor = ": 'bg-surface-gray-2  prose-sm p-2 rounded-sm'"
+
+  [[entries.sites]]
+  file = "frontend/src/components/DiscussionReplies.vue"
+  anchor = ":placeholder=\"__('Type your reply here...')\""
+
+[[entries]]
+id = "discussion-new-label"
+title = "Etichetta personalizzabile per creare un argomento di discussione"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il componente Discussions accetta una prop newLabel che sostituisce la dicitura generica «New
+{0}» sul pulsante di creazione e nel titolo del modale: serviva a mostrare «Ask a question» /
+«Fai una domanda» nelle domande della lezione, dove «Nuova Question» suonava male. Dal commit
+ca61596d2 («hide discussion in lessons») Lesson.vue non monta più Discussions e nessuno passa
+newLabel, quindi oggi la prop è inutilizzata ma innocua. v2.59.0 tocca solo il titolo."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Discussions.vue"
+  anchor = "{{ newLabel || __('New {0}').format(singularize(title)) }}"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Discussions.vue"
+  anchor = ":title=\"newLabel || __('New {0}').format(title)\""
+
+[[entries]]
+id = "assignment-list-style"
+title = "Ritocchi di stile della lista dei compiti"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La lista dei compiti usa la classe os-list-view del tema, con padding ridotto e testo delle
+celle più piccolo su telefono, come le altre liste del fork. v2.59.0 cambia le icone delle
+intestazioni (FeatherIcon → span lucide-*) poche righe sotto: nessuna sovrapposizione con le
+nostre righe."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Assignments.vue"
+  anchor = 'class="!w-auto px-2 sm:px-5 os-list-view"'
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Assignments.vue"
+  anchor = '<div v-else class="text-xs sm:text-sm">'

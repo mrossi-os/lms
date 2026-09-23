@@ -3,6 +3,7 @@
 		class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-base px-3 py-2.5 sm:px-5"
 	>
 		<Breadcrumbs v-if="submissionDetails.doc" :items="breadcrumbs" />
+		<!-- OSLMS-CUSTOM: Save hidden for the read-only Valutatore -->
 		<div v-if="canGrade" class="flex gap-2 items-center">
 			<Badge
 				v-if="submissionDetails.isDirty"
@@ -64,6 +65,7 @@
 					<span class="leading-5" v-html="sanitizeRichHTML(row.answer)"></span>
 				</div>
 				<div class="grid grid-cols-2 gap-5">
+					<!-- OSLMS-CUSTOM: marks read-only for the Valutatore; quiz grading stays with batch admins -->
 					<FormControl
 						v-model="row.marks"
 						:label="__('Marks')"
@@ -103,6 +105,7 @@ const { brand } = sessionStore()
 const router = useRouter()
 const user = inject('$user')
 
+// OSLMS-CUSTOM: Valutatore may open quiz submissions of own batch students, read-only
 // A scoped "Valutatore" reaches this page from the batch dashboard (student
 // drill-down) to read the quiz answers of their own students — the per-batch
 // scoping is enforced server-side. Grading quizzes stays with the batch admins,
@@ -112,6 +115,7 @@ const canGrade = computed(
 )
 
 onMounted(() => {
+	// OSLMS-CUSTOM: admit the Valutatore instead of bouncing to Courses
 	if (!canGrade.value && !user.data?.is_valutatore)
 		router.push({ name: 'Courses' })
 })
@@ -121,6 +125,7 @@ useKeyboardShortcuts({
 	shortcuts: [
 		{
 			...saveShortcut(() => saveSubmission()),
+			// OSLMS-CUSTOM: block Mod+S save for the read-only Valutatore
 			guard: (e) =>
 				canGrade.value && !e.target?.classList?.contains('ProseMirror'),
 		},

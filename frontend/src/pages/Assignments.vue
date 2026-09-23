@@ -68,6 +68,7 @@
 			}"
 			class="!w-auto px-2 sm:px-5 os-list-view"
 		>
+			<!-- OSLMS-CUSTOM: os-list-view theme class and tighter padding/text on phones -->
 			<ListHeader class="mb-2 grid items-center rounded bg-surface-gray-2 p-2">
 				<ListHeaderItem :item="item" v-for="item in assignmentColumns">
 					<template #prefix="{ item }">
@@ -222,6 +223,7 @@ const reloadAssignments = () => {
 
 const assignmentFilter = computed(() => {
 	let filters = {}
+	// OSLMS-CUSTOM: multi-word search: each word must match (in order)
 	const titleLike = searchLikeFilter(titleFilter.value)
 	if (titleLike) {
 		filters.title = titleLike

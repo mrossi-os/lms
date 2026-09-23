@@ -32,6 +32,7 @@
 							:label="__('Marks')"
 							type="number"
 						/>
+						<!-- OSLMS-CUSTOM: translated question type labels (value stays English) and placeholder -->
 						<FormControl
 							:label="__('Type')"
 							v-model="question.type"
@@ -437,4 +438,5 @@ const updateQuestion = () => {
 		},
 	)
 }
+// OSLMS-CUSTOM: upstream unscoped style block forcing every checked radio app-wide to gray-900 was removed on purpose
 </script>

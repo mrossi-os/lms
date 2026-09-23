@@ -1,6 +1,7 @@
 <template>
 	<!-- Single column on phones: side by side each pane is ~190px wide, which
 	pushes the Save button and the editor toolbar out of the viewport. -->
+	<!-- OSLMS-CUSTOM: single-column layout on phones (panes side by side push Save and toolbar off-screen) -->
 	<div
 		v-if="assignment.data"
 		class="grid grid-cols-1 md:grid-cols-2 h-full"
@@ -418,6 +419,7 @@ const removeSubmission = () => {
 	attachment.value = null
 }
 
+// OSLMS-CUSTOM: the per-batch Valutatore can grade assignment submissions
 const canGradeSubmission = computed(() => {
 	return (
 		(user.data?.is_moderator ||
@@ -441,6 +443,7 @@ const canModifyAssignment = computed(() => {
 	return false
 })
 
+// OSLMS-CUSTOM: translated grade labels, status badge, file type and placeholders
 const submissionStatusOptions = computed(() => {
 	return [
 		{ label: __('Not Graded'), value: 'Not Graded' },

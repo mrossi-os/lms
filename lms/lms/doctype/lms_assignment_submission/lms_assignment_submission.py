@@ -9,6 +9,7 @@ from frappe.utils import validate_url
 
 from lms.lms.utils import get_lms_route
 
+# OSLMS-CUSTOM: Valutatore may save (grade) submissions of its own batch students
 # Roles allowed to save a submission that belongs to somebody else — i.e. the
 # ones that grade. "Valutatore" is the os_lms custom role: it is scoped to its
 # own batches, but that scoping is already applied by the time this runs, since

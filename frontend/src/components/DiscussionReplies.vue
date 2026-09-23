@@ -1,4 +1,5 @@
 <template>
+	<!-- OSLMS-CUSTOM: flex column with order-* classes: batch chat puts the composer above newest-first messages -->
 	<div class="mt-6 flex flex-col">
 		<div v-if="!singleThread" class="order-1 flex items-center mb-5 md:hidden">
 			<Button variant="outline" @click="showTopics = true">
@@ -17,6 +18,7 @@
 			{{ topic.title }}
 		</div>
 
+		<!-- OSLMS-CUSTOM: replies rendered from orderedReplies (newest first in the single-thread batch chat) -->
 		<div v-for="(reply, index) in orderedReplies" class="order-3">
 			<div
 				class="py-3"
@@ -26,6 +28,7 @@
 					<div class="flex items-center text-ink-gray-5">
 						<UserAvatar :user="reply.user" class="me-2" />
 						<span>
+							<!-- OSLMS-CUSTOM: fall back to the owner when the reply user is null (deleted/disabled user) instead of crashing -->
 							{{ reply.user?.full_name || reply.owner }}
 						</span>
 						<span class="text-sm ms-2">
@@ -66,6 +69,7 @@
 						</Button>
 					</div>
 				</div>
+				<!-- OSLMS-CUSTOM: toolbar without the Embed (iframe) button; gray editor background -->
 				<TextEditor
 					:content="reply.reply"
 					@change="(val) => (reply.reply = val)"
@@ -80,6 +84,7 @@
 			</div>
 		</div>
 
+		<!-- OSLMS-CUSTOM: composer: toolbar without Embed, placed on top in the batch chat -->
 		<TextEditor
 			v-if="renderEditor && !readOnlyMode"
 			:class="['mt-5', singleThread ? 'order-2' : 'order-4']"
@@ -90,6 +95,7 @@
 			:fixedMenu="discussionFixedMenu"
 			editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem] max-h-[16rem] overflow-y-scroll mb-4"
 		/>
+		<!-- OSLMS-CUSTOM: Post button follows the composer position -->
 		<div
 			v-if="!readOnlyMode"
 			:class="['flex justify-between mt-2', singleThread ? 'order-2' : 'order-4']"
@@ -113,6 +119,7 @@ import {
 	toast,
 } from 'frappe-ui'
 import { timeAgo } from '@/utils'
+// OSLMS-CUSTOM: discussion toolbar without the Embed (iframe) button
 import { discussionFixedMenu } from '@/utils/discussionToolbar'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { ref, computed, inject, onMounted, onUnmounted } from 'vue'
@@ -163,6 +170,7 @@ const replies = createResource({
 	auto: true,
 })
 
+// OSLMS-CUSTOM: newest-first order for the single-thread batch chat
 // The single-thread batch chat shows newest messages first (top) with the
 // composer above them; topic threads keep chronological order (oldest first).
 const orderedReplies = computed(() => {

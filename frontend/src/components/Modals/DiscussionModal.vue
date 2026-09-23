@@ -19,6 +19,7 @@
 					<div class="mb-1.5 text-p-sm-medium text-ink-gray-7">
 						{{ __('Details') }}
 					</div>
+					<!-- OSLMS-CUSTOM: toolbar without the Embed (iframe) button -->
 					<TextEditor
 						:content="topic.reply"
 						@change="(val) => (topic.reply = val)"
@@ -35,6 +36,7 @@
 import { call, Dialog, FormControl, TextEditor, toast } from 'frappe-ui'
 import { reactive } from 'vue'
 import { singularize } from '@/utils'
+// OSLMS-CUSTOM: discussion toolbar without the Embed (iframe) button
 import { discussionFixedMenu } from '@/utils/discussionToolbar'
 import { useTelemetry } from 'frappe-ui/frappe'
 

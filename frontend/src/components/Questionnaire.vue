@@ -33,6 +33,7 @@
 						{{ question.title }}
 					</legend>
 					<div class="mt-5 flex flex-wrap gap-2.5">
+						<!-- OSLMS-CUSTOM: bg-surface-base instead of bg-surface-white (token missing in our frappe-ui build) -->
 						<label
 							v-for="option in question.options"
 							:key="String(option.value)"
@@ -61,6 +62,7 @@
 			</Transition>
 		</div>
 
+		<!-- OSLMS-CUSTOM: bg-surface-base instead of bg-surface-white on the nav buttons (build fix) -->
 		<button
 			v-if="current > 0"
 			type="button"

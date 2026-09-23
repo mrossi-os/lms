@@ -8,6 +8,7 @@
 			<template #prefix>
 				<span class="lucide-plus size-4" />
 			</template>
+			<!-- OSLMS-CUSTOM: optional newLabel overrides the create-button wording -->
 			{{ newLabel || __('New {0}').format(singularize(title)) }}
 		</Button>
 		<div class="text-3xl-semibold text-ink-gray-9">
@@ -90,6 +91,7 @@
 			</div>
 		</div>
 	</div>
+	<!-- OSLMS-CUSTOM: optional newLabel overrides the modal title -->
 	<DiscussionModal
 		v-model="showTopicModal"
 		:title="newLabel || __('New {0}').format(title)"
@@ -128,6 +130,7 @@ const props = defineProps({
 		type: String,
 		required: true,
 	},
+	// OSLMS-CUSTOM: newLabel prop (e.g. "Ask a question" for lesson Q&A)
 	// Optional override for the create action's wording (button + modal title).
 	// When empty, falls back to the generic "New {singularized title}" label.
 	newLabel: {

@@ -43,6 +43,7 @@
 				{{ __('{0} Exercises').format(totalExercises.data || 0) }}
 			</div>
 			<div class="flex flex-col gap-3 sm:gap-5 md:flex-row">
+				<!-- OSLMS-CUSTOM: reload on update:modelValue so emptying the search box clears the filter -->
 				<FormControl
 					v-model="titleFilter"
 					:placeholder="__('Search')"
@@ -181,6 +182,7 @@ import {
 	usePageMeta,
 } from 'frappe-ui'
 import Select from '@/components/Controls/Select.vue'
+// OSLMS-CUSTOM: dates from the app dayjs instance (Italian locale)
 import dayjs from '@/utils/dayjs'
 import { searchLikeFilter } from '@/utils'
 import { ClipboardList, Plus } from 'lucide-vue-next'
@@ -239,6 +241,7 @@ const updateList = () => {
 
 const getFilters = () => {
 	let filters: any = {}
+	// OSLMS-CUSTOM: multi-word search: each word must match (in order)
 	const titleLike = searchLikeFilter(titleFilter.value)
 	if (titleLike) {
 		filters['title'] = titleLike

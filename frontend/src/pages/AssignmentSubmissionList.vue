@@ -1,10 +1,12 @@
 <template>
+	<!-- OSLMS-CUSTOM: themed page header (main-page-header) instead of LayoutHeader -->
 	<header
 		class="sticky top-0 z-10 flex items-center justify-between border-b main-page-header px-3 py-2.5 sm:px-5"
 	>
 		<Breadcrumbs :items="breadcrumbs" />
 	</header>
 	<div class="md:w-3/4 md:mx-auto py-5 mx-5">
+		<!-- OSLMS-CUSTOM: filters stack in one column on phones -->
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-5 mb-5">
 			<Link
 				doctype="LMS Assignment"
@@ -19,6 +21,7 @@
 				:placeholder="__('Status')"
 			/>
 		</div>
+		<!-- OSLMS-CUSTOM: os-list-view theme class; translated status badge, columns, filters and breadcrumb -->
 		<ListView
 			v-if="submissions.loading || submissions.data?.length"
 			:columns="submissionColumns"
@@ -101,6 +104,7 @@ const assignmentID = ref('')
 const member = ref('')
 const status = ref('')
 
+// OSLMS-CUSTOM: the per-batch Valutatore may open the assignment submissions list
 onMounted(() => {
 	if (
 		!user.data?.is_instructor &&

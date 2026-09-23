@@ -8,6 +8,7 @@
 		<div class="text-3xl-semibold mb-5 text-ink-gray-9">
 			{{ submissions.data[0].quiz_title }}
 		</div>
+		<!-- OSLMS-CUSTOM: os-list-view theme class on the submissions list -->
 		<ListView
 			:columns="quizColumns"
 			:rows="submissions.data"
@@ -67,6 +68,7 @@ const { brand } = sessionStore()
 const router = useRouter()
 const user = inject('$user')
 
+// OSLMS-CUSTOM: the per-batch Valutatore may open the quiz submissions list (read-only)
 onMounted(() => {
 	if (
 		!user.data?.is_instructor &&

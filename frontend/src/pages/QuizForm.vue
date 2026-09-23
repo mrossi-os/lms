@@ -3,6 +3,7 @@
 		class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-base px-3 py-2.5 sm:px-5"
 	>
 		<Breadcrumbs :items="breadcrumbs" />
+		<!-- OSLMS-CUSTOM: solid Test Quiz / Check Submissions buttons and ghost delete button (house style) -->
 		<div v-if="!readOnlyMode" class="flex items-center gap-x-2">
 			<Badge v-if="quizDetails.isDirty" theme="orange">
 				{{ __('Not Saved') }}
@@ -60,6 +61,7 @@
 		v-else-if="quizDetails.doc"
 		class="grid min-h-0 flex-1 grid-cols-1 max-lg:overflow-y-auto lg:grid-cols-[7fr,3fr]"
 	>
+		<!-- OSLMS-CUSTOM: single-column stacked layout below lg so the quiz form is usable on mobile -->
 		<!-- LEFT: Questions -->
 		<div class="flex min-h-0 flex-col">
 			<div class="flex items-center justify-between px-5 pt-5 mb-4">
@@ -73,6 +75,7 @@
 					{{ __('New Question') }}
 				</Button>
 			</div>
+			<!-- OSLMS-CUSTOM: os-list-view theme class on the questions list -->
 			<ListView
 				v-if="questions.length"
 				class="flex overflow-y-auto px-5 os-list-view"
@@ -148,6 +151,7 @@
 		</div>
 
 		<!-- RIGHT: Details + Settings -->
+		<!-- OSLMS-CUSTOM: settings panel stacks under the questions on mobile -->
 		<div class="space-y-8 overflow-y-auto border-t p-5 lg:border-l lg:border-t-0">
 			<div class="space-y-5">
 				<div class="text-ink-gray-9 font-semibold">{{ __('Details') }}</div>

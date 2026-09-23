@@ -105,6 +105,7 @@
 							>
 								{{ testCase.status }}
 							</span>
+							<!-- OSLMS-CUSTOM: icon names inside this commented-out upstream block renamed to LucideCheck/LucideX during a merge fix; no runtime effect -->
 							<!-- <span v-if="testCase.status === 'Passed'">
 								<LucideCheck class="size-4 text-ink-green-3" />
 							</span>

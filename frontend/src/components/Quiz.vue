@@ -6,6 +6,7 @@
 		<LoadingIndicator class="size-4 text-ink-gray-5" />
 	</div>
 	<div v-else-if="quiz.data">
+		<!-- OSLMS-CUSTOM: darker readable text colors and translated plural labels in the quiz instructions -->
 		<div
 			class="bg-surface-blue-2 text-ink-grey-9 space-y-2 p-3 mb-4 rounded-lg leading-5"
 		>
@@ -303,6 +304,7 @@
 						<!-- Check and Next stay available side by side with Submit so a
 						question can be left unanswered: the learner can move on, or
 						hand the quiz in from any question. -->
+						<!-- OSLMS-CUSTOM: Check/Next/Submit side by side so a question can be skipped and the quiz submitted from any question -->
 						<div
 							class="flex flex-col sm:flex-row sm:items-center gap-2 sm:ms-auto"
 						>
@@ -466,6 +468,7 @@
 					</div>
 				</div>
 			</div>
+			<!-- OSLMS-CUSTOM: warn the learner that unanswered questions will score zero before submitting -->
 			<div
 				v-if="unattemptedCount"
 				class="flex items-start gap-2 mt-3 rounded-lg bg-surface-amber-2 p-2 text-ink-amber-6 text-sm leading-5"
@@ -543,6 +546,7 @@ const props = defineProps({
 onMounted(() => {
 	window.addEventListener('pagehide', handlePageHide)
 	window.addEventListener('beforeunload', handleBeforeUnload)
+	// OSLMS-CUSTOM: seed questions, timer and attempts when a cached quiz is remounted
 	// A cache hit hands back an already-resolved resource, so the watcher below
 	// only fires once the background reload lands — seed the display now.
 	// Without this the reopened quiz renders its empty question list for a beat
@@ -604,6 +608,7 @@ const quiz = createResource({
 		// instance's transform, so a per-instance ref stays empty on every later
 		// mount — populateQuestions then drops every row as unresolvable and the
 		// quiz claims it has no questions until a full page reload.
+		// OSLMS-CUSTOM: question map rides inside the cached quiz doc so a remounted quiz keeps its questions
 		quizDoc._questions_by_name = data?.questions_by_name || {}
 		return quizDoc
 	},
@@ -613,6 +618,7 @@ const quiz = createResource({
 	},
 })
 
+// OSLMS-CUSTOM: read the question map from the cached doc, not a per-instance ref
 const questionsByName = computed(() => quiz.data?._questions_by_name || {})
 
 const populateQuestions = () => {
@@ -655,6 +661,7 @@ const stopTimer = () => {
 const startTimer = () => {
 	if (!quiz.data?.duration) return
 	stopTimer()
+	// OSLMS-CUSTOM: wall-clock timer so background-tab throttling cannot skip the auto submit
 	// Anchor the countdown to a wall-clock deadline instead of decrementing a
 	// counter: setInterval drifts and is throttled hard in background tabs, so
 	// a plain counter overshoots and the auto submit never fires.
@@ -730,6 +737,7 @@ watch(
 	() => {
 		if (quiz.data) {
 			populateQuestions()
+			// OSLMS-CUSTOM: seed the timer on remount of a cached quiz resource
 			// The resource's own onSuccess belongs to whichever component
 			// instance created it first — `cache` hands the same resource back
 			// on every later mount — so seed the timer from here as well,
@@ -837,6 +845,7 @@ const markAnswer = (index) => {
 	selectedOptions.value[index - 1] = selectedOptions.value[index - 1] ? 0 : 1
 }
 
+// OSLMS-CUSTOM: blank answers are not answers: lets unanswered questions be submitted
 // An untouched Open Ended editor still emits markup ("<p></p>"), and a
 // User Input textarea emits "" — neither is an answer. Media on its own is.
 const isBlankAnswer = (value) => {
@@ -860,6 +869,7 @@ const getAnswers = () => {
 			if (selectedOptions.value[index])
 				answers.push(questionDetails.data[`option_${index + 1}`])
 		})
+	// OSLMS-CUSTOM: skip blank answers so submit_quiz never receives [null]
 	} else if (!isBlankAnswer(possibleAnswer.value)) {
 		// Pushing a blank answer used to make every visited question count as
 		// attempted, and shipped [null] to submit_quiz — which fails there.
@@ -931,6 +941,7 @@ const addToLocalStorage = () => {
 
 const nextQuestion = () => {
 	if (!quiz.data.show_answers) return
+	// OSLMS-CUSTOM: record the current answer when moving on so skipped questions stay unattempted
 	// Keep an answer that was filled in but never checked; a question left
 	// blank simply records nothing and stays unattempted.
 	recordCurrentAttempt()
@@ -966,6 +977,7 @@ const submitQuiz = () => {
 }
 
 const createSubmission = () => {
+	// OSLMS-CUSTOM: guard against double submission (learner click + timer expiry)
 	// The learner and the expiring timer can both land here — submit once.
 	if (submitting || quizSubmission.data) return
 	submitting = true
@@ -987,6 +999,7 @@ const createSubmission = () => {
 						window.location.reload()
 					}, 3000)
 				} else {
+					// OSLMS-CUSTOM: surface generic submission errors instead of failing silently
 					toast.error(__('Your quiz could not be submitted. Please try again.'))
 				}
 			},
@@ -1035,6 +1048,7 @@ const markLessonProgress = () => {
 }
 
 const handleSubmitClick = () => {
+	// OSLMS-CUSTOM: always show the submission confirmation with the unanswered count
 	// Confirm in both modes: the quiz can now be handed in from any question,
 	// so the learner needs to see what is still unanswered before doing it.
 	recordCurrentAttempt()
@@ -1049,6 +1063,7 @@ const recordCurrentAttempt = () => {
 	addToLocalStorage()
 }
 
+// OSLMS-CUSTOM: unanswered count shown in the submission confirmation
 const unattemptedCount = computed(() =>
 	Math.max(0, questions.value.length - attemptedQuestions.value.length),
 )
@@ -1092,6 +1107,7 @@ const markForReview = (event, questionNumber) => {
 const getSubmissionColumns = () => {
 	return [
 		{
+			// OSLMS-CUSTOM: translated submission table column labels
 			label: __('No.'),
 			key: 'idx',
 		},

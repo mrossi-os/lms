@@ -22,6 +22,7 @@
 						:label="__('Title')"
 						:required="true"
 					/>
+					<!-- OSLMS-CUSTOM: translated placeholder on the language select -->
 					<FormControl
 						v-model="exercise.language"
 						:label="__('Language')"
@@ -283,6 +284,7 @@ const updateExercise = (close: () => void) => {
 	)
 }
 
+// OSLMS-CUSTOM: translated test case column headers
 const testCaseColumns = computed(() => {
 	return [__('Input'), __('Expected Output')]
 })

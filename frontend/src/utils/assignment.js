@@ -43,6 +43,7 @@ export class Assignment {
 	}
 
 	renderAssignment(assignment) {
+		// OSLMS-CUSTOM: translated placeholder when no assignment is selected (was "Assignment: undefined")
 		// Saving the modal without picking an assignment passes a null value,
 		// which otherwise renders "Assignment: undefined". Show a translated
 		// placeholder instead.
@@ -66,6 +67,7 @@ export class Assignment {
 				const submissionPath = getLmsRoute(
 					`assignment-submission/${assignment}/${submission}?fromLesson=1`,
 				)
+				// OSLMS-CUSTOM: os-frame class gives the in-lesson submission iframe full viewport height
 				this.wrapper.innerHTML = `<iframe src="${submissionPath}" class="w-full h-[500px] os-frame"></iframe>`
 			})
 			return
@@ -77,6 +79,7 @@ export class Assignment {
 			},
 			fieldname: ['title'],
 		}).then((data) => {
+			// OSLMS-CUSTOM: translated Assignment label in the editor preview
 			this.wrapper.innerHTML = `<div class='border rounded-md p-4 text-center bg-surface-sidebar mb-4'>
 				<span class="font-medium">
 					${__('Assignment')}: ${data.title}

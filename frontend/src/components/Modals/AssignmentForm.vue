@@ -10,6 +10,7 @@
 					}}
 				</div>
 				<div class="space-y-4 max-h-[75vh] overflow-y-auto p-1">
+					<!-- OSLMS-CUSTOM: translated placeholders on the assignment form fields -->
 					<FormControl
 						v-model="assignment.title"
 						:label="__('Title')"
@@ -137,6 +138,7 @@ const validateFields = () => {
 
 const saveAssignment = () => {
 	validateFields()
+	// OSLMS-CUSTOM: warn on missing required fields instead of failing silently on save
 	if (!assignment.title) {
 		toast.warning(__('{0} is required').format(__('Title')))
 		return
@@ -185,6 +187,7 @@ const updateAssignment = () => {
 	)
 }
 
+// OSLMS-CUSTOM: translated submission type labels (values stay English)
 const assignmentOptions = computed(() => {
 	return [
 		{ label: __('PDF'), value: 'PDF' },
