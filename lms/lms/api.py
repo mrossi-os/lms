@@ -1957,6 +1957,7 @@ def get_profile_details(username: str):
 	if not details:
 		frappe.throw(_("User {0} not found").format(username), frappe.DoesNotExistError)
 
+	# OSLMS-CUSTOM: own profile visible without an LMS role.
 	# A user can always view their own profile, even without an LMS role (e.g. a
 	# freshly created account not yet granted "LMS Student"). Viewing other users'
 	# profiles still requires an LMS role.

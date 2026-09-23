@@ -53,6 +53,8 @@ import type {
 	Resource,
 	SessionUser,
 } from '@/types/api'
+// OSLMS-CUSTOM: client course settings (hero media, feature sections, learning
+// rules) render in these two os_lms sections, mounted in the template above.
 import OsCourseDetailForm from '@/oslms/pages/Courses/OsCourseDetailForm.vue'
 import OsCourseSettings from '@/oslms/pages/Courses/OsCourseSettings.vue'
 

@@ -168,6 +168,7 @@ def process_results(results: list, quiz_details: dict):
 		result["question"] = question_details.question_detail
 		result["marks_out_of"] = question_details.marks
 
+		# OSLMS-CUSTOM: skipped questions score 0 instead of failing the submission.
 		# A skipped question can still reach us with a blank or null answer —
 		# joining or matching against that raises, which used to take the whole
 		# submission down and left the learner unable to hand the quiz in.

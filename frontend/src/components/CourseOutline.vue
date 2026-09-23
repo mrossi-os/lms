@@ -324,6 +324,7 @@ function navigateToLesson(lesson: OutlineLesson) {
 		router.push({
 			name: 'CourseDetail',
 			params: { courseName: props.courseName },
+			// OSLMS-CUSTOM: the Editor tab hash is '#editor'; '#course editor' opened the wrong tab.
 			hash: '#editor',
 			query: { editLesson: lesson.number, lessonMode: 'edit' },
 		})

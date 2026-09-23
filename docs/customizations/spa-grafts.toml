@@ -605,3 +605,106 @@ frappe-ui che tocca il file."""
   [[entries.sites]]
   file = "frontend/src/overrides/frappe-ui/src/components/TextEditor/extensions/toc-node/TocNodeView.vue"
   anchor = ":title=\"__('Rimuovi indice')\""
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 — innesti senza marcatore nei file toccati da v2.58.1
+# (Fase 0-bis: completamento dell'inventario prima del primo merge)
+# ---------------------------------------------------------------------------
+
+[[entries]]
+id = "course-form-os-sections"
+title = "Impostazioni custom del corso nel modulo impostazioni"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le impostazioni del corso volute dal cliente vivono in due componenti os_lms montati dentro
+il CourseForm upstream: OsCourseDetailForm (hero con immagine o video, feature sections) nella
+colonna principale e OsCourseSettings (regole di apprendimento: blocco delle lezioni in
+sequenza, blocco del quiz al completamento) nella barra laterale. Se un merge riscrive
+CourseForm e li perde, i campi restano nel database ma spariscono dal modulo: nessuno potrà
+più modificarli. L'upstream rifattorizza periodicamente questa pagina (memoria
+courseform-sectioned-custom-grafts): in caso di riscrittura, rimontare i due componenti nella
+nuova struttura, non tornare a un modulo monolitico."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseForm.vue"
+  anchor = "<OsCourseDetailForm />"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseForm.vue"
+  anchor = "<OsCourseSettings />"
+
+[[entries]]
+id = "course-outline-editor-hash"
+title = "Modifica lezione dal programma del corso apre la scheda giusta"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il pulsante di modifica di una lezione nel programma del corso porta al corso con l'hash
+'#editor', che è quello della scheda Editor; l'upstream usava '#course editor', che non
+corrisponde a nessuna scheda, e l'editor della lezione si apriva sulla scheda sbagliata.
+Se l'upstream corregge da sé l'hash in modo equivalente, accettare la sua versione e marcare
+la voce come accepted-drift."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseOutline.vue"
+  anchor = "hash: '#editor',"
+  symbol = "navigateToLesson"
+
+[[entries]]
+id = "profile-own-without-lms-role"
+title = "Il proprio profilo è visibile anche senza ruolo LMS"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Un utente vede sempre il proprio profilo, anche senza un ruolo LMS (per esempio un account
+appena creato a cui non è ancora stato assegnato LMS Student); per vedere il profilo di altri
+serve ancora un ruolo LMS. Un username inesistente restituisce "non trovato" invece di un
+errore generico. Senza questa regola, un nuovo utente che apre il proprio profilo riceve un
+errore di permesso."""
+
+  [[entries.sites]]
+  file = "lms/lms/api.py"
+  anchor = "if details.name != frappe.session.user and not has_lms_role():"
+  symbol = "get_profile_details"
+
+[[entries]]
+id = "lesson-pdf-inline-filename"
+title = "PDF delle lezioni con il nome giusto su mobile"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+serve_resource dà un nome esplicito ai file privati serviti inline (in pratica i PDF delle
+lezioni) con un Content-Disposition inline; senza, il browser usa l'ultimo pezzo dell'URL, cioè
+il nome del metodo, e Chrome su mobile mostra quello al posto del nome del PDF. ATTENZIONE al
+merge di v2.58.1: l'upstream corregge da sé l'altra nostra modifica nella stessa funzione
+(rimozione dell'argomento filename da send_private_file, commit upstream 7e5a825e e
+48252d92): lì va accettata la versione upstream; deve sopravvivere solo l'aggiunta del
+Content-Disposition."""
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/course_lesson/course_lesson.py"
+  anchor = "inline; filename*=UTF-8''"
+  symbol = "serve_resource"
+
+[[entries]]
+id = "quiz-submit-unanswered"
+title = "Un quiz si può consegnare con domande senza risposta"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Una domanda saltata arriva con risposta vuota o nulla; prima faceva fallire l'intera consegna
+e lo studente non riusciva più a consegnare il quiz. Ora le risposte vuote vengono filtrate e
+la domanda vale 0. ATTENZIONE al merge di v2.58.1: l'upstream irrobustisce la consegna dei quiz
+contro input malformati (commit upstream 567da4f1), probabile sovrapposizione: confrontare le
+due versioni e, se quella upstream gestisce le domande saltate, adottarla e marcare la voce
+come accepted-drift. Il test test_lms_quiz.py contiene i casi aggiunti con la correzione."""
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_quiz/lms_quiz.py"
+  anchor = "result.get(\"answer\") or []"
+  symbol = "process_results"
+
+  [entries.checks]
+  backend = "lms/lms/doctype/lms_quiz/test_lms_quiz.py"
+

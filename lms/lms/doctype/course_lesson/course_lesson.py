@@ -187,6 +187,7 @@ def serve_resource(file_url: str):
 	relative_path = file_url.split("/private", 1)[1] if "/private" in file_url else file_url
 	response = send_private_file(relative_path)
 
+	# OSLMS-CUSTOM: inline filename so mobile browsers show the real PDF name.
 	# Frappe only names the response for force-download extensions, so an inline file
 	# (a PDF, say) carries no Content-Disposition at all. Browsers then fall back to
 	# the last path segment of the URL, which here is this method's dotted name -- what
