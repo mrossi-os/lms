@@ -13,6 +13,7 @@
 	>
 		<template #default>
 			<div class="flex flex-col gap-4 text-base max-h-[60vh]">
+				<!-- OSLMS-CUSTOM: translated "Select option" placeholder on the course select -->
 				<FormControl
 					v-model="evaluation.course"
 					type="select"

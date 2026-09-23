@@ -33,6 +33,7 @@
 					@input="() => (doc.code = doc.code.toUpperCase())"
 				/>
 
+				<!-- OSLMS-CUSTOM: translated "Select option" placeholder on Discount Type -->
 				<Select
 					v-model="doc.discount_type"
 					:label="__('Discount Type')"

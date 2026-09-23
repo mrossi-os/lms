@@ -5232,3 +5232,263 @@ ATTENZIONE al merge di v2.60.0: l'upstream riscrive altre funzioni dello stesso 
   file = "frontend/src/utils/format.js"
   anchor = "useTimeAgo(date, { messages: IT_TIME_AGO_MESSAGES })"
   symbol = "timeAgo"
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 prima del merge di v2.61.0 — impostazioni e modali
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 prima del merge di v2.61.0 — gruppo "settings-modals"
+# (CertificationLinks, modali capitolo/valutazione/recensione, tipi note,
+# coupon, account email, dettaglio impostazioni, account Zoom)
+# ---------------------------------------------------------------------------
+
+# --- Pulsante "Visualizza certificato" (CertificationLinks.vue) --------------
+
+[[entries]]
+id = "certification-links-view-on-profile"
+title = "\"Visualizza certificato\" porta alla pagina Certificati del profilo"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nella card del corso, quando lo studente ha già il certificato, il pulsante «Visualizza
+certificato» non scarica più il PDF da qui: è un router-link alla pagina Certificati del
+profilo (route ProfileCertificates con lo username dell'utente). È lì che si apre il
+certificato giusto: l'openbadge TrueSkills per i corsi con emissione TrueSkills oppure il PDF
+interno generato con Chrome (useCertificateViewer, vedi trueskills-certificate-viewer).
+Storia: 28976b969 aveva aggiunto &pdf_generator=chrome al download diretto (regola condivisa
+con course-certificate-pdf-chrome e event-modal-certificate-chrome-pdf: download_pdf senza
+pdf_generator usa wkhtmltopdf e il modello con transform:rotate esce bianco); 14c85335e lo
+aveva sostituito con useCertificateViewer; ce30c447e ha tolto tutto e messo la navigazione al
+profilo. Quindi in questo file la regola Chrome non c'è più: vive in useCertificateViewer.js,
+Event.vue e CourseCertification.vue; l'intent di event-modal-certificate-chrome-pdf che cita
+ancora CertificationLinks.vue è superato su questo punto.
+Al merge di v2.61.0 l'upstream cambia solo l'import dei tipi ('@/types/api' → '@/types'),
+fuori dalle nostre righe: nessun conflitto atteso; se l'upstream reintroducesse
+downloadCertificate, tenere il router-link."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CertificationLinks.vue"
+  anchor = "name: 'ProfileCertificates',"
+
+# --- Modale capitolo (ChapterModal.vue) ---------------------------------------
+
+[[entries]]
+id = "chapter-modal-translations"
+title = "Etichette tradotte nel modale del capitolo"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+L'etichetta Titolo e il testo del pulsante «Upload an ZIP file» (pacchetto SCORM) passano da
+__() per comparire in italiano (commit cbc7146dd e d8b533a6b). Solo traduzione, nessuna
+regola. Resta in inglese «Uploading N%» dentro il template literal. Al merge di v2.61.0
+l'upstream trasforma lo span di rimozione del file SCORM in button con aria-label e cambia
+l'import dei tipi: righe lontane dalle nostre, nessun conflitto atteso."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/ChapterModal.vue"
+  anchor = ":label=\"__('Title')\""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/ChapterModal.vue"
+  anchor = "__('Upload an ZIP file')"
+
+# --- Modale prenotazione valutazione (EvaluationModal.vue) --------------------
+
+[[entries]]
+id = "evaluation-modal-select-placeholder"
+title = "Segnaposto tradotto sulla scelta del corso nel modale di valutazione"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La select Corso del modale «Prenota la valutazione» mostra il segnaposto tradotto «Select
+option» invece di un valore vuoto (commit e577585ca, traduzioni). Il resto del diff è una
+virgola finale di Prettier nel watch. Nessuna regola di business; il flusso di prenotazione
+valutazioni è poco usato dal cliente (schede Disponibilità/Calendario nascoste nel profilo,
+vedi profile-tabs-certificates-only). Al merge di v2.61.0 l'upstream aggiunge :key ai v-for
+e trasforma gli slot orari in button, dalla riga 24 in giù: non tocca la FormControl,
+nessun conflitto atteso."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/EvaluationModal.vue"
+  anchor = ":placeholder=\"__('Select option')\""
+
+# --- Modale recensione (ReviewModal.vue) -------------------------------------
+
+[[entries]]
+id = "review-modal-submit-translation"
+title = "Pulsante Invia tradotto nel modale recensione (con residuo della vecchia API Dialog)"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+La nostra modifica voluta è solo l'etichetta dell'azione «Submit» passata da __() (commit
+f33c6ca45, righe nostre in blame). Il resto del diff NON è una scelta nostra: la Dialog usa
+ancora la vecchia API (v-model + :options con onClick: (close) => ...), mentre l'upstream
+v2.60.1 è sulla nuova (v-model:open, :title, size, :actions con onClick: ({ close }) => ...,
+migrazione db53a0996); le righe vecchie sono di Jannat Patel, quindi è residuo della
+risoluzione di un merge che ha tenuto la nostra versione per non perdere la traduzione.
+Probabili effetti: frontend/src/tests/ReviewModal.test.ts (stub di Dialog che legge la prop
+actions) non trova il pulsante e dovrebbe fallire; a runtime, se la Dialog 1.0-beta passa
+all'onClick legacy un oggetto { close } e non la funzione, submitReview(close) chiamerebbe
+close() su un oggetto. Impatto basso: le recensioni sono nascoste (course-reviews-removed).
+Al merge di v2.61.0 (che cambia solo l'import dei tipi) conviene prendere la versione
+upstream e rimettere solo label: __('Submit')."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/ReviewModal.vue"
+  anchor = "label: __('Submit'),"
+
+# --- Tipo Note (Notes/types.ts) ----------------------------------------------
+
+[[entries]]
+id = "notes-type-text-offset"
+title = "Campo text_offset nel tipo Note delle evidenziazioni"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il tipo Note ha il campo opzionale text_offset (numero o null): è la parte di tipizzazione
+della regola lesson-highlight-offset (commit a4573499a), cioè l'evidenziazione salvata con la
+posizione dell'occorrenza scelta, così al ripristino si illumina quella giusta e non la
+prima. Il campo è custom os_lms su LMS Lesson Note.
+ATTENZIONE al merge di v2.61.0: l'upstream CANCELLA questo file e sposta i tipi in
+frontend/src/types/notes.ts (esportato dal barrel '@/types'); gli import in Notes.vue e
+InlineLessonMenu.vue passano a '@/types'. Sarà un conflitto modifica/cancellazione:
+accettare la cancellazione, aggiungere `text_offset?: number | null` (con il marcatore) al
+tipo Note in frontend/src/types/notes.ts e controllare che InlineLessonMenu.vue, che ha
+nostre modifiche, importi Note/Notes da '@/types'."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Notes/types.ts"
+  anchor = "text_offset?: number | null"
+
+# --- Coupon (Settings/Coupons) ------------------------------------------------
+
+[[entries]]
+id = "coupon-forms-select-placeholder"
+title = "Segnaposto tradotto nelle select dei coupon"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le select Tipo di sconto (dettaglio coupon) e Tipo documento (righe «Applicabile a») mostrano
+il segnaposto tradotto «Select option» (commit e577585ca, traduzioni). Solo traduzione; il
+gruppo Pagamenti, che contiene i coupon, è comunque nascosto (settings-payment-group-removed).
+In CouponDetails.vue manca anche class="w-full" sulla select Tipo di sconto, presente
+nell'upstream: non risulta voluto, è residuo di una risoluzione di merge (la nostra riga
+del segnaposto ha preso il posto di quella della classe). Al merge di v2.61.0 l'upstream
+cambia l'intestazione «Applicable For» in h2, gli import dei tipi e alcuni commenti, e in
+CouponItems aggiunge un commento TODO(a11y) nel thead: nessuna sovrapposizione con le
+nostre righe; si può prendere l'upstream e rimettere solo il segnaposto."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Coupons/CouponDetails.vue"
+  anchor = ":placeholder=\"__('Select option')\""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Coupons/CouponItems.vue"
+  anchor = ":placeholder=\"__('Select option')\""
+
+# --- Account email (Settings/EmailAccount/emailConfig.ts) ---------------------
+
+[[entries]]
+id = "email-config-lazy-translation-getters"
+title = "Testi della configurazione account email tradotti al momento del render"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il modulo viene importato subito (dal dialogo Impostazioni importato staticamente nella barra
+laterale), prima che il plugin di traduzione imposti window.__ e carichi le traduzioni: le
+etichette costruite con __() al caricamento restavano in inglese dopo un ricaricamento
+completo (memoria translation_baked_ref_freezes_english). Ogni testo traducibile (label,
+placeholder, description dei campi, info dei provider) è quindi un getter che chiama __()
+all'accesso, a render time (commit 3e17a8267). In più i testi info dei provider sono passati
+da template literal su più righe a stringhe su una riga: la chiave di traduzione è quella
+su una riga, presente in lms/translations/it.csv (non in it.po). Al merge di v2.61.0
+l'upstream cambia solo l'import dei tipi ('@/types/email' → '@/types'), nessun conflitto
+atteso; se l'upstream aggiungesse campi nuovi con __() diretto, trasformarli in getter."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/EmailAccount/emailConfig.ts"
+  anchor = "return __('Account name')"
+  symbol = "fixedFields"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/EmailAccount/emailConfig.ts"
+  anchor = "'Setting up GMail requires you to enable two factor authentication and app specific passwords. Read more',"
+  symbol = "services"
+
+# --- Dettaglio impostazioni (SettingDetails.vue) -----------------------------
+
+[[entries]]
+id = "setting-details-formatting"
+title = "Solo formattazione nel dettaglio impostazioni"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il file differisce dall'upstream solo per una virgola finale aggiunta da Prettier nella
+chiamata save.submit; nessun comportamento cambiato, per questo non porta marcatori. Al merge
+di v2.61.0 l'upstream aggiunge un onSuccess che ricarica le impostazioni della barra laterale
+(settingsStore.loadSidebarSettings(true)) poco sopra la nostra riga: prendere la versione
+upstream senza esitazioni."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/SettingDetails.vue"
+  anchor = "toast.error(err.messages?.[0] || err)\n\t\t\t},\n\t\t},\n\t)"
+  symbol = "update"
+
+# --- Account Zoom (ZoomAccountForm.vue) ---------------------------------------
+
+[[entries]]
+id = "zoom-account-google-calendar-field"
+title = "Account Zoom legato a un Google Calendar (form rotto dopo un merge)"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Regola voluta (commit 0619704f2, «bind Google Calendar to Zoom accounts for live class
+invites»): ogni account Zoom ha un campo Google Calendar obbligatorio (campo google_calendar
+su LMS Zoom Settings), usato per inviare gli inviti delle classi live dal calendario giusto
+(lato server apps/os_lms/os_lms/overrides/lms_live_class.py). Il form lo dichiara nel tipo,
+lo azzera per un account nuovo e lo carica da quello esistente; la lista in ZoomSettings.vue
+carica il campo (settings-google-calendar-tab). È visibile a chi gestisce gli account Zoom
+nelle Impostazioni.
+PROBLEMA ATTUALE (da confermare col titolare, confidence bassa per questo): quando l'upstream
+ha trasformato il modale in pannello SettingsLayout (f6299b7c5), la risoluzione del merge
+(027c0c56f «fix merge: Batch components») ha tenuto il nostro corpo dentro
+<template #body-content>, uno slot che SettingsLayout non ha, e ha perso l'upstream
+<template #header-actions> con il pulsante Salva. Risultato: il campo Google Calendar non
+viene mostrato (si vede il corpo upstream di default, senza quel campo) e il form non ha il
+pulsante Salva (la funzione save esiste ma non è usata). Correzione suggerita, non applicata:
+rimettere #header-actions con il Button Salva, togliere il blocco #body-content e aggiungere
+il Link Google Calendar nella griglia del corpo di default.
+Al merge di v2.61.0 l'upstream cambia solo l'import di User ('@/types'): nessun conflitto
+atteso, ma è il momento buono per sistemare il template."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/ZoomAccountForm.vue"
+  anchor = "v-model=\"account.google_calendar\""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/ZoomAccountForm.vue"
+  anchor = "account.google_calendar = acc.google_calendar || ''"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/ZoomAccountForm.vue"
+  anchor = "<template #body-content>"
+
+[[entries]]
+id = "zoom-account-rename-keeps-account-name"
+title = "Rinominando un account Zoom il nome resta quello nuovo"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Salvando un account Zoom esistente con il nome cambiato, il form prima rinomina il documento
+(rename_doc) e poi salva i campi. L'upstream in quel salvataggio passa account_name =
+props.accountID, cioè il nome VECCHIO, riportando il campo al valore precedente; noi passiamo
+account.name, così account_name resta allineato al nuovo nome del documento (commit
+d2f1196b0 «Fix modal zoom settings»). Oggi il ramo non è raggiungibile finché manca il
+pulsante Salva (vedi zoom-account-google-calendar-field). Al merge di v2.61.0 nessuna
+modifica upstream in setValue."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/ZoomAccountForm.vue"
+  anchor = "OSLMS-CUSTOM: keep account_name in sync with the (possibly renamed) doc name"
+  symbol = "setValue"

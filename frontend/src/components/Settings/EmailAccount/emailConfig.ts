@@ -14,6 +14,7 @@ declare global {
 	}
 }
 
+// OSLMS-CUSTOM: translatable strings are getters so __() runs at render time, not frozen to English at import
 // `__` is a global set by the translation plugin at app init. This module is
 // imported eagerly (via the sidebar's statically-imported Settings modal), which
 // runs BEFORE the plugin sets `window.__` and before translations are fetched.

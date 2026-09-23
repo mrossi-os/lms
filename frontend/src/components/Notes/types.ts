@@ -1,6 +1,7 @@
 
 export type Note = {
 	highlighted_text?: string
+	// OSLMS-CUSTOM: text_offset stores which occurrence of the highlighted text was selected (os_lms custom field on LMS Lesson Note)
 	text_offset?: number | null
 	color?: string
 	name: string

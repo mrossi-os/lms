@@ -24,6 +24,7 @@
 						class="bg-surface-base border-b border-outline-gray-2 last:border-b-0"
 					>
 						<td class="px-6 py-2">
+							<!-- OSLMS-CUSTOM: translated "Select option" placeholder on the document type select -->
 							<Select
 								v-model="row.reference_doctype"
 								:placeholder="__('Select option')"

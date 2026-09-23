@@ -14,6 +14,7 @@
 	>
 		<template #default>
 			<div class="space-y-4 text-base">
+				<!-- OSLMS-CUSTOM: chapter modal labels translated via __() (Title, Upload an ZIP file) -->
 				<FormControl
 					:label="__('Title')"
 					v-model="chapter.title"

@@ -6,6 +6,7 @@
 			params: { username: user.data?.username },
 		}"
 	>
+		<!-- OSLMS-CUSTOM: View Certificate navigates to the profile Certificates page (TrueSkills badge or Chrome-rendered PDF) instead of downloading the PDF here -->
 		<Button class="w-full">
 			<template #prefix>
 				<span class="lucide-graduation-cap size-4" />

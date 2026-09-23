@@ -52,6 +52,7 @@
 					type="text"
 					:required="true"
 				/>
+				<!-- OSLMS-CUSTOM: Google Calendar bound to the Zoom account, used to send live class invites -->
 				<Link
 					v-model="account.google_calendar"
 					:label="__('Google Calendar')"
@@ -123,6 +124,7 @@ interface ZoomAccount {
 	account_id: string
 	client_id: string
 	client_secret: string
+	// OSLMS-CUSTOM: Zoom account bound to a Google Calendar for live class invites (os_lms field on LMS Zoom Settings)
 	google_calendar: string
 }
 
@@ -186,6 +188,7 @@ watch(
 				account.account_id = acc.account_id
 				account.client_id = acc.client_id
 				account.client_secret = acc.client_secret
+				// OSLMS-CUSTOM: load the Google Calendar bound to this Zoom account
 				account.google_calendar = acc.google_calendar || ''
 			}
 		}
@@ -246,6 +249,7 @@ const setValue = () => {
 		{
 			...account,
 			name: account.name,
+			// OSLMS-CUSTOM: keep account_name in sync with the (possibly renamed) doc name; upstream reset it to the old accountID
 			account_name: account.name,
 		},
 		{

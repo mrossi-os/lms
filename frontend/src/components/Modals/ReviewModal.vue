@@ -14,6 +14,7 @@
 		}"
 	>
 		<template #default>
+			<!-- OSLMS-CUSTOM: Submit action label translated via __() (the legacy v-model/:options Dialog API around it is merge residue) -->
 			<div class="flex flex-col gap-4">
 				<Rating v-model="review.rating" :label="__('Rating')" />
 				<FormControl
