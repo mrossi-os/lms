@@ -1,0 +1,572 @@
+# Inventario delle personalizzazioni marcate OSLMS-CUSTOM.
+#
+# Fonte di verità unica: da qui si genera la verifica dopo ogni merge upstream.
+# Chi aggiunge una personalizzazione aggiunge anche la voce, nella stessa sessione.
+# Schema e criteri: vedi README.md in questa cartella.
+
+schema_version = 1
+area = "spa-grafts"
+
+# ---------------------------------------------------------------------------
+# Card laterale del corso (CourseCardOverlay.vue)
+# ---------------------------------------------------------------------------
+
+[[entries]]
+id = "course-card-admin-gate"
+title = "Menu di gestione sulla card corso visibile anche al Docente"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il ruolo custom Docente è un istruttore globale: deve essere trattato come amministratore
+del corso sulla card (niente CTA di iscrizione, azioni di gestione) esattamente come
+Moderator e l'istruttore del corso. L'upstream conosce solo Moderator e istruttore."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCardOverlay.vue"
+  anchor = "Boolean(user.data?.is_docente)"
+  symbol = "isAdmin"
+
+  [entries.visibility]
+  subject = "trattamento da amministratore sulla card corso"
+  allow = ["Moderator", "Docente", "course-instructor"]
+  deny = ["Student", "Valutatore", "Guest"]
+
+[[entries]]
+id = "course-card-valutatore-no-enroll"
+title = "Nessuna CTA di iscrizione per il Valutatore"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il Valutatore di un batch che contiene il corso lo consulta in sola lettura e non è mai
+uno studente. Raggiunge le lezioni senza iscrizione: offrirgli la CTA di iscrizione è una
+trappola, perché un click crea una LMS Enrollment reale e lo elenca tra gli studenti.
+Il flag is_valutatore è iniettato dall'override os_lms di get_course_details."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCardOverlay.vue"
+  anchor = "Boolean(props.course.data?.is_valutatore)"
+  symbol = "isValutatore"
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCardOverlay.vue"
+  anchor = "!isAdmin.value && !isValutatore.value"
+  symbol = "canEnroll"
+
+  [[entries.sites]]
+  file = "frontend/src/types/api.ts"
+  anchor = "is_valutatore?: 0 | 1"
+
+  [entries.visibility]
+  subject = "CTA di iscrizione / acquisto sulla card corso"
+  allow = ["Student", "Guest"]
+  deny = ["Valutatore", "Moderator", "Docente", "course-instructor"]
+
+[[entries]]
+id = "course-card-certificate-dedup"
+title = "Niente doppio pulsante certificato dopo l'emissione"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Una volta emesso il certificato deve restare solo il «View Certificate» di
+CertificationLinks, non anche un «Get Certificate». LMS Enrollment.certificate non viene
+valorizzato all'emissione, quindi la fonte autorevole è get_certification_details (lo
+stesso segnale che usa CertificationLinks); si attende il caricamento per evitare flash."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCardOverlay.vue"
+  anchor = "url: 'lms.lms.api.get_certification_details'"
+  symbol = "certification"
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCardOverlay.vue"
+  anchor = "!certification.data.certificate"
+  symbol = "canGetCertificate"
+
+[[entries]]
+id = "trueskills-certificate-viewer"
+title = "Il certificato TrueSkills sostituisce il PDF interno"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Per i corsi con emissione TrueSkills il certificato di completamento è l'immagine
+openbadge TrueSkills (aperta in linea), non il PDF del Print Format interno. Vale sulla
+card corso e nella pagina certificati del profilo; i certificati interni o di batch
+continuano ad aprire il PDF. TrueSkills è alternativo al certificato interno, quindi il
+pulsante si abilita anche con enable_certification spento."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCardOverlay.vue"
+  anchor = "openCourseCertificate(props.course.data?.name)"
+  symbol = "fetchCertificate"
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCardOverlay.vue"
+  anchor = "props.course.data?.trueskills_certificate_enabled"
+  symbol = "canGetCertificate"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProfileCertificates.vue"
+  anchor = "const { openIssuedCertificate } = useCertificateViewer()"
+
+  [[entries.sites]]
+  file = "frontend/src/types/lms/LMSCourse.ts"
+  anchor = "trueskills_certificate_enabled?: 0 | 1"
+
+[[entries]]
+id = "course-card-outline"
+title = "Programma del corso navigabile al posto delle statistiche"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La card mostra il programma del corso (CourseOutline) navigabile al posto del blocco
+«This course includes» con le statistiche, che resta commentato nel file per un facile
+ripristino insieme alle sue computed e alle icone importate."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCardOverlay.vue"
+  anchor = "<div v-if=\"!hideOutline\" :class=\"readOnlyMode ? 'mt-4' : 'mt-0'\">"
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCardOverlay.vue"
+  anchor = "OSLMS-CUSTOM: \"This course includes\" stats block disabled"
+
+# ---------------------------------------------------------------------------
+# Trattamento mobile della pagina corso
+# ---------------------------------------------------------------------------
+
+[[entries]]
+id = "course-mobile-cta-bar"
+title = "Barra fissa «Continue Learning» su telefono"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Sul telefono (<640px, MobileLayout con barra di navigazione in basso) lo studente iscritto
+vede una barra fissa a tutta larghezza con «Continue Learning», che diventa l'unica azione
+primaria; il pulsante nella card viene nascosto. La pagina aggiunge padding in fondo per
+non coprire l'ultima sezione, e pubblica la presenza della barra nello store mobileCta
+così che i pulsanti AI flottanti si sollevino invece di sovrapporsi. Soglia 640 e non 768
+per restare dentro la shell telefono."""
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/pages/Courses/CourseOverview.vue"
+  anchor = "() => isMobile.value && Boolean(props.course.data?.membership)"
+  symbol = "showMobileCta"
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/pages/Courses/CourseOverview.vue"
+  anchor = "{ 'pb-36': showMobileCta }"
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/pages/Courses/CourseOverview.vue"
+  anchor = "mobileCta.setBar(visible)"
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCardOverlay.vue"
+  anchor = "v-if=\"!hideContinueCta\""
+
+  [[entries.sites]]
+  file = "frontend/src/stores/mobileCta.js"
+  anchor = "defineStore('mobile-cta'"
+
+  [[entries.sites]]
+  file = "frontend/src/oslms/components/AiFixedButtons.vue"
+  anchor = "mobileCta.barVisible ? 'bottom-34 sm:bottom-6' : 'bottom-20 sm:bottom-9'"
+
+[[entries]]
+id = "course-mobile-outline-bottom"
+title = "Programma del corso in fondo alla pagina su telefono"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Sul telefono (<640px) il programma del corso si sposta in fondo alla pagina, sotto le
+sezioni di contenuto, e viene tolto dalla card (hideOutline). In ogni layout più largo
+resta nella card, quindi il rendering in fondo è condizionato alla shell telefono per non
+duplicare il programma."""
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/pages/Courses/CourseOverview.vue"
+  anchor = "<section v-if=\"isMobile\">"
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/pages/Courses/CourseOverview.vue"
+  anchor = "const isMobile = computed<boolean>(() => size.width < 640)"
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCardOverlay.vue"
+  anchor = "hideOutline?: boolean"
+
+[[entries]]
+id = "course-card-hide-when-empty"
+title = "La card corso sparisce quando resterebbe vuota"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Su telefono programma e CTA escono dalla card, che può rimanere senza contenuto: invece di
+un riquadro vuoto con bordo la card non si rende. Per saperlo replica la visibilità di
+CertificationLinks usando la stessa risorsa certification."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCardOverlay.vue"
+  anchor = "v-if=\"hasCardContent\""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCardOverlay.vue"
+  anchor = "const certLinksVisible = computed<boolean>"
+
+[[entries]]
+id = "course-tablet-inline-card"
+title = "Card corso completa in linea sul tablet"
+layer = "override-file"
+confidence = "high"
+intent = """
+Tra 640 e 1023px la pagina è a colonna singola ma la card laterale desktop (lg:) è
+nascosta: lì si rende in linea la card completa originale, così il trattamento mobile
+(barra fissa + programma in fondo) resta confinato al telefono."""
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/pages/Courses/CourseOverview.vue"
+  anchor = "<div v-if=\"isNarrow && !isMobile\" class=\"lg:hidden\">"
+
+# ---------------------------------------------------------------------------
+# Pagina corso (override CourseOverview.vue)
+# ---------------------------------------------------------------------------
+
+[[entries]]
+id = "course-hero-banner"
+title = "Banner hero del corso"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Se il corso ha un hero abilitato con un media, il media compare come sezione a tutta
+larghezza con angoli arrotondati tra l'introduzione breve e «About this course», e usa lo
+stesso player delle lezioni. In quel caso il video di anteprima sparisce dalla card
+(hideVideo) e la card scende per allinearsi. I dati hero arrivano annidati dall'override
+os_lms di get_course_details."""
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/pages/Courses/CourseOverview.vue"
+  anchor = "Boolean(heroData.value?.enabled && heroData.value?.media_url)"
+  symbol = "hasHero"
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/pages/Courses/CourseOverview.vue"
+  anchor = ":hero=\"heroData\""
+
+  [[entries.sites]]
+  file = "frontend/src/oslms/components/CourseHero.vue"
+  anchor = "<section class=\"mb-8 w-full overflow-hidden rounded-md bg-black\">"
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCardOverlay.vue"
+  anchor = "v-if=\"course.data?.video_link && !hideVideo\""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCardOverlay.vue"
+  anchor = ":class=\"{ 'md:mt-16': hideVideo }\""
+
+[[entries]]
+id = "course-instructors-hidden-from-students"
+title = "Istruttori del corso nascosti agli studenti"
+layer = "override-file"
+confidence = "high"
+intent = """
+L'elenco degli istruttori in testa alla pagina corso è visibile solo a moderatori e
+istruttori del corso, non agli studenti."""
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/pages/Courses/CourseOverview.vue"
+  anchor = "v-if=\"isCourseAdmin && course.data.instructors?.length\""
+
+  [entries.visibility]
+  subject = "elenco istruttori nella pagina corso"
+  allow = ["Moderator", "course-instructor"]
+  deny = ["Student", "Guest"]
+
+[[entries]]
+id = "course-short-intro-preline"
+title = "Introduzione breve del corso su più righe"
+layer = "override-file"
+confidence = "high"
+intent = """
+short_introduction è un campo Small Text in cui gli autori scrivono su più righe; l'HTML
+collasserebbe gli a capo, quindi si conservano con whitespace-pre-line."""
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/pages/Courses/CourseOverview.vue"
+  anchor = "class=\"text-ink-gray-7 leading-6 whitespace-pre-line\""
+
+[[entries]]
+id = "course-content-section-removed"
+title = "Sezione «Course content» rimossa dalla pagina corso"
+layer = "override-file"
+confidence = "low"
+intent = """
+La sezione «Course content» dell'upstream è commentata, insieme alla risorsa
+get_course_outline che la alimentava (per non sprecare la chiamata API). Il programma
+del corso vive nella card (o in fondo su telefono). Motivazione dedotta: evitare di
+mostrare due volte il programma."""
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/pages/Courses/CourseOverview.vue"
+  anchor = "OSLMS-CUSTOM: \"Course content\" section removed"
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/pages/Courses/CourseOverview.vue"
+  anchor = "OSLMS-CUSTOM: outline resource/stats removed"
+
+[[entries]]
+id = "course-description-collapsible"
+title = "Descrizione del corso comprimibile"
+layer = "override-file"
+confidence = "high"
+intent = """
+La descrizione lunga del corso si rende con CourseDescription, che la comprime con
+«mostra di più / di meno» invece di mostrarla sempre per intero."""
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/pages/Courses/CourseOverview.vue"
+  anchor = "<CourseDescription :description=\"course.data.description\" />"
+
+[[entries]]
+id = "course-feature-sections"
+title = "Sezioni in evidenza del corso"
+layer = "override-file"
+confidence = "high"
+intent = """
+Il corso può avere sezioni in evidenza configurate dall'autore, rese dopo la descrizione;
+i dati arrivano annidati dall'override os_lms di get_course_details e il rendering tiene
+conto dell'iscrizione dello studente."""
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/pages/Courses/CourseOverview.vue"
+  anchor = ":sections=\"featureSections\""
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/pages/Courses/CourseOverview.vue"
+  anchor = "(props.course.data as any)?.feature_sections ?? null"
+
+[[entries]]
+id = "course-reviews-removed"
+title = "Recensioni rimosse dalla pagina corso"
+layer = "override-file"
+confidence = "low"
+intent = """
+Il blocco CourseReviews dell'upstream è commentato: le recensioni non compaiono nella
+pagina corso. Motivazione non documentata nel codice, presumibilmente scelta del
+committente."""
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/pages/Courses/CourseOverview.vue"
+  anchor = "OSLMS-CUSTOM: CourseReviews removed"
+
+[[entries]]
+id = "course-creator-card-removed"
+title = "Card dell'autore rimossa dalla pagina corso"
+layer = "override-file"
+confidence = "low"
+intent = """
+La CourseCreatorCard dell'upstream nella colonna laterale è commentata. Coerente con
+l'occultamento degli istruttori agli studenti, ma la motivazione non è scritta."""
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/pages/Courses/CourseOverview.vue"
+  anchor = "OSLMS-CUSTOM: CourseCreatorCard removed"
+
+[[entries]]
+id = "course-overview-tag-colors"
+title = "Colori dei tag anche nella pagina corso"
+layer = "override-file"
+confidence = "high"
+intent = """
+La mappa colori dei tag (LMS OS Tag) è fornita da Courses.vue solo nell'elenco corsi;
+la pagina corso la ricarica e la fornisce, altrimenti CourseTagBadges non si rende."""
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/pages/Courses/CourseOverview.vue"
+  anchor = "provide('tagColorMap', tagColorMap)"
+
+# ---------------------------------------------------------------------------
+# Programma del corso (ChapterRow.vue)
+# ---------------------------------------------------------------------------
+
+[[entries]]
+id = "chapter-row-chevron-lucide"
+title = "Chevron dei capitoli come componente lucide"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il chevron di apertura del capitolo usa il componente lucide ChevronRight perché con
+la resa upstream non compariva."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/ChapterRow.vue"
+  anchor = "<ChevronRight"
+
+[[entries]]
+id = "lesson-tag-badges"
+title = "Badge dei tag sulle lezioni nel programma"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Ogni lezione nel programma del corso mostra i propri tag come badge. I tag arrivano
+come stringa separata da virgole dall'override os_lms di get_course_outline."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/ChapterRow.vue"
+  anchor = "import CourseTagBadges from '@/oslms/components/CourseTagBadges.vue'"
+
+  [[entries.sites]]
+  file = "frontend/src/components/ChapterRow.vue"
+  anchor = ":tags=\"lesson.tags\""
+
+  [[entries.sites]]
+  file = "frontend/src/types/api.ts"
+  anchor = "tags?: string"
+
+[[entries]]
+id = "lesson-ai-status"
+title = "Stato di indicizzazione AI delle lezioni nell'editor"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nel programma in modalità modifica ogni lezione mostra in forma compatta lo stato di
+indicizzazione per l'assistente AI (RAG os_lms). Lo stato arriva dall'override os_lms
+di get_course_outline."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/ChapterRow.vue"
+  anchor = "<LessonAIStatus :lesson=\"lesson\" />"
+
+  [[entries.sites]]
+  file = "frontend/src/types/api.ts"
+  anchor = "index_status?: string"
+
+  [entries.visibility]
+  subject = "stato AI della lezione nel programma"
+  allow = ["course-editor"]
+  deny = ["Student", "Guest"]
+
+# ---------------------------------------------------------------------------
+# Video, batch, profilo
+# ---------------------------------------------------------------------------
+
+[[entries]]
+id = "video-preview-plyr"
+title = "Anteprima YouTube/Vimeo nel player Plyr"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Un'anteprima YouTube/Vimeo si riproduce con lo stesso player Plyr delle lezioni invece
+che con l'iframe nudo del provider, così non compaiono i controlli del provider (titolo,
+canale, condividi, griglia di fine video). Il contenitore riserva il 16:9 mentre Plyr
+parte, per non far saltare la pagina."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/VideoPreview.vue"
+  anchor = "<div v-if=\"isEmbed\" class=\"preview-player aspect-video w-full bg-black\">"
+
+[[entries]]
+id = "batch-description-preline"
+title = "Descrizione del batch su più righe"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La descrizione del batch è un campo Small Text scritto su più righe; si conservano gli a
+capo con whitespace-pre-line, come per l'introduzione breve del corso."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchOverview.vue"
+  anchor = "class=\"my-3 leading-6 text-ink-gray-7 card whitespace-pre-line\""
+
+[[entries]]
+id = "batch-preview-video"
+title = "Video di anteprima nella pagina batch"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il video di anteprima del batch compare sotto la descrizione breve a ogni larghezza (mai
+in colonna laterale), largo quanto la descrizione e in 16:9. Solo il video: il resto di
+BatchOverlay (prezzo, posti, CTA di iscrizione) resta fuori da questa pagina."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchOverview.vue"
+  anchor = ":video-link=\"batch.data.video_link\""
+
+# ---------------------------------------------------------------------------
+# Programmi
+# ---------------------------------------------------------------------------
+
+[[entries]]
+id = "program-description"
+title = "Descrizione del programma visibile allo studente"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La descrizione del programma (campo custom os_lms) si mostra sia nel dettaglio del
+programma sia nel dialogo di iscrizione, con la formattazione conservata e sanificata
+con sanitizeRichHTML."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/ProgramDetail.vue"
+  anchor = ":description=\"sanitizeRichHTML(program.data.description)\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/ProgramEnrollment.vue"
+  anchor = ":description=\"sanitizeRichHTML(program.data.description)\""
+
+[[entries]]
+id = "home-programs-row"
+title = "Riga dei programmi nella home dello studente"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La home dello studente mostra i suoi programmi o, se non è iscritto a nessuno, quelli
+pubblicati (stesso schema della riga dei batch). Riusa la risorsa programs dello store
+settings già caricata dalla sidebar invece di una seconda chiamata; la carica solo se
+nessuno l'ha fatto (layout mobile senza sidebar). Un programma non iscritto apre il
+dialogo di iscrizione invece del dettaglio."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Home/StudentHome.vue"
+  anchor = "<div v-if=\"homePrograms.length\" class=\"mt-10\">"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Home/StudentHome.vue"
+  anchor = "if (!programs.data && !programs.loading) programs.reload()"
+
+[[entries]]
+id = "program-member-unpublished-course"
+title = "Membri del programma vedono i corsi non pubblicati"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Chi è membro di un programma che contiene un corso può aprirlo anche se il corso non è
+pubblicato. Il flag in_member_program è iniettato dall'override os_lms di
+get_course_details; qui è censito solo il tipo, le guardie server-side sono os_lms."""
+
+  [[entries.sites]]
+  file = "frontend/src/types/api.ts"
+  anchor = "in_member_program?: 0 | 1"
+
+# ---------------------------------------------------------------------------
+# Override di componenti frappe-ui
+# ---------------------------------------------------------------------------
+
+[[entries]]
+id = "toc-node-translations"
+title = "Traduzione delle stringhe dell'indice nel TextEditor"
+layer = "override-file"
+confidence = "high"
+intent = """
+Copia integrale di TocNodeView.vue di frappe-ui con due sole differenze: il messaggio
+«There are no headings in this document.» passa per __() e il titolo del pulsante di
+rimozione è in italiano. Va risincronizzata con l'upstream a ogni aggiornamento di
+frappe-ui che tocca il file."""
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/frappe-ui/src/components/TextEditor/extensions/toc-node/TocNodeView.vue"
+  anchor = "__('There are no headings in this document.')"
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/frappe-ui/src/components/TextEditor/extensions/toc-node/TocNodeView.vue"
+  anchor = ":title=\"__('Rimuovi indice')\""
