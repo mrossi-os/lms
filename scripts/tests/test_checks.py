@@ -4,7 +4,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.customizations.checks import ERROR, check_sites
+from scripts.customizations.checks import (
+	ERROR,
+	WARNING,
+	check_sites,
+	check_test_paths,
+	check_uncatalogued_markers,
+)
 from scripts.customizations.model import Entry, Site
 
 
@@ -70,6 +76,59 @@ class CheckSitesTest(unittest.TestCase):
 			root = fake_repo(tmp, **{"src/A.vue": "x", "src/B.vue": "nothing"})
 			findings = check_sites([entry(sites=sites)], root)
 		self.assertEqual([f.file for f in findings], ["src/B.vue"])
+
+
+class CheckUncataloguedMarkersTest(unittest.TestCase):
+	def test_reports_a_marked_file_that_no_entry_mentions(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			root = fake_repo(tmp, **{"frontend/src/Loose.vue": "// OSLMS-CUSTOM: nostro\n"})
+			findings = check_uncatalogued_markers([], root)
+		self.assertEqual(len(findings), 1)
+		self.assertEqual(findings[0].check, "C3")
+		self.assertEqual(findings[0].severity, ERROR)
+		self.assertEqual(findings[0].file, "frontend/src/Loose.vue")
+
+	def test_stays_silent_when_the_file_is_catalogued(self):
+		site = Site(file="frontend/src/Loose.vue", anchor="OSLMS-CUSTOM")
+		with tempfile.TemporaryDirectory() as tmp:
+			root = fake_repo(tmp, **{"frontend/src/Loose.vue": "// OSLMS-CUSTOM: nostro\n"})
+			findings = check_uncatalogued_markers([entry(sites=[site])], root)
+		self.assertEqual(findings, [])
+
+	def test_ignores_generated_bundles(self):
+		marked = "// OSLMS-CUSTOM\n"
+		with tempfile.TemporaryDirectory() as tmp:
+			root = fake_repo(tmp, **{"lms/public/frontend/assets/index-abc.js": marked})
+			findings = check_uncatalogued_markers([], root)
+		self.assertEqual(findings, [])
+
+	def test_ignores_unwatched_suffixes(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			root = fake_repo(tmp, **{"frontend/src/notes.md": "OSLMS-CUSTOM\n"})
+			findings = check_uncatalogued_markers([], root)
+		self.assertEqual(findings, [])
+
+
+class CheckTestPathsTest(unittest.TestCase):
+	def test_warns_when_an_entry_has_no_test_at_all(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			findings = check_test_paths([entry()], Path(tmp))
+		self.assertEqual(len(findings), 1)
+		self.assertEqual(findings[0].check, "C4")
+		self.assertEqual(findings[0].severity, WARNING)
+
+	def test_warns_when_a_declared_test_file_is_missing(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			findings = check_test_paths([entry(checks={"unit": "t/missing.test.ts"})], Path(tmp))
+		self.assertEqual(len(findings), 1)
+		self.assertIn("unit", findings[0].message)
+		self.assertEqual(findings[0].file, "t/missing.test.ts")
+
+	def test_stays_silent_when_the_declared_test_exists(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			root = fake_repo(tmp, **{"t/present.test.ts": "it('x', () => {})\n"})
+			findings = check_test_paths([entry(checks={"unit": "t/present.test.ts"})], root)
+		self.assertEqual(findings, [])
 
 
 if __name__ == "__main__":
