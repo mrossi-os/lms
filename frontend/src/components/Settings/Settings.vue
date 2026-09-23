@@ -1,6 +1,7 @@
 <template>
 	<Dialog v-model="show" :options="{ size: '5xl' }">
 		<template #body>
+			<!-- OSLMS-CUSTOM: Dialog kept on the v-model/options API, padded scrollable content pane; labels are translated where the tabs are defined -->
 			<div class="flex h-[calc(100vh_-_8rem)]" id="settings-modal">
 				<div
 					class="flex w-52 shrink-0 flex-col bg-surface-gray-2 p-2 overflow-y-auto"
@@ -9,6 +10,7 @@
 						{{ __('Settings') }}
 					</h1>
 					<div class="space-y-5">
+						<!-- OSLMS-CUSTOM: tabs are identified by a stable English `key` because `label` is already translated with __() -->
 						<div v-for="tab in tabs" :key="tab.key">
 							<div
 								v-if="!tab.hideLabel"
@@ -33,6 +35,7 @@
 					:key="activeTab.key"
 					class="flex flex-1 flex-col p-8 bg-surface-elevation-2 overflow-x-auto overflow-y-auto"
 				>
+					<!-- OSLMS-CUSTOM: os_lms tab templates (AI, TrueSkills API) receive their field sections; props switch on the stable tab key -->
 					<component
 						v-if="activeTab.template"
 						:is="activeTab.template"
@@ -78,8 +81,11 @@ import GoogleCalendarSettings from '@/components/Settings/GoogleCalendarSettings
 import Badges from '@/components/Settings/Badges/Badges.vue'
 import { buildOslmsSettingsTabs } from '@/oslms/utils/settings'
 
+// OSLMS-CUSTOM: Google Calendar tab reserved to System Manager and Gestore
 const GOOGLE_CALENDAR_ROLES = ['System Manager', 'Gestore']
+// OSLMS-CUSTOM: system-wide tabs (General, Badges, Signup, SEO) reserved to administrators, hidden from Moderator/Gestore
 const ADMIN_ONLY_ROLES = ['System Manager', 'Administrator']
+// OSLMS-CUSTOM: os_lms integration tabs open to administrators plus Gestore
 // Roles allowed on the os_lms integration tabs (TrueSkills API, Prompt AI):
 // administrators plus the "Gestore" manager bundle.
 const OS_INTEGRATION_ROLES = ['Gestore']
@@ -127,6 +133,7 @@ const tabsStructure = computed(() => {
 					key: 'General',
 					label: __('General'),
 					icon: 'Wrench',
+					// OSLMS-CUSTOM: administrators only (see ADMIN_ONLY_ROLES)
 					condition: isAdministrator,
 					sections: [
 						{
@@ -388,6 +395,7 @@ const tabsStructure = computed(() => {
 					),
 					icon: 'Award',
 					template: markRaw(Badges),
+					// OSLMS-CUSTOM: administrators only (see ADMIN_ONLY_ROLES)
 					condition: isAdministrator,
 				},
 				{
@@ -432,6 +440,7 @@ const tabsStructure = computed(() => {
 				},
 			],
 		},
+		// OSLMS-CUSTOM: upstream "Payment" group (Configuration, Gateways, Transactions, Coupons) intentionally removed from the settings dialog
 		{
 			key: 'Conferencing',
 			label: __('Conferencing'),
@@ -455,6 +464,7 @@ const tabsStructure = computed(() => {
 					icon: 'Presentation',
 					template: markRaw(GoogleMeetSettings),
 				},
+				// OSLMS-CUSTOM: Google Calendar accounts tab (System Manager + Gestore) for live class and evaluation invites
 				{
 					key: 'Google Calendar',
 					label: __('Google Calendar'),
@@ -522,6 +532,7 @@ const tabsStructure = computed(() => {
 							columns: [
 								{
 									fields: [
+										// OSLMS-CUSTOM: extra sidebar visibility toggle (Home), backed by an os_lms custom field on LMS Settings
 										{
 											label: __('Home'),
 											name: 'home',
@@ -539,6 +550,7 @@ const tabsStructure = computed(() => {
 											type: 'checkbox',
 											description: 'Show the Batches link in the sidebar.',
 										},
+										// OSLMS-CUSTOM: extra sidebar visibility toggle (Programs), backed by an os_lms custom field on LMS Settings
 										{
 											label: __('Programs'),
 											name: 'programs',
@@ -562,6 +574,7 @@ const tabsStructure = computed(() => {
 								},
 								{
 									fields: [
+										// OSLMS-CUSTOM: extra sidebar visibility toggle (Search, Quizzes, Assignments), backed by an os_lms custom field on LMS Settings
 										{
 											label: __('Search'),
 											name: 'search',
@@ -609,6 +622,7 @@ const tabsStructure = computed(() => {
 					description: __(
 						'Manage the settings related to user signup and registration',
 					),
+					// OSLMS-CUSTOM: administrators only (see ADMIN_ONLY_ROLES)
 					condition: isAdministrator,
 					sections: [
 						{
@@ -646,6 +660,7 @@ const tabsStructure = computed(() => {
 						},
 					],
 				},
+				// OSLMS-CUSTOM: welcome notification and welcome video shown to students on first login
 				{
 					key: 'Welcome Video',
 					label: __('Welcome'),
@@ -738,6 +753,7 @@ const tabsStructure = computed(() => {
 					description: __(
 						'Manage the SEO settings to improve your website ranking on search engines',
 					),
+					// OSLMS-CUSTOM: administrators only (see ADMIN_ONLY_ROLES)
 					condition: isAdministrator,
 					sections: [
 						{
@@ -778,12 +794,14 @@ const tabsStructure = computed(() => {
 				},
 			],
 		},
+		// OSLMS-CUSTOM: os_lms tabs (TrueSkills API, Configurazioni, AI, Prompt AI) injected from @/oslms/utils/settings
 		...buildOslmsSettingsTabs({ isAdministrator, canManageOsIntegrations }),
 	]
 })
 
 const tabs = computed(() => {
 	return tabsStructure.value
+		// OSLMS-CUSTOM: whole groups can carry a role condition; groups left empty are dropped
 		.filter((tab) => !tab.condition || tab.condition())
 		.map((tab) => {
 			return {
@@ -800,6 +818,7 @@ watch(show, async () => {
 	if (show.value) {
 		const currentTab = await tabs.value
 			.flatMap((tab) => tab.items)
+			// OSLMS-CUSTOM: deep links (openSettings) match the stable key, not the translated label
 			.find((item) => item.key === settingsStore.activeTab)
 		activeTab.value = currentTab || tabs.value[0].items[0]
 	} else {

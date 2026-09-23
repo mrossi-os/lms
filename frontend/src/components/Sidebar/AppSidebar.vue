@@ -26,6 +26,7 @@
 					</nav>
 				</div>
 			</div>
+			<!-- OSLMS-CUSTOM: upstream "More" group (custom web pages + add-page button) removed from the sidebar -->
 		</div>
 		<div class="m-2 flex flex-col gap-1">
 			<div
@@ -44,6 +45,7 @@
 				"
 				:isSidebarCollapsed="sidebarStore.isSidebarCollapsed"
 			/>
+			<!-- OSLMS-CUSTOM: upstream "Complete your profile" prompt and Frappe GettingStartedBanner removed -->
 
 			<div
 				class="flex items-center mt-4"
@@ -71,6 +73,8 @@
 							</div>
 						</template>
 					</Tooltip>
+					<!-- OSLMS-CUSTOM: upstream help, onboarding-call and "Powered by Frappe Learning" icons removed -->
+					<!-- OSLMS-CUSTOM: app version label shown in the sidebar footer -->
 					<span id="versionApp" class="text-xs text-ink-gray-5"> 1.12.5 </span>
 				</div>
 
@@ -507,6 +511,7 @@ watch(userResource, async () => {
 	if (userResource.data) {
 		isModerator.value = userResource.data.is_moderator
 		isInstructor.value = userResource.data.is_instructor
+		// OSLMS-CUSTOM: rebuild the links once programs are loaded so the Programs link can appear
 		await programs.reload()
 		updateSidebarLinks()
 		setUpOnboarding()

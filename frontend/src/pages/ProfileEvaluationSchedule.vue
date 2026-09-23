@@ -1,9 +1,11 @@
 <template>
 	<div class="mt-7 mb-20">
+		<!-- OSLMS-CUSTOM: heading explaining the tab content -->
 		<h2 class="mb-4 text-lg font-semibold text-ink-gray-9">
 			{{ __('Booked Evaluations') }}
 		</h2>
 		<div class="flex h-screen flex-col overflow-hidden">
+			<!-- OSLMS-CUSTOM: v-else empty-state text below when no evaluation is booked -->
 			<Calendar
 				v-if="evaluations.data?.length"
 				:config="{

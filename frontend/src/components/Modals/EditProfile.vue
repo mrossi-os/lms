@@ -19,9 +19,11 @@
 		</template>
 		<template #default>
 			<div class="text-base">
+				<!-- OSLMS-CUSTOM: single-column form, the right column (open to, languages, bio) is commented out -->
 				<div class="grid grid-cols-1 gap-10">
 					<div class="space-y-4">
 						<div class="space-y-4">
+							<!-- OSLMS-CUSTOM: profile image is optional -->
 							<Uploader
 								v-model="profile.image"
 								:label="__('Profile Image')"
@@ -38,6 +40,7 @@
 								:label="__('Last Name')"
 								:required="true"
 							/>
+							<!-- OSLMS-CUSTOM: codice fiscale field (User custom field, needed for TrueSkills badge issuance) -->
 							<FormControl
 								v-model="profile.codice_fiscale"
 								:label="__('Codice Fiscale')"
@@ -45,6 +48,7 @@
 								type="text"
 								maxlength="16"
 							/>
+							<!-- OSLMS-CUSTOM: headline, LinkedIn and Twitter fields hidden -->
 							<!-- <FormControl v-model="profile.headline" :label="__('Headline')" />
 
 							<FormControl
@@ -104,6 +108,7 @@ import { ref, reactive, watch } from 'vue'
 import { sanitizeHTML } from '@/utils'
 import Link from '@/components/Controls/Link.vue'
 
+// OSLMS-CUSTOM: codice fiscale format check before save
 // Italian codice fiscale: 6 letters + 2 digits + letter + 2 digits + letter +
 // 3 digits + letter (16 chars). Mirrors the backend pattern in safelog.py.
 const CODICE_FISCALE_RE = /^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$/
@@ -112,6 +117,7 @@ const show = defineModel()
 const reloadProfile = defineModel('reloadProfile')
 const hasLanguageChanged = ref(false)
 const isDirty = ref(false)
+// OSLMS-CUSTOM: codice fiscale loaded separately and tracked for the dirty state
 // Codice fiscale is PII and not part of get_profile_details; it is fetched
 // separately, scoped to the user's own record. Keep the loaded value as the
 // baseline for the dirty-state comparison.
@@ -175,6 +181,7 @@ const saveProfile = () => {
 	if (missingMandatoryFields) return
 	profile.bio = sanitizeHTML(profile.bio || '')
 	profile.codice_fiscale = (profile.codice_fiscale || '').trim().toUpperCase()
+	// OSLMS-CUSTOM: reject an invalid codice fiscale
 	if (profile.codice_fiscale && !CODICE_FISCALE_RE.test(profile.codice_fiscale)) {
 		toast.error(__('Please enter a valid Codice Fiscale.'))
 		return

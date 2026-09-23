@@ -62,6 +62,7 @@
 					doctype="LMS Source"
 					:required="!!fieldMeta.source?.reqd"
 				/>
+				<!-- OSLMS-CUSTOM: translated select placeholder -->
 				<Select
 					:options="documentTypeOptions"
 					:placeholder="__('Select option')"

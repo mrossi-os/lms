@@ -137,6 +137,7 @@ const zoomAccounts = createListResource({
 		'account_id',
 		'client_id',
 		'client_secret',
+		// OSLMS-CUSTOM: Zoom account bound to a Google Calendar for live class invites
 		'google_calendar',
 	],
 	cache: ['zoomAccounts'],

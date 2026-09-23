@@ -1,4 +1,5 @@
 <template>
+	<!-- OSLMS-CUSTOM: the chain ends with NoPermission when the profile fails to load (profile.error) instead of a blank page -->
 	<NoPermission v-if="!$user.data" />
 	<div v-else-if="profile.data">
 		<header
@@ -14,6 +15,7 @@
 				</template>
 			</Button>
 		</header>
+		<!-- OSLMS-CUSTOM: cover image and its Edit button removed, empty spacer kept -->
 		<div class="group relative h-[130px] w-full"></div>
 		<div class="mx-auto -mt-10 md:-mt-4 max-w-4xl translate-x-0 px-5">
 			<div class="flex flex-col md:flex-row items-center">
@@ -94,6 +96,7 @@
 			</div>
 
 			<div class="mb-4 mt-10">
+				<!-- OSLMS-CUSTOM: tab bar hidden for students, who only have the Certificates tab -->
 				<TabButtons
 					v-if="!$user.data?.is_student"
 					class="inline-block"
@@ -184,6 +187,7 @@ const setActiveTab = () => {
 			activeTab.value = convertToTitleCase(section)
 		}
 	})
+	// OSLMS-CUSTOM: About tab removed, Certificates is the default tab
 	if (!activeTab.value) activeTab.value = 'Certificates'
 }
 
@@ -227,11 +231,13 @@ const isEvaluatorOrModerator = () => {
 }
 
 const getTabButtons = () => {
+	// OSLMS-CUSTOM: About tab removed
 	let buttons = [{ label: __('Certificates'), value: 'Certificates' }]
 	if ($user.data?.is_moderator) {
 		buttons.push({ label: __('Roles'), value: 'Roles' })
 	}
 
+	// OSLMS-CUSTOM: Slots and Schedule tabs hidden (commented out)
 	// if (currentUserHasHigherAccess() && isEvaluatorOrModerator()) {
 	// 	buttons.push({ label: __('Slots'), value: 'Slots' })
 	// 	buttons.push({ label: __('Schedule'), value: 'Schedule' })

@@ -38,6 +38,7 @@
 								v-slot="{ file, progress, uploading, openFileSelector }"
 							>
 								<div class="">
+									<!-- OSLMS-CUSTOM: upload button texts translated with __() -->
 									<Button @click="openFileSelector" :loading="uploading">
 										{{
 											uploading
@@ -164,6 +165,7 @@ import { onMounted, reactive, watch } from 'vue'
 import { validateFile } from '@/utils'
 import Link from '@/components/Controls/Link.vue'
 import CodeEditor from '@/components/Controls/CodeEditor.vue'
+// OSLMS-CUSTOM: VideoSourceInput field type for the welcome video (link or uploaded file); its template branch is currently missing, see inventory
 import FilePicker from '@/components/Controls/FilePicker.vue'
 import VideoSourceInput from '@/oslms/components/Form/VideoSourceInput.vue'
 

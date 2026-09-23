@@ -36,6 +36,7 @@
 				v-model="batch_evaluator"
 				@update:modelValue="saveRole('batch_evaluator')"
 			/>
+			<!-- OSLMS-CUSTOM: global switch for the custom Valutatore role -->
 			<BooleanSwitch
 				size="sm"
 				:label="__('Valutatore')"
@@ -50,6 +51,7 @@
 				v-model="moderator"
 				@update:modelValue="saveRole('moderator')"
 			/>
+			<!-- OSLMS-CUSTOM: Manager = custom Gestore role, Teacher = custom Docente role -->
 			<BooleanSwitch
 				size="sm"
 				:label="__('Manager')"
@@ -82,6 +84,7 @@ const instructor = ref(false)
 const valutatore = ref(false)
 const readOnlyMode = window.read_only_mode
 
+// OSLMS-CUSTOM: switch keys mapped to the custom os_lms role names (Gestore, Docente)
 const ROLE_NAME_MAP = {
 	lms_student: 'LMS Student',
 	manager: 'Gestore',
@@ -108,6 +111,7 @@ const roles = createResource({
 			'course_creator',
 			'batch_evaluator',
 			'lms_student',
+			// OSLMS-CUSTOM: read the custom roles reported by the os_lms get_roles override
 			'manager',
 			'instructor',
 			'valutatore',

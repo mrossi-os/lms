@@ -1235,3 +1235,654 @@ CourseCardOverlay.vue, CourseCertification.vue e ProfileCertificates.vue (commit
   file = "frontend/src/components/Modals/Event.vue"
   anchor = "&pdf_generator=chrome"
   symbol = "openCertificate"
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 prima del merge di v2.59.0 — impostazioni, profilo e ruoli
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 — gruppo "settings-roles" (Impostazioni, profilo, ruoli,
+# barra laterale, permessi lezioni) prima del merge di v2.59.0
+# ---------------------------------------------------------------------------
+
+# ── Settings.vue ───────────────────────────────────────────────────────────
+
+[[entries]]
+id = "settings-tabs-stable-keys"
+title = "Le schede delle impostazioni si identificano con una chiave stabile"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Tutte le etichette del dialogo Impostazioni (gruppi, schede, sezioni, campi, descrizioni) sono
+tradotte con __() nel punto in cui vengono definite, per avere l'interfaccia in italiano. Una
+etichetta tradotta non può più identificare la scheda: per questo ogni gruppo e ogni scheda ha
+una `key` inglese e stabile, e su quella si basano la scheda attiva, la chiave del pannello, i
+link diretti (openSettings('Members'), openSettings('General')…) e la scelta delle prop da
+passare ai componenti (Members, Transactions, AI, TrueSkills API). Il titolo del gruppo si
+stampa senza __() perché è già tradotto. Attenzione: 'Course Progress' e le due schede del
+gruppo Email (Accounts, Templates) non hanno ancora una `key` (arrivate dall'upstream dopo il
+nostro innesto). ATTENZIONE al merge di v2.59.0: l'upstream riscrive tutto il template con
+SettingsDialog/SettingsNavItem, fa diventare activeTab una stringa uguale a item.label e usa
+item.label in panelProps (['Users', 'Transactions']); rinomina inoltre il gruppo 'Users' in
+'User Management' e la scheda 'Members' in 'Users'. Nella nuova struttura bisogna usare
+item.key come :value e come chiave, e tenere i link diretti allineati alle chiavi."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = ':activeTab="activeTab?.key"'
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = ".find((item) => item.key === settingsStore.activeTab)"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = "<span>{{ tab.label }}</span>"
+
+[[entries]]
+id = "settings-admin-only-tabs"
+title = "Schede di sistema delle impostazioni solo per gli amministratori"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le schede che cambiano il comportamento dell'intera piattaforma (Generale, Badge, Registrazione,
+SEO) sono riservate agli amministratori (System Manager o utente Administrator). Il dialogo
+Impostazioni è aperto anche a Moderator e quindi a Gestore (che ha sempre anche Moderator):
+senza questa regola un gestore potrebbe cambiare configurazioni di sistema come l'accesso ospite,
+la registrazione o i metadati SEO. Le stesse funzioni isAdministrator e canManageOsIntegrations
+vengono passate a buildOslmsSettingsTabs per le schede os_lms. ATTENZIONE al merge di v2.59.0:
+l'upstream cambia le icone delle stesse schede ('lucide-wrench'…) e riscrive il template; le
+`condition: isAdministrator` sulle quattro schede vanno conservate."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = "const ADMIN_ONLY_ROLES = ['System Manager', 'Administrator']"
+  symbol = "isAdministrator"
+
+  [entries.visibility]
+  subject = "Schede Generale, Badge, Registrazione e SEO del dialogo Impostazioni"
+  allow = ["System Manager", "Administrator"]
+  deny = ["Moderator", "Gestore", "Docente", "Course Creator"]
+
+[[entries]]
+id = "settings-payment-group-removed"
+title = "Gruppo Pagamenti tolto dalle impostazioni"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il gruppo upstream "Payment" (Configurazione valuta/gateway, Gateway, Transazioni, Coupon) è
+stato tolto volutamente dal dialogo Impostazioni (commit 39907513c "Hide payment section in
+settings", confermato nel merge di v2.58.0: "il nostro Settings.vue non ha di proposito il
+gruppo Payments"). Ogni merge che tocca quel blocco tende a reintrodurlo; va riscartato insieme
+agli import di PaymentGateways, Coupons e Transactions. ATTENZIONE al merge di v2.59.0: l'upstream
+modifica le icone di tutte e quattro le voci del gruppo, quindi il blocco comparirà nel conflitto
+e non va ripreso."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = '// OSLMS-CUSTOM: upstream "Payment" group (Configuration, Gateways, Transactions, Coupons) intentionally removed from the settings dialog'
+
+[[entries]]
+id = "settings-google-calendar-tab"
+title = "Scheda Google Calendar nelle impostazioni e calendario legato agli account Zoom"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nel gruppo Conferenze c'è una scheda Google Calendar per gestire i calendari Google usati per
+gli inviti delle classi live e delle valutazioni; è visibile solo a System Manager e Gestore
+(uno dei pochi controlli che nomina esplicitamente il ruolo Gestore). Ogni account Zoom può
+essere legato a uno di questi calendari (campo google_calendar su LMS Zoom Settings), così gli
+inviti delle classi live partono dal calendario giusto; per questo la lista degli account Zoom
+carica anche quel campo. ATTENZIONE al merge di v2.59.0: l'upstream riscrive ZoomSettings.vue
+(ListView → List/ListRows) e l'elenco `fields` della risorsa va ricontrollato."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = "const GOOGLE_CALENDAR_ROLES = ['System Manager', 'Gestore']"
+  symbol = "canManageGoogleCalendars"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = "template: markRaw(GoogleCalendarSettings),"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/ZoomSettings.vue"
+  anchor = "'google_calendar',"
+  symbol = "zoomAccounts"
+
+  [entries.visibility]
+  subject = "Scheda Google Calendar del dialogo Impostazioni"
+  allow = ["System Manager", "Gestore"]
+  deny = ["Moderator senza Gestore", "Docente", "Course Creator"]
+
+[[entries]]
+id = "settings-oslms-tabs-injection"
+title = "Schede os_lms iniettate nel dialogo Impostazioni"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le schede del modulo os_lms (TrueSkills API, Configurazioni con Corsi e Classi live, AI, Prompt
+AI) non sono scritte in Settings.vue ma costruite da buildOslmsSettingsTabs in
+@/oslms/utils/settings e aggiunte in coda con uno spread, per tenere il file vicino
+all'upstream. Per farle funzionare Settings.vue deve: filtrare anche i gruppi interi con la loro
+`condition` e togliere i gruppi rimasti vuoti (un gestore senza System Manager non deve vedere
+un gruppo AI vuoto); passare `sections` ai componenti AI e TrueSkills API; ricevere
+canManageOsIntegrations (amministratori più Gestore) per TrueSkills API e Prompt AI. Il ramo
+'Branding' nello stesso controllo è un residuo upstream (BrandSettings non dichiara `sections`).
+ATTENZIONE al merge di v2.59.0: con il nuovo template a pannelli le prop passano da
+panelProps(item); lì vanno riportati sia `sections` per AI/TrueSkills API sia il filtro dei
+gruppi."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = "...buildOslmsSettingsTabs({ isAdministrator, canManageOsIntegrations }),"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = "const OS_INTEGRATION_ROLES = ['Gestore']"
+  symbol = "canManageOsIntegrations"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = ".filter((tab) => !tab.condition || tab.condition())"
+  symbol = "tabs"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = "activeTab.key == 'AI' ||"
+
+  [entries.visibility]
+  subject = "Schede os_lms TrueSkills API e Prompt AI (le schede Configurazioni e AI solo amministratori)"
+  allow = ["System Manager", "Administrator", "Gestore"]
+  deny = ["Moderator senza Gestore", "Docente", "Course Creator"]
+
+[[entries]]
+id = "settings-sidebar-extra-toggles"
+title = "Interruttori aggiuntivi per le voci della barra laterale"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La scheda Barra laterale delle impostazioni ha cinque interruttori in più rispetto all'upstream
+(Home, Programmi, Cerca, Quiz, Compiti), salvati in campi personalizzati di LMS Settings
+definiti nelle fixture os_lms, così l'amministratore può nascondere anche queste voci (commit
+c634f2bd1 e a4e416fe2). La barra laterale li applica con il meccanismo upstream
+(updateSidebarLinksVisibility confronta il nome del campo con l'etichetta della voce); per la
+voce Programmi i link vengono ricostruiti subito dopo il caricamento dei programmi, altrimenti la
+voce non compare al primo caricamento."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = "name: 'home',"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = "name: 'programs',"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = "name: 'search',"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = "name: 'quizzes',"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = "name: 'assignments',"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Sidebar/AppSidebar.vue"
+  anchor = "await programs.reload()\n\t\tupdateSidebarLinks()"
+
+[[entries]]
+id = "settings-welcome-tab"
+title = "Scheda Benvenuto: notifica e video al primo accesso dello studente"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La scheda Benvenuto (gruppo Personalizza) configura la notifica di benvenuto e il video di
+benvenuto mostrati allo studente al primo accesso; i due si attivano in modo indipendente
+(commit 88a13f16b). Il video accetta sia un link esterno (YouTube, Vimeo) sia un file caricato
+nello stesso campo, con il tipo di campo VideoSourceInput (commit 1ac7315b9). I campi sono
+personalizzati su LMS Settings (fixture os_lms). ATTENZIONE: SettingFields.vue importa ancora
+VideoSourceInput e FilePicker, ma il ramo `v-else-if="field.type == 'VideoSourceInput'"` del
+template non c'è più (perso in un merge precedente): oggi il campo del video cade nel
+FormControl generico. Da ripristinare, non da cancellare."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = "name: 'welcome_notification_enabled',"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = "name: 'welcome_video_file',"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/SettingFields.vue"
+  anchor = "import VideoSourceInput from '@/oslms/components/Form/VideoSourceInput.vue'"
+
+[[entries]]
+id = "settings-dialog-style"
+title = "Ritocchi di stile del dialogo Impostazioni"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Ritocchi estetici del dialogo Impostazioni: il Dialog usa ancora l'API v-model + options
+(introdotta dopo un crash seguito a un merge, commit 265842cde), il pannello del contenuto ha
+padding e scorrimento propri, il contenitore ha id "settings-modal". Nessuna regola funzionale:
+al merge di v2.59.0 l'upstream sostituisce tutto con SettingsDialog, e questi ritocchi vanno
+rivalutati sulla nuova struttura, non riapplicati alla cieca."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = "<Dialog v-model=\"show\" :options=\"{ size: '5xl' }\">"
+
+# ── SettingFields.vue ──────────────────────────────────────────────────────
+
+[[entries]]
+id = "settings-fields-translations"
+title = "Ritocchi di traduzione nei campi delle impostazioni"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Testi dei campi delle impostazioni tradotti con __(): pulsante di caricamento immagine e relativa
+percentuale, descrizione del campo HTML di registrazione, segnaposto delle select. Solo
+traduzione, nessuna regola funzionale."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/SettingFields.vue"
+  anchor = "__('Upload an image')"
+
+# ── Members.vue ────────────────────────────────────────────────────────────
+
+[[entries]]
+id = "settings-members-row-opens-edit"
+title = "Clic sulla riga di un membro apre la modifica"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nella scheda Membri il clic su una riga apre la finestra di modifica del membro (nome, ruoli,
+compreso Valutatore), non solo la voce "Edit member" del menu; così il gestore modifica un
+utente direttamente dall'elenco (commit 33b333d9f). In origine apriva EditMemberModal (con il
+codice fiscale); oggi openEditMember apre NewMemberModal in modalità modifica, e le variabili
+showEditMember, selectedMember, onNavigateProfile e onMemberUpdated sono residui non più usati.
+ATTENZIONE al merge di v2.59.0: l'upstream riscrive l'elenco con List/ListRow, con
+ListRow @click = openProfile e la cella azioni @click.stop; bisogna decidere quale clic apre
+cosa sulla nuova struttura."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Members.vue"
+  anchor = '@click="openEditMember(member)"'
+
+[[entries]]
+id = "settings-members-valutatore-badge"
+title = "Badge del ruolo Valutatore nell'elenco membri"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+L'elenco dei membri mostra un badge anche per il ruolo personalizzato Valutatore (valutatore di
+una singola classe), che l'override get_members ora restituisce (commit 1af13d630); un ruolo
+sconosciuto mostra il proprio nome invece di un badge vuoto, e le etichette dei ruoli sono
+tradotte. ATTENZIONE al merge di v2.59.0: l'upstream riscrive il markup del badge
+(`<span class="text-sm leading-5">{{ getRole(role) }}</span>`): va rimesso __()."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Members.vue"
+  anchor = "Valutatore: 'Valutatore',"
+  symbol = "getRole"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Members.vue"
+  anchor = "return map[role] || role"
+  symbol = "getRole"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Members.vue"
+  anchor = "{{ __(getRole(role)) }}"
+
+# ── File con soli ritocchi ─────────────────────────────────────────────────
+
+[[entries]]
+id = "settings-email-template-list-translation"
+title = "Titolo tradotto nell'elenco dei modelli email"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il titolo della pagina Modelli email passa da __() per comparire in italiano. Solo traduzione.
+ATTENZIONE al merge di v2.59.0: l'upstream riscrive il corpo del file (ricerca, List/ListRows)
+ma non la riga del titolo; controllare che __(label) resti."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/EmailTemplate/EmailTemplateList.vue"
+  anchor = ':title="__(label)"'
+
+[[entries]]
+id = "settings-transaction-details-cosmetic"
+title = "Ritocchi nel dettaglio transazione"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Segnaposto tradotto nella select "Payment For Document Type" e una virgola finale di
+formattazione. C'è anche un import di Switch (BooleanSwitch) non usato, rimasto da una
+correzione di percorso. Il gruppo Pagamenti è comunque nascosto (settings-payment-group-removed).
+Nessuna regola funzionale: al merge si può prendere la versione upstream e rimettere il solo
+segnaposto."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Transactions/TransactionDetails.vue"
+  anchor = ":placeholder=\"__('Select option')\""
+
+[[entries]]
+id = "settings-email-template-modal-formatting"
+title = "Solo formattazione nella finestra dei modelli email"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il file differisce dall'upstream solo per virgole finali aggiunte da Prettier; nessun
+comportamento cambiato, per questo non porta marcatori. Al merge (v2.59.0 passa a
+RichTextEditor e toglie :rows) prendere la versione upstream senza esitazioni."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/EmailTemplateModal.vue"
+  anchor = "cleanError(err.messages[0]) || __('Error creating email template'),"
+
+# ── Profilo ────────────────────────────────────────────────────────────────
+
+[[entries]]
+id = "profile-roles-custom-role-toggles"
+title = "Interruttori dei ruoli Valutatore, Gestore e Docente nel profilo"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La scheda Ruoli del profilo (visibile ai moderatori) permette di assegnare anche i tre ruoli
+personalizzati: Valutatore (valutatore per classe; l'interruttore assegna il ruolo globale,
+che il sync della classe non revoca più), "Manager" = Gestore (il pacchetto completo di gestione)
+e "Teacher" = Docente (istruttore globale su tutti i corsi e le classi). ROLE_NAME_MAP traduce la
+chiave dell'interruttore nel nome reale del ruolo; gli override os_lms di get_roles e save_role
+leggono e scrivono questi ruoli."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProfileRoles.vue"
+  anchor = "@update:modelValue=\"saveRole('valutatore')\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProfileRoles.vue"
+  anchor = "@update:modelValue=\"saveRole('manager')\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProfileRoles.vue"
+  anchor = "@update:modelValue=\"saveRole('instructor')\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProfileRoles.vue"
+  anchor = "manager: 'Gestore',"
+  symbol = "ROLE_NAME_MAP"
+
+  [entries.visibility]
+  subject = "Interruttori Valutatore, Manager (Gestore) e Teacher (Docente) nella scheda Ruoli del profilo"
+  allow = ["Moderator"]
+  deny = ["LMS Student", "Docente", "Course Creator", "Valutatore"]
+
+[[entries]]
+id = "profile-tab-bar-hidden-for-students"
+title = "Barra delle schede del profilo nascosta agli studenti"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Uno studente nel profilo ha solo la scheda Certificati, quindi la barra delle schede sarebbe
+solo rumore: si mostra solo ai non studenti (istruttori, moderatori, valutatori), che possono
+avere altre schede come Ruoli (commit 3f63fec00). ATTENZIONE al merge di v2.59.0: l'upstream
+cambia lo stesso elemento TabButtons (`:buttons` diventa `:options`); il v-if va conservato."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Profile.vue"
+  anchor = 'v-if="!$user.data?.is_student"'
+
+  [entries.visibility]
+  subject = "Barra delle schede nella pagina profilo"
+  allow = ["Course Creator", "Moderator", "Batch Evaluator", "Docente", "Valutatore"]
+  deny = ["LMS Student"]
+
+[[entries]]
+id = "profile-tabs-certificates-only"
+title = "Profilo senza schede Informazioni, Disponibilità e Calendario"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Il profilo ha tolto la scheda Informazioni (About) e parte dalla scheda Certificati (commit
+3f63fec00); le schede Disponibilità (Slots) e Calendario valutazioni (Schedule) per valutatori
+e moderatori sono commentate (commit 498ec89d4 "Hide Schedule and Calendar tabs in profile").
+Il motivo non è scritto nei commit: probabilmente il flusso upstream di prenotazione delle
+valutazioni con disponibilità del valutatore non è usato dal cliente, e le informazioni
+personali del profilo non servono. Le route ProfileAbout, ProfileEvaluator e
+ProfileEvaluationSchedule esistono ancora in router.js (e la route base redirige ancora a
+ProfileAbout)."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Profile.vue"
+  anchor = "let buttons = [{ label: __('Certificates'), value: 'Certificates' }]"
+  symbol = "getTabButtons"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Profile.vue"
+  anchor = "if (!activeTab.value) activeTab.value = 'Certificates'"
+  symbol = "setActiveTab"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Profile.vue"
+  anchor = "// if (currentUserHasHigherAccess() && isEvaluatorOrModerator()) {"
+  symbol = "getTabButtons"
+
+[[entries]]
+id = "profile-cover-image-removed"
+title = "Profilo senza immagine di copertina"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Nella pagina profilo l'immagine di copertina e il pulsante per cambiarla sono stati tolti,
+resta solo lo spazio vuoto sopra l'avatar; l'intestazione ha uno sfondo grigio chiaro (commit
+20bee4c5f "fix profile styke"). Il motivo non è scritto: probabilmente una scelta grafica del
+cliente. Il componente EditCoverImage e la risorsa coverImage sono ancora importati ma non più
+usati nel template."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Profile.vue"
+  anchor = '<div class="group relative h-[130px] w-full"></div>'
+
+[[entries]]
+id = "profile-load-error-no-permission"
+title = "Profilo non caricato: messaggio di permesso invece della pagina vuota"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Se la risorsa del profilo fallisce (profilo di altri senza ruolo LMS, username inesistente) la
+pagina mostra NoPermission invece di restare bianca (commit 97b62f6f9). È la metà frontend della
+voce profile-own-without-lms-role (lato api.py): le due vanno riapplicate insieme."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Profile.vue"
+  anchor = '<NoPermission v-else-if="profile.error" />'
+
+[[entries]]
+id = "profile-evaluator-availability"
+title = "Disponibilità del valutatore senza Google Calendar configurato"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La pagina delle disponibilità del valutatore legge i dati da os_lms.os_lms.api.get_evaluator_details
+invece che dall'endpoint upstream: la versione os_lms prova a creare il Google Calendar del
+valutatore ma ignora l'errore quando le API Google non sono configurate, così la pagina si apre
+lo stesso (commit 30838fc12 "Fix Slots profile"). Se l'utente aggiunge una fascia senza giorno o
+orari riceve un avviso invece di un nulla silenzioso; i segnaposto delle select sono tradotti.
+La scheda Slots è oggi nascosta nel profilo (profile-tabs-certificates-only), ma la route esiste."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProfileEvaluator.vue"
+  anchor = "url: 'os_lms.os_lms.api.get_evaluator_details',"
+  symbol = "evaluator"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProfileEvaluator.vue"
+  anchor = "toast.warning(__('Please fill in all fields: day, start time and end time'))"
+  symbol = "add"
+
+[[entries]]
+id = "profile-evaluation-schedule-heading"
+title = "Titolo e stato vuoto nel calendario delle valutazioni prenotate"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La scheda Calendario valutazioni del profilo ha un titolo ("Valutazioni prenotate") e un testo
+quando non c'è nulla in calendario, per far capire a cosa serve la scheda (commit 1815bdc42).
+La scheda è oggi nascosta nel profilo (profile-tabs-certificates-only), ma la route esiste."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProfileEvaluationSchedule.vue"
+  anchor = "{{ __('Booked Evaluations') }}"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProfileEvaluationSchedule.vue"
+  anchor = "{{ __('No evaluations scheduled yet') }}"
+
+[[entries]]
+id = "profile-edit-codice-fiscale"
+title = "Codice fiscale nella modifica del profilo"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Lo studente inserisce il proprio codice fiscale dalla modifica del profilo: è il campo
+personalizzato codice_fiscale di User, che l'integrazione TrueSkills invia come fiscalId per
+emettere l'open badge del certificato. Si valida il formato (16 caratteri, schema italiano) e si
+salva maiuscolo; vuoto è ammesso. È un dato personale e non passa da get_profile_details: viene
+letto a parte con frappe.client.get_value sul proprio record e confrontato a parte per lo stato
+"modificato". ATTENZIONE al merge di v2.59.0: l'upstream cambia lo slot dell'intestazione
+(#body-header → #title) e la colonna della bio (TextEditor → RichTextEditor)."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/EditProfile.vue"
+  anchor = 'v-model="profile.codice_fiscale"'
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/EditProfile.vue"
+  anchor = "const CODICE_FISCALE_RE = "
+  symbol = "saveProfile"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/EditProfile.vue"
+  anchor = "fieldname: 'codice_fiscale',"
+
+[[entries]]
+id = "profile-edit-image-optional"
+title = "Immagine del profilo facoltativa"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il profilo si salva anche senza immagine: l'upstream la rendeva obbligatoria, e uno studente che
+voleva solo correggere nome o codice fiscale era bloccato (commit 02839f37a). La modifica
+consiste nell'aver tolto `:required="true"` dall'Uploader e la voce 'Profile Image' dalla
+validazione dei campi obbligatori; l'ancora è il commento che lo segnala."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/EditProfile.vue"
+  anchor = "<!-- OSLMS-CUSTOM: profile image is optional -->"
+
+[[entries]]
+id = "profile-edit-reduced-fields"
+title = "Modifica profilo ridotta a una colonna"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+La finestra di modifica del profilo è a una sola colonna: sono commentati titolo (headline),
+LinkedIn, Twitter e l'intera colonna destra (disponibile per, lingua, bio) (commit 29f976c3b
+"fix: style"). Il motivo non è scritto: probabilmente il cliente vuole un profilo essenziale
+(nome, cognome, immagine, codice fiscale). Nota: con la colonna destra commentata non si può più
+cambiare la lingua dal profilo. ATTENZIONE al merge di v2.59.0: l'upstream modifica righe
+dentro i blocchi commentati (RichTextEditor per la bio), il che darà conflitti in zone
+commentate."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/EditProfile.vue"
+  anchor = '<div class="grid grid-cols-1 gap-10">'
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/EditProfile.vue"
+  anchor = "<!-- <FormControl v-model=\"profile.headline\" :label=\"__('Headline')\" />"
+
+# ── permissions.py ─────────────────────────────────────────────────────────
+
+[[entries]]
+id = "permissions-valutatore-lesson-access"
+title = "Il Valutatore legge le lezioni dei corsi delle sue classi"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Un Valutatore rivede i corsi delle classi che valuta: può leggere ogni lezione e i suoi
+materiali per studenti come uno studente iscritto, senza iscrizione (quindi senza tracciamento
+dei progressi) (commit b6b075222). I materiali riservati agli istruttori restano esclusi: il
+ramo sta di proposito dopo il controllo instructor_only. ATTENZIONE al merge di v2.59.0:
+l'upstream riscrive can_access_lesson in resolve_lesson_access, che restituisce la coppia
+(is_instructor, can_access); il ramo del valutatore va rimesso lì come `return False, True`
+dopo il controllo can_modify_course, così instructor_only continua a escluderlo. L'upstream
+aggiunge anche can_access_quiz: valutare se il valutatore debba leggere anche i quiz."""
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = "if is_course_valutatore(lesson_row.course, user):"
+  symbol = "can_access_lesson"
+
+  [entries.visibility]
+  subject = "Risorse per studenti delle lezioni dei corsi delle classi valutate"
+  allow = ["Valutatore della classe che contiene il corso"]
+  deny = ["Valutatore su materiali riservati agli istruttori"]
+
+# ── AppSidebar.vue ─────────────────────────────────────────────────────────
+
+[[entries]]
+id = "sidebar-more-group-removed"
+title = "Gruppo \"Altro\" (pagine web) tolto dalla barra laterale"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Il gruppo upstream "More" della barra laterale (pagine web personalizzate, con il pulsante + per
+aggiungerle riservato ai moderatori) è stato tolto (commit 032752e69 "Hide More group section in
+sidebar"). Il motivo non è scritto: probabilmente la funzione pagine web non è usata. Nello
+script restano toggleWebPages, openPageModal e PageModal."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Sidebar/AppSidebar.vue"
+  anchor = '<!-- OSLMS-CUSTOM: upstream "More" group (custom web pages + add-page button) removed from the sidebar -->'
+
+[[entries]]
+id = "sidebar-frappe-onboarding-removed"
+title = "Onboarding, aiuto e riferimenti a Frappe tolti dalla barra laterale"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Dalla barra laterale sono stati tolti il riquadro "Completa il tuo profilo" per gli studenti
+(commit 5b09a2c99), il banner Getting Started con HelpModal e IntermediateStepModal (commit
+f3be3c1bc), e le icone di aiuto, di prenotazione della sessione di onboarding con il team Frappe
+e "Powered by Frappe Learning" (commit 1d3fa64ea). Deduzione: la piattaforma è presentata con il
+marchio del cliente e non deve rimandare a Frappe né al suo percorso di onboarding. Nello script
+restano import e variabili dell'onboarding (setUpOnboarding, showOnboarding, profileIsComplete)."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Sidebar/AppSidebar.vue"
+  anchor = '<!-- OSLMS-CUSTOM: upstream "Complete your profile" prompt and Frappe GettingStartedBanner removed -->'
+
+  [[entries.sites]]
+  file = "frontend/src/components/Sidebar/AppSidebar.vue"
+  anchor = '<!-- OSLMS-CUSTOM: upstream help, onboarding-call and "Powered by Frappe Learning" icons removed -->'
+
+[[entries]]
+id = "sidebar-app-version-label"
+title = "Versione dell'app nel piede della barra laterale"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il piede della barra laterale mostra il numero di versione dell'app, scritto a mano e aggiornato
+a ogni rilascio (commit 10b5ac7eb, fd1856c7b, cbdc9582b), per sapere quale versione è installata
+su un sito quando si segnala un problema. Il numero si aggiorna, l'elemento deve restare."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Sidebar/AppSidebar.vue"
+  anchor = '<span id="versionApp" class="text-xs text-ink-gray-5">'

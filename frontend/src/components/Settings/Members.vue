@@ -27,6 +27,7 @@
 		<div class="pb-4">
 			<div v-if="displayedMembers.length">
 				<ul class="divide-y divide-outline-elevation-2">
+					<!-- OSLMS-CUSTOM: clicking a member row opens the edit-member modal, not only the row menu -->
 					<li
 						v-for="member in displayedMembers"
 						class="flex items-center justify-between py-2 cursor-pointer"
@@ -62,6 +63,7 @@
 							>
 								<span class="lucide-shield size-4" />
 								<span class="text-sm">
+									<!-- OSLMS-CUSTOM: role badge labels translated (custom roles such as Valutatore fall through as-is) -->
 									{{ __(getRole(role)) }}
 								</span>
 							</span>
@@ -260,6 +262,7 @@ const getRole = (role: string) => {
 		'Course Creator': 'Instructor',
 		Moderator: 'Moderator',
 		'Batch Evaluator': 'Evaluator',
+		// OSLMS-CUSTOM: badge for the custom per-batch Valutatore role; unknown roles show their own name
 		Valutatore: 'Valutatore',
 	}
 	return map[role] || role

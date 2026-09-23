@@ -15,6 +15,7 @@ from lms.lms.utils import (
 	can_modify_course,
 	get_membership,
 	guest_access_allowed,
+	# OSLMS-CUSTOM: Valutatore reads the lessons of the courses of the batches they evaluate
 	is_course_valutatore,
 )
 
@@ -46,6 +47,7 @@ def can_access_lesson(lesson: str, *, instructor_only: bool = False, user: str |
 			return True
 		if instructor_only:
 			return False
+		# OSLMS-CUSTOM: Valutatore branch, deliberately after the instructor_only gate
 		# A "Valutatore" reviews the courses of the batches they evaluate: they read
 		# every lesson like an enrolled student would, without an enrolment (and so
 		# without progress tracking). Instructor-only media stays out of reach —
