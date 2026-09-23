@@ -99,8 +99,16 @@ vi.mock('frappe-ui', async () => {
 			'../../node_modules/frappe-ui/src/components/MultiSelect/MultiSelect.vue'
 		)
 	).default
+	// OSLMS-CUSTOM: our MultiLink is built on reka-ui inside a frappe-ui Popover
+	// (entry multilink-reka-combobox), so the mock also provides Popover (real) and
+	// a LoadingIndicator stub; the assertions are upstream's, unchanged.
+	const Popover = (
+		await import('../../node_modules/frappe-ui/src/components/Popover/Popover.vue')
+	).default
 	return {
 		MultiSelect,
+		Popover,
+		LoadingIndicator: { template: '<span />' },
 		FormLabel: { props: ['label'], template: `<label>{{ label }}</label>` },
 		Button: {
 			props: ['variant', 'size', 'ariaLabel'],

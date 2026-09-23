@@ -5620,7 +5620,8 @@ Risoluzione consigliata se si tiene la nostra versione: tenere il template Popov
 riportare nello script disabled (sul <button> trigger: :disabled e classi cursor-not-allowed
 opacity-60, e niente apertura del Popover), toOptions, titleLookup/resolveMissing/watch e le
 due aggiunte a mergedOptions (import di watch). Senza, i MultiLink con valori salvati
-mostrano il docname invece del titolo finché non si apre la tendina."""
+mostrano il docname invece del titolo finché non si apre la tendina.
+Merge di v2.61.0 (2026-09-23): portati nella nostra versione reka la prop disabled e la risoluzione dei titoli (titleLookup/resolveMissing) dell'upstream. Il test upstream multiLink.test.ts (11 casi) passa contro la nostra versione dopo aver aggiunto al suo mock Popover (reale) e uno stub di LoadingIndicator, su decisione del committente; asserzioni invariate. Domanda aperta: tornare al MultiSelect upstream alla riconciliazione degli override dopo v2.62.0."""
 
   [[entries.sites]]
   file = "frontend/src/components/Controls/MultiLink.vue"
@@ -5647,6 +5648,10 @@ mostrano il docname invece del titolo finché non si apre la tendina."""
   [[entries.sites]]
   file = "frontend/src/components/Controls/MultiLink.vue"
   anchor = "function clearAll() {"
+
+  [[entries.sites]]
+  file = "frontend/src/tests/multiLink.test.ts"
+  anchor = "// OSLMS-CUSTOM: our MultiLink is built on reka-ui inside a frappe-ui Popover"
 
 [[entries]]
 id = "multiselect-exclude-cached-options"
