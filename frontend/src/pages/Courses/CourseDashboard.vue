@@ -1,5 +1,6 @@
 <template>
 	<div class="p-5">
+		<!-- OSLMS-CUSTOM: stat cards stack on mobile; 3 columns because the rating card is hidden -->
 		<div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-5 text-ink-gray-9">
 			<NumberChartGraph
 				:title="__('Enrolled')"
@@ -9,6 +10,7 @@
 				:title="__('Average Completion Rate')"
 				:value="averageCompletionRate"
 			/>
+			<!-- OSLMS-CUSTOM: "Average Rating" card hidden (course reviews are disabled) -->
 			<!-- <NumberChartGraph
 				:title="__('Average Rating')"
 				:value="course.data?.rating || 0"
@@ -19,6 +21,7 @@
 			</NumberChartGraph>-->
 			<NumberChartGraph :title="__('Lessons')" :value="course.data?.lessons" />
 		</div>
+		<!-- OSLMS-CUSTOM: students list and side charts stack in one column below lg -->
 		<div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-5 items-start">
 			<div class="min-w-0 border rounded-lg py-3 px-4 card">
 				<div class="flex flex-wrap items-center justify-between gap-2 mb-3">
@@ -26,6 +29,7 @@
 						{{ __('Students') }}
 					</div>
 					<div class="flex items-center gap-x-2">
+						<!-- OSLMS-CUSTOM: compact search field labelled "Search by name" -->
 						<FormControl
 							v-model="searchFilter"
 							class="small-form"
@@ -52,6 +56,7 @@
 						<ListHeader
 							class="mb-2 grid items-center md:space-x-4 rounded-sm border-b p-2"
 						>
+							<!-- OSLMS-CUSTOM: sortable student columns (click toggles asc/desc) -->
 							<ListHeaderItem
 								:item="item"
 								v-for="item in progressColumns"
@@ -153,6 +158,7 @@
 						class="grid grid-cols-1 sm:grid-cols-[2fr_1fr] gap-4 sm:gap-0 items-center justify-between text-ink-gray-9"
 					>
 						<div class="flex flex-col space-y-4 flex-1 text-sm">
+							<!-- OSLMS-CUSTOM: legend color by row position, because the labels are translated to Italian -->
 							<div
 								class="flex items-center text-ink-gray-7"
 								v-for="(row, idx) in chartDetails.data?.progress_distribution"
@@ -316,6 +322,7 @@ const dayjs = inject<typeof dayjsType>('$dayjs')!
 const showEnrollmentModal = ref<boolean>(false)
 const searchFilter = ref<string | null>(null)
 
+// OSLMS-CUSTOM: sortable students list (server-side orderBy)
 // Server-side sorting for the students list. Keys map to real LMS Enrollment
 // fields (member_name, progress) or the standard `creation` column, so sorting
 // stays correct across the paginated "Load More" pages. Defaults mirror the
@@ -347,6 +354,7 @@ const chartDetails = createResource({
 		}
 	},
 	auto: true,
+	// OSLMS-CUSTOM: Italian labels for the progress distribution legend
 	onSuccess(data: any) {
 		// Italian labels for the progress-distribution legend. The backend returns
 		// English ("Just Started (0-30%)", ...); the "(range%)" suffix is kept so
@@ -377,6 +385,7 @@ const progressList = createListResource({
 		'progress',
 		'creation',
 	],
+	// OSLMS-CUSTOM: explicit default order, mirrored by sortColumn/sortOrder
 	orderBy: 'creation desc',
 	pageLength: 100,
 	auto: true,
@@ -420,6 +429,7 @@ watch([searchFilter], () => {
 	progressList.reload()
 })
 
+// OSLMS-CUSTOM: sortable students list
 // Toggle sorting on a students-list column. Clicking the active column flips
 // its direction; clicking a different column starts ascending. `update` merges
 // only `orderBy`, leaving the current search `filters` intact.

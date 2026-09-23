@@ -1,5 +1,6 @@
 <template>
 	<div class="w-full px-5 pt-5 pb-10">
+		<!-- OSLMS-CUSTOM: welcome video hero at the top of the home -->
 		<WelcomeVideoHero />
 
 		<div class="space-y-2">
@@ -8,6 +9,7 @@
 					{{ __('Hey') }}, {{ user.data?.full_name }} 👋
 				</div>
 				<div>
+					<!-- OSLMS-CUSTOM: no streak badge on the admin-style home (incl. Valutatore) -->
 					<div
 						v-if="!useAdminHome"
 						@click="showStreakModal = true"
@@ -26,6 +28,7 @@
 			</div>
 		</div>
 
+		<!-- OSLMS-CUSTOM: the AdminHome branch below also serves the Valutatore (useAdminHome), fed with its own live classes -->
 		<div
 			v-if="isHomeLoading"
 			class="flex flex-1 items-center justify-center py-20"
@@ -52,11 +55,13 @@ import { useSettings } from '@/stores/settings'
 import StudentHome from '@/pages/Home/StudentHome.vue'
 import AdminHome from '@/pages/Home/AdminHome.vue'
 import Streak from '@/pages/Home/Streak.vue'
+// OSLMS-CUSTOM: welcome video hero (os_lms)
 import WelcomeVideoHero from '@/oslms/components/Home/WelcomeVideoHero.vue'
 
 const user = inject<any>('$user')
 const { brand } = sessionStore()
 const settingsStore = useSettings()
+// OSLMS-CUSTOM: live classes can be switched off site-wide (enable_live_classes setting)
 const liveClassesEnabled = computed(
 	() => settingsStore.settings.data?.enable_live_classes !== 0,
 )
@@ -85,6 +90,7 @@ const isAdmin = computed(() => {
 	)
 })
 
+// OSLMS-CUSTOM: Valutatore gets the admin-style home
 // A "Valutatore" is not a student: it gets the admin-style home (no student
 // progress / evaluation widgets), limited to what it can actually do — its own
 // joinable live classes, and no course-creation calls to action.
@@ -102,6 +108,7 @@ const isHomeLoading = computed(() => {
 })
 
 onMounted(() => {
+	// OSLMS-CUSTOM: Valutatore opens on the admin-style home, without the student eval count
 	if (useAdminHome.value) {
 		currentTab.value = 'instructor'
 	} else {
@@ -112,11 +119,13 @@ onMounted(() => {
 
 const myLiveClasses = createResource({
 	url: 'lms.lms.api.get_my_live_classes',
+	// OSLMS-CUSTOM: skip the live-class fetch when live classes are disabled
 	auto: liveClassesEnabled.value && !isAdmin.value ? true : false,
 })
 
 const adminLiveClasses = createResource({
 	url: 'lms.lms.api.get_admin_live_classes',
+	// OSLMS-CUSTOM: skip the live-class fetch when live classes are disabled
 	auto: liveClassesEnabled.value && isAdmin.value ? true : false,
 })
 

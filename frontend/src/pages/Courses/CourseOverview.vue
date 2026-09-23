@@ -169,6 +169,7 @@ const props = defineProps<{
 }>()
 
 const user = inject<SessionUser>('$user')
+// OSLMS-CUSTOM: dead code at runtime - overrides/pages/Courses/CourseOverview.vue shadows this file; only Prettier trailing commas differ from upstream
 
 const isCourseInstructor = computed<boolean>(() =>
 	(props.course.data?.instructors || []).some(

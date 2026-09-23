@@ -27,6 +27,7 @@
 							:label="__('Title')"
 							:required="true"
 						/>
+						<!-- OSLMS-CUSTOM: translated "Select option" placeholder on the Type and Work Mode selects -->
 						<FormControl
 							v-model="job.type"
 							:label="__('Type')"

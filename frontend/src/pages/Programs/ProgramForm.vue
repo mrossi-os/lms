@@ -15,6 +15,7 @@
 		<template #default>
 			<div class="text-base">
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-5 pb-5">
+					<!-- OSLMS-CUSTOM: Title bound to program.title; a changed title renames the program on save -->
 					<FormControl
 						v-model="program.title"
 						:label="__('Title')"
@@ -37,6 +38,7 @@
 						/>
 					</div>
 				</div>
+				<!-- OSLMS-CUSTOM: rich program description editor (os_lms description field) -->
 				<div class="pb-5 col-span-2">
 					<div class="mb-1.5 text-sm text-ink-gray-5">
 						{{ __('Description') }}
@@ -59,6 +61,7 @@
 						<div class="text-xl-semibold text-ink-gray-9">
 							{{ __('Courses') }}
 						</div>
+						<!-- OSLMS-CUSTOM: the add-course dialog adds several courses at once -->
 						<Button @click="openForm()">
 							<template #prefix>
 								<span class="lucide-plus size-4" />
@@ -138,6 +141,7 @@
 								</template>
 								{{ __('Progress Summary') }}
 							</Button>
+							<!-- OSLMS-CUSTOM: add several members at once, or pick them from a batch ("Add Group") -->
 							<Button @click="openMemberForm('direct')">
 								<template #prefix>
 									<span class="lucide-plus size-4" />
@@ -216,6 +220,7 @@
 			>
 				<template #default>
 					<div @click.stop>
+						<!-- OSLMS-CUSTOM: multi-course picker that excludes courses already in the program -->
 						<!--
 							MultiSelect, like the members field below: it binds an array,
 							supports :exclude and exposes cachedOptions — the three things
@@ -237,6 +242,7 @@
 					</div>
 				</template>
 			</Dialog>
+			<!-- OSLMS-CUSTOM: dialogs to add members directly or from a batch -->
 			<!-- Dialog aggiungi membro diretto -->
 			<Dialog
 				v-model="showMemberDialog"
@@ -377,6 +383,7 @@ import {
 	toast,
 	TextEditor,
 } from 'frappe-ui'
+// OSLMS-CUSTOM: translatable selection banner (os_lms override imported directly)
 import ListSelectBanner from '@/overrides/frappe-ui/src/components/ListView/ListSelectBanner.vue'
 import { computed, ref, watch, getCurrentInstance } from 'vue'
 
@@ -387,6 +394,7 @@ import { Plus, Trash2, TrendingUp } from 'lucide-vue-next'
 import Link from '@/components/Controls/Link.vue'
 import Draggable from 'vuedraggable'
 import ProgramProgressSummary from '@/pages/Programs/ProgramProgressSummary.vue'
+// OSLMS-CUSTOM: multi-value picker for courses and members
 import MultiSelect from '@/components/Controls/MultiSelect.vue'
 
 const show = defineModel<boolean>()
@@ -424,6 +432,7 @@ const program = ref<Program>({
 	program_members: [],
 })
 
+// OSLMS-CUSTOM: (re)load the full program document when the dialog opens or the program changes
 const loadProgramData = () => {
 	if (!props.programName) return
 	setProgramData()
@@ -438,6 +447,7 @@ watch(show, (isOpen) => {
 	if (isOpen) loadProgramData()
 })
 
+// OSLMS-CUSTOM: list the members of the picked batch, minus those already in the program
 watch(selectedBatch, async (val) => {
 	if (!val) return
 	batchMembersList.value = []
@@ -528,6 +538,7 @@ const setProgramData = () => {
 	dirty.value = false
 }
 
+// OSLMS-CUSTOM: load the whole LMS Program document (child tables included) instead of per-child list resources
 const programDoc = createResource({
 	url: 'frappe.client.get',
 	makeParams() {
@@ -568,6 +579,7 @@ const validateTitle = () => {
 
 const saveProgram = (close: () => void) => {
 	validateTitle()
+	// OSLMS-CUSTOM: keep the description's rich formatting
 	// Rich sanitizer: the allowlist one drops the span/mark/s tags and style
 	// attributes the editor uses for text color, highlight and strikethrough.
 	program.value.description = sanitizeRichHTML(program.value.description)
@@ -599,6 +611,7 @@ const createNewProgram = (close: () => void) => {
 	)
 }
 
+// OSLMS-CUSTOM: rename on title change, then save the whole document (child tables included)
 const updateProgram = async (close: () => void) => {
 	try {
 		const newTitle = program.value.title
@@ -698,6 +711,7 @@ const openForm = () => {
 	selectedCourses.value = []
 }
 
+// OSLMS-CUSTOM: add several courses at once
 const addCourses = (close: () => void) => {
 	if (!selectedCourses.value.length) {
 		toast.warning(__('Please select at least one course'))
@@ -758,6 +772,7 @@ const addMembers = (close: () => void) => {
 	)
 }
 
+// OSLMS-CUSTOM: add members picked from a batch
 const addMembersFromBatch = (close: () => void) => {
 	if (!selectedMembers.value.length) {
 		toast.warning(__('Please select at least one member'))
@@ -809,6 +824,7 @@ const updateCounts = async (
 		},
 		{
 			onSuccess() {
+				// OSLMS-CUSTOM: reload the full document after a count update
 				// Reload, don't just reset: setProgramData rebuilds the program from
 				// the list resource, which carries no child tables, so on its own it
 				// emptied the course and member lists right after a row was added or
@@ -822,6 +838,7 @@ const updateCounts = async (
 	)
 }
 
+// OSLMS-CUSTOM: reorder the local course list, then persist idx per row for saved programs
 const updateOrder = async (e: any) => {
 	let sourceIdx = e.from.dataset.idx
 	let targetIdx = e.to.dataset.idx
@@ -853,6 +870,7 @@ const updateOrder = async (e: any) => {
 
 const wait = (ms: number) => new Promise((res) => setTimeout(res, ms))
 
+// OSLMS-CUSTOM: remove selected rows by their row key (course / member)
 const remove = (
 	selections: Iterable<string>,
 	unselectAll: () => void,
@@ -899,6 +917,7 @@ const deleteProgram = (close: () => void) => {
 	})
 }
 
+// OSLMS-CUSTOM: translated selection banner text
 const selectionText = (count: number) =>
 	count === 1 ? __('1 row selected') : __('{0} rows selected').format(count)
 

@@ -40,6 +40,7 @@
 					</Tooltip>
 				</div>
 
+				<!-- OSLMS-CUSTOM: total course duration replaces the upstream enrolled-students count -->
 				<div v-if="formattedDuration">
 					<Tooltip :text="__('Duration')">
 						<span class="flex items-center">
@@ -49,6 +50,7 @@
 					</Tooltip>
 				</div>
 
+				<!-- OSLMS-CUSTOM: "certification available" badge (built-in or TrueSkills certificate) replaces the upstream average rating -->
 				<div
 					v-if="
 						course.enable_certification ||
@@ -79,6 +81,7 @@
 				{{ course.title }}
 			</div>
 
+			<!-- OSLMS-CUSTOM: colored LMS OS Tag badges on the course card -->
 			<CourseTagBadges v-if="course.tags" :tags="course.tags" class="my-1" />
 
 			<div class="short-introduction text-sm">
@@ -93,6 +96,7 @@
 			<div v-if="user && course.membership" class="text-sm mt-2 mb-4">
 				{{ Math.ceil(course.membership.progress) }}% {{ __('completed') }}
 			</div>
+			<!-- OSLMS-CUSTOM: upstream card footer (instructor avatars, price, "Get Certified" icon) removed -->
 		</div>
 	</div>
 </template>
@@ -105,6 +109,7 @@ import { formatRating } from '@/utils'
 import { theme } from '@/utils/theme'
 import { computed } from 'vue'
 import ProgressBar from '@/components/ProgressBar.vue'
+// OSLMS-CUSTOM: colored LMS OS Tag badges (tag colors provided by Courses.vue)
 import CourseTagBadges from '@/oslms/components/CourseTagBadges.vue'
 import colors from '@/utils/frappe-ui-colors.json'
 
@@ -117,6 +122,7 @@ const props = defineProps({
 	},
 })
 
+// OSLMS-CUSTOM: course duration from the os_lms total_minutes field
 // Converte i minuti totali in formato leggibile: "1h 30m", "2h", "45m"
 const formattedDuration = computed(() => {
 	const total = props.course.total_minutes

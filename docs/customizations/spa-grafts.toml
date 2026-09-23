@@ -2666,3 +2666,795 @@ traducibile (la chiave cambia a ogni indice); ora è __('Video {0}').format(n)."
   [[entries.sites]]
   file = "frontend/src/components/Modals/VideoStatistics.vue"
   anchor = "label: __('Video {0}').format(index + 1),"
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 prima del merge di v2.59.0 — corsi, programmi e home
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 — gruppo "courses-programs-home" (bozza prima del merge di v2.59.0)
+# Card corso, elenco corsi, dashboard corso, modulo corso, home, programmi, offerte di lavoro
+# ---------------------------------------------------------------------------
+
+# --- Card del corso (CourseCard.vue) ---------------------------------------
+
+[[entries]]
+id = "courses-card-duration"
+title = "Durata del corso sulla card al posto degli iscritti"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La card del corso mostra la durata complessiva (somma dei minuti delle lezioni, campo os_lms
+total_minutes calcolato dall'override get_courses) invece del numero di studenti iscritti:
+per il cliente la durata è l'informazione utile per scegliere un corso, il numero di iscritti
+no. È già stata persa una volta in un merge (commit ff9a87957): il blocco era rimasto con la
+nostra condizione e il tooltip "Durata" ma mostrava di nuovo icona e numero degli iscritti.
+Dopo ogni merge controllare che dentro il blocco ci siano ancora l'icona orologio e
+formattedDuration."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCard.vue"
+  anchor = "<div v-if=\"formattedDuration\">"
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCard.vue"
+  anchor = "const formattedDuration = computed(() => {"
+  symbol = "formattedDuration"
+
+[[entries]]
+id = "courses-card-certification-badge"
+title = "Indicatore \"certificazione disponibile\" sulla card del corso"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Al posto della valutazione media (le recensioni sono disattivate, vedi course-reviews-removed)
+la card indica se il corso rilascia un certificato, anche quando il certificato è solo
+TrueSkills (trueskills_certificate_enabled, esposto dall'override os_lms di get_courses):
+senza, i corsi che rilasciano solo il badge TrueSkills non mostravano l'icona. ATTENZIONE,
+deriva già presente: dentro il blocco oggi c'è di nuovo il contenuto upstream della
+valutazione (stella + formatRating(course.rating)) invece dell'icona Award del commit
+ae30b25cb, cioè la stessa deriva da merge già corretta per la durata; va chiesto al
+committente se ripristinare l'icona."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCard.vue"
+  anchor = "course.trueskills_certificate_enabled"
+
+[[entries]]
+id = "courses-card-tag-colors"
+title = "Tag colorati (LMS OS Tag) sulla card del corso"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+I tag del corso si mostrano sulla card come badge colorati, con i colori configurati nel
+doctype os_lms LMS OS Tag. L'elenco corsi carica una volta la mappa tag→colore e la fornisce
+con provide('tagColorMap'); CourseTagBadges la legge con inject (la pagina corso fa lo
+stesso, vedi course-overview-tag-colors). Senza il provide i badge non hanno colore.
+ATTENZIONE al merge di v2.59.0: l'upstream elimina l'import di
+@/utils/frappe-ui-colors.json (file cancellato) nella riga subito sotto il nostro import di
+CourseTagBadges e riscrive gradientColor con var(--colore-400): prendere la loro versione di
+gradientColor e tenere i nostri import."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCard.vue"
+  anchor = "<CourseTagBadges v-if=\"course.tags\" :tags=\"course.tags\" class=\"my-1\" />"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/Courses.vue"
+  anchor = "doctype: 'LMS OS Tag',"
+  symbol = "tagResource"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/Courses.vue"
+  anchor = "provide('tagColorMap', tagColorMap)"
+
+[[entries]]
+id = "courses-card-footer-removed"
+title = "Piè di card del corso rimosso (istruttori, prezzo, certificazione)"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Dalla card del corso è stata tolta la fascia inferiore dell'upstream: avatar e nomi degli
+istruttori, prezzo del corso a pagamento e icona "Get Certified". Tolta nel commit 84bde1890
+(che introduce la durata) senza motivazione scritta. Presumibilmente coerente con la scelta
+di non mostrare gli istruttori agli studenti (course-instructors-hidden-from-students) e con
+l'indicatore di certificazione spostato in alto; il prezzo sparisce anche per i corsi a
+pagamento. Il blocco non è commentato ma cancellato, per questo l'ancora è sul marcatore."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCard.vue"
+  anchor = 'OSLMS-CUSTOM: upstream card footer (instructor avatars, price, "Get Certified" icon) removed'
+
+# --- Recensioni, outline, certificati ----------------------------------------
+
+[[entries]]
+id = "course-reviews-legacy-block-residue"
+title = "Residuo di merge in CourseReviews (stelle e testo duplicati)"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Non è una personalizzazione da conservare: è un residuo di un vecchio merge. Accanto al blocco
+upstream riprogettato (stelle + testo con "vedi altro") è rimasta la vecchia versione di
+stelle e testo della recensione, che quindi comparirebbero due volte; di nostro ci sono solo i
+token colore del tema (fill-ink-amber-2 / fill-ink-gray-3, commit bf14f80d1). Oggi è
+invisibile: CourseReviews non viene reso nella pagina corso (course-reviews-removed). Al
+merge di v2.59.0 (che tocca le classi di testo delle righe vicine) prendere la versione
+upstream intera ed eliminare il blocco residuo, poi togliere questa voce; da confermare col
+committente."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseReviews.vue"
+  anchor = "? 'fill-ink-amber-2'"
+
+[[entries]]
+id = "create-outline-button-import"
+title = "Import esplicito di Button in CreateOutline"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Import esplicito di Button da frappe-ui aggiunto durante la correzione di un merge (commit
+027c0c56f) perché il componente non risolveva più Button da solo. Il componente non è usato
+da nessuna pagina: se l'upstream lo cancella o aggiunge lo stesso import, accettare la sua
+versione."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CreateOutline.vue"
+  anchor = "import { Button } from 'frappe-ui'"
+
+[[entries]]
+id = "course-certificate-pdf-chrome"
+title = "Certificato del corso scaricato con il generatore PDF Chrome"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+download_pdf usa wkhtmltopdf se non riceve pdf_generator, ignorando sia il Print Format sia
+le Print Settings; il modello di certificato del cliente usa transform:rotate, che solo il
+generatore Chrome rende, e con wkhtmltopdf il PDF usciva bianco (memoria
+certificate-print-format-setup). Ogni link di download del certificato nella SPA aggiunge
+&pdf_generator=chrome; lo stesso innesto vive anche in components/Modals/Event.vue e in
+oslms/composables/useCertificateViewer.js."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseCertification.vue"
+  anchor = "&pdf_generator=chrome"
+  symbol = "openCertificate"
+
+# --- Dashboard del corso (CourseDashboard.vue) --------------------------------
+
+[[entries]]
+id = "course-dashboard-rating-card-hidden"
+title = "Riquadro \"Valutazione media\" nascosto nella dashboard del corso"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le recensioni dei corsi sono disattivate (course-reviews-removed, confermato dal committente
+il 2026-09-23), quindi la valutazione media sarebbe sempre 0: il riquadro è commentato e la
+riga dei numeri passa da 4 a 3 colonne. Sono rimasti Iscritti, Completamento medio e Lezioni.
+Il blocco commentato è la modifica, per questo l'ancora è sul commento."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDashboard.vue"
+  anchor = "<!-- <NumberChartGraph"
+
+[[entries]]
+id = "course-dashboard-sortable-students"
+title = "Colonne ordinabili nell'elenco studenti della dashboard del corso"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Chi gestisce il corso può ordinare gli studenti per nome, avanzamento e data di iscrizione
+cliccando le intestazioni (freccia di direzione). L'ordinamento è lato server (orderBy della
+list resource) così resta corretto anche sulle pagine caricate con "Carica altro"; il
+default esplicito 'creation desc' coincide con lo stato iniziale di sortColumn/sortOrder.
+Stessa funzione nella dashboard del batch (AdminBatchDashboard)."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDashboard.vue"
+  anchor = "@click=\"toggleSort(item.key)\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDashboard.vue"
+  anchor = "const toggleSort = (key: string) => {"
+  symbol = "toggleSort"
+
+[[entries]]
+id = "course-dashboard-progress-labels-it"
+title = "Legenda della distribuzione dei progressi in italiano"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il backend restituisce le fasce di avanzamento in inglese ("Just Started (0-30%)"…) e non
+passano da __(): la risposta viene rietichettata in italiano, conservando il suffisso
+"(intervallo%)" letto dal tooltip. Siccome le etichette non iniziano più con Just/In/Adv, il
+colore della legenda si sceglie per posizione della riga e non per nome. ATTENZIONE al merge
+di v2.59.0: l'upstream riscrive proprio quel backgroundColor (row.name.startsWith →
+var(--colore-400)), elimina theme, progressColors basato sul json e l'import di
+@/utils/frappe-ui-colors.json (file cancellato): tenere la sua sintassi var(--…-400) ma
+scegliere il colore con ['red', 'amber', 'blue', 'green'][idx]."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDashboard.vue"
+  anchor = "'Just Started (0-30%)': 'Appena iniziato (0-30%)',"
+  symbol = "chartDetails"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDashboard.vue"
+  anchor = "['red', 'amber', 'blue', 'green'][idx]"
+
+[[entries]]
+id = "course-dashboard-mobile-layout"
+title = "Dashboard del corso impilata in una colonna su mobile"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Su telefono le griglie a più colonne della dashboard rendevano il contenuto più largo dello
+schermo e l'intera pagina scorreva di lato. I numeri vanno in una colonna sotto sm, elenco
+studenti e grafici laterali in una colonna sotto lg (con min-w-0 perché il contenuto non
+allarghi la griglia), legenda e torta impilate sotto sm, l'elenco studenti scorre in
+orizzontale dentro il suo riquadro."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDashboard.vue"
+  anchor = "grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-5 items-start"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDashboard.vue"
+  anchor = "grid grid-cols-1 sm:grid-cols-[2fr_1fr] gap-4 sm:gap-0"
+
+[[entries]]
+id = "course-dashboard-search-by-name"
+title = "Ritocchi di stile/traduzioni nella dashboard del corso"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Ritocchi senza regola di business: il campo di ricerca studenti è compatto (classe small-form
+del tema elite) ed etichettato "Cerca per nome", perché cerca solo sul nome; i riquadri hanno
+la classe card del tema elite; l'intestazione dell'elenco usa un bordo inferiore invece dello
+sfondo grigio. Da riapplicare solo se l'upstream riscrive la pagina."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDashboard.vue"
+  anchor = ":placeholder=\"__('Search by name')\""
+
+[[entries]]
+id = "courses-programs-theme-card-hooks"
+title = "Classe card del tema elite su riquadri e card di corsi e programmi"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La classe card è l'aggancio dello stile delle card del tema elite
+(frontend/src/styles/theme/elite/main.css): aggiunta ai riquadri numerici delle dashboard
+(NumberChartGraph, usato da dashboard corso, dashboard batch e statistiche video) e alle card
+dei programmi, per l'amministratore e per lo studente. Ripristinata dopo un reset delle classi
+Tailwind (commit 7574da03e). Senza la classe le card perdono sfondo e ombra del tema.
+ATTENZIONE al merge di v2.59.0: l'upstream cambia le classi del titolo nella riga subito
+sotto le nostre (text-xl-semibold → text-lg-semibold): tenerle entrambe."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/NumberChartGraph.vue"
+  anchor = "<div class=\"border rounded-lg p-3 space-y-2 card\">"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/Programs.vue"
+  anchor = "class=\"border rounded-md p-3 hover:border-outline-gray-3 cursor-pointer space-y-2 card\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/StudentPrograms.vue"
+  anchor = "class=\"border rounded-md p-3 hover:border-outline-gray-3 cursor-pointer card\""
+
+# --- Pagina e modulo del corso -----------------------------------------------
+
+[[entries]]
+id = "course-overview-original-shadowed"
+title = "CourseOverview originale oscurato dall'override"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Codice morto a runtime: il plugin osOverrideTheme serve al suo posto
+frontend/src/overrides/pages/Courses/CourseOverview.vue, dove vivono tutte le
+personalizzazioni della pagina corso (course-hero-banner, course-mobile-cta-bar,
+course-reviews-removed…). Rispetto a v2.58.1 il file differisce solo per le virgole finali
+di Prettier. La voce esiste per ricordarlo: al merge prendere sempre la versione upstream di
+questo file (tenendo la riga del marcatore) e riportare nell'override le modifiche upstream
+utili. ATTENZIONE al merge di v2.59.0: l'upstream toglie la cache della risorsa outline e la
+carica con un watch sul nome del corso (fetch immediato), oltre a ridurre le classi dei
+titoli: valutare se portare il watch nell'override. L'ancora è sul marcatore perché la voce
+documenta l'oscuramento, non una regola."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseOverview.vue"
+  anchor = "OSLMS-CUSTOM: dead code at runtime"
+
+[[entries]]
+id = "course-form-overview-theme-hooks"
+title = "Agganci del tema elite nella sezione panoramica del modulo corso"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nella sezione "Panoramica" delle impostazioni del corso, il contenitore dell'editor della
+descrizione porta la classe ProseMirror-wrapper (più un anello di focus) e il campo "Corsi
+correlati" la classe os-multilink: sono gli agganci con cui il tema elite
+(styles/theme/elite/main.css) dà a editor e campo lo sfondo surface-gray-2 degli altri input.
+ATTENZIONE al merge di v2.59.0: l'upstream sostituisce il TextEditor di frappe-ui con
+RichTextEditor proprio dentro il nostro contenitore: tenere la classe sul contenitore e
+verificare che il selettore .ProseMirror-wrapper div div:nth-child(1) colpisca ancora
+l'area di scrittura."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseOverviewSection.vue"
+  anchor = "class=\"ProseMirror-wrapper rounded-t-lg"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseOverviewSection.vue"
+  anchor = "class=\"os-multilink\""
+
+[[entries]]
+id = "course-form-mobile-layout"
+title = "Creazione e copertina del corso utilizzabili su mobile"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Su telefono il campo copertina del corso (anteprima + pulsanti) e i campi del dialogo "Nuovo
+corso" stavano su due colonne e uscivano dallo schermo: sotto sm anteprima e controlli si
+impilano, l'anteprima occupa la larghezza disponibile e i pulsanti vanno a capo; il dialogo
+usa una colonna."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseThumbnailField.vue"
+  anchor = "flex flex-col sm:flex-row items-start gap-3 sm:gap-5"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/NewCourseModal.vue"
+  anchor = "grid grid-cols-1 sm:grid-cols-2 gap-5 border-b pb-5 mb-5"
+
+[[entries]]
+id = "course-new-modal-title-translated"
+title = "Ritocchi di traduzione nel dialogo Nuovo corso"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il titolo del dialogo "New Course" era una stringa fissa in inglese: passa da __() per
+comparire in italiano. Nessuna regola di business."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/NewCourseModal.vue"
+  anchor = ":title=\"__('New Course')\""
+
+# --- Elenco corsi (Courses.vue) ------------------------------------------------
+
+[[entries]]
+id = "courses-list-students-enrolled-only"
+title = "Lo studente vede nell'elenco corsi solo i corsi a cui è iscritto"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Per lo studente l'elenco corsi ha solo la scheda "Iscritto": le schede pubbliche "Pubblicati"
+e "In arrivo" sono nascoste, il selettore delle schede sparisce quando resta una sola scheda,
+lo studente atterra sempre su "Iscritto" (anche con una scheda salvata in precedenza) e un
+?tab= non consentito nell'URL viene ignorato. Effetto collaterale voluto dal commit 5e3e6529d:
+è stato tolto il ramo upstream che dava la scheda "Iscritto" a ogni utente non
+amministratore, quindi un utente che non è né studente né Moderator/istruttore/valutatore
+di certificati vede solo "Pubblicati" e "In arrivo". ATTENZIONE al merge di v2.59.0:
+l'upstream rinomina :buttons in :options proprio sul TabButtons che noi abbiamo spezzato su
+più righe con il v-if: tenere il v-if e usare :options."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/Courses.vue"
+  anchor = "v-if=\"courseTabs.length > 1\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/Courses.vue"
+  anchor = "return [{ label: __('Enrolled'), value: 'enrolled' }]"
+  symbol = "courseTabs"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/Courses.vue"
+  anchor = "if (tab && courseTabs.value.some((t) => t.value === tab)) {"
+  symbol = "setFiltersFromQuery"
+
+  [entries.visibility]
+  subject = "schede Pubblicati e In arrivo dell'elenco corsi"
+  allow = ["Moderator", "Docente", "course-instructor", "Batch Evaluator", "Valutatore"]
+  deny = ["Student"]
+
+[[entries]]
+id = "courses-list-persist-tab"
+title = "L'elenco corsi ricorda la scheda selezionata"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La scheda scelta nell'elenco corsi resta selezionata quando si esce e si torna (localStorage
+'lms_courses_tab'); se la scheda salvata non è più disponibile per il ruolo dell'utente si
+torna alla prima disponibile. Stessa funzione nell'elenco batch."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/Courses.vue"
+  anchor = "useLocalStorage('lms_courses_tab', 'live')"
+
+[[entries]]
+id = "courses-list-category-per-tab"
+title = "Filtro categoria dell'elenco corsi limitato alla scheda attiva"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il menu delle categorie elencava solo le categorie dei corsi pubblicati, quindi risultava
+vuoto sulle schede con bozze o iscrizioni (Creati, Non pubblicati, Iscritto). Ora le
+categorie si ricaricano per la scheda attiva con gli stessi filtri di get_courses (il backend
+get_course_categories li accetta; l'override os_lms applica lo scoping del valutatore), il
+menu si nasconde se la scheda non ha categorie e una categoria scelta su un'altra scheda
+viene azzerata al cambio scheda. Si usa una risorsa semplice perché createListResource
+lasciava data vuoto con opzioni { label, value }."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/Courses.vue"
+  anchor = ":options=\"categoryOptions\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/Courses.vue"
+  anchor = "const reloadCategories = () => {"
+  symbol = "reloadCategories"
+
+[[entries]]
+id = "courses-programs-list-search"
+title = "Ricerca per parole indipendenti negli elenchi di corsi e programmi"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La casella di ricerca costruiva un unico LIKE sull'intera frase ("%Corso p%"), quindi
+aggiungere una seconda parola azzerava i risultati: searchLikeFilter divide la ricerca in
+parole e le cerca in ordine con spazi liberi ("%Corso%p%"). Inoltre il ricaricamento parte
+da update:modelValue e non dall'evento input del DOM, che arrivava prima dell'aggiornamento
+del v-model: la ricerca era sempre in ritardo di un carattere e svuotare la casella non
+toglieva il filtro. Stessa correzione negli elenchi di batch, quiz, compiti ed esercizi di
+programmazione (fuori da questo gruppo)."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/Courses.vue"
+  anchor = "const titleFilter = searchLikeFilter(title.value)"
+  symbol = "updateTitleFilter"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/Courses.vue"
+  anchor = "class=\"w-full lg:w-40\"\n\t\t\t\t\t@update:modelValue=\"updateCourses()\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/Programs.vue"
+  anchor = "const titleFilter = searchLikeFilter(title.value)"
+  symbol = "updateTitleFilter"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/Programs.vue"
+  anchor = "@update:modelValue=\"updatePrograms()\""
+
+[[entries]]
+id = "courses-list-certification-first-click"
+title = "Il filtro Certificazione dell'elenco corsi si applica al primo clic"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La casella "Certificazione" usava @change, che scatta prima che il Checkbox di frappe-ui
+aggiorni il modello: il filtro si applicava con un clic di ritardo. Con update:modelValue
+legge il valore aggiornato. Il filtro di certificazione include anche i corsi con solo
+certificato TrueSkills (update_course_filters lato server). L'ancora è su due righe perché
+l'evento da solo compare tre volte nel file."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/Courses.vue"
+  anchor = ":label=\"__('Certification')\"\n\t\t\t\t\t\t@update:modelValue=\"updateCourses()\""
+
+[[entries]]
+id = "courses-list-gestore-no-import"
+title = "Import dei corsi da file nascosto al Gestore"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il Gestore può creare i corsi solo a mano: dal menu "Crea" spariscono "Importa tramite Data
+Import" e "Importa tramite ZIP". Il System Manager li conserva anche se ha il ruolo Gestore,
+perché l'Administrator ha implicitamente ogni ruolo e altrimenti perderebbe l'import. La
+regola controlla il nome del ruolo in roles (non esiste un flag is_manager). ATTENZIONE al
+merge di v2.59.0: l'upstream rinomina le icone del menu ('book-open' → 'lucide-book-open',
+'upload' → 'lucide-upload', 'folder-plus' → 'lucide-folder-plus') dentro l'array che noi
+abbiamo spezzato in menu + push: riapplicare i nuovi nomi nella nostra struttura."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/Courses.vue"
+  anchor = "const canImportCourse = computed(() => {"
+  symbol = "canImportCourse"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/Courses.vue"
+  anchor = "if (!canImportCourse.value) return menu"
+  symbol = "courseMenu"
+
+  [entries.visibility]
+  subject = "import dei corsi da Data Import e da ZIP"
+  allow = ["Moderator", "Course Creator", "System Manager"]
+  deny = ["Gestore"]
+
+[[entries]]
+id = "courses-list-upcoming-students-unpublished"
+title = "Scheda In arrivo senza filtro pubblicati per lo studente"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Aggiunta con il commit 7c44a7dc8 ("accesso ai corsi tramite i batch"): sulla scheda "In
+arrivo" lo studente non riceveva il filtro published=1, presumibilmente per vedere i corsi
+non pubblicati dei suoi batch. Da courses-list-students-enrolled-only (2026-07-20) lo
+studente non vede più la scheda "In arrivo", quindi il ramo oggi non si raggiunge.
+Chiedere al committente se toglierlo o conservarlo."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/Courses.vue"
+  anchor = "currentTab.value != 'upcoming'"
+  symbol = "updateStudentFilter"
+
+# --- Home ----------------------------------------------------------------------
+
+[[entries]]
+id = "home-valutatore-admin-home"
+title = "Il Valutatore riceve la home in stile amministratore"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il Valutatore non è uno studente: la home dello studente lanciava widget per cui non ha
+permessi (valutazioni in arrivo, conteggio delle richieste di certificato) e produceva 403.
+Home.vue lo manda sulla home in stile amministratore (useAdminHome = isAdmin || is_valutatore),
+senza serie giornaliera né conteggio valutazioni, passandogli le proprie lezioni dal vivo
+(get_my_live_classes, che include i batch che valuta) invece di quelle amministrative.
+AdminHome gli nasconde l'invito "Crea corso" e aggiunge la sezione "Batch che valuti"
+(os_lms.os_lms.api.get_evaluation_batches) perché la pagina non resti vuota. Memoria
+valutatore-role-scoped-per-batch."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Home/Home.vue"
+  anchor = "const useAdminHome = computed(() => isAdmin.value || isValutatore.value)"
+  symbol = "useAdminHome"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Home/Home.vue"
+  anchor = ":liveClasses=\"isAdmin ? adminLiveClasses : myLiveClasses\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Home/AdminHome.vue"
+  anchor = "url: 'os_lms.os_lms.api.get_evaluation_batches',"
+  symbol = "evaluationBatches"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Home/AdminHome.vue"
+  anchor = "!user.data?.is_valutatore"
+
+  [entries.visibility]
+  subject = "home in stile amministratore"
+  allow = ["Moderator", "Docente", "course-instructor", "Batch Evaluator", "Valutatore"]
+  deny = ["Student"]
+
+[[entries]]
+id = "home-admin-live-class-card"
+title = "Lezioni dal vivo della home amministratore con la card condivisa"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le lezioni dal vivo della home amministratore usano LiveClassCard, la card unica condivisa
+con la home dello studente e la scheda del batch: finestra di accesso di 15 minuti, controllo
+che l'ospite abbia avviato la lezione, pulsante "Avvia" per chi conduce, ingresso da
+osservatore per il Valutatore anche se la lezione non risulta avviata, link di ingresso
+interno protetto (join_live_class) invece dell'URL Zoom/Meet. Memoria
+live-class-internal-gated-join. ATTENZIONE al merge di v2.59.0: l'upstream cambia le classi
+del titolo dentro la card inline che noi abbiamo sostituito: tenere LiveClassCard."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Home/AdminHome.vue"
+  anchor = ":observer=\"Boolean(cls.is_valutatore)\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Home/AdminHome.vue"
+  anchor = "import LiveClassCard from '@/components/LiveClassCard.vue'"
+
+[[entries]]
+id = "home-welcome-video-hero"
+title = "Video di benvenuto in cima alla home"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La home mostra in cima il video di benvenuto configurato dal cliente
+(oslms/components/Home/WelcomeVideoHero.vue: video o iframe, si riduce a fine riproduzione).
+Il componente decide da sé se mostrarsi; nella pagina upstream va solo montato."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Home/Home.vue"
+  anchor = "<WelcomeVideoHero />"
+
+[[entries]]
+id = "home-live-classes-toggle"
+title = "Nessuna richiesta delle lezioni dal vivo quando sono disattivate"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le lezioni dal vivo si possono disattivare per tutto il sito con l'impostazione
+enable_live_classes (gruppo Configurazioni delle impostazioni os_lms): la home non chiede più
+né le lezioni dello studente né quelle amministrative. Stessa regola nella scheda del batch
+(BatchDetail.vue)."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Home/Home.vue"
+  anchor = "settingsStore.settings.data?.enable_live_classes !== 0"
+  symbol = "liveClassesEnabled"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Home/Home.vue"
+  anchor = "auto: liveClassesEnabled.value && isAdmin.value ? true : false,"
+  symbol = "adminLiveClasses"
+
+# --- Programmi (ProgramForm.vue, Programs.vue) ---------------------------------
+
+[[entries]]
+id = "program-form-title-rename"
+title = "Il titolo del programma si modifica rinominando il documento"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+LMS Program ha come nome il titolo (autoname field:title, allow_rename). Il campo Titolo
+dell'upstream era legato a program.name, quindi su un programma esistente modificarlo non
+cambiava nulla di persistente. Ora il campo è legato a program.title e, se al salvataggio il
+titolo è diverso dal nome, il documento viene prima rinominato con frappe.client.rename_doc e
+poi salvato col nuovo nome. Nota: validateTitle (upstream) pulisce ancora program.name e non
+program.title."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  anchor = "v-model=\"program.title\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  anchor = "'/api/method/frappe.client.rename_doc',"
+  symbol = "updateProgram"
+
+[[entries]]
+id = "program-form-description-editor"
+title = "Descrizione del programma modificabile con formattazione"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il modulo del programma ha un editor ricco per la descrizione (campo custom os_lms di LMS
+Program), mostrata poi allo studente (program-description). Al salvataggio passa da
+sanitizeRichHTML e non dal sanitizer a lista chiusa, che toglieva span/mark/s e gli attributi
+style usati per colore, evidenziazione e barrato. L'elenco dei programmi carica il campo
+description perché il modulo copia i dati del programma da quell'elenco. Il TextEditor è
+quello di frappe-ui: in v2.59.0 l'upstream sostituisce TextEditor con RichTextEditor in altri
+moduli, valutare se allinearsi."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  anchor = ":content=\"program.description\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  anchor = "program.value.description = sanitizeRichHTML(program.value.description)"
+  symbol = "saveProgram"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/Programs.vue"
+  anchor = "'description',"
+  symbol = "programs"
+
+  [entries.checks]
+  unit = "frontend/src/tests/sanitizeRichHTML.test.ts"
+
+[[entries]]
+id = "program-form-add-courses-multi"
+title = "Più corsi aggiunti insieme a un programma"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il dialogo "Aggiungi corso al programma" usa un MultiSelect: si scelgono più corsi in una
+volta, quelli già presenti nel programma sono esclusi dalla lista e le nuove righe prendono il
+titolo del corso dalle opzioni in cache. È stato rotto una volta da un refactor (commit
+3255d0a07: dialogo intitolato "Iscrivi membro", campo Link a un ref inesistente, aggiunta
+sempre rifiutata): il dialogo serve solo i corsi, i membri hanno i loro due dialoghi.
+ATTENZIONE al merge di v2.59.0: l'upstream riformatta proprio l'onClick con currentForm che
+noi abbiamo tolto: tenere la nostra versione."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  anchor = "v-model=\"selectedCourses\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  anchor = "const addCourses = (close: () => void) => {"
+  symbol = "addCourses"
+
+[[entries]]
+id = "program-form-add-members-bulk"
+title = "Membri del programma aggiunti in blocco o da un batch"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Al posto del singolo campo "Membro del programma" ci sono due azioni: "Aggiungi membro" (più
+utenti insieme, esclusi quelli già membri) e "Aggiungi gruppo", che elenca gli iscritti di un
+batch scelto (LMS Batch Enrollment, esclusi i già membri) e permette di selezionarli uno a
+uno o tutti. Serve a iscrivere un'intera classe a un programma senza inserire gli studenti a
+mano. Sparisce il collegamento upstream "crea nuovo utente" (onCreate → openSettings)."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  anchor = "@click=\"openMemberForm('batch')\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  anchor = "v-model=\"selectedMembers\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  anchor = "const addMembersFromBatch = (close: () => void) => {"
+  symbol = "addMembersFromBatch"
+
+[[entries]]
+id = "program-form-full-document"
+title = "Il modulo del programma lavora sul documento completo"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Invece delle due list resource upstream sui doctype figli (LMS Program Course, LMS Program
+Member) il modulo carica l'intero LMS Program con frappe.client.get (righe ordinate per idx),
+lo ricarica all'apertura del dialogo e dopo l'aggiornamento dei conteggi, modifica corsi e
+membri in locale (rimozione per chiave di riga, riordino) e salva tutto il documento con un
+PUT su /api/resource. Il riordino di un programma già salvato scrive l'idx di ogni riga con
+frappe.client.set_value. Dai commit risulta che le list resource lasciavano gli elenchi vuoti
+(commit 02e82b3bc "fix load program details", 3255d0a07); il motivo esatto della scelta del
+PUT al posto di setValue non è scritto."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  anchor = "url: 'frappe.client.get',"
+  symbol = "programDoc"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  anchor = "/api/resource/LMS%20Program/"
+  symbol = "updateProgram"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  anchor = "selectionsSet.has(item[rowKey])"
+  symbol = "remove"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  anchor = "fieldname: { idx: course.idx },"
+  symbol = "updateOrder"
+
+[[entries]]
+id = "program-form-translated-selection"
+title = "Ritocchi di traduzione nel modulo del programma"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Testi del modulo del programma resi traducibili: il banner di selezione delle righe usa
+l'override os_lms di ListSelectBanner (importato direttamente dal percorso overrides) con il
+testo "N righe selezionate" passato da selectionText, e le etichette delle colonne (Titolo,
+Membro, Nome completo) passano da __(). Nessuna regola di business."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  anchor = "const selectionText = (count: number) =>"
+  symbol = "selectionText"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  anchor = "import ListSelectBanner from '@/overrides/frappe-ui/src/components/ListView/ListSelectBanner.vue'"
+
+# --- Offerte di lavoro -----------------------------------------------------------
+
+[[entries]]
+id = "job-form-select-placeholder"
+title = "Ritocchi di traduzione nel modulo offerta di lavoro"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le tendine Tipo e Modalità di lavoro mostrano il segnaposto tradotto "Seleziona opzione"
+invece di un valore vuoto. Nessuna regola di business. L'ancora è su due righe perché il
+segnaposto compare due volte nel file."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/JobForm.vue"
+  anchor = ":placeholder=\"__('Select option')\"\n\t\t\t\t\t\t\t:options=\"jobTypes\""

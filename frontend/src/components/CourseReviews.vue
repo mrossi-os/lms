@@ -53,6 +53,7 @@
 						<span class="text-ink-gray-5 shrink-0">
 							{{ formatReviewDate(review.creation) }}
 						</span>
+						<!-- OSLMS-CUSTOM: legacy star/review block left over from an old merge (duplicates the upstream one below); only its theme tokens are ours -->
 						<div class="flex mt-2 gap-x-1">
 							<LucideStar
 								v-for="index in 5"

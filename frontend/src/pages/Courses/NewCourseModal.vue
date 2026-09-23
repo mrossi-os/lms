@@ -2,6 +2,7 @@
 	<Dialog v-model:open="show" :title="__('New Course')" size="3xl">
 		<template #default>
 			<div class="text-base">
+				<!-- OSLMS-CUSTOM: form fields in one column on mobile; the dialog title above is wrapped in __() -->
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-5 border-b pb-5 mb-5">
 					<FormControl
 						v-model="course.title"

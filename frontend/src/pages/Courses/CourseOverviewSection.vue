@@ -11,6 +11,7 @@
 				{{ __('Course Description') }}
 				<span class="text-ink-red-6">*</span>
 			</label>
+			<!-- OSLMS-CUSTOM: ProseMirror-wrapper hook for the elite theme editor background + focus ring -->
 			<div
 				class="ProseMirror-wrapper rounded-t-lg rounded-b-md outline-none transition-[box-shadow] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] focus-within:ring-2 ring-outline-gray-3"
 			>
@@ -29,6 +30,7 @@
 				/>
 			</div>
 		</div>
+		<!-- OSLMS-CUSTOM: os-multilink hook for the elite theme input background -->
 		<MultiLink
 			v-model="relatedCourses"
 			doctype="LMS Course"

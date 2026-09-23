@@ -42,6 +42,7 @@
 					{{ __('Upcoming Live Classes') }}
 				</div>
 				<div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+					<!-- OSLMS-CUSTOM: shared LiveClassCard (gated internal join, host start, observer join for the Valutatore) replaces the upstream inline card -->
 					<LiveClassCard
 						v-for="cls in liveClasses?.data"
 						:key="cls.name"
@@ -54,6 +55,7 @@
 			</div>
 		</div>
 
+		<!-- OSLMS-CUSTOM: "Batches you evaluate" section for the Valutatore -->
 		<div
 			v-if="user.data?.is_valutatore && evaluationBatches.data?.length"
 			class="mt-10"
@@ -137,6 +139,7 @@
 			</div>
 		</div>
 
+		<!-- OSLMS-CUSTOM: no "Create Course" empty state for the Valutatore -->
 		<div
 			v-if="
 				!createdCourses.data?.length &&
@@ -186,6 +189,7 @@ import {
 import { formatTime } from '@/utils'
 import CourseCard from '@/components/CourseCard.vue'
 import BatchCard from '@/pages/Batches/components/BatchCard.vue'
+// OSLMS-CUSTOM: shared live class card
 import LiveClassCard from '@/components/LiveClassCard.vue'
 
 const user = inject<any>('$user')
@@ -207,6 +211,7 @@ const createdBatches = createResource({
 	auto: true,
 })
 
+// OSLMS-CUSTOM: Valutatore's evaluated batches
 // Batches the current user evaluates — shown only to a "Valutatore" so their
 // (otherwise instructor-centric) admin home is not empty.
 const evaluationBatches = createResource({

@@ -29,6 +29,7 @@
 			>
 				<TabButtons :buttons="programTabs" v-model="currentTab" class="w-fit" />
 
+				<!-- OSLMS-CUSTOM: reload on update:modelValue so the search reads the current value and clearing it clears the filter -->
 				<FormControl
 					v-model="title"
 					:placeholder="__('Search')"
@@ -51,6 +52,7 @@
 			v-else-if="programs.data?.length"
 			class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5"
 		>
+			<!-- OSLMS-CUSTOM: "card" class is the elite theme card style hook -->
 			<div
 				v-for="program in programs.data"
 				@click="openForm(program.name)"
@@ -129,6 +131,7 @@ const programs = createListResource({
 	fields: [
 		'name',
 		'title',
+		// OSLMS-CUSTOM: description is edited in ProgramForm (copied from this list)
 		'description',
 		'modified',
 		'member_count',
@@ -160,6 +163,7 @@ const updateFilters = () => {
 }
 
 const updateTitleFilter = () => {
+	// OSLMS-CUSTOM: search words matched independently
 	const titleFilter = searchLikeFilter(title.value)
 	if (titleFilter) {
 		filters.value['title'] = titleFilter

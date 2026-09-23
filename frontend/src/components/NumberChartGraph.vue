@@ -1,5 +1,6 @@
 <template>
 	<div class="border rounded-lg p-3 space-y-2 card">
+		<!-- OSLMS-CUSTOM: "card" class on the root is the elite theme card style hook -->
 		<div class="text-ink-gray-5">
 			{{ __(title) }}
 		</div>

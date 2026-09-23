@@ -21,6 +21,7 @@
 	</div>
 </template>
 <script setup>
+// OSLMS-CUSTOM: explicit Button import (build fix after an upstream merge)
 import { Button } from 'frappe-ui'
 
 const props = defineProps({

@@ -12,6 +12,7 @@
 					v-if="data.length > 0"
 					class="grid grid-cols-1 lg:grid-cols-3 gap-5"
 				>
+					<!-- OSLMS-CUSTOM: "card" class is the elite theme card style hook -->
 					<div
 						v-for="program in data"
 						@click="openDetails(program.name, category)"

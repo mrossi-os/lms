@@ -4,6 +4,7 @@
 			{{ __('Course thumbnail') }}
 		</label>
 
+		<!-- OSLMS-CUSTOM: thumbnail preview and controls stack on mobile -->
 		<div class="flex flex-col sm:flex-row items-start gap-3 sm:gap-5">
 			<button
 				type="button"

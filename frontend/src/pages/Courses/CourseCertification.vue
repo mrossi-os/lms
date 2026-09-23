@@ -114,6 +114,7 @@ const populateCourses = () => {
 }
 
 const openCertificate = (certificate) => {
+	// OSLMS-CUSTOM: force the Chrome PDF generator (wkhtmltopdf breaks the certificate print format)
 	window.open(
 		`/api/method/frappe.utils.print_format.download_pdf?doctype=LMS+Certificate&name=${
 			certificate.name

@@ -39,6 +39,7 @@
 			<div
 				class="flex flex-col space-y-4 lg:flex-row lg:items-center lg:gap-x-4 lg:space-y-0"
 			>
+				<!-- OSLMS-CUSTOM: students only have the Enrolled tab, so the switcher is hidden when a single tab is left -->
 				<TabButtons
 					v-if="courseTabs.length > 1"
 					:buttons="courseTabs"
@@ -46,6 +47,7 @@
 					class="w-fit"
 				/>
 
+				<!-- OSLMS-CUSTOM: reload on update:modelValue so the search reads the current value and clearing it clears the filter -->
 				<FormControl
 					v-model="title"
 					:placeholder="__('Search')"
@@ -58,6 +60,7 @@
 					</template>
 				</FormControl>
 
+				<!-- OSLMS-CUSTOM: category options scoped to the active tab; hidden when the tab has no categories -->
 				<ClearableCombobox
 					v-if="categoryOptions.length"
 					v-model="currentCategory"
@@ -67,6 +70,7 @@
 					class="w-full lg:w-40"
 				/>
 
+				<!-- OSLMS-CUSTOM: certification checkbox reloads on update:modelValue (applies on the first click) -->
 				<Tooltip :text="__('Only show courses that offer a certificate')">
 					<FormControl
 						type="checkbox"
@@ -150,6 +154,7 @@ const currentCategory = ref(null)
 const title = ref('')
 const certification = ref(false)
 const filters = ref({})
+// OSLMS-CUSTOM: persisted tab selection
 // Persist the selected tab so it survives leaving and returning to the list.
 const currentTab = useLocalStorage('lms_courses_tab', 'live')
 const { brand } = sessionStore()
@@ -158,6 +163,7 @@ const router = useRouter()
 const showCourseModal = ref(false)
 const showCourseImportModal = ref(false)
 
+// OSLMS-CUSTOM: LMS OS Tag colors provided to CourseCard's CourseTagBadges
 const tagResource = createResource({
 	url: 'frappe.client.get_list',
 	method: 'POST',
@@ -177,6 +183,7 @@ const tagColorMap = computed(() => {
 provide('tagColorMap', tagColorMap)
 
 onMounted(() => {
+	// OSLMS-CUSTOM: students always land on the Enrolled tab
 	// Students only have the "Enrolled" tab, so always land them there
 	// regardless of any previously persisted value.
 	if (user.data?.is_student) {
@@ -200,6 +207,7 @@ const setFiltersFromQuery = () => {
 	currentCategory.value = queries.get('category') || null
 	certification.value = queries.get('certification') || false
 	const tab = queries.get('tab')
+	// OSLMS-CUSTOM: ignore a ?tab= the user is not allowed to see
 	// Only honor tabs the current user is actually allowed to see, so a stale
 	// or crafted ?tab= can't push a student onto a hidden tab.
 	if (tab && courseTabs.value.some((t) => t.value === tab)) {
@@ -218,6 +226,7 @@ const courses = createListResource({
 	start: start.value,
 })
 
+// OSLMS-CUSTOM: tab-scoped category options loaded with a plain resource
 // get_course_categories returns plain { label, value } options, not doctype
 // documents, so use a plain resource: createListResource's document machinery
 // (name-keyed dataMap + offline doc cache) can leave `data` empty here. No
@@ -279,6 +288,7 @@ const updateCategoryFilter = () => {
 }
 
 const updateTitleFilter = () => {
+	// OSLMS-CUSTOM: search words matched independently
 	const titleFilter = searchLikeFilter(title.value)
 	if (titleFilter) {
 		filters.value['title'] = titleFilter
@@ -328,6 +338,7 @@ const updateTabFilter = () => {
 	}
 }
 
+// OSLMS-CUSTOM: no published=1 filter for students on the Upcoming tab (batch access to unpublished courses)
 const updateStudentFilter = () => {
 	if (
 		!user.data ||
@@ -364,6 +375,7 @@ const setQueryParams = () => {
 }
 
 watch(currentTab, () => {
+	// OSLMS-CUSTOM: clear the category and refetch the tab-scoped options
 	// Each tab has its own category set, so a selection made on another tab no
 	// longer applies; clear it before refetching the tab-scoped options.
 	currentCategory.value = null
@@ -372,6 +384,7 @@ watch(currentTab, () => {
 })
 
 const courseTabs = computed(() => {
+	// OSLMS-CUSTOM: students see only the Enrolled tab
 	// Students only see the courses they are enrolled in — the public
 	// "Published" and "Upcoming" tabs are hidden for them.
 	if (user.data?.is_student) {
@@ -399,6 +412,7 @@ const courseTabs = computed(() => {
 	return tabs
 })
 
+// OSLMS-CUSTOM: file-based course import hidden from Gestore (System Managers keep it)
 // A "Gestore" may only create courses manually, so the file-based entries
 // (Data Import tool, ZIP) are hidden for them. System Managers keep them —
 // including the Administrator, who implicitly holds every role and would
@@ -420,6 +434,7 @@ const courseMenu = computed(() => {
 		},
 	]
 
+	// OSLMS-CUSTOM: file-based course import hidden from Gestore
 	if (!canImportCourse.value) return menu
 
 	menu.push(
