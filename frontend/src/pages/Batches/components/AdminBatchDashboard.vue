@@ -359,7 +359,6 @@ import Select from '@/components/Controls/Select.vue'
 import { computed, inject, ref, watch } from 'vue'
 import type dayjsType from 'dayjs'
 import { formatAmount } from '@/utils'
-import colors from '@/utils/frappe-ui-colors.json'
 import BatchFeedback from '@/pages/Batches/components/BatchFeedback.vue'
 import BatchStudentProgress from '@/pages/Batches/components/BatchStudentProgress.vue'
 import NumberChartGraph from '@/components/NumberChartGraph.vue'
@@ -497,10 +496,6 @@ const completionPct = (count: number) => {
 // Donut palette. It cycles when the batch has more courses (or the course more
 // lessons) than hues; the list rows below reuse `sliceColor` with the same index
 // so they double as the chart legend.
-const theme = ref<'darkMode' | 'lightMode'>(
-	localStorage.getItem('theme') == 'dark' ? 'darkMode' : 'lightMode',
-)
-
 const chartHues = [
 	'blue',
 	'green',
@@ -515,7 +510,7 @@ const chartHues = [
 ] as const
 
 const sliceColor = (idx: number) =>
-	colors[theme.value][chartHues[idx % chartHues.length]][400]
+	`var(--${chartHues[idx % chartHues.length]}-400)`
 
 // OSLMS-CUSTOM: progress summary donut derived client-side
 // Progress summary: how the batch's students spread over the same buckets the
@@ -560,7 +555,7 @@ const progressSummaryTotal = computed(() =>
 )
 
 const progressSummaryColors = computed(() =>
-	progressBuckets.map((bucket) => colors[theme.value][bucket.hue][400]),
+	progressBuckets.map((bucket) => `var(--${bucket.hue}-400)`),
 )
 
 const progressSummaryChartOptions = computed(() => ({
