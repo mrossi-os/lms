@@ -56,6 +56,7 @@
 						@input="markDirty()"
 					/>
 					<div class="border-t -mx-5" />
+					<!-- OSLMS-CUSTOM: completion certificate switch turns TrueSkill emission off -->
 					<BooleanSwitch
 						size="sm"
 						:modelValue="Boolean(doc?.enable_certification)"
@@ -69,6 +70,7 @@
 
 				<template v-else>
 					<div class="border-t -mx-5" />
+					<!-- OSLMS-CUSTOM: completion certificate switch turns TrueSkill emission off -->
 					<BooleanSwitch
 						size="sm"
 						:modelValue="Boolean(doc?.enable_certification)"
@@ -132,6 +134,7 @@
 				</template>
 
 				<div class="border-t -mx-5" />
+				<!-- OSLMS-CUSTOM: per-course TrueSkill certificate emission (switch, template select, create template) -->
 				<BooleanSwitch
 					size="sm"
 					:modelValue="Boolean(doc?.trueskills_certificate_enabled)"
@@ -201,6 +204,7 @@
 		:defaultRoles="['batch_evaluator']"
 		@created="onEvaluatorCreated"
 	/>
+	<!-- OSLMS-CUSTOM: TrueSkill template creation dialog -->
 	<TrueSkillsTemplateModal
 		v-model="showTrueskillTemplateModal"
 		:course="doc?.name"
@@ -240,6 +244,7 @@ import { computed, inject, ref, watch } from 'vue'
 import CollapsibleSection from '@/components/CollapsibleSection.vue'
 import Link from '@/components/Controls/Link.vue'
 import NewMemberModal from '@/components/Modals/NewMemberModal.vue'
+// OSLMS-CUSTOM: TrueSkill certificate emission settings
 import TrueSkillsTemplateModal from '@/oslms/components/trueskills/TrueSkillsTemplateModal.vue'
 import { useSettings } from '@/stores/settings'
 import type { CourseFormContext, Resource } from '@/types/api'
@@ -343,6 +348,7 @@ interface TrueSkillsTemplatesData {
 	error?: string
 }
 
+// OSLMS-CUSTOM: TrueSkill templates list for the per-course template select
 const trueskillTemplatesResource = createResource({
 	url: 'os_lms.os_lms.trueskills.api.list_templates',
 	auto: false,
@@ -416,6 +422,7 @@ watch(
 
 // The internal completion certificate and TrueSkills issuance are mutually
 // exclusive per course: enabling one disables the other.
+// OSLMS-CUSTOM: internal completion certificate and TrueSkill emission are mutually exclusive
 function setCompletionCertificate(val: boolean) {
 	if (!resource.doc) return
 	resource.doc.enable_certification = val ? 1 : 0

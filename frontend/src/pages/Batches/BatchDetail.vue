@@ -2,6 +2,7 @@
 	<div v-if="batch.data" class="">
 		<!-- On phones the header stacks: breadcrumb + badge on the first row,
 		     the actions right-aligned on the second one. -->
+		<!-- OSLMS-CUSTOM: header stacks on two rows on phones, compact buttons -->
 		<header
 			class="sticky top-0 z-10 border-b flex flex-col gap-y-2 sm:flex-row sm:items-center sm:justify-between sm:gap-y-0 bg-surface-base px-3 py-2.5 sm:px-5 max-sm:[&_button]:text-xs"
 		>
@@ -14,6 +15,7 @@
 			<div
 				class="flex items-center gap-x-2 max-sm:flex-wrap max-sm:gap-y-2 max-sm:justify-end max-sm:empty:hidden"
 			>
+				<!-- OSLMS-CUSTOM: tab checks use the untranslated tab key, not the label -->
 				<template v-if="currentTabKey === 'Settings' && isAdmin">
 					<Badge v-if="childRef?.isDirty" theme="orange">
 						{{ __('Not Saved') }}
@@ -43,6 +45,7 @@
 						</Button>
 					</template>
 				</Dropdown>
+				<!-- OSLMS-CUSTOM: Import students button on the Dashboard tab (goToImport via childRef) -->
 				<Button
 					v-if="tabIndex === 1 && isAdmin"
 					variant="outline"
@@ -63,6 +66,7 @@
 					</template>
 					{{ __('Enroll') }}
 				</Button>
+				<!-- OSLMS-CUSTOM: announcement composer lives in the Announcements tab (childRef) -->
 				<Tooltip
 					v-if="currentTabKey === 'Announcements' && isAdmin && !readOnlyMode"
 					:text="
@@ -89,6 +93,7 @@
 					:loading="publishToggle.loading"
 					@click="togglePublishBatch"
 				>
+					<!-- OSLMS-CUSTOM: short publish label on phones -->
 					<span class="sm:hidden">
 						{{ batch.data?.published ? __('Unpubl.') : __('Publish') }}
 					</span>
@@ -99,6 +104,7 @@
 			</div>
 		</header>
 		<div>
+			<!-- OSLMS-CUSTOM: a Valutatore of this batch gets the tabs, not the public overview -->
 			<BatchOverview
 				v-if="!isAdmin && !isStudent && !isBatchValutatore"
 				:batch="batch"
@@ -111,6 +117,7 @@
 						>
 							<component v-if="tab.icon" :is="tab.icon" class="size-4" />
 							{{ tab.label }}
+							<!-- OSLMS-CUSTOM: unread notification badge per batch tab -->
 							<Badge v-if="tabBadgeCount(tab.key)" theme="red" size="sm">
 								{{ tabBadgeCount(tab.key) }}
 							</Badge>
@@ -202,6 +209,7 @@ const tabIndex = ref(0)
 const tabs = ref([])
 const openCertificateDialog = ref(false)
 
+// OSLMS-CUSTOM: batch tab -> notification section for the unread badges
 const TAB_KEY_TO_SECTION = {
 	Classes: 'classes',
 	Announcements: 'announcements',
@@ -219,6 +227,7 @@ const updateTabIndex = () => {
 	const hash = route.hash
 	if (hash) {
 		tabs.value.forEach((tab, index) => {
+			// OSLMS-CUSTOM: URL hash matches the untranslated tab key
 			if (tab.key?.toLowerCase() === hash.replace('#', '')) {
 				tabIndex.value = index
 			}
@@ -226,6 +235,7 @@ const updateTabIndex = () => {
 	}
 }
 
+// OSLMS-CUSTOM: opening a tab marks its batch notifications as read
 const markTabNotificationsRead = createResource({
 	url: 'os_lms.os_lms.api.mark_batch_tab_notifications_read',
 })
@@ -267,6 +277,7 @@ const onNotificationsPublished = () => {
 }
 
 onMounted(() => {
+	// OSLMS-CUSTOM: reload the batch (and its tab badges) on new notifications
 	socket.on('publish_lms_notifications', onNotificationsPublished)
 })
 
@@ -297,11 +308,13 @@ watch(batch, () => {
 // Keep the active tab in sync when only the URL hash changes (e.g. clicking a
 // batch notification while already inside the batch): the component is not
 // remounted and `batch` does not reload, so watch(batch) never fires.
+// OSLMS-CUSTOM: follow hash-only navigation (batch notification links)
 watch(() => route.hash, updateTabIndex)
 
 const updateTabs = () => {
 	addToTabs('Overview', __('Overview'), markRaw(BatchOverview), List)
 	if (!user.data) return
+	// OSLMS-CUSTOM: per-batch Valutatore gets the admin dashboard tab
 	if (isAdmin.value || isBatchValutatore.value) {
 		addToTabs(
 			'Dashboard',
@@ -317,6 +330,7 @@ const updateTabs = () => {
 			ClipboardPen,
 		)
 	}
+	// OSLMS-CUSTOM: Classes tab hidden when live classes are disabled site-wide
 	if (settingsStore.settings.data?.enable_live_classes !== 0) {
 		addToTabs('Classes', __('Classes'), markRaw(LiveClass), Laptop)
 	}
@@ -332,6 +346,7 @@ const updateTabs = () => {
 	}
 }
 
+// OSLMS-CUSTOM: tabs carry an untranslated key plus a translated label
 const addToTabs = (key, label, component, icon) => {
 	if (!tabs.value.some((tab) => tab.key === key)) {
 		tabs.value.push({
@@ -345,12 +360,14 @@ const addToTabs = (key, label, component, icon) => {
 
 const isAdmin = computed(() => {
 	return (
+		// OSLMS-CUSTOM: Docente manages batches like a moderator
 		user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente
 	)
 })
 
 // A "Valutatore" of this batch gets the admin Dashboard + the live class and
 // announcements tabs (read-only), but NOT the Settings tab nor publish controls.
+// OSLMS-CUSTOM: Valutatore of this batch (flag computed server-side)
 const isBatchValutatore = computed(() => {
 	return Boolean(batch.data?.is_valutatore)
 })
@@ -361,6 +378,7 @@ const isStudent = computed(() => {
 
 // Compare against the tab KEY (untranslated), not the label: the label is run
 // through __() so it becomes e.g. "Annunci" in Italian and would never match.
+// OSLMS-CUSTOM: header actions switch on the tab key, labels are translated
 const currentTabKey = computed(() => tabs.value[tabIndex.value]?.key)
 
 const publishToggle = createResource({

@@ -7,6 +7,7 @@
 	</header>
 	<!-- The viewport-height frame only applies where the two panes scroll
 	independently; on phones the stacked layout has to grow with its content. -->
+	<!-- OSLMS-CUSTOM: fixed-height frame only from md up, phones scroll the stacked panes -->
 	<div class="md:overflow-hidden md:h-[calc(100vh-3.2rem)]">
 		<Assignment
 			:assignmentID="assignmentID"

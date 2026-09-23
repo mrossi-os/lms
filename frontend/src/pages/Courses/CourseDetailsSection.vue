@@ -1,5 +1,6 @@
 <template>
 	<section v-if="doc" class="space-y-5">
+		<!-- OSLMS-CUSTOM: root v-if="doc" guard; section renders only once the course doc exists -->
 		<div class="text-base font-semibold text-ink-gray-9">
 			{{ __('Course details') }}
 		</div>
@@ -11,6 +12,7 @@
 				variant="outline"
 				@input="markDirty()"
 			/>
+			<!-- OSLMS-CUSTOM: os-link wrapper + translated inline-create placeholder -->
 			<Link
 				v-model="doc.category"
 				doctype="LMS Category"
@@ -24,6 +26,7 @@
 			/>
 			<CourseInstructorsField />
 			<div class="space-y-1.5">
+				<!-- OSLMS-CUSTOM: os_lms TagPicker (colored tags) replaces the upstream tags MultiSelect -->
 				<TagPicker v-model="doc.tags" @dirty="markDirty()" />
 			</div>
 			<FormControl
@@ -50,10 +53,12 @@
 </template>
 
 <script setup lang="ts">
+// OSLMS-CUSTOM: os_lms TagPicker replaces the upstream tags MultiSelect
 import TagPicker from '@/oslms/components/TagPicker.vue'
 import { FormControl } from 'frappe-ui'
 import { computed, inject } from 'vue'
 import { createLMSCategory } from '@/utils'
+// OSLMS-CUSTOM: os-link wrapper restyles the upstream Link control
 import Link from '@/oslms/components/Controls/Link.vue'
 import CourseInstructorsField from '@/pages/Courses/CourseInstructorsField.vue'
 import CourseThumbnailField from '@/pages/Courses/CourseThumbnailField.vue'

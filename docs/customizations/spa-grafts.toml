@@ -6057,3 +6057,557 @@ e togliere questa voce dall'inventario."""
   [[entries.sites]]
   file = "lms/public/css/style.css"
   anchor = 'input[type="checkbox"] {'
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 prima del merge di v2.61.0 — pagine di corsi e classi
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 prima del merge di v2.61.0 — gruppo "course-batch-pages"
+# (pagina consegna compito, dettaglio classe, schede Corsi/Valutazioni della
+# classe, sezioni del modulo corso, editor del corso, progressi dello studente)
+# ---------------------------------------------------------------------------
+
+# --- Pagina della consegna (AssignmentSubmission.vue) ------------------------
+
+[[entries]]
+id = "assignment-submission-mobile-frame"
+title = "Cornice ad altezza fissa della consegna solo da md in su"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Contenitore di pagina della voce assignment-mobile-single-column (che vive in
+components/Assignment.vue): su telefono consegna e testo del compito sono impilati e la pagina
+deve crescere con il contenuto, quindi overflow-hidden e l'altezza 100vh-3.2rem valgono solo da
+md in su, dove i due riquadri scorrono ciascuno per conto suo. Senza, su telefono la parte
+bassa (editor della risposta, pulsante Save) resta tagliata e non si raggiunge (commit
+96c6c73cb). Al merge di v2.61.0 l'upstream aggiunge nello script provideStudentView (Student
+View passata come query param all'iframe della lezione): righe lontane dal nostro div, nessun
+conflitto atteso."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/AssignmentSubmission.vue"
+  anchor = 'class="md:overflow-hidden md:h-[calc(100vh-3.2rem)]"'
+
+# --- Dettaglio della classe (BatchDetail.vue) ---------------------------------
+
+[[entries]]
+id = "batch-detail-mobile-header"
+title = "Intestazione della classe su due righe e compatta su telefono"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Su telefono l'intestazione della classe (breadcrumb, badge Pubblicata, azioni) non stava in una
+riga e spingeva la pagina di lato: sotto sm si impila, breadcrumb e badge (shrink-0) sopra, le
+azioni sotto allineate a destra e a capo se serve, la riga delle azioni sparisce se vuota
+(max-sm:empty:hidden) e i pulsanti usano testo xs. Il pulsante Pubblica/Annulla pubblicazione
+mostra su telefono l'etichetta corta «Unpubl.» (commit 924c9612b, d83ff3feb, 45ff5e0ab).
+ATTENZIONE al merge di v2.61.0: l'upstream («publish button only on settings») cambia il
+v-if del pulsante di pubblicazione in `isAdmin && currentTabLabel === 'Settings'`, proprio
+sopra le nostre righe (variant solid, span sm:hidden/max-sm:hidden): conflitto probabile.
+Accettare la regola upstream (pubblica solo sulla scheda Impostazioni) ma scriverla con
+currentTabKey (currentTabLabel da noi non esiste più, vedi batch-detail-tab-keys) e tenere le
+due etichette responsive. Le altre modifiche upstream dell'intestazione (label accessibili su
+Elimina e sul menu «...») sono fuori dalle nostre righe."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchDetail.vue"
+  anchor = "sm:flex-row sm:items-center sm:justify-between sm:gap-y-0"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchDetail.vue"
+  anchor = "max-sm:flex-wrap max-sm:gap-y-2 max-sm:justify-end max-sm:empty:hidden"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchDetail.vue"
+  anchor = "__('Unpubl.')"
+
+[[entries]]
+id = "batch-detail-tab-keys"
+title = "Schede della classe con chiave non tradotta ed etichetta tradotta"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le etichette delle schede passano da __() (Panoramica, Dashboard, Lezioni, Annunci,
+Discussioni, Impostazioni), quindi ogni confronto fatto sull'etichetta si rompe in italiano:
+ogni scheda porta una chiave inglese fissa (addToTabs(key, label, …)) e sulla chiave si basano
+l'hash dell'URL (#dashboard, #announcements… sia in lettura sia in scrittura), la scheda
+Discussioni del pannello e le azioni dell'intestazione (currentTabKey: Salva/Elimina su
+Impostazioni, «Fai un annuncio» su Annunci). Senza, in italiano i link diretti alle schede
+(anche dalle notifiche) aprono sempre la prima scheda e i pulsanti dell'intestazione non
+compaiono (commit 792fdab8c, 027c0c56f).
+ATTENZIONE al merge di v2.61.0: l'upstream introduce un nuovo uso di currentTabLabel nel v-if
+del pulsante di pubblicazione; da noi currentTabLabel non è definito, quindi se il merge lo
+lascia passare il pulsante sparisce su tutte le schede. Riscriverlo con currentTabKey. Stessa
+attenzione per qualunque nuovo `tab.label ==` o `currentTabLabel` in arrivo dall'upstream."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchDetail.vue"
+  anchor = "const addToTabs = (key, label, component, icon) => {"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchDetail.vue"
+  anchor = "if (tab.key?.toLowerCase() === hash.replace('#', '')) {"
+  symbol = "updateTabIndex"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchDetail.vue"
+  anchor = "const currentTabKey = computed(() => tabs.value[tabIndex.value]?.key)"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchDetail.vue"
+  anchor = "v-if=\"tab.key == 'Discussions'\""
+
+[[entries]]
+id = "batch-detail-hash-sync"
+title = "La scheda attiva segue anche il solo cambio di hash"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Cliccando una notifica della classe mentre si è già dentro quella classe cambia solo l'hash
+dell'URL: il componente non viene rimontato e batch non si ricarica, quindi watch(batch) non
+scatta e la scheda restava quella di prima. Un watch sull'hash richiama updateTabIndex
+(commit 0505a4140). v2.61.0 non tocca questa riga."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchDetail.vue"
+  anchor = "watch(() => route.hash, updateTabIndex)"
+
+[[entries]]
+id = "batch-detail-tab-notification-badges"
+title = "Contatore di notifiche non lette sulle schede della classe"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le schede Lezioni, Annunci e Discussioni mostrano un badge rosso con il numero di notifiche non
+lette di quella sezione per l'utente (batch.data.tab_notifications, calcolato dall'override
+os_lms di get_batch_details in override_utils.py). Aprire la scheda le segna come lette
+(os_lms.os_lms.api.mark_batch_tab_notifications_read) e azzera il badge; all'evento socket
+publish_lms_notifications la classe si ricarica per aggiornare i contatori. Lo slot tab-item
+riscrive il pulsante della scheda upstream per ospitare il badge (commit 22ebe74c4, 027c0c56f).
+Se l'upstream cambia lo slot delle Tabs di frappe-ui, riportare icona, etichetta e badge.
+v2.61.0 non tocca queste righe."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchDetail.vue"
+  anchor = "<Badge v-if=\"tabBadgeCount(tab.key)\" theme=\"red\" size=\"sm\">"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchDetail.vue"
+  anchor = "const TAB_KEY_TO_SECTION = {"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchDetail.vue"
+  anchor = "url: 'os_lms.os_lms.api.mark_batch_tab_notifications_read',"
+  symbol = "markTabNotificationsRead"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchDetail.vue"
+  anchor = "socket.on('publish_lms_notifications', onNotificationsPublished)"
+
+[[entries]]
+id = "batch-detail-valutatore-tabs"
+title = "Il Valutatore della classe vede le schede e la dashboard amministrativa"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il Valutatore è un ruolo per singola classe (campo valutatori di LMS Batch; is_valutatore
+calcolato lato server nel get_batch_details di lms/lms/utils.py, innesto backend nostro). Per la sua classe non vede la sola panoramica
+pubblica ma le schede, con la Dashboard amministrativa (andamento degli studenti da valutare),
+Lezioni, Annunci e Discussioni in sola lettura; NON ha la scheda Impostazioni né i comandi di
+pubblicazione, importazione e iscrizione, che restano legati a isAdmin (commit f25d5ca3e).
+Vedi memoria valutatore_role_scoped_per_batch. v2.61.0 non tocca queste righe."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchDetail.vue"
+  anchor = "v-if=\"!isAdmin && !isStudent && !isBatchValutatore\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchDetail.vue"
+  anchor = "if (isAdmin.value || isBatchValutatore.value) {"
+  symbol = "updateTabs"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchDetail.vue"
+  anchor = "return Boolean(batch.data?.is_valutatore)"
+  symbol = "isBatchValutatore"
+
+  [entries.visibility]
+  subject = "schede della classe con Dashboard amministrativa (senza Impostazioni né pubblicazione)"
+  allow = ["Moderator", "Batch Evaluator", "Docente", "Valutatore"]
+  deny = ["Guest"]
+
+[[entries]]
+id = "batch-detail-docente-admin"
+title = "Il Docente gestisce la classe come un moderatore"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Docente è il ruolo globale di istruttore del cliente (flag is_docente): nella pagina della
+classe conta come amministratore, quindi vede Dashboard amministrativa e Impostazioni, può
+pubblicare, importare e iscrivere studenti e fare annunci, come Moderator e Batch Evaluator.
+Vedi memoria docente_global_instructor_role. Nota: nelle schede Corsi e Valutazioni del modulo
+classe il pulsante Aggiungi è invece solo per Moderator (voce batch-content-add-moderator-only).
+v2.61.0 non tocca questa riga."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchDetail.vue"
+  anchor = "user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente"
+  symbol = "isAdmin"
+
+  [entries.visibility]
+  subject = "gestione della classe (Dashboard amministrativa, Impostazioni, pubblicazione, iscrizioni, annunci)"
+  allow = ["Moderator", "Batch Evaluator", "Docente"]
+  deny = ["Valutatore", "Student", "Guest"]
+
+[[entries]]
+id = "batch-detail-live-classes-toggle"
+title = "Scheda Lezioni della classe nascosta quando le lezioni dal vivo sono disattivate"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Con l'impostazione os_lms enable_live_classes a 0 (gruppo Configurazioni) le lezioni dal vivo
+sono spente per tutto il sito e la scheda Lezioni della classe non viene aggiunta. È la stessa
+regola di home-live-classes-toggle, che cita BatchDetail.vue senza avere un sito qui
+(commit b8276dcbe). v2.61.0 non tocca questa riga."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchDetail.vue"
+  anchor = "settingsStore.settings.data?.enable_live_classes !== 0"
+  symbol = "updateTabs"
+
+[[entries]]
+id = "batch-detail-header-actions"
+title = "Azioni della scheda nell'intestazione della classe (Importa, Fai un annuncio)"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Sulla scheda Dashboard l'intestazione ha, accanto a Iscrivi (ora solid), il pulsante Importa
+che chiama goToImport della dashboard via childRef (voce batch-dashboard-import-students). Sulla
+scheda Annunci il pulsante «Fai un annuncio» (solid) apre il composer montato dalla scheda
+stessa via childRef.openAnnouncementModal (voce announcement-modal-in-tab): BatchDetail non
+monta più AnnouncementModal e il menu «...» non ha più la voce annuncio (commit dd55dbbbc,
+265842cde, 027c0c56f). Il pulsante è disabilitato, con tooltip, se la classe non ha studenti.
+Nota: il v-if usa !readOnlyMode ma dd55dbbbc ha tolto `const readOnlyMode =
+window.read_only_mode` e l'upstream ha poi reintrodotto il riferimento nel template: oggi
+readOnlyMode non è definito (sempre falso), quindi in modalità sola lettura il pulsante resta
+visibile. Segnalato, non corretto. v2.61.0 non tocca queste righe."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchDetail.vue"
+  anchor = "@click=\"childRef?.goToImport?.()\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchDetail.vue"
+  anchor = "@click=\"childRef?.openAnnouncementModal?.()\""
+
+  [entries.visibility]
+  subject = "pulsanti Importa, Iscrivi e Fai un annuncio nell'intestazione della classe"
+  allow = ["Moderator", "Batch Evaluator", "Docente"]
+  deny = ["Valutatore", "Student", "Guest"]
+
+# --- Schede Corsi e Valutazioni della classe (BatchCourses.vue, Assessments.vue) ---
+
+[[entries]]
+id = "batch-content-add-moderator-only"
+title = "Aggiunta di corsi e valutazioni alla classe solo per Moderator"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+I pulsanti Aggiungi delle schede Corsi e Valutazioni della classe erano concessi a
+is_moderator || is_evaluator, ma i selettori che aprono caricano le opzioni con search_link,
+che applica i permessi di lettura del doctype: un Batch Evaluator non legge LMS Course, quindi
+il dialogo si apriva con una lista vuota e nessun messaggio. Il comando è offerto solo a chi
+può completarlo: is_moderator (commit 8a1086854). Le due schede vanno tenute allineate. Al
+merge di v2.61.0 l'upstream aggiunge solo :key e label accessibili nelle liste: nessun
+conflitto atteso. Se l'upstream ripristina `is_moderator || is_evaluator` il bug torna."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/BatchCourses.vue"
+  anchor = "return user.data?.is_moderator\n}"
+  symbol = "isAdmin"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/Assessments.vue"
+  anchor = "return user.data?.is_moderator\n}"
+  symbol = "canAddAssessments"
+
+  [entries.visibility]
+  subject = "pulsante Aggiungi nelle schede Corsi e Valutazioni della classe"
+  allow = ["Moderator"]
+  deny = ["Batch Evaluator", "Student"]
+
+[[entries]]
+id = "batch-courses-row-course-link"
+title = "Il clic su un corso della classe apre il corso giusto"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le righe della scheda Corsi sono righe figlie Batch Course: row.name è il nome della riga
+figlia, non del corso, quindi il link upstream verso CourseDetail portava a un corso
+inesistente. Il parametro usa row.course, il Link al corso (commit 30111a51d). Bug upstream
+ancora presente in v2.61.0, che non tocca questa riga."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/BatchCourses.vue"
+  anchor = "params: { courseName: row.course },"
+
+[[entries]]
+id = "batch-tabs-list-style-i18n"
+title = "Stile e traduzioni delle liste Corsi e Valutazioni della classe"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Ritocchi senza regola di business: le due liste portano la classe os-list-view del tema elite;
+le intestazioni di colonna della lista Corsi (Title, Evaluator) passano da __(); lo stato della
+valutazione nel badge della lista Valutazioni (vista anche dallo studente nella sua dashboard)
+passa da __() e compare in italiano. Differenze solo di formattazione: virgola finale in
+removeAssessments e `<div class="">` come radice di BatchCourses. Al merge di v2.61.0
+l'upstream aggiunge :key a ListHeaderItem/ListRow, un :label sul pulsante di eliminazione e
+trasforma in h2 il titolo «Assessments»: righe diverse dalle nostre, nessun conflitto atteso."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/Assessments.vue"
+  anchor = 'class="border rounded-lg os-list-view"'
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/Assessments.vue"
+  anchor = "{{ __(row[column.key]) }}"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/BatchCourses.vue"
+  anchor = 'class="border rounded-lg os-list-view"'
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/BatchCourses.vue"
+  anchor = "label: __('Evaluator'),"
+
+# --- Modulo corso: sezione Dettagli (CourseDetailsSection.vue) ------------------
+
+[[entries]]
+id = "course-details-tag-picker"
+title = "Selettore di tag colorati os_lms nella sezione Dettagli del corso"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il MultiSelect dei tag upstream (tag liberi senza colore) è sostituito dal TagPicker os_lms,
+che gestisce i tag con colore usati nelle card e nella panoramica del corso (voci
+courses-card-tag-colors e course-overview-tag-colors). Entrambi scrivono doc.tags come stringa
+separata da virgole; TagPicker segnala la modifica con @dirty. Tutta la logica upstream dei tag
+(parsedTags, tagsArray, tagOptions, «Create …») è stata rimossa (commit 6d6d2af78, ab9548b47,
+22776c717). Vedi memoria courseform_sectioned_custom_grafts.
+ATTENZIONE al merge di v2.61.0: l'upstream modifica proprio il trigger del MultiSelect che non
+abbiamo più (aggiunge :aria-expanded, text-left → text-start): conflitto sicuro nel blocco
+cancellato. Tenere il nostro <TagPicker> e scartare il blocco upstream; non reimportare
+MultiSelect né TagOption."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDetailsSection.vue"
+  anchor = "<TagPicker v-model=\"doc.tags\" @dirty=\"markDirty()\" />"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDetailsSection.vue"
+  anchor = "import TagPicker from '@/oslms/components/TagPicker.vue'"
+
+[[entries]]
+id = "course-details-os-link"
+title = "Campo Categoria del corso con il wrapper os-link e segnaposto tradotto"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il campo Categoria usa il wrapper os_lms Controls/Link.vue (div os-link attorno al Link
+upstream, per restilizzarlo con i colori del cliente senza toccare il componente base; come
+batch-form-os-link) e il segnaposto della creazione in linea passa da __() («Category name»).
+Il ripuntamento dell'import è del commit 3f21af05c (preselezione dei Link dopo il cambio di
+Combobox). Dopo un merge l'import può tornare a '@/components/Controls/Link.vue': va ripuntato.
+v2.61.0 non tocca queste righe."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDetailsSection.vue"
+  anchor = "import Link from '@/oslms/components/Controls/Link.vue'"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDetailsSection.vue"
+  anchor = ":inlineCreatePlaceholder=\"__('Category name')\""
+
+[[entries]]
+id = "course-details-doc-guard"
+title = "Sezione Dettagli del corso resa solo a documento caricato"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+La sezione ha v-if="doc" sulla radice, così il template (v-model="doc.title", doc.category,
+doc.tags…) non viene valutato prima che resource.doc esista. Introdotto da Gabriele Pagnotta nel
+commit «fix merge problems on course and lesson form» (6d6d2af78) insieme al titolo con
+text-base font-semibold al posto di text-base-semibold (ritocco di classe, senza regola).
+Confidenza bassa: la motivazione (errore a doc non ancora caricato) è dedotta, non
+documentata. v2.61.0 non tocca queste righe."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDetailsSection.vue"
+  anchor = "<section v-if=\"doc\" class=\"space-y-5\">"
+
+# --- Editor del corso (CourseEditor.vue) ----------------------------------------
+
+[[entries]]
+id = "course-editor-tab-hash"
+title = "L'editor del corso tiene l'hash della scheda Editor"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Compagna di course-outline-editor-hash. Quando l'editor del corso riscrive l'URL (lezione
+selezionata, modalità, lezione eliminata) e l'hash è vuoto, usa '#editor', che è l'id della
+scheda Editor in CourseDetail; l'upstream usa '#course editor', che nella nostra CourseDetail
+(confronto sull'id della scheda, non sull'etichetta tradotta) non corrisponde a nessuna
+scheda e riportava l'utente sulla Panoramica invece che nell'editor della lezione (commit
+9a71dfc70).
+ATTENZIONE al merge di v2.61.0 («make student view a real route instead of an editor mode»):
+l'upstream toglie l'anteprima studente dall'editor (Lesson embedded, StudentLessonSidebar,
+mode/lessonMode, syncModeToUrl, controlli Prev/Next/Zen) e riscrive syncSelectedToUrl;
+aggiunge un watch che manda i vecchi link ?lessonMode=preview alla route Lesson con
+studentView=1. Conflitti sicuri su syncSelectedToUrl e syncModeToUrl: prendere la versione
+upstream (sparisce la modalità preview) ma sostituire ogni '#course editor' con '#editor' —
+dopo il merge `grep -c "'#course editor'"` su questo file deve dare 0 (upstream ne porta 3:
+syncSelectedToUrl, watch legacy di lessonMode e, in v2.61.0, anche il nuovo link «Editor view»
+di Lesson.vue, fuori da questo gruppo). La prima ancora (hash '#editor' seguito da `const STORAGE_KEY`) oggi
+colpisce syncModeToUrl e, dopo un merge risolto bene, colpirà syncSelectedToUrl, che resta
+l'ultima funzione prima di STORAGE_KEY; la seconda è la lezione eliminata. Verificare anche che CourseDetail (fuori
+gruppo) non rimandi più a preview/mode dell'editor."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseEditor.vue"
+  anchor = "hash: route.hash || '#editor',\n\t})\n}\n\nconst STORAGE_KEY"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseEditor.vue"
+  anchor = "hash: route.hash || '#editor',\n\t\t\t\t})"
+
+# --- Modulo corso: campo Istruttori (CourseInstructorsField.vue) ----------------
+
+[[entries]]
+id = "course-instructors-theme-hook"
+title = "Aggancio os-multilink del tema elite sul campo Istruttori"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il campo Istruttori del modulo corso porta la classe os-multilink, l'aggancio con cui il tema
+elite (styles/theme/elite/main.css, .os-multilink div button) dà al campo lo sfondo degli altri
+input; stesso aggancio di course-form-overview-theme-hooks per «Corsi correlati» (commit
+93cb00289). Nel file ci sono anche solo virgole finali aggiunte dal formatter. v2.61.0 cambia
+solo l'import dei tipi ('@/types/api' → '@/types'): nessun conflitto atteso."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseInstructorsField.vue"
+  anchor = "class=\"os-multilink\""
+
+[[entries]]
+id = "course-instructors-orphan-removable"
+title = "Istruttore con account cancellato ancora rimovibile dal corso"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le opzioni del menu degli istruttori selezionati nascono da resolvedSelected, e deselezionarle
+lì è l'unico modo per togliere un istruttore. Un istruttore il cui utente è stato cancellato non
+torna mai dalla ricerca: l'upstream lo filtrava via, lasciandolo invisibile ma ancora nel
+modello, con ogni salvataggio del corso che falliva su un link rotto. Si ripiega sull'id
+utente grezzo, così resta elencato e si può rimuovere (commit 1f3614c65). v2.61.0 non tocca
+queste righe."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseInstructorsField.vue"
+  anchor = "resolvedDetails.value.get(v) ?? {"
+  symbol = "resolvedSelected"
+
+# --- Modulo corso: pubblicazione e certificati (CoursePublishSettings.vue) --------
+
+[[entries]]
+id = "course-trueskills-publish-settings"
+title = "Emissione del certificato TrueSkill configurabile per corso"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nella sezione «Prezzo e certificazione» il gestore del corso attiva l'emissione del certificato
+tramite TrueSkill (campo custom trueskills_certificate_enabled) e sceglie il template
+TrueSkill (trueskills_template_id, stringa: il select nativo confronta stringhe mentre Frappe
+può restituire un intero), caricato da os_lms.os_lms.trueskills.api.list_templates solo quando
+lo switch è attivo; con errore dell'API compare il messaggio restituito. «+ Crea nuovo
+template» apre TrueSkillsTemplateModal (os_lms) e seleziona il template appena creato. Solo
+corsi, solo Openbadge: vedi memorie trueskills_integration_decisions e
+trueskill_api_integration_brief (commit 58a05c965, 8b303956d, 265842cde, 14c85335e).
+Le stringhe sorgente di questo blocco sono in italiano dentro __() («Emetti certificato
+TrueSkill»…), quindi restano italiane anche con lingua inglese. v2.61.0 cambia solo l'import
+dei tipi, una riga sotto il nostro import di TrueSkillsTemplateModal: conflitto improbabile."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CoursePublishSettings.vue"
+  anchor = ":modelValue=\"Boolean(doc?.trueskills_certificate_enabled)\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CoursePublishSettings.vue"
+  anchor = "url: 'os_lms.os_lms.trueskills.api.list_templates',"
+  symbol = "trueskillTemplatesResource"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CoursePublishSettings.vue"
+  anchor = "<TrueSkillsTemplateModal"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CoursePublishSettings.vue"
+  anchor = "import TrueSkillsTemplateModal from '@/oslms/components/trueskills/TrueSkillsTemplateModal.vue'"
+
+[[entries]]
+id = "course-certificate-trueskill-exclusive"
+title = "Certificato di completamento interno e TrueSkill mutuamente esclusivi"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Per ogni corso il certificato è o quello interno di completamento o l'openbadge TrueSkill, mai
+entrambi: attivare uno switch spegne l'altro (setCompletionCertificate /
+setTrueskillCertificate). Per questo i due switch «Completion certificate» (sia nel ramo corso
+a pagamento sia in quello gratuito) non usano più v-model ma :modelValue +
+@update:modelValue="setCompletionCertificate" (commit 14c85335e, che ha sostituito il vincolo
+precedente di 8b303956d «TrueSkill richiede il certificato di completamento»). Stessa regola
+lato visualizzazione in trueskills-certificate-viewer. v2.61.0 non tocca queste righe."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CoursePublishSettings.vue"
+  anchor = "if (val) resource.doc.trueskills_certificate_enabled = 0"
+  symbol = "setCompletionCertificate"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CoursePublishSettings.vue"
+  anchor = "if (val) resource.doc.enable_certification = 0"
+  symbol = "setTrueskillCertificate"
+
+# --- Progressi dello studente (StudentCourseProgress.vue) -----------------------
+
+[[entries]]
+id = "student-course-progress-i18n-mobile"
+title = "Dialogo dei progressi dello studente tradotto e a una colonna su telefono"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Ritocchi senza regola di business nel dialogo aperto dalla dashboard del corso: titolo
+«Student Progress» passato da __(); stato di compiti ed esercizi di programmazione nel badge
+passato da __() (compare in italiano); con dati di valutazione la griglia è a una colonna sotto
+md e a due da md in su (commit 8024c18a4, 6828e3df9, b8ed38187).
+ATTENZIONE al merge di v2.61.0: l'upstream trasforma in <ul>/<li> con :key gli elenchi di
+lezioni, compiti ed esercizi, proprio dove stanno i nostri {{ __(assignment.status) }} e
+{{ __(exercise.status) }}: conflitto sicuro. Prendere la struttura upstream (ul/li) e
+rimettere __() sui due stati nei badge."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/StudentCourseProgress.vue"
+  anchor = ":title=\"__('Student Progress')\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/StudentCourseProgress.vue"
+  anchor = "{{ __(assignment.status) }}"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/StudentCourseProgress.vue"
+  anchor = "{{ __(exercise.status) }}"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/StudentCourseProgress.vue"
+  anchor = ":class=\"hasAssessmentData ? 'grid-cols-1 md:grid-cols-2' : ''\""

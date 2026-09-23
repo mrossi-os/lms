@@ -128,6 +128,7 @@ function syncSelectedToUrl(number) {
 		return
 	router.replace({
 		query: { ...route.query, editLesson: number, lessonMode: nextLessonMode },
+		// OSLMS-CUSTOM: '#editor' is the CourseDetail tab id; '#course editor' matches no tab
 		hash: route.hash || '#editor',
 	})
 }
@@ -137,6 +138,7 @@ function syncModeToUrl(newMode) {
 	if (route.query.lessonMode === newMode) return
 	router.replace({
 		query: { ...route.query, lessonMode: newMode },
+		// OSLMS-CUSTOM: '#editor' is the CourseDetail tab id; '#course editor' matches no tab
 		hash: route.hash || '#editor',
 	})
 }
@@ -289,6 +291,7 @@ watch(
 				const { editLesson, ...rest } = route.query
 				router.replace({
 					query: rest,
+					// OSLMS-CUSTOM: '#editor' is the CourseDetail tab id; '#course editor' matches no tab
 					hash: route.hash || '#editor',
 				})
 			}

@@ -6,6 +6,7 @@
 	>
 		<template #default>
 			<div class="text-base text-ink-gray-9 max-h-[70vh] overflow-y-auto">
+				<!-- OSLMS-CUSTOM: Dialog title translated with __('Student Progress') -->
 				<div class="flex justify-between mb-5 px-2">
 					<div class="flex items-center gap-x-2">
 						<Avatar
@@ -33,6 +34,7 @@
 					</div>
 				</div>
 
+				<!-- OSLMS-CUSTOM: assessment columns stack in one column below md -->
 				<div
 					class="grid gap-5"
 					:class="hasAssessmentData ? 'grid-cols-1 md:grid-cols-2' : ''"
@@ -118,6 +120,7 @@
 									{{ assignment.assignment_title }}
 								</div>
 								<Badge :theme="getAssessmentStatusTheme(assignment.status)">
+									<!-- OSLMS-CUSTOM: translated assignment status -->
 									{{ __(assignment.status) }}
 								</Badge>
 							</div>
@@ -140,6 +143,7 @@
 									{{ exercise.exercise_title }}
 								</div>
 								<Badge :theme="getAssessmentStatusTheme(exercise.status)">
+									<!-- OSLMS-CUSTOM: translated exercise status -->
 									{{ __(exercise.status) }}
 								</Badge>
 							</div>

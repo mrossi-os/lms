@@ -12,6 +12,7 @@
 			</Button>
 		</div>
 		<div v-if="courses.data?.length" class="text-sm">
+			<!-- OSLMS-CUSTOM: os-list-view theme class; row link uses the course, not the child row name -->
 			<ListView
 				:columns="getCoursesColumns()"
 				:rows="courses.data"
@@ -117,6 +118,7 @@ const openCourseModal = () => {
 const getCoursesColumns = () => {
 	return [
 		{
+			// OSLMS-CUSTOM: translated column labels
 			label: __('Title'),
 			key: 'title',
 		},
@@ -143,6 +145,7 @@ const isAdmin = () => {
 	}
 	// A "Batch Evaluator" may open the batch settings but has no read access to
 	// LMS Course, so adding a course would open a dialog with an empty list.
+	// OSLMS-CUSTOM: only moderators add courses to a batch
 	return user.data?.is_moderator
 }
 </script>

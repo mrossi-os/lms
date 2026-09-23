@@ -12,6 +12,7 @@
 			</Button>
 		</div>
 		<div v-if="assessments.data?.length" class="text-sm">
+			<!-- OSLMS-CUSTOM: os-list-view theme class on the assessments list -->
 			<ListView
 				:columns="getAssessmentColumns()"
 				:rows="assessments.data"
@@ -45,6 +46,7 @@
 								</div>
 								<div v-else-if="isNaN(row[column.key])">
 									<Badge :theme="getStatusTheme(row[column.key])">
+										<!-- OSLMS-CUSTOM: translated assessment status -->
 										{{ __(row[column.key]) }}
 									</Badge>
 								</div>
@@ -200,6 +202,7 @@ const getRowRoute = (row) => {
 const canAddAssessments = () => {
 	if (readOnlyMode) return false
 	// Kept in sync with the Courses tab: an evaluator cannot add batch content.
+	// OSLMS-CUSTOM: only moderators add assessments (Batch Evaluator cannot use the picker)
 	return user.data?.is_moderator
 }
 

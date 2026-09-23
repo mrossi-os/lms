@@ -1,4 +1,5 @@
 <template>
+	<!-- OSLMS-CUSTOM: os-multilink hook for the elite theme input background -->
 	<MultiLink
 		ref="multiLinkRef"
 		v-model="instructors"
@@ -134,6 +135,7 @@ watch(
 // so dropping it here left it stuck on the course — invisible in the list, yet
 // still in the model, failing every save on a broken link. Fall back to the
 // raw user id so it stays listed and can be removed.
+// OSLMS-CUSTOM: keep instructors with a deleted account listed so they can be removed
 const resolvedSelected = computed<InstructorOption[]>(() =>
 	instructors.value.map(
 		(v) =>
