@@ -34,6 +34,7 @@
 			</video>
 		</div>
 		<div v-else-if="block.includes('{{ PDF')">
+			<!-- OSLMS-CUSTOM: markdown PDF macro rendered by PdfBlock (readable on mobile) -->
 			<PdfBlock :file="getId(block)" :toolbar="false" />
 		</div>
 		<div v-else-if="block.includes('{{ Audio')">

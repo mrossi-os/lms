@@ -1,5 +1,6 @@
 import { useTimeAgo } from '@vueuse/core'
 
+// OSLMS-CUSTOM: Italian relative dates ('ieri', '3 giorni fa') across the SPA.
 // Italian relative-time strings for useTimeAgo (English-only by default).
 // Mirrors @vueuse's default message shape: `past`/`future` receive the
 // already-formatted unit string and only wrap it when it contains a number, so

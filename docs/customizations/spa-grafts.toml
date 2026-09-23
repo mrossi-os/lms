@@ -2365,6 +2365,10 @@ in LessonContent.vue per le lezioni markdown."""
   anchor = "const app = createApp(PdfBlock, {"
   symbol = "Upload.renderFile"
 
+  [[entries.sites]]
+  file = "frontend/src/components/LessonContent.vue"
+  anchor = "<PdfBlock :file=\"getId(block)\" :toolbar=\"false\" />"
+
   [entries.checks]
   unit = "frontend/src/tests/pdfBlock.test.ts"
 
@@ -5198,3 +5202,20 @@ v-if="!showTabs" e class="flex-1" senza min-h-0 (rimosso di proposito in ab9548b
   subject = "vista a schede (Panoramica + Dashboard) del dettaglio corso"
   allow = ["Valutatore (della classe)", "Moderator", "Docente", "course-instructor"]
   deny = ["Student", "Guest"]
+
+[[entries]]
+id = "time-ago-italian"
+title = "Date relative in italiano («ieri», «3 giorni fa»)"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+useTimeAgo di @vueuse produce solo testi inglesi («3 days ago»), che comparivano in italiano
+misto nelle liste (notifiche, discussioni, consegne). timeAgo gli passa i messaggi italiani, con
+le forme singolari «ieri», «domani», «il mese scorso» non precedute da «fa» (commit df691861f).
+ATTENZIONE al merge di v2.60.0: l'upstream riscrive altre funzioni dello stesso file
+(HTML_ESCAPE_MAP), non timeAgo."""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/format.js"
+  anchor = "useTimeAgo(date, { messages: IT_TIME_AGO_MESSAGES })"
+  symbol = "timeAgo"
