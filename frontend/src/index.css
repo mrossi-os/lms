@@ -1,5 +1,4 @@
 @import 'frappe-ui/style.css';
-@import './styles/codemirror.css';
 @import './styles/blockEditor.css';
 /* OSLMS-CUSTOM: load the client's Elite theme on top of frappe-ui */
 @import './styles/theme/elite/main.css';

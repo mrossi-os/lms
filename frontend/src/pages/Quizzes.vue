@@ -17,8 +17,8 @@
 		<div
 			class="mx-5 mb-5 flex flex-col justify-between gap-y-4 sm:flex-row sm:items-center"
 		>
-			<div class="text-lg font-semibold text-ink-gray-9">
-				{{ __('{0} Quizzes').format(quizzes.data?.length || 0) }}
+			<div class="text-lg-semibold text-ink-gray-9">
+				{{ __('{0} Quizzes').format(totalQuizzes.data || 0) }}
 			</div>
 			<FormControl v-model="search" type="text" :placeholder="__('Search')">
 				<template #prefix>
@@ -44,7 +44,7 @@
 			<ListHeader class="mb-2 grid items-center rounded bg-surface-gray-2 p-2">
 				<ListHeaderItem :item="item" v-for="item in quizColumns">
 					<template v-if="!isMobile" #prefix="{ item }">
-						<FeatherIcon :name="item.icon?.toString()" class="h-4 w-4" />
+						<span :class="[item.icon, 'h-4 w-4']" aria-hidden="true" />
 					</template>
 				</ListHeaderItem>
 			</ListHeader>
@@ -63,10 +63,10 @@
 							<ListRowItem :item="row[column.key]" :align="column.align">
 								<div v-if="column.key == 'show_answers'">
 									<!-- OSLMS-CUSTOM: green check icon instead of a disabled checkbox for Show Answers -->
-									<FeatherIcon
+									<span
 										v-if="row[column.key]"
-										name="check"
-										class="h-4 w-4 text-ink-green-3"
+										class="lucide-check h-4 w-4 text-ink-green-3"
+										aria-hidden="true"
 									/>
 								</div>
 								<div
@@ -131,7 +131,6 @@ import {
 	Button,
 	createListResource,
 	createResource,
-	FeatherIcon,
 	FormControl,
 	ListView,
 	ListRows,
@@ -276,42 +275,42 @@ const quizColumns = computed(() => {
 			label: __('Title'),
 			key: 'title',
 			width: 2,
-			icon: 'file-text',
+			icon: 'lucide-file-text',
 		},
 		{
 			label: __('Total Marks'),
 			key: 'total_marks',
 			width: 0.5,
 			align: 'center',
-			icon: 'hash',
+			icon: 'lucide-hash',
 		},
 		{
 			label: __('Passing Percentage'),
 			key: 'passing_percentage',
 			width: 1,
 			align: 'center',
-			icon: 'percent',
+			icon: 'lucide-percent',
 		},
 		{
 			label: __('Max Attempts'),
 			key: 'max_attempts',
 			width: 0.5,
 			align: 'center',
-			icon: 'repeat',
+			icon: 'lucide-repeat',
 		},
 		{
 			label: __('Show Answers'),
 			key: 'show_answers',
 			width: 0.5,
 			align: 'center',
-			icon: 'eye',
+			icon: 'lucide-eye',
 		},
 		{
 			label: __('Updated On'),
 			key: 'modified',
 			width: 1,
 			align: 'right',
-			icon: 'clock',
+			icon: 'lucide-clock',
 		},
 	]
 	// OSLMS-CUSTOM: only title, passing percentage and updated-on columns on phones

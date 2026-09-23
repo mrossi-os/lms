@@ -11,7 +11,7 @@
 			class="border-b md:border-b-0 md:border-e p-5 md:overflow-y-auto md:h-[calc(100vh-3.2rem)]"
 			:class="{ 'md:h-full': !showTitle }"
 		>
-			<div v-if="showTitle" class="text-xl-semibold mb-5 text-ink-gray-9">
+			<div v-if="showTitle" class="text-lg-semibold mb-5 text-ink-gray-9">
 				<div v-if="submissionName === 'new'">
 					{{ __('Submission by') }} {{ user.data?.full_name }}
 				</div>
@@ -50,7 +50,11 @@
 							:label="__('Save')"
 							combo="Mod+S"
 						>
-							<Button variant="solid" @click="submitAssignment()">
+							<Button
+								variant="solid"
+								:loading="isSubmitting"
+								@click="submitAssignment()"
+							>
 								{{ __('Save') }}
 							</Button>
 						</ShortcutTooltip>
@@ -133,22 +137,19 @@
 					<div class="text-p-sm-medium text-ink-gray-7 mb-1.5">
 						{{ __('Enter a URL') }}
 					</div>
-					<FormControl
-						v-model="answer"
-						type="text"
-						:readonly="!canModifyAssignment"
-					/>
+					<!-- OSLMS-CUSTOM: whoever grades sees the learner's answer read-only -->
+					<FormControl v-model="answer" type="text" :readonly="answerReadOnly" />
 				</div>
 				<div v-else>
 					<div class="text-sm mb-2 text-ink-gray-7">
 						{{ __('Write your answer here') }}
 					</div>
-					<TextEditor
+					<!-- OSLMS-CUSTOM: whoever grades sees the learner's answer read-only -->
+					<RichTextEditor
 						:content="answer"
 						@change="(val) => (answer = val)"
-						:editable="true"
-						:fixedMenu="true"
-						:readonly="!canModifyAssignment"
+						:editable="!answerReadOnly"
+						:fixedMenu="!answerReadOnly"
 						:uploadArgs="{
 							private: true,
 						}"
@@ -189,7 +190,7 @@
 						<div class="text-p-sm-medium text-ink-gray-7 mb-1.5">
 							{{ __('Comments') }}
 						</div>
-						<TextEditor
+						<RichTextEditor
 							:content="comments"
 							@change="
 								(val) => {
@@ -220,7 +221,6 @@ import {
 	createDocumentResource,
 	FileUploader,
 	FormControl,
-	TextEditor,
 	toast,
 } from 'frappe-ui'
 import { computed, inject, ref, watch } from 'vue'
@@ -231,6 +231,7 @@ import {
 } from '@/composables/useKeyboardShortcuts'
 import { useRouter } from 'vue-router'
 import { validateFile } from '@/utils'
+import RichTextEditor from '@/components/RichTextEditor.vue'
 
 const answer = ref(null)
 const attachment = ref(null)
@@ -295,7 +296,12 @@ watch(submissionResource, () => {
 	}
 })
 
+const isSubmitting = ref(false)
+
 const submitAssignment = () => {
+	if (isSubmitting.value) return
+	isSubmitting.value = true
+
 	if (props.submissionName != 'new') {
 		updateSubmission()
 	} else {
@@ -323,6 +329,7 @@ const addNewSubmission = () => {
 		toast.error(
 			__('Please provide an answer or upload a file before submitting.'),
 		)
+		isSubmitting.value = false
 		return
 	}
 	call('frappe.client.insert', {
@@ -347,6 +354,9 @@ const addNewSubmission = () => {
 			toast.error(err.messages?.[0] || err)
 			console.error(err)
 		})
+		.finally(() => {
+			isSubmitting.value = false
+		})
 }
 
 const updateSubmission = () => {
@@ -366,9 +376,11 @@ const updateSubmission = () => {
 		{
 			onSuccess(data) {
 				isDirty.value = false
+				isSubmitting.value = false
 				toast.success(__('Changes saved successfully'))
 			},
 			onError(err) {
+				isSubmitting.value = false
 				toast.error(err.messages?.[0] || err)
 				console.error(err)
 			},
@@ -430,6 +442,15 @@ const canGradeSubmission = computed(() => {
 		router.currentRoute.value.name == 'AssignmentSubmission'
 	)
 })
+
+// OSLMS-CUSTOM: only the learner who owns an existing submission may edit its answer;
+// graders (Valutatore, instructors, moderators) review it without changing it.
+const answerReadOnly = computed(
+	() =>
+		props.submissionName != 'new' &&
+		Boolean(submissionResource.doc?.owner) &&
+		submissionResource.doc?.owner != user.data?.name
+)
 
 const canModifyAssignment = computed(() => {
 	if (props.submissionName == 'new') {

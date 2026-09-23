@@ -11,7 +11,7 @@
 			<!-- OSLMS-CUSTOM: optional newLabel overrides the create-button wording -->
 			{{ newLabel || __('New {0}').format(singularize(title)) }}
 		</Button>
-		<div class="text-3xl-semibold text-ink-gray-9">
+		<div class="text-2xl-semibold text-ink-gray-9">
 			{{ __(title) }}
 		</div>
 	</div>

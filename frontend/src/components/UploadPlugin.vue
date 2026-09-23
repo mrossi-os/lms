@@ -70,29 +70,21 @@ const props = defineProps({
 		type: Function,
 		required: true,
 	},
-	docname: {
-		type: String,
-		default: null,
-	},
-	fieldname: {
-		type: String,
-		default: 'content',
+	uploadContext: {
+		type: Object,
+		default: () => ({}),
 	},
 })
 
-// OSLMS-CUSTOM: upload unattached while the lesson has no docname yet (417 on newer Frappe)
+// Attach to the lesson only once it exists: a null docname with doctype set
+// makes the File doctype reject the upload.
 const uploadArgs = computed(() => {
-	// Only attach the file to the lesson record once it exists. A brand-new,
-	// unsaved lesson has no docname yet; sending doctype without a valid docname
-	// makes newer Frappe reject the upload (417, "Attached To Name must be a
-	// string or an integer"). Upload unattached in that case — the block only
-	// needs the returned file_url, and the file gets linked when the lesson is
-	// saved and re-opened with a docname.
 	const args = { private: true }
-	if (props.docname) {
+	const docname = props.uploadContext?.docname
+	if (docname) {
 		args.doctype = 'Course Lesson'
-		args.docname = props.docname
-		args.fieldname = props.fieldname
+		args.docname = docname
+		args.fieldname = props.uploadContext?.fieldname || 'content'
 	}
 	return args
 })

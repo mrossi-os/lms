@@ -33,7 +33,7 @@
 		<div
 			class="mb-5 flex flex-col justify-between space-y-4 lg:flex-row lg:items-center lg:space-y-0"
 		>
-			<div class="text-xl-semibold text-ink-gray-9">
+			<div class="text-lg-semibold text-ink-gray-9">
 				{{ __('All Courses') }}
 			</div>
 			<div
@@ -42,7 +42,7 @@
 				<!-- OSLMS-CUSTOM: students only have the Enrolled tab, so the switcher is hidden when a single tab is left -->
 				<TabButtons
 					v-if="courseTabs.length > 1"
-					:buttons="courseTabs"
+					:options="courseTabs"
 					v-model="currentTab"
 					class="w-fit"
 				/>
@@ -427,7 +427,7 @@ const courseMenu = computed(() => {
 	const menu = [
 		{
 			label: __('New Course'),
-			icon: 'book-open',
+			icon: 'lucide-book-open',
 			onClick() {
 				showCourseModal.value = true
 			},
@@ -440,7 +440,7 @@ const courseMenu = computed(() => {
 	menu.push(
 		{
 			label: __('Import via Data Import Tool'),
-			icon: 'upload',
+			icon: 'lucide-upload',
 			onClick() {
 				router.push({
 					name: 'NewDataImport',
@@ -450,7 +450,7 @@ const courseMenu = computed(() => {
 		},
 		{
 			label: __('Import via ZIP'),
-			icon: 'folder-plus',
+			icon: 'lucide-folder-plus',
 			onClick() {
 				showCourseImportModal.value = true
 			},

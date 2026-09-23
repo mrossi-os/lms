@@ -21,7 +21,7 @@
 					<span
 						class="size-3 rounded-full"
 						:style="{
-							backgroundColor: getColor(color.toLowerCase(), 400),
+							backgroundColor: `var(--${color.toLowerCase()}-400)`,
 						}"
 					></span>
 					<span>
@@ -58,7 +58,6 @@ import { computed, inject, ref, watch } from 'vue'
 import type { Note, Notes } from '@/components/Notes/types'
 import {
 	blockQuotesClick,
-	getColor,
 	getRangeOffset,
 	highlightText,
 	removeHighlight,

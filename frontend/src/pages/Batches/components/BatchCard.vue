@@ -4,7 +4,7 @@
 		style="min-height: 150px"
 	>
 		<!-- OSLMS-CUSTOM: card class on the root for the os theme -->
-		<div class="text-xl-semibold leading-5 mb-2 text-ink-gray-9">
+		<div class="text-lg-semibold leading-5 mb-2 text-ink-gray-9">
 			{{ batch.title }}
 		</div>
 		<Badge

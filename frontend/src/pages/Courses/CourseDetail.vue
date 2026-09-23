@@ -105,7 +105,8 @@
 		<LessonHelp v-model="showLessonHelp" />
 
 		<div v-if="!showTabs" class="flex-1">
-			<CourseOverview :course="course" />
+			<CourseOverview v-if="course.data" :course="course" />
+			<SkeletonLoader v-else variant="course-page" />
 		</div>
 		<div v-else class="relative flex flex-1 flex-col">
 			<Tabs :tabs="tabs" v-model="tabIndex">
@@ -189,6 +190,7 @@ import { sessionStore } from '@/stores/session'
 import { useSettings } from '@/stores/settings'
 import LayoutHeader from '@/components/Layouts/LayoutHeader.vue'
 import CourseOverview from '@/pages/Courses/CourseOverview.vue'
+import SkeletonLoader from '@/components/SkeletonLoader.vue'
 import CourseDashboard from '@/pages/Courses/CourseDashboard.vue'
 import CourseEditor from '@/pages/Courses/CourseEditor.vue'
 import CourseForm from '@/pages/Courses/CourseForm.vue'

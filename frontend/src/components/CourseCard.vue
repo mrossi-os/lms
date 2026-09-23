@@ -20,10 +20,10 @@
 				class="flex items-center justify-center text-white flex-1 font-extrabold my-auto px-5 text-center leading-6 h-full"
 				:class="
 					course.title.length > 32
-						? 'text-xl'
+						? 'text-lg'
 						: course.title.length > 20
-						? 'text-3xl'
-						: 'text-4xl'
+						? 'text-2xl'
+						: 'text-3xl'
 				"
 			>
 				{{ course.title }}
@@ -76,7 +76,7 @@
 			<div
 				v-if="course.image"
 				class="font-semibold leading-6"
-				:class="course.title.length > 32 ? 'text-xl' : 'text-3xl'"
+				:class="course.title.length > 32 ? 'text-lg' : 'text-2xl'"
 			>
 				{{ course.title }}
 			</div>
@@ -111,7 +111,6 @@ import { computed } from 'vue'
 import ProgressBar from '@/components/ProgressBar.vue'
 // OSLMS-CUSTOM: colored LMS OS Tag badges (tag colors provided by Courses.vue)
 import CourseTagBadges from '@/oslms/components/CourseTagBadges.vue'
-import colors from '@/utils/frappe-ui-colors.json'
 
 const { user } = sessionStore()
 
@@ -135,10 +134,8 @@ const formattedDuration = computed(() => {
 })
 
 const gradientColor = computed(() => {
-	let themeMode = theme.value === 'dark' ? 'darkMode' : 'lightMode'
 	let color = props.course.card_gradient?.toLowerCase() || 'blue'
-	let colorMap = colors[themeMode][color]
-	return `linear-gradient(to top right, black, ${colorMap[400]})`
+	return `linear-gradient(to top right, black, var(--${color}-400))`
 })
 </script>
 

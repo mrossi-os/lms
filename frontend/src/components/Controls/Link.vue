@@ -8,6 +8,7 @@
 		/>
 		<!-- OSLMS-CUSTOM: bound to the stale Combobox override API (@input/@focus, open-on-click, no size/loading) -->
 		<Combobox
+			:open="isOpen"
 			:modelValue="value"
 			:options="resolvedOptions"
 			:placeholder="attrs.placeholder as string"
@@ -123,6 +124,7 @@ const valuePropPassed = computed<boolean>(() => 'value' in attrs)
 
 const creating = ref<boolean>(false)
 const newItemName = ref<string>('')
+const isOpen = ref<boolean>(false)
 let loaded = false
 
 const value = computed<string>(() =>
@@ -212,6 +214,9 @@ function onFocus(): void {
 	// itself opens via `open-on-click` (not `open-on-focus`): focusing keeps the
 	// list from re-opening when the Combobox restores focus to the input after a
 	// selection, which otherwise made the dropdown impossible to close by mouse.
+	// Upstream's `isOpen` / `:open` binding is kept but inert: the stale override
+	// declares the `open` prop without reading it and never emits update:open, so
+	// isOpen stays false and handleCreate's `isOpen.value = false` is a no-op.
 	if (!loaded) reload('')
 }
 
@@ -242,6 +247,8 @@ function handleCreate(): void {
 		creating.value = true
 		return
 	}
+	// Close the dropdown so it doesn't stack on top of the modal onCreate opens.
+	isOpen.value = false
 	props.onCreate?.(null)
 }
 

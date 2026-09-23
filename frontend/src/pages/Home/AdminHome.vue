@@ -2,7 +2,7 @@
 	<div>
 		<div class="mt-10 space-y-10">
 			<div v-if="evals?.data?.length">
-				<div class="font-semibold text-lg text-ink-gray-9 mb-3">
+				<div class="text-lg-semibold text-ink-gray-9 mb-3">
 					{{ __('Upcoming Evaluations') }}
 				</div>
 				<div class="grid grid-cols-1 md:grid-cols-4 gap-5">
@@ -11,7 +11,7 @@
 						class="border hover:border-outline-gray-3 rounded-md p-3 flex flex-col h-full cursor-pointer"
 						@click="redirectToProfile()"
 					>
-						<div class="font-semibold text-ink-gray-9 text-lg leading-5 mb-3">
+						<div class="text-ink-gray-9 text-lg-semibold leading-5 mb-3">
 							{{ evaluation.course_title }}
 						</div>
 						<div class="text-ink-gray-7">
@@ -38,7 +38,7 @@
 				</div>
 			</div>
 			<div v-if="liveClasses?.data?.length">
-				<div class="font-semibold text-lg text-ink-gray-9 mb-3">
+				<div class="text-lg-semibold text-ink-gray-9 mb-3">
 					{{ __('Upcoming Live Classes') }}
 				</div>
 				<div class="grid grid-cols-1 md:grid-cols-4 gap-5">
@@ -85,7 +85,7 @@
 
 		<div v-if="createdCourses.data?.length" class="mt-10">
 			<div class="flex items-center justify-between mb-3">
-				<span class="font-semibold text-lg text-ink-gray-9">
+				<span class="text-lg-semibold text-ink-gray-9">
 					{{ __('Courses Created') }}
 				</span>
 				<router-link
@@ -113,7 +113,7 @@
 
 		<div v-if="createdBatches.data?.length" class="mt-10">
 			<div class="flex items-center justify-between mb-3">
-				<span class="font-semibold text-lg text-ink-gray-9">
+				<span class="text-lg-semibold text-ink-gray-9">
 					{{ __('Upcoming Batches') }}
 				</span>
 				<router-link
@@ -148,8 +148,8 @@
 			"
 			class="flex flex-col items-center justify-center mt-60"
 		>
-			<GraduationCap class="size-10 mx-auto stroke-1 text-ink-gray-5" />
-			<div class="text-lg font-semibold text-ink-gray-7 mb-1.5">
+			<span class="lucide-graduation-cap size-10 mx-auto text-ink-gray-5" />
+			<div class="text-lg-semibold text-ink-gray-7 mb-1.5">
 				{{ __('No courses created') }}
 			</div>
 			<div

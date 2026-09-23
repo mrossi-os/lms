@@ -4,7 +4,7 @@
 			<UpcomingEvaluations :forHome="true" />
 			<WelcomeWithOverallProgress />
 			<div v-if="myLiveClasses.data?.length">
-				<div class="font-semibold text-lg mb-3 text-ink-gray-9">
+				<div class="font-semibold text-md mb-3 text-ink-gray-9">
 					{{ __('Upcoming Live Classes') }}
 				</div>
 				<div class="grid grid-cols-1 md:grid-cols-4 gap-5">
@@ -22,7 +22,7 @@
 
 		<div v-if="myCourses.data?.length" class="mt-10">
 			<div class="flex items-center justify-between mb-3">
-				<span class="font-semibold text-lg text-ink-gray-9">
+				<span class="font-semibold text-md text-ink-gray-9">
 					{{
 						myCourses.data[0].membership
 							? __('My Courses')
@@ -159,7 +159,7 @@
 
 		<div v-if="myBatches.data?.length" class="mt-10">
 			<div class="flex items-center justify-between mb-3">
-				<span class="font-semibold text-lg text-ink-gray-9">
+				<span class="font-semibold text-md text-ink-gray-9">
 					{{
 						myBatches.data?.[0].students?.includes(user.data?.name)
 							? __('My Batches')

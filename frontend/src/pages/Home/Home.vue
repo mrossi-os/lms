@@ -5,7 +5,7 @@
 
 		<div class="space-y-2">
 			<div class="flex items-center justify-between">
-				<div class="text-3xl-bold text-ink-gray-9">
+				<div class="text-2xl-bold text-ink-gray-9">
 					{{ __('Hey') }}, {{ user.data?.full_name }} 👋
 				</div>
 				<div>
@@ -23,7 +23,7 @@
 				</div>
 			</div>
 
-			<div class="text-xl text-ink-gray-6 leading-6">
+			<div class="text-lg text-ink-gray-6 leading-6">
 				{{ subtitle }}
 			</div>
 		</div>

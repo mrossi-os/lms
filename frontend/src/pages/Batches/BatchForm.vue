@@ -201,7 +201,6 @@
 							v-model="batchDetail.doc.description"
 							:label="__('Short Description')"
 							type="textarea"
-							:rows="4"
 							:placeholder="__('Short description of the batch')"
 							:required="true"
 							variant="outline"
@@ -220,7 +219,7 @@
 						<div
 							class="rounded-t-lg rounded-b-md outline-none transition-[box-shadow] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]"
 						>
-							<TextEditor
+							<RichTextEditor
 								:id="batchDetailsId"
 								:content="batchDetail.doc.batch_details"
 								@change="(val: string) => updateBatchDetails(val)"
@@ -288,14 +287,12 @@
 							v-model="meta.description"
 							:label="__('Meta Description')"
 							type="textarea"
-							:rows="4"
 							variant="outline"
 						/>
 						<FormControl
 							v-model="meta.keywords"
 							:label="__('Meta Keywords')"
 							type="textarea"
-							:rows="4"
 							:placeholder="__('Comma separated keywords')"
 							variant="outline"
 						/>
@@ -347,7 +344,6 @@ import {
 	Combobox,
 	FormControl,
 	FormLabel,
-	TextEditor,
 	createDocumentResource,
 	createResource,
 	toast,
@@ -382,6 +378,7 @@ import FeatureSectionEditor from '@/oslms/components/FeatureSectionEditor.vue'
 import type { LMSBatch } from '@/types/lms/LMSBatch'
 import type { CourseInstructor } from '@/types/lms/CourseInstructor'
 import type { Resource, BatchDetails, SessionUser } from '@/types/api'
+import RichTextEditor from '@/components/RichTextEditor.vue'
 
 interface DialogAction {
 	label: string

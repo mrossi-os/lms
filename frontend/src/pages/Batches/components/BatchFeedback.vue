@@ -3,7 +3,7 @@
 		<!-- OSLMS-CUSTOM: card styling on the root (padding, border, card class) -->
 		<div class="flex justify-between mb-5">
 			<div class="space-y-1">
-				<div class="text-xl-semibold text-ink-gray-9">
+				<div class="text-lg-semibold text-ink-gray-9">
 					{{ __('Feedback') }}
 				</div>
 				<div

@@ -2,7 +2,7 @@
 	<Dialog v-model:open="show" size="2xl">
 		<template #title>
 			<div class="flex items-center justify-between gap-x-2 text-base w-full">
-				<div class="text-3xl-semibold text-ink-gray-9">
+				<div class="text-2xl-semibold text-ink-gray-9">
 					{{
 						programName === 'new' ? __('Create Program') : __('Edit Program')
 					}}
@@ -58,7 +58,7 @@
 				</div>
 				<div class="pb-5">
 					<div class="flex items-center justify-between mt-5 mb-4">
-						<div class="text-xl-semibold text-ink-gray-9">
+						<div class="text-lg-semibold text-ink-gray-9">
 							{{ __('Courses') }}
 						</div>
 						<!-- OSLMS-CUSTOM: the add-course dialog adds several courses at once -->
@@ -128,7 +128,7 @@
 
 				<div>
 					<div class="flex items-center justify-between mt-5 mb-4">
-						<div class="text-xl-semibold text-ink-gray-9">
+						<div class="text-lg-semibold text-ink-gray-9">
 							{{ __('Members') }}
 						</div>
 						<div class="flex gap-x-2">

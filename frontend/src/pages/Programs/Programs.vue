@@ -21,13 +21,13 @@
 		<div
 			class="mb-5 flex flex-col justify-between space-y-4 lg:flex-row lg:items-center lg:space-y-0"
 		>
-			<div class="text-xl-semibold text-ink-gray-9">
+			<div class="text-lg-semibold text-ink-gray-9">
 				{{ __('All Programs') }}
 			</div>
 			<div
 				class="flex flex-col space-y-3 lg:flex-row lg:items-center lg:gap-x-4 lg:space-y-0"
 			>
-				<TabButtons :buttons="programTabs" v-model="currentTab" class="w-fit" />
+				<TabButtons :options="programTabs" v-model="currentTab" class="w-fit" />
 
 				<!-- OSLMS-CUSTOM: reload on update:modelValue so the search reads the current value and clearing it clears the filter -->
 				<FormControl
@@ -58,7 +58,7 @@
 				@click="openForm(program.name)"
 				class="border rounded-md p-3 hover:border-outline-gray-3 cursor-pointer space-y-2 card"
 			>
-				<div class="text-xl-semibold text-ink-gray-9">
+				<div class="text-lg-semibold text-ink-gray-9">
 					{{ program.name }}
 				</div>
 				<div class="flex items-center gap-x-2 text-ink-gray-7">

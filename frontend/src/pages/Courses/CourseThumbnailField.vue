@@ -90,7 +90,7 @@
 										? 'ring-2 ring-offset-2 ring-outline-gray-4'
 										: 'hover:scale-105'
 								"
-								:style="{ backgroundColor: getColor(c.toLowerCase(), 400) }"
+								:style="{ backgroundColor: `var(--${c.toLowerCase()}-400)` }"
 								:aria-label="c"
 								@click="pickColor(c)"
 							/>
@@ -125,7 +125,6 @@
 <script setup lang="ts">
 import { Button, FileUploader, createResource, toast } from 'frappe-ui'
 import { computed, inject, ref, watch } from 'vue'
-import { getColor } from '@/utils'
 import type { CourseFormContext, Resource } from '@/types/api'
 
 const { resource, markDirty } = inject<CourseFormContext>('courseForm')!
@@ -152,7 +151,7 @@ const hasImage = computed<boolean>(() => Boolean(doc.value?.image))
 const wellColor = computed<string>(() => {
 	const c = doc.value?.card_gradient
 	if (!c) return ''
-	return getColor(String(c).toLowerCase(), 400)
+	return `var(--${String(c).toLowerCase()}-400)`
 })
 
 const filename = computed<string>(() => {

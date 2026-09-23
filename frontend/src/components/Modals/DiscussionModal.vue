@@ -20,11 +20,12 @@
 						{{ __('Details') }}
 					</div>
 					<!-- OSLMS-CUSTOM: toolbar without the Embed (iframe) button -->
-					<TextEditor
+					<RichTextEditor
 						:content="topic.reply"
 						@change="(val) => (topic.reply = val)"
 						:editable="true"
-						:fixedMenu="discussionFixedMenu"
+						:fixedMenu="true"
+						:excludeItems="discussionExcludedItems"
 						editorClass="prose-sm max-w-none border-b border-x border-outline-elevation-2 bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]"
 					/>
 				</div>
@@ -33,12 +34,13 @@
 	</Dialog>
 </template>
 <script setup>
-import { call, Dialog, FormControl, TextEditor, toast } from 'frappe-ui'
+import { call, Dialog, FormControl, toast } from 'frappe-ui'
 import { reactive } from 'vue'
 import { singularize } from '@/utils'
 // OSLMS-CUSTOM: discussion toolbar without the Embed (iframe) button
-import { discussionFixedMenu } from '@/utils/discussionToolbar'
+import { discussionExcludedItems } from '@/utils/discussionToolbar'
 import { useTelemetry } from 'frappe-ui/frappe'
+import RichTextEditor from '@/components/RichTextEditor.vue'
 
 const topics = defineModel('reloadTopics')
 const emit = defineEmits(['created'])

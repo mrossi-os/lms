@@ -17,7 +17,7 @@
 			class="rounded-t-md w-full overflow-hidden"
 		/>
 		<div class="p-5">
-			<!-- <div class="text-2xl font-semibold text-ink-gray-9 mb-4">
+			<!-- <div class="text-3xl-semibold text-ink-gray-9 mb-4">
 				{{ priceLabel }}
 			</div> -->
 			<div v-if="!readOnlyMode">

@@ -21,11 +21,25 @@
 			</NumberChartGraph>-->
 			<NumberChartGraph :title="__('Lessons')" :value="course.data?.lessons" />
 		</div>
+		<div
+			v-if="showStudentsEmptyState"
+			class="flex min-h-[70vh] flex-col items-center justify-center gap-3 px-4 text-center"
+		>
+			<span class="lucide-users size-7.5 text-ink-gray-5" />
+			<div class="flex flex-col items-center gap-1">
+				<span class="text-lg-medium text-ink-gray-8">
+					{{ __('No students enrolled yet') }}
+				</span>
+				<span class="text-p-base text-ink-gray-6">
+					{{ __('Enroll students to track their progress here.') }}
+				</span>
+			</div>
+		</div>
 		<!-- OSLMS-CUSTOM: students list and side charts stack in one column below lg -->
-		<div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-5 items-start">
+		<div v-else class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-5 items-start">
 			<div class="min-w-0 border rounded-lg py-3 px-4 card">
 				<div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-					<div class="text-xl-semibold text-ink-gray-9">
+					<div class="text-lg-semibold text-ink-gray-9">
 						{{ __('Students') }}
 					</div>
 					<div class="flex items-center gap-x-2">
@@ -166,10 +180,9 @@
 								<div
 									class="size-2 rounded"
 									:style="{
-										backgroundColor:
-											colors[theme][
-												['red', 'amber', 'blue', 'green'][idx]
-											][400],
+										backgroundColor: `var(--${
+											['red', 'amber', 'blue', 'green'][idx]
+										}-400)`,
 									}"
 								></div>
 								<Tooltip :text="row.name.split('(')[1].replace(')', '')">
@@ -305,7 +318,6 @@ import Select from '@/components/Controls/Select.vue'
 import { computed, inject, ref, watch } from 'vue'
 import type dayjsType from 'dayjs'
 import { formatAmount } from '@/utils'
-import colors from '@/utils/frappe-ui-colors.json'
 import CourseEnrollmentModal from '@/pages/Courses/CourseEnrollmentModal.vue'
 import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
 import NumberChartGraph from '@/components/NumberChartGraph.vue'
@@ -338,9 +350,6 @@ defineExpose({ openEnrollModal })
 
 const showProgressModal = ref<boolean>(false)
 const currentStudent = ref<Record<string, unknown> | null>(null)
-const theme = ref<'darkMode' | 'lightMode'>(
-	localStorage.getItem('theme') == 'dark' ? 'darkMode' : 'lightMode',
-)
 type Filters = {
 	course: string | undefined
 	member_name?: string[]
@@ -454,14 +463,9 @@ const showStudentsEmptyState = computed(
 		!progressList.loading && !progressList.data?.length && !searchFilter.value,
 )
 
-const progressColors = computed(() => {
-	let colorList = []
-	colorList.push(colors[theme.value]['red'][400])
-	colorList.push(colors[theme.value]['amber'][400])
-	colorList.push(colors[theme.value]['blue'][400])
-	colorList.push(colors[theme.value]['green'][400])
-	return colorList
-})
+const progressColors = computed(() =>
+	['red', 'amber', 'blue', 'green'].map((color) => `var(--${color}-400)`)
+)
 
 const progressColumns = computed(() => {
 	return [

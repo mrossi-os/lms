@@ -2,7 +2,7 @@
 	<div class="m-5 pb-10">
 		<div class="flex justify-between w-full">
 			<div class="w-full md:w-2/3">
-				<div class="text-5xl-semibold text-ink-gray-9">
+				<div class="text-4xl-semibold text-ink-gray-9">
 					{{ batch.data.title }}
 				</div>
 				<!-- OSLMS-CUSTOM: description is a Small Text field, so authors can
@@ -55,7 +55,7 @@
 		</div>
 		<div v-if="courses.data?.length">
 			<div class="flex items-center mt-10">
-				<div class="text-4xl-semibold text-ink-gray-9">
+				<div class="text-3xl-semibold text-ink-gray-9">
 					{{ __('Courses') }}
 				</div>
 			</div>

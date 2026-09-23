@@ -1,6 +1,6 @@
 <template>
 	<div class="mt-7 mb-20">
-		<h2 class="mb-4 text-lg font-semibold text-ink-gray-9">
+		<h2 class="mb-4 text-md font-semibold text-ink-gray-9">
 			{{ __('My availability') }}
 		</h2>
 
@@ -99,7 +99,7 @@
 				</Button>
 			</div>
 			<div class="my-10">
-				<h2 class="mb-4 text-lg font-semibold text-ink-gray-9">
+				<h2 class="mb-4 text-md font-semibold text-ink-gray-9">
 					{{ __('I am unavailable') }}
 				</h2>
 				<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -134,7 +134,7 @@
 				</div>
 			</div>
 			<div v-if="isSessionUser()">
-				<h2 class="mb-4 text-lg font-semibold text-ink-gray-9">
+				<h2 class="mb-4 text-md font-semibold text-ink-gray-9">
 					{{ __('My calendar') }}
 				</h2>
 				<div

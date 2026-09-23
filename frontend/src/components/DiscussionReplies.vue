@@ -7,13 +7,13 @@
 					<span class="lucide-chevron-left size-5 text-ink-gray-7" />
 				</template>
 			</Button>
-			<span class="text-xl-semibold ms-2 text-ink-gray-9">
+			<span class="text-lg-semibold ms-2 text-ink-gray-9">
 				{{ topic.title }}
 			</span>
 		</div>
 		<div
 			v-if="!singleThread"
-			class="order-1 hidden md:block text-xl-semibold mb-5 text-ink-gray-9"
+			class="order-1 hidden md:block text-lg-semibold mb-5 text-ink-gray-9"
 		>
 			{{ topic.title }}
 		</div>
@@ -70,11 +70,12 @@
 					</div>
 				</div>
 				<!-- OSLMS-CUSTOM: toolbar without the Embed (iframe) button; gray editor background -->
-				<TextEditor
+				<RichTextEditor
 					:content="reply.reply"
 					@change="(val) => (reply.reply = val)"
 					:editable="reply.editable || false"
-					:fixedMenu="reply.editable ? discussionFixedMenu : false"
+					:fixedMenu="reply.editable || false"
+					:excludeItems="discussionExcludedItems"
 					:editorClass="
 						reply.editable
 							? 'ProseMirror bg-surface-gray-2  prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none'
@@ -85,14 +86,15 @@
 		</div>
 
 		<!-- OSLMS-CUSTOM: composer: toolbar without Embed, placed on top in the batch chat -->
-		<TextEditor
+		<RichTextEditor
 			v-if="renderEditor && !readOnlyMode"
 			:class="['mt-5', singleThread ? 'order-2' : 'order-4']"
 			:content="newReply"
 			:mentions="mentionUsers"
 			@change="(val) => (newReply = val)"
 			:placeholder="__('Type your reply here...')"
-			:fixedMenu="discussionFixedMenu"
+			:fixedMenu="true"
+			:excludeItems="discussionExcludedItems"
 			editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem] max-h-[16rem] overflow-y-scroll mb-4"
 		/>
 		<!-- OSLMS-CUSTOM: Post button follows the composer position -->
@@ -110,20 +112,14 @@
 	</div>
 </template>
 <script setup>
-import {
-	call,
-	createResource,
-	TextEditor,
-	Button,
-	Dropdown,
-	toast,
-} from 'frappe-ui'
+import { call, createResource, Button, Dropdown, toast } from 'frappe-ui'
 import { timeAgo } from '@/utils'
 // OSLMS-CUSTOM: discussion toolbar without the Embed (iframe) button
-import { discussionFixedMenu } from '@/utils/discussionToolbar'
+import { discussionExcludedItems } from '@/utils/discussionToolbar'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { ref, computed, inject, onMounted, onUnmounted } from 'vue'
 import { useTelemetry } from 'frappe-ui/frappe'
+import RichTextEditor from '@/components/RichTextEditor.vue'
 
 const showTopics = defineModel('showTopics')
 const newReply = ref('')

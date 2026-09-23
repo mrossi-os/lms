@@ -1,75 +1,76 @@
 <template>
-	<Dialog v-model="show" :options="{ size: '5xl' }">
-		<template #body>
-			<!-- OSLMS-CUSTOM: Dialog kept on the v-model/options API, padded scrollable content pane; labels are translated where the tabs are defined -->
-			<div class="flex h-[calc(100vh_-_8rem)]" id="settings-modal">
-				<div
-					class="flex w-52 shrink-0 flex-col bg-surface-gray-2 p-2 overflow-y-auto"
+	<SettingsDialog v-model="show" v-model:tab="activeTab" size="5xl">
+		<template #title>{{ __('Settings') }}</template>
+		<SettingsSidebar>
+			<!-- OSLMS-CUSTOM: tabs are identified by a stable English `key` (tabKey) because `label` is already translated with __(); group labels print without __() -->
+			<SettingsNavGroup
+				v-for="group in tabs"
+				:key="tabKey(group)"
+				:label="group.hideLabel ? undefined : group.label"
+			>
+				<!-- CRM's sidebar type: xs-medium group headings, sm item labels.
+				     Set on inner spans — the library's own text-base sits on the
+				     wrapper and would otherwise win the cascade. -->
+				<template #label>
+					<span class="text-xs-medium text-ink-gray-5">
+						{{ group.label }}
+					</span>
+				</template>
+				<SettingsNavItem
+					v-for="item in group.items"
+					:key="tabKey(item)"
+					:value="tabKey(item)"
 				>
-					<h1 class="mb-3 px-2 pt-2 text-xl-semibold text-ink-gray-9">
-						{{ __('Settings') }}
-					</h1>
-					<div class="space-y-5">
-						<!-- OSLMS-CUSTOM: tabs are identified by a stable English `key` because `label` is already translated with __() -->
-						<div v-for="tab in tabs" :key="tab.key">
-							<div
-								v-if="!tab.hideLabel"
-								class="mb-2 mt-3 flex cursor-pointer gap-1.5 px-1 text-base text-ink-gray-5 transition-all duration-300 ease-in-out"
-							>
-								<span>{{ tab.label }}</span>
-							</div>
-							<nav class="space-y-1">
-								<div v-for="item in tab.items" @click="activeTab = item">
-									<SidebarLink
-										:link="item"
-										:key="item.key"
-										:activeTab="activeTab?.key"
-									/>
-								</div>
-							</nav>
-						</div>
-					</div>
-				</div>
-				<div
-					v-if="activeTab && data.doc"
-					:key="activeTab.key"
-					class="flex flex-1 flex-col p-8 bg-surface-elevation-2 overflow-x-auto overflow-y-auto"
-				>
-					<!-- OSLMS-CUSTOM: os_lms tab templates (AI, TrueSkills API) receive their field sections; props switch on the stable tab key -->
-					<component
-						v-if="activeTab.template"
-						:is="activeTab.template"
-						v-bind="{
-							label: activeTab.label,
-							description: activeTab.description,
-							...(activeTab.key == 'Branding' ||
-							activeTab.key == 'AI' ||
-							activeTab.key == 'TrueSkills API'
-								? { sections: activeTab.sections }
-								: {}),
-							...(activeTab.key == 'Members' || activeTab.key == 'Transactions'
-								? { 'onUpdate:show': (val) => (show = val), show }
-								: {}),
-						}"
-					/>
-					<SettingDetails
-						v-else
-						:sections="activeTab.sections"
-						:label="activeTab.label"
-						:description="activeTab.description"
-						:data="data"
-					/>
-				</div>
-			</div>
-		</template>
-	</Dialog>
+					<template #prefix>
+						<!-- OSLMS-CUSTOM: os_lms tabs (buildOslmsSettingsTabs) still name lucide-vue-next components; lucide-* class names render as a span -->
+						<component
+							v-if="lucideIcons[item.icon]"
+							:is="lucideIcons[item.icon]"
+							class="size-4 shrink-0 stroke-1.5 text-ink-gray-7"
+						/>
+						<span v-else :class="[item.icon, 'size-4 shrink-0 text-ink-gray-7']" />
+					</template>
+					<span class="text-sm text-ink-gray-8">{{ __(item.label) }}</span>
+				</SettingsNavItem>
+			</SettingsNavGroup>
+		</SettingsSidebar>
+		<!-- OSLMS-CUSTOM: padded, scrollable content pane (re-applied on SettingsDialog at the v2.59.0 merge) -->
+		<SettingsContent v-if="data.doc" id="settings-modal">
+			<SettingsPanel
+				v-for="item in items"
+				:key="tabKey(item)"
+				:value="tabKey(item)"
+				class="p-8 overflow-x-auto overflow-y-auto"
+			>
+				<component
+					v-if="item.template"
+					:is="item.template"
+					v-bind="panelProps(item)"
+				/>
+				<SettingDetails
+					v-else
+					:sections="item.sections"
+					:label="item.label"
+					:description="item.description"
+					:data="data"
+				/>
+			</SettingsPanel>
+		</SettingsContent>
+	</SettingsDialog>
 </template>
 <script setup>
-import { Dialog, createDocumentResource } from 'frappe-ui'
+import {
+	SettingsContent,
+	SettingsDialog,
+	SettingsNavGroup,
+	SettingsNavItem,
+	SettingsPanel,
+	SettingsSidebar,
+	createDocumentResource,
+} from 'frappe-ui'
 import { computed, inject, markRaw, ref, watch } from 'vue'
 import { useSettings } from '@/stores/settings'
 import SettingDetails from '@/components/Settings/SettingDetails.vue'
-import SidebarLink from '@/components/Sidebar/SidebarLink.vue'
 import Members from '@/components/Settings/Members.vue'
 import Categories from '@/components/Settings/Categories.vue'
 import EmailTemplatePage from '@/components/Settings/EmailTemplate/EmailTemplatePage.vue'
@@ -80,6 +81,7 @@ import GoogleMeetSettings from '@/components/Settings/GoogleMeetSettings.vue'
 import GoogleCalendarSettings from '@/components/Settings/GoogleCalendarSettings.vue'
 import Badges from '@/components/Settings/Badges/Badges.vue'
 import { buildOslmsSettingsTabs } from '@/oslms/utils/settings'
+import * as lucideIcons from 'lucide-vue-next'
 
 // OSLMS-CUSTOM: Google Calendar tab reserved to System Manager and Gestore
 const GOOGLE_CALENDAR_ROLES = ['System Manager', 'Gestore']
@@ -111,7 +113,7 @@ const canManageOsIntegrations = () => {
 
 const show = defineModel()
 const doctype = ref('LMS Settings')
-const activeTab = ref(null)
+const activeTab = ref('')
 const settingsStore = useSettings()
 
 const data = createDocumentResource({
@@ -127,12 +129,15 @@ const tabsStructure = computed(() => {
 		{
 			key: 'Configuration',
 			label: __('Configuration'),
-			hideLabel: true,
+			hideLabel: false,
 			items: [
 				{
 					key: 'General',
 					label: __('General'),
-					icon: 'Wrench',
+					icon: 'lucide-wrench',
+					description: __(
+						'Configure system-wide defaults, notifications, and contact information',
+					),
 					// OSLMS-CUSTOM: administrators only (see ADMIN_ONLY_ROLES)
 					condition: isAdministrator,
 					sections: [
@@ -326,7 +331,7 @@ const tabsStructure = computed(() => {
 				},
 				{
 					label: __('Course Progress'),
-					icon: 'Activity',
+					icon: 'lucide-activity',
 					description: __(
 						'Control how lessons are marked complete: dwell time and enforcement toggles for video, quiz, and assignment.',
 					),
@@ -393,7 +398,7 @@ const tabsStructure = computed(() => {
 					description: __(
 						'Create badges and assign them to students to acknowledge their achievements',
 					),
-					icon: 'Award',
+					icon: 'lucide-award',
 					template: markRaw(Badges),
 					// OSLMS-CUSTOM: administrators only (see ADMIN_ONLY_ROLES)
 					condition: isAdministrator,
@@ -402,7 +407,7 @@ const tabsStructure = computed(() => {
 					key: 'Categories',
 					label: __('Categories'),
 					description: __('Double click to edit the category'),
-					icon: 'Network',
+					icon: 'lucide-network',
 					template: markRaw(Categories),
 				},
 			],
@@ -413,29 +418,30 @@ const tabsStructure = computed(() => {
 				{
 					label: 'Accounts',
 					description: 'Manage email accounts for incoming and outgoing mail',
-					icon: 'Mail',
+					icon: 'lucide-mail',
 					template: markRaw(EmailConfig),
 				},
 				{
 					label: 'Templates',
 					description: 'Manage the email templates for your learning system',
-					icon: 'MailPlus',
+					icon: 'lucide-mail-plus',
 					template: markRaw(EmailTemplatePage),
 				},
 			],
 		},
 		{
 			key: 'Users',
-			label: __('Users'),
+			label: __('User Management'),
 			hideLabel: false,
 			items: [
 				{
+					// OSLMS-CUSTOM: key stays 'Members' so openSettings('Members') deep links keep working after upstream renamed the tab to "Users"
 					key: 'Members',
-					label: __('Members'),
+					label: __('Users'),
 					description: __(
-						'Add new members or manage roles and permissions of existing members',
+						'Manage users by adding or inviting them, and assign roles to control their access and permissions',
 					),
-					icon: 'User',
+					icon: 'lucide-user',
 					template: markRaw(Members),
 				},
 			],
@@ -452,7 +458,7 @@ const tabsStructure = computed(() => {
 					description: __(
 						'Manage zoom accounts to conduct live classes from batches',
 					),
-					icon: 'Video',
+					icon: 'lucide-video',
 					template: markRaw(ZoomSettings),
 				},
 				{
@@ -461,7 +467,7 @@ const tabsStructure = computed(() => {
 					description: __(
 						'Manage Google Meet accounts to conduct live classes from batches',
 					),
-					icon: 'Presentation',
+					icon: 'lucide-presentation',
 					template: markRaw(GoogleMeetSettings),
 				},
 				// OSLMS-CUSTOM: Google Calendar accounts tab (System Manager + Gestore) for live class and evaluation invites
@@ -471,7 +477,7 @@ const tabsStructure = computed(() => {
 					description: __(
 						'Manage Google Calendars used for live classes and evaluations',
 					),
-					icon: 'Calendar',
+					icon: 'lucide-calendar',
 					template: markRaw(GoogleCalendarSettings),
 					condition: canManageGoogleCalendars,
 				},
@@ -485,7 +491,7 @@ const tabsStructure = computed(() => {
 				{
 					key: 'Branding',
 					label: __('Branding'),
-					icon: 'Blocks',
+					icon: 'lucide-palette',
 					description: __(
 						'Customize the brand name and logo to make the application your own',
 					),
@@ -525,7 +531,7 @@ const tabsStructure = computed(() => {
 				{
 					key: 'Sidebar',
 					label: __('Sidebar'),
-					icon: 'PanelLeftIcon',
+					icon: 'lucide-panel-left',
 					description: __('Choose the items you want to show in the sidebar'),
 					sections: [
 						{
@@ -618,7 +624,7 @@ const tabsStructure = computed(() => {
 				{
 					key: 'Signup',
 					label: __('Signup'),
-					icon: 'LogIn',
+					icon: 'lucide-log-in',
 					description: __(
 						'Manage the settings related to user signup and registration',
 					),
@@ -664,7 +670,7 @@ const tabsStructure = computed(() => {
 				{
 					key: 'Welcome Video',
 					label: __('Welcome'),
-					icon: 'PlayCircle',
+					icon: 'lucide-circle-play',
 					description: __(
 						'Configura la notifica e il video di benvenuto mostrati agli studenti al primo login. I due possono essere attivati indipendentemente.',
 					),
@@ -749,7 +755,7 @@ const tabsStructure = computed(() => {
 				{
 					key: 'SEO',
 					label: __('SEO'),
-					icon: 'Search',
+					icon: 'lucide-search',
 					description: __(
 						'Manage the SEO settings to improve your website ranking on search engines',
 					),
@@ -799,6 +805,24 @@ const tabsStructure = computed(() => {
 	]
 })
 
+// OSLMS-CUSTOM: stable tab identity (English key), falling back to the label for tabs that carry no key
+const tabKey = (item) => item.key || item.label
+
+const items = computed(() => tabs.value.flatMap((group) => group.items))
+
+// Members and Transactions own dialogs of their own and need to close Settings.
+// OSLMS-CUSTOM: props switch on the stable tab key; os_lms templates (AI, TrueSkills API) receive their field sections
+const panelProps = (item) => ({
+	label: item.label,
+	description: item.description,
+	...(['Branding', 'AI', 'TrueSkills API'].includes(item.key)
+		? { sections: item.sections }
+		: {}),
+	...(['Members', 'Transactions'].includes(item.key)
+		? { 'onUpdate:show': (val) => (show.value = val), show: show.value }
+		: {}),
+})
+
 const tabs = computed(() => {
 	return tabsStructure.value
 		// OSLMS-CUSTOM: whole groups can carry a role condition; groups left empty are dropped
@@ -814,15 +838,14 @@ const tabs = computed(() => {
 		.filter((tab) => tab.items.length > 0)
 })
 
-watch(show, async () => {
+watch(show, () => {
 	if (show.value) {
-		const currentTab = await tabs.value
-			.flatMap((tab) => tab.items)
-			// OSLMS-CUSTOM: deep links (openSettings) match the stable key, not the translated label
+		// OSLMS-CUSTOM: deep links (openSettings) match the stable key, not the translated label
+		const stored = items.value
 			.find((item) => item.key === settingsStore.activeTab)
-		activeTab.value = currentTab || tabs.value[0].items[0]
+		activeTab.value = tabKey(stored || items.value[0])
 	} else {
-		activeTab.value = null
+		activeTab.value = ''
 		settingsStore.isSettingsOpen = false
 	}
 })

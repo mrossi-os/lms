@@ -1269,7 +1269,7 @@ item.key come :value e come chiave, e tenere i link diretti allineati alle chiav
 
   [[entries.sites]]
   file = "frontend/src/components/Settings/Settings.vue"
-  anchor = ':activeTab="activeTab?.key"'
+  anchor = "const tabKey = (item) => item.key || item.label"
 
   [[entries.sites]]
   file = "frontend/src/components/Settings/Settings.vue"
@@ -1277,7 +1277,7 @@ item.key come :value e come chiave, e tenere i link diretti allineati alle chiav
 
   [[entries.sites]]
   file = "frontend/src/components/Settings/Settings.vue"
-  anchor = "<span>{{ tab.label }}</span>"
+  anchor = "{{ group.label }}"
 
 [[entries]]
 id = "settings-admin-only-tabs"
@@ -1389,7 +1389,7 @@ gruppi."""
 
   [[entries.sites]]
   file = "frontend/src/components/Settings/Settings.vue"
-  anchor = "activeTab.key == 'AI' ||"
+  anchor = "['Branding', 'AI', 'TrueSkills API'].includes(item.key)"
 
   [entries.visibility]
   subject = "Schede os_lms TrueSkills API e Prompt AI (le schede Configurazioni e AI solo amministratori)"
@@ -1471,11 +1471,15 @@ Ritocchi estetici del dialogo Impostazioni: il Dialog usa ancora l'API v-model +
 (introdotta dopo un crash seguito a un merge, commit 265842cde), il pannello del contenuto ha
 padding e scorrimento propri, il contenitore ha id "settings-modal". Nessuna regola funzionale:
 al merge di v2.59.0 l'upstream sostituisce tutto con SettingsDialog, e questi ritocchi vanno
-rivalutati sulla nuova struttura, non riapplicati alla cieca."""
+rivalutati sulla nuova struttura, non riapplicati alla cieca.
+Al merge di v2.59.0 (2026-09-23, decisione del committente: riapplicare) i ritocchi sono stati
+riportati sul SettingsDialog upstream: padding e scorrimento sul SettingsPanel (che in beta.24 non
+ne ha di propri) e id settings-modal sul SettingsContent. L API v-model + options del vecchio
+Dialog non ha più senso ed è decaduta."""
 
   [[entries.sites]]
   file = "frontend/src/components/Settings/Settings.vue"
-  anchor = "<Dialog v-model=\"show\" :options=\"{ size: '5xl' }\">"
+  anchor = 'class="p-8 overflow-x-auto overflow-y-auto"'
 
 # ── SettingFields.vue ──────────────────────────────────────────────────────
 
@@ -1508,7 +1512,10 @@ codice fiscale); oggi openEditMember apre NewMemberModal in modalità modifica, 
 showEditMember, selectedMember, onNavigateProfile e onMemberUpdated sono residui non più usati.
 ATTENZIONE al merge di v2.59.0: l'upstream riscrive l'elenco con List/ListRow, con
 ListRow @click = openProfile e la cella azioni @click.stop; bisogna decidere quale clic apre
-cosa sulla nuova struttura."""
+cosa sulla nuova struttura.
+Risolto al merge di v2.59.0 (2026-09-23, decisione del committente): nella lista List/ListRow
+upstream il clic sulla riga apre la modifica del membro, il clic su avatar e nome apre il profilo
+(@click.stop sulle due celle); la cella ruoli/menu resta @click.stop come nell upstream."""
 
   [[entries.sites]]
   file = "frontend/src/components/Settings/Members.vue"
@@ -1828,7 +1835,7 @@ aggiunge anche can_access_quiz: valutare se il valutatore debba leggere anche i 
   [[entries.sites]]
   file = "lms/lms/permissions.py"
   anchor = "if is_course_valutatore(lesson_row.course, user):"
-  symbol = "can_access_lesson"
+  symbol = "resolve_lesson_access"
 
   [entries.visibility]
   subject = "Risorse per studenti delle lezioni dei corsi delle classi valutate"
@@ -2148,7 +2155,7 @@ text-lg-semibold): prendere la classe upstream e riaggiungere break-words."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Lesson.vue"
-  anchor = "<div class=\"text-5xl-semibold text-ink-gray-9 break-words\">"
+  anchor = '<div class="text-4xl-semibold text-ink-gray-9 break-words">'
 
   [[entries.sites]]
   file = "frontend/src/pages/Lesson.vue"
@@ -2322,6 +2329,7 @@ id = "upload-unattached-new-lesson"
 title = "Upload senza allegato finché la lezione non è salvata"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 Una lezione nuova non ha ancora un docname; inviare doctype senza un docname valido fa
 rifiutare l'upload da Frappe recente (417 «Attached To Name must be a string or an
@@ -2329,11 +2337,14 @@ integer»). Finché il docname manca il file si carica senza allegarlo. ATTENZIO
 di v2.59.0: l'upstream risolve lo stesso problema nello stesso computed (nuova prop
 uploadContext, contesti reattivi in LessonForm e upload.js che passa uploadContext);
 accettare la versione upstream, tenere intorno le nostre aggiunte di
-upload-documents-and-archives e marcare questa voce come accepted-drift."""
+upload-documents-and-archives e marcare questa voce come accepted-drift.
+ACCEPTED-DRIFT dal 2026-09-23 (decisione del committente al merge di v2.59.0): l upstream fa ora
+da sé la stessa cosa (uploadArgs letti da uploadContext.docname) e la nostra versione non poteva
+più funzionare perché la prop docname è stata rimossa; si usa la versione upstream."""
 
   [[entries.sites]]
   file = "frontend/src/components/UploadPlugin.vue"
-  anchor = "if (props.docname) {"
+  anchor = "const docname = props.uploadContext?.docname"
   symbol = "uploadArgs"
 
 [[entries]]
@@ -3731,7 +3742,7 @@ v2.63.0 ricostruisce le pagine dei quiz."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Quizzes.vue"
-  anchor = 'class="h-4 w-4 text-ink-green-3"'
+  anchor = 'class="lucide-check h-4 w-4 text-ink-green-3"'
 
 [[entries]]
 id = "assessment-list-search-words"
@@ -3840,7 +3851,7 @@ che chi corregge non possa modificare la risposta dello studente."""
 
   [[entries.sites]]
   file = "lms/lms/doctype/lms_assignment_submission/lms_assignment_submission.py"
-  anchor = '"System Manager", "Valutatore"}'
+  anchor = 'PRIVILEGED_ROLES = LMS_PRIVILEGED_ROLES | {"Valutatore"}'
   symbol = "PRIVILEGED_ROLES"
 
   [[entries.sites]]
@@ -4090,19 +4101,31 @@ non cambiano. ATTENZIONE al merge di v2.59.0: l'upstream sostituisce TextEditor 
 RichTextEditor in DiscussionReplies e DiscussionModal; lì fixedMenu è un booleano e la barra è
 fissa e INCLUDE InsertIframe, quindi il nostro array diventerebbe solo «true» e il pulsante Embed
 tornerebbe in silenzio. Serve un modo per passare a RichTextEditor una barra senza InsertIframe
-(prop dedicata o variante del componente)."""
+(prop dedicata o variante del componente).
+Dal merge di v2.59.0 (2026-09-23, decisione del committente) le discussioni usano il
+RichTextEditor upstream, la cui barra fissa include sempre InsertIframe: la regola vive nella
+prop OSLMS-CUSTOM excludeItems di RichTextEditor.vue e nella lista discussionExcludedItems."""
 
   [[entries.sites]]
   file = "frontend/src/components/DiscussionReplies.vue"
-  anchor = ':fixedMenu="reply.editable ? discussionFixedMenu : false"'
+  anchor = ":fixedMenu=\"reply.editable || false\"\n\t\t\t\t\t:excludeItems=\"discussionExcludedItems\""
 
   [[entries.sites]]
   file = "frontend/src/components/DiscussionReplies.vue"
-  anchor = ':fixedMenu="discussionFixedMenu"'
+  anchor = ":fixedMenu=\"true\"\n\t\t\t:excludeItems=\"discussionExcludedItems\""
 
   [[entries.sites]]
   file = "frontend/src/components/Modals/DiscussionModal.vue"
-  anchor = ':fixedMenu="discussionFixedMenu"'
+  anchor = ':excludeItems="discussionExcludedItems"'
+
+  [[entries.sites]]
+  file = "frontend/src/components/RichTextEditor.vue"
+  anchor = "toolbar.filter((item) => !props.excludeItems.includes(item))"
+  symbol = "visibleToolbar"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/discussionToolbar.js"
+  anchor = "export const discussionExcludedItems = [InsertIframe]"
 
 [[entries]]
 id = "discussion-batch-chat-newest-first"
@@ -5076,3 +5099,63 @@ rinominato da validate_course_enrollment a enroll_in_batch_courses."""
   file = "lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.py"
   anchor = "enrollment.save(ignore_permissions=True)"
   symbol = "enroll_in_batch_courses"
+
+# ---------------------------------------------------------------------------
+# Decisioni del committente al merge di v2.59.0 (2026-09-23)
+# ---------------------------------------------------------------------------
+
+[[entries]]
+id = "assignment-answer-readonly-for-graders"
+title = "Chi corregge vede la risposta del compito in sola lettura"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Chi corregge un compito (Valutatore, istruttori, moderatori) deve poter leggere la risposta dello
+studente e compilare solo voto e commenti, mai modificare la risposta. Fino a v2.58.1 l'upstream
+rendeva i campi risposta readonly; v2.59.0 ha tolto quel vincolo mentre il pulsante Salva resta
+visibile a chi corregge, e il backend lascia passare i ruoli privilegiati. Decisione del
+committente al merge di v2.59.0: sola lettura per chiunque non sia lo studente autore di una
+consegna esistente. Lo studente mantiene il comportamento upstream sulla propria consegna."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Assignment.vue"
+  anchor = "submissionResource.doc?.owner != user.data?.name"
+  symbol = "answerReadOnly"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Assignment.vue"
+  anchor = ':editable="!answerReadOnly"'
+
+  [entries.visibility]
+  subject = "modifica della risposta di una consegna esistente"
+  allow = ["Student (autore)"]
+  deny = ["Valutatore", "Docente", "Moderator", "course-instructor"]
+
+[[entries]]
+id = "permissions-valutatore-quiz-access"
+title = "Il Valutatore vede i quiz dei corsi e delle classi che valuta"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il Valutatore di una classe legge le lezioni dei corsi di quella classe senza esserne iscritto
+(permissions-valutatore-lesson-access). Da v2.59.0 l'upstream protegge i quiz con
+can_access_quiz, che conosce moderatori, autori, iscritti e istruttori ma non il Valutatore:
+senza questo ramo il Valutatore riceverebbe «non autorizzato» sui quiz dentro le lezioni e sui
+quiz assegnati come verifica alla classe. Decisione del committente al merge di v2.59.0: il
+Valutatore legge i quiz dei corsi delle classi che valuta e le verifiche quiz della propria
+classe. Non concede modifica."""
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = "if course and is_course_valutatore(course, user):"
+  symbol = "can_access_quiz"
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = "or is_batch_valutatore(batch, user)"
+  symbol = "can_access_quiz"
+
+  [entries.visibility]
+  subject = "lettura dei quiz di corsi e classi valutati"
+  allow = ["Valutatore (della classe)", "Moderator", "course-instructor", "Student (iscritto)"]
+  deny = ["Valutatore (di altre classi)", "Guest"]

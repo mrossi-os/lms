@@ -140,7 +140,6 @@ export default defineConfig(async ({ mode }) => {
 			include: [
 				'feather-icons',
 				'tailwind.config.js',
-				'interactjs',
 				'highlight.js',
 				'plyr',
 				// OSLMS-CUSTOM: pre-bundle all tiptap/prosemirror entrypoints (plugin$ crash)

@@ -97,7 +97,7 @@
 						</div>
 					</div>
 				</div>
-				<!-- OSLMS-CUSTOM: three editor branches (template with {{ message }} / raw-HTML template / plain rich editor) so styled email HTML is never re-serialized by TextEditor -->
+				<!-- OSLMS-CUSTOM: three editor branches (template with {{ message }} / raw-HTML template / plain rich editor) so styled email HTML is never re-serialized by the rich editor -->
 				<div
 					v-if="sendEmail && isHtmlMode && hasMessagePlaceholder"
 					class="mb-4 flex flex-col gap-3"
@@ -107,7 +107,7 @@
 							{{ __('Message') }}
 							<span class="text-ink-red-3">*</span>
 						</div>
-						<TextEditor
+						<RichTextEditor
 							:fixedMenu="true"
 							:content="announcement.message"
 							@change="(val) => (announcement.message = val)"
@@ -180,7 +180,7 @@
 						{{ __('Announcement') }}
 						<span class="text-ink-red-3">*</span>
 					</div>
-					<TextEditor
+					<RichTextEditor
 						:fixedMenu="true"
 						:content="announcement.announcement"
 						@change="(val) => (announcement.announcement = val)"
@@ -193,21 +193,16 @@
 </template>
 
 <script setup>
-import {
-	Button,
-	Dialog,
-	FormControl,
-	TextEditor,
-	createResource,
-	toast,
-} from 'frappe-ui'
+import { Button, Dialog, FormControl, createResource, toast } from 'frappe-ui'
 import { computed, reactive, ref, watch } from 'vue'
+import RichTextEditor from '@/components/RichTextEditor.vue'
 import AnnouncementContent from '@/pages/Batches/components/AnnouncementContent.vue'
 
 const show = defineModel()
 
 /*
- * The frappe-ui TextEditor color extension renders named colors as
+ * The rich editor's color extension (RichTextEditor, frappe-ui/editor) renders
+ * named colors as
  * `color: var(--prose-color-<name>)`, and those CSS variables only exist inside
  * the editor (`.ProseMirror`). Anywhere else — the preview, the published
  * announcement, and the actual email the student receives — the variable is
@@ -227,6 +222,8 @@ const NAMED_COLOR_HEX = {
 	gray: '#7C7C7C',
 	teal: '#0B9E92',
 	cyan: '#32A4C7',
+	// frappe-ui/editor palette adds indigo, aliased to the violet hue
+	indigo: '#5F46C7',
 }
 
 // Highlights are stored the same way, as
@@ -244,6 +241,7 @@ const NAMED_HIGHLIGHT_HEX = {
 	gray: '#f3f3f3',
 	teal: '#e6f7f4',
 	cyan: '#ddf7ff',
+	indigo: '#f0ebff',
 }
 
 const inlineNamedColors = (html) =>

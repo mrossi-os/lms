@@ -27,7 +27,7 @@
 				<div class="shadow rounded-md w-3/4 mt-10 mx-auto text-center p-4">
 					<div class="flex items-center justify-center mt-4 gap-x-2">
 						<span class="lucide-lock-keyhole size-4 text-ink-gray-5" />
-						<div class="text-xl-semibold text-ink-gray-7">
+						<div class="text-lg-semibold text-ink-gray-7">
 							{{ __('This lesson is locked') }}
 						</div>
 					</div>
@@ -81,7 +81,7 @@
 						>
 							<!-- OSLMS-CUSTOM: min-w-0 + break-words stop long lesson titles from overflowing the 70/30 grid -->
 							<div class="flex flex-col min-w-0">
-								<div class="text-5xl-semibold text-ink-gray-9 break-words">
+								<div class="text-4xl-semibold text-ink-gray-9 break-words">
 									{{ lesson.data.title }}
 								</div>
 
