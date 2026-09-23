@@ -1,0 +1,23 @@
+name: Customizations
+
+on:
+  pull_request:
+  push:
+    branches: [develop, feature/oslms]
+
+jobs:
+  check:
+    name: Inventory and drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: Detector unit tests
+        run: python3 -m unittest discover -s scripts/tests -t . -v
+
+      - name: Customization drift
+        run: python3 scripts/check_customizations.py
