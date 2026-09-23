@@ -48,6 +48,11 @@ def build_parser() -> argparse.ArgumentParser:
 		help="inventory directory (default: <repo-root>/docs/customizations)",
 	)
 	parser.add_argument("--json", action="store_true", help="emit JSON instead of a table")
+	parser.add_argument(
+		"--list-files",
+		action="store_true",
+		help="print the catalogued file paths, one per line, and exit",
+	)
 	return parser
 
 
@@ -61,6 +66,11 @@ def main(argv: list[str] | None = None) -> int:
 	except InventoryError as exc:
 		print(f"Inventario non valido: {exc}", file=sys.stderr)
 		return 2
+
+	if args.list_files:
+		for path in sorted({site.file for entry in entries for site in entry.sites}):
+			print(path)
+		return 0
 
 	findings = (
 		check_sites(entries, repo_root)

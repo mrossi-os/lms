@@ -131,5 +131,14 @@ class MainTest(unittest.TestCase):
 		self.assertEqual(code, 2)
 
 
+class ListFilesTest(unittest.TestCase):
+	def test_prints_one_catalogued_path_per_line(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			root = build_repo(tmp, "const a = is_docente\n")
+			code, output = run_main(["--repo-root", str(root), "--list-files"])
+		self.assertEqual(code, 0)
+		self.assertEqual(output.split(), ["frontend/src/Card.vue"])
+
+
 if __name__ == "__main__":
 	unittest.main()
