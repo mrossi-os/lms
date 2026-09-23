@@ -2,6 +2,7 @@
 	<Dialog v-model:open="show" :title="__('Enroll a Student')" size="xl">
 		<template #default>
 			<div class="space-y-4">
+				<!-- OSLMS-CUSTOM: Purchased Certificate checkbox hidden (paid certificates not used), so the Payment field never shows -->
 				<!-- <FormControl
 					type="checkbox"
 					:label="__('Purchased Certificate')"
@@ -37,6 +38,7 @@
 		</template>
 		<template #actions="{ close }">
 			<div class="text-end">
+				<!-- OSLMS-CUSTOM: button label forced to Italian "Iscrivi" -->
 				<Button variant="solid" @click="enrollStudent(close)">
 					{{ __('Iscrivi') }}
 				</Button>

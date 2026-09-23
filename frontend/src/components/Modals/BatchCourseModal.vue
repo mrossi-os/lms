@@ -12,6 +12,7 @@
 		]"
 	>
 		<template #default>
+			<!-- OSLMS-CUSTOM: course picker lists every course, drafts included (upstream published: 1 filter removed) -->
 			<Link
 				doctype="LMS Course"
 				v-model="course"

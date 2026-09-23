@@ -16,6 +16,7 @@
 	>
 		<template #default>
 			<div class="flex flex-col gap-4">
+				<!-- OSLMS-CUSTOM: bulk enrollment, several students picked at once; no Payment field (payments not used) -->
 				<MultiLink
 					doctype="User"
 					v-model="selectedStudents"
@@ -59,6 +60,7 @@ const props = defineProps({
 	},
 })
 
+// OSLMS-CUSTOM: bulk enrollment, one insert per selected student with an aggregated failure message
 // Enroll a single member, resolving to whether it succeeded so the bulk loop
 // can keep going and report failures (e.g. an already-enrolled student) in one
 // aggregated message instead of a toast per request.

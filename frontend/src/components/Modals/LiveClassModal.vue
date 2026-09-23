@@ -16,6 +16,7 @@
 	>
 		<template #default>
 			<div class="flex flex-col gap-4">
+				<!-- OSLMS-CUSTOM: edit mode notices, schedule frozen once the class has started / students notified on a reschedule -->
 				<div
 					v-if="isEdit && scheduleLocked"
 					class="flex items-start gap-2 bg-surface-amber-1 px-3 py-2 rounded-lg text-ink-amber-6 text-sm"
@@ -66,6 +67,7 @@
 						/>
 					</div>
 					<div class="space-y-4">
+						<!-- OSLMS-CUSTOM: explicit required Time label and 24-hour time picker (use12Hour false) -->
 						<Tooltip
 							:text="
 								__(
@@ -105,6 +107,7 @@
 								@update:modelValue="(value) => (liveClass.timezone = value)"
 							/>
 						</div>
+						<!-- OSLMS-CUSTOM: auto recording chosen only at creation (not editable afterwards), translated placeholder -->
 						<FormControl
 							v-if="!isEdit && props.conferencingProvider === 'Zoom'"
 							v-model="liveClass.auto_recording"
@@ -120,6 +123,7 @@
 					type="textarea"
 					:label="__('Description')"
 				/>
+				<!-- OSLMS-CUSTOM: per-class reminders (offset + unit, min 15 minutes, sent status) -->
 				<div class="border-t pt-4">
 					<div class="flex items-center justify-between mb-2">
 						<div>
@@ -226,11 +230,14 @@ const props = defineProps({
 	},
 })
 
+// OSLMS-CUSTOM: the same modal edits an existing live class when LiveClass.vue passes it in
 const isEdit = computed(() => !!props.liveClass)
+// OSLMS-CUSTOM: double-submit guard
 // Guards against a second submit while the first is still running: two saves in
 // flight on the same class make the loser fail with "Record has changed since
 // last read".
 const saving = ref(false)
+// OSLMS-CUSTOM: schedule locked once the host has started the class
 // Once the host has started the class its schedule is frozen, server-side too
 // (see `_validate_schedule_change`): only title, description and reminders stay
 // editable, because students are already being let in on the old slot.
@@ -242,6 +249,7 @@ const reminderUnitOptions = [
 	{ label: __('Days'), value: 'Days' },
 ]
 
+// OSLMS-CUSTOM: reminders must fire at least 15 minutes before the class (mirrored server-side)
 const MIN_REMINDER_MINUTES = 15
 const UNIT_TO_MINUTES = { Minutes: 1, Hours: 60, Days: 60 * 24 }
 const offsetToMinutes = (value, unit) =>
@@ -265,6 +273,7 @@ onMounted(() => {
 		liveClass.title = props.liveClass.title || ''
 		liveClass.description = props.liveClass.description || ''
 		liveClass.date = props.liveClass.date || ''
+		// OSLMS-CUSTOM: prefill the form from the class being edited
 		// Stored as HH:mm:ss, but the time field (and valideTime) work on HH:mm.
 		liveClass.time = (props.liveClass.time || '').slice(0, 5)
 		liveClass.duration = props.liveClass.duration || ''
@@ -291,6 +300,7 @@ const getTimezoneOptions = () => {
 
 const getRecordingOptions = () => {
 	return [
+		// OSLMS-CUSTOM: recording option labels translated via __() (values stay English)
 		{ label: __('No Recording'), value: 'No Recording' },
 		{ label: __('Local'), value: 'Local' },
 		{ label: __('Cloud'), value: 'Cloud' },
@@ -332,11 +342,13 @@ const createGoogleMeetLiveClass = createResource({
 	},
 })
 
+// OSLMS-CUSTOM: edits and post-create reminders go through the os_lms update_live_class endpoint
 const updateLiveClassResource = createResource({
 	url: 'os_lms.os_lms.api.update_live_class',
 })
 
 const submitLiveClass = (close) => {
+	// OSLMS-CUSTOM: ignore a second click while a save is in flight, then route to create or update
 	if (saving.value) {
 		return
 	}
@@ -347,6 +359,7 @@ const submitLiveClass = (close) => {
 }
 
 const submitCreate = (close) => {
+	// OSLMS-CUSTOM: validation really blocks the submit (upstream validate() dropped the message)
 	const validation = validateFormFields()
 	if (validation) {
 		toast.error(validation)
@@ -369,6 +382,7 @@ const submitCreate = (close) => {
 	})
 }
 
+// OSLMS-CUSTOM: reminders are saved on the new class right after the upstream create call
 const persistRemindersAfterCreate = (created, close) => {
 	if (!liveClass.reminders.length) {
 		liveClasses.value.reload()
@@ -445,6 +459,7 @@ const submitUpdate = (close) => {
 	)
 }
 
+// OSLMS-CUSTOM: only a real reschedule must land in the future when editing
 const scheduleChanged = () => {
 	if (!props.liveClass) return true
 	// The stored time comes back as HH:mm:ss, the form holds HH:mm.
@@ -491,6 +506,7 @@ const validateSchedule = (requireFuture) => {
 	}
 }
 
+// OSLMS-CUSTOM: reminder validation (positive offset, minimum 15 minutes)
 const validateReminders = () => {
 	for (const r of liveClass.reminders) {
 		if (!r.offset_value || r.offset_value < 1) {
@@ -529,6 +545,7 @@ const validateFormFields = () => {
 }
 
 const valideTime = () => {
+	// OSLMS-CUSTOM: accept the stored HH:mm:ss format too
 	// Accept both HH:mm from the picker and HH:mm:ss as stored on the document.
 	let time = String(liveClass.time || '').split(':')
 	if (time.length < 2 || time.length > 3) {

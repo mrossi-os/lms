@@ -30,6 +30,7 @@
 					v-model="details.expiry_date"
 					:label="__('Expiry Date')"
 				/>
+				<!-- OSLMS-CUSTOM: translated "Select option" placeholder on the course select -->
 				<FormControl
 					type="select"
 					v-model="details.course"

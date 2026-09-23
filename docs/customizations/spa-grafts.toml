@@ -7178,3 +7178,365 @@ una classe non pubblicata non la troverebbe più nelle liste."""
   subject = "lettura delle classi live di una classe"
   allow = ["Valutatore (della classe)", "Moderator", "Batch Evaluator", "Student (iscritto)"]
   deny = ["Valutatore (di altre classi)", "Guest"]
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 prima del merge di v2.62.0 — modali di classi, corsi, lezioni live
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 prima del merge di v2.62.0 — gruppo "modals"
+# (modali corso della classe, candidatura lavoro, lezione live, iscrizione
+# studenti alla classe, dettaglio gateway di pagamento, certificati in blocco,
+# iscrizione al corso)
+# ---------------------------------------------------------------------------
+
+# --- Aggiunta di un corso alla classe (BatchCourseModal.vue) ------------------
+
+[[entries]]
+id = "batch-course-modal-all-courses"
+title = "Nella scelta del corso da aggiungere alla classe compaiono anche le bozze"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il Link «Corso» del modale «Aggiungi un corso alla classe» non ha più il filtro upstream
+:filters="{ published: 1 }": compaiono tutti i corsi, bozze comprese, perché i corsi di una
+classe si preparano di solito prima che parta, quando non sono ancora pubblicati (commit
+93dc50217 e 59c9e52e6). Il vincolo era solo di interfaccia: Batch Course non ha validazioni
+lato server sul corso pubblicato. Chi usa il modale: solo Moderator (il pulsante Aggiungi è
+limitato ai moderatori, vedi batch-content-add-moderator-only). La regola è un'ASSENZA:
+l'ancora sta sul Link del corso, quindi il rilevatore non si accorge se il filtro torna;
+controllare a mano dopo ogni merge.
+ATTENZIONE al merge di v2.62.0: l'upstream CANCELLA questo file («forms become pages») e lo
+sostituisce con frontend/src/pages/Forms/BatchCourseForm.vue (route NewBatchCourse), che ha
+di nuovo :filters="{ published: 1 }" sul Link LMS Course. Conflitto modifica/cancellazione:
+accettare la cancellazione, togliere il filtro nel nuovo form (con il marcatore) e spostare
+qui il sito. Il nuovo form ha anche un proprio gate (is_moderator || is_instructor) copiato
+dal gate upstream di BatchCourses.vue, più largo del nostro (solo is_moderator,
+batch-content-add-moderator-only): riportare lì la stessa restrizione, perché l'URL del
+form è raggiungibile anche senza pulsante."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/BatchCourseModal.vue"
+  anchor = 'doctype="LMS Course"'
+
+# --- Candidatura a un'offerta di lavoro (JobApplicationModal.vue) -------------
+
+[[entries]]
+id = "job-application-modal-translations"
+title = "Titolo e pulsante Invia tradotti nel modale di candidatura"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il titolo «Apply for this job» e l'etichetta dell'azione «Submit» passano da __() per
+comparire in italiano (commit f33c6ca45, riportati da 265842cde dopo un merge). Solo
+traduzione, nessuna regola; la sezione Lavori è comunque poco esposta al cliente (vedi
+command-palette-jobs-removed). Marcatore dentro lo slot #default perché le righe stanno
+nella lista degli attributi della Dialog radice.
+ATTENZIONE al merge di v2.62.0: l'upstream riscrive la riga subito sotto la nostra etichetta
+(onClick: ({ close }) => submitResume(close) su una riga) e traduce le stringhe del corpo
+(Uploading {0}%, Upload your resume, toast), ma lascia title="Apply for this job" e
+label: 'Submit' letterali. Conflitto atteso nel blocco :actions: prendere la versione
+upstream e rimettere :title="__('Apply for this job')" e label: __('Submit')."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/JobApplicationModal.vue"
+  anchor = "label: __('Submit'),"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/JobApplicationModal.vue"
+  anchor = ":title=\"__('Apply for this job')\""
+
+# --- Lezione live: creazione e modifica (LiveClassModal.vue) ------------------
+
+[[entries]]
+id = "live-class-modal-edit-reschedule"
+title = "Il modale della lezione live modifica e riprogramma una lezione esistente"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Lo stesso modale di creazione serve anche a MODIFICARE una lezione live: LiveClass.vue gli
+passa la lezione (prop liveClass, vedi live-class-edit-delete) e il modale si precompila,
+cambia titolo in «Edit Live Class» e salva con os_lms.os_lms.api.update_live_class invece
+delle create upstream (commit a4dc44396, 7b6ea7a18, 7365f7e33). Regole:
+- data, ora, durata e fuso sono modificabili dopo la pubblicazione; una modifica di titolo o
+  orario riprogramma la riunione Zoom (PATCH, stesso link) e manda email + notifica agli
+  iscritti (lato backend); un banner blu lo dice a chi modifica;
+- quando l'host ha avviato la lezione (started_at valorizzato) data, ora, durata e fuso sono
+  bloccati (anche lato server, _validate_schedule_change) e un banner ambra lo spiega; si
+  possono cambiare solo titolo, descrizione e promemoria;
+- in modifica la data futura è richiesta solo se l'orario cambia davvero (scheduleChanged):
+  si può correggere il titolo di una lezione passata;
+- l'ora salvata arriva come HH:mm:ss: il form la carica come HH:mm e valideTime accetta
+  entrambi i formati (prima ogni modifica veniva rifiutata con «ora non valida»);
+- la registrazione automatica Zoom si sceglie solo in creazione, non in modifica.
+Chi la usa: gestore della classe (Moderator, Batch Evaluator), come il menu di modifica.
+ATTENZIONE al merge di v2.62.0: l'upstream CANCELLA questo file e lo sostituisce con
+frontend/src/pages/Forms/LiveClassForm.vue (route NewLiveClass, FormShell), che fa SOLO
+creazione: nessuna modifica, nessun promemoria, nessun blocco. Conflitto
+modifica/cancellazione. Decisione del committente necessaria: (a) tenere questo modale per
+la modifica (LiveClass.vue lo apre ancora con :liveClass) e usare il form upstream solo per
+creare, riportandovi promemoria e validazione; oppure (b) portare modifica e promemoria nel
+form upstream con una route di modifica (es. nome della lezione in params) e aggiornare
+LiveClass.vue. In ogni caso le regole sopra vanno riapplicate e i siti spostati."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  anchor = "const isEdit = computed(() => !!props.liveClass)"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  anchor = "url: 'os_lms.os_lms.api.update_live_class',"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  anchor = "const scheduleLocked = computed(() => isEdit.value && !!props.liveClass?.started_at)"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  anchor = 'v-if="isEdit && scheduleLocked"'
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  anchor = "validateSchedule(scheduleChanged())"
+  symbol = "validateEditFields"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  anchor = "liveClass.time = (props.liveClass.time || '').slice(0, 5)"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  anchor = "if (time.length < 2 || time.length > 3) {"
+  symbol = "valideTime"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  anchor = "v-if=\"!isEdit && props.conferencingProvider === 'Zoom'\""
+
+  [entries.visibility]
+  subject = "modifica e riprogrammazione di una lezione live"
+  allow = ["Moderator", "Batch Evaluator"]
+  deny = ["Valutatore", "Student"]
+
+[[entries]]
+id = "live-class-modal-reminders"
+title = "Promemoria configurabili per ogni lezione live"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Ogni lezione live ha i suoi promemoria (tabella figlia os_lms LMS Live Class Reminder):
+nel modale si aggiungono righe valore + unità (Minuti/Ore/Giorni) e per ognuna si vede se
+è già partita (sent_at) (commit a4dc44396, acc7dd94e). Ogni promemoria deve cadere almeno 15
+minuti prima della lezione (stessa soglia controllata lato server in update_live_class).
+Le create upstream non conoscono i promemoria: dopo la creazione il modale li salva con una
+seconda chiamata a update_live_class sulla lezione appena creata (persistRemindersAfterCreate).
+In modifica sent_at non viene inviato: il server riallinea le righe e un offset cambiato
+riparte da solo. L'invio lo fa lo scheduler di os_lms (live_class_reminders.py).
+ATTENZIONE al merge di v2.62.0: il file è cancellato e LiveClassForm.vue upstream non ha la
+sezione promemoria; vedi live-class-modal-edit-reschedule per la scelta di come riapplicarla."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  anchor = "const MIN_REMINDER_MINUTES = 15"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  anchor = '@click="addReminder"'
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  anchor = "const persistRemindersAfterCreate = (created, close) => {"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  anchor = "const validateReminders = () => {"
+
+[[entries]]
+id = "live-class-modal-submit-guard"
+title = "Salvataggio della lezione live protetto dal doppio clic e con validazione bloccante"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Due regole sul salvataggio (commit e78ce251d, a4dc44396):
+- un secondo clic su Invia mentre il primo salvataggio è in corso viene ignorato (saving):
+  due salvataggi contemporanei sulla stessa lezione facevano fallire il secondo con «Record
+  has changed since last read»;
+- la validazione blocca davvero: upstream la chiamava dentro validate() della resource senza
+  restituirne il messaggio, quindi non fermava mai l'invio; qui il messaggio va in un toast e
+  l'invio si ferma.
+Nota: loading: saving nell'azione non ha effetto visibile, perché la Dialog di frappe-ui
+1.0-beta ricostruisce le azioni con un proprio loading; la protezione vera è il return su
+saving. La Dialog usa ancora la vecchia API (v-model + :options): righe upstream vecchie
+(Jannat Patel), residuo di merge, non una scelta nostra.
+ATTENZIONE al merge di v2.62.0: file cancellato; LiveClassForm.vue upstream usa
+submitResource (utils/resource) e HeaderButton con :loading, che probabilmente coprono già
+entrambe le regole: verificare prima di riapplicarle."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  anchor = "if (saving.value) {"
+  symbol = "submitLiveClass"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  anchor = "const validation = validateFormFields()"
+  symbol = "submitCreate"
+
+[[entries]]
+id = "live-class-modal-time-24h-i18n"
+title = "Ora a 24 ore, etichetta Ora esplicita e traduzioni nel modale della lezione live"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Ritocchi di interfaccia:
+- il selettore dell'ora è forzato a 24 ore (:use12Hour="false", commit 305c803b8), coerente
+  con il tooltip «formato 24 ore (HH:mm)» e con l'uso italiano;
+- sopra il selettore c'è un'etichetta «Ora *» scritta a mano (commit 027c0c56f «fix merge»),
+  oltre al :label della FormControl: motivo DEDOTTO, probabilmente il FormControl type=time di
+  frappe-ui 1.0-beta non mostra la sua etichetta dentro il Tooltip. L'attributo
+  for="batchTimezone" è copiato dall'etichetta del fuso e non punta al campo ora;
+- etichette tradotte: azione Invia, opzioni di registrazione (No Recording/Local/Cloud, valori
+  inglesi invariati), segnaposto «Select option» sulla registrazione;
+- il Combobox del fuso assegna direttamente il valore ((value) => ...) invece di opt.value
+  (commit f5255c354): con il Combobox 1.0-beta il fuso non si impostava. v2.62.0 contiene la
+  stessa correzione, quindi su questo punto non è più una personalizzazione.
+ATTENZIONE al merge di v2.62.0: file cancellato; in LiveClassForm.vue riportare use12Hour e,
+se ancora serve, l'etichetta; le opzioni di registrazione restano letterali inglesi anche
+lì. Domanda per il committente: l'etichetta doppia dell'ora serve ancora?"""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  anchor = ':use12Hour="false"'
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  anchor = "{{ __('Time') }}"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  anchor = "{ label: __('No Recording'), value: 'No Recording' },"
+
+# --- Iscrizione studenti alla classe (StudentModal.vue) -----------------------
+
+[[entries]]
+id = "batch-student-modal-bulk-enroll"
+title = "Iscrizione di più studenti alla classe in un colpo solo, senza campo Pagamento"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il modale di iscrizione alla classe (dashboard admin della classe) sceglie PIÙ studenti con
+MultiLink invece di uno solo con Link (commit 033a2378a, «Enroll Students»): per ciascuno fa
+un insert di LMS Batch Enrollment in sequenza, conta i falliti (es. già iscritto) e mostra un
+solo messaggio aggregato «{0} student(s) could not be enrolled», lasciando selezionati solo quelli
+falliti per riprovare; se almeno uno riesce ricarica la classe. «Crea nuovo» chiude il
+dropdown e porta a Impostazioni → Membri. Il Link «Pagamento» (LMS Payment) è stato tolto:
+prima commentato (175b0a754), poi eliminato; il cliente non usa i pagamenti (vedi
+settings-payment-group-removed). Chi lo usa: Moderator, Batch Evaluator e Docente (isFullAdmin in
+AdminBatchDashboard.vue, vedi batch-dashboard-import-students); il Valutatore no. La Dialog usa ancora la vecchia API (v-model + :options): righe upstream
+vecchie, residuo di merge; onClick: (close) funziona grazie allo shim di compatibilità della
+Dialog 1.0-beta.
+ATTENZIONE al merge di v2.62.0: l'upstream CANCELLA questo file e lo sostituisce con
+frontend/src/pages/Forms/BatchStudentForm.vue (route NewBatchStudent), con un solo Link User
+e il Link LMS Payment, insert via frappe.client.insert e gate is_moderator || is_evaluator.
+Conflitto modifica/cancellazione: accettare la cancellazione e riapplicare nel nuovo form
+selezione multipla + ciclo di insert con messaggio aggregato + niente campo Pagamento;
+aggiornare di conseguenza frontend/src/tests/batchStudentForm.test.ts (si aspetta payment:
+null e il flusso crea-pagamento → Transactions). Il gate del nuovo form (is_moderator ||
+is_evaluator) esclude il Docente, che da noi può iscrivere (isFullAdmin): aggiungere
+is_docente al refusal del form."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/StudentModal.vue"
+  anchor = 'v-model="selectedStudents"'
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/StudentModal.vue"
+  anchor = "const addStudents = async (close) => {"
+
+# --- Dettaglio gateway di pagamento (PaymentGatewayDetails.vue) --------------
+
+[[entries]]
+id = "payment-gateway-details-formatting"
+title = "Solo formattazione nel dettaglio del gateway di pagamento"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il file differisce dall'upstream solo per una virgola finale aggiunta da Prettier in
+getNewGateway (commit e577585ca); nessun comportamento cambiato, per questo non porta
+marcatori. La pagina non è comunque raggiungibile: il gruppo Pagamenti è tolto dalle
+impostazioni (settings-payment-group-removed). Al merge di v2.62.0 l'upstream toglie la
+descrizione, cambia il titolo in modifica e aggiunge configuredGateways, lontano dalla nostra
+riga: prendere la versione upstream senza esitazioni."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/PaymentGatewayDetails.vue"
+  anchor = "gateway.name.includes(newGateway.value),"
+  symbol = "getNewGateway"
+
+# --- Certificati in blocco della classe (BulkCertificates.vue) ---------------
+
+[[entries]]
+id = "bulk-certificates-select-placeholder"
+title = "Segnaposto tradotto sulla scelta del corso nei certificati in blocco"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La select Corso del modale «Genera certificati» della classe mostra il segnaposto tradotto
+«Select option» invece di un valore vuoto (commit e577585ca, traduzioni). Il resto del diff
+sono virgole finali di Prettier. Nessuna regola di business; il titolo «Generate
+Certificates» e l'azione «Create» restano letterali inglesi.
+ATTENZIONE al merge di v2.62.0: l'upstream CANCELLA questo file e lo sostituisce con
+frontend/src/pages/Forms/BulkCertificatesForm.vue (route BulkCertificates), la cui select
+Corso non ha segnaposto: accettare la cancellazione e rimettere
+:placeholder="__('Select option')" sulla select del nuovo form (con il marcatore)."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/BulkCertificates.vue"
+  anchor = ":placeholder=\"__('Select option')\""
+
+# --- Iscrizione di uno studente al corso (CourseEnrollmentModal.vue) ----------
+
+[[entries]]
+id = "course-enrollment-purchased-certificate-hidden"
+title = "Casella «Certificato acquistato» nascosta nell'iscrizione al corso"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Nel modale «Iscrivi uno studente» della dashboard del corso la casella «Purchased
+Certificate» è commentata (commit 1d3fa64ea): purchasedCertificate resta false, quindi non
+compare mai nemmeno il Link «Pagamento» e l'iscrizione nasce senza certificato acquistato.
+Motivo DEDOTTO, il commit non lo dice: il cliente non vende certificati né usa i pagamenti,
+come per il campo Pagamento tolto dall'iscrizione alla classe (batch-student-modal-bulk-enroll)
+e il gruppo Pagamenti tolto dalle impostazioni (settings-payment-group-removed). L'ancora è il
+commento stesso, perché la personalizzazione consiste nel commentare il blocco upstream.
+Chi usa il modale: Moderator e istruttori del corso (Docente).
+ATTENZIONE al merge di v2.62.0: l'upstream CANCELLA questo file e lo sostituisce con
+frontend/src/pages/Forms/CourseEnrollmentForm.vue (route NewCourseEnrollment), che ha di
+nuovo la FormControl checkbox «Purchased Certificate» e il Link Pagamento sotto
+v-if="purchasedCertificate". Accettare la cancellazione e ricommentare (o togliere) la
+casella nel nuovo form; frontend/src/tests/courseEnrollmentForm.test.ts la usa e va adattato.
+Il lato server (enforce_server_managed_fields) riporta comunque purchased_certificate a
+false per chi non ne ha diritto. Domanda per il committente: confermare che la casella va
+nascosta anche nel nuovo form."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseEnrollmentModal.vue"
+  anchor = "<!-- <FormControl"
+
+[[entries]]
+id = "course-enrollment-enroll-label-it"
+title = "Pulsante «Iscrivi» e titolo tradotto nell'iscrizione al corso"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il pulsante di conferma del modale mostra «Iscrivi» scritto in italiano dentro __() (commit
+b580114cc) invece di __('Enroll'): all'epoca «Enroll» era tradotto in modo non adatto a un
+amministratore che iscrive un'altra persona; oggi it.csv traduce comunque Enroll → Iscrivi.
+Il titolo «Enroll a Student» passa da __() (commit 979d01269). Solo traduzione.
+ATTENZIONE al merge di v2.62.0: file cancellato e sostituito da CourseEnrollmentForm.vue,
+che ha già :title="__('Enroll a Student')" e usa un HeaderButton __('Save'): nessuna delle
+due modifiche va riapplicata, salvo che il committente voglia «Iscrivi» al posto di «Salva»."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseEnrollmentModal.vue"
+  anchor = "{{ __('Iscrivi') }}"

@@ -15,6 +15,7 @@
 		]"
 	>
 		<template #default>
+			<!-- OSLMS-CUSTOM: dialog title and Submit action label translated via __() -->
 			<div class="flex flex-col gap-4 text-base">
 				<p class="text-ink-gray-9">
 					{{
