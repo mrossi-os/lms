@@ -2354,23 +2354,32 @@ layer = "spa-graft"
 confidence = "high"
 intent = """
 I browser mobili non mostrano un PDF in un iframe (Chrome Android mostra un segnaposto di
-download, Safari iOS una prima pagina statica). I blocchi PDF caricati nella lezione
-passano quindi per PdfBlock, che sotto i 640px mostra una scheda che apre il file in una
-nuova scheda e su desktop tiene il frame incorporato. Parte della stessa correzione di
-lesson-pdf-inline-filename (nome del file nel Content-Disposition); PdfBlock si usa anche
-in LessonContent.vue per le lezioni markdown."""
+download, Safari iOS una prima pagina statica). Fino a v2.59.0 il nostro PdfBlock mostrava su
+mobile una scheda che apriva il file in un'altra scheda. Dal merge di v2.60.0 (2026-09-23,
+decisione del committente) si usa il visualizzatore pdf.js dell'upstream, che legge il PDF dentro
+la lezione anche su mobile; restano nostri: (1) gli URL dei file privati, che arrivano già
+codificati attraverso serve_resource, passati a pdf.js e al link di riserva senza ricodificarli
+(%20 diventerebbe %2520 e il PDF non si caricherebbe), mentre i percorsi grezzi dei caricamenti
+nuovi si codificano; (2) i testi del visualizzatore tradotti tramite window.__; (3) nel blocco
+upload dell'editor, il PDF riconosciuto anche dall'estensione dell'URL quando manca file_type.
+Parte della stessa correzione di lesson-pdf-inline-filename."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/PdfBlock.vue"
+  anchor = "file.includes('serve_resource') || /%[0-9A-Fa-f]{2}/.test(file)"
+  symbol = "fileURL"
+
+  [[entries.sites]]
+  file = "frontend/src/components/PdfBlock.vue"
+  anchor = "const __ = (text) => (window.__ ? window.__(text) : text)"
 
   [[entries.sites]]
   file = "frontend/src/utils/upload.js"
-  anchor = "const app = createApp(PdfBlock, {"
+  anchor = "} else if (fileType.toLowerCase() == 'pdf') {"
   symbol = "Upload.renderFile"
 
-  [[entries.sites]]
-  file = "frontend/src/components/LessonContent.vue"
-  anchor = "<PdfBlock :file=\"getId(block)\" :toolbar=\"false\" />"
-
   [entries.checks]
-  unit = "frontend/src/tests/pdfBlockMobile.test.ts"
+  unit = "frontend/src/tests/pdfBlockPrivateUrl.test.ts"
 
 [[entries]]
 id = "upload-toolbox-icon-theme"
@@ -3812,11 +3821,15 @@ id = "questionnaire-surface-base-token"
 title = "Questionario con bg-surface-base al posto di bg-surface-white"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 Le opzioni e i pulsanti di navigazione del questionario usano bg-surface-base perché
 bg-surface-white non esiste nella versione di frappe-ui/preset Tailwind del fork e rompeva la
 build («fix error build»). Se dopo un aggiornamento di frappe-ui il token esiste, si può
-accettare la versione upstream. v2.59.0 tocca solo il legend del titolo."""
+accettare la versione upstream. v2.59.0 tocca solo il legend del titolo.
+ACCEPTED-DRIFT dal 2026-09-23 (decisione del committente al merge di v2.60.0): il redesign
+dell onboarding persona dell upstream elimina Questionnaire.vue. DA VERIFICARE nella prova
+nell app: che il nuovo onboarding non abbia lo stesso problema di colore (bg-surface-white)."""
 
   [[entries.sites]]
   file = "frontend/src/components/Questionnaire.vue"

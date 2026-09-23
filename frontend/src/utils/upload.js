@@ -2,7 +2,6 @@ import AudioBlock from '@/components/AudioBlock.vue'
 import VideoBlock from '@/components/VideoBlock.vue'
 // OSLMS-CUSTOM: non-media uploads render as a download card
 import FileBlock from '@/components/FileBlock.vue'
-// OSLMS-CUSTOM: PDFs render through PdfBlock (open-in-new-tab card on mobile)
 import PdfBlock from '@/components/PdfBlock.vue'
 import UploadPlugin from '@/components/UploadPlugin.vue'
 import { h, createApp } from 'vue'
@@ -84,12 +83,15 @@ export class Upload {
 			app.mount(this.wrapper)
 			return
 		} else if (fileType.toLowerCase() == 'pdf') {
-			// OSLMS-CUSTOM: PdfBlock instead of the raw iframe (mobile browsers cannot render it)
-			const app = createApp(PdfBlock, {
+			// OSLMS-CUSTOM: PDF detected from the derived type (file_type or URL extension)
+			// iOS Safari (all WebKit browsers) refuses to scroll a PDF in an
+			// <iframe>, so render it inline via pdf.js. mount()/unmount() is tracked
+			// so destroy() can tear the pdf.js worker + render tasks down.
+			this.app = createApp(PdfBlock, {
 				file: file.file_url,
 			})
-			app.use(translationPlugin)
-			app.mount(this.wrapper)
+			this.app.use(translationPlugin)
+			this.app.mount(this.wrapper)
 			return
 		} else if (this.isImage(fileType)) {
 			this.wrapper.innerHTML = `<img class="mb-4" src=${encodeURI(
@@ -147,6 +149,16 @@ export class Upload {
 		// Fall back to the extension parsed from the file URL.
 		const path = (file.file_url || '').split('?')[0]
 		return path.includes('.') ? path.split('.').pop() : ''
+	}
+
+	// EditorJS calls destroy() when a block is removed or the editor is torn down.
+	// Unmounting the PdfBlock app fires its onBeforeUnmount, which cancels render
+	// tasks, destroys the document, and releases the shared pdf.js worker.
+	destroy() {
+		if (this.app) {
+			this.app.unmount()
+			this.app = null
+		}
 	}
 
 	isVideo(type) {

@@ -34,8 +34,7 @@
 			</video>
 		</div>
 		<div v-else-if="block.includes('{{ PDF')">
-			<!-- OSLMS-CUSTOM: markdown PDF macro rendered by PdfBlock (readable on mobile) -->
-			<PdfBlock :file="getId(block)" :toolbar="false" />
+			<PdfBlock :file="getId(block)" />
 		</div>
 		<div v-else-if="block.includes('{{ Audio')">
 			<audio width="100%" controls controlsList="nodownload">
@@ -64,6 +63,7 @@ import PdfBlock from '@/components/PdfBlock.vue'
 import MarkdownIt from 'markdown-it'
 import DOMPurify from 'dompurify'
 import { useScreenSize } from '@/utils/composables'
+import { getMacroArg } from '@/utils/lessonMacros'
 
 const screenSize = useScreenSize()
 
@@ -97,6 +97,8 @@ const getYouTubeVideoSource = (block) => {
 }
 
 const getId = (block) => {
-	return block.match(/\(["']([^"']+?)["']\)/)[1]
+	// Guard the match: a malformed `{{ PDF() }}` / unbalanced-quote macro yields
+	// null, and the old unguarded [1] threw and killed the whole lesson render.
+	return getMacroArg(block) ?? ''
 }
 </script>
