@@ -456,3 +456,13 @@ Uscita a tabella e `--json`. Attenzione ai tranelli già incontrati: in zsh `$t:
 1. `python3 -m unittest discover -s scripts/tests -t .` verde, compresi i test di `upstream_plan.py`.
 2. `python3 scripts/upstream_plan.py` sul repository reale mostra `v2.58.1` → `v2.63.0` con: il bump di `frappe-ui` in `v2.59.0` (beta.7 → beta.24) e in `v2.62.0` (→ beta.29), le 3 rotture di `v2.63.0`, **0 file non censiti** per `v2.58.1`, e la raccomandazione di fermarsi a `v2.58.1`.
 3. La skill è elencata fra quelle disponibili ed esegue i passi 0-4 fino alla creazione del branch. **Il merge vero non fa parte della costruzione**: lo lancia il committente quando vuole.
+
+### 15.7 Note di costruzione (2026-09-23)
+
+Versione 1 costruita: `.claude/skills/upstream-upgrade/SKILL.md`, `scripts/upstream_plan.py`, `scripts/tests/test_upstream_plan.py` (28 test; suite `scripts/tests` 68 verdi). Criteri di §15.6 verificati sul repository reale. Tre punti di §15.3 sono stati **corretti** in costruzione, perché applicati alla lettera davano risultati sbagliati:
+
+1. **Le rotture non stanno nei soggetti.** frappe/lms fonde le PR con commit di merge: il soggetto è «Merge pull request #N» e il titolo con `!` sta nella seconda riga del corpo. Cercando solo nei soggetti, `v2.63.0` risulta con 0 rotture invece di 3. Il piano scansiona ogni riga del messaggio (e riconosce anche il piè di pagina `BREAKING CHANGE:`).
+2. **`--not --tags` fa sparire i nostri commit.** I tag del fork (`ve1.0.1`, `vi1.0.6`, `vi1.0.7`) stanno sul nostro branch: escludere tutti i tag toglie ogni nostro commit che li precede, cioè 535 su 741 (misurato: tutti di Riccardo Liciotti e Gabriele Pagnotta). Si escludono `--remotes=upstream` più i soli tag di release upstream (`vX.Y.Z`).
+3. **I file con modifiche nostre non censite sono 154, non «circa 78»** (§15.2), per effetto del punto 2. Esclusi traduzioni, test e file generati (`yarn.lock`, `components.d.ts`). `v2.58.1` resta a 0; `v2.59.0` ne tocca 82, `v2.62.0` 125: la fermata F7 sarà il lavoro principale dei passi successivi a `v2.58.1`.
+
+Scelte di costruzione non previste dal testo: le fermate di giudizio (F4-F7) si valutano **prima** del merge, dal piano, così i conflitti si risolvono già nella direzione decisa; il piano segnala anche le pagine congelate il cui originale è toccato (`overrides/<rel>` → `frontend/src/<rel>`) e conta un rinomino come un file solo, tenendo però entrambi i percorsi negli incroci.

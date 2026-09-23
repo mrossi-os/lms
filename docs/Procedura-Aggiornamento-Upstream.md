@@ -3,7 +3,7 @@
 **Destinatari:** chi esegue l'aggiornamento della piattaforma dal progetto originale (`frappe/lms`).
 **Documento di progetto:** [`superpowers/specs/2026-09-18-upstream-release-walk-design.md`](superpowers/specs/2026-09-18-upstream-release-walk-design.md) — come è fatto il sistema e perché.
 
-> **Stato:** gli strumenti marcati ⚙️ **non esistono ancora**. Questa guida descrive la procedura a sistema costruito. Vedi §8 per cosa manca e in quale ordine va costruito.
+> **Stato (2026-09-23):** la versione 1 di `/upstream-upgrade` è costruita — skill `.claude/skills/upstream-upgrade/SKILL.md` e piano `scripts/upstream_plan.py`. Gli strumenti ancora marcati ⚙️ **non esistono ancora**. Vedi §8 per cosa manca.
 
 ---
 
@@ -40,7 +40,7 @@ rm -rf .git/rr-cache                # cancella tutto lo storico
 
 ---
 
-## 3. Avvio: un comando, due domande ⚙️
+## 3. Avvio: un comando, due domande
 
 ```
 /upstream-upgrade
@@ -50,16 +50,16 @@ Il comando esegue da solo, in sequenza:
 
 | | Cosa fa | Se qualcosa non va |
 | --- | --- | --- |
-| 1 | Verifica che il working tree sia pulito | Si ferma ed elenca cosa c'è di non committato |
+| 1 | Verifica che il working tree sia pulito (sono tollerati `docs/WORKLOG.md` modificato e i file non tracciati) | Si ferma ed elenca cosa c'è di non committato |
 | 2 | Verifica remote e `rerere` | Propone i comandi mancanti |
 | 3 | `git fetch upstream --tags` | — |
-| 4 | Calcola il piano: per ogni release fra dove sei e l'ultima — **commit e file reali** (dal diff, non dalle note), rotture dichiarate, **cambi di dipendenze**, tuoi file censiti coinvolti | — |
+| 4 | Calcola il piano (`scripts/upstream_plan.py`): per ogni release fra dove sei e l'ultima — **commit e file reali** (dal diff, non dalle note), rotture dichiarate, **versione di `frappe-ui`**, tuoi file censiti coinvolti, pagine congelate toccate, **tuoi file modificati ma non censiti** | — |
 | 5 | Mostra il piano con una **raccomandazione motivata** su dove fermarsi | — |
 
 Poi ti fa **due domande**:
 
 > **1.** Fino a quale release vuoi arrivare? *[proposta fra parentesi]*
-> **2.** Creo il branch `merge/upstream-<versione>` partendo da `<branch corrente>`. Confermi?
+> **2.** Da quale branch parto e con quale nome? *[`feature/oslms` → `merge/upstream-<versione>`]*
 
 La seconda domanda **dichiara la partenza** invece di darla per scontata: è il momento in cui ti accorgi se sei sul branch sbagliato. Partire per distrazione da `develop` invece che dal tuo branch di lavoro farebbe lavorare il percorso per ore su una base sbagliata.
 
@@ -77,17 +77,20 @@ Perché sono la categoria che nessuno strumento vede. Un bump di libreria viene 
 
 ### 4.1 Il ciclo, per ogni release in ordine dalla più vecchia
 
+Le fermate che richiedono una tua decisione si ricavano dal piano **prima** del merge: così i conflitti si risolvono già nella direzione che hai scelto.
+
 | | Passo | Se fallisce |
 | --- | --- | --- |
-| a | Merge della release | → Fermata 1 |
-| b | Rilevatore di scostamento ⚙️ | → Fermata 2 |
-| c | Build | → Fermata 3 |
-| d | Note: rotture dichiarate (`!`) | → Fermata 4 |
-| e | Note: sovrapposizioni con funzioni tue | → Fermata 5 |
-| f | Pagine congelate toccate | → Fermata 6 |
-| g | Nulla da segnalare → commit e release successiva | — |
+| a | File tuoi modificati ma non censiti, toccati dalla release | → Fermata 7 |
+| b | Bump di `frappe-ui` o pagine congelate toccate | → Fermata 6 |
+| c | Rotture dichiarate (`!`) | → Fermata 4 |
+| d | Sovrapposizioni con funzioni tue | → Fermata 5 |
+| e | Merge della release | → Fermata 1 |
+| f | Rilevatore di scostamento | → Fermata 2 |
+| g | Build | → Fermata 3 |
+| h | Nulla da segnalare → release successiva, senza chiederti niente | — |
 
-### 4.2 Le sei fermate
+### 4.2 Le sette fermate
 
 | Fermata | Chi decide | Cosa ricevi |
 | --- | --- | --- |
@@ -96,7 +99,8 @@ Perché sono la categoria che nessuno strumento vede. Un bump di libreria viene 
 | 3 · Build rotta | **Agente** — diagnostica e corregge | Riga di rapporto |
 | 4 · Rottura dichiarata | **Tu** | Valutazione d'impatto |
 | 5 · Sostituzione o deprecazione | **Tu** | Analisi comparativa e raccomandazione |
-| 6 · Pagina congelata toccata | **Tu** | Confronto a tre vie e proposta |
+| 6 · Pagina congelata toccata o bump di `frappe-ui` | **Tu** | Diff upstream e proposta (il confronto a tre vie arriverà quando sarà registrata la base di ogni override) |
+| 7 · File tuoi non censiti toccati | **Tu** | Proposta di censirli **prima** del merge: marcatore e voce di inventario |
 
 Puoi **interrompere quando vuoi**: lo stato del percorso è su file, non nella conversazione. Riprendi giorni dopo, anche da una sessione nuova, e il percorso sa dov'era e perché si era fermato.
 
@@ -117,8 +121,8 @@ Puoi **interrompere quando vuoi**: lo stato del percorso è su file, non nella c
 Li lancia l'agente a fine percorso:
 
 ```bash
-python3 scripts/check_customizations.py        # ⚙️ secondi
-cd frontend && yarn test                        # ⚙️ ~30 secondi
+python3 scripts/check_customizations.py        # secondi
+cd frontend && yarn test                        # ~30 secondi
 bench --site <sito> run-tests --app os_lms
 bench --site <sito> run-ui-tests lms --headless # ⚙️ opzionale, lento
 ```
@@ -171,17 +175,19 @@ Unisci nel branch di lavoro e decidi se pubblicare. **L'agente non pubblica mai 
 
 | ⚙️ Strumento | Sblocca | Stato |
 | --- | --- | --- |
-| Inventario + rilevatore (Fase 0) | Fermata 2, riparazione guidata, lista di cosa provare | Piano scritto e codice verificato, non eseguito |
+| Inventario + rilevatore (Fase 0) | Fermata 2, riparazione guidata, lista di cosa provare | ✅ Completo |
 | Test backend e Vitest (Fase 1) | §5.1, e la fiducia nel «procedi da solo» | Da pianificare |
-| Motore del percorso + skill | §3, §4 | Progetto scritto, punti aperti |
+| Motore del percorso + skill | §3, §4 | ✅ Versione 1 (2026-09-23): `plan` è codice (`scripts/upstream_plan.py`); ciclo, fermate e stato sono dentro la skill |
 | Seeding + E2E (Fasi 2-3) | L'ultima riga di §5.1 | Da pianificare |
 
 **Il minimo utile è la Fase 0:** con quella soltanto puoi già fare un aggiornamento a mano sapendo esattamente cosa hai perso.
 
-## 9. Consultazione senza aggiornare ⚙️
+## 9. Consultazione senza aggiornare
 
 ```bash
-python3 scripts/upstream_walk.py plan --to <versione>
+python3 scripts/upstream_plan.py                  # tutte le release a monte
+python3 scripts/upstream_plan.py --to <versione>  # fino a una release
+python3 scripts/upstream_plan.py --json           # per strumenti e agenti
 ```
 
 Per guardare cosa c'è a monte senza nessuna intenzione di aggiornare — per esempio per decidere *quando* farlo. Non modifica nulla.
