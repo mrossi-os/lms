@@ -1,6 +1,7 @@
 <template>
 	<div class="space-y-1.5">
 		<FormLabel v-if="label" :label="label" :required="required" />
+		<!-- OSLMS-CUSTOM: self-contained Popover + reka-ui Combobox instead of frappe-ui MultiSelect -->
 		<Popover
 			:show="popoverOpen"
 			:matchTargetWidth="true"
@@ -136,6 +137,7 @@
 
 <script setup lang="ts">
 import { Button, FormLabel, LoadingIndicator, Popover, createResource } from 'frappe-ui'
+// OSLMS-CUSTOM: reka-ui primitives for the self-contained multi-select
 import {
 	ComboboxRoot,
 	ComboboxInput,
@@ -189,6 +191,7 @@ const value = defineModel<string[]>({ default: () => [] })
 const popoverOpen = ref<boolean>(false)
 let loaded = false
 
+// OSLMS-CUSTOM: theme focus/open ring on the trigger (variants lose the bg/border swap)
 const triggerBaseClasses =
 	'relative inline-flex items-center gap-2 text-left text-ink-gray-7 outline-none transition-[background-color,border-color,box-shadow] duration-150 focus-visible:ring-2 data-[state=open]:ring-2 ring-outline-gray-3'
 
@@ -242,6 +245,7 @@ function onPopoverToggle(open: boolean) {
 
 const onQuery = useDebounceFn((txt: string) => reload(txt || ''), 300)
 
+// OSLMS-CUSTOM: server-side search driven by the reka ComboboxInput
 function onInput(event: Event) {
 	onQuery((event.target as HTMLInputElement).value)
 }
@@ -284,6 +288,7 @@ const optionByValue = computed<Map<string, SelectOption>>(() => {
 	return map
 })
 
+// OSLMS-CUSTOM: trigger summary computed here (MultiSelect used to provide it)
 // Resolve currently selected values to full option objects (falling back to a
 // bare {label,value} when an option hasn't been loaded yet) for the trigger.
 const selectedOptions = computed<SelectOption[]>(() =>
@@ -300,6 +305,7 @@ function defaultSummary(selected: { label: string }[]) {
 	return selected.map((o) => o.label).join(', ')
 }
 
+// OSLMS-CUSTOM: Clear footer action (MultiSelect used to provide it)
 function clearAll() {
 	value.value = []
 	onChange([])

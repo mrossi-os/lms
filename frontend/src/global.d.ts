@@ -19,6 +19,7 @@ declare module 'vue' {
   }
 }
 
+// OSLMS-CUSTOM: __ also declared on @vue/runtime-core for template type-checking
 declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
     __: (text: string) => string

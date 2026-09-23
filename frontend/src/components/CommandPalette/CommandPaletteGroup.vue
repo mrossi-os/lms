@@ -1,6 +1,7 @@
 <template>
 	<div v-for="result in list" class="px-2.5 space-y-2">
 		<div class="text-ink-gray-5 px-2">
+			<!-- OSLMS-CUSTOM: group titles translated at render time -->
 			{{ __(result.title) }}
 		</div>
 		<div class="">
@@ -16,6 +17,7 @@
 						:is="item.icon"
 						class="size-4 stroke-1.5 text-ink-gray-6"
 					/>
+					<!-- OSLMS-CUSTOM: explicit theme ink color on the result title -->
 					<div
 						class="text-ink-gray-8"
 						v-html="sanitizeRichHTML(item.title)"

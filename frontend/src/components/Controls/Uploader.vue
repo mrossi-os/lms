@@ -8,6 +8,7 @@
 			@failure="onUploadFailure"
 		>
 			<template v-slot="{ uploading, progress, openFileSelector }">
+				<!-- OSLMS-CUSTOM: flex-wrap so the buttons drop below the preview on mobile -->
 				<div class="flex flex-wrap items-start gap-4">
 					<div
 						:class="[
@@ -52,6 +53,7 @@
 						</Button>
 					</div>
 				</div>
+				<!-- OSLMS-CUSTOM: render the description prop callers already pass -->
 				<p v-if="description" class="text-p-xs text-ink-gray-5 mt-1.5">
 					{{ __(description) }}
 				</p>
@@ -74,6 +76,7 @@ const props = withDefaults(
 	defineProps<{
 		modelValue: string | null
 		label?: string
+		// OSLMS-CUSTOM: declared so NewCourseModal/BadgeForm hints are shown
 		description?: string
 		type?: 'image' | 'video'
 		required?: boolean
@@ -92,6 +95,7 @@ const fileType = computed<string>(() =>
 
 const previewBoxClasses = computed<string>(() => {
 	if (props.shape === 'circle') return 'size-24 rounded-full'
+	// OSLMS-CUSTOM: preview capped at container width on mobile
 	// max-w-full lets the preview shrink on narrow containers (mobile) so the
 	// action buttons keep enough room to wrap below instead of being clipped.
 	return 'w-56 max-w-full aspect-[750/422] rounded-md'

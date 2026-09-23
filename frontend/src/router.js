@@ -46,6 +46,7 @@ const routes = [
 		component: () => import('@/pages/Lesson.vue'),
 		props: true,
 	},
+	// OSLMS-CUSTOM: standalone lesson editor URL kept alongside the CourseDetail editor
 	{
 		path: '/courses/:courseName/learn/:chapterNumber-:lessonNumber/edit',
 		name: 'LessonForm',
@@ -238,11 +239,13 @@ const routes = [
 			),
 		props: true,
 	},
+	// OSLMS-CUSTOM: /search page restored after upstream removed it
 	{
 		path: '/search',
 		name: 'Search',
 		component: () => import('@/pages/Search/Search.vue'),
 	},
+	// OSLMS-CUSTOM: file upload page (user dropdown entry)
 	{
 		path: '/file-upload',
 		name: 'FileUpload',
@@ -265,6 +268,7 @@ const routes = [
 		component: () => import('@/pages/DataImport.vue'),
 		props: true,
 	},
+	// OSLMS-CUSTOM: os_lms AI chat/voice simulation pages
 	{
 		path: '/simulations/admin',
 		name: 'InstructorReports',
@@ -299,6 +303,7 @@ const routes = [
 		component: () => import('@/oslms/pages/Simulation/SimulationDebrief.vue'),
 		props: true,
 	},
+	// OSLMS-CUSTOM: student statistics export page
 	{
 		path: '/statistics/export',
 		name: 'StudentStatsExport',

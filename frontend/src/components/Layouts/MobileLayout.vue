@@ -1,5 +1,6 @@
 <template>
 	<div class="relative flex h-screen flex-col bg-surface-base">
+		<!-- OSLMS-CUSTOM: root carries bg-surface-base (mobile body background) -->
 		<div
 			class="flex flex-1 flex-col overflow-y-auto pb-10"
 			id="scrollContainer"
@@ -24,11 +25,13 @@
 						:is="icons[link.icon]"
 						class="h-4 w-4 stroke-1.5 text-ink-gray-5"
 					/>
+					<!-- OSLMS-CUSTOM: menu labels translated and themed -->
 					<div class="text-ink-gray-9">{{ __(link.label) }}</div>
 				</div>
 			</div>
 
 			<!-- Fixed menu -->
+			<!-- OSLMS-CUSTOM: bottom bar on bg-surface-gray-1 -->
 			<div
 				v-if="sidebarSettings.data"
 				class="standalone:pb-4 fixed bottom-0 start-0 z-10 flex w-full items-center justify-around border-t border-outline-gray-2 bg-surface-gray-1"
@@ -55,6 +58,7 @@
 			</div>
 		</div>
 
+		<!-- OSLMS-CUSTOM: floating AI coach/tutor buttons on mobile too -->
 		<AiFixedButtons />
 	</div>
 </template>
@@ -67,6 +71,7 @@ import { useSettings } from '@/stores/settings'
 import { usersStore } from '@/stores/user'
 import * as icons from 'lucide-vue-next'
 import { toggleNotifications } from '@/stores/notifications'
+// OSLMS-CUSTOM: os_lms floating AI buttons
 import AiFixedButtons from '@/oslms/components/AiFixedButtons.vue'
 
 const { logout, user } = sessionStore()
@@ -117,6 +122,7 @@ const filterLinksToShow = (data) => {
 	})
 }
 
+// OSLMS-CUSTOM: extra menu links honour the LMS sidebar settings toggles
 const isLinkEnabled = (label) => {
 	const data = sidebarSettings.data
 	if (!data) return true
@@ -151,8 +157,10 @@ const updateSidebarLinks = () => {
 		{
 			onSuccess: async (data) => {
 				filterLinksToShow(data)
+				// OSLMS-CUSTOM: no Programs entry in the mobile nav
 				// Programs are intentionally hidden on mobile
 				if (isModerator.value || isInstructor.value) {
+					// OSLMS-CUSTOM: instructor links gated on the sidebar settings
 					if (isLinkEnabled('Quizzes')) addLink('Quizzes', 'CircleHelp', 'Quizzes')
 					if (isLinkEnabled('Assignments')) addLink('Assignments', 'Pencil', 'Assignments')
 					if (isLinkEnabled('Programming Exercises')) addLink('Programming Exercises', 'Code', 'ProgrammingExercises')

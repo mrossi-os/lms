@@ -5492,3 +5492,568 @@ modifica upstream in setValue."""
   file = "frontend/src/components/Settings/ZoomAccountForm.vue"
   anchor = "OSLMS-CUSTOM: keep account_name in sync with the (possibly renamed) doc name"
   symbol = "setValue"
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 prima del merge di v2.61.0 — controlli, layout e infrastruttura
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 prima del merge di v2.61.0 — gruppo "controls-infra"
+# (controlli condivisi, layout, palette, router, configurazione test, patch e
+# foglio di stile legacy). Base P = v2.60.1, obiettivo T = v2.61.0.
+# ---------------------------------------------------------------------------
+
+# --- Palette Cmd+K (CommandPaletteGroup.vue) ---------------------------------
+
+[[entries]]
+id = "command-palette-group-title-i18n-ink"
+title = "Titoli dei gruppi della palette tradotti e titolo dei risultati in inchiostro del tema"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+CommandPalette passa ai gruppi titoli letterali in inglese («Jump to», nomi di doctype dei
+risultati di ricerca): CommandPaletteGroup li traduce con __() al momento del rendering, ed è
+per questo che CommandPalette.vue lascia il letterale 'Jump to' (voce
+command-palette-search-page-entry). Tradurli qui, a ogni rendering, evita anche il
+congelamento in inglese al ricaricamento completo (memoria translation_baked_ref_freezes_english).
+Il titolo del singolo risultato (v-html) porta text-ink-gray-8 esplicito perché nel tema elite
+il testo ereditato non era leggibile (commit d6d2b82d8, colore dedotto: confidence della parte
+cromatica bassa). ATTENZIONE al merge di v2.61.0: l'upstream riscrive il corpo del gruppo
+(ul/li/button con data-palette-item, :key sui v-for) toccando entrambe le righe: prendere la
+struttura upstream e riapplicare {{ __(result.title) }} nel div del titolo del gruppo e
+class="text-ink-gray-8" sul div con v-html dentro il nuovo <button>."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CommandPalette/CommandPaletteGroup.vue"
+  anchor = "{{ __(result.title) }}"
+
+  [[entries.sites]]
+  file = "frontend/src/components/CommandPalette/CommandPaletteGroup.vue"
+  anchor = 'class="text-ink-gray-8"'
+
+# --- Controlli (Controls/) -----------------------------------------------------
+
+[[entries]]
+id = "image-uploader-progress-format"
+title = "Percentuale di caricamento immagine con .format()"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+__('Uploading {0}%', [progress]) mostrava «[object Object]» o il segnaposto non sostituito:
+il __() del frontend non accetta argomenti di formato, quindi si usa .format(progress)
+(commit 0a8870811, correzione i18n su tutti i {0}). Nessun marcatore: la riga sta dentro
+un attributo del template. ATTENZIONE al merge di v2.61.0: l'upstream contiene la stessa
+identica modifica, il merge è pulito e da quel momento non è più una personalizzazione;
+la voce può essere rimossa dopo il merge."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/ImageUploader.vue"
+  anchor = "__('Uploading {0}%').format(progress)"
+
+[[entries]]
+id = "multilink-reka-combobox"
+title = "MultiLink autonomo su Popover + Combobox di reka-ui"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+MultiLink (selezione multipla con ricerca lato server: istruttori del corso, corsi correlati,
+filtri dell'esportazione statistiche, iscrizione studenti al batch…) non usa il MultiSelect di
+frappe-ui ma un Popover di frappe-ui con dentro ComboboxRoot/Input/Item di reka-ui, con
+ricerca server (ignore-filter + onInput → reload), riepilogo nel pulsante
+(selectedOptions/displayValue con ripiego {label: v, value: v} per i valori non ancora
+caricati), piede «Cancella»/«Crea nuovo» (clearAll) e un anello di focus/apertura sul pulsante al
+posto del cambio di sfondo/bordo delle varianti. Motivazione dedotta dai commit 9b609dbae
+«fix link and multilink components» e 265842cde «Fix crash after merge with upstream»: il
+componente upstream si appoggiava al MultiSelect di frappe-ui 1.0-beta mentre il fork girava
+su frappe-ui 0.1.276, e la pagina andava in errore; riscriverlo su reka-ui lo ha reso
+indipendente dalla versione di frappe-ui e dall'override stantio del Combobox (memoria
+combobox_override_event_api: «MultiLink è autonomo su reka-ui, non toccato»). Oggi
+node_modules è su frappe-ui 1.0.0-beta.24, che esporta MultiSelect: da chiarire se la
+riscrittura serve ancora. ATTENZIONE al merge di v2.61.0: conflitto pesante. L'upstream, sul
+proprio template MultiSelect, aggiunge la prop disabled (usata dal nuovo
+Settings/Raven/RuleEditor.vue), estrae toOptions, e soprattutto risolve le etichette dei valori
+già salvati prima dell'apertura (titleLookup + resolved/requested + resolveMissing con watch
+immediato, filters {name in …} più names per search_users_by_role, mergedOptions esteso a
+resolved e al docname grezzo), e sposta il tipo Resource da '@/types/api' a '@/types'.
+Risoluzione consigliata se si tiene la nostra versione: tenere il template Popover/reka e
+riportare nello script disabled (sul <button> trigger: :disabled e classi cursor-not-allowed
+opacity-60, e niente apertura del Popover), toOptions, titleLookup/resolveMissing/watch e le
+due aggiunte a mergedOptions (import di watch). Senza, i MultiLink con valori salvati
+mostrano il docname invece del titolo finché non si apre la tendina."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/MultiLink.vue"
+  anchor = "<ComboboxRoot"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/MultiLink.vue"
+  anchor = "} from 'reka-ui'"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/MultiLink.vue"
+  anchor = "focus-visible:ring-2 data-[state=open]:ring-2 ring-outline-gray-3"
+  symbol = "triggerBaseClasses"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/MultiLink.vue"
+  anchor = "function onInput(event: Event) {"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/MultiLink.vue"
+  anchor = "(v) => optionByValue.value.get(v) || { label: v, value: v }"
+  symbol = "selectedOptions"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/MultiLink.vue"
+  anchor = "function clearAll() {"
+
+[[entries]]
+id = "multiselect-exclude-cached-options"
+title = "MultiSelect con valori esclusi e opzioni scelte esposte"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il dialogo «Aggiungi corso al programma» (ProgramForm, voce program-form-add-courses-multi)
+passa :exclude con i corsi già nel programma, che non devono comparire tra le opzioni, e legge
+dal ref del componente cachedOptions, la cache delle opzioni effettivamente selezionate, per
+dare alle nuove righe titolo e descrizione del corso. Il MultiSelect upstream non ha né la prop
+né l'esposizione: senza, il dialogo riproporrebbe corsi già presenti e le righe nuove
+avrebbero solo il docname. Il file ha anche perso l'a capo finale (solo formattazione).
+ATTENZIONE al merge di v2.61.0: l'upstream tocca solo aria-label dell'input e l'import del
+tipo Resource ('@/types'): nessuna sovrapposizione, merge atteso pulito."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/MultiSelect.vue"
+  anchor = "exclude?: string[]"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/MultiSelect.vue"
+  anchor = "const cachedOptions = ref<SelectOption[]>([])"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/MultiSelect.vue"
+  anchor = "!excluded.has(option.value)"
+  symbol = "options"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/MultiSelect.vue"
+  anchor = "defineExpose({ cachedOptions })"
+
+[[entries]]
+id = "multiselect-focus-input-handler"
+title = "Gestore focusInput definito nel MultiSelect"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il template upstream chiama @click="focusInput" sul riquadro dei valori e dà ref="search"
+all'input, ma lo script upstream non definisce né focusInput né il ref (gestore orfano rimasto
+da un refactor, ancora così in v2.61.0): un clic sul riquadro fuori dall'input dava un errore
+in console invece di mettere a fuoco la ricerca. Li definiamo noi (commit 1de09e4d5). Se un
+merge porta l'upstream a definirli, tenere una sola definizione."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/MultiSelect.vue"
+  anchor = "const focusInput = () => {"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/MultiSelect.vue"
+  anchor = "const search = ref<{ $el: HTMLElement } | null>(null)"
+
+[[entries]]
+id = "uploader-mobile-wrap-description"
+title = "Uploader usabile su telefono e con descrizione visibile"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nel dialogo Nuovo corso, su telefono, l'anteprima larga w-56 in una riga che non andava a capo
+spingeva fuori vista i pulsanti Carica/Sostituisci/Rimuovi: la riga ora fa flex-wrap e
+l'anteprima è limitata a max-w-full, così i pulsanti scendono sotto. Inoltre la prop
+description, già passata da NewCourseModal (linee guida della miniatura) e da BadgeForm, non
+era dichiarata né mostrata: la dichiariamo e la rendiamo tradotta sotto il controllo (commit
+252fce492). ATTENZIONE al merge di v2.61.0: l'upstream aggiunge solo :alt all'<img>
+dell'anteprima, lontano dalle nostre righe: merge atteso pulito."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/Uploader.vue"
+  anchor = 'class="flex flex-wrap items-start gap-4"'
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/Uploader.vue"
+  anchor = "'w-56 max-w-full aspect-[750/422] rounded-md'"
+  symbol = "previewBoxClasses"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/Uploader.vue"
+  anchor = '<p v-if="description"'
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/Uploader.vue"
+  anchor = "description?: string"
+
+[[entries]]
+id = "video-preview-field-vimeo"
+title = "Campo video di anteprima: link Vimeo e link di condivisione Vimeo"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il campo «Video di anteprima» di corsi e batch accetta anche link Vimeo, non solo YouTube:
+l'anteprima nel modulo usa l'iframe anche per il tipo 'embed' (Vimeo) di getVideoPreview, e
+testi e segnaposto citano Vimeo. Un link vimeo.com/share/<uuid> (pulsante «Copia link» di
+Vimeo) non è incorporabile: update() salva subito il testo digitato e poi chiede a os_lms
+resolve_vimeo_share la forma canonica, sostituendo il valore; se fallisce mostra un toast e
+lascia il valore com'è. È l'altra metà di embed-vimeo-share-links (memoria
+vimeo_share_link_server_resolution); il tipo 'embed' vive in utils/video.ts (commit 0a61c2f10,
+batch-preview-video). ATTENZIONE al merge di v2.61.0: l'upstream aggiunge
+:aria-label="__('YouTube link')" subito sopra il nostro :placeholder → conflitto sul
+FormControl: tenere il nostro placeholder e l'aria-label upstream portandola a «YouTube or
+Vimeo link» (con traduzione in it.po/it.csv). Aggiunge anche :title all'iframe e aria-label al
+pulsante di rimozione: da accettare; l'iframe deve restare v-if="isEmbedPreview"."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/VideoPreviewField.vue"
+  anchor = 'v-if="isEmbedPreview"'
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/VideoPreviewField.vue"
+  anchor = "preview.value.type === 'embed'"
+  symbol = "isEmbedPreview"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/VideoPreviewField.vue"
+  anchor = "__('Paste a YouTube or Vimeo link')"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/VideoPreviewField.vue"
+  anchor = "call('os_lms.os_lms.api.resolve_vimeo_share'"
+  symbol = "update"
+
+  [entries.checks]
+  unit = "frontend/src/tests/videoPreviewFieldShare.test.ts"
+
+# --- Layout (DesktopLayout.vue, MobileLayout.vue) ----------------------------
+
+[[entries]]
+id = "ai-fixed-buttons-layouts"
+title = "Pulsanti flottanti AI montati nei layout desktop e mobile"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+I pulsanti flottanti del coach/tutor AI di os_lms (AiFixedButtons) sono montati una volta sola
+nella shell dell'app, così compaiono su ogni pagina senza toccare le singole pagine. All'inizio
+erano solo in DesktopLayout, quindi sotto i 640px (MobileLayout) mancavano dal DOM: sono stati
+montati anche lì (commit 099e173c9), con AiFixedButtons che si alza sopra la barra inferiore
+(voce course-mobile-cta-bar). ATTENZIONE al merge di v2.61.0: entrambi i layout vengono
+riscritti per l'accessibilità (link «Salta al contenuto principale», <main> al posto del div
+contenitore, <nav> nella barra mobile): i due <AiFixedButtons /> sono adiacenti alle righe
+cambiate e andranno in conflitto. Tenere la struttura upstream, rimettere <AiFixedButtons />
+come ultimo figlio del contenitore radice (dopo </main> su desktop, dopo il blocco menu su
+mobile) e mantenere i due import."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/DesktopLayout.vue"
+  anchor = "<AiFixedButtons />"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/DesktopLayout.vue"
+  anchor = "import AiFixedButtons from '@/oslms/components/AiFixedButtons.vue'"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/MobileLayout.vue"
+  anchor = "<AiFixedButtons />"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/MobileLayout.vue"
+  anchor = "import AiFixedButtons from '@/oslms/components/AiFixedButtons.vue'"
+
+[[entries]]
+id = "desktop-layout-elite-sidebar"
+title = "Contenitore della sidebar desktop senza bordo e sfondo upstream"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Nel tema elite il contenitore della AppSidebar non porta le classi upstream border-e
+bg-surface-sidebar (commit e9b6577b7 «update theme colors»): colore e bordo della sidebar sono
+dati dal tema. Davanti c'è un <div class="bg-gradient-overlay">, aggancio di una sfumatura
+del tema il cui CSS (.bg-gradient-overlay e le variabili --gradient-overlay-*) è stato
+rimosso nel commit 2b3b61c7d: oggi il div è inerte (già annotato nel WORKLOG). Motivazione
+dedotta; da confermare se il div vada tolto. ATTENZIONE al merge di v2.61.0: l'upstream
+inserisce il link «Skip to main content» subito prima del div della sidebar e trasforma il
+contenitore del contenuto in <main id="main-content">: conflitto sulle prime righe del template.
+Accettare skip link e <main>, tenere il contenitore sidebar come class="h-full" (e, se ancora
+voluto, il div overlay)."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/DesktopLayout.vue"
+  anchor = '<div class="h-full">'
+
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/DesktopLayout.vue"
+  anchor = '<div class="bg-gradient-overlay"></div>'
+
+[[entries]]
+id = "mobile-layout-theme-labels"
+title = "Colori e etichette tradotte nel layout mobile"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Sul telefono la radice del layout porta bg-surface-base (lo sfondo del body restava
+diverso dal contenuto) e la barra di navigazione inferiore usa bg-surface-gray-1 per staccarsi
+dal contenuto (commit 76f1d5a1c); le voci del menu «altro» passano per __() e hanno colore del
+tema text-ink-gray-9 (commit bf14f80d1), altrimenti restavano in inglese. ATTENZIONE al merge
+di v2.61.0: l'upstream trasforma il div del contenuto in <main>, le voci del menu «altro» da
+<div> in <button> e la barra inferiore da <div> in <nav> con aria-label: conflitto su tutte e
+tre le righe. Accettare i nuovi elementi upstream e riapplicare bg-surface-base sulla radice,
+bg-surface-gray-1 al posto di bg-surface-base nella classe della <nav>, e
+class="text-ink-gray-9" + {{ __(link.label) }} nel div dell'etichetta dentro il <button>."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/MobileLayout.vue"
+  anchor = 'class="relative flex h-screen flex-col bg-surface-base"'
+
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/MobileLayout.vue"
+  anchor = "border-t border-outline-gray-2 bg-surface-gray-1"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/MobileLayout.vue"
+  anchor = '<div class="text-ink-gray-9">{{ __(link.label) }}</div>'
+
+[[entries]]
+id = "mobile-nav-sidebar-settings-toggles"
+title = "Menu mobile rispettoso delle impostazioni della sidebar"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le voci che MobileLayout aggiunge a mano al menu «altro» (Notifiche per tutti; Quiz, Compiti,
+Esercizi di programmazione per moderatori e docenti) ignoravano gli interruttori della sidebar
+nelle impostazioni LMS, che filterLinksToShow applica solo ai link della sidebar: una voce
+spenta per il desktop ricompariva sul telefono. isLinkEnabled calcola la stessa chiave
+(etichetta in minuscolo con underscore) e aggiunge la voce solo se l'impostazione è assente o
+attiva; per questo i tre helper upstream addQuizzes/addAssignments/addProgrammingExercises sono
+stati sostituiti da addLink condizionati (commit 8d417b557). ATTENZIONE al merge di v2.61.0:
+l'upstream riscrive updateSidebarLinks (loadSidebarSettings().then(...) al posto di
+sidebarSettings.reload con onSuccess, più un watch su sidebarSettings.data) e conserva i tre
+helper e addPrograms: conflitto. Prendere la nuova struttura upstream e dentro il then
+riapplicare le tre chiamate addLink condizionate da isLinkEnabled (o condizionare gli helper) e
+isLinkEnabled('Notifications') in addOtherLinks; tenere isLinkEnabled."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/MobileLayout.vue"
+  anchor = "const isLinkEnabled = (label) => {"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/MobileLayout.vue"
+  anchor = "if (isLinkEnabled('Notifications'))"
+  symbol = "addOtherLinks"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/MobileLayout.vue"
+  anchor = "if (isLinkEnabled('Quizzes'))"
+  symbol = "updateSidebarLinks"
+
+[[entries]]
+id = "mobile-nav-programs-hidden"
+title = "Voce Programmi assente dal menu mobile"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Sul telefono la navigazione non mostra Programmi, per nessun ruolo: l'upstream la inserisce
+in MobileLayout con addPrograms() dopo un controllo asincrono (checkIfCanAddProgram con
+chiamata a get_programs), perché getSidebarLinks(true) la esclude sempre su mobile; noi abbiamo
+tolto addPrograms, checkIfCanAddProgram e l'import di call (commit 96c6c73cb «fix mobile
+layout», dopo un tentativo di correggere la voce duplicata in 36a0d8531). Il commento nel
+codice dice «intenzionalmente nascosti», ma il motivo di prodotto non è scritto: da confermare.
+ATTENZIONE al merge di v2.61.0: l'upstream conserva addPrograms/checkIfCanAddProgram e li
+richiama dentro il nuovo loadSidebarSettings().then(...): nella risoluzione non reintrodurre
+await addPrograms() né le due funzioni (né l'import di call se resta inutilizzato)."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/MobileLayout.vue"
+  anchor = "// Programs are intentionally hidden on mobile"
+  symbol = "updateSidebarLinks"
+
+# --- Tipi globali, router, configurazione dei test ---------------------------
+
+[[entries]]
+id = "global-dts-runtime-core-augmentation"
+title = "__ dichiarato anche su @vue/runtime-core"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Oltre all'aumento upstream di ComponentCustomProperties su 'vue', lo stesso __ è dichiarato
+sul modulo '@vue/runtime-core' (commit 6d6d2af78 di Gabriele Pagnotta, «fix merge problems on
+course and lesson form»). Motivazione dedotta: alcuni strumenti di tipo (Volar/vue-tsc in
+certe versioni) leggono le proprietà globali dei template da @vue/runtime-core, e senza questa
+dichiarazione __() nei template risultava non tipizzato. Nessun effetto a runtime. ATTENZIONE
+al merge di v2.61.0: l'upstream re-indenta tutto il file con tabulazioni e aggiunge l'a capo
+finale, toccando la chiusura del blocco 'vue' a cui il nostro blocco è accodato: conflitto
+banale. Prendere la versione upstream e riaccodare il blocco '@vue/runtime-core' indentato
+con tabulazioni."""
+
+  [[entries.sites]]
+  file = "frontend/src/global.d.ts"
+  anchor = "declare module '@vue/runtime-core' {"
+
+[[entries]]
+id = "router-lesson-edit-route"
+title = "Rotta diretta dell'editor di lezione /learn/<cap>-<lez>/edit"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+La rotta LessonForm (/courses/:courseName/learn/:chapterNumber-:lessonNumber/edit) apre
+l'editor di una lezione con un URL proprio. L'upstream l'ha eliminata spostando la modifica
+delle lezioni dentro CourseDetail (hash «#course editor» + query editLesson); noi l'abbiamo
+rimessa nel commit fe4d73061 «fix lesson from student view». Nessun punto del codice attuale
+vi naviga per nome o percorso: motivazione dedotta (URL diretti/segnalibri o link esterni
+verso l'editor), da confermare, e forse oggi superflua. ATTENZIONE al merge di v2.61.0: la
+riscrittura upstream «make student view a real route instead of an editor mode» (anteprima
+tolta da CourseEditor, link «Editor view» nell'intestazione di Lesson.vue verso CourseDetail
+con editLesson) non tocca router.js, ma rende ancora più probabile che questa rotta sia un
+residuo; se tenuta, verificare che LessonForm funzioni ancora montata da sola."""
+
+  [[entries.sites]]
+  file = "frontend/src/router.js"
+  anchor = "path: '/courses/:courseName/learn/:chapterNumber-:lessonNumber/edit',"
+
+[[entries]]
+id = "router-search-page-route"
+title = "Rotta /search della pagina di ricerca ripristinata"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La pagina Search (pages/Search/Search.vue) è stata tolta dall'upstream (commit 46a356b08) e da
+noi ripristinata: ci arriva la voce «Search for …» della palette Cmd+K
+(command-palette-search-page-entry) ed è uno dei due punti di ricerca allineati da
+oslms/utils/searchRoutes.ts. Senza la rotta, quella voce della palette non porta da nessuna
+parte. ATTENZIONE al merge di v2.61.0: l'upstream aggiunge in coda all'array routes la rotta
+catch-all NotFound ('/:pathMatch(.*)*'), proprio dove stanno le nostre rotte accodate:
+conflitto. Tenere tutte le nostre rotte e la NotFound (Vue Router ordina per specificità, la
+catch-all resta comunque l'ultima scelta; per leggibilità metterla in fondo)."""
+
+  [[entries.sites]]
+  file = "frontend/src/router.js"
+  anchor = "path: '/search',"
+
+[[entries]]
+id = "router-file-upload-route"
+title = "Rotta della pagina Carica file"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La pagina FileUpload (pages/FileUpload.vue, creata da noi nel commit f546fed1c insieme al file
+picker) permette di caricare file riusabili nei contenuti; la raggiunge la voce «Importa» del
+menu utente (UserDropdown), visibile solo ai moderatori. Senza la rotta la voce di menu va in
+errore.
+ATTENZIONE al merge di v2.61.0: stesso conflitto di coda dell'array routes con la nuova
+rotta NotFound (vedi router-search-page-route)."""
+
+  [[entries.sites]]
+  file = "frontend/src/router.js"
+  anchor = "path: '/file-upload',"
+
+[[entries]]
+id = "router-simulation-routes"
+title = "Rotte delle simulazioni AI di os_lms"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le simulazioni AI di os_lms (chat e voce) hanno sei pagine proprie sotto /simulations:
+InstructorReports (area docente/admin), ScenarioCreate e ScenarioEdit (editor degli scenari),
+EvaluationSchemas (schemi di valutazione), SimulationPlay (sessione dello studente) e
+SimulationDebrief (resoconto). I componenti stanno in oslms/pages/Simulation, ma le rotte
+devono vivere nell'array routes upstream. Le rotte statiche (/simulations/admin,
+/simulations/scenarios/…, /simulations/valutations-schema) devono restare riconoscibili
+prima di /simulations/:sessionId (Vue Router le classifica per specificità, quindi l'ordine
+non è critico). ATTENZIONE al merge di v2.61.0: stesso conflitto di coda dell'array routes con
+la nuova rotta NotFound (vedi router-search-page-route)."""
+
+  [[entries.sites]]
+  file = "frontend/src/router.js"
+  anchor = "path: '/simulations/admin',"
+
+  [[entries.sites]]
+  file = "frontend/src/router.js"
+  anchor = "path: '/simulations/:sessionId',"
+
+  [[entries.sites]]
+  file = "frontend/src/router.js"
+  anchor = "path: '/simulations/:sessionId/debrief',"
+
+[[entries]]
+id = "router-student-stats-export-route"
+title = "Rotta della pagina di esportazione delle statistiche studenti"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La pagina StudentStatsExport (oslms/pages/StudentStatsExport.vue, commit 68ce20f5d) esporta le
+statistiche degli studenti con filtri; la voce di sidebar in utils/index.js è condizionata a
+can_export_stats (ruoli EXPORT_STATS_ROLES lato os_lms). Senza la rotta la voce di menu non
+apre nulla. ATTENZIONE al merge di v2.61.0: stesso conflitto di coda dell'array routes con la
+nuova rotta NotFound (vedi router-search-page-route)."""
+
+  [[entries.sites]]
+  file = "frontend/src/router.js"
+  anchor = "path: '/statistics/export',"
+
+[[entries]]
+id = "vitest-inline-frappe-ui"
+title = "frappe-ui trasformato da Vite nei test Vitest"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+frappe-ui è distribuito come sorgenti non transpilate: un test che importa suoi moduli
+interni (es. la vera cache delle risorse in quizCachedRemount.test.ts, che verifica che un quiz
+in cache riaperto conservi le domande) fallisce se Node lo risolve come ESM esterno. Con
+server.deps.inline lo processa Vite. ATTENZIONE al merge di v2.61.0: l'upstream aggiunge
+resolve.dedupe ['vue', 'frappe-ui'] nel blocco resolve, lontano dal nostro blocco test: merge
+atteso pulito; le due opzioni sono compatibili."""
+
+  [[entries.sites]]
+  file = "frontend/vitest.config.ts"
+  anchor = "server: { deps: { inline: [/frappe-ui/] } },"
+
+  [entries.checks]
+  unit = "frontend/src/tests/quizCachedRemount.test.ts"
+
+# --- Patch e foglio di stile legacy (lms/) -----------------------------------
+
+[[entries]]
+id = "patch-backfill-batch-course-enrollments"
+title = "Patch di recupero delle iscrizioni ai corsi dei batch"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le iscrizioni ai corsi di un batch nascevano solo all'ingresso dello studente nel batch: un
+corso aggiunto dopo a un batch in corso non arrivava agli studenti già iscritti (commit
+a7cd6d837, che sposta anche il bypass enrollment_from_batch prima dei vincoli di
+auto-iscrizione e crea le iscrizioni in after_insert / on_update di LMS Batch). La patch
+lms.patches.v2_0.backfill_batch_course_enrollments, registrata nell'elenco upstream
+lms/patches.txt, iscrive una tantum gli studenti dei batch preesistenti; registra l'errore e
+prosegue per i batch problematici. Nessun marcatore: patches.txt contiene solo voci. Se la
+riga sparisce, i siti non ancora migrati non recuperano le iscrizioni mancanti. ATTENZIONE al
+merge di v2.61.0: l'upstream accoda lms.patches.v2_0.add_batch_enrollment_index #20-07-2026
+nello stesso punto (in fondo al file): conflitto. Tenere entrambe le righe; la nostra dopo
+quella upstream va bene (i siti di produzione l'hanno già eseguita e Frappe salta le patch già
+registrate)."""
+
+  [[entries.sites]]
+  file = "lms/patches.txt"
+  anchor = "lms.patches.v2_0.backfill_batch_course_enrollments #10-09-2026"
+
+[[entries]]
+id = "legacy-style-css-formatting"
+title = "Foglio di stile legacy lms/public/css/style.css: solo formattazione"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Rispetto a v2.60.1 il file differisce solo per formattazione (commit b1d2b4156 «Changes for set
+default styles color», passato da Prettier: punti e virgola finali, esadecimali in minuscolo,
+selettori multipli su più righe, virgolette in input[type="checkbox"]); nessuna regola nostra.
+Nessun marcatore. ATTENZIONE al merge di v2.61.0: l'upstream elimina il file insieme a
+lms.bundle.less e a web_include_css = "lms.bundle.css" in hooks.py (commit cad3692f1 «remove
+unused legacy css bundle»): conflitto modifica/eliminazione. Accettare l'eliminazione (git rm)
+e togliere questa voce dall'inventario."""
+
+  [[entries.sites]]
+  file = "lms/public/css/style.css"
+  anchor = 'input[type="checkbox"] {'

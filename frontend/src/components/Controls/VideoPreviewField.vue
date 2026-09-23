@@ -5,6 +5,7 @@
 			<div
 				class="relative aspect-[750/422] w-56 shrink-0 grid place-items-center overflow-hidden rounded-lg border border-outline-gray-2 bg-surface-gray-2"
 			>
+				<!-- OSLMS-CUSTOM: Vimeo links preview in the iframe too, not only YouTube -->
 				<iframe
 					v-if="isEmbedPreview"
 					:src="preview.src"
@@ -79,6 +80,7 @@
 
 			<!-- Empty or YouTube link: URL input + upload. -->
 			<div v-else class="flex-1 space-y-2">
+				<!-- OSLMS-CUSTOM: copy mentions Vimeo links alongside YouTube -->
 				<FormControl
 					type="text"
 					v-model="urlInput"
@@ -98,6 +100,7 @@
 						</Button>
 					</template>
 				</FileUploader>
+				<!-- OSLMS-CUSTOM: hint covers Vimeo and the share-link resolution state -->
 				<p class="text-p-sm text-ink-gray-5">
 					{{
 						resolvingShareLink
@@ -194,6 +197,7 @@ const emit = defineEmits<{
 
 const preview = computed(() => getVideoPreview(props.modelValue))
 
+// OSLMS-CUSTOM: 'embed' preview type (Vimeo) handled like YouTube
 // YouTube and Vimeo links both preview as an iframe, like on the course page.
 const isEmbedPreview = computed<boolean>(
 	() => preview.value.type === 'youtube' || preview.value.type === 'embed'
@@ -208,6 +212,7 @@ const isUploadedVideo = computed<boolean>(() => {
 	return v.startsWith('/files/') || v.startsWith('/private/files/')
 })
 
+// OSLMS-CUSTOM: Vimeo share-link resolution state
 // True while a pasted Vimeo share link is being resolved into a playable URL.
 const resolvingShareLink = ref<boolean>(false)
 
@@ -249,6 +254,7 @@ const urlInput = computed<string>({
 	},
 })
 
+// OSLMS-CUSTOM: Vimeo share links resolved server-side into a playable URL
 async function update(value: string) {
 	const next = value || ''
 	// Store what was typed first: the resolve below is a round-trip, and a

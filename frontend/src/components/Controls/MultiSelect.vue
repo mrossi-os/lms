@@ -126,6 +126,7 @@ const props = withDefaults(
 		validate?: (value: string) => boolean
 		errorMessage?: (value: string) => string
 		required?: boolean
+		// OSLMS-CUSTOM: values hidden from the options (ProgramForm: courses already in the program)
 		exclude?: string[]
 	}>(),
 	{
@@ -139,14 +140,17 @@ const props = withDefaults(
 const values = defineModel<string[]>({ default: () => [] })
 const attrs = useAttrs()
 const trigger = ref<{ $el: HTMLElement } | null>(null)
+// OSLMS-CUSTOM: template ref behind focusInput (handler missing upstream)
 const search = ref<{ $el: HTMLElement } | null>(null)
 const query = ref<string>('')
 const text = ref<string>('')
 const selectedValue = ref<SelectOption | null>(null)
+// OSLMS-CUSTOM: selected options cached and exposed for ProgramForm.addCourses
 // Cache of options the user has actually selected, so the parent can resolve
 // labels/descriptions for chosen values (used by ProgramForm.addCourses).
 const cachedOptions = ref<SelectOption[]>([])
 
+// OSLMS-CUSTOM: define the focusInput handler the upstream template calls
 // Clicking the box padding (not directly the input) should focus the input.
 const focusInput = () => {
 	search.value?.$el?.focus()
@@ -199,6 +203,7 @@ const filterOptions = createResource({
 
 const options = computed<SelectOption[]>(() => {
 	const allOptions = filterOptions.data || []
+	// OSLMS-CUSTOM: drop excluded values from the options
 	const excluded = new Set(props.exclude || [])
 	return allOptions.filter(
 		(option) =>

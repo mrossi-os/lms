@@ -9,6 +9,7 @@ export default defineConfig({
 		environment: 'jsdom',
 		globals: true,
 		include: ['src/tests/**/*.test.{ts,js}'],
+		// OSLMS-CUSTOM: inline frappe-ui so tests can import its internal modules
 		// frappe-ui ships untranspiled sources; a test that pulls one of its
 		// internal modules (e.g. the real resource cache) needs them processed by
 		// vite rather than resolved as external node ESM.
