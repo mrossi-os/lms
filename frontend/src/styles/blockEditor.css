@@ -170,6 +170,7 @@ iframe {
    and injects that CSS at runtime, so it beats an equal-specificity override.
    Scope under .codex-editor to win the cascade and make the row/column options
    popover follow the same tokens as the parent (.ce-popover) block menu. */
+/* OSLMS-CUSTOM: table popover scoped under .codex-editor so theme tokens (incl. hover) beat the plugin's runtime #fff */
 .codex-editor .tc-popover {
 	--color-background: var(--surface-base);
 	--color-background-hover: var(--surface-gray-3);

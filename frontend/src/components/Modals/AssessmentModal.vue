@@ -13,6 +13,7 @@
 	>
 		<template #default>
 			<div class="space-y-4">
+				<!-- OSLMS-CUSTOM: translated type placeholder (Italian UI) -->
 				<FormControl
 					type="select"
 					:options="assessmentTypes"
@@ -99,6 +100,7 @@ const addAssessment = (close) => {
 
 const assessmentTypes = computed(() => {
 	return [
+		// OSLMS-CUSTOM: assessment type labels go through __() for the Italian UI
 		{ label: __('Quiz'), value: 'LMS Quiz' },
 		{ label: __('Assignment'), value: 'LMS Assignment' },
 		{ label: __('Programming Exercise'), value: 'LMS Programming Exercise' },

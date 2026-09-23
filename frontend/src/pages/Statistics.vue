@@ -13,6 +13,7 @@
 		</div>
 		<div v-else-if="chartDetails.data" class="p-5">
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+				<!-- OSLMS-CUSTOM: chart titles, subtitles and axis labels go through __() for the Italian UI -->
 				<Tooltip :text="__('Published Courses')">
 					<NumberChart
 						class="border rounded-md"

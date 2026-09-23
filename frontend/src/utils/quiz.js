@@ -63,6 +63,7 @@ export class Quiz {
 		}
 		// `quiz` is the link value (e.g. "untitled-quiz-5"), which says nothing to
 		// the author — show the docname only until the title comes back.
+		// OSLMS-CUSTOM: editor placeholder shows the quiz title (fetched) instead of the docname
 		this.renderQuizPlaceholder(quiz)
 		call('frappe.client.get_value', {
 			doctype: 'LMS Quiz',
@@ -78,6 +79,7 @@ export class Quiz {
 
 	// Built up with textContent instead of an innerHTML template so a quiz title
 	// can't inject markup into the lesson editor.
+	// OSLMS-CUSTOM: translated, XSS-safe quiz placeholder built via textContent
 	renderQuizPlaceholder(label) {
 		const box = document.createElement('div')
 		box.className =

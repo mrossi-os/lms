@@ -83,6 +83,7 @@ onMounted(() => {
 		// Filter, table/embed actions…) through the same i18n dictionary used by
 		// the read-only renderer in Lesson.vue. Labels route via __() so they
 		// follow the user's language (translations in lms/translations/it.csv).
+		// OSLMS-CUSTOM: translated EditorJS chrome via getEditorI18n() instead of upstream's direction-only i18n
 		i18n: getEditorI18n(),
 		onReady: () => {
 			// onReady can fire after the component unmounted (fast nav / deleting

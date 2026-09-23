@@ -25,6 +25,7 @@ onMounted(() => {
 	}
 })
 
+// OSLMS-CUSTOM: doctype titles go through __() for the Italian UI
 const doctypeMap = {
 	'LMS Course': {
 		title: __('Courses'),

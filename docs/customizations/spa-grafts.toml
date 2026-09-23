@@ -6741,3 +6741,180 @@ reindex_lesson_content); lezione in «processing» non rimessa in coda; mai bloc
 
   [entries.checks]
   unit = "apps/os_lms/os_lms/os_lms/tests/test_lesson_rename_reindex.py"
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 prima del merge di v2.62.0 — editor, quiz, import, statistiche
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 prima del merge di v2.62.0 — gruppo "editor"
+# (editor a blocchi della lezione, segnaposto quiz, modale valutazioni della
+# classe, pagina Importazione dati, pagina Statistiche)
+# ---------------------------------------------------------------------------
+
+# --- Editor a blocchi (BlockEditor.vue, blockEditor.css) ---------------------
+
+[[entries]]
+id = "block-editor-i18n-labels"
+title = "Etichette dell'editor a blocchi dell'autore tradotte"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Completa la voce editor-i18n-labels (che censisce getEditorI18n() in utils/index.js e il
+renderer in sola lettura di Lesson.vue) sul lato autore: l'editor EditorJS con cui docenti
+e gestori scrivono la lezione riceve lo stesso dizionario i18n, così toolbox, block tune,
+filtro del popover e azioni di tabelle/embed seguono la lingua dell'utente invece di restare
+in inglese (commit 979d01269). L'upstream passa solo `{ direction }`: getEditorI18n()
+restituisce anch'esso direction (rtl/ltr), quindi non si perde nulla sostituendolo.
+Al merge di v2.62.0 l'upstream cambia solo commenti del file (trattini lunghi → parentesi,
+anche nel commento di onReady due righe sotto il nostro hunk): merge pulito atteso; se
+Git segnala conflitto tenere `i18n: getEditorI18n(),` e i commenti upstream."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/BlockEditor.vue"
+  anchor = "i18n: getEditorI18n(),"
+
+[[entries]]
+id = "block-editor-table-popover-tokens"
+title = "Popover delle tabelle dell'editor con i colori del tema"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il plugin tabelle di EditorJS inietta a runtime un CSS che ridefinisce
+--color-background: #fff direttamente su .tc-popover, e a parità di specificità vince sul
+nostro foglio: il menu opzioni riga/colonna restava bianco (illeggibile in tema scuro) e
+con l'hover di default. La regola è quindi agganciata sotto .codex-editor per vincere la
+cascata e aggiunge --color-background-hover, così il popover delle tabelle usa gli stessi
+token frappe-ui del menu dei blocchi (.ce-popover) (commit 75ded9ac6). Al merge di v2.62.0
+l'upstream tocca solo commenti e la proprietà transition di .ce-inline-tool, lontano dal
+nostro blocco: nessun conflitto atteso; se l'upstream riportasse il selettore a
+`.tc-popover` nudo, rimettere lo scope .codex-editor e la variabile di hover."""
+
+  [[entries.sites]]
+  file = "frontend/src/styles/blockEditor.css"
+  anchor = ".codex-editor .tc-popover {"
+
+  [[entries.sites]]
+  file = "frontend/src/styles/blockEditor.css"
+  anchor = "--color-background-hover: var(--surface-gray-3);"
+
+# --- Segnaposto del quiz nell'editor (utils/quiz.js) --------------------------
+
+[[entries]]
+id = "quiz-editor-placeholder-title"
+title = "Segnaposto del quiz nell'editor con titolo tradotto e sicuro"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nell'editor della lezione (modalità modifica, non lettura) il blocco quiz mostrava
+«Quiz: untitled-quiz-5», cioè il docname del Link, che all'autore non dice nulla. Il
+segnaposto mostra subito il docname e poi lo sostituisce con il titolo del quiz letto con
+frappe.client.get_value; l'etichetta «Quiz» passa per __() e il riquadro è costruito con
+textContent invece di un template innerHTML, così un titolo non può iniettare markup
+nell'editor (commit 96c6c73cb).
+ATTENZIONE al merge di v2.62.0: l'upstream (refactor XSS «v-safe-html») sostituisce
+proprio le righe innerHTML con `this.wrapper.replaceChildren(blockNotice(`Quiz: ${quiz}`))`
+(helper utils/blockDom.ts, stesso markup, già sicuro) e aggiunge registerDirectives() ai
+createApp: conflitto certo sull'hunk del segnaposto. Risolvere adottando blockNotice e
+registerDirectives upstream ma tenendo la regola: import di `call`, segnaposto iniziale col
+docname, get_value del titolo e label tradotta, cioè renderQuizPlaceholder(label) può
+diventare `this.wrapper.replaceChildren(blockNotice(`${__('Quiz')}: ${label}`))` e il nostro
+costruttore DOM si può eliminare."""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/quiz.js"
+  anchor = "fieldname: ['title'],"
+  symbol = "Quiz.renderQuiz"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/quiz.js"
+  anchor = "text.textContent = `${__('Quiz')}: ${label}`"
+  symbol = "Quiz.renderQuizPlaceholder"
+
+# --- Modale «Aggiungi valutazione» della classe (AssessmentModal.vue) ---------
+
+[[entries]]
+id = "assessment-modal-i18n"
+title = "Modale aggiungi valutazione: tipi e segnaposto tradotti"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nella scheda Valutazioni della classe la modale «Aggiungi valutazione» mostrava i tipi
+(Quiz, Assignment, Programming Exercise) e il segnaposto del tipo in inglese: le etichette
+passano per __() e il segnaposto vuoto diventa __('Select option'), per l'interfaccia
+italiana (commit e577585ca, 37d684e20). Il `},` con virgola finale in addAssessment è solo
+formattazione Prettier dello stesso commit.
+ATTENZIONE al merge di v2.62.0: l'upstream («give forms their own addresses» / «one shell
+for every form») CANCELLA questo file e lo sostituisce con la pagina
+frontend/src/pages/Forms/AssessmentForm.vue (FormShell, rotta propria): conflitto
+modify/delete. Accettare la cancellazione e riapplicare la regola nel nuovo file: in
+AssessmentForm.vue assessmentTypes ha di nuovo le etichette inglesi fisse e placeholder=" "
+sul select del tipo, quindi rimettere __() sulle tre etichette e __('Select option') sul
+segnaposto; le stringhe nuove (rifiuto «You do not have permission to add assessments to
+this batch.», «This site is in read-only mode.», Save) vanno tradotte in it.csv/it.po.
+Il gate del nuovo form (is_moderator || is_instructor) copre Docente tramite is_instructor;
+l'import di AssessmentModal in Batches/components/Assessments.vue appartiene a un altro
+gruppo."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/AssessmentModal.vue"
+  anchor = ":placeholder=\"__('Select option')\""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/AssessmentModal.vue"
+  anchor = "{ label: __('Programming Exercise'), value: 'LMS Programming Exercise' },"
+
+# --- Pagina Importazione dati (DataImport.vue) -------------------------------
+
+[[entries]]
+id = "data-import-doctype-titles-i18n"
+title = "Importazione dati: titoli dei doctype tradotti"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+I titoli di doctypeMap (Courses, Batches, Categories) che la pagina passa al componente
+DataImport di frappe-ui (da noi il fork in src/overrides/frappe-ui/frappe/DataImport, che
+li mostra nel breadcrumb e nelle intestazioni) passano per __() per l'interfaccia italiana
+(commit e577585ca). La pagina è riservata ai moderatori (gate upstream in onMounted).
+Rischio noto: i titoli sono valutati una volta al setup; se le traduzioni non sono ancora
+caricate restano in inglese fino al reload (vedi translation_baked_ref_freezes_english).
+ATTENZIONE al merge di v2.62.0: l'upstream avvolge il componente in un div
+.data-import-host, aggiunge PageHeader con breadcrumb propri e con CSS scoped NASCONDE
+l'header del componente (`:deep(> header)`) mostrando a ogni larghezza la copia
+`lg:hidden w-[90%]` degli step. doctypeMap non cambia: merge pulito atteso sul nostro hunk.
+Però il breadcrumb tradotto del nostro fork resta nascosto e il nuovo breadcrumb upstream
+mostra il doctype grezzo (`String(route.params.doctype)`, es. «LMS Course»): dopo il merge
+usare doctypeMap[doctype].title (o __(doctype)) per quella voce, e verificare che il fork
+DataImport.vue renda ancora `<header>` come figlio diretto e ImportSteps con le classi
+`lg:hidden w-[90%]`, altrimenti il CSS upstream non aggancia. Il fork stesso non risulta
+censito nell'inventario."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/DataImport.vue"
+  anchor = "title: __('Categories'),"
+
+# --- Pagina Statistiche (Statistics.vue) --------------------------------------
+
+[[entries]]
+id = "statistics-chart-labels-i18n"
+title = "Statistiche: titoli e assi dei grafici tradotti"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+I config dei NumberChart/AxisChart/DonutChart della pagina Statistiche (titoli, sottotitoli
+e titoli degli assi: Courses, Signups, Enrollments, Completions, Certifications, «… per
+day», Date, Course Completion) erano stringhe inglesi fisse: passano tutte per __() per
+l'interfaccia italiana (commit e577585ca). I commit di Gabriele Pagnotta sul file
+(e9b6577b7 classi tema, de2ccc2a5 ritorno alle classi Tailwind standard) si annullano a
+vicenda e non lasciano differenze. Al merge di v2.62.0 l'upstream sostituisce l'header con
+PageHeader e rimuove l'import di Breadcrumbs, righe lontane dalle nostre: merge pulito
+atteso; se i config venissero riscritti (es. redesign mobile) rimettere __() su ogni
+title/subtitle/asse, lasciando non tradotti i `name` delle serie (sono chiavi dei dati)."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Statistics.vue"
+  anchor = "subtitle: __('Signups per day'),"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Statistics.vue"
+  anchor = "subtitle: __('Course Completion'),"
