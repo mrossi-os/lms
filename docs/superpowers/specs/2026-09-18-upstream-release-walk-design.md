@@ -1,7 +1,7 @@
 # Aggiornamento upstream guidato, release per release — documento di progetto
 
 **Data:** 2026-09-18
-**Stato:** progetto parziale — cinque decisioni prese con il committente, sezioni di dettaglio scritte ma **non ancora riviste**; §13 elenca ciò che resta da decidere. Aggiornato il 2026-09-18 con i dati di ampiezza reale (§3.4-3.5) e la forma di avvio interattiva (§6.2.1)
+**Stato:** progetto parziale — cinque decisioni prese con il committente, sezioni di dettaglio scritte ma **non ancora riviste**; §13 elenca ciò che resta da decidere. Aggiornato il 2026-09-18 con i dati di ampiezza reale (§3.4-3.5) e la forma di avvio interattiva (§6.2.1). **Il 2026-09-23 aggiunta la §15: mandato di costruzione della versione 1, da cui parte chi deve realizzare `/upstream-upgrade`.**
 **Branch di riferimento:** `feature/oslms`
 **Destinatari:** il supervisore del progetto e ogni sessione di sviluppo futura (umana o AI) che debba costruire o usare questo sistema.
 **Documento collegato:** [`2026-09-18-upstream-regression-harness-design.md`](2026-09-18-upstream-regression-harness-design.md) — il sistema di verifica delle personalizzazioni, di cui questo è la naturale prosecuzione e da cui dipende.
@@ -371,3 +371,88 @@ Le sezioni 7-12 sono state scritte ma **non sottoposte all'approvazione sezione 
 - `lesson-editorjs-custom-tags-server-strip` — l'area colpita dalla rottura `fix(lesson)!` di `v2.63.0`
 
 **Stato del repository al 2026-09-18:** nessun remote `upstream`; `develop` fermo al 2026-03-19; ultimo merge upstream `v2.58.0` del 2026-07-02 su `merge/upstream-v2.58.0`; `rerere` non configurato; 24 override in `frontend/src/overrides/`; 49 marcatori `OSLMS-CUSTOM` su 12 file sorgente.
+
+---
+
+## 15. Versione 1 da costruire — decisa il 2026-09-23
+
+> **Questa sezione è il mandato di costruzione.** Una sessione che deve realizzare `/upstream-upgrade` parte da qui; il resto del documento spiega il perché delle scelte. Dove questa sezione e le precedenti divergono, vale questa.
+
+### 15.1 Cosa vuole il committente
+
+Lanciare **un solo comando**, `/upstream-upgrade`, che:
+
+1. mostra le release upstream disponibili;
+2. gli fa scegliere fino a quale arrivare;
+3. crea un branch dedicato, partendo da `feature/oslms` oppure chiedendogli da quale branch partire;
+4. esegue tutte le operazioni necessarie per avere l'aggiornamento **senza conflitti irrisolti e senza perdere nessuna personalizzazione**;
+5. **in caso di dubbio o perplessità, è incentivato a chiedere**, spiegare la situazione e decidere insieme a lui. Non deve mai indovinare.
+
+### 15.2 Stato di partenza (verificato il 2026-09-23)
+
+- Prerequisito git: remote `upstream` = `frappe/lms` configurato, `rerere.enabled=true`.
+- Fase 0 completa: inventario `docs/customizations/spa-grafts.toml` (33 voci, 0 a bassa confidenza), rilevatore `scripts/check_customizations.py`, guardia hook `Stop` `scripts/inventory_guard.py`, workflow CI, skill `/upstream-check` (rapporto post-merge, non fa il merge).
+- Tutti i file toccati da `v2.58.1` che contengono modifiche nostre sono censiti.
+- **Limite noto:** circa 78 file upstream contengono modifiche nostre **senza marcatore** e non sono censiti; molti sono toccati dalle release da `v2.59.0` in poi. Vedi §15.4, fermata F7.
+
+### 15.3 Scope della versione 1
+
+| Da costruire | Contenuto |
+| --- | --- |
+| `.claude/skills/upstream-upgrade/SKILL.md` | L'intero flusso di §15.4, con le regole di §15.5 |
+| `scripts/upstream_plan.py` + `scripts/tests/test_upstream_plan.py` | Il comando `plan` di §6.2: la tabella delle release. Sola libreria standard, stesso stile del rilevatore (ruff, tab, bootstrap del `sys.path`) |
+| `docs/Procedura-Aggiornamento-Upstream.md` | Aggiornata: rimuovere i ⚙️ dei passi ora reali |
+
+**Fuori scope nella v1:** i comandi `step`/`status`/`resume` del motore (§6.2) restano **dentro la skill**; lo stato del percorso lo scrive l'agente (§15.4, passo 7). Si potranno spostare in codice in una versione successiva.
+
+`upstream_plan.py` deve produrre, per ogni release successiva all'ultima già fusa nel branch di partenza (ultimo tag upstream antenato di `HEAD`, ordinamento per versione con `sort -V` o equivalente):
+
+- commit e file **reali** (`git log`/`git diff` fra tag consecutivi — **mai** dalle note di release, §3.2 e §3.4);
+- rotture dichiarate (`!` nei soggetti dei commit, formato Conventional Commits);
+- versione di `frappe-ui` in `frontend/package.json` a quel tag, segnalando il cambio rispetto alla release precedente;
+- voci di inventario i cui file sono toccati dalla release;
+- **file con modifiche nostre non censiti** toccati dalla release: file upstream (presenti al tag base) modificati da commit nostri, cioè `git log --no-merges <base>..HEAD --not --remotes=upstream --tags`, privi di marcatore `OSLMS-CUSTOM`, esclusi traduzioni e test;
+- una raccomandazione su dove fermarsi: prima del primo bump di dipendenza importante o della prima rottura dichiarata.
+
+Uscita a tabella e `--json`. Attenzione ai tranelli già incontrati: in zsh `$t:path` è un modificatore (usare `subprocess` con liste di argomenti, non stringhe di shell); senza `--not --remotes=upstream --tags` il conteggio dei file nostri si gonfia per un vecchio merge di `upstream/develop`.
+
+### 15.4 Il flusso della skill
+
+| # | Passo | Dettaglio |
+| --- | --- | --- |
+| 0 | Controlli | Branch corrente; modifiche in sospeso (sono **tollerati** `docs/WORKLOG.md` modificato e i file non tracciati: non bloccano il merge); remote `upstream`; `rerere`. Se manca qualcosa, propone il comando e chiede |
+| 1 | Fetch | `git fetch upstream --tags` |
+| 2 | Piano | `python3 scripts/upstream_plan.py` e presentazione della tabella con la raccomandazione |
+| 3 | Domanda 1 | **Fino a quale release?** Opzioni = le release, la raccomandata per prima |
+| 4 | Domanda 2 | **Da quale branch partire e con quale nome?** Proposta: partenza `feature/oslms` (o il branch corrente, dichiarato esplicitamente), nome `merge/upstream-<tag>` |
+| 5 | Branch | Creazione del branch |
+| 6 | Ciclo | Per ogni release, dalla più vecchia: merge → fermate F1-F7 → rilevatore → build frontend → commit del merge |
+| 7 | Stato | Dopo ogni release scrive `.git/oslms-upstream-walk.json` (partenza, arrivo, release completate con commit, fermata attiva). All'avvio, se il file esiste, propone di riprendere |
+| 8 | Chiusura | Suite completa (rilevatore, Vitest, test backend `os_lms` con Docker: se non è attivo lo chiede), skill `/upstream-check`, rapporto in `docs/upstream-checks/`, **lista puntuale di cosa provare nell'app** ricavata dalle voci toccate, con il ruolo con cui provarle |
+
+**Fermate.** Le prime sei sono quelle di §8; F7 è nuova.
+
+| | Condizione | Chi decide |
+| --- | --- | --- |
+| F1 | Conflitto git in un file censito | Agente, usando l'`intent` della voce; **se l'intent non basta a decidere, chiede** |
+| F2 | Il rilevatore segnala una personalizzazione persa | Agente, riapplica secondo l'`intent` |
+| F3 | Build rotta | Agente |
+| F4 | Rottura dichiarata dall'upstream | **Committente**, con valutazione d'impatto |
+| F5 | Novità upstream che sostituisce o rende obsoleta una funzione nostra (incluse le sovrapposizioni già annotate negli intent) | **Committente**, con analisi comparativa e raccomandazione |
+| F6 | Pagina congelata in `overrides/` con originale toccato, o bump di `frappe-ui` | **Committente** |
+| F7 | La release tocca file con **modifiche nostre non censite** | **Committente**: la skill propone di censirle **prima** del merge (marcatore + voce di inventario, come fatto il 2026-09-23 per i file di `v2.58.1`) e procede solo dopo |
+
+### 15.5 Regole della skill
+
+1. **Nel dubbio, chiedi.** Se non è chiaro cosa protegge una riga, se due versioni sono entrambe plausibili, se una modifica upstream potrebbe essere voluta: fermati, spiega la situazione in linguaggio semplice, presenta le opzioni con una raccomandazione motivata, e decidi con il committente. Indovinare è l'errore più costoso di questo processo.
+2. Non modificare mai un test per farlo passare (§10).
+3. Non cancellare voci di inventario; se una regola non vale più, `status = "accepted-drift"` con data e motivo, **dopo** l'ok del committente.
+4. Non proseguire oltre una fermata non risolta.
+5. Non pubblicare nulla e non unire nel branch di partenza senza l'ok esplicito del committente.
+6. Registrare l'attività nel worklog secondo le convenzioni del progetto.
+
+### 15.6 Criteri di completamento della v1
+
+1. `python3 -m unittest discover -s scripts/tests -t .` verde, compresi i test di `upstream_plan.py`.
+2. `python3 scripts/upstream_plan.py` sul repository reale mostra `v2.58.1` → `v2.63.0` con: il bump di `frappe-ui` in `v2.59.0` (beta.7 → beta.24) e in `v2.62.0` (→ beta.29), le 3 rotture di `v2.63.0`, **0 file non censiti** per `v2.58.1`, e la raccomandazione di fermarsi a `v2.58.1`.
+3. La skill è elencata fra quelle disponibili ed esegue i passi 0-4 fino alla creazione del branch. **Il merge vero non fa parte della costruzione**: lo lancia il committente quando vuole.
