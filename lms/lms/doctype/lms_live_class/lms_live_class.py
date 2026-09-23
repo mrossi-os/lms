@@ -12,12 +12,14 @@ from frappe.utils import cint, format_date, format_time, get_datetime, nowdate
 from lms.lms.doctype.lms_batch.lms_batch import authenticate
 
 
+# OSLMS-CUSTOM: debug logger for live class calendar/Meet creation
 def _lc_log(msg):
 	frappe.logger("lms_live_class_debug", allow_site=True).info(msg)
 
 
 class LMSLiveClass(Document):
 	def after_insert(self):
+		# OSLMS-CUSTOM: log and record calendar-event creation failures
 		_lc_log(f"[after_insert] LMS Live Class={self.name} provider={self.conferencing_provider} meet_account={self.google_meet_account} zoom_account={self.zoom_account}")
 		try:
 			self.create_calendar_event()
@@ -81,6 +83,7 @@ class LMSLiveClass(Document):
 			calendar = frappe.db.get_value(
 				"Google Calendar", {"user": frappe.session.user, "enable": 1}, "name"
 			)
+		# OSLMS-CUSTOM: debug logging of the calendar/Meet creation steps
 		_lc_log(f"[create_calendar_event] {self.name} resolved calendar={calendar}")
 
 		if not calendar:
@@ -176,6 +179,7 @@ class LMSLiveClass(Document):
 
 	def sync_with_google_calendar(self, event, calendar):
 		event.reload()
+		# OSLMS-CUSTOM: debug logging of the Google Calendar sync
 		_lc_log(f"[sync_with_google_calendar] event={event.name} BEFORE creation={event.creation} modified={event.modified} sync={event.sync_with_google_calendar} cal={event.google_calendar}")
 		update_data = {
 			"sync_with_google_calendar": 1,
@@ -188,6 +192,7 @@ class LMSLiveClass(Document):
 
 	def add_video_conferencing_to_event(self, event):
 		event.reload()
+		# OSLMS-CUSTOM: debug logging of the Meet link creation
 		_lc_log(f"[add_video_conferencing_to_event] event={event.name} BEFORE creation={event.creation} modified={event.modified} add_vc={event.add_video_conferencing} sync={event.sync_with_google_calendar} cal={event.google_calendar} event_id={event.google_calendar_event_id}")
 		event.update(
 			{
@@ -324,6 +329,7 @@ def has_permission(doc, ptype="read", user=None):
 	if ptype not in ("read", "select", "print"):
 		return False
 
+	# OSLMS-CUSTOM: batch Valutatore reads the live classes of their batch
 	# A custom "Valutatore" can read (only) the live classes of the batch they
 	# are assigned to, just like an enrolled student.
 	return bool(

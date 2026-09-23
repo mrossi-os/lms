@@ -44,6 +44,7 @@ class LMSBatch(Document):
 		if self.has_value_changed("published") and self.published:
 			frappe.enqueue(send_notification_for_published_batch, batch=self)
 
+		# OSLMS-CUSTOM: enroll existing batch students in courses added to a running batch
 		self.enroll_students_in_added_courses()
 
 	def enroll_students_in_added_courses(self):
@@ -172,6 +173,7 @@ class LMSBatch(Document):
 			if not self.zoom_account:
 				frappe.throw(_("Please select a Zoom account for this batch."))
 
+			# OSLMS-CUSTOM: a batch Zoom account must be enabled and bound to a Google Calendar
 			zoom_settings = frappe.get_doc("LMS Zoom Settings", self.zoom_account)
 			if not zoom_settings.enabled:
 				frappe.throw(
@@ -261,6 +263,7 @@ def send_system_notification_for_published_batch(batch):
 	frappe.db.set_value("LMS Batch", batch.name, "notification_sent", 1)
 
 
+# OSLMS-CUSTOM: refuse live classes on a Google Calendar whose OAuth flow is not completed
 def _ensure_calendar_authorized(calendar_name: str):
 	"""Throw if the Google Calendar has no refresh token (OAuth flow not completed)."""
 	calendar_doc = frappe.get_doc("Google Calendar", calendar_name)
@@ -289,6 +292,7 @@ def create_live_class(
 	if not any(role in roles for role in ["Moderator", "Batch Evaluator"]):
 		frappe.throw(_("You do not have permission to create a live class."))
 
+	# OSLMS-CUSTOM: a Zoom live class needs an enabled account bound to a Google Calendar
 	zoom_settings = frappe.get_doc("LMS Zoom Settings", zoom_account)
 	if not zoom_settings.enabled:
 		frappe.throw(_("Please enable the Zoom account to use this feature."))
@@ -300,10 +304,12 @@ def create_live_class(
 			)
 		)
 
+	# OSLMS-CUSTOM: Zoom live class: the bound Google Calendar must be authorized
 	_ensure_calendar_authorized(zoom_settings.google_calendar)
 
 	payload = {
 		"topic": title,
+		# OSLMS-CUSTOM: Zoom start_time sent as local wall-clock time, not shifted to GMT
 		# Local wall-clock time, read by Zoom in the `timezone` set below. The
 		# trailing "Z" of a Babel pattern is the RFC822 offset, not a literal "Z":
 		# it made Zoom read the slot as GMT and schedule the meeting shifted.
@@ -375,6 +381,7 @@ def create_google_meet_live_class(
 			)
 		)
 
+	# OSLMS-CUSTOM: Google Meet live class: the Google Calendar must be authorized
 	_ensure_calendar_authorized(google_meet_settings.google_calendar)
 
 	class_details = frappe.get_doc(
@@ -416,6 +423,7 @@ def authenticate(zoom_account):
 	}
 	response = requests.request("POST", authenticate_url, headers=headers)
 
+	# OSLMS-CUSTOM: readable error when Zoom OAuth returns no access token
 	try:
 		data = response.json()
 	except ValueError:

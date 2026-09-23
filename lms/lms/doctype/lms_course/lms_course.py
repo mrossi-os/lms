@@ -51,6 +51,7 @@ class LMSCourse(Document):
 			).save(ignore_permissions=True)
 
 	def validate_video_link(self):
+		# OSLMS-CUSTOM: strip YouTube URLs to a bare id, keep Vimeo/other URLs whole
 		if not self.video_link:
 			return
 
@@ -83,6 +84,7 @@ class LMSCourse(Document):
 				)
 
 	def validate_certification(self):
+		# OSLMS-CUSTOM: clear paid-certificate evaluator/timezone when the toggle is off
 		# Evaluator and timezone belong to the paid certificate and are the only two
 		# fields that do (price and currency are shared with paid_course). Turning the
 		# certificate off used to leave them set but hidden from the form, and a stale

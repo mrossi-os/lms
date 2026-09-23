@@ -6918,3 +6918,263 @@ title/subtitle/asse, lasciando non tradotti i `name` delle serie (sono chiavi de
   [[entries.sites]]
   file = "frontend/src/pages/Statistics.vue"
   anchor = "subtitle: __('Course Completion'),"
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 prima del merge di v2.62.0 — doctype backend (classi, corsi, lezioni live)
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-23 prima del merge di v2.62.0 — gruppo "backend"
+# (controller Python delle classi, dei corsi e delle classi live)
+# ---------------------------------------------------------------------------
+
+# --- Classe (lms_batch.py) -------------------------------------------------------
+
+[[entries]]
+id = "batch-added-courses-enroll-existing-students"
+title = "Un corso aggiunto a una classe in corso iscrive gli studenti già presenti"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le iscrizioni ai corsi di una classe nascevano solo quando lo studente entrava nella classe:
+un corso aggiunto dopo a una classe già avviata non arrivava agli studenti già iscritti, che
+non lo vedevano tra i corsi della classe. In on_update di LMS Batch si confrontano i corsi
+prima e dopo il salvataggio e gli studenti presenti vengono iscritti a quelli nuovi con
+enroll_batch_students_in_courses (lms/lms/utils.py). Vale per chi modifica la classe
+(Moderator, Docente, Gestore) e protegge gli studenti. Fa parte della correzione in più file
+del commit a7cd6d837 (vedi batch-enrollment-courses-after-insert e
+patch-backfill-batch-course-enrollments).
+ATTENZIONE al merge di v2.62.0: l'upstream aggiunge `format_timezone,` in testa al blocco
+`from lms.lms.utils import (`, esattamente dove sta il nostro `enroll_batch_students_in_courses,`:
+conflitto sull'import. Tenere entrambe le righe in ordine alfabetico
+(enroll_batch_students_in_courses, format_timezone, generate_slug). on_update non è toccato."""
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_batch/lms_batch.py"
+  anchor = "self.enroll_students_in_added_courses()"
+  symbol = "on_update"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_batch/lms_batch.py"
+  anchor = "enroll_batch_students_in_courses(self.name, added)"
+  symbol = "enroll_students_in_added_courses"
+
+[[entries]]
+id = "zoom-account-enabled-calendar-required"
+title = "Classe e classe live Zoom richiedono un account attivo legato a un Google Calendar"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Gli inviti delle classi live Zoom partono dal Google Calendar legato all'account Zoom (campo
+google_calendar su LMS Zoom Settings, commit 0619704f2; l'evento lo crea
+CustomLMSLiveClass.create_calendar_event in apps/os_lms/os_lms/overrides/lms_live_class.py).
+Quindi una classe con fornitore Zoom non si salva se l'account scelto è disattivato o non ha un
+calendario (validate_conferencing_provider), e create_live_class rifiuta subito, con un
+messaggio chiaro, un account disattivato o senza calendario invece di fallire più avanti nella
+creazione dell'evento. È la metà server di zoom-account-google-calendar-field. Riguarda chi
+crea classi e classi live (Moderator, Batch Evaluator). v2.62.0 non tocca queste righe."""
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_batch/lms_batch.py"
+  anchor = '"The selected Zoom account is disabled. Please enable it or select another account."'
+  symbol = "validate_conferencing_provider"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_batch/lms_batch.py"
+  anchor = '_("The selected Zoom account does not have a Google Calendar configured.")'
+  symbol = "validate_conferencing_provider"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_batch/lms_batch.py"
+  anchor = '"The Zoom account does not have a Google Calendar configured. Please set up a Google Calendar first."'
+  symbol = "create_live_class"
+
+[[entries]]
+id = "live-class-calendar-oauth-check"
+title = "Classe live rifiutata se il Google Calendar non è autorizzato"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Un Google Calendar il cui flusso OAuth non è stato completato non ha refresh token, e la
+creazione dell'evento (con invito e, per Meet, link della riunione) fallisce con un errore
+poco comprensibile a classe live già scritta. _ensure_calendar_authorized controlla il refresh
+token prima di creare la classe live, sia Zoom (calendario dell'account Zoom) sia Google Meet
+(calendario dell'account Meet), e dice all'utente di aprire il Google Calendar e premere
+«Authorize Google Calendar Access» (commit d2f1196b0). Riguarda Moderator e Batch Evaluator che
+creano classi live. v2.62.0 non tocca queste righe."""
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_batch/lms_batch.py"
+  anchor = "def _ensure_calendar_authorized(calendar_name: str):"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_batch/lms_batch.py"
+  anchor = "_ensure_calendar_authorized(zoom_settings.google_calendar)"
+  symbol = "create_live_class"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_batch/lms_batch.py"
+  anchor = "_ensure_calendar_authorized(google_meet_settings.google_calendar)"
+  symbol = "create_google_meet_live_class"
+
+[[entries]]
+id = "zoom-start-time-local-wallclock"
+title = "Orario della riunione Zoom inviato come ora locale"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Zoom legge start_time nel fuso indicato dal campo timezone del payload. L'upstream formatta con
+il pattern Babel "yyyy-MM-ddTHH:mm:ssZ", dove la Z finale è l'offset RFC822 e non una Z
+letterale: Zoom leggeva l'orario come GMT e una lezione alle 15:00 Europe/Rome veniva fissata
+alle 15:00 GMT (spostata). Si invia l'ora locale senza offset
+(get_datetime(...).strftime("%Y-%m-%dT%H:%M:%S")); per questo l'import di frappe.utils usa
+get_datetime al posto di format_datetime (commit 7b6ea7a18, «allow rescheduling a published
+live class»). Riguarda tutti i partecipanti delle classi live Zoom.
+Al merge di v2.62.0: l'upstream tiene format_datetime nell'import e nella riga di start_time ma
+non li modifica, quindi nessun conflitto atteso; se il merge reintroduce format_datetime nella
+riga di start_time, rimettere la nostra."""
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_batch/lms_batch.py"
+  anchor = '"start_time": get_datetime(f"{date} {time}").strftime("%Y-%m-%dT%H:%M:%S"),'
+  symbol = "create_live_class"
+
+[[entries]]
+id = "zoom-authenticate-error-message"
+title = "Errore leggibile quando l'autenticazione Zoom fallisce"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+L'upstream fa response.json()["access_token"]: con credenziali sbagliate o account Zoom
+revocato la risposta non ha access_token (o non è JSON) e l'utente riceveva un KeyError o
+ValueError generico. authenticate() legge la risposta in modo tollerante e, senza token, lancia
+«Zoom authentication failed for account {0}: {1}» con il motivo restituito da Zoom (reason,
+error o il testo della risposta), commit 365aa5df1. È usata anche da os_lms (api.py, riprogrammazione
+e cancellazione delle riunioni Zoom) e da lms_live_class.py. Riguarda chi crea o modifica classi
+live Zoom. v2.62.0 non tocca la funzione."""
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_batch/lms_batch.py"
+  anchor = 'error = data.get("reason") or data.get("error") or response.text'
+  symbol = "authenticate"
+
+# --- Corso (lms_course.py) -------------------------------------------------------
+
+[[entries]]
+id = "course-video-link-youtube-id"
+title = "Video di anteprima del corso: YouTube ridotto all'id, Vimeo intatto"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Il vecchio codice upstream prendeva l'ultimo segmento del percorso del link e rovinava i link
+Vimeo vimeo.com/<id>/<hash>. Il nostro validate_video_link (commit f51e0a512, «add support for
+vimeo with preview video in courseform») riduce all'id solo i link YouTube (watch?v= e
+youtu.be/) e conserva intero qualsiasi altro link (Vimeo, file caricati /files/...), così il
+frontend costruisce l'embed corretto (video-preview-field-vimeo). Riguarda chi modifica il corso.
+Confidence bassa: da v2.57.0 (b7c8d09e2) l'upstream non tocca più il link («Store video_link
+exactly as entered», il frontend accetta sia URL sia id nudi), quindi la nostra versione,
+tenuta nei merge precedenti, potrebbe essere superflua. Domanda al titolare: tenerla o adottare
+quella upstream?
+ATTENZIONE al merge di v2.62.0: l'upstream cambia la prima riga del suo commento (trattino
+lungo → due punti) proprio nel corpo della funzione che noi sostituiamo: conflitto sicuro.
+Senza decisione diversa del titolare, tenere il nostro corpo e scartare il commento upstream."""
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_course/lms_course.py"
+  anchor = 'self.video_link = link.split("watch?v=")[-1].split("&")[0]'
+  symbol = "validate_video_link"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_course/lms_course.py"
+  anchor = 'self.video_link = link.split("youtu.be/")[-1].split("?")[0]'
+  symbol = "validate_video_link"
+
+[[entries]]
+id = "course-paid-certificate-fields-cleared"
+title = "Valutatore e fuso del certificato a pagamento azzerati quando lo si disattiva"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+evaluator e timezone appartengono solo al certificato a pagamento (prezzo e valuta sono
+condivisi con paid_course). Spegnendo il certificato restavano valorizzati ma nascosti dal
+modulo, e se quel Course Evaluator veniva poi cancellato il corso non si salvava più: la
+validazione del link lo rifiutava e il campo non era visibile per correggerlo. Si azzerano con
+l'interruttore, e un valutatore che non esiste più viene tolto anche a certificato attivo, così
+i corsi già bloccati si sbloccano al salvataggio successivo; i controlli sotto continuano a
+esigere valutatore e fuso validi quando il certificato a pagamento è attivo (commit dd87156bd).
+Riguarda chi modifica il corso (Moderator, Course Creator, Docente, Gestore). v2.62.0 non
+tocca validate_certification."""
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_course/lms_course.py"
+  anchor = 'if self.evaluator and not frappe.db.exists("Course Evaluator", self.evaluator):'
+  symbol = "validate_certification"
+
+# --- Classe live (lms_live_class.py) --------------------------------------------
+
+[[entries]]
+id = "live-class-calendar-debug-logging"
+title = "Log di diagnosi della creazione di evento e link Meet delle classi live"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Strumentazione di diagnosi (commit ef01b9a21, «add log for google meet calender»), aggiunta per
+capire perché le classi live Google Meet non ricevevano il link: un logger dedicato
+(lms_live_class_debug) traccia ogni passo di create_calendar_event, sync_with_google_calendar e
+add_video_conferencing_to_event, e after_insert registra in Error Log ogni fallimento della
+creazione dell'evento e lo rilancia. Nessun effetto per l'utente, solo log.
+Confidence bassa: oggi CustomLMSLiveClass (apps/os_lms/os_lms/overrides/lms_live_class.py)
+riscrive create_calendar_event senza chiamare super() né sync_with_google_calendar o
+add_video_conferencing_to_event, quindi quei log nella classe base sono codice morto; resta
+attivo solo l'involucro di after_insert (log + frappe.log_error + raise). C'è anche un commento
+in italiano («stato dell'event subito dopo la sync»). Domanda al titolare: tenerla o tornare al
+file upstream? v2.62.0 aggiunge solo get_permission_query_conditions in fondo al file, lontano
+da queste righe."""
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_live_class/lms_live_class.py"
+  anchor = 'frappe.logger("lms_live_class_debug", allow_site=True).info(msg)'
+  symbol = "_lc_log"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_live_class/lms_live_class.py"
+  anchor = 'frappe.log_error(title="LMS Live Class create_calendar_event failed")'
+  symbol = "after_insert"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_live_class/lms_live_class.py"
+  anchor = 'frappe.log_error(title="LMS Live Class sync_with_google_calendar failed")'
+  symbol = "create_calendar_event"
+
+[[entries]]
+id = "live-class-valutatore-read"
+title = "Il Valutatore legge le classi live della propria classe"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il Valutatore di una classe non è iscritto come studente ma deve vedere (e raggiungere) le
+classi live della classe che valuta, come uno studente iscritto: has_permission concede la sola
+lettura anche a is_batch_valutatore(doc.batch_name, user) (commit f25d5ca3e, ruolo Valutatore
+per classe). Nelle liste il perimetro è dato da os_lms valutatore.live_class_query_conditions.
+ATTENZIONE al merge di v2.62.0: l'upstream accoda subito dopo has_permission una nuova
+get_permission_query_conditions (solo classi live delle classi in cui l'utente è iscritto,
+tranne Administrator, Moderator, Batch Evaluator) e la registra in lms/hooks.py. 1) Conflitto
+testuale probabile in fondo al file: tenere il nostro return bool(... or is_batch_valutatore
+...) e accodare la funzione upstream. 2) Conflitto di regola: Frappe mette in AND le condizioni
+di lms e di os_lms, quindi la scheda Classi live della classe (LiveClass.vue usa
+frappe.client.get_list e get_count) diventa vuota per il Valutatore e anche per Docente e
+Course Creator senza Moderator. Nella condizione upstream aggiungere l'OR sulle classi del
+Valutatore (select parent from `tabLMS Batch Valutatore` where valutatore = utente) e decidere
+col titolare il bypass per Docente/Course Creator. Stesso rischio per la nuova
+get_permission_query_conditions di LMS Batch (pubblicate o con iscrizione): il Valutatore di
+una classe non pubblicata non la troverebbe più nelle liste."""
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_live_class/lms_live_class.py"
+  anchor = "or is_batch_valutatore(doc.batch_name, user)"
+  symbol = "has_permission"
+
+  [entries.visibility]
+  subject = "lettura delle classi live di una classe"
+  allow = ["Valutatore (della classe)", "Moderator", "Batch Evaluator", "Student (iscritto)"]
+  deny = ["Valutatore (di altre classi)", "Guest"]
