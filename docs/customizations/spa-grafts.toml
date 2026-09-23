@@ -676,11 +676,11 @@ confidence = "high"
 intent = """
 serve_resource dà un nome esplicito ai file privati serviti inline (in pratica i PDF delle
 lezioni) con un Content-Disposition inline; senza, il browser usa l'ultimo pezzo dell'URL, cioè
-il nome del metodo, e Chrome su mobile mostra quello al posto del nome del PDF. ATTENZIONE al
-merge di v2.58.1: l'upstream corregge da sé l'altra nostra modifica nella stessa funzione
-(rimozione dell'argomento filename da send_private_file, commit upstream 7e5a825e e
-48252d92): lì va accettata la versione upstream; deve sopravvivere solo l'aggiunta del
-Content-Disposition."""
+il nome del metodo, e Chrome su mobile mostra quello al posto del nome del PDF. Dal merge di
+v2.58.1 (2026-09-23, confermato dal committente) il file si serve con _serve_private_file
+dell'upstream, che passa filename= solo alle versioni di Frappe che lo accettano; la nostra
+aggiunta resta dopo, protetta da «Content-Disposition not in response.headers», così non
+sovrascrive l'intestazione se Frappe l'ha già messa."""
 
   [[entries.sites]]
   file = "lms/lms/doctype/course_lesson/course_lesson.py"
@@ -695,14 +695,17 @@ confidence = "high"
 intent = """
 Una domanda saltata arriva con risposta vuota o nulla; prima faceva fallire l'intera consegna
 e lo studente non riusciva più a consegnare il quiz. Ora le risposte vuote vengono filtrate e
-la domanda vale 0. ATTENZIONE al merge di v2.58.1: l'upstream irrobustisce la consegna dei quiz
-contro input malformati (commit upstream 567da4f1), probabile sovrapposizione: confrontare le
-due versioni e, se quella upstream gestisce le domande saltate, adottarla e marcare la voce
-come accepted-drift. Il test test_lms_quiz.py contiene i casi aggiunti con la correzione."""
+la domanda vale 0, anche con la penalità per risposte sbagliate attiva. Dal merge di v2.58.1
+(2026-09-23) convive con la correzione upstream 567da4f1: l'upstream valida l'input e normalizza
+le risposte nulle a "", poi il nostro filtro tratta come saltata ogni domanda senza risposte non
+vuote. Senza il nostro ramo l'upstream penalizzerebbe la domanda saltata come una risposta
+sbagliata. Decisione del committente: la scelta fra 0 e penalità deve diventare
+un'impostazione del quiz, da costruire dopo il merge di v2.63.0 sul nuovo authoring dei quiz;
+fino ad allora vale 0. Il test test_lms_quiz.py contiene i casi aggiunti con la correzione."""
 
   [[entries.sites]]
   file = "lms/lms/doctype/lms_quiz/lms_quiz.py"
-  anchor = "result.get(\"answer\") or []"
+  anchor = "if answer not in (None, \"\")"
   symbol = "process_results"
 
   [entries.checks]
