@@ -7,3 +7,4 @@ os_lms.patches.v0_0_4.drop_golden_runs
 os_lms.patches.v0_0_5.backfill_lesson_dwell_time
 os_lms.patches.v0_0_6.copy_enforce_lesson_order
 os_lms.patches.v0_0_7.convert_lms_inline_color
+os_lms.patches.v0_0_8.restrict_student_quiz_submission_perms
