@@ -17,10 +17,9 @@
 		</span>
 		<!-- Only this icon triggers the download, not the whole card. -->
 		<a
-			:href="fileURL"
+			:href="safeUrl(fileURL)"
 			:download="fileName"
-			target="_blank"
-			rel="noopener"
+			v-external
 			:title="__('Download')"
 			:aria-label="__('Download')"
 			class="flex items-center justify-center rounded-md p-2 shrink-0 text-ink-gray-7 no-underline hover:bg-surface-gray-2 transition-colors"
@@ -31,6 +30,7 @@
 </template>
 
 <script setup>
+import { safeUrl } from '@/utils/safeUrl'
 import { computed } from 'vue'
 
 const props = defineProps({

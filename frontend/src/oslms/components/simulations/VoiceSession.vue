@@ -20,7 +20,7 @@
 					:class="
 						turn.role === 'user'
 							? 'self-end bg-gray-100'
-							: 'self-start bg-blue-50'
+							: 'self-start bg-surface-blue-2'
 					"
 				>
 					{{ turn.text }}

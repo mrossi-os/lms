@@ -8241,3 +8241,45 @@ PageHeader, inoltrata da ListPage; senza la prop il comportamento upstream è in
   subject = "pulsante indietro con la cronologia su telefono"
   allow = ["Valutatore"]
   deny = ["Moderator", "Docente", "Course Creator"]
+
+[[entries]]
+id = "open-external-opener-and-pending-tab"
+title = "Aperture di finestre che openExternal non copre: OAuth con opener e scheda anticipata"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+v2.62.0 confina ogni window.open in utils/openExternal.ts (test openExternal: nessun window.open
+altrove) e openExternal apre sempre con noopener. Due nostri flussi non lo sopportano:
+(1) l'autorizzazione Google Calendar apre un popup OAuth la cui pagina di ritorno (os_lms
+google_calendar.py) avvisa la finestra principale con window.opener.postMessage: senza opener la
+configurazione del calendario non si chiude mai; (2) il visualizzatore dei certificati
+(useCertificateViewer) apre una scheda vuota dentro il clic, così i blocchi dei popup la lasciano
+passare, e la indirizza quando il badge TrueSkills è pronto: serve il riferimento alla finestra, che
+con noopener è null. Le due funzioni gemelle vivono nello stesso modulo: openWithOpener (URL filtrato
+da safeUrl, opener conservato di proposito) e openPendingTab (opener azzerato subito; l'URL finale
+passa da safeUrl in navigate).
+Adeguamento ai cancelli di sicurezza di v2.62.0 (2026-09-24), stesso commit: v-html → v-safe-html
+(rich per contenuti nostri, basic per i messaggi del Data Import), :href/:src → safeUrl (anteprime
+data:/blob: tramite oslms/utils/safeImageData), target="_blank" → v-external, window.open →
+openExternal, <base target="_blank"> dell'iframe degli annunci sostituito da target/rel sui link."""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/openExternal.ts"
+  anchor = "export const openWithOpener = (url?: string | null): Window | null => {"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/openExternal.ts"
+  anchor = "if (win) win.opener = null"
+  symbol = "openPendingTab"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/GoogleCalendarModal.vue"
+  anchor = "openWithOpener(message.url)"
+
+  [[entries.sites]]
+  file = "frontend/src/oslms/composables/useCertificateViewer.js"
+  anchor = "const win = openPendingTab()"
+
+  [[entries.sites]]
+  file = "frontend/src/oslms/utils/safeImageData.ts"
+  anchor = "export const safeImageData = (value?: string | null): string | undefined => {"

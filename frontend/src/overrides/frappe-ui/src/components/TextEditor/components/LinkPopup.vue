@@ -25,8 +25,8 @@
       v-else
       class="text-ink-gray-9 underline text-sm flex-1 truncate pl-1"
       :title="_href"
-      :href="_href"
-      target="_blank"
+      :href="safeUrl(_href)"
+      v-external
     >
       {{ _href }}
     </a>
@@ -70,6 +70,8 @@
 </template>
 
 <script setup lang="ts">
+import { vExternal } from '@/directives/external'
+import { safeUrl } from '@/utils/safeUrl'
 import { onMounted, ref, useTemplateRef, nextTick } from 'vue'
 import { Button, TextInput } from 'frappe-ui'
 import LucideCopy from '~icons/lucide/copy'

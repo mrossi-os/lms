@@ -10,6 +10,8 @@
 // Errors and a slow-issuance timeout surface as toasts.
 import { ref } from 'vue'
 import { call, toast } from 'frappe-ui'
+import { openExternal, openPendingTab } from '@/utils/openExternal'
+import { safeUrl } from '@/utils/safeUrl'
 
 const POLL_INTERVAL_MS = 1500
 const POLL_MAX_ATTEMPTS = 20 // ~30s before giving up
@@ -53,7 +55,7 @@ export function useCertificateViewer() {
 	function openLoadingTab() {
 		// Open synchronously within the click gesture so popup blockers allow it;
 		// navigate it once the artifact is ready (or close it on failure).
-		const win = window.open('', '_blank')
+		const win = openPendingTab()
 		if (win) {
 			win.document.write(
 				`<!doctype html><meta charset="utf-8"><title>${__('Certificato')}</title>` +
@@ -66,8 +68,10 @@ export function useCertificateViewer() {
 	}
 
 	function navigate(win, url) {
-		if (win) win.location.href = url
-		else window.open(url, '_blank')
+		const href = safeUrl(url)
+		if (!href) return fail(win)
+		if (win) win.location.href = href
+		else openExternal(href)
 	}
 
 	function fail(win, err) {
@@ -155,7 +159,7 @@ export function useCertificateViewer() {
 		if (opening.value) return
 		// No TrueSkills log at all → internal PDF (synchronous, keeps the gesture).
 		if (!status || (!status.issued && !status.state)) {
-			window.open(pdfUrl(name, template), '_blank')
+			openExternal(pdfUrl(name, template))
 			return
 		}
 		opening.value = true

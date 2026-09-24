@@ -6,6 +6,7 @@
   node_modules/.../extensions/iframe/IframeNodeView.vue after any upstream bump.
 -->
 <script setup lang="ts">
+import { safeUrl } from '@/utils/safeUrl'
 import { ref, onMounted, computed, nextTick } from 'vue'
 import { NodeViewWrapper, nodeViewProps } from '@tiptap/vue-3'
 import { detectPlatform, calculateAspectRatio } from '../../../../../../../../node_modules/frappe-ui/src/components/TextEditor/extensions/iframe/utils'
@@ -214,7 +215,7 @@ function setCursorBeforeIframe() {
           :class="{
             'pointer-events-none': isEditable && !props.node.attrs.interactive,
           }"
-          :src="node.attrs.src"
+          :src="safeUrl(node.attrs.src)"
           :style="iframeStyles"
           :title="node.attrs.title || ''"
           frameborder="0"

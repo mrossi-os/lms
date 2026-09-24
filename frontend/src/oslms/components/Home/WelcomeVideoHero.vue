@@ -11,7 +11,7 @@
 		>
 			<video
 				v-if="embed.kind === 'video'"
-				:src="embed.src"
+				:src="safeUrl(embed.src)"
 				controls
 				autoplay
 				muted
@@ -24,7 +24,7 @@
 				class="absolute inset-0 flex items-center justify-center"
 			>
 				<iframe
-					:src="embed.src"
+					:src="safeUrl(embed.src)"
 					class="w-full aspect-video block"
 					style="min-height: 100%"
 					frameborder="0"
@@ -77,6 +77,7 @@
 </template>
 
 <script setup>
+import { safeUrl } from '@/utils/safeUrl'
 import { computed, ref, watch } from 'vue'
 import { createResource } from 'frappe-ui'
 import { Maximize2, X } from 'lucide-vue-next'

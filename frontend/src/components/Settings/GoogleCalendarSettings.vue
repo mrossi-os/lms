@@ -44,7 +44,7 @@
 				</div>
 				<a
 					href="/app/google-settings"
-					target="_blank"
+					v-external
 					class="underline font-medium"
 				>
 					{{ __('Open Google Settings') }}

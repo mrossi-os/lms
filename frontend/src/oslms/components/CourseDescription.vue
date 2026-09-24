@@ -2,7 +2,7 @@
 	<div class="">
 		<div
 			ref="contentRef"
-			v-html="unescapedDescription"
+			v-safe-html:rich="unescapedDescription"
 			class="ProseMirror prose prose-sm max-w-none !whitespace-normal prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 overflow-hidden transition-all duration-300"
 			:style="
 				!isExpanded && showToggle ? `max-height: ${collapsedHeight}px` : ''
@@ -47,7 +47,7 @@ const contentRef = ref<HTMLElement | null>(null)
 const showToggle = ref(false)
 
 // The description is stored as HTML; decode any escaped entities (e.g. &lt;p&gt;)
-// so the markup renders correctly when bound with v-html.
+// so the markup renders correctly through v-safe-html.
 const unescapedDescription = computed(() => {
 	const html = props.description
 	if (!html) return ''

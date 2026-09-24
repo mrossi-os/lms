@@ -40,14 +40,14 @@
 							<div
 								v-if="item.description"
 								class="text-xs text-ink-gray-6 leading-4 mt-0.5 break-words"
-								v-html="linkify(item.description)"
+								v-safe-html:rich="linkify(item.description)"
 							></div>
 						</div>
 						<!-- Download -->
 						<a
 							v-if="getFileUrl(item.file)"
-							:href="getFileUrl(item.file)"
-							target="_blank"
+							:href="safeUrl(getFileUrl(item.file))"
+							v-external
 							download
 							class="flex flex-row lg:flex-col items-center gap-1.5 border-t border-outline-gray-1 text-xs text-ink-gray-5 hover:text-ink-gray-8 hover:bg-surface-gray-7 transition-colors w-full lg:w-fit card p-2"
 						>
@@ -73,6 +73,7 @@
 </template>
 
 <script setup lang="ts">
+import { safeUrl } from '@/utils/safeUrl'
 import { computed, inject, ref, watch } from 'vue'
 import { createResource } from 'frappe-ui'
 import { AlertTriangle, CheckCircle, Download } from 'lucide-vue-next'
@@ -226,7 +227,7 @@ const getIconComponent = (iconName: string) => {
 	return (LucideIcons as any)[iconName] ?? null
 }
 
-// Escape HTML before injecting via v-html (XSS-safe).
+// Escape HTML before rendering through v-safe-html.
 const escapeHtml = (text: string) =>
 	text
 		.replace(/&/g, '&amp;')
@@ -252,7 +253,8 @@ const linkify = (text?: string) => {
 			url = url.slice(0, -trailing.length)
 		}
 		const href = url.startsWith('http') ? url : `https://${url}`
-		return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="text-ink-blue-3 underline hover:text-ink-blue-2 break-all">${url}</a>${trailing}`
+		// target and rel are added by the v-safe-html sanitizer to every anchor.
+		return `<a href="${href}" class="text-ink-blue-3 underline hover:text-ink-blue-2 break-all">${url}</a>${trailing}`
 	})
 }
 </script>

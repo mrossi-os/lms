@@ -48,7 +48,7 @@
             <div class="rounded-md bg-surface-amber-2 p-2 space-y-2 text-xs">
                 <div v-for="warning in warnings" class="flex items-center space-x-2">
                     <FeatherIcon name="alert-circle" class="size-3 text-ink-amber-6" />
-                    <div v-html="warning.message" class="text-ink-amber-6"></div>
+                    <div v-safe-html:basic="warning.message" class="text-ink-amber-6"></div>
                 </div>
             </div>
         </div>
@@ -130,7 +130,7 @@
                             </td>
                             
                             <td class="px-3 py-2 text-sm text-ink-gray-7 w-full">
-                                <span v-if="rowMessage(row)" v-html="rowMessage(row)">
+                                <span v-if="rowMessage(row)" v-safe-html:basic="rowMessage(row)">
                                 </span>
                                 <span v-else-if="!rowMessage(row) && !row.success">
                                     {{ __('Failed to import') }}
@@ -165,6 +165,7 @@
     </div>
 </template>
 <script setup lang="ts">
+import vSafeHtml from '@/directives/safeHtml'
 import { Badge, Button, FeatherIcon, Popover, TabButtons, call, initSocket } from 'frappe-ui'
 import { getPreviewData, getBadgeColor } from '../../../../../node_modules/frappe-ui/frappe/DataImport/dataImport'
 import { computed, nextTick, onMounted, ref, watch } from 'vue';

@@ -56,7 +56,7 @@
 				</button>
 				<a
 					class="pdf-btn"
-					:href="safeFileURL"
+					:href="safeUrl(fileURL)"
 					v-external
 					:aria-label="__('Open in new tab')"
 				>
@@ -72,7 +72,7 @@
 			</div>
 			<div v-else-if="error" class="pdf-status pdf-error">
 				<span>{{ __(error) }}</span>
-				<a class="pdf-fallback-link" :href="safeFileURL" v-external>
+				<a class="pdf-fallback-link" :href="safeUrl(fileURL)" v-external>
 					{{ __('Open the PDF in a new tab') }}
 				</a>
 			</div>

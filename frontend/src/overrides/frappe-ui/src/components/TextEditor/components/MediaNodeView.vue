@@ -8,6 +8,8 @@
   with node_modules/.../TextEditor/components/MediaNodeView.vue after any bump.
 -->
 <script setup lang="ts">
+import { safeImageData } from '@/oslms/utils/safeImageData'
+import { safeUrl } from '@/utils/safeUrl'
 import { ref, onMounted, onUnmounted, computed, h } from 'vue'
 import { NodeViewWrapper, nodeViewProps } from '@tiptap/vue-3'
 import LoadingIndicator from '../../../../../../../node_modules/frappe-ui/src/components/LoadingIndicator.vue'
@@ -287,10 +289,10 @@ const wrapperClasses = (float: string) => [
       width: node.attrs.width ? `${node.attrs.width}px` : 'auto',
     }">
       <div v-if="isUploaded || fileContent" class="relative">
-        <img v-if="!isVideo" ref="mediaRef" class="rounded-[2px]" :class="!isUploaded && 'opacity-40'" :src="node.attrs.src || fileContent"
+        <img v-if="!isVideo" ref="mediaRef" class="rounded-[2px]" :class="!isUploaded && 'opacity-40'" :src="safeUrl(node.attrs.src || fileContent) ?? safeImageData(node.attrs.src || fileContent)"
           :alt="node.attrs.alt || ''" :width="node.attrs.width" :height="node.attrs.height"
           @click.stop="selectMedia" @load="handleMediaLoaded" />
-        <video v-else ref="mediaRef" class="rounded-[2px]" :class="!isUploaded && 'opacity-40'" :src="node.attrs.src || fileContent"
+        <video v-else ref="mediaRef" class="rounded-[2px]" :class="!isUploaded && 'opacity-40'" :src="safeUrl(node.attrs.src || fileContent) ?? safeImageData(node.attrs.src || fileContent)"
           :width="node.attrs.width" :height="node.attrs.height" :autoplay="node.attrs.autoplay"
           :loop="node.attrs.loop" :muted="node.attrs.muted" :controls="isUploaded" @click.stop="selectMedia"
           @loadedmetadata="handleMediaLoaded" />

@@ -64,7 +64,7 @@
 						</p>
 						<img
 							v-if="form.imageBase64"
-							:src="form.imageBase64"
+							:src="safeUrl(form.imageBase64) ?? safeImageData(form.imageBase64)"
 							alt=""
 							class="max-h-40 rounded border border-outline-gray-2"
 						/>
@@ -117,6 +117,8 @@
 </template>
 
 <script setup>
+import { safeImageData } from '@/oslms/utils/safeImageData'
+import { safeUrl } from '@/utils/safeUrl'
 import { computed, reactive, ref, watch } from 'vue'
 import { Dialog, FormControl, createResource, toast } from 'frappe-ui'
 import Switch from '@/components/Controls/BooleanSwitch.vue'

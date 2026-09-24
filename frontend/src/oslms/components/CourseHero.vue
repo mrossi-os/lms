@@ -14,7 +14,7 @@
 		is free text), so it keeps the plain iframe it always had. -->
 		<div v-else-if="isVideo" class="relative aspect-video w-full">
 			<iframe
-				:src="embedUrl"
+				:src="safeUrl(embedUrl)"
 				class="absolute inset-0 w-full h-full"
 				frameborder="0"
 				allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -26,7 +26,7 @@
 			class="relative aspect-video w-full"
 		>
 			<img
-				:src="hero?.media_url"
+				:src="safeUrl(hero?.media_url)"
 				:alt="title"
 				class="absolute inset-0 w-full h-full object-cover"
 			/>
@@ -35,6 +35,7 @@
 </template>
 
 <script setup lang="ts">
+import { safeUrl } from '@/utils/safeUrl'
 import { computed } from 'vue'
 import { getVideoEmbedURL } from '@/utils/'
 import { getYouTubeId, isVimeoLink } from '@/utils/video'

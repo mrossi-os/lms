@@ -47,8 +47,8 @@
 				class="flex items-center gap-x-2 text-ink-gray-9 mt-auto"
 			>
 				<a
-					:href="internalJoinUrl(cls)"
-					target="_blank"
+					:href="safeUrl(internalJoinUrl(cls))"
+					v-external
 					@click.stop
 					class="w-full cursor-pointer inline-flex items-center justify-center gap-2 transition-colors focus:outline-none text-ink-gray-8 bg-surface-gray-2 hover:bg-surface-gray-3 active:bg-surface-gray-4 focus-visible:ring focus-visible:ring-outline-gray-3 h-7 text-base px-2 rounded"
 				>
@@ -88,6 +88,8 @@
 	</div>
 </template>
 <script setup>
+import { openExternal } from '@/utils/openExternal'
+import { safeUrl } from '@/utils/safeUrl'
 import { createResource, Tooltip, toast } from 'frappe-ui'
 import { Calendar, Clock, Info, Monitor, Video } from 'lucide-vue-next'
 import { inject } from 'vue'
@@ -206,12 +208,12 @@ const startClass = (cls) => {
 		{
 			onSuccess(data) {
 				const url = data?.start_url || fallbackUrl
-				if (url) window.open(url, '_blank', 'noopener')
+				openExternal(url)
 				emit('started', cls)
 			},
 			onError(err) {
 				toast.error(err.messages?.[0] || err)
-				if (fallbackUrl) window.open(fallbackUrl, '_blank', 'noopener')
+				openExternal(fallbackUrl)
 			},
 		},
 	)

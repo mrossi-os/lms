@@ -68,8 +68,8 @@
 			</Autocomplete>
 			<a
 				v-if="modelValue"
-				:href="selectedFileUrl"
-				target="_blank"
+				:href="safeUrl(selectedFileUrl)"
+				v-external
 				class="shrink-0 text-ink-gray-4 hover:text-ink-gray-7 transition-colors"
 				:title="__('Open file')"
 			>
@@ -80,6 +80,7 @@
 </template>
 
 <script setup>
+import { safeUrl } from '@/utils/safeUrl'
 import Autocomplete from '@/components/Controls/Autocomplete.vue'
 import { watchDebounced } from '@vueuse/core'
 import { createResource, Button } from 'frappe-ui'

@@ -53,6 +53,7 @@
 	</div>
 </template>
 <script setup>
+import { openExternal } from '@/utils/openExternal'
 import { createListResource, createResource } from 'frappe-ui'
 import { inject, onMounted, ref, watch } from 'vue'
 // OSLMS-CUSTOM: open the TrueSkills openbadge image for certificates issued
@@ -141,7 +142,7 @@ const downloadOpenbadge = (certificateName, fileFormat) => {
 		certificate_id: status.trueskill_id,
 		file_format: fileFormat,
 	})
-	window.open(
+	openExternal(
 		`/api/method/os_lms.os_lms.trueskills.api.download?${params.toString()}`,
 	)
 }

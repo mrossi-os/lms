@@ -71,7 +71,7 @@
 				>
 					<img
 						v-if="pf.preview"
-						:src="pf.preview"
+						:src="safeUrl(pf.preview) ?? safeImageData(pf.preview)"
 						class="w-10 h-10 rounded object-cover shrink-0"
 					/>
 					<component
@@ -239,8 +239,8 @@
 					</Tooltip>
 					<Tooltip v-if="isPreviewable(file.file_name)" :text="__('Open')">
 						<a
-							:href="file.file_url"
-							target="_blank"
+							:href="safeUrl(file.file_url)"
+							v-external
 							class="p-1.5 rounded hover:bg-surface-gray-3 text-ink-gray-5 hover:text-ink-gray-7 transition-colors"
 						>
 							<ExternalLink class="w-4 h-4" />
@@ -248,8 +248,8 @@
 					</Tooltip>
 					<Tooltip :text="__('Download')">
 						<a
-							:href="file.file_url"
-							target="_blank"
+							:href="safeUrl(file.file_url)"
+							v-external
 							download
 							class="p-1.5 rounded hover:bg-surface-gray-3 text-ink-gray-5 hover:text-ink-gray-7 transition-colors"
 						>
@@ -315,6 +315,8 @@
 </template>
 
 <script setup>
+import { safeImageData } from '@/oslms/utils/safeImageData'
+import { safeUrl } from '@/utils/safeUrl'
 import {
 	Breadcrumbs,
 	Button,

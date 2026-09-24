@@ -34,7 +34,7 @@
 				>
 					<div
 						class="flex-1 text-sm text-ink-gray-9 prose prose-sm max-w-none chatbot-markdown"
-						v-html="renderMarkdown(message.content)"
+						v-safe-html:rich="renderMarkdown(message.content)"
 					></div>
 					<SpeakButton
 						v-if="ttsEnabled"

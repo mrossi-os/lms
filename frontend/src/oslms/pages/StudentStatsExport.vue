@@ -280,6 +280,7 @@
 </template>
 
 <script setup>
+import { openExternal } from '@/utils/openExternal'
 import {
 	Badge,
 	Breadcrumbs,
@@ -367,7 +368,7 @@ function formatDate(value) {
 }
 
 function downloadExport(row) {
-	if (row.file) window.open(row.file, '_blank')
+	openExternal(row.file)
 }
 
 function removeExport(row) {

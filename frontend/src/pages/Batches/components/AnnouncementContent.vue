@@ -36,7 +36,6 @@ const srcdoc = computed(
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<base target="_blank">
 <style>
 	html, body { margin: 0; }
 	body {
@@ -106,6 +105,13 @@ const onLoad = () => {
 	resize()
 	const doc = frame.value?.contentDocument
 	if (!doc) return
+
+	// Links open in a new tab without a handle back on this page (the content is
+	// an email template, so its anchors carry no target of their own).
+	doc.querySelectorAll('a[href]').forEach((link) => {
+		link.setAttribute('target', '_blank')
+		link.setAttribute('rel', 'noopener noreferrer')
+	})
 
 	// Images load asynchronously and change the document height.
 	doc.querySelectorAll('img').forEach((img) => {

@@ -76,6 +76,7 @@
 </template>
 
 <script setup lang="ts">
+import { openWithOpener } from '@/utils/openExternal'
 import { Badge, Button, call, Dialog, FormControl, toast } from 'frappe-ui'
 import { Check, CircleAlert } from 'lucide-vue-next'
 import Switch from '@/components/Controls/BooleanSwitch.vue'
@@ -242,7 +243,7 @@ const authorize = () => {
 				},
 			)
 			if (message?.url) {
-				window.open(message.url)
+				openWithOpener(message.url)
 			}
 		})
 		.catch((err: any) => {

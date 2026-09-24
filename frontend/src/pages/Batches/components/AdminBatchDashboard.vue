@@ -364,6 +364,7 @@
 	/>
 </template>
 <script setup lang="ts">
+import { openExternal } from '@/utils/openExternal'
 import {
 	ECharts,
 	createResource,
@@ -695,11 +696,10 @@ const progressChartOptions = computed(() => ({
 function exportProgress(fileFormat: 'xlsx' | 'csv') {
 	const name = props.batch?.data?.name
 	if (!name) return
-	window.open(
+	openExternal(
 		`/api/method/os_lms.os_lms.api.export_batch_progress?batch=${encodeURIComponent(
 			name,
 		)}&file_format=${fileFormat}`,
-		'_blank',
 	)
 }
 

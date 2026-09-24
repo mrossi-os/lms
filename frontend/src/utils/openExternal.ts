@@ -19,3 +19,21 @@ export const openExternal = (url?: string | null): void => {
 	if (!href) return
 	window.open(href, '_blank', 'noopener')
 }
+
+// OSLMS-CUSTOM: the two opens openExternal cannot express, kept in this module
+// OAuth popup whose callback page reports back through window.opener.postMessage
+// (os_lms google_calendar.py), so it must keep the opener.
+export const openWithOpener = (url?: string | null): Window | null => {
+	const href = safeUrl(url)
+	return href ? window.open(href, '_blank') : null
+}
+
+// A blank tab opened inside the click gesture, so popup blockers allow it, and
+// navigated once an async artifact is ready. The opener is cut straight away:
+// the page it ends up showing gets no handle on ours, while we keep the one
+// window.open returned.
+export const openPendingTab = (): Window | null => {
+	const win = window.open('', '_blank')
+	if (win) win.opener = null
+	return win
+}
