@@ -43,10 +43,11 @@
 						{{ __('Students') }}
 					</div>
 					<div class="flex flex-wrap items-center gap-2">
-						<!-- OSLMS-CUSTOM: sortable students list. Upstream's ResponsiveListView owns
-						the column header (and phones get cards with no header at all), so the sort
-						lives in a control beside the search: pick a column, flip the direction. -->
+						<!-- OSLMS-CUSTOM: sortable students list. On desktop the ResponsiveListView
+						headers sort; phones get cards with no header at all, so there the sort lives
+						in a control beside the search: pick a column, flip the direction. -->
 						<Select
+							v-if="isMobile"
 							:modelValue="sortColumn"
 							:options="studentSortOptions"
 							:aria-label="__('Sort students by')"
@@ -54,6 +55,7 @@
 							@update:modelValue="(value) => toggleSort(String(value))"
 						/>
 						<Button
+							v-if="isMobile"
 							:aria-label="
 								sortOrder === 'asc' ? __('Ascending') : __('Descending')
 							"
@@ -92,6 +94,9 @@
 						:rows="progressList.data || []"
 						row-key="name"
 						:options="studentListOptions"
+						:sortColumn="sortColumn"
+						:sortOrder="sortOrder"
+						@sort="toggleSort"
 					>
 						<template #cell="{ column, row, value }">
 							<span
@@ -292,6 +297,7 @@ import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
 import NumberChartGraph from '@/components/NumberChartGraph.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
 import ResponsiveListView from '@/components/ResponsiveListView.vue'
+import { useScreenSize } from '@/utils/composables'
 import StudentCourseProgress from '@/pages/Courses/StudentCourseProgress.vue'
 
 import type {
@@ -314,6 +320,7 @@ const searchFilter = ref<string | null>(null)
 // fields (member_name, progress) or the standard `creation` column, so sorting
 // stays correct across the paginated "Load More" pages. Defaults mirror the
 // list resource's initial `orderBy: 'creation desc'`.
+const { isMobile } = useScreenSize()
 const sortColumn = ref<string>('creation')
 const sortOrder = ref<'asc' | 'desc'>('desc')
 

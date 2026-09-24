@@ -2915,7 +2915,8 @@ cliccando le intestazioni (freccia di direzione). L'ordinamento è lato server (
 list resource) così resta corretto anche sulle pagine caricate con "Carica altro"; il
 default esplicito 'creation desc' coincide con lo stato iniziale di sortColumn/sortOrder.
 Stessa funzione nella dashboard del batch (AdminBatchDashboard).
-Merge di v2.62.0 (2026-09-24): la tabella studenti e ora ResponsiveListView; ordinamento tenuto con un selettore accanto alla ricerca (toggleSort(sortColumn))."""
+Merge di v2.62.0 (2026-09-24): la tabella studenti e ora ResponsiveListView; ordinamento tenuto con un selettore accanto alla ricerca (toggleSort(sortColumn)).
+Decisione del committente (2026-09-24): su desktop si ordina cliccando le intestazioni, come prima del merge; innestate in ResponsiveListView (upstream) due prop opzionali sortColumn/sortOrder e l'evento sort (senza le prop il componente è identico all'upstream), stesso aspetto delle intestazioni di AdminBatchDashboard. Il selettore colonna + pulsante direzione accanto alla ricerca resta solo su telefono (isMobile), dove le schede non hanno intestazioni."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Courses/CourseDashboard.vue"
@@ -2925,6 +2926,14 @@ Merge di v2.62.0 (2026-09-24): la tabella studenti e ora ResponsiveListView; ord
   file = "frontend/src/pages/Courses/CourseDashboard.vue"
   anchor = "const toggleSort = (key: string) => {"
   symbol = "toggleSort"
+
+  [[entries.sites]]
+  file = "frontend/src/components/ResponsiveListView.vue"
+  anchor = "@click=\"sortable && emit('sort', column.key)\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDashboard.vue"
+  anchor = ':sortColumn="sortColumn"'
 
 [[entries]]
 id = "course-dashboard-progress-labels-it"

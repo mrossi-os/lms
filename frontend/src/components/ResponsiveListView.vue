@@ -11,16 +11,30 @@
 		<template #default>
 			<template v-if="!isMobile">
 				<ListHeader>
+					<!-- OSLMS-CUSTOM: optional clickable headers that sort (sortColumn prop set) -->
 					<ListHeaderItem
 						v-for="column in shrinkableColumns"
 						:key="column.key"
 						:item="column"
+						:class="sortable ? 'cursor-pointer select-none' : ''"
+						@click="sortable && emit('sort', column.key)"
 					>
 						<template #prefix="{ item }">
 							<span
 								v-if="item.icon"
 								:class="[item.icon, 'h-4 w-4']"
 								aria-hidden="true"
+							/>
+						</template>
+						<template v-if="sortable" #suffix>
+							<span
+								v-if="sortColumn === column.key"
+								class="lucide-chevron-up size-3.5 shrink-0 text-ink-gray-7 transition-transform duration-200"
+								:class="sortOrder === 'desc' ? 'rotate-180' : ''"
+							/>
+							<span
+								v-else
+								class="lucide-chevrons-up-down size-3.5 shrink-0 text-ink-gray-4"
 							/>
 						</template>
 					</ListHeaderItem>
@@ -179,9 +193,21 @@ const props = withDefaults(
 		/** Column shown as the card heading. Defaults to the first column. */
 		titleKey?: string
 		pageScroll?: boolean
+		/** OSLMS-CUSTOM: set it to make the desktop headers sort (emits `sort`). */
+		sortColumn?: string | null
+		sortOrder?: 'asc' | 'desc'
 	}>(),
-	{ options: undefined, titleKey: undefined, pageScroll: false }
+	{
+		options: undefined,
+		titleKey: undefined,
+		pageScroll: false,
+		sortColumn: null,
+		sortOrder: 'asc',
+	}
 )
+
+const emit = defineEmits<{ sort: [key: string] }>()
+const sortable = computed(() => props.sortColumn !== null)
 
 const slots = useSlots()
 const { isMobile } = useScreenSize()
