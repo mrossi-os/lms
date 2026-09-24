@@ -6,7 +6,12 @@
     2. Popover/Tooltip imported from the package entry ('frappe-ui') instead of
        relative paths that would resolve inside src/overrides and 404.
   The colour `name` still drives the editor commands (`name.toLowerCase()`), so
-  only the *displayed* strings are translated. Keep this file in sync with
+  only the *displayed* strings are translated.
+  Accepted exception (client decision, 2026-09-24): the upstream LMS test
+  inkOnTintContrast flags the 9 raw `bg-*-100` highlight swatches below. They
+  are frappe-ui's own classes (the new editor's swatches.ts uses the same ones)
+  and must match the real highlight colours, so they stay; the test only sees
+  them because this copy lives under src/. Keep this file in sync with
   node_modules/frappe-ui/src/components/TextEditor/components/FontColor.vue after
   any upstream frappe-ui bump.
 -->
