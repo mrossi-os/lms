@@ -113,14 +113,13 @@ export default defineConfig(async ({ mode }) => {
 						'node_modules/frappe-ui/src/components/Switch/Switch.vue'
 					),
 				},
-				// Same pattern as Switch: the FileUploader override re-imports
-				// the ORIGINAL component to extend its components map (to register
-				// `Button`, which the original imports but forgets to declare).
+				// Same pattern as Switch: the Combobox override wraps the ORIGINAL
+				// component only to translate its empty-state text.
 				{
-					find: 'frappe-ui-fileuploader-original',
+					find: 'frappe-ui-combobox-original',
 					replacement: path.resolve(
 						__dirname,
-						'node_modules/frappe-ui/src/components/FileUploader/FileUploader.vue'
+						'node_modules/frappe-ui/src/components/Combobox/Combobox.vue'
 					),
 				},
 				// Same pattern as Switch: the TextEditor override re-imports the

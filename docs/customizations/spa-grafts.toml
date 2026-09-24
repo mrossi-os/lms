@@ -791,13 +791,14 @@ title = "Alias verso i componenti frappe-ui originali per gli override «wrap»"
 layer = "spa-graft"
 confidence = "high"
 intent = """
-Gli override di Switch, FileUploader e TextEditor avvolgono il componente originale invece di
-copiarlo; per importare l'originale senza ricadere sull'override stesso usano gli alias
+Gli override di Switch, Combobox e TextEditor avvolgono il componente originale invece di
+copiarlo (FileUploader non serve più da frappe-ui 1.0.0-beta.29, che registra Button da sé;
+Combobox è diventato un involucro nello stesso riallineamento, per tradurre solo emptyText); per importare l'originale senza ricadere sull'override stesso usano gli alias
 frappe-ui-*-original, che puntano direttamente al file in node_modules scavalcando plugin e
 «exports» del pacchetto. Per ospitarli resolve.alias è passato dalla forma oggetto upstream
 alla forma array: al merge, se l'upstream aggiunge alias nella forma oggetto, vanno riportati
 nell'array, non il contrario. ATTENZIONE al merge di v2.59.0 (frappe-ui beta.24): verificare
-che i tre percorsi node_modules/frappe-ui/src/components/{Switch,FileUploader,TextEditor}
+che i tre percorsi node_modules/frappe-ui/src/components/{Switch,Combobox,TextEditor}
 esistano ancora, altrimenti la build fallisce su un alias che non risolve."""
 
   [[entries.sites]]
@@ -806,7 +807,7 @@ esistano ancora, altrimenti la build fallisce su un alias che non risolve."""
 
   [[entries.sites]]
   file = "frontend/vite.config.js"
-  anchor = "find: 'frappe-ui-fileuploader-original',"
+  anchor = "find: 'frappe-ui-combobox-original',"
 
   [[entries.sites]]
   file = "frontend/vite.config.js"
@@ -975,46 +976,6 @@ nel conflitto conservare questa riga."""
   anchor = '"editorjs-color-picker":'
 
 # --- Controllo Link (Controls/Link.vue) -------------------------------------
-
-[[entries]]
-id = "link-control-stale-combobox-events"
-title = "Controllo Link agganciato all'API del Combobox sovrascritto"
-layer = "spa-graft"
-confidence = "high"
-intent = """
-Il Combobox realmente usato in tutta l'app è l'override in src/overrides/frappe-ui/.../Combobox,
-copia di una versione più vecchia: emette solo update:modelValue, update:selectedOption, focus,
-blur e input, e non gestisce size, loading né update:query/update:open. Link.vue deve quindi
-usare @input per la ricerca, @focus (onFocus) per caricare la lista la prima volta e
-:open-on-click per aprire il menu; con gli eventi nuovi dell'upstream ogni campo Link si apre
-vuoto e la ricerca non restituisce nulla (è già successo dopo un merge, memoria
-combobox_override_event_api). open-on-click invece di open-on-focus evita che il menu si
-riapra quando il Combobox rimette il fuoco sull'input dopo una scelta. Questi binding vanno
-riportati agli eventi nuovi solo quando l'override del Combobox verrà riallineato a frappe-ui.
-Il wrapper os-link (src/oslms/components/Controls/Link.vue) passa tutto a questo componente.
-ATTENZIONE al merge di v2.59.0: l'upstream aggiunge :open="isOpen", imposta isOpen dentro
-onOpen (che da noi non esiste, sostituito da onFocus: conflitto sicuro) e chiude il menu in
-handleCreate prima di aprire il modale di creazione. Con l'override attuale la prop open non
-viene letta, quindi quella chiusura non avrà effetto: tenere @input/@focus, e valutare a parte
-se servono chiusura del menu e prop open nell'override.
-Merge di v2.63.0 (2026-09-24): l upstream aggiunge la prop align (e0d20a9b4) e ripassa loading/label/required/description/error al Combobox; l override non le conosce, quindi restano fuori e align viene mappata sulla prop placement dell override (che la inoltra come align a reka)."""
-
-  [[entries.sites]]
-  file = "frontend/src/components/Controls/Link.vue"
-  anchor = '@input="onQuery"'
-
-  [[entries.sites]]
-  file = "frontend/src/components/Controls/Link.vue"
-  anchor = '@focus="onFocus"'
-
-  [[entries.sites]]
-  file = "frontend/src/components/Controls/Link.vue"
-  anchor = ':open-on-click="true"'
-
-  [[entries.sites]]
-  file = "frontend/src/components/Controls/Link.vue"
-  anchor = "function onFocus(): void {"
-  symbol = "onFocus"
 
 # --- Palette Cmd+K (CommandPalette.vue) -------------------------------------
 

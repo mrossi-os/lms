@@ -1,27 +1,24 @@
 <template>
 	<div :class="attrs.class as any" :style="attrs.style as any">
-		<!-- OSLMS-CUSTOM: the stale Combobox override does not render the label, so it stays an outer FormLabel (label/required are now declared props, no longer in attrs) -->
-		<FormLabel
-			v-if="label"
-			:label="__(label)"
-			:required="required"
-			class="mb-1.5"
-		/>
-		<!-- OSLMS-CUSTOM: bound to the stale Combobox override API (@input/@focus, open-on-click, placement for align, no size/loading) -->
 		<Combobox
 			:open="isOpen"
 			:modelValue="value"
 			:options="resolvedOptions"
 			:placeholder="attrs.placeholder as string"
 			:disabled="attrs.readonly as boolean"
-			:aria-label="attrs['aria-label'] as string"
+			:size="(attrs.size as ComboboxSize) || 'sm'"
+			:aria-label="label ? undefined : (attrs['aria-label'] as string)"
 			:variant="attrs.variant as ComboboxVariant"
-			:open-on-click="true"
-			:placement="props.align"
+			:align="props.align"
+			:loading="options.loading"
+			:label="label ? __(label) : undefined"
+			:required="required"
+			:description="description"
+			:error="error"
 			@update:modelValue="onSelect"
-			@input="onQuery"
-			@focus="onFocus"
-			class="w-full focus-within:border-outline-gray-4 focus-within:bg-surface-base focus-within:shadow-sm focus-within:outline-none data-[state=open]:border-outline-gray-4 data-[state=open]:bg-surface-base data-[state=open]:shadow-sm data-[state=open]:outline-none"
+			@update:query="onQuery"
+			@update:open="onOpen"
+			class="w-full"
 		>
 			<template #footer>
 				<div
@@ -82,19 +79,14 @@
 </template>
 
 <script setup lang="ts">
-import {
-	Combobox,
-	Button,
-	FormControl,
-	FormLabel,
-	createResource,
-} from 'frappe-ui'
+import { Combobox, Button, FormControl, createResource } from 'frappe-ui'
 import type { ComboboxOptionValue } from 'frappe-ui'
 import { useDebounceFn, watchDebounced } from '@vueuse/core'
 import { useAttrs, computed, ref, watch } from 'vue'
 import { useSettings } from '@/stores/settings'
 import type { Resource } from '@/types'
 
+type ComboboxSize = 'sm' | 'md' | 'lg' | 'xl'
 type ComboboxVariant = 'subtle' | 'outline' | 'ghost'
 
 interface LinkOption {
@@ -121,7 +113,7 @@ const props = withDefaults(
 		// either direction, so a control near the end of a row opens inwards.
 		align?: 'start' | 'center' | 'end'
 	}>(),
-	{ inlineCreatePlaceholder: 'Enter...', align: 'start' },
+	{ inlineCreatePlaceholder: 'Enter...', align: 'start' }
 )
 
 const emit = defineEmits<{
@@ -140,7 +132,7 @@ const isOpen = ref<boolean>(false)
 let loaded = false
 
 const value = computed<string>(() =>
-	valuePropPassed.value ? (attrs.value as string) : props.modelValue,
+	valuePropPassed.value ? (attrs.value as string) : props.modelValue
 )
 
 const searchTransform = (data: LinkOption[]): LinkOption[] =>
@@ -220,16 +212,9 @@ function reload(txt: string = ''): void {
 	options.reload()
 }
 
-// OSLMS-CUSTOM: onFocus replaces upstream onOpen (override has no update:open)
-function onFocus(): void {
-	// Load the initial list the first time the field is focused. The dropdown
-	// itself opens via `open-on-click` (not `open-on-focus`): focusing keeps the
-	// list from re-opening when the Combobox restores focus to the input after a
-	// selection, which otherwise made the dropdown impossible to close by mouse.
-	// Upstream's `isOpen` / `:open` binding is kept but inert: the stale override
-	// declares the `open` prop without reading it and never emits update:open, so
-	// isOpen stays false and handleCreate's `isOpen.value = false` is a no-op.
-	if (!loaded) reload('')
+function onOpen(open: unknown): void {
+	isOpen.value = open as boolean
+	if (isOpen.value && !loaded) reload('')
 }
 
 const onQuery = useDebounceFn((txt: unknown) => reload(txt as string), 300)
@@ -243,7 +228,7 @@ watchDebounced(
 	(isOpen, wasOpen) => {
 		if (wasOpen && !isOpen && loaded) reload('')
 	},
-	{ debounce: 200 },
+	{ debounce: 200 }
 )
 
 function onSelect(val: unknown): void {
