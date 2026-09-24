@@ -235,8 +235,9 @@
 			     The rule above it is the summary's `border-b` while stacked and its
 			     own `lg:border-t` beside it, so the two never double up — and a
 			     submission with no violations still gets one from the summary. -->
+			<!-- OSLMS-CUSTOM: the proctoring photo log is not shown to the per-batch Valutatore -->
 			<aside
-				v-if="submissionDetails.doc.violation_count"
+				v-if="submissionDetails.doc.violation_count && canSeeProctoringLog"
 				class="order-2 border-b px-5 py-5 lg:order-none lg:col-start-2 lg:row-start-2 lg:border-b-0 lg:border-t"
 			>
 				<details
@@ -421,12 +422,25 @@ const submissionDetails = createDocumentResource({
 	auto: true,
 })
 
+// OSLMS-CUSTOM: the proctoring log (with webcam stills) stays with Moderators and
+// instructors; the os_lms override refuses it to the per-batch Valutatore, so
+// the page does not even ask for it.
+const canSeeProctoringLog = computed(
+	() =>
+		!user.data?.is_valutatore ||
+		Boolean(
+			user.data?.is_moderator ||
+				user.data?.is_instructor ||
+				user.data?.is_evaluator
+		)
+)
+
 const violationLog = createResource({
 	url: 'lms.lms.doctype.lms_quiz.lms_quiz.get_quiz_violation_logs',
 	makeParams() {
 		return { submission: props.submission }
 	},
-	auto: true,
+	auto: canSeeProctoringLog.value,
 })
 
 const openEndedCheck = createResource({

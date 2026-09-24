@@ -6781,6 +6781,35 @@ visibility = { allow = ["Administrator", "System Manager"], deny = ["Moderator",
   anchor = "// OSLMS-CUSTOM: Raven is a platform-wide integration, administrators only"
 
 [[entries]]
+id = "proctoring-log-hidden-from-valutatore"
+title = "Il registro del proctoring con le foto non è visibile al Valutatore di classe"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+v2.63.0 introduce il proctoring dei quiz (13d2114da e seguenti): durante il tentativo la webcam
+riconosce il volto e a ogni violazione salva una foto (File privato su LMS Quiz Violation Log);
+nel dettaglio della consegna una colonna mostra il registro con le foto, servito da
+get_quiz_violation_logs a chiunque possa leggere la consegna. Il Valutatore di classe legge le
+consegne dei suoi studenti (quiz-submission-valutatore-readonly), quindi vedrebbe anche le foto.
+Decisione del committente (2026-09-24): funzione adottata (spenta di default su ogni quiz),
+registro con foto solo a Moderator e istruttori; informativa privacy a carico del committente.
+Doppio blocco: l'override os_lms di get_quiz_violation_logs (os_lms.os_lms.valutatore, in
+override_whitelisted_methods) rifiuta la chiamata al Valutatore senza ruoli pieni, e la pagina
+non la fa nemmeno e non mostra la colonna. Il numero di violazioni (campo della consegna) resta
+visibile."""
+visibility = { allow = ["Moderator", "Docente", "Course Creator", "Batch Evaluator"], deny = ["Valutatore"] }
+checks = { unit = "apps/os_lms/os_lms/os_lms/tests/test_violation_log_access.py" }
+
+  [[entries.sites]]
+  file = "frontend/src/pages/QuizSubmission.vue"
+  anchor = 'v-if="submissionDetails.doc.violation_count && canSeeProctoringLog"'
+
+  [[entries.sites]]
+  file = "frontend/src/pages/QuizSubmission.vue"
+  anchor = "auto: canSeeProctoringLog.value,"
+  symbol = "violationLog"
+
+[[entries]]
 id = "raven-framework-ui-stub"
 title = "@framework/ui sostituito da uno stub locale (editor delle condizioni Raven)"
 layer = "spa-graft"

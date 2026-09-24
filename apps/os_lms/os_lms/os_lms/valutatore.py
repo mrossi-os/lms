@@ -177,6 +177,26 @@ def course_progress_query_conditions(user: str | None = None) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Proctoring log (upstream v2.63.0)
+# ---------------------------------------------------------------------------
+@frappe.whitelist()
+def get_quiz_violation_logs(submission: str):
+	"""Upstream ``get_quiz_violation_logs``, closed to the scoped Valutatore.
+
+	The upstream endpoint returns the proctoring events of a quiz attempt, with a
+	webcam still for each violation, to anyone who can read the submission. The
+	scoped Valutatore can read the quiz submissions of their batch students, but
+	the client decided (2026-09-24) that the photo log stays with Moderators and
+	instructors: it is refused here, not only hidden in the SPA.
+	"""
+	from lms.lms.doctype.lms_quiz.lms_quiz import get_quiz_violation_logs as upstream
+
+	if _only_scoped_valutatore(frappe.session.user):
+		frappe.throw(frappe._("Insufficient Permission"), frappe.PermissionError)
+	return upstream(submission)
+
+
+# ---------------------------------------------------------------------------
 # Row-level veto (has_permission)
 # ---------------------------------------------------------------------------
 def submission_has_permission(doc, ptype: str = "read", user: str | None = None):

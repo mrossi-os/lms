@@ -124,6 +124,8 @@ override_whitelisted_methods = {
     "lms.lms.utils.get_batch_details": "os_lms.os_lms.override_utils.get_batch_details",
     "lms.lms.utils.get_roles": "os_lms.os_lms.override_utils.get_roles",
     "lms.lms.utils.get_program_details": "os_lms.os_lms.override_utils.get_program_details",
+    # The proctoring photo log is not shown to the per-batch Valutatore (v2.63.0).
+    "lms.lms.doctype.lms_quiz.lms_quiz.get_quiz_violation_logs": "os_lms.os_lms.valutatore.get_quiz_violation_logs",
 
     
     "lms.command_palette.search_sqlite": "os_lms.os_lms.override_api.search_sqlite",
