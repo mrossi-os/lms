@@ -1,172 +1,110 @@
 <template>
-	<div class="space-y-1.5">
-		<FormLabel v-if="label" :label="__(label)" :required="required" />
-		<!-- OSLMS-CUSTOM: self-contained Popover + reka-ui Combobox instead of frappe-ui MultiSelect -->
-		<Popover
-			:show="popoverOpen"
-			:matchTargetWidth="true"
-			placement="bottom-start"
-			@update:show="onPopoverToggle"
-		>
-			<template #target="{ togglePopover, isOpen }">
-				<button
-					type="button"
-					:class="[
-						triggerBaseClasses,
-						triggerVariantClasses[variant],
-						'min-h-7 rounded px-2 w-full justify-between text-base',
-						disabled && 'cursor-not-allowed opacity-60',
-					]"
-					:data-state="isOpen ? 'open' : 'closed'"
-					:disabled="disabled"
-					@click="togglePopover"
-				>
-					<span class="flex min-w-0 flex-1 items-center gap-2">
-						<slot name="prefix" :selected="selectedOptions" />
-						<span
-							class="min-w-0 flex-1 truncate text-start"
-							:class="!selectedOptions.length && 'text-ink-gray-4'"
-						>
-							<slot
-								name="summary"
-								:summary="displayValue || placeholder"
-								:selected="selectedOptions"
-							>
-								<template v-if="selectedOptions.length">{{
-									defaultSummary(selectedOptions)
-								}}</template>
-								<template v-else>{{ placeholder }}</template>
-							</slot>
-						</span>
-					</span>
-					<ChevronDown
-						class="size-4 shrink-0 text-ink-gray-4 transition-transform duration-200"
-						:class="isOpen && 'rotate-180'"
-					/>
-				</button>
-			</template>
-			<template #body>
+	<MultiSelect
+		v-model="value"
+		v-model:open="popoverOpen"
+		v-model:query="query"
+		:options="mergedOptions"
+		:placeholder="placeholder"
+		:emptyText="emptyText"
+		:variant="variant"
+		:disabled="disabled"
+		:loading="loading"
+		:filterable="false"
+		:label="label ? __(label) : undefined"
+		:description="description"
+		:error="error"
+		:required="required"
+		@update:open="onOpen"
+		@update:modelValue="onChange"
+	>
+		<template v-if="$slots.prefix" #prefix="slotProps">
+			<slot
+				name="prefix"
+				v-bind="slotProps"
+				:selected="slotProps.selectedOptions"
+			/>
+		</template>
+		<template v-if="$slots.summary" #summary="slotProps">
+			<slot
+				name="summary"
+				v-bind="slotProps"
+				:selected="slotProps.selectedOptions"
+			/>
+		</template>
+		<template v-if="$slots['item-prefix']" #item-prefix="slotProps">
+			<slot name="item-prefix" v-bind="slotProps" />
+		</template>
+		<template v-if="$slots['item-label']" #item-label="slotProps">
+			<slot name="item-label" v-bind="slotProps" />
+		</template>
+		<template #footer="{ clear, selectAll }">
+			<slot name="footer" :close="closePopover">
 				<div
-					class="rounded-lg border border-outline-gray-1 bg-surface-elevation-2 shadow-xl"
+					class="flex items-center justify-between gap-2 border-t border-outline-gray-1 px-2 py-1.5 mt-1"
 				>
-					<!--
-						`ignore-filter` disables reka's built-in client filtering: search
-						is server-side via `reload(txt)`. `open` is hardcoded since the list
-						is already mounted inside the (conditionally rendered) popover body.
-					-->
-					<ComboboxRoot
-						v-model="value"
-						multiple
-						:open="true"
-						:ignore-filter="true"
-						class="p-2 pb-0"
-						@update:modelValue="onChange"
+					<Button
+						variant="ghost"
+						size="sm"
+						:aria-label="__('Clear')"
+						@click="clear"
 					>
-						<div
-							class="flex w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 ring-2 ring-outline-gray-2 transition-colors hover:bg-surface-gray-3"
+						{{ __('Clear') }}
+					</Button>
+					<div
+						v-if="props.onCreate || allowSelectAll"
+						class="flex items-center gap-1"
+					>
+						<Button
+							v-if="props.onCreate"
+							variant="ghost"
+							size="sm"
+							:aria-label="__(createLabel)"
+							@click="handleCreate"
 						>
-							<ComboboxInput
-								class="h-full w-full border-0 bg-transparent p-0 text-base text-ink-gray-8 placeholder:text-ink-gray-4 focus:border-0 focus:outline-0 focus:ring-0"
-								:placeholder="__('Search...')"
-								autocomplete="off"
-								@input="onInput"
-							/>
-							<LoadingIndicator
-								v-if="options.loading"
-								class="size-4 shrink-0 text-ink-gray-5"
-							/>
-						</div>
-						<ComboboxContent class="z-10 mt-2 overflow-hidden">
-							<ComboboxViewport class="max-h-60 overflow-auto pb-1.5">
-								<ComboboxEmpty
-									class="px-2.5 py-1.5 text-center text-base text-ink-gray-5"
-								>
-									{{ __(emptyText) }}
-								</ComboboxEmpty>
-								<ComboboxItem
-									v-for="item in mergedOptions"
-									:key="item.value"
-									:value="item.value"
-									:disabled="(item.disabled as boolean) || false"
-									class="relative flex h-7 select-none items-center gap-2 rounded p-1.5 text-base leading-none text-ink-gray-7 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-surface-gray-3 data-[highlighted]:outline-none"
-								>
-									<slot name="item-prefix" :item="item" />
-									<span class="min-w-0 flex-1 pe-6">
-										<slot name="item-label" :item="item">
-											{{ item.label }}
-										</slot>
-									</span>
-									<ComboboxItemIndicator
-										class="absolute end-1.5 inline-flex items-center justify-center"
-									>
-										<Check class="size-4" />
-									</ComboboxItemIndicator>
-								</ComboboxItem>
-							</ComboboxViewport>
-							<slot name="footer" :close="closePopover">
-								<div
-									class="mt-1 flex items-center justify-between gap-2 border-t border-outline-gray-1 px-2 py-1.5"
-								>
-									<Button
-										variant="ghost"
-										size="sm"
-										:aria-label="__('Clear')"
-										@click="clearAll"
-									>
-										{{ __('Clear') }}
-									</Button>
-									<div
-										v-if="props.onCreate || allowSelectAll"
-										class="flex items-center gap-1"
-									>
-										<Button
-											v-if="props.onCreate"
-											variant="ghost"
-											size="sm"
-											:aria-label="__(createLabel)"
-											@click="handleCreate"
-										>
-											<template #prefix>
-												<Plus class="size-4 stroke-1.5" />
-											</template>
-											{{ __(createLabel) }}
-										</Button>
-										<Button
-											v-if="allowSelectAll"
-											variant="ghost"
-											size="sm"
-											:aria-label="__('Select all')"
-											@click="selectAll"
-										>
-											{{ __('Select all') }}
-										</Button>
-									</div>
-								</div>
-							</slot>
-						</ComboboxContent>
-					</ComboboxRoot>
+							<template #prefix>
+								<span class="lucide-plus size-4" />
+							</template>
+							{{ __(createLabel) }}
+						</Button>
+						<Button
+							v-if="allowSelectAll"
+							variant="ghost"
+							size="sm"
+							:aria-label="__('Select all')"
+							@click="selectAll"
+						>
+							{{ __('Select all') }}
+						</Button>
+					</div>
 				</div>
-			</template>
-		</Popover>
-	</div>
+			</slot>
+		</template>
+	</MultiSelect>
 </template>
 
 <script setup lang="ts">
-import { Button, FormLabel, LoadingIndicator, Popover, createResource } from 'frappe-ui'
-// OSLMS-CUSTOM: reka-ui primitives for the self-contained multi-select
-import {
-	ComboboxRoot,
-	ComboboxInput,
-	ComboboxContent,
-	ComboboxViewport,
-	ComboboxEmpty,
-	ComboboxItem,
-	ComboboxItemIndicator,
-} from 'reka-ui'
+import { Button, MultiSelect, createResource } from 'frappe-ui'
 import { useDebounceFn } from '@vueuse/core'
-import { ChevronDown, Plus, Check } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
 import type { Resource } from '@/types'
+
+// The trigger is MultiSelect's own: it already carries the theme's focus ring,
+// the open/variant/size data attributes and the full aria wiring, none of which
+// a local button reproduced correctly. So `#trigger` is not overridden here and
+// `disabled` is handed to MultiSelect rather than to a button of ours.
+//
+// `#prefix` and `#summary` are forwarded only when a consumer supplies them.
+// Forwarding `#summary` unconditionally would suppress MultiSelect's own
+// summary, which collapses 2+ selections to "N selected", and with it the
+// phantom sizer that keeps the trigger from widening with the selection.
+// Both slots get MultiSelect's slot props plus `selected`, the name MultiLink's
+// own trigger used, so a consumer written against the old shape still works.
+//
+// Footer layout: Clear on the start edge, everything additive on the end edge,
+// so the one destructive action in the row is never adjacent to the ones that
+// add. Select all sits last because it is the end-edge action asked for; a
+// control that also passes `onCreate` puts Create New beside it rather than back
+// on the start edge, so Clear stays alone whatever the combination.
 
 interface SelectOption {
 	label: string
@@ -217,26 +155,11 @@ const props = withDefaults(
 const value = defineModel<string[]>({ default: () => [] })
 
 const popoverOpen = ref<boolean>(false)
-// The typed search text, kept so a change of doctype can re-run it and a
-// reopened control starts from the base list. See onPopoverToggle().
+// Bound rather than left to MultiSelect, because the search runs on the server:
+// the typed text has to reach `reload()`. Binding also makes the query ours to
+// reset. See onOpen().
 const query = ref<string>('')
 let loaded = false
-
-// OSLMS-CUSTOM: theme focus/open ring on the trigger (variants lose the bg/border swap)
-const triggerBaseClasses =
-	'relative inline-flex items-center gap-2 text-start text-ink-gray-7 outline-none transition-[background-color,border-color,box-shadow] duration-150 focus-visible:ring-2 data-[state=open]:ring-2 ring-outline-gray-3'
-
-const triggerVariantClasses: Record<
-	NonNullable<typeof props.variant>,
-	string
-> = {
-	subtle:
-		'border border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-elevation-2 hover:bg-surface-gray-3',
-	outline:
-		'border border-outline-gray-2 bg-surface-base hover:border-outline-gray-3',
-	ghost:
-		'border border-transparent bg-transparent hover:bg-surface-gray-3 focus-within:bg-surface-gray-3',
-}
 
 function buildParams(txt: string) {
 	return {
@@ -270,32 +193,25 @@ function reload(txt: string = '') {
 	options.reload()
 }
 
-// Popover has no `open` event; load the initial list the first time it opens.
-function onPopoverToggle(open: boolean) {
-	popoverOpen.value = open
+// Surfaced to MultiSelect so the list reads as pending rather than empty. Left
+// unset, the popover renders `emptyText` for the whole round trip, so every
+// dropdown opens on "No results" and only then fills in.
+const loading = computed<boolean>(() => !!options.loading)
+
+function onOpen(open: boolean) {
 	if (open) {
 		if (!loaded) reload()
 		return
 	}
-	// OSLMS-CUSTOM: the search input unmounts with the popover, so a control
-	// reopened after a search would show that search's hits under an empty box.
-	// Forget it: the next open loads the base list again.
-	if (query.value) {
-		query.value = ''
-		loaded = false
-	}
+	// MultiSelect never clears a bound query, so a control reopened after a
+	// fruitless search would still be showing that search's text over that
+	// search's (empty) results. Clearing runs the base search again.
+	query.value = ''
 }
 
-const onQuery = useDebounceFn(
-	(txt: unknown) => reload((txt as string) || ''),
-	300
-)
+const runQuery = useDebounceFn((txt: string) => reload(txt), 300)
 
-// OSLMS-CUSTOM: server-side search driven by the reka ComboboxInput
-function onInput(event: Event) {
-	query.value = (event.target as HTMLInputElement).value
-	onQuery(query.value)
-}
+watch(query, (txt) => runQuery(txt))
 
 const emit = defineEmits<{
 	(e: 'change', value: string[]): void
@@ -427,38 +343,6 @@ const optionByValue = computed<Map<string, SelectOption>>(() => {
 	mergedOptions.value.forEach((o) => map.set(o.value, o))
 	return map
 })
-
-// OSLMS-CUSTOM: trigger summary computed here (MultiSelect used to provide it)
-// Resolve currently selected values to full option objects (falling back to a
-// bare {label,value} when an option hasn't been loaded yet) for the trigger.
-const selectedOptions = computed<SelectOption[]>(() =>
-	(value.value || []).map(
-		(v) => optionByValue.value.get(v) || { label: v, value: v }
-	)
-)
-
-const displayValue = computed<string>(() =>
-	defaultSummary(selectedOptions.value)
-)
-
-function defaultSummary(selected: { label: string }[]) {
-	return selected.map((o) => o.label).join(', ')
-}
-
-// OSLMS-CUSTOM: Clear footer action (MultiSelect used to provide it)
-function clearAll() {
-	value.value = []
-	onChange([])
-}
-
-// Every option currently listed (one page of the server search), enabled ones only.
-function selectAll() {
-	const all = mergedOptions.value
-		.filter((o) => !o.disabled)
-		.map((o) => o.value)
-	value.value = all
-	onChange(all)
-}
 
 defineExpose({ reload, options, optionByValue })
 </script>

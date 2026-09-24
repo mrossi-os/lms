@@ -5668,69 +5668,6 @@ la voce può essere rimossa dopo il merge."""
   anchor = "__('Uploading {0}%').format(progress)"
 
 [[entries]]
-id = "multilink-reka-combobox"
-title = "MultiLink autonomo su Popover + Combobox di reka-ui"
-layer = "spa-graft"
-confidence = "low"
-intent = """
-MultiLink (selezione multipla con ricerca lato server: istruttori del corso, corsi correlati,
-filtri dell'esportazione statistiche, iscrizione studenti al batch…) non usa il MultiSelect di
-frappe-ui ma un Popover di frappe-ui con dentro ComboboxRoot/Input/Item di reka-ui, con
-ricerca server (ignore-filter + onInput → reload), riepilogo nel pulsante
-(selectedOptions/displayValue con ripiego {label: v, value: v} per i valori non ancora
-caricati), piede «Cancella»/«Crea nuovo» (clearAll) e un anello di focus/apertura sul pulsante al
-posto del cambio di sfondo/bordo delle varianti. Motivazione dedotta dai commit 9b609dbae
-«fix link and multilink components» e 265842cde «Fix crash after merge with upstream»: il
-componente upstream si appoggiava al MultiSelect di frappe-ui 1.0-beta mentre il fork girava
-su frappe-ui 0.1.276, e la pagina andava in errore; riscriverlo su reka-ui lo ha reso
-indipendente dalla versione di frappe-ui e dall'override stantio del Combobox (memoria
-combobox_override_event_api: «MultiLink è autonomo su reka-ui, non toccato»). Oggi
-node_modules è su frappe-ui 1.0.0-beta.24, che esporta MultiSelect: da chiarire se la
-riscrittura serve ancora. ATTENZIONE al merge di v2.61.0: conflitto pesante. L'upstream, sul
-proprio template MultiSelect, aggiunge la prop disabled (usata dal nuovo
-Settings/Raven/RuleEditor.vue), estrae toOptions, e soprattutto risolve le etichette dei valori
-già salvati prima dell'apertura (titleLookup + resolved/requested + resolveMissing con watch
-immediato, filters {name in …} più names per search_users_by_role, mergedOptions esteso a
-resolved e al docname grezzo), e sposta il tipo Resource da '@/types/api' a '@/types'.
-Risoluzione consigliata se si tiene la nostra versione: tenere il template Popover/reka e
-riportare nello script disabled (sul <button> trigger: :disabled e classi cursor-not-allowed
-opacity-60, e niente apertura del Popover), toOptions, titleLookup/resolveMissing/watch e le
-due aggiunte a mergedOptions (import di watch). Senza, i MultiLink con valori salvati
-mostrano il docname invece del titolo finché non si apre la tendina.
-Merge di v2.61.0 (2026-09-23): portati nella nostra versione reka la prop disabled e la risoluzione dei titoli (titleLookup/resolveMissing) dell'upstream. Il test upstream multiLink.test.ts (11 casi) passa contro la nostra versione dopo aver aggiunto al suo mock Popover (reale) e uno stub di LoadingIndicator, su decisione del committente; asserzioni invariate. Domanda aperta: tornare al MultiSelect upstream alla riconciliazione degli override dopo v2.62.0.
-Merge di v2.63.0 (2026-09-24, Raven #2706): la versione upstream resta su MultiSelect; tenuta la nostra riscrittura reka e portate a mano le novita upstream: prop emptyText e allowSelectAll (pulsante Seleziona tutto nel footer, oggi usato solo da Raven), ricerca dimenticata alla chiusura del popover, nuova ricerca quando cambiano url/doctype/filters/searchParams (searchKey)."""
-
-  [[entries.sites]]
-  file = "frontend/src/components/Controls/MultiLink.vue"
-  anchor = "<ComboboxRoot"
-
-  [[entries.sites]]
-  file = "frontend/src/components/Controls/MultiLink.vue"
-  anchor = "} from 'reka-ui'"
-
-  [[entries.sites]]
-  file = "frontend/src/components/Controls/MultiLink.vue"
-  anchor = "focus-visible:ring-2 data-[state=open]:ring-2 ring-outline-gray-3"
-  symbol = "triggerBaseClasses"
-
-  [[entries.sites]]
-  file = "frontend/src/components/Controls/MultiLink.vue"
-  anchor = "function onInput(event: Event) {"
-
-  [[entries.sites]]
-  file = "frontend/src/components/Controls/MultiLink.vue"
-  anchor = "(v) => optionByValue.value.get(v) || { label: v, value: v }"
-  symbol = "selectedOptions"
-
-  [[entries.sites]]
-  file = "frontend/src/components/Controls/MultiLink.vue"
-  anchor = "function clearAll() {"
-
-  [[entries.sites]]
-  file = "frontend/src/tests/multiLink.test.ts"
-  anchor = "// OSLMS-CUSTOM: our MultiLink is built on reka-ui inside a frappe-ui Popover"
-
-[[entries]]
 id = "multiselect-exclude-cached-options"
 title = "MultiSelect con valori esclusi e opzioni scelte esposte"
 layer = "spa-graft"
