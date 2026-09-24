@@ -938,6 +938,28 @@ esiste anche una copia in src/molecules/editor/extensions/toc-node/toc-render.ts
   symbol = "osTranslateTocFallback"
 
 [[entries]]
+id = "vitest-known-failures-baseline"
+title = "yarn test giudica Vitest contro una baseline di rossi attesi"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Decisione del committente (2026-09-24, B3.1): i test upstream che falliscono per nostre
+personalizzazioni (asseriscono un comportamento che cambiamo apposta, o i loro mock non
+conoscono un modulo importato da un nostro innesto) NON si modificano, per non creare conflitti
+a ogni merge. Sono elencati uno per uno, con tipo (rule/mock), voce d'inventario e motivo, in
+frontend/oslms-test/known-failures.json. "test" in package.json lancia
+oslms-test/vitest-baseline.mjs, che fa fallire l'esecuzione solo per un rosso NUOVO, per un rosso
+atteso diventato verde (da togliere dall'elenco) o per una voce che non corrisponde più a nessun
+test. Il workflow upstream frontend-tests.yml chiama `yarn test --run` e passa quindi dalla
+baseline senza essere modificato. "test:raw" resta Vitest puro. Al merge: se l'upstream cambia
+lo script "test", tenere il nostro; dopo ogni merge rilanciare yarn test e aggiornare l'elenco
+solo per test upstream nuovi o rinominati, con il motivo."""
+
+  [[entries.sites]]
+  file = "frontend/package.json"
+  anchor = '"test": "node oslms-test/vitest-baseline.mjs",'
+
+[[entries]]
 id = "deps-tiptap-direct-deps"
 title = "@tiptap dichiarati come dipendenze dirette e deduplicati"
 layer = "spa-graft"

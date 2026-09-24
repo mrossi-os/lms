@@ -1,0 +1,496 @@
+{
+	"_about": [
+		"Vitest failures expected on this fork, checked by oslms-test/vitest-baseline.mjs (yarn test).",
+		"kind=rule: the test asserts upstream behaviour one of our customizations changes on purpose (entry = docs/customizations/spa-grafts.toml id).",
+		"kind=mock: the upstream test mocks do not provide a module our graft imports, so the test never reaches its assertion.",
+		"Never edit an upstream test to make it pass: fix the code, or agree the rule with the client and list it here.",
+		"Created 2026-09-24 (B3.1, after the v2.58.0 -> v2.63.0 upstream walk)."
+	],
+	"tests": {
+		"ChapterRow.test.ts > ChapterRow locked lesson exposes the locked state as text, not as aria-label on a div": {
+			"kind": "mock",
+			"entry": "lesson-ai-status",
+			"why": "LessonAIStatus (useLessonIngestion) calls createResource, missing from the frappe-ui mock"
+		},
+		"ChapterRow.test.ts > ChapterRow locked lesson renders a lock and no router-link for a locked lesson": {
+			"kind": "mock",
+			"entry": "lesson-ai-status",
+			"why": "LessonAIStatus (useLessonIngestion) calls createResource, missing from the frappe-ui mock"
+		},
+		"ChapterRow.test.ts > ChapterRow locked lesson still links an unlocked lesson": {
+			"kind": "mock",
+			"entry": "lesson-ai-status",
+			"why": "LessonAIStatus (useLessonIngestion) calls createResource, missing from the frappe-ui mock"
+		},
+		"NewMemberModal.test.ts > NewMemberModal: add mode assigns multiple selected roles with value 1": {
+			"kind": "rule",
+			"entry": "member-valutatore-role-exact-roles",
+			"why": "members are created with exactly the chosen roles, not through frappe.client.insert"
+		},
+		"NewMemberModal.test.ts > NewMemberModal: add mode inserts the user then assigns only the selected roles, emits created, closes": {
+			"kind": "rule",
+			"entry": "member-valutatore-role-exact-roles",
+			"why": "members are created with exactly the chosen roles, not through frappe.client.insert"
+		},
+		"NewMemberModal.test.ts > NewMemberModal: add mode toasts on insert failure without closing": {
+			"kind": "rule",
+			"entry": "member-valutatore-role-exact-roles",
+			"why": "members are created with exactly the chosen roles, not through frappe.client.insert"
+		},
+		"announcementForm.test.ts > AnnouncementForm as a route BCCs the batch students it fetched, not a prop": {
+			"kind": "rule",
+			"entry": "announcement-send-os-lms",
+			"why": "announcements go through os_lms send_batch_announcement; Reply To is removed"
+		},
+		"announcementForm.test.ts > AnnouncementForm as a route carries every field of the announcement form": {
+			"kind": "rule",
+			"entry": "announcement-send-os-lms",
+			"why": "announcements go through os_lms send_batch_announcement; Reply To is removed"
+		},
+		"assignmentForm.test.ts > AssignmentForm as a route creates through its own resource, not a parent-supplied one": {
+			"kind": "rule",
+			"entry": "assignment-form-required-warnings",
+			"why": "the test saves an empty form; title, submission type and question are required"
+		},
+		"assignmentForm.test.ts > AssignmentForm as a route replaces rather than pushes on save, so Back reaches the list": {
+			"kind": "rule",
+			"entry": "assignment-form-required-warnings",
+			"why": "the test saves an empty form; title, submission type and question are required"
+		},
+		"assignmentForm.test.ts > AssignmentForm as a route signals the parent list to refetch after a create": {
+			"kind": "rule",
+			"entry": "assignment-form-required-warnings",
+			"why": "the test saves an empty form; title, submission type and question are required"
+		},
+		"batchDetailOpeners.test.ts > BatchDetail's form openers opens the announcement form carrying the current tab hash": {
+			"kind": "mock",
+			"entry": "batch-detail-tab-notification-badges",
+			"why": "BatchDetail subscribes to socket.on at mount; the test provides no socket"
+		},
+		"batchDetailOpeners.test.ts > BatchDetail's form openers opens the certificates form carrying the current tab hash": {
+			"kind": "mock",
+			"entry": "batch-detail-tab-notification-badges",
+			"why": "BatchDetail subscribes to socket.on at mount; the test provides no socket"
+		},
+		"batchDetailOpeners.test.ts > BatchDetail's form openers renders the child form route through its own outlet": {
+			"kind": "mock",
+			"entry": "batch-detail-tab-notification-badges",
+			"why": "BatchDetail subscribes to socket.on at mount; the test provides no socket"
+		},
+		"batchStudentForm.test.ts > BatchStudentForm as a route asks the batch page to refetch its details": {
+			"kind": "mock",
+			"entry": "batch-student-modal-bulk-enroll",
+			"why": "bulk enrollment uses MultiLink (frappe-ui MultiSelect), missing from the frappe-ui mock"
+		},
+		"batchStudentForm.test.ts > BatchStudentForm as a route does not refetch the details when the enrollment fails": {
+			"kind": "mock",
+			"entry": "batch-student-modal-bulk-enroll",
+			"why": "bulk enrollment uses MultiLink (frappe-ui MultiSelect), missing from the frappe-ui mock"
+		},
+		"batchStudentForm.test.ts > BatchStudentForm as a route inserts through its own resource, against the routed batch": {
+			"kind": "mock",
+			"entry": "batch-student-modal-bulk-enroll",
+			"why": "bulk enrollment uses MultiLink (frappe-ui MultiSelect), missing from the frappe-ui mock"
+		},
+		"batchStudentForm.test.ts > BatchStudentForm as a route leaves the onboarding step alone for a plain moderator": {
+			"kind": "mock",
+			"entry": "batch-student-modal-bulk-enroll",
+			"why": "bulk enrollment uses MultiLink (frappe-ui MultiSelect), missing from the frappe-ui mock"
+		},
+		"batchStudentForm.test.ts > BatchStudentForm as a route lets a batch evaluator through": {
+			"kind": "mock",
+			"entry": "batch-student-modal-bulk-enroll",
+			"why": "bulk enrollment uses MultiLink (frappe-ui MultiSelect), missing from the frappe-ui mock"
+		},
+		"batchStudentForm.test.ts > BatchStudentForm as a route mobile: the back control pops the router back to the batch": {
+			"kind": "mock",
+			"entry": "batch-student-modal-bulk-enroll",
+			"why": "bulk enrollment uses MultiLink (frappe-ui MultiSelect), missing from the frappe-ui mock"
+		},
+		"batchStudentForm.test.ts > BatchStudentForm as a route mounts straight from the URL with no parent dashboard mounted": {
+			"kind": "mock",
+			"entry": "batch-student-modal-bulk-enroll",
+			"why": "bulk enrollment uses MultiLink (frappe-ui MultiSelect), missing from the frappe-ui mock"
+		},
+		"batchStudentForm.test.ts > BatchStudentForm as a route opens Settings from \"Create New\" on LMS Payment": {
+			"kind": "mock",
+			"entry": "batch-student-modal-bulk-enroll",
+			"why": "bulk enrollment uses MultiLink (frappe-ui MultiSelect), missing from the frappe-ui mock"
+		},
+		"batchStudentForm.test.ts > BatchStudentForm as a route opens Settings from \"Create New\" on User": {
+			"kind": "mock",
+			"entry": "batch-student-modal-bulk-enroll",
+			"why": "bulk enrollment uses MultiLink (frappe-ui MultiSelect), missing from the frappe-ui mock"
+		},
+		"batchStudentForm.test.ts > BatchStudentForm as a route reloads both the student list and the Enrolled count when mounted": {
+			"kind": "mock",
+			"entry": "batch-student-modal-bulk-enroll",
+			"why": "bulk enrollment uses MultiLink (frappe-ui MultiSelect), missing from the frappe-ui mock"
+		},
+		"batchStudentForm.test.ts > BatchStudentForm as a route returns to the tab it was opened from": {
+			"kind": "mock",
+			"entry": "batch-student-modal-bulk-enroll",
+			"why": "bulk enrollment uses MultiLink (frappe-ui MultiSelect), missing from the frappe-ui mock"
+		},
+		"batchStudentForm.test.ts > BatchStudentForm as a route stays put when Settings has nowhere to open": {
+			"kind": "mock",
+			"entry": "batch-student-modal-bulk-enroll",
+			"why": "bulk enrollment uses MultiLink (frappe-ui MultiSelect), missing from the frappe-ui mock"
+		},
+		"batchStudentForm.test.ts > BatchStudentForm as a route survives a save with no dashboard tab to refresh": {
+			"kind": "mock",
+			"entry": "batch-student-modal-bulk-enroll",
+			"why": "bulk enrollment uses MultiLink (frappe-ui MultiSelect), missing from the frappe-ui mock"
+		},
+		"batchStudentForm.test.ts > BatchStudentForm as a route ticks the onboarding step only for a system manager": {
+			"kind": "mock",
+			"entry": "batch-student-modal-bulk-enroll",
+			"why": "bulk enrollment uses MultiLink (frappe-ui MultiSelect), missing from the frappe-ui mock"
+		},
+		"batchStudentForm.test.ts > BatchStudentForm as a route will not submit an empty student": {
+			"kind": "mock",
+			"entry": "batch-student-modal-bulk-enroll",
+			"why": "bulk enrollment uses MultiLink (frappe-ui MultiSelect), missing from the frappe-ui mock"
+		},
+		"blockEditor.test.ts > BlockEditor does not inject the old custom Notion-style handle or menu": {
+			"kind": "mock",
+			"entry": "block-editor-i18n-labels",
+			"why": "getEditorI18n missing from the @/utils mock"
+		},
+		"blockEditor.test.ts > BlockEditor exposes a focus() method that places the caret without throwing": {
+			"kind": "mock",
+			"entry": "block-editor-i18n-labels",
+			"why": "getEditorI18n missing from the @/utils mock"
+		},
+		"blockEditor.test.ts > BlockEditor makes the native settings button draggable (editorjs-drag-drop)": {
+			"kind": "mock",
+			"entry": "block-editor-i18n-labels",
+			"why": "getEditorI18n missing from the @/utils mock"
+		},
+		"blockEditor.test.ts > BlockEditor null-guards exposed methods after unmount (teardown autosave)": {
+			"kind": "mock",
+			"entry": "block-editor-i18n-labels",
+			"why": "getEditorI18n missing from the @/utils mock"
+		},
+		"blockEditor.test.ts > BlockEditor renders the native EditorJS toolbar (+ add and the ⋮⋮ settings menu)": {
+			"kind": "mock",
+			"entry": "block-editor-i18n-labels",
+			"why": "getEditorI18n missing from the @/utils mock"
+		},
+		"blockEditor.test.ts > BlockEditor round-trips block content through render() and save()": {
+			"kind": "mock",
+			"entry": "block-editor-i18n-labels",
+			"why": "getEditorI18n missing from the @/utils mock"
+		},
+		"blockEditorTeardown.test.ts > BlockEditor onReady teardown race constructs DragDrop once when onReady fires while still mounted": {
+			"kind": "mock",
+			"entry": "block-editor-i18n-labels",
+			"why": "getEditorI18n missing from the @/utils mock"
+		},
+		"blockEditorTeardown.test.ts > BlockEditor onReady teardown race does not construct DragDrop(null) when onReady fires after unmount": {
+			"kind": "mock",
+			"entry": "block-editor-i18n-labels",
+			"why": "getEditorI18n missing from the @/utils mock"
+		},
+		"commandPaletteCategories.test.ts > command palette categories offers a browse row for each category the user may see": {
+			"kind": "rule",
+			"entry": "command-palette-jobs-removed",
+			"why": "the Jobs category is removed on purpose"
+		},
+		"commandPaletteCategories.test.ts > command palette site visibility flags offers everything while the flags are still unresolved": {
+			"kind": "rule",
+			"entry": "command-palette-jobs-removed",
+			"why": "the Jobs category is removed on purpose"
+		},
+		"commandPaletteEmptyState.test.ts > typing with no results keeps the empty message steady across keystrokes": {
+			"kind": "rule",
+			"entry": "command-palette-search-page-entry",
+			"why": "the Search row is always present, so the list is never empty"
+		},
+		"commandPaletteSearch.test.ts > command palette search survives arrowing through an empty result set": {
+			"kind": "rule",
+			"entry": "command-palette-search-page-entry",
+			"why": "the Search row is always the last row, so wrap-around and empty-list navigation differ"
+		},
+		"commandPaletteSearch.test.ts > command palette search wraps from the last result back to the first": {
+			"kind": "rule",
+			"entry": "command-palette-search-page-entry",
+			"why": "the Search row is always the last row, so wrap-around and empty-list navigation differ"
+		},
+		"coursesFilters.test.ts > Courses list filters drops a slow response from the tab the user has already left": {
+			"kind": "mock",
+			"entry": "courses-list-persist-tab",
+			"why": "useLocalStorage missing from the @/utils/composables mock"
+		},
+		"coursesFilters.test.ts > Courses list filters keeps the selected tab when the user resource resolves again": {
+			"kind": "mock",
+			"entry": "courses-list-persist-tab",
+			"why": "useLocalStorage missing from the @/utils/composables mock"
+		},
+		"coursesFilters.test.ts > Courses list filters re-asks for the total whenever the filters change, cancelling the last": {
+			"kind": "mock",
+			"entry": "courses-list-persist-tab",
+			"why": "useLocalStorage missing from the @/utils/composables mock"
+		},
+		"coursesFilters.test.ts > Courses list filters reads certification=false from the query string as off": {
+			"kind": "mock",
+			"entry": "courses-list-persist-tab",
+			"why": "useLocalStorage missing from the @/utils/composables mock"
+		},
+		"coursesFilters.test.ts > Courses list filters rewrites the filter query without wiping window.history.state": {
+			"kind": "mock",
+			"entry": "courses-list-persist-tab",
+			"why": "useLocalStorage missing from the @/utils/composables mock"
+		},
+		"coursesFilters.test.ts > Courses list filters sends one request with the new value from the desktop certification checkbox": {
+			"kind": "mock",
+			"entry": "courses-list-persist-tab",
+			"why": "useLocalStorage missing from the @/utils/composables mock"
+		},
+		"coursesFilters.test.ts > Courses list filters sends the same request from the mobile certification checkbox": {
+			"kind": "mock",
+			"entry": "courses-list-persist-tab",
+			"why": "useLocalStorage missing from the @/utils/composables mock"
+		},
+		"inkOnTintContrast.test.ts > ink-on-tint contrast uses no raw palette background": {
+			"kind": "rule",
+			"entry": "",
+			"why": "accepted exception: the 9 raw bg-*-100 swatches of the FontColor override are frappe-ui's own (commit a49d9ee48, override header)"
+		},
+		"lessonFormTeardown.test.ts > LessonForm teardown autosave does not save the lesson on teardown once it has been marked deleted": {
+			"kind": "mock",
+			"entry": "lesson-form-os-settings-panel",
+			"why": "OsLessonForm imports the lucide Settings icon, missing from the lucide-vue-next mock"
+		},
+		"lessonFormTeardown.test.ts > LessonForm teardown autosave does not wipe stored instructor notes on a title-only flush before the notes finish loading": {
+			"kind": "mock",
+			"entry": "lesson-form-os-settings-panel",
+			"why": "OsLessonForm imports the lucide Settings icon, missing from the lucide-vue-next mock"
+		},
+		"lessonFormTeardown.test.ts > LessonForm teardown autosave folds in instructor-note edits even when unmount flushes during the body save": {
+			"kind": "mock",
+			"entry": "lesson-form-os-settings-panel",
+			"why": "OsLessonForm imports the lucide Settings icon, missing from the lucide-vue-next mock"
+		},
+		"lessonFormTeardown.test.ts > LessonForm teardown autosave persists the latest body edit captured before teardown even when the body save rejects": {
+			"kind": "mock",
+			"entry": "lesson-form-os-settings-panel",
+			"why": "OsLessonForm imports the lucide Settings icon, missing from the lucide-vue-next mock"
+		},
+		"lessonFormTeardown.test.ts > LessonForm teardown autosave persists the latest instructor-note edit captured before teardown even when its save rejects": {
+			"kind": "mock",
+			"entry": "lesson-form-os-settings-panel",
+			"why": "OsLessonForm imports the lucide Settings icon, missing from the lucide-vue-next mock"
+		},
+		"lessonFormTeardown.test.ts > LessonForm teardown autosave still flushes a dirty lesson on genuine navigation (not deleted)": {
+			"kind": "mock",
+			"entry": "lesson-form-os-settings-panel",
+			"why": "OsLessonForm imports the lucide Settings icon, missing from the lucide-vue-next mock"
+		},
+		"lessonFormTeardown.test.ts > LessonForm teardown autosave still persists the lesson when an editor save rejects during teardown": {
+			"kind": "mock",
+			"entry": "lesson-form-os-settings-panel",
+			"why": "OsLessonForm imports the lucide Settings icon, missing from the lucide-vue-next mock"
+		},
+		"lessonFormTeardown.test.ts > LessonForm title is single-line collapses a pasted multi-line title": {
+			"kind": "mock",
+			"entry": "lesson-form-os-settings-panel",
+			"why": "OsLessonForm imports the lucide Settings icon, missing from the lucide-vue-next mock"
+		},
+		"lessonFormTeardown.test.ts > LessonForm title is single-line flattens a title that was stored with a break": {
+			"kind": "mock",
+			"entry": "lesson-form-os-settings-panel",
+			"why": "OsLessonForm imports the lucide Settings icon, missing from the lucide-vue-next mock"
+		},
+		"lessonFormTeardown.test.ts > LessonForm title is single-line lets Enter through while an IME candidate is being confirmed": {
+			"kind": "mock",
+			"entry": "lesson-form-os-settings-panel",
+			"why": "OsLessonForm imports the lucide Settings icon, missing from the lucide-vue-next mock"
+		},
+		"lessonFormTeardown.test.ts > LessonForm title is single-line persists the flattened title, not the break": {
+			"kind": "mock",
+			"entry": "lesson-form-os-settings-panel",
+			"why": "OsLessonForm imports the lucide Settings icon, missing from the lucide-vue-next mock"
+		},
+		"lessonFormTeardown.test.ts > LessonForm title is single-line refuses Enter": {
+			"kind": "mock",
+			"entry": "lesson-form-os-settings-panel",
+			"why": "OsLessonForm imports the lucide Settings icon, missing from the lucide-vue-next mock"
+		},
+		"lessonFormTeardown.test.ts > LessonForm with unreadable stored content writes the unreadable field back untouched and saves the rest": {
+			"kind": "mock",
+			"entry": "lesson-form-os-settings-panel",
+			"why": "OsLessonForm imports the lucide Settings icon, missing from the lucide-vue-next mock"
+		},
+		"liveClassForm.test.ts > LiveClassForm as a route refreshes the Classes tab list after a create, by cache key": {
+			"kind": "rule",
+			"entry": "live-class-modal-submit-guard",
+			"why": "the test submits an empty form; validation really blocks it"
+		},
+		"liveClassForm.test.ts > LiveClassForm as a route submits through the endpoint the batch provider selects": {
+			"kind": "rule",
+			"entry": "live-class-modal-submit-guard",
+			"why": "the test submits an empty form; validation really blocks it"
+		},
+		"liveClassForm.test.ts > the Classes tab opener registers its list under the key the form refreshes": {
+			"kind": "rule",
+			"entry": "live-class-pagination-sort",
+			"why": "the list is a paged get_list resource, not a cached list resource"
+		},
+		"memberFormRoute.test.ts > the member form route a cold deep link announces the change even with no settings surface mounted": {
+			"kind": "rule",
+			"entry": "member-valutatore-role-exact-roles",
+			"why": "members are created with exactly the chosen roles, not through frappe.client.insert"
+		},
+		"memberFormRoute.test.ts > the member form route a cold deep link bumps the signal a mounted list watches": {
+			"kind": "rule",
+			"entry": "member-valutatore-role-exact-roles",
+			"why": "members are created with exactly the chosen roles, not through frappe.client.insert"
+		},
+		"mobileBottomBar.test.ts [suite]": {
+			"kind": "mock",
+			"entry": "ai-fixed-buttons-layouts",
+			"why": "MobileLayout mounts AiFixedButtons, whose mobileCta store needs defineStore, missing from the pinia mock"
+		},
+		"mobileYou.test.ts > a cold deep link to /you stands up before the nav links have arrived": {
+			"kind": "rule",
+			"entry": "admin-forced-theme",
+			"why": "the Colour mode row is removed: the theme is set by the admin"
+		},
+		"mobileYou.test.ts > picking a row opens the colour-mode sheet rather than navigating away for it": {
+			"kind": "rule",
+			"entry": "admin-forced-theme",
+			"why": "the Colour mode row is removed: the theme is set by the admin"
+		},
+		"mobileYou.test.ts > picking a row sets the preference from the sheet and closes it": {
+			"kind": "rule",
+			"entry": "admin-forced-theme",
+			"why": "the Colour mode row is removed: the theme is set by the admin"
+		},
+		"mobileYou.test.ts > what the page shows offers no way into settings, not even to a moderator": {
+			"kind": "rule",
+			"entry": "admin-forced-theme",
+			"why": "the Colour mode row is removed: the theme is set by the admin"
+		},
+		"newBatchForm.test.ts > NewBatchForm as a route ignores Ctrl+S for a user who cannot create batches": {
+			"kind": "rule",
+			"entry": "batch-new-modal-required-warnings",
+			"why": "the test saves an empty form; the required fields are checked one by one"
+		},
+		"newBatchForm.test.ts > NewBatchForm as a route inserts through its own resource, not a parent-supplied one": {
+			"kind": "rule",
+			"entry": "batch-new-modal-required-warnings",
+			"why": "the test saves an empty form; the required fields are checked one by one"
+		},
+		"newBatchForm.test.ts > NewBatchForm as a route replaces rather than pushes on save, so Back reaches the list": {
+			"kind": "rule",
+			"entry": "batch-new-modal-required-warnings",
+			"why": "the test saves an empty form; the required fields are checked one by one"
+		},
+		"profileEditRoute.test.ts > the profile edit route offers the Open to blank as the value the field allows": {
+			"kind": "rule",
+			"entry": "profile-edit-reduced-fields",
+			"why": "the Open to / headline / bio fields are hidden"
+		},
+		"profileEditRoute.test.ts > the profile edit route resumes syncing the tab once the form is left": {
+			"kind": "rule",
+			"entry": "profile-tabs-certificates-only",
+			"why": "the profile opens on Certificates, not About"
+		},
+		"profileEditRoute.test.ts > the profile edit route returns to pristine when Open to goes back to blank": {
+			"kind": "rule",
+			"entry": "profile-edit-reduced-fields",
+			"why": "the Open to / headline / bio fields are hidden"
+		},
+		"profileEditRoute.test.ts > the profile edit route seeds every field from the profile it was handed": {
+			"kind": "rule",
+			"entry": "profile-edit-reduced-fields",
+			"why": "the Open to / headline / bio fields are hidden"
+		},
+		"profileEditRoute.test.ts > the profile edit route stays pristine when a null-backed field is cleared": {
+			"kind": "rule",
+			"entry": "profile-edit-reduced-fields",
+			"why": "the Open to / headline / bio fields are hidden"
+		},
+		"programForm.test.ts > ProgramForm as a route asks the list page to refetch rather than reloading its resource": {
+			"kind": "mock",
+			"entry": "program-form-full-document",
+			"why": "ProgramForm loads the full document through createResource, missing from the frappe-ui mock"
+		},
+		"programForm.test.ts > ProgramForm as a route carries every field of the program form": {
+			"kind": "mock",
+			"entry": "program-form-full-document",
+			"why": "ProgramForm loads the full document through createResource, missing from the frappe-ui mock"
+		},
+		"programForm.test.ts > ProgramForm as a route desktop: dismissing the Dialog (Escape/backdrop/X) pops the router": {
+			"kind": "mock",
+			"entry": "program-form-full-document",
+			"why": "ProgramForm loads the full document through createResource, missing from the frappe-ui mock"
+		},
+		"programForm.test.ts > ProgramForm as a route edit mode, arrived at cold does not wipe the child tables when saved straight after a deep link": {
+			"kind": "mock",
+			"entry": "program-form-full-document",
+			"why": "ProgramForm loads the full document through createResource, missing from the frappe-ui mock"
+		},
+		"programForm.test.ts > ProgramForm as a route edit mode, arrived at cold fetches its own record instead of reading a parent array (C4)": {
+			"kind": "mock",
+			"entry": "program-form-full-document",
+			"why": "ProgramForm loads the full document through createResource, missing from the frappe-ui mock"
+		},
+		"programForm.test.ts > ProgramForm as a route edit mode, arrived at cold loads both child tables on mount, with no prop change to trigger it (C3)": {
+			"kind": "mock",
+			"entry": "program-form-full-document",
+			"why": "ProgramForm loads the full document through createResource, missing from the frappe-ui mock"
+		},
+		"programForm.test.ts > ProgramForm as a route edit mode, arrived at cold offers Delete only for a real program": {
+			"kind": "mock",
+			"entry": "program-form-full-document",
+			"why": "ProgramForm loads the full document through createResource, missing from the frappe-ui mock"
+		},
+		"programForm.test.ts > ProgramForm as a route inserts through its own resource on the create sentinel": {
+			"kind": "mock",
+			"entry": "program-form-full-document",
+			"why": "ProgramForm loads the full document through createResource, missing from the frappe-ui mock"
+		},
+		"programForm.test.ts > ProgramForm as a route mobile: the back control pops the router back to the list": {
+			"kind": "mock",
+			"entry": "program-form-full-document",
+			"why": "ProgramForm loads the full document through createResource, missing from the frappe-ui mock"
+		},
+		"programForm.test.ts > ProgramForm as a route mounts straight from the URL with no parent list": {
+			"kind": "mock",
+			"entry": "program-form-full-document",
+			"why": "ProgramForm loads the full document through createResource, missing from the frappe-ui mock"
+		},
+		"programForm.test.ts > ProgramForm as a route refuses to render the form for a user who cannot manage programs": {
+			"kind": "mock",
+			"entry": "program-form-full-document",
+			"why": "ProgramForm loads the full document through createResource, missing from the frappe-ui mock"
+		},
+		"programForm.test.ts > ProgramForm as a route replaces rather than pushes on save, so Back reaches the list": {
+			"kind": "mock",
+			"entry": "program-form-full-document",
+			"why": "ProgramForm loads the full document through createResource, missing from the frappe-ui mock"
+		},
+		"publicImageUploads.test.ts > every uploader has the privacy the manifest states matches the manifest exactly — no new, moved or flipped uploader": {
+			"kind": "rule",
+			"entry": "announcement-email-template-composer",
+			"why": "AnnouncementForm has a second uploader (HTML template composer); the upstream manifest lists one"
+		},
+		"ravenSettings.test.ts > the conditions of a channel hangs the row menu off the end of its trigger": {
+			"kind": "rule",
+			"entry": "raven-framework-ui-stub",
+			"why": "the ConditionBuilder from @framework/ui is stubbed: it exists only on Frappe develop"
+		},
+		"ravenSettings.test.ts > the conditions of a channel names each row's actions button after the row, and says the word once": {
+			"kind": "rule",
+			"entry": "raven-framework-ui-stub",
+			"why": "the ConditionBuilder from @framework/ui is stubbed: it exists only on Frappe develop"
+		},
+		"ravenSettings.test.ts > the conditions of a channel words an unfinished condition once, under the builder, and marks its row": {
+			"kind": "rule",
+			"entry": "raven-framework-ui-stub",
+			"why": "the ConditionBuilder from @framework/ui is stubbed: it exists only on Frappe develop"
+		}
+	}
+}

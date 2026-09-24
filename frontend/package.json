@@ -8,7 +8,8 @@
 		"serve": "vite preview",
 		"build": "vite build --base=/assets/lms/frontend/ && yarn copy-html-entry",
 		"copy-html-entry": "cp ../lms/public/frontend/index.html ../lms/www/_lms.html",
-		"test": "vitest run",
+		"test": "node oslms-test/vitest-baseline.mjs",
+		"test:raw": "vitest run",
 		"test:watch": "vitest"
 	},
 	"dependencies": {
