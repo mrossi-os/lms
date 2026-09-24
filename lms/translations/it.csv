@@ -5686,3 +5686,6 @@ restrict_ip
 "questions must be a JSON list of question names.","questions deve essere un elenco JSON di nomi di domande."
 "questions must be a list.","questions deve essere un elenco."
 "You are not permitted to access the question bank.","Non hai il permesso di accedere alla banca domande."
+"Penalise Unanswered Questions","Penalizza le domande senza risposta"
+"Unanswered questions lose the same marks as wrong answers. Off: they score 0.","Le domande senza risposta perdono gli stessi punti delle risposte errate. Se disattivato, valgono 0."
+"You have {0} unattempted {1}. If you submit, each of them deducts {2} {3}.","Hai {0} {1} senza risposta. Se consegni ora, ognuna toglierà {2} {3}."

@@ -716,12 +716,31 @@ le risposte nulle a "", poi il nostro filtro tratta come saltata ogni domanda se
 vuote. Senza il nostro ramo l'upstream penalizzerebbe la domanda saltata come una risposta
 sbagliata. Decisione del committente: la scelta fra 0 e penalità deve diventare
 un'impostazione del quiz, da costruire dopo il merge di v2.63.0 sul nuovo authoring dei quiz;
-fino ad allora vale 0. Il test test_lms_quiz.py contiene i casi aggiunti con la correzione."""
+fino ad allora vale 0. Il test test_lms_quiz.py contiene i casi aggiunti con la correzione.
+Impostazione per quiz (2026-09-24, dopo il merge di v2.63.0, decisione del committente): campo custom os_lms LMS Quiz.penalize_unanswered (Check, default 0, visibile solo con la penalità attiva; fixture custom_field.json, filtro fixtures esteso a LMS Quiz). Spento (default, e per tutti i quiz esistenti): la saltata vale 0. Acceso con la penalità: la saltata perde marks_to_cut come una risposta sbagliata. Letto a parte in submit_quiz perché un sito senza il campo consegni comunque. Interruttore nel nuovo QuizForm sotto «Marks to Deduct»; nel player la conferma di consegna dice quanti punti toglie ogni saltata."""
 
   [[entries.sites]]
   file = "lms/lms/doctype/lms_quiz/lms_quiz.py"
   anchor = "if answer not in (None, \"\")"
   symbol = "process_results"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_quiz/lms_quiz.py"
+  anchor = "if frappe.get_meta(\"LMS Quiz\").has_field(\"penalize_unanswered\"):"
+  symbol = "submit_quiz"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_quiz/lms_quiz.py"
+  anchor = "result[\"marks\"] = -quiz_details.marks_to_cut if penalize else 0"
+  symbol = "process_results"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Forms/QuizForm.vue"
+  anchor = "v-model=\"doc.penalize_unanswered\""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Quiz.vue"
+  anchor = "const penalizesUnanswered = computed(() =>"
 
   [entries.checks]
   backend = "lms/lms/doctype/lms_quiz/test_lms_quiz.py"

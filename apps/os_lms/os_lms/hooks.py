@@ -166,6 +166,7 @@ fixtures = [
                     "LMS Course",
                     "LMS Batch",
                     "LMS Live Class",
+                    "LMS Quiz",
                     "LMS Lesson Note",
                     "User",
                     "Email Template",

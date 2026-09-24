@@ -863,15 +863,25 @@
 	>
 		<template #default>
 			<div class="space-y-3">
-				<!-- OSLMS-CUSTOM: unanswered questions score 0 (quiz-submit-unanswered), not "incorrect" -->
+				<!-- OSLMS-CUSTOM: unanswered questions score 0 (quiz-submit-unanswered), not "incorrect",
+				     unless the quiz asks for the wrong-answer penalty (penalize_unanswered) -->
 				<p v-if="unattemptedCount" class="text-base text-ink-gray-6 leading-5">
 					{{
-						__(
-							'You have {0} unattempted {1}. They will score 0 points if you submit.'
-						).format(
-							unattemptedCount,
-							unattemptedCount == 1 ? __('question') : __('questions')
-						)
+						penalizesUnanswered
+							? __(
+									'You have {0} unattempted {1}. If you submit, each of them deducts {2} {3}.'
+							  ).format(
+									unattemptedCount,
+									unattemptedCount == 1 ? __('question') : __('questions'),
+									quiz.data.marks_to_cut,
+									quiz.data.marks_to_cut == 1 ? __('mark') : __('marks')
+							  )
+							: __(
+									'You have {0} unattempted {1}. They will score 0 points if you submit.'
+							  ).format(
+									unattemptedCount,
+									unattemptedCount == 1 ? __('question') : __('questions')
+							  )
 					}}
 				</p>
 				<p v-else class="text-base text-ink-gray-6 leading-5">
@@ -1648,6 +1658,13 @@ const recordCurrentAttempt = () => {
 // OSLMS-CUSTOM: unanswered count shown in the submission confirmation
 const unattemptedCount = computed(() =>
 	Math.max(0, questions.value.length - attemptedQuestions.value.length)
+)
+
+// OSLMS-CUSTOM: the quiz takes the wrong-answer penalty for skipped questions too
+const penalizesUnanswered = computed(() =>
+	Boolean(
+		quiz.data?.enable_negative_marking && quiz.data?.penalize_unanswered
+	)
 )
 
 const paginationWindow = computed(() => {

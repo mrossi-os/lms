@@ -25,14 +25,8 @@ class TestConvertLmsInlineColor(UnitTestCase):
 		)
 
 	def test_only_strings_inside_the_json_change(self):
-		raw = json.dumps(
-			{
-				"time": 1,
-				"blocks": [
-					{"type": "paragraph", "data": {"text": '<lms-inline-color style="color: red">x</lms-inline-color>'}}
-				],
-			}
-		)
+		text = '<lms-inline-color style="color: red">x</lms-inline-color>'
+		raw = json.dumps({"time": 1, "blocks": [{"type": "paragraph", "data": {"text": text}}]})
 		data = json.loads(patch.convert_content(raw))
 		self.assertEqual(data["time"], 1)
 		self.assertEqual(

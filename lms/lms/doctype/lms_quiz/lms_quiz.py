@@ -191,6 +191,10 @@ def submit_quiz(
 	)
 	if not quiz_details:
 		frappe.throw(_("Invalid quiz."), frappe.ValidationError)
+	# OSLMS-CUSTOM: per-quiz choice between 0 and the wrong-answer penalty for a skipped
+	# question (os_lms custom field; read apart so a site without it still submits).
+	if frappe.get_meta("LMS Quiz").has_field("penalize_unanswered"):
+		quiz_details.penalize_unanswered = frappe.db.get_value("LMS Quiz", quiz, "penalize_unanswered")
 
 	from lms.lms.permissions import can_access_quiz
 
@@ -533,7 +537,9 @@ def process_results(results: list, quiz_details: dict):
 
 		if not answers:
 			result["answer"] = ""
-			result["marks"] = 0
+			# A skipped question scores 0 unless the quiz asks for the wrong-answer penalty.
+			penalize = quiz_details.get("enable_negative_marking") and quiz_details.get("penalize_unanswered")
+			result["marks"] = -quiz_details.marks_to_cut if penalize else 0
 			result["is_correct"] = 0
 			if question_details.type == "Open Ended":
 				is_open_ended = True

@@ -137,7 +137,7 @@ class TestSkippedQuestions(unittest.TestCase):
 		cls.open_quiz.append("questions", {"question": cls.open_ended.name, "marks": 1})
 		cls.open_quiz.save()
 
-	def process(self, quiz, results, enable_negative_marking=0):
+	def process(self, quiz, results, enable_negative_marking=0, penalize_unanswered=0):
 		from lms.lms.doctype.lms_quiz.lms_quiz import process_results
 
 		return process_results(
@@ -146,6 +146,7 @@ class TestSkippedQuestions(unittest.TestCase):
 				{
 					"name": quiz.name,
 					"enable_negative_marking": enable_negative_marking,
+					"penalize_unanswered": penalize_unanswered,
 					"marks_to_cut": 1,
 				}
 			),
@@ -177,6 +178,26 @@ class TestSkippedQuestions(unittest.TestCase):
 			self.quiz,
 			[{"question_name": self.choices.name, "answer": [None]}],
 			enable_negative_marking=1,
+		)
+
+		self.assertEqual(data["results"][0]["marks"], 0)
+
+	def test_blank_answer_takes_the_penalty_when_the_quiz_asks_for_it(self):
+		data = self.process(
+			self.quiz,
+			[{"question_name": self.choices.name, "answer": [None]}],
+			enable_negative_marking=1,
+			penalize_unanswered=1,
+		)
+
+		self.assertEqual(data["results"][0]["marks"], -1)
+		self.assertEqual(data["results"][0]["is_correct"], 0)
+
+	def test_penalize_unanswered_is_inert_without_negative_marking(self):
+		data = self.process(
+			self.quiz,
+			[{"question_name": self.choices.name, "answer": [None]}],
+			penalize_unanswered=1,
 		)
 
 		self.assertEqual(data["results"][0]["marks"], 0)

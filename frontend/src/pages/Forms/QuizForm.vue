@@ -305,6 +305,18 @@
 						:label="__('Marks to Deduct')"
 						variant="outline"
 					/>
+					<!-- OSLMS-CUSTOM: per-quiz choice: a skipped question scores 0 or takes the penalty -->
+					<BooleanSwitch
+						v-if="doc.enable_negative_marking"
+						v-model="doc.penalize_unanswered"
+						size="sm"
+						:label="__('Penalise Unanswered Questions')"
+						:description="
+							__(
+								'Unanswered questions lose the same marks as wrong answers. Off: they score 0.'
+							)
+						"
+					/>
 					<BooleanSwitch
 						v-model="doc.enable_proctoring"
 						size="sm"

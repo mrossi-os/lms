@@ -19,11 +19,15 @@ CLOSE_TAG = re.compile(r"</lms-inline-color\s*>", re.IGNORECASE)
 CLASS_ATTR = re.compile(r"""\bclass\s*=\s*(["'])(.*?)\1""", re.IGNORECASE | re.DOTALL)
 
 
+def _merge_class(match: re.Match) -> str:
+	quote, classes = match.group(1), match.group(2)
+	return f"class={quote}lms-inline-color {classes}{quote}"
+
+
 def _open_span(match: re.Match) -> str:
 	attrs = match.group(1) or ""
 	if CLASS_ATTR.search(attrs):
-		quote_and_merge = lambda m: f"class={m.group(1)}lms-inline-color {m.group(2)}{m.group(1)}"  # noqa: E731
-		return f"<span{CLASS_ATTR.sub(quote_and_merge, attrs, count=1)}>"
+		return f"<span{CLASS_ATTR.sub(_merge_class, attrs, count=1)}>"
 	return f'<span class="lms-inline-color"{attrs}>'
 
 
