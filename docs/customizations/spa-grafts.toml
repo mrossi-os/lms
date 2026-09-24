@@ -2494,12 +2494,17 @@ lesson_editorjs_custom_tags_server_strip). Lacuna nota: <lms-align> (allineament
 nell'ADD_TAGS client e si perde al caricamento. ATTENZIONE: v2.63.0 rimuove il tool colore
 inline (utils/inline/Color.ts) e riscrive il salvataggio del contenuto; i contenuti già
 salvati con <lms-inline-color> vanno comunque mostrati, decidere con il committente come.
-DECISIONE 2026-09-24 (v2.63.0): la nostra correzione su utils/inline/Color.ts (nodo attivo catturato all apertura del pannello, listener persistenti sugli input colore, mousedown che non fa perdere la selezione) cade con il file, eliminato upstream (cc66dc6e0). Al merge si prende la cancellazione; lo strumento colore viene riscritto subito dopo sul nuovo BaseInline/ToolButton, emettendo <span class="lms-inline-color" style>, e riporta le stesse tre protezioni. Una patch os_lms converte i 2 <lms-inline-color> della lezione di produzione 0790; i <span style=color> esistenti restano. Questa voce va ripuntata sul nuovo file dello strumento."""
+DECISIONE 2026-09-24 (v2.63.0): la nostra correzione su utils/inline/Color.ts (nodo attivo catturato all apertura del pannello, listener persistenti sugli input colore, mousedown che non fa perdere la selezione) cade con il file, eliminato upstream (cc66dc6e0). Al merge si prende la cancellazione; lo strumento colore viene riscritto subito dopo sul nuovo BaseInline/ToolButton, emettendo <span class="lms-inline-color" style>, e riporta le stesse tre protezioni. Una patch os_lms converte i 2 <lms-inline-color> della lezione di produzione 0790; i <span style=color> esistenti restano. Questa voce va ripuntata sul nuovo file dello strumento.
+Merge di v2.63.0 (2026-09-24): la metà server (EDITORJS_CUSTOM_TAGS in lms/lms/utils.py) ora è marcata e censita qui; <lms-align> tolto dall allowlist (l upstream emette <span class="lms-align">, 0 lezioni di produzione usavano il vecchio elemento, e il test upstream test_a_custom_element_is_unwrapped ne richiede lo scarto)."""
 
   [[entries.sites]]
   file = "frontend/src/utils/index.js"
   anchor = "ADD_TAGS: ['lms-inline-color']"
   symbol = "sanitizeJSON"
+
+  [[entries.sites]]
+  file = "lms/lms/utils.py"
+  anchor = "EDITORJS_CUSTOM_TAGS = frozenset({\"lms-inline-color\"})"
 
 [[entries]]
 id = "editor-header-inline-toolbar"

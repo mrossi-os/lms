@@ -3383,13 +3383,14 @@ def is_demo_course(course: str) -> bool:
 	return title == "A guide to Frappe Learning"
 
 
-# Custom inline elements the EditorJS toolbar emits: <lms-inline-color> carries
-# text/highlight colors (Color.ts) and <lms-align> carries text alignment
-# (TextAlign.ts). The frontend whitelists them in its own sanitizer, but Frappe's
-# HTML sanitizer doesn't know them and would strip them on save — silently
-# dropping a lesson's colors/alignment after a reload. Keep this in sync with the
-# frontend tools.
-EDITORJS_CUSTOM_TAGS = frozenset({"lms-inline-color", "lms-align"})
+# OSLMS-CUSTOM: custom inline element kept through the lesson sanitiser.
+# <lms-inline-color> carried text/highlight colors from the old Color.ts tool.
+# The frontend whitelists it in its own sanitizer, but Frappe's HTML sanitizer
+# doesn't know it and would strip it on save, silently dropping a lesson's
+# colors after a reload. Since v2.63.0 alignment is a <span class="lms-align">
+# and the colour tool emits a <span class="lms-inline-color">, so <lms-align> is
+# no longer listed; this stays until no stored lesson uses the old element.
+EDITORJS_CUSTOM_TAGS = frozenset({"lms-inline-color"})
 
 
 def sanitize_editorjs(raw):
