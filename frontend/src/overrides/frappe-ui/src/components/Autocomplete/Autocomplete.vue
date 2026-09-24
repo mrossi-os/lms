@@ -40,7 +40,7 @@
           }"
         >
           <div class="w-full space-y-1.5">
-            <label v-if="props.label" class="block text-xs text-ink-gray-5">
+            <label v-if="props.label" class="block text-base text-ink-gray-5">
               {{ props.label }}
             </label>
             <button
@@ -132,9 +132,9 @@
                 >
                   <li
                     :class="[
-                      'flex cursor-pointer items-center justify-between rounded px-2.5 py-1.5 text-base',
+                      'flex cursor-pointer items-center justify-between rounded px-2.5 py-1.5 text-base transition-colors duration-100 ease-out',
                       {
-                        'bg-surface-gray-3': active,
+                        'bg-surface-alpha-gray-2': active,
                         'opacity-50': option.disabled,
                       },
                     ]"

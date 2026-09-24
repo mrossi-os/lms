@@ -1,13 +1,13 @@
 <!--
-  Override of frappe-ui's TextEditor Menu.vue via the osOverrideTheme Vite
-  plugin. Menu.vue is the shared renderer for the fixed toolbar (and its
+  Override of frappe-ui's TextEditor TextEditorMenu.vue (Menu.vue before 1.0.0-beta.29) via the osOverrideTheme Vite
+  plugin. It is the shared renderer for the fixed toolbar (and its
   dropdowns, e.g. the table menu). The ONLY changes from upstream are:
     1. Every visible button/option label + tooltip is wrapped in __() so the
        hardcoded English labels from commands.js become translatable.
     2. The Popover import is repointed at the original file in node_modules
        (a bare relative import would resolve inside src/overrides and 404).
   Keep this file in sync with
-  node_modules/frappe-ui/src/components/TextEditor/components/Menu.vue after any
+  node_modules/frappe-ui/src/components/TextEditor/components/TextEditorMenu.vue after any
   upstream frappe-ui bump.
 -->
 <template>
