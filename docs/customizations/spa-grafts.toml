@@ -791,7 +791,7 @@ title = "Alias verso i componenti frappe-ui originali per gli override «wrap»"
 layer = "spa-graft"
 confidence = "high"
 intent = """
-Gli override di Switch, Combobox e TextEditor avvolgono il componente originale invece di
+Gli override di Switch, Combobox, TextEditor e MenuItems (nuovo editor frappe-ui/editor) avvolgono il componente originale invece di
 copiarlo (FileUploader non serve più da frappe-ui 1.0.0-beta.29, che registra Button da sé;
 Combobox è diventato un involucro nello stesso riallineamento, per tradurre solo emptyText); per importare l'originale senza ricadere sull'override stesso usano gli alias
 frappe-ui-*-original, che puntano direttamente al file in node_modules scavalcando plugin e
@@ -808,6 +808,10 @@ esistano ancora, altrimenti la build fallisce su un alias che non risolve."""
   [[entries.sites]]
   file = "frontend/vite.config.js"
   anchor = "find: 'frappe-ui-combobox-original',"
+
+  [[entries.sites]]
+  file = "frontend/vite.config.js"
+  anchor = "find: 'frappe-ui-menuitems-original',"
 
   [[entries.sites]]
   file = "frontend/vite.config.js"

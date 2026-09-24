@@ -122,6 +122,15 @@ export default defineConfig(async ({ mode }) => {
 						'node_modules/frappe-ui/src/components/Combobox/Combobox.vue'
 					),
 				},
+				// Same pattern as Switch: the new editor's MenuItems override wraps
+				// the ORIGINAL renderer only to translate the menu item labels.
+				{
+					find: 'frappe-ui-menuitems-original',
+					replacement: path.resolve(
+						__dirname,
+						'node_modules/frappe-ui/src/molecules/editor/MenuItems.vue'
+					),
+				},
 				// Same pattern as Switch: the TextEditor override re-imports the
 				// ORIGINAL component to wrap it and add the `os-editor-wrapper`
 				// marker class without forking the (large) component file.
