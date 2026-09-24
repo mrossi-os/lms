@@ -114,7 +114,8 @@ describe('Quiz.vue — cached resource across remounts', () => {
 		// First navigation to the quiz — cold cache.
 		const first = await mountQuiz()
 		expect(first.text()).toContain('Start')
-		expect(first.text()).toContain('This quiz consists of 3 questions.')
+		// The v2.63.0 player shows the count as "3 questions" in its header.
+		expect(first.text()).toMatch(/\b3\s+questions\b/)
 		first.unmount()
 
 		// Second navigation to the same quiz, no page reload in between.
