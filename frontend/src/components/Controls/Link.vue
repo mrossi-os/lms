@@ -176,8 +176,15 @@ watch(
 			resolvedFor = ''
 			return
 		}
+		// OSLMS-CUSTOM: a value picked from the results takes its label from them; the old label otherwise sticks to the new value
+		const picked = options.data?.find((o) => o.value === v)
+		if (picked) {
+			currentLabel.value = picked.label
+			resolvedFor = v
+			return
+		}
 		// Skip if the value is already known (just picked, or already resolved).
-		if (v === resolvedFor || options.data?.some((o) => o.value === v)) return
+		if (v === resolvedFor) return
 		resolvedFor = v
 		titleResource.update({
 			params: {

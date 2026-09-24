@@ -977,6 +977,25 @@ nel conflitto conservare questa riga."""
 
 # --- Controllo Link (Controls/Link.vue) -------------------------------------
 
+[[entries]]
+id = "link-control-picked-label"
+title = "Il controllo Link aggiorna l'etichetta quando si sceglie un valore dai risultati"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Correzione di un difetto upstream (presente in v2.63.0 e in develop al 2026-09-24). Link.vue
+ricorda l'etichetta del valore corrente in currentLabel, ma il watch sul valore usciva subito
+quando il valore scelto era già tra i risultati, senza aggiornarla. Dopo una scelta, alla
+ricerca successiva resolvedOptions aggiungeva un'opzione {label: vecchia etichetta, value:
+nuovo valore}: nel menu comparivano due voci uguali e il campo poteva mostrare il nome della
+categoria precedente per il valore nuovo (visto sulla categoria del corso: «Design» per
+Finance). Ora un valore preso dai risultati prende da lì la sua etichetta. Da togliere quando
+l'upstream corregge il watch."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/Link.vue"
+  anchor = "const picked = options.data?.find((o) => o.value === v)"
+
 # --- Palette Cmd+K (CommandPalette.vue) -------------------------------------
 
 [[entries]]
