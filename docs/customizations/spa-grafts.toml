@@ -2651,11 +2651,12 @@ intent = """
 I wrapper popper di Radix Vue (Dropdown, Select, Tooltip, Popover di frappe-ui) sono
 teletrasportati nel body senza z-index; gli elementi fissi locali, come i pulsanti
 flottanti del tutor AI e le modali a z-50, li coprivano. z-index 200 li porta sopra.
-Introdotto insieme al pulsante fisso del tutor AI (e1aa5e126)."""
+Introdotto insieme al pulsante fisso del tutor AI (e1aa5e126).
+Adeguamento al merge di v2.62.0 (2026-09-24): frappe-ui 1.0-beta usa reka-ui (successore di Radix Vue), che marca il wrapper con data-reka-popper-content-wrapper: la regola sul solo attributo radix era diventata inerte. Selettore allargato a entrambi; l'ancora è ora quello reka."""
 
   [[entries.sites]]
   file = "frontend/src/index.css"
-  anchor = "[data-radix-popper-content-wrapper] {"
+  anchor = "[data-reka-popper-content-wrapper],"
 
 [[entries]]
 id = "prose-hr-table-colors"
