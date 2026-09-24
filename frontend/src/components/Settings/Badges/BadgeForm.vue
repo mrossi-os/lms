@@ -35,10 +35,11 @@
 					type="textarea"
 					:placeholder="__('What is this badge awarded for?')"
 				/>
+				<!-- OSLMS-CUSTOM: badge image label and description translated -->
 				<Uploader
 					v-model="badge.image"
-					label="Badge Image"
-					description="An image that represents the badge."
+					:label="__('Badge Image')"
+					:description="__('An image that represents the badge.')"
 				/>
 			</div>
 

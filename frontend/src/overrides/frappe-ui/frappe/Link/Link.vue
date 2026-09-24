@@ -44,7 +44,7 @@
       <template v-else-if="showClear" #suffix>
         <button
           type="button"
-          aria-label="Clear"
+          :aria-label="__('Clear')"
           data-slot="clear"
           class="group-hover:grid group-focus:grid group-focus-within:grid hidden size-4 place-items-center rounded-sm text-ink-gray-5 hover:bg-surface-gray-3 hover:text-ink-gray-7 focus:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-3"
           @click="clearValue"
@@ -60,7 +60,7 @@
       <template v-else #item-create="{ query }">
         <div class="flex">
           <span class="truncate">
-            Create
+            {{ __('Create') }}
             <span v-if="query" class="font-medium text-ink-gray-8">
               {{ query }}
             </span>

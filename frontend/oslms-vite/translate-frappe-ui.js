@@ -51,6 +51,11 @@ const raw = (from, to) => ({
 })
 
 export const FRAPPE_UI_STRINGS = {
+	// Settings dialog
+	['components/SettingsDialog/SettingsDialog.vue']: [
+		text('Manage your settings across the tabs in this dialog.'),
+	],
+
 	// Colour pickers
 	[EDITOR + 'components/font-color/fontColorController.ts']: [
 		str('Text and background color'),

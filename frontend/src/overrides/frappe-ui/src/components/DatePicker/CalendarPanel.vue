@@ -33,7 +33,7 @@
     >
       <Button
         :class="{ invisible: hidePrev }"
-        label="previous"
+        :label="__('Previous')"
         variant="ghost"
         icon="lucide-chevron-left"
         @click="emit('prev')"
@@ -43,7 +43,7 @@
       </span>
       <Button
         :class="{ invisible: hideNext }"
-        label="next"
+        :label="__('Next')"
         variant="ghost"
         icon="lucide-chevron-right"
         @click="emit('next')"
@@ -54,7 +54,7 @@
         variant="ghost"
         size="sm"
         class="text-sm-medium text-ink-gray-7"
-        label="cycle-calendar-view"
+        :label="__('Change calendar view')"
         @click="emit('cycleView')"
       >
         {{ months[currentMonth] }} {{ currentYear }}
@@ -62,7 +62,7 @@
       <div v-if="view === 'date'" class="flex items-center">
         <Button
           v-if="!hidePrev"
-          label="previous"
+          :label="__('Previous')"
           variant="ghost"
           icon="lucide-chevron-left"
           @click="emit('prev')"
@@ -76,7 +76,7 @@
         />
         <Button
           v-if="!hideNext"
-          label="next"
+          :label="__('Next')"
           variant="ghost"
           icon="lucide-chevron-right"
           @click="emit('next')"
@@ -88,7 +88,7 @@
         v-if="view === 'date'"
         ref="gridRef"
         role="grid"
-        aria-label="Calendar dates"
+        :aria-label="__('Calendar dates')"
         @mouseleave="emit('hoverCell', null)"
       >
         <div
@@ -174,12 +174,12 @@
           </div>
         </div>
       </div>
-      <div v-else class="flex h-52 w-52" aria-label="Select month and year">
+      <div v-else class="flex h-52 w-52" :aria-label="__('Select month and year')">
         <div
           ref="yearListRef"
           class="relative flex w-1/2 flex-col gap-0.5 overflow-y-auto"
           role="listbox"
-          aria-label="Select year"
+          :aria-label="__('Select year')"
         >
           <button
             v-for="y in years"
@@ -202,7 +202,7 @@
           ref="monthListRef"
           class="relative flex w-1/2 flex-col gap-0.5 overflow-y-auto pl-1.5"
           role="listbox"
-          aria-label="Select month"
+          :aria-label="__('Select month')"
         >
           <button
             v-for="(m, i) in months"

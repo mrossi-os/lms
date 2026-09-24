@@ -842,6 +842,22 @@ in lms/translations/it.csv. Le etichette della barra passano invece dall'overrid
   anchor = "osTranslateFrappeUi(),"
 
 [[entries]]
+id = "badge-form-image-i18n"
+title = "Etichetta e descrizione dell'immagine del badge tradotte"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nel modulo del badge (Impostazioni → Badge) l'upstream passa all'Uploader label="Badge Image"
+e description="An image that represents the badge." come testo fisso inglese. Qui passano per
+__(), tradotti in it.csv (regola del committente: tutti i testi visibili vanno tradotti).
+Su upstream/develop al 2026-09-24 il file non esiste più (impostazioni dei badge
+riorganizzate): al prossimo merge verificare se il nuovo componente traduce già questi testi."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Badges/BadgeForm.vue"
+  anchor = ":description=\"__('An image that represents the badge.')\""
+
+[[entries]]
 id = "vite-utils-alias-oslms"
 title = "@/utils risolto sul modulo utils di os_lms"
 layer = "spa-graft"

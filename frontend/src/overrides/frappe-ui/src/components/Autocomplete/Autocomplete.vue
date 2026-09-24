@@ -184,7 +184,7 @@
                 v-if="groups.length == 0"
                 class="rounded-md px-2.5 py-1.5 text-base text-ink-gray-5"
               >
-                No results found
+                {{ __('No results found') }}
               </li>
             </ComboboxOptions>
 
@@ -196,17 +196,17 @@
                 <div v-if="multiple" class="flex items-center justify-end">
                   <Button
                     v-if="!areAllOptionsSelected"
-                    label="Select All"
+                    :label="__('Select All')"
                     @click.stop="selectAll"
                   />
                   <Button
                     v-if="areAllOptionsSelected"
-                    label="Clear All"
+                    :label="__('Clear All')"
                     @click.stop="clearAll"
                   />
                 </div>
                 <div v-else class="flex items-center justify-end">
-                  <Button label="Clear" @click.stop="clearAll" />
+                  <Button :label="__('Clear')" @click.stop="clearAll" />
                 </div>
               </slot>
             </div>

@@ -315,7 +315,7 @@ const wrapperClasses = (float: string) => [
 
           <div ref="alignButtonRef" v-if="showAlignPopper && !isVideo"
             class="absolute top-full mt-1 right-6 bg-black/65 rounded shadow-lg px-1.5 py-1 z-50 gap-2.5 flex items-center">
-            <Tooltip text="Align left" class="h-5">
+            <Tooltip :text="__('Align left')" class="h-5">
               <button @click="setAlignment('left')" class="text-ink-gray-4 hover:text-ink-base" :class="node.attrs.align === 'left'
                 ? 'text-ink-base'
                 : 'text-ink-gray-4'
@@ -323,7 +323,7 @@ const wrapperClasses = (float: string) => [
                 <LucideAlignLeft class="size-4" />
               </button>
             </Tooltip>
-            <Tooltip text="Align center" class="h-5">
+            <Tooltip :text="__('Align center')" class="h-5">
               <button @click="setAlignment('center')" class="text-ink-gray-4 hover:text-ink-base" :class="node.attrs.align === 'center'
                 ? 'text-ink-base'
                 : 'text-ink-gray-4'
@@ -331,7 +331,7 @@ const wrapperClasses = (float: string) => [
                 <LucideAlignCenter class="size-4" />
               </button>
             </Tooltip>
-            <Tooltip text="Align right" class="h-5">
+            <Tooltip :text="__('Align right')" class="h-5">
               <button @click="setAlignment('right')" class="text-ink-gray-4 hover:text-ink-base" :class="node.attrs.align === 'right'
                 ? 'text-ink-base'
                 : 'text-ink-gray-4'
@@ -343,7 +343,7 @@ const wrapperClasses = (float: string) => [
 
           <div v-if="showFloatPopper" ref="floatButtonRef"
             class="absolute top-full mt-1 right-0 bg-black/65 rounded shadow-lg px-1.5 py-1 z-50 gap-2.5 flex items-center">
-            <Tooltip text="Float left" class="h-5">
+            <Tooltip :text="__('Float left')" class="h-5">
               <button @click="setFloat('left')" class="text-ink-gray-4 hover:text-ink-base" :class="node.attrs.float === 'left'
                 ? 'text-ink-base'
                 : 'text-ink-gray-4'
@@ -351,7 +351,7 @@ const wrapperClasses = (float: string) => [
                 <LucideFloatLeft class="size-4" />
               </button>
             </Tooltip>
-            <Tooltip text="Float right" class="h-5">
+            <Tooltip :text="__('Float right')" class="h-5">
               <button @click="setFloat('right')" class="text-ink-gray-4 hover:text-ink-base" :class="node.attrs.float === 'right'
                 ? 'text-ink-base'
                 : 'text-ink-gray-4'
@@ -359,7 +359,7 @@ const wrapperClasses = (float: string) => [
                 <LucideFloatRight class="size-4" />
               </button>
             </Tooltip>
-            <Tooltip v-if="node.attrs.float" text="Remove float" class="h-5">
+            <Tooltip v-if="node.attrs.float" :text="__('Remove float')" class="h-5">
               <button @click="setFloat(null)" class="text-ink-gray-4 hover:text-ink-base hover:bg-transparent">
                 <LucideNoFloat class="size-4" />
               </button>
@@ -372,7 +372,7 @@ const wrapperClasses = (float: string) => [
           variant="solid"
           class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
           :icon-left="h(LucideRotateCw, { class: 'size-4' })"
-          label="Try again"
+          :label="__('Try again')"
           @click="isVideo ? editor.commands.reuploadVideo(node.attrs.uploadId) : editor.commands.reuploadImage(node.attrs.uploadId)"
         />
 

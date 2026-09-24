@@ -246,7 +246,7 @@ function setCursorBeforeIframe() {
                 'px-1.5 py-1 text-ink-gray-4 hover:text-white transition-colors duration-150',
                 { 'text-white': node.attrs.align === 'left' }
               ]"
-              title="Align Left"
+              :title="__('Align Left')"
             >
               <LucideAlignLeft class="size-4" />
             </button>
@@ -256,7 +256,7 @@ function setCursorBeforeIframe() {
                 'px-1.5 py-1 text-ink-gray-4 hover:text-white transition-colors duration-150',
                 { 'text-white': node.attrs.align === 'center' }
               ]"
-              title="Align Center"
+              :title="__('Align Center')"
             >
               <LucideAlignCenter class="size-4" />
             </button>
@@ -266,7 +266,7 @@ function setCursorBeforeIframe() {
                 'px-1.5 py-1 text-ink-gray-4 hover:text-white transition-colors duration-150',
                 { 'text-white': node.attrs.align === 'right' }
               ]"
-              title="Align Right"
+              :title="__('Align Right')"
             >
               <LucideAlignRight class="size-4" />
             </button>
@@ -277,7 +277,7 @@ function setCursorBeforeIframe() {
             v-if="selected && isEditable"
             class="cursor-nw-resize bg-black/65 rounded-md p-1"
             @mousedown.prevent="startResize"
-            title="Resize"
+            :title="__('Resize')"
           >
             <LucideMoveDiagonal2 class="text-white size-4" />
           </button>
@@ -291,7 +291,7 @@ function setCursorBeforeIframe() {
         >
           <div class="text-ink-gray-5 text-center">
             <div class="text-lg mb-1">🔗</div>
-            <div class="text-sm">Loading embed...</div>
+            <div class="text-sm">{{ __('Loading embed...') }}</div>
           </div>
         </div>
       </div>
