@@ -1484,7 +1484,8 @@ nello stesso campo, con il tipo di campo VideoSourceInput (commit 1ac7315b9). I 
 personalizzati su LMS Settings (fixture os_lms). ATTENZIONE: SettingFields.vue importa ancora
 VideoSourceInput e FilePicker, ma il ramo `v-else-if="field.type == 'VideoSourceInput'"` del
 template non c'è più (perso in un merge precedente): oggi il campo del video cade nel
-FormControl generico. Da ripristinare, non da cancellare."""
+FormControl generico. Da ripristinare, non da cancellare.
+Verifica di fine percorso (2026-09-24): l avvertenza sul ramo VideoSourceInput di SettingFields.vue è superata, il ramo è di nuovo presente e la scheda salva tutti i campi."""
 
   [[entries.sites]]
   file = "frontend/src/components/Settings/Settings.vue"
@@ -5296,7 +5297,8 @@ can_access_quiz, che conosce moderatori, autori, iscritti e istruttori ma non il
 senza questo ramo il Valutatore riceverebbe «non autorizzato» sui quiz dentro le lezioni e sui
 quiz assegnati come verifica alla classe. Decisione del committente al merge di v2.59.0: il
 Valutatore legge i quiz dei corsi delle classi che valuta e le verifiche quiz della propria
-classe. Non concede modifica."""
+classe. Non concede modifica.
+Verifica di fine percorso (2026-09-24, /upstream-check): la riscrittura upstream del gate sequenziale (3884be5ba) aveva messo «if not get_membership(course, user): continue» prima del nostro ramo, rendendolo irraggiungibile (il Valutatore non è iscritto) e il quiz dentro la lezione dava «non autorizzato». Ramo spostato prima del controllo di iscrizione; test os_lms test_valutatore_quiz_access.py."""
 
   [[entries.sites]]
   file = "lms/lms/permissions.py"
@@ -6823,6 +6825,41 @@ visibility = { allow = ["Administrator", "System Manager"], deny = ["Moderator",
   [[entries.sites]]
   file = "frontend/src/components/Settings/Settings.vue"
   anchor = "// OSLMS-CUSTOM: Raven is a platform-wide integration, administrators only"
+
+[[entries]]
+id = "oslms-api-overrides-upstream-compat"
+title = "Gli override API di os_lms restano compatibili con gli originali upstream"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+os_lms sostituisce 23 metodi whitelisted upstream (override_whitelisted_methods in hooks.py).
+Un merge upstream li può rompere senza che build, rilevatore o test se ne accorgano: v2.62.0 ha
+tolto get_instructor_info da lms.command_palette, che override_api.py importava, e l'intero
+modulo non si importava più (profilo utente, impostazioni, barra laterale, membri, ruoli,
+annunci, notifiche e ricerca in errore); v2.63.0 ha aggiunto a search_sqlite il parametro
+category (ricerca dentro una categoria della palette) e get_courses/get_batches accettano
+limit_page_length, che i nostri override non dichiaravano e Frappe scartava in silenzio.
+Scoperto e corretto nella verifica di fine percorso (2026-09-24): get_instructor_info copiato
+in locale (serve ancora ad author_info della pagina /search), parametri aggiunti e passati
+all'originale. Guardia permanente: il test test_override_signatures.py fallisce se un override
+non si risolve o scarta un parametro dell'originale."""
+checks = { unit = "apps/os_lms/os_lms/os_lms/tests/test_override_signatures.py" }
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/os_lms/override_api.py"
+  anchor = "def get_instructor_info(doctype, record):"
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/os_lms/override_api.py"
+  anchor = "def search_sqlite(query: str, category: str | None = None):"
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/os_lms/override_utils.py"
+  anchor = "courses = _orginal_get_courses(filters, start, limit_page_length)"
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/os_lms/override_utils.py"
+  anchor = "return _original_get_batches(filters, start, order_by, limit_page_length)"
 
 [[entries]]
 id = "proctoring-log-hidden-from-valutatore"

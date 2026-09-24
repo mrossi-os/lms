@@ -137,6 +137,12 @@ def can_access_quiz(quiz: str, *, user: str | None = None) -> bool:
 		for course, lessons in placements.items():
 			if can_modify_course(course):
 				return True
+			# OSLMS-CUSTOM: a Valutatore reads the quizzes of the courses of the batches
+			# they evaluate, as they read those courses' lessons (see resolve_lesson_access).
+			# Before the membership check: the Valutatore is not enrolled, and the
+			# sequential gate does not apply to non-members (enforces_lesson_completion).
+			if course and is_course_valutatore(course, user):
+				return True
 			if not get_membership(course, user):
 				continue
 			locked = get_locked_lessons(course)
@@ -148,10 +154,6 @@ def can_access_quiz(quiz: str, *, user: str | None = None) -> bool:
 			# course, so such a placement used to grant any enrolled member access to a
 			# quiz whose lesson is still locked. It grants nothing now.
 			if any(lesson and lesson not in locked for lesson in lessons):
-				return True
-			# OSLMS-CUSTOM: a Valutatore reads the quizzes of the courses of the batches
-			# they evaluate, as they read those courses' lessons (see resolve_lesson_access).
-			if course and is_course_valutatore(course, user):
 				return True
 
 		assessment_batches = frappe.get_all(
