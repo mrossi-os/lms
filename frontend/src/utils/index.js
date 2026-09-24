@@ -1061,22 +1061,7 @@ export const sanitizeEditorJs = (data) => {
 }
 
 export const sanitizeHTML = (text) => {
-	// OSLMS-CUSTOM: keep iframes (YouTube embeds) and video tags through sanitizeHTML
-	const iframes = {}
-
-	const textWithoutIframes = text.replace(
-		/<iframe[\s\S]*?<\/iframe>/gi,
-		(match) => {
-			const id = 'iframe_' + Math.random().toString(36).substr(2, 9)
-			iframes[id] = match
-			console.log('--- extracted iframe:', match, 'id:', id)
-			return `<div data-iframe-id="${id}"></div>`
-		},
-	)
-
-	const decoded = decodeEntities(textWithoutIframes)
-
-	let sanitized = DOMPurify.sanitize(decoded, {
+	text = DOMPurify.sanitize(decodeEntities(text), {
 		ALLOWED_TAGS: [
 			'b',
 			'br',
@@ -1103,47 +1088,10 @@ export const sanitizeHTML = (text) => {
 			'li',
 			'img',
 			'blockquote',
-			'iframe',
-			'video',
-			'source',
-			'div',
 		],
-		ALLOWED_ATTR: [
-			'href',
-			'target',
-			'src',
-			'rel',
-			// video
-			'controls',
-			'autoplay',
-			'loop',
-			'muted',
-			'width',
-			'height',
-			'loading',
-			'uploadid',
-			// iframe
-			'frameborder',
-			'allowfullscreen',
-			'allow',
-			'data-align',
-			'data-interactive',
-			'data-iframe-id',
-		],
-		ADD_TAGS: ['iframe'],
-		ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder'],
+		ALLOWED_ATTR: ['href', 'target', 'src'],
 	})
-
-	// OSLMS-CUSTOM: re-insert the iframes extracted before sanitizing
-	Object.entries(iframes).forEach(([id, iframe]) => {
-		console.log('--- replacing placeholder:', id)
-		sanitized = sanitized.replace(
-			`<div data-iframe-id="${id}"></div>`,
-			iframe,
-		)
-	})
-
-	return sanitized
+	return text
 }
 
 // Re-exported from a lean module so it stays testable without index.js's heavy

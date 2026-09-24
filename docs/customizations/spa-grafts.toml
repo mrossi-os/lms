@@ -2646,30 +2646,6 @@ questo gruppo)."""
   symbol = "searchLikeFilter"
 
 [[entries]]
-id = "sanitize-html-keep-iframes"
-title = "sanitizeHTML conserva i video YouTube incorporati"
-layer = "spa-graft"
-confidence = "high"
-intent = """
-Nata per non perdere i video YouTube incorporati nella descrizione del corso (commit
-514f89cf0): sanitizeHTML estrae gli iframe prima di DOMPurify e li reinserisce dopo, e
-ammette tag video/source/div con i relativi attributi. La usano i moduli che ripuliscono i
-testi (nuovo corso, profilo, assegnazioni, quiz, lavori, programmi, esercizi) e il pannello
-notifiche. Nota di sicurezza da valutare col committente: gli iframe estratti tornano nel
-testo senza passare da DOMPurify, con tutti i loro attributi; restano anche due
-console.log di debug."""
-
-  [[entries.sites]]
-  file = "frontend/src/utils/index.js"
-  anchor = '/<iframe[\s\S]*?<\/iframe>/gi,'
-  symbol = "sanitizeHTML"
-
-  [[entries.sites]]
-  file = "frontend/src/utils/index.js"
-  anchor = "ADD_TAGS: ['iframe'],"
-  symbol = "sanitizeHTML"
-
-[[entries]]
 id = "theme-elite-import"
 title = "Tema Elite del cliente caricato sopra frappe-ui"
 layer = "spa-graft"
