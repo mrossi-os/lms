@@ -1,4 +1,5 @@
-import { vi } from 'vitest'
+import { beforeEach, vi } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 import { config } from '@vue/test-utils'
 import { safeHtml, vExternal } from '../directives'
 
@@ -24,3 +25,28 @@ vi.stubGlobal('__', (message: string) => {
 			),
 	}
 })
+
+// main.js installs Pinia on the app, so every store is live before a page
+// mounts. Our grafts reach stores (AI context, settings) from pages whose
+// upstream tests never set one up; a fresh active Pinia per test mirrors the
+// app without leaking store state between tests.
+beforeEach(() => {
+	setActivePinia(createPinia())
+})
+
+// jsdom has no matchMedia. The app's responsive composables call it at setup,
+// so a page using one dies before rendering. This mirrors a desktop browser
+// where no media query matches; a test that needs a match stubs its own.
+if (!window.matchMedia) {
+	window.matchMedia = (query: string) =>
+		({
+			matches: false,
+			media: query,
+			onchange: null,
+			addListener() {},
+			removeListener() {},
+			addEventListener() {},
+			removeEventListener() {},
+			dispatchEvent: () => false,
+		}) as unknown as MediaQueryList
+}
