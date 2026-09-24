@@ -181,6 +181,10 @@ export default defineConfig(async ({ mode }) => {
 				'tailwind.config.js',
 				'highlight.js',
 				'plyr',
+				// grid-layout-plus (reached through the raw-served frappe-ui) imports
+				// interactjs' UMD build as a default export; pre-bundling gives it one.
+				// Without it the dev server's SPA dies on load (production is unaffected).
+				'interactjs',
 				// OSLMS-CUSTOM: pre-bundle all tiptap/prosemirror entrypoints (plugin$ crash)
 				// Pre-bundle EVERY tiptap/prosemirror entrypoint the editor touches.
 				// `frappe-ui` is excluded from optimization below (its source must be
