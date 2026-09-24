@@ -942,16 +942,14 @@ const applyAccessFromLesson = (data) => {
 }
 
 // A quiz can also live inside the EditorJS content, not only as `quiz_id`.
-const contentHasQuiz = computed(() => {
-	if (!lesson.data?.content) return false
-	try {
-		return JSON.parse(lesson.data.content)?.blocks?.some(
+// Read through the same parser the lesson renders with, so content it repairs
+// on load is recognised here too.
+const contentHasQuiz = computed(
+	() =>
+		parseStoredEditorJs(lesson.data?.content)?.blocks?.some(
 			(block) => block.type === 'quiz',
-		)
-	} catch {
-		return false
-	}
-})
+		) ?? false,
+)
 
 watch(
 	() => lesson.data,
