@@ -1,7 +1,9 @@
 import hashlib
 import json
 import re
+from datetime import datetime
 from urllib.parse import quote
+from zoneinfo import ZoneInfo
 
 import frappe
 import requests
@@ -20,9 +22,12 @@ from frappe.utils import (
 	get_datetime,
 	get_frappe_version,
 	get_fullname,
+	get_system_timezone,
+	get_time,
 	getdate,
 	nowtime,
 	rounded,
+	to_timedelta,
 	validate_email_address,
 )
 from pypika import Case
@@ -701,6 +706,90 @@ def get_evaluator(course: str, batch: str = None):
 	return evaluator
 
 
+def get_zone(timezone: str) -> ZoneInfo | None:
+	"""None for anything that is not an IANA zone name.
+
+	Every timezone in LMS is a free-text `Data` field. New records hold a name
+	picked from `get_country_timezone_info` ("Asia/Kolkata"), older rows predate
+	that control and can hold anything ("IST (GMT+5:30)").
+	"""
+	if not timezone:
+		return None
+
+	try:
+		return ZoneInfo(timezone)
+	except (KeyError, ValueError):
+		return None
+
+
+def get_evaluation_display_timezone(course: str = None, batch: str = None) -> str:
+	"""The zone evaluation slots are *shown* in. Never the zone they are stored in.
+
+	Slots are authored and stored in the system timezone. `nowtime()`
+	comparisons and the naive datetime handed to Google Calendar all depend on
+	that. The batch declares the zone its cohort works in, so that is what a
+	learner books against; a direct-evaluation course has no batch, and falls
+	back to its own timezone, which is mandatory for a paid certificate.
+	"""
+	if batch:
+		timezone = frappe.db.get_value("LMS Batch", batch, "timezone")
+		if timezone:
+			return timezone
+
+	if course:
+		# Only when paid_certificate is set: the field `depends_on` it, so an
+		# unset course can be carrying a stale value from a toggle.
+		settings = frappe.db.get_value("LMS Course", course, ["paid_certificate", "timezone"], as_dict=True)
+		if settings and settings.paid_certificate and settings.timezone:
+			return settings.timezone
+
+	return get_system_timezone()
+
+
+def convert_from_system_timezone(date, time, timezone: str) -> tuple:
+	"""Move a system-time wall clock into `timezone`. Returns (date, time).
+
+	The date comes back because conversion rolls over: an evaluator's Monday
+	09:00 in Asia/Kolkata is Sunday 20:30 in America/Los_Angeles.
+
+	A zone name we cannot resolve is legacy free text with no offset to convert
+	against, so the wall clock is returned untouched: labelled, not moved.
+	"""
+	zone = get_zone(timezone)
+	system = get_zone(get_system_timezone())
+	if not zone or not system or zone.key == system.key:
+		return getdate(date), get_time(time)
+
+	moment = datetime.combine(getdate(date), get_time(time), tzinfo=system).astimezone(zone)
+	return moment.date(), moment.time()
+
+
+def format_timezone(timezone: str, at=None) -> str:
+	""" "Asia/Kolkata" -> "Asia/Kolkata (GMT+5:30)".
+
+	`at` is the instant to read the offset at: a date, a datetime, or None for
+	now. It matters because the offset shifts across DST, and the slot picker
+	spans 60 days.
+
+	Mirrors frontend/src/utils/timezone.ts so an email reads the same as the
+	screen it was booked from. Values that are not IANA zone names are echoed:
+	they already read as a timezone to a human, and there is no safe way to
+	parse them back into one.
+	"""
+	if not timezone:
+		return ""
+
+	zone = get_zone(timezone)
+	if not zone:
+		return timezone
+
+	moment = get_datetime(at).replace(tzinfo=zone) if at else datetime.now(zone)
+	total_minutes = int(moment.utcoffset().total_seconds() // 60)
+	hours, minutes = divmod(abs(total_minutes), 60)
+	sign = "+" if total_minutes >= 0 else "-"
+	return f"{timezone} (GMT{sign}{hours}:{minutes:02d})"
+
+
 def check_multicurrency(amount: float, currency: str, country: str = None, amount_usd: float = None):
 	settings = frappe.get_single("LMS Settings")
 	show_usd_equivalent = settings.show_usd_equivalent
@@ -773,9 +862,25 @@ def guest_access_allowed():
 	return True
 
 
-@frappe.whitelist(allow_guest=True)
+DEFAULT_PAGE_LENGTH = 24
+MAX_PAGE_LENGTH = 120
+
+
+def resolve_page_length(limit_page_length=None) -> int:
+	"""How many rows a list endpoint returns for a client-supplied page size.
+
+	`createListResource` sends `limit_page_length` and advances `start` by the
+	same number, so an endpoint that ignores it hands back a page of a different
+	size and the next page repeats rows. Bounded because these endpoints are
+	open to guests and an unbounded page size is a cheap way to ask for a table.
+	"""
+	page_length = cint(limit_page_length) or DEFAULT_PAGE_LENGTH
+	return min(max(page_length, 1), MAX_PAGE_LENGTH)
+
+
+@frappe.whitelist(allow_guest=True)  # nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
 @rate_limit(limit=500, seconds=60 * 60)
-def get_courses(filters: dict = None, start: int = 0) -> list:
+def get_courses(filters: dict = None, start: int = 0, limit_page_length: int | str = None) -> list:
 	"""Returns the list of courses."""
 
 	if not guest_access_allowed():
@@ -786,22 +891,80 @@ def get_courses(filters: dict = None, start: int = 0) -> list:
 
 	filters, or_filters, show_featured = update_course_filters(filters)
 	fields = get_course_fields()
+	page_length = resolve_page_length(limit_page_length)
+	start = cint(start)
 
-	courses = frappe.get_all(
-		"LMS Course",
-		filters=filters,
-		fields=fields,
-		or_filters=or_filters,
-		order_by="enrollments desc",
-		start=start,
-		page_length=30,
+	# Featured courses lead the list, and the query below excludes them, so the
+	# two together are one sequence the caller pages through. Slicing has to
+	# treat it that way: prepending them to a full page returned a page longer
+	# than the one asked for, and since the caller advances `start` by the size
+	# it asked for, the next page then repeated whatever the extras pushed past
+	# the end.
+	# Read only as far as the window: `len(featured)` below is the offset the rest
+	# of the sequence starts at, and it is only needed when the window runs past
+	# the featured rows, which is exactly when this read returned all of them.
+	featured = (
+		get_featured_courses(filters.copy(), or_filters, fields, start + page_length) if show_featured else []
 	)
-	if show_featured and start == 0:
-		courses = get_featured_courses(filters, or_filters, fields) + courses
+	courses = featured[start : start + page_length]
+	remaining = page_length - len(courses)
+
+	if remaining > 0:
+		courses = courses + frappe.get_all(
+			"LMS Course",
+			filters=filters,
+			fields=fields,
+			or_filters=or_filters,
+			order_by="enrollments desc",
+			start=max(start - len(featured), 0),
+			page_length=remaining,
+		)
 
 	courses = get_enrollment_details(courses)
 	courses = get_course_card_details(courses)
 	return courses
+
+
+@frappe.whitelist(allow_guest=True)  # nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
+@rate_limit(limit=500, seconds=60 * 60)
+def get_course_count(filters: dict = None) -> int:
+	"""How many courses the same filters `get_courses` takes actually match.
+
+	The list footer cannot ask `frappe.client.get_count` for this: the tabs
+	filter on `enrolled`, `created` and `live`, which are not fields, and the
+	title search is an or_filter. Both only exist once `update_course_filters`
+	has resolved them.
+	"""
+	if not guest_access_allowed():
+		return 0
+
+	if not filters:
+		filters = {}
+
+	filters, or_filters, show_featured = update_course_filters(filters)
+	total = count_matching("LMS Course", filters, or_filters)
+	if show_featured:
+		# `update_course_filters` narrowed the query to featured=0 for the live
+		# tab, so the featured rows it leads with are counted separately.
+		total += count_matching("LMS Course", {**filters, "featured": 1}, or_filters)
+	return total
+
+
+def count_matching(doctype: str, filters: dict | list, or_filters: dict = None) -> int:
+	"""Row count for filters that include or_filters, which db.count cannot take."""
+	rows = frappe.get_all(doctype, filters=filters, or_filters=or_filters, fields=[{"COUNT": "*"}])
+	return cint(next(iter(rows[0].values()))) if rows else 0
+
+
+def as_filter_conditions(filters: dict) -> list:
+	"""The same filters as a list of conditions, which can hold two per field."""
+	conditions = []
+	for field, value in filters.items():
+		if isinstance(value, list | tuple):
+			conditions.append([field, value[0], value[1]])
+		else:
+			conditions.append([field, "=", value])
+	return conditions
 
 
 @frappe.whitelist(allow_guest=True)
@@ -935,7 +1098,7 @@ def get_enrollment_details(courses: list) -> list:
 	return courses
 
 
-def get_featured_courses(filters: dict, or_filters: dict, fields: list) -> list:
+def get_featured_courses(filters: dict, or_filters: dict, fields: list, page_length: int) -> list:
 	filters.update({"featured": 1})
 	featured_courses = frappe.get_all(
 		"LMS Course",
@@ -943,6 +1106,7 @@ def get_featured_courses(filters: dict, or_filters: dict, fields: list) -> list:
 		fields=fields,
 		or_filters=or_filters,
 		order_by="enrollments desc",
+		page_length=page_length,
 	)
 	return featured_courses
 
@@ -991,7 +1155,7 @@ def get_course_fields():
 	]
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=True)  # nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
 @rate_limit(limit=500, seconds=60 * 60)
 def get_course_details(course: str):
 	if not guest_access_allowed():
@@ -1040,7 +1204,13 @@ def get_course_details(course: str):
 		course_details.is_instructor = False
 
 	if course_details.membership and course_details.membership.current_lesson:
-		course_details.current_lesson = get_lesson_index(course_details.membership.current_lesson)
+		# "Continue Learning" must not point at a locked lesson. get_lesson_gate keeps
+		# the enrollment pointer when it is unlocked and substitutes the lesson the
+		# student may actually open otherwise; it returns None when no gate applies.
+		from lms.lms.permissions import get_lesson_gate
+
+		_locked, resume = get_lesson_gate(course)
+		course_details.current_lesson = get_lesson_index(resume or course_details.membership.current_lesson)
 
 	return course_details
 
@@ -1080,7 +1250,7 @@ def get_categorized_courses(courses: list) -> dict:
 	}
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=True)  # nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
 def get_course_outline(course: str, progress: bool = False) -> list:
 	"""Returns the course outline."""
 
@@ -1095,7 +1265,11 @@ def get_course_outline(course: str, progress: bool = False) -> list:
 	files_by_name = get_scorm_files(chapters)
 	completed = get_completed_lessons(course, lesson_rows) if progress else set()
 
-	return build_outline(chapters, lesson_rows, files_by_name, completed, progress)
+	from lms.lms.permissions import enforces_lesson_completion
+
+	enforce = enforces_lesson_completion(course) if progress else False
+
+	return build_outline(chapters, lesson_rows, files_by_name, completed, progress, enforce)
 
 
 def get_outline_chapter(course: str) -> list:
@@ -1174,8 +1348,76 @@ def get_completed_lessons(course: str, lesson_rows: list) -> set:
 	)
 
 
+def compute_locked_lessons(ordered_lesson_names: list, completed: set) -> set:
+	"""Lesson names a student may not open yet, given the course order and what they finished.
+
+	A lesson is open when it is at or before the first incomplete lesson, or when the
+	student already completed it (so enabling the setting mid-cohort never revokes
+	access to work already done).
+
+	Names are deduped on first occurrence: a lesson reachable from two chapters would
+	otherwise be locked by its later occurrence and, since the return value is a set of
+	names, lock its earlier one too — with lesson one locked, even the redirect target
+	is locked and the course is a dead end.
+	"""
+	locked = set()
+	seen = set()
+	past_first_incomplete = False
+	for name in ordered_lesson_names:
+		if name in seen:
+			continue
+		seen.add(name)
+		if name in completed:
+			continue
+		if past_first_incomplete:
+			locked.add(name)
+		else:
+			past_first_incomplete = True
+	return locked
+
+
+def get_ordered_lesson_rows(course: str) -> list:
+	"""Lesson identity rows for a course, in (chapter idx, lesson idx) order.
+
+	Deliberately narrow. The lock rule needs nothing but names and order, so this must
+	not reuse get_outline_lessons: that selects body and content, the two largest text
+	columns, and every gated lesson view would then transfer the whole course.
+
+	The joins mirror get_outline_chapter / get_outline_lessons exactly (both reference
+	tables inner-joined to their target doctype) so this list and the one build_outline
+	derives its locks from can never diverge over a dangling reference row.
+	"""
+	ChapterReference = frappe.qb.DocType("Chapter Reference")
+	CourseChapter = frappe.qb.DocType("Course Chapter")
+	LessonReference = frappe.qb.DocType("Lesson Reference")
+	CourseLesson = frappe.qb.DocType("Course Lesson")
+	return (
+		frappe.qb.from_(ChapterReference)
+		.join(CourseChapter)
+		.on(CourseChapter.name == ChapterReference.chapter)
+		.join(LessonReference)
+		.on(LessonReference.parent == CourseChapter.name)
+		.join(CourseLesson)
+		.on(CourseLesson.name == LessonReference.lesson)
+		.select(
+			CourseLesson.name.as_("name"),
+			ChapterReference.chapter.as_("chapter_name"),
+			ChapterReference.idx.as_("chapter_idx"),
+			LessonReference.idx.as_("lesson_idx"),
+		)
+		.where(ChapterReference.parent == course)
+		.orderby(ChapterReference.idx)
+		.orderby(LessonReference.idx)
+	).run(as_dict=True)
+
+
 def build_outline(
-	chapters: list, lesson_rows: list, files_by_name: dict, completed: set, progress: bool
+	chapters: list,
+	lesson_rows: list,
+	files_by_name: dict,
+	completed: set,
+	progress: bool,
+	enforce_completion: bool = False,
 ) -> list:
 	chapter_idx_by_name = {c.name: c.idx for c in chapters}
 	lessons_by_chapter = {}
@@ -1197,8 +1439,19 @@ def build_outline(
 			lesson.is_complete = lr.name in completed
 		lessons_by_chapter.setdefault(lr.chapter_name, []).append(lesson)
 
+	if progress and enforce_completion:
+		ordered_names = [lesson.name for c in chapters for lesson in lessons_by_chapter.get(c.name, [])]
+		locked = compute_locked_lessons(ordered_names, completed)
+		for lessons in lessons_by_chapter.values():
+			for lesson in lessons:
+				lesson.locked = 1 if lesson.name in locked else 0
+				if lesson.locked:
+					# The quiz is part of the gated lesson, not a separate resource.
+					lesson.quiz_id = None
+
 	outline = []
 	for c in chapters:
+		lessons = lessons_by_chapter.get(c.name, [])
 		chapter = frappe._dict(
 			name=c.name,
 			title=c.title,
@@ -1206,15 +1459,48 @@ def build_outline(
 			launch_file=c.launch_file,
 			scorm_package=c.scorm_package,
 			idx=c.idx,
-			lessons=lessons_by_chapter.get(c.name, []),
+			lessons=lessons,
 		)
-		if c.is_scorm_package and c.scorm_package and c.scorm_package in files_by_name:
+		# launch_file is the SCORM entry URL and scorm_package resolves to the package
+		# file. Handing either out for a chapter the student cannot open yet would let
+		# the outline itself route around the gate, so withhold both.
+		if lessons and all(lesson.get("locked") for lesson in lessons):
+			chapter.launch_file = None
+			chapter.scorm_package = None
+		elif c.is_scorm_package and c.scorm_package and c.scorm_package in files_by_name:
 			chapter.scorm_package = files_by_name[c.scorm_package]
 		outline.append(chapter)
 	return outline
 
 
-@frappe.whitelist(allow_guest=True)
+def _gate_redirect(course: str) -> dict:
+	"""The locked payload for a lesson number that resolves to nothing.
+
+	Typing a lesson number that does not exist is the same URL tampering the gate is
+	there to catch, so on a gated course it lands the student back on their current
+	lesson rather than on the course page. Off a gated course the caller keeps the
+	existing empty response.
+
+	`not_found` travels with `locked` so the page can say which of the two happened:
+	the lesson does not exist, and telling the student to finish the earlier lessons to
+	unlock it would be a lie.
+	"""
+	from lms.lms.permissions import get_lesson_gate
+
+	_locked, resume = get_lesson_gate(course)
+	if not resume:
+		return {}
+
+	return {
+		"locked": 1,
+		"not_found": 1,
+		"title": _("Lesson not found"),
+		"course_title": frappe.db.get_value("LMS Course", course, "title"),
+		"redirect_to": get_lesson_index(resume),
+	}
+
+
+@frappe.whitelist(allow_guest=True)  # nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
 @rate_limit(limit=500, seconds=60 * 60)
 def get_lesson(course: str, chapter: int, lesson: int) -> dict:
 	if not guest_access_allowed():
@@ -1233,14 +1519,14 @@ def get_lesson(course: str, chapter: int, lesson: int) -> dict:
 		.limit(1)
 	).run(as_dict=1)
 	if not chapter_row:
-		return {}
+		return _gate_redirect(course)
 
 	chapter_name = chapter_row[0].name
 	chapter_title = chapter_row[0].title
 
 	lesson_name = frappe.db.get_value("Lesson Reference", {"parent": chapter_name, "idx": lesson}, "lesson")
 	if not lesson_name:
-		return {}
+		return _gate_redirect(course)
 
 	lesson_details = frappe.db.get_value(
 		"Course Lesson",
@@ -1265,7 +1551,20 @@ def get_lesson(course: str, chapter: int, lesson: int) -> dict:
 	)
 
 	if not lesson_details:
-		return {}
+		return _gate_redirect(course)
+
+	# Local import: permissions imports from utils at module load, so importing it
+	# at the top of utils would create a cycle.
+	from lms.lms.permissions import get_lesson_gate
+
+	locked, resume = get_lesson_gate(course)
+	if lesson_name in locked:
+		return {
+			"locked": 1,
+			"title": lesson_details.title,
+			"course_title": frappe.db.get_value("LMS Course", course, "title"),
+			"redirect_to": get_lesson_index(resume) if resume else "1-1",
+		}
 
 	if lesson_details.is_scorm_package:
 		return {
@@ -2333,8 +2632,8 @@ def serialize_callbacks_without_the_constraint():
 	Take one lock every callback contends for instead. The DocType row of the
 	table missing its constraint is an arbitrary choice, but it always exists and
 	nothing else writes it outside a migrate. Payment callbacks then queue
-	site-wide, which is coarse — and is why it only happens while the constraint
-	is missing — but it puts them back in line, so the second one sees the first
+	site-wide, which is coarse (and is why it only happens while the constraint
+	is missing), but it puts them back in line, so the second one sees the first
 	payment recorded."""
 	# Imported here: lms_payment imports get_lms_route from this module.
 	from lms.lms.doctype.lms_payment.lms_payment import has_unique_payment_id
@@ -2491,6 +2790,14 @@ def get_payment_total(payment_doc: dict) -> float:
 
 
 def enroll_in_course(course: str, payment_name: str):
+	# The check below exists so a repeated payment callback is a no-op, and an
+	# unlocked check cannot deliver that: two callbacks arriving together both read
+	# "absent", and the loser then hits the controller's own duplicate error —
+	# failing a request that has already taken the learner's money. Locking the
+	# course row first makes the skip reliable. The controller locks the same row,
+	# so this adds no new lock ordering.
+	frappe.db.get_value("LMS Course", course, "name", for_update=True)
+
 	if not frappe.db.exists("LMS Enrollment", {"member": frappe.session.user, "course": course}):
 		enrollment = frappe.new_doc("LMS Enrollment")
 		payment = frappe.db.get_value("LMS Payment", payment_name, ["name", "source"], as_dict=True)
@@ -2670,21 +2977,21 @@ def validate_program_enrollment(program: str):
 		frappe.throw(_("You cannot enroll in an unpublished program."))
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=True)  # nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
 @rate_limit(limit=500, seconds=60 * 60)
-def get_batches(filters: dict = None, start: int = 0, order_by: str = "start_date"):
+def get_batches(
+	filters: dict = None,
+	start: int = 0,
+	order_by: str = "start_date",
+	limit_page_length: int | str = None,
+):
 	if not guest_access_allowed():
 		return []
 
 	if not filters:
 		filters = {}
 
-	if filters.get("enrolled"):
-		enrolled_batches = frappe.get_all(
-			"LMS Batch Enrollment", {"member": frappe.session.user}, pluck="batch"
-		)
-		filters.update({"name": ["in", enrolled_batches]})
-		del filters["enrolled"]
+	update_batch_filters(filters)
 
 	batches = frappe.get_all(
 		"LMS Batch",
@@ -2708,7 +3015,7 @@ def get_batches(filters: dict = None, start: int = 0, order_by: str = "start_dat
 		],
 		order_by=order_by,
 		start=start,
-		page_length=20,
+		page_length=resolve_page_length(limit_page_length),
 	)
 
 	batches = filter_batches_based_on_start_time(batches, filters)
@@ -2716,22 +3023,82 @@ def get_batches(filters: dict = None, start: int = 0, order_by: str = "start_dat
 	return batches
 
 
+def update_batch_filters(filters: dict) -> None:
+	"""Turns the pseudo-filters the batch list offers into real ones, in place."""
+	if filters.get("enrolled"):
+		enrolled_batches = frappe.get_all(
+			"LMS Batch Enrollment", {"member": frappe.session.user}, pluck="batch"
+		)
+		filters.update({"name": ["in", enrolled_batches]})
+		del filters["enrolled"]
+
+
+@frappe.whitelist(allow_guest=True)  # nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
+@rate_limit(limit=500, seconds=60 * 60)
+def get_batch_count(filters: dict = None) -> int:
+	"""How many batches the same filters `get_batches` takes actually match.
+
+	The list footer cannot ask `frappe.client.get_count` for this: the Upcoming
+	and Archived tabs turn on the time of day, and the query only settles the
+	date, so `filter_batches_based_on_start_time` decides the rest in Python.
+
+	Counted as two COUNTs rather than by fetching the rows and repeating that
+	pass over them: the endpoint is open to guests, so the work it does must not
+	grow with the number of batches on the site.
+	"""
+	if not guest_access_allowed():
+		return 0
+
+	if not filters:
+		filters = {}
+
+	update_batch_filters(filters)
+	total = count_matching("LMS Batch", filters)
+
+	batch_type = get_batch_type(filters)
+	if batch_type:
+		total -= count_batches_the_clock_decides(filters, batch_type)
+
+	return total
+
+
+def count_batches_the_clock_decides(filters: dict, batch_type: str) -> int:
+	"""How many matching batches `filter_batches_based_on_start_time` drops.
+
+	Only today's are ever in question. Every other date the query has already
+	settled. Upcoming drops the ones already under way; Archived, the ones still
+	to come. Both conditions are added rather than replacing the caller's date
+	filter, so a tab asking for `start_date > today` still counts nothing today.
+	"""
+	started = "<" if batch_type == "upcoming" else ">="
+	conditions = as_filter_conditions(filters) + [
+		["start_date", "=", getdate()],
+		["start_time", started, nowtime()],
+	]
+	return count_matching("LMS Batch", conditions)
+
+
+def has_started_today(batch) -> bool:
+	"""Whether a batch dated today has already begun.
+
+	Compared as times rather than as strings. `start_time` comes back from the
+	database as a timedelta, and `str()` renders a single-digit hour without a
+	leading zero. That sorted "9:00:00" above "14:30:00", so a batch that began
+	at nine that morning still counted as upcoming at half past two.
+	"""
+	if getdate(batch.start_date) != getdate():
+		return False
+	return to_timedelta(str(batch.start_time)) < to_timedelta(nowtime())
+
+
 def filter_batches_based_on_start_time(batches: list, filters: dict) -> list:
 	batchType = get_batch_type(filters)
 	if batchType == "upcoming":
-		batches_to_remove = [
-			batch
-			for batch in batches
-			if getdate(batch.start_date) == getdate() and str(batch.start_time) < nowtime()
-		]
-		batches = [batch for batch in batches if batch not in batches_to_remove]
+		batches = [batch for batch in batches if not has_started_today(batch)]
 	elif batchType == "archived":
-		batches_to_remove = [
-			batch
-			for batch in batches
-			if getdate(batch.start_date) == getdate() and str(batch.start_time) >= nowtime()
+		batches = [
+			batch for batch in batches if getdate(batch.start_date) != getdate() or has_started_today(batch)
 		]
-		batches = [batch for batch in batches if batch not in batches_to_remove]
 	return batches
 
 
@@ -3052,8 +3419,8 @@ def get_editorjs_blocks(content):
 	if not isinstance(blocks, list):
 		return []
 	# Keep only blocks a reader can safely reach block["data"][...] on: the block must be a
-	# dict, and `data` (if present) must be a dict. A present-but-non-dict data — null, str,
-	# list ({"type": "quiz", "data": "x"}) — is dropped; note a plain `.get("data", {})` guard
+	# dict, and `data` (if present) must be a dict. A present-but-non-dict data (null, str,
+	# or a list like {"type": "quiz", "data": "x"}) is dropped; note a plain `.get("data", {})` guard
 	# wouldn't save the null case. Hand-authored/partial content must not AttributeError a
 	# save, the outline, or progress tracking.
 	valid_blocks = []

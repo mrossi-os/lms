@@ -1,9 +1,9 @@
 <template>
 	<div v-if="batch?.data" class="p-5">
-		<div class="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
+		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
 			<NumberChartGraph
 				:title="__('Enrolled')"
-				:value="formatAmount(batch.data?.students?.length) || 0"
+				:value="formatAmount(studentCount.data) || 0"
 			/>
 
 			<!-- OSLMS-CUSTOM: certified count comes from the single os_lms batch stats call -->
@@ -25,7 +25,7 @@
 
 		<div
 			v-if="showStudentsEmptyState"
-			class="flex min-h-[70vh] flex-col items-center justify-center gap-3 px-4 text-center"
+			class="flex min-h-[30vh] sm:min-h-[70vh] flex-col items-center justify-center gap-3 px-4 text-center"
 		>
 			<span class="lucide-users size-7.5 text-ink-gray-5" />
 			<div class="flex flex-col items-center gap-1">
@@ -33,7 +33,7 @@
 					{{ __('No students enrolled yet') }}
 				</span>
 				<span class="text-p-base text-ink-gray-6">
-					{{ __('Enroll students to track their progress here.') }}
+					{{ __('Enroll students to track their progress here') }}
 				</span>
 			</div>
 		</div>
@@ -73,22 +73,54 @@
 						</Dropdown>
 					</div>
 				</div>
-				<div class="max-h-[63vh] overflow-y-auto">
-					<!-- OSLMS-CUSTOM: sortable rows with a progress column; row selection (removal) only for full admins -->
+				<div class="sm:max-h-[63vh] sm:overflow-y-auto">
+					<ResponsiveListView
+						v-if="isMobile && (students.loading || students.data?.length)"
+						:columns="studentColumns"
+						:rows="sortedStudents"
+						row-key="name"
+						:options="studentListOptions"
+					>
+						<template #cell="{ column, row, value }">
+							<span
+								v-if="column.key === 'member_name'"
+								class="flex items-center gap-2"
+							>
+								<Avatar
+									:image="row.member_image as string"
+									:label="String(value)"
+									size="sm"
+								/>
+								<span class="min-w-0 truncate">{{ value }}</span>
+							</span>
+							<span v-else-if="column.key === 'progress'">
+								{{ getStudentProgress(row.member as string) }}%
+							</span>
+							<span v-else-if="column.key === 'creation'">
+								{{ dayjs(value as string).format('DD MMM YYYY') }}
+							</span>
+							<span v-else>{{ value }}</span>
+						</template>
+						<template #selection-actions="{ unselectAll, selections }">
+							<Button
+								variant="ghost"
+								:label="__('Remove')"
+								@click="removeStudents(selections, unselectAll)"
+							>
+								<template #icon>
+									<span class="lucide-trash-2 size-4" />
+								</template>
+							</Button>
+						</template>
+					</ResponsiveListView>
 					<ListView
-						v-if="students.loading || students.data?.length"
+						v-else-if="students.loading || students.data?.length"
 						:columns="studentColumns"
 						:rows="sortedStudents"
 						rowKey="name"
-						:options="{
-							selectable: isFullAdmin,
-							showTooltip: false,
-							onRowClick: (row: any) => {
-								currentStudent = row.member
-								showProgressModal = true
-							},
-						}"
+						:options="studentListOptions"
 					>
+						<!-- OSLMS-CUSTOM: desktop keeps the sortable table (clickable headers, progress column); phones get upstream's card list above -->
 						<ListHeader
 							class="mb-2 grid items-center gap-x-4 rounded bg-surface-gray-2 p-2"
 						>
@@ -101,14 +133,14 @@
 								@click="toggleSort(item.key)"
 							>
 								<template #suffix>
-									<LucideChevronUp
+									<span
 										v-if="sortColumn === item.key"
-										class="size-3.5 shrink-0 text-ink-gray-7 transition-transform duration-200"
+										class="lucide-chevron-up size-3.5 shrink-0 text-ink-gray-7 transition-transform duration-200"
 										:class="sortOrder === 'desc' ? 'rotate-180' : ''"
 									/>
-									<LucideChevronsUpDown
+									<span
 										v-else
-										class="size-3.5 shrink-0 text-ink-gray-4"
+										class="lucide-chevrons-up-down size-3.5 shrink-0 text-ink-gray-4"
 									/>
 								</template>
 							</ListHeaderItem>
@@ -160,7 +192,7 @@
 										variant="ghost"
 										@click="removeStudents(selections, unselectAll)"
 									>
-										<LucideTrash2 class="h-4 w-4 stroke-1.5" />
+										<span class="lucide-trash-2 size-4" />
 									</Button>
 								</div>
 							</template>
@@ -177,8 +209,8 @@
 							"
 							:description="
 								searchFilter
-									? __('Try a different name.')
-									: __('Enroll students to track their progress here.')
+									? __('Try a different name')
+									: __('Enroll students to track their progress here')
 							"
 						/>
 					</div>
@@ -324,12 +356,6 @@
 			</div>
 		</div>
 	</div>
-	<StudentModal
-		v-if="showEnrollmentModal"
-		v-model="showEnrollmentModal"
-		:batch="batch"
-		:students="students"
-	/>
 	<BatchStudentProgress
 		v-if="showProgressModal"
 		v-model="showProgressModal"
@@ -357,16 +383,22 @@ import {
 	toast,
 } from 'frappe-ui'
 import Select from '@/components/Controls/Select.vue'
-import { computed, inject, ref, watch } from 'vue'
+import { computed, inject, onMounted, ref, watch } from 'vue'
 import type dayjsType from 'dayjs'
 import { formatAmount } from '@/utils'
 import BatchFeedback from '@/pages/Batches/components/BatchFeedback.vue'
 import BatchStudentProgress from '@/pages/Batches/components/BatchStudentProgress.vue'
 import NumberChartGraph from '@/components/NumberChartGraph.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
-import StudentModal from '@/components/Modals/StudentModal.vue'
+import ResponsiveListView from '@/components/ResponsiveListView.vue'
 import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
 import { useRouter } from 'vue-router'
+import { useScreenSize } from '@/utils/composables'
+import type {
+	ListColumn,
+	ListRow as ListRowData,
+	ListViewOptions,
+} from '@/types'
 
 const dayjs = inject<typeof dayjsType>('$dayjs')!
 const user = inject<{ data?: Record<string, any> }>('$user')
@@ -393,16 +425,13 @@ const searchFilter = ref<string | null>(null)
 // initial `orderBy: 'creation desc'`.
 const sortColumn = ref<string>('creation')
 const sortOrder = ref<'asc' | 'desc'>('desc')
-const showEnrollmentModal = ref<boolean>(false)
 const showProgressModal = ref<boolean>(false)
 const currentStudent = ref<any>(null)
+const { isMobile } = useScreenSize()
 
-function openEnrollModal() {
-	showEnrollmentModal.value = true
-}
-
+// Enrolling now goes through the BatchStudentForm route (opened by BatchDetail).
 // OSLMS-CUSTOM: expose goToImport for the batch header import button
-defineExpose({ openEnrollModal, goToImport })
+defineExpose({ goToImport })
 
 const props = defineProps<{
 	batch: { [key: string]: any } | null
@@ -426,6 +455,23 @@ const batchStats = createResource({
 	auto: true,
 })
 
+// The Enrolled card used to read batch.data.students.length, refreshed by the
+// enrollment modal calling batch.reload() on the resource it was handed. The
+// routed form has no such handle — get_batch_details deliberately carries no
+// cache key (useBatchForms.ts) — so the count comes from its own cached
+// resource, shaped like certificationCount above, which the form can reach by
+// key. The two numbers are identical: get_batch_details builds `students` from
+// exactly this get_all with no further filter.
+const studentCount = createResource({
+	url: 'frappe.client.get_count',
+	cache: ['batch_student_count', props.batch?.data?.name],
+	params: {
+		doctype: 'LMS Batch Enrollment',
+		filters: { batch: props.batch?.data?.name },
+	},
+	auto: true,
+})
+
 const students = createListResource({
 	doctype: 'LMS Batch Enrollment',
 	filters: {
@@ -441,6 +487,9 @@ const students = createListResource({
 	],
 	orderBy: 'creation desc',
 	auto: true,
+	// Named so BatchStudentForm can reload it through getCachedListResource
+	// after inserting. Keyed by batch, because BatchDetail is per-batch.
+	cache: ['batchStudents', props.batch?.data?.name],
 })
 
 const getStudentProgress = (member: string) =>
@@ -665,8 +714,8 @@ const exportMenu = computed(() => [
 	},
 ])
 
-watch(searchFilter, () => {
-	let filters: Record<string, any> = {
+const studentFilters = (): Record<string, any> => {
+	const filters: Record<string, any> = {
 		batch: props.batch?.data?.name,
 	}
 
@@ -674,7 +723,11 @@ watch(searchFilter, () => {
 		filters.member_name = ['like', `%${searchFilter.value}%`]
 	}
 
-	students.update({ filters })
+	return filters
+}
+
+watch(searchFilter, () => {
+	students.update({ filters: studentFilters() })
 	students.reload()
 })
 
@@ -697,7 +750,22 @@ const toggleSort = (key: string) => {
 	}
 }
 
-const studentColumns = computed(() => {
+// The cache key deliberately outlives this component so the student form can
+// reload the list after inserting — but the filters ride along with it, while
+// `searchFilter` is a component-local ref that starts empty on every mount. A
+// remount would otherwise show the previous visit's search results underneath
+// a blank search box. Only re-syncs when they actually disagree, so a first
+// mount does not fetch twice.
+onMounted(() => {
+	const desired = studentFilters()
+
+	if (JSON.stringify(students.filters) !== JSON.stringify(desired)) {
+		students.update({ filters: desired })
+		students.reload()
+	}
+})
+
+const studentColumns = computed<ListColumn[]>(() => {
 	return [
 		{
 			label: __('Name'),
@@ -713,14 +781,14 @@ const studentColumns = computed(() => {
 		{
 			label: __('Enrolled On'),
 			key: 'creation',
-			align: 'right',
+			align: 'left',
 		},
 	]
 })
 
 // OSLMS-CUSTOM: remove the selected students from the batch
 const removeStudents = async (
-	selections: string[],
+	selections: Iterable<string>,
 	unselectAll: () => void,
 ) => {
 	for (const student of selections) {
@@ -729,6 +797,16 @@ const removeStudents = async (
 	unselectAll()
 	toast.success(__('Students removed successfully'))
 }
+
+const studentListOptions = computed<ListViewOptions>(() => ({
+	// OSLMS-CUSTOM: row selection (student removal) only for full admins
+	selectable: Boolean(isFullAdmin.value),
+	showTooltip: false,
+	onRowClick: (row: ListRowData) => {
+		currentStudent.value = row.member
+		showProgressModal.value = true
+	},
+}))
 
 const showStudentsEmptyState = computed(
 	() => !students.loading && !students.data?.length && !searchFilter.value,

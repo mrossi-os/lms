@@ -100,10 +100,6 @@
 					</div>
 				</div>
 			</div>
-			<ProgramEnrollment
-				v-model="showProgramEnrollment"
-				:programName="enrollmentProgram"
-			/>
 		</div>
 
 		<div v-if="newCourses.data?.length" class="mt-10">
@@ -195,7 +191,7 @@
 	</div>
 </template>
 <script setup lang="ts">
-import { computed, inject, onMounted, ref } from 'vue'
+import { computed, inject, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { createResource } from 'frappe-ui'
 import { MoveRight } from 'lucide-vue-next'
@@ -205,7 +201,7 @@ import UpcomingEvaluations from '@/components/UpcomingEvaluations.vue'
 import WelcomeWithOverallProgress from '@/oslms/components/Home/WelcomeWithOverallProgress.vue'
 import LiveClassCard from '@/components/LiveClassCard.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
-import ProgramEnrollment from '@/pages/Programs/ProgramEnrollment.vue'
+import { openFormRoute } from '@/composables/useFormRoute'
 import { useSettings } from '@/stores/settings'
 
 const user = inject<any>('$user')
@@ -250,8 +246,6 @@ const myBatches = createResource({
 // when nothing has loaded it yet (e.g. the mobile layout has no sidebar).
 const router = useRouter()
 const { programs } = useSettings()
-const showProgramEnrollment = ref(false)
-const enrollmentProgram = ref<string | null>(null)
 
 onMounted(() => {
 	if (!programs.data && !programs.loading) programs.reload()
@@ -271,8 +265,12 @@ const openProgram = (programName: string) => {
 	if (hasEnrolledPrograms.value) {
 		router.push({ name: 'ProgramDetail', params: { programName } })
 	} else {
-		enrollmentProgram.value = programName
-		showProgramEnrollment.value = true
+		// The enrollment confirmation is a routed form now (a child of Programs):
+		// openFormRoute stamps the history entry so cancelling pops back here.
+		openFormRoute(router, {
+			name: 'ProgramEnrollment',
+			params: { programName },
+		})
 	}
 }
 </script>

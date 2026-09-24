@@ -4,6 +4,7 @@
 		:title="__('All Courses')"
 		:rows="courses.data || []"
 		:loading="courses.list.loading || reloading"
+		:total-count="courseCount"
 		:has-next-page="courses.hasNextPage"
 		v-model:page-length="pageLength"
 		empty-name="Courses"
@@ -36,24 +37,20 @@
 			</Dropdown>
 		</template>
 
-		<template #tabs>
+		<template #filters>
 			<!-- OSLMS-CUSTOM: students only have the Enrolled tab, so the switcher is hidden when a single tab is left -->
 			<TabButtons
 				v-if="courseTabs.length > 1"
 				:options="courseTabs"
 				v-model="currentTab"
-				class="w-fit"
+				class="!w-fit shrink-0"
 			/>
-		</template>
-
-		<template #filters>
 			<!-- OSLMS-CUSTOM: reload on update:modelValue so the search reads the current value and clearing it clears the filter -->
 			<FormControl
 				v-model="title"
 				:placeholder="__('Search')"
 				:aria-label="__('Search')"
 				type="text"
-				class="w-full sm:min-w-40 lg:w-32 lg:min-w-0 xl:w-40"
 				@update:modelValue="updateCourses()"
 			>
 				<template #prefix>
@@ -67,11 +64,7 @@
 				:options="categoryOptions"
 				:placeholder="__('Category')"
 				@update:modelValue="updateCourses()"
-				class="w-full sm:w-auto"
 			/>
-		</template>
-
-		<template #toggles>
 			<ToggleFilter
 				:modelValue="certification"
 				:label="__('Certification')"
@@ -90,16 +83,7 @@
 		</template>
 	</ListPage>
 
-	<NewCourseModal
-		v-if="showCourseModal"
-		v-model="showCourseModal"
-		:courses="courses"
-	/>
-
-	<CourseImportModal
-		v-if="showCourseImportModal"
-		v-model="showCourseImportModal"
-	/>
+	<router-view />
 </template>
 <script setup>
 import {
@@ -120,8 +104,7 @@ import { canCreateCourse, searchLikeFilter } from '@/utils'
 import { useLocalStorage } from '@/utils/composables'
 import CourseCard from '@/components/CourseCard.vue'
 import { useRouter } from 'vue-router'
-import NewCourseModal from '@/pages/Courses/NewCourseModal.vue'
-import CourseImportModal from '@/pages/Courses/CourseImportModal.vue'
+import { openFormRoute } from '@/composables/useFormRoute'
 
 const user = inject('$user')
 const dayjs = inject('$dayjs')
@@ -140,8 +123,6 @@ const filters = ref({})
 const currentTab = useLocalStorage('lms_courses_tab', 'live')
 const { brand } = sessionStore()
 const router = useRouter()
-const showCourseModal = ref(false)
-const showCourseImportModal = ref(false)
 
 // OSLMS-CUSTOM: LMS OS Tag colors provided to CourseCard's CourseTagBadges
 const tagResource = createResource({
@@ -193,8 +174,13 @@ const setFiltersFromQuery = () => {
 	if (tab && courseTabs.value.some((t) => t.value === tab)) {
 		currentTab.value = tab
 	}
+	// Compatibility shim: ?newCourse=1 was this page's ad-hoc deep link before
+	// /courses/new existed. BatchCourseModal.vue:27 still emits it, as may
+	// bookmarks and anything outside the SPA, so forward it rather than drop it.
+	// replace(), so the query-param URL is not left behind as an entry the user
+	// can go Back to and re-open the form from.
 	if (queries.get('newCourse') == '1') {
-		showCourseModal.value = true
+		router.replace({ name: 'NewCourse' })
 	}
 }
 
@@ -205,6 +191,27 @@ const courses = createListResource({
 	pageLength: 24,
 	start: start.value,
 })
+
+// The tabs filter on `enrolled`, `created` and `live`, which are not fields,
+// so `frappe.client.get_count` cannot answer this; only the endpoint that
+// resolves them can. Without it the footer can say how many rows it has but
+// not how many there are.
+const courseCountResource = createResource({
+	url: 'lms.lms.utils.get_course_count',
+	makeParams: () => ({ filters: filters.value }),
+	onError: (error) => {
+		console.error(error)
+	},
+})
+
+const courseCount = computed(() => courseCountResource.data ?? null)
+
+const getCourseCount = () => {
+	// Same sequencing hazard as the list: nothing orders the responses, so a
+	// slow count for filters the user has left would overwrite the current one.
+	courseCountResource.abort()
+	courseCountResource.submit()
+}
 
 // `list.loading` goes false mid-request: the aborted fetch's tail resolves
 // after the new reload() has started and clears the flag for it, so the empty
@@ -260,13 +267,14 @@ const updateCourses = () => {
 	updateFilters()
 	// createResource keeps no request sequence: every response assigns
 	// `data`, so a slow fetch for filters the user has already left repaints
-	// the list with the wrong courses seconds later. Cancel it first — an
+	// the list with the wrong courses seconds later. Cancel it first: an
 	// aborted fetch is swallowed and never reaches the list.
 	courses.list.abort()
 	courses.update({
 		filters: filters.value,
 	})
 	reloadCourses()
+	getCourseCount()
 }
 
 const updateFilters = () => {
@@ -370,7 +378,12 @@ const setQueryParams = () => {
 		queryString = `?${queries.toString()}`
 	}
 
-	history.replaceState({}, '', `${location.pathname}${queryString}`)
+	// Carry the existing state forward rather than replacing it with `{}`. This
+	// page hosts form child routes whose open/close semantics hang off a marker
+	// in history.state, and that marker only survives a reload through
+	// window.history. `{}` also being truthy means vue-router never re-seeds its
+	// own `position` key after such a reload, so every later pop delta is NaN.
+	history.replaceState(history.state, '', `${location.pathname}${queryString}`)
 }
 
 watch(currentTab, () => {
@@ -428,7 +441,9 @@ const courseMenu = computed(() => {
 			label: __('New Course'),
 			icon: 'lucide-book-open',
 			onClick() {
-				showCourseModal.value = true
+				// openFormRoute, not a bare router.push: it stamps the history
+				// entry so the form's own close() pops it instead of replacing.
+				openFormRoute(router, { name: 'NewCourse' })
 			},
 		},
 	]
@@ -451,7 +466,7 @@ const courseMenu = computed(() => {
 			label: __('Import via ZIP'),
 			icon: 'lucide-folder-plus',
 			onClick() {
-				showCourseImportModal.value = true
+				openFormRoute(router, { name: 'CourseImport' })
 			},
 		},
 	)

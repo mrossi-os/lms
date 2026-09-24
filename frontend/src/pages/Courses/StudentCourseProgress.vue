@@ -8,7 +8,7 @@
 			<div class="text-base text-ink-gray-9 max-h-[70vh] overflow-y-auto">
 				<!-- OSLMS-CUSTOM: Dialog title translated with __('Student Progress') -->
 				<div class="flex justify-between mb-5 px-2">
-					<div class="flex items-center gap-x-2">
+					<div class="flex items-center gap-x-3">
 						<Avatar
 							:image="student?.member_image"
 							:label="student?.member_name"

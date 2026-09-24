@@ -1,6 +1,6 @@
 <template>
 	<div class="space-y-1.5">
-		<FormLabel v-if="label" :label="label" :required="required" />
+		<FormLabel v-if="label" :label="__(label)" :required="required" />
 		<!-- OSLMS-CUSTOM: self-contained Popover + reka-ui Combobox instead of frappe-ui MultiSelect -->
 		<Popover
 			:show="popoverOpen"
@@ -24,7 +24,7 @@
 					<span class="flex min-w-0 flex-1 items-center gap-2">
 						<slot name="prefix" :selected="selectedOptions" />
 						<span
-							class="min-w-0 flex-1 truncate text-left"
+							class="min-w-0 flex-1 truncate text-start"
 							:class="!selectedOptions.length && 'text-ink-gray-4'"
 						>
 							<slot
@@ -91,13 +91,13 @@
 									class="relative flex h-7 select-none items-center gap-2 rounded p-1.5 text-base leading-none text-ink-gray-7 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-surface-gray-3 data-[highlighted]:outline-none"
 								>
 									<slot name="item-prefix" :item="item" />
-									<span class="min-w-0 flex-1 pr-6">
+									<span class="min-w-0 flex-1 pe-6">
 										<slot name="item-label" :item="item">
 											{{ item.label }}
 										</slot>
 									</span>
 									<ComboboxItemIndicator
-										class="absolute right-1.5 inline-flex items-center justify-center"
+										class="absolute end-1.5 inline-flex items-center justify-center"
 									>
 										<Check class="size-4" />
 									</ComboboxItemIndicator>
@@ -172,6 +172,8 @@ const props = withDefaults(
 		transform?: (rows: Record<string, unknown>[]) => SelectOption[]
 		extraOptions?: SelectOption[]
 		label?: string
+		description?: string
+		error?: string
 		placeholder?: string
 		required?: boolean
 		disabled?: boolean
@@ -196,7 +198,7 @@ let loaded = false
 
 // OSLMS-CUSTOM: theme focus/open ring on the trigger (variants lose the bg/border swap)
 const triggerBaseClasses =
-	'relative inline-flex items-center gap-2 text-left text-ink-gray-7 outline-none transition-[background-color,border-color,box-shadow] duration-150 focus-visible:ring-2 data-[state=open]:ring-2 ring-outline-gray-3'
+	'relative inline-flex items-center gap-2 text-start text-ink-gray-7 outline-none transition-[background-color,border-color,box-shadow] duration-150 focus-visible:ring-2 data-[state=open]:ring-2 ring-outline-gray-3'
 
 const triggerVariantClasses: Record<
 	NonNullable<typeof props.variant>,
@@ -248,7 +250,10 @@ function onPopoverToggle(open: boolean) {
 	if (open && !loaded) reload()
 }
 
-const onQuery = useDebounceFn((txt: string) => reload(txt || ''), 300)
+const onQuery = useDebounceFn(
+	(txt: unknown) => reload((txt as string) || ''),
+	300
+)
 
 // OSLMS-CUSTOM: server-side search driven by the reka ComboboxInput
 function onInput(event: Event) {

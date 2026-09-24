@@ -4,7 +4,7 @@
 		<h2 class="mb-4 text-lg font-semibold text-ink-gray-9">
 			{{ __('Booked Evaluations') }}
 		</h2>
-		<div class="flex h-screen flex-col overflow-hidden">
+		<div class="flex h-dvh flex-col overflow-hidden">
 			<!-- OSLMS-CUSTOM: v-else empty-state text below when no evaluation is booked -->
 			<Calendar
 				v-if="evaluations.data?.length"
@@ -83,6 +83,7 @@ const evaluations = createListResource({
 		'date',
 		'start_time',
 		'end_time',
+		'timezone',
 		'google_meet_link',
 	],
 	auto: true,

@@ -1,5 +1,5 @@
 <template>
-	<div class="w-full px-5 pt-5 pb-10">
+	<div class="w-full p-5">
 		<!-- OSLMS-CUSTOM: welcome video hero at the top of the home -->
 		<WelcomeVideoHero />
 

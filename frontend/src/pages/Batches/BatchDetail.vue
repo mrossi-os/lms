@@ -1,224 +1,164 @@
 <template>
-	<div v-if="batch.data" class="">
-		<!-- On phones the header stacks: breadcrumb + badge on the first row,
-		     the actions right-aligned on the second one. -->
-		<!-- OSLMS-CUSTOM: header stacks on two rows on phones, compact buttons -->
-		<header
-			class="sticky top-0 z-10 border-b flex flex-col gap-y-2 sm:flex-row sm:items-center sm:justify-between sm:gap-y-0 bg-surface-base px-3 py-2.5 sm:px-5 max-sm:[&_button]:text-xs"
-		>
-			<div class="flex items-center gap-x-2">
-				<Breadcrumbs :items="breadcrumbs" />
-				<Badge v-if="batch.data?.published" theme="green" class="shrink-0">
-					{{ __('Published') }}
-				</Badge>
-			</div>
-			<div
-				class="flex items-center gap-x-2 max-sm:flex-wrap max-sm:gap-y-2 max-sm:justify-end max-sm:empty:hidden"
+	<TabbedDetailPage
+		ref="page"
+		:tabs="tabs"
+		:breadcrumbs="breadcrumbs"
+		:published="Boolean(batch.data?.published)"
+		:loading="!batch.data"
+		:doc="batch"
+		doc-prop="batch"
+	>
+		<template #actions="{ tab, instance }">
+			<Badge v-if="tab?.key === 'settings' && instance?.isDirty" theme="orange">
+				{{ __('Not Saved') }}
+			</Badge>
+			<Button
+				v-if="tab?.key === 'settings' && isAdmin && !isMobile"
+				:variant="batch.data?.published ? 'outline' : 'solid'"
+				:theme="batch.data?.published ? 'red' : 'gray'"
+				@click="togglePublishBatch"
 			>
-				<!-- OSLMS-CUSTOM: tab checks use the untranslated tab key, not the label -->
-				<template v-if="currentTabKey === 'Settings' && isAdmin">
-					<Badge v-if="childRef?.isDirty" theme="orange">
-						{{ __('Not Saved') }}
-					</Badge>
-					<Button :label="__('Delete batch')" @click="childRef.deleteBatch()">
-						<template #icon>
-							<span class="lucide-trash-2 w-4 h-4" />
-						</template>
-					</Button>
-					<ShortcutTooltip :label="__('Save')" combo="Mod+S">
-						<Button variant="solid" @click="childRef.submitBatch()">
-							{{ __('Save') }}
-						</Button>
-					</ShortcutTooltip>
-				</template>
-				<Dropdown
-					v-else-if="isAdmin && batchMenu.length"
-					:options="batchMenu"
-					placement="left"
-					side="left"
-				>
-					<template v-slot="{ open }">
-						<Button
-							variant="ghost"
-							:label="__('Batch options')"
-							:aria-expanded="open"
-						>
-							<template #icon>
-								<span class="lucide-ellipsis-vertical w-4 h-4" />
-							</template>
-						</Button>
-					</template>
-				</Dropdown>
-				<!-- OSLMS-CUSTOM: Import students button on the Dashboard tab (goToImport via childRef) -->
-				<Button
-					v-if="tabIndex === 1 && isAdmin"
-					variant="outline"
-					@click="childRef?.goToImport?.()"
-				>
-					<template #prefix>
-						<span class="lucide-import size-4" />
-					</template>
-					{{ __('Import') }}
-				</Button>
-				<Button
-					v-if="tabIndex === 1 && isAdmin"
-					variant="solid"
-					@click="childRef?.openEnrollModal?.()"
-				>
-					<template #prefix>
-						<span class="lucide-plus size-4" />
-					</template>
-					{{ __('Enroll') }}
-				</Button>
-				<!-- OSLMS-CUSTOM: announcement composer lives in the Announcements tab (childRef) -->
-				<Tooltip
-					v-if="currentTabKey === 'Announcements' && isAdmin && !readOnlyMode"
-					:text="
-						batch.data?.students?.length
-							? ''
-							: __('Add students to the batch to make an announcement')
-					"
-				>
+				{{ batch.data?.published ? __('Unpublish') : __('Publish') }}
+			</Button>
+			<Dropdown
+				v-if="isAdmin && batchMenu(tab).length"
+				:options="batchMenu(tab)"
+				placement="left"
+				side="left"
+			>
+				<template v-slot="{ open }">
 					<Button
-						variant="solid"
-						:disabled="!batch.data?.students?.length"
-						@click="childRef?.openAnnouncementModal?.()"
+						variant="ghost"
+						:label="__('Batch options')"
+						:aria-expanded="open"
 					>
-						<template #prefix>
-							<span class="lucide-send size-4" />
+						<template #icon>
+							<span class="lucide-ellipsis-vertical w-4 h-4" />
 						</template>
-						{{ __('Make Announcement') }}
 					</Button>
-				</Tooltip>
-				<!-- OSLMS-CUSTOM: upstream's "publish only on Settings" rule, checked on the tab key (labels are translated) -->
-				<Button
-					v-if="isAdmin && currentTabKey === 'Settings'"
-					variant="solid"
-					:theme="batch.data?.published ? 'red' : 'gray'"
-					:loading="publishToggle.loading"
-					@click="togglePublishBatch"
-				>
-					<!-- OSLMS-CUSTOM: short publish label on phones -->
-					<span class="sm:hidden">
-						{{ batch.data?.published ? __('Unpubl.') : __('Publish') }}
-					</span>
-					<span class="max-sm:hidden">
-						{{ batch.data?.published ? __('Unpublish') : __('Publish') }}
-					</span>
-				</Button>
-			</div>
-		</header>
-		<div>
-			<!-- OSLMS-CUSTOM: a Valutatore of this batch gets the tabs, not the public overview -->
-			<BatchOverview
-				v-if="!isAdmin && !isStudent && !isBatchValutatore"
-				:batch="batch"
+				</template>
+			</Dropdown>
+			<!-- OSLMS-CUSTOM: Import students button on the Dashboard tab (goToImport on the tab instance) -->
+			<HeaderButton
+				v-if="tab?.key === 'dashboard' && isAdmin"
+				:label="__('Import')"
+				icon="lucide-import"
+				@click="instance?.goToImport?.()"
 			/>
-			<div v-else>
-				<Tabs :tabs="tabs" v-model="tabIndex">
-					<template #tab-item="{ tab }">
-						<button
-							class="flex items-center gap-1.5 text-base text-ink-gray-5 duration-300 ease-in-out hover:text-ink-gray-9 data-[state=active]:text-ink-gray-9 py-2.5 cursor-pointer"
-						>
-							<component v-if="tab.icon" :is="tab.icon" class="size-4" />
-							{{ tab.label }}
-							<!-- OSLMS-CUSTOM: unread notification badge per batch tab -->
-							<Badge v-if="tabBadgeCount(tab.key)" theme="red" size="sm">
-								{{ tabBadgeCount(tab.key) }}
-							</Badge>
-						</button>
-					</template>
-					<template #tab-panel="{ tab }">
-						<div
-							v-if="tab.key == 'Discussions'"
-							class="w-[90%] lg:w-[75%] mx-auto mt-5"
-						>
-							<Discussions
-								doctype="LMS Batch"
-								:docname="batch.data.name"
-								:title="__('Discussions')"
-								:key="batch.data.name"
-								:singleThread="true"
-								:scrollToBottom="false"
-							/>
-						</div>
+			<HeaderButton
+				v-if="tab?.key === 'dashboard' && isAdmin"
+				:label="__('Enroll')"
+				icon="lucide-plus"
+				variant="solid"
+				@click="openStudentForm"
+			/>
+			<template v-if="tab?.key === 'announcements' && isAdmin && !readOnlyMode">
+				<Tooltip
+					v-if="!batch.data?.students?.length"
+					:text="__('Add students to the batch to make an announcement')"
+				>
+					<HeaderButton
+						:label="__('Make Announcement')"
+						icon="lucide-send"
+						disabled
+					/>
+				</Tooltip>
+				<HeaderButton
+					v-else
+					:label="__('Make Announcement')"
+					icon="lucide-send"
+					@click="openAnnouncementModal"
+				/>
+			</template>
+			<ShortcutTooltip
+				v-if="tab?.key === 'settings' && isAdmin"
+				:label="__('Save')"
+				combo="Mod+S"
+			>
+				<HeaderButton
+					:label="__('Save')"
+					variant="solid"
+					@click="instance?.submitBatch()"
+				/>
+			</ShortcutTooltip>
+		</template>
 
-						<component
-							v-else
-							:is="tab.component"
-							:batch="batch"
-							ref="childRef"
-						/>
-					</template>
-				</Tabs>
+		<template #solo>
+			<BatchOverview v-if="batch.data" :batch="batch" />
+			<SkeletonLoader v-else variant="course-page" />
+		</template>
+
+		<template #tab-body-discussions>
+			<div class="w-[90%] lg:w-[75%] mx-auto mt-5">
+				<Discussions
+					doctype="LMS Batch"
+					:docname="batch.data.name"
+					:title="__('Discussions')"
+					:key="batch.data.name"
+					:singleThread="true"
+					:scrollToBottom="false"
+				/>
 			</div>
-		</div>
-	</div>
-	<BulkCertificates
-		v-if="batch.data"
-		v-model="openCertificateDialog"
-		:batch="batch.data"
-	/>
+		</template>
+	</TabbedDetailPage>
+
+	<router-view />
 </template>
 <script setup>
-import {
-	ClipboardPen,
-	Laptop,
-	List,
-	Mail,
-	MessageCircle,
-	Settings2,
-	TrendingUp,
-} from 'lucide-vue-next'
 import {
 	computed,
 	inject,
 	markRaw,
 	onMounted,
 	onUnmounted,
-	ref,
+	provide,
+	useTemplateRef,
 	watch,
 } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
 	Badge,
-	Breadcrumbs,
 	Button,
 	createResource,
 	Dropdown,
-	Tabs,
 	Tooltip,
 	toast,
 	usePageMeta,
 } from 'frappe-ui'
 import { sessionStore } from '@/stores/session'
 import { useSettings } from '@/stores/settings'
+import { useScreenSize } from '@/utils/composables'
 import AdminBatchDashboard from '@/pages/Batches/components/AdminBatchDashboard.vue'
 import StudentBatchDashboard from '@/pages/Batches/components/BatchDashboard.vue'
 import BatchOverview from '@/pages/Batches/BatchOverview.vue'
 import LiveClass from '@/pages/Batches/components/LiveClass.vue'
 import Announcements from '@/pages/Batches/components/Announcements.vue'
 import BatchForm from '@/pages/Batches/BatchForm.vue'
-import BulkCertificates from '@/pages/Batches/components/BulkCertificates.vue'
 import Discussions from '@/components/Discussions.vue'
+import HeaderButton from '@/components/HeaderButton.vue'
 import ShortcutTooltip from '@/components/ShortcutTooltip.vue'
+import SkeletonLoader from '@/components/SkeletonLoader.vue'
+import TabbedDetailPage from '@/components/Layouts/TabbedDetailPage.vue'
+import { openBatchForm } from '@/composables/useBatchForms'
 
 const router = useRouter()
+// Read by every form opener below. TabbedDetailPage still keeps the active tab
+// in route.hash (:143, :158), so a form route opened without it re-renders the
+// page on its first tab.
 const route = useRoute()
 const { brand } = sessionStore()
 const settingsStore = useSettings()
+const { isMobile } = useScreenSize()
 const user = inject('$user')
 const socket = inject('$socket')
-const childRef = ref(null)
-const tabIndex = ref(0)
-const tabs = ref([])
-const openCertificateDialog = ref(false)
+const page = useTemplateRef('page')
+const readOnlyMode = window.read_only_mode
 
 // OSLMS-CUSTOM: batch tab -> notification section for the unread badges
 const TAB_KEY_TO_SECTION = {
-	Classes: 'classes',
-	Announcements: 'announcements',
-	Discussions: 'discussions',
+	classes: 'classes',
+	announcements: 'announcements',
+	discussions: 'discussions',
 }
 
 const props = defineProps({
@@ -228,17 +168,34 @@ const props = defineProps({
 	},
 })
 
-const updateTabIndex = () => {
-	const hash = route.hash
-	if (hash) {
-		tabs.value.forEach((tab, index) => {
-			// OSLMS-CUSTOM: URL hash matches the untranslated tab key
-			if (tab.key?.toLowerCase() === hash.replace('#', '')) {
-				tabIndex.value = index
-			}
-		})
-	}
-}
+const batch = createResource({
+	url: 'lms.lms.utils.get_batch_details',
+	makeParams: () => ({
+		batch: props.batchName,
+	}),
+	auto: true,
+	onSuccess: (data) => {
+		if (!data) {
+			router.push({ name: 'Batches' })
+		}
+	},
+})
+
+// The router reuses this component when you go straight from one batch to
+// another (the command palette does exactly that), so setup does not run a
+// second time. Without this the page would keep showing the batch you
+// arrived on. The `cache` key is gone for the same reason: it was read once at
+// setup, so a reload would have written the new batch into the old one's
+// entry.
+watch(
+	() => props.batchName,
+	() => batch.reload()
+)
+
+// The forms in the <router-view> below change what this endpoint reports —
+// enrolling a student moves Seats Left on the overlay. Having no cache key is
+// what makes them unable to reach it themselves, so it is handed down.
+provide('reloadBatchDetails', () => batch.reload())
 
 // OSLMS-CUSTOM: opening a tab marks its batch notifications as read
 const markTabNotificationsRead = createResource({
@@ -251,12 +208,15 @@ const tabBadgeCount = (key) => {
 	return batch.data?.tab_notifications?.[section] || 0
 }
 
+// TabbedDetailPage keeps the active tab key in route.hash (it pushes the hash
+// on tab change and follows hash-only navigation, e.g. a batch notification
+// link), so the hash is the active tab. Re-checked when the batch reloads too,
+// since the counters arrive with get_batch_details.
 const handleActiveTab = () => {
-	const tab = tabs.value[tabIndex.value]
-	if (!tab) return
-	const section = TAB_KEY_TO_SECTION[tab.key]
-	if (!section) return
-	if (!tabBadgeCount(tab.key)) return
+	const key = route.hash.replace('#', '')
+	const section = TAB_KEY_TO_SECTION[key]
+	if (!section || !tabBadgeCount(key)) return
+	if (!tabs.value.some((tab) => tab.key === key && (tab.when ?? true))) return
 	markTabNotificationsRead.submit(
 		{ batch: props.batchName, section },
 		{
@@ -269,13 +229,7 @@ const handleActiveTab = () => {
 	)
 }
 
-watch(tabIndex, () => {
-	const tab = tabs.value[tabIndex.value]
-	if (tab.key.toLowerCase() != route.hash.replace('#', '')) {
-		router.push({ ...route, hash: `#${tab.key.toLowerCase()}` })
-	}
-	handleActiveTab()
-})
+watch([() => route.hash, () => batch.data], handleActiveTab)
 
 const onNotificationsPublished = () => {
 	batch.reload()
@@ -290,83 +244,10 @@ onUnmounted(() => {
 	socket.off('publish_lms_notifications', onNotificationsPublished)
 })
 
-const batch = createResource({
-	url: 'lms.lms.utils.get_batch_details',
-	cache: ['batch', props.batchName],
-	params: {
-		batch: props.batchName,
-	},
-	auto: true,
-	onSuccess: (data) => {
-		if (!data) {
-			router.push({ name: 'Batches' })
-		}
-	},
-})
-
-watch(batch, () => {
-	updateTabs()
-	updateTabIndex()
-	handleActiveTab()
-})
-
-// Keep the active tab in sync when only the URL hash changes (e.g. clicking a
-// batch notification while already inside the batch): the component is not
-// remounted and `batch` does not reload, so watch(batch) never fires.
-// OSLMS-CUSTOM: follow hash-only navigation (batch notification links)
-watch(() => route.hash, updateTabIndex)
-
-const updateTabs = () => {
-	addToTabs('Overview', __('Overview'), markRaw(BatchOverview), List)
-	if (!user.data) return
-	// OSLMS-CUSTOM: per-batch Valutatore gets the admin dashboard tab
-	if (isAdmin.value || isBatchValutatore.value) {
-		addToTabs(
-			'Dashboard',
-			__('Dashboard'),
-			markRaw(AdminBatchDashboard),
-			TrendingUp,
-		)
-	} else if (isStudent.value) {
-		addToTabs(
-			'Dashboard',
-			__('Dashboard'),
-			markRaw(StudentBatchDashboard),
-			ClipboardPen,
-		)
-	}
-	// OSLMS-CUSTOM: Classes tab hidden when live classes are disabled site-wide
-	if (settingsStore.settings.data?.enable_live_classes !== 0) {
-		addToTabs('Classes', __('Classes'), markRaw(LiveClass), Laptop)
-	}
-	addToTabs('Announcements', __('Announcements'), markRaw(Announcements), Mail)
-	addToTabs(
-		'Discussions',
-		__('Discussions'),
-		markRaw(Discussions),
-		MessageCircle,
-	)
-	if (isAdmin.value) {
-		addToTabs('Settings', __('Settings'), markRaw(BatchForm), Settings2)
-	}
-}
-
-// OSLMS-CUSTOM: tabs carry an untranslated key plus a translated label
-const addToTabs = (key, label, component, icon) => {
-	if (!tabs.value.some((tab) => tab.key === key)) {
-		tabs.value.push({
-			key,
-			label,
-			component,
-			icon,
-		})
-	}
-}
-
 const isAdmin = computed(() => {
-	return (
+	return Boolean(
 		// OSLMS-CUSTOM: Docente manages batches like a moderator
-		user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente
+		user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente,
 	)
 })
 
@@ -378,13 +259,82 @@ const isBatchValutatore = computed(() => {
 })
 
 const isStudent = computed(() => {
-	return batch.data?.students?.includes(user.data?.name)
+	return Boolean(batch.data?.students?.includes(user.data?.name))
 })
 
-// Compare against the tab KEY (untranslated), not the label: the label is run
-// through __() so it becomes e.g. "Annunci" in Italian and would never match.
-// OSLMS-CUSTOM: header actions switch on the tab key, labels are translated
-const currentTabKey = computed(() => tabs.value[tabIndex.value]?.key)
+const tabs = computed(() => {
+	// OSLMS-CUSTOM: a Valutatore of this batch gets the tabs, not the public overview
+	const enrolled = isAdmin.value || isStudent.value || isBatchValutatore.value
+	// OSLMS-CUSTOM: per-batch Valutatore gets the admin dashboard tab
+	const adminDashboard = isAdmin.value || isBatchValutatore.value
+	return [
+		{
+			key: 'overview',
+			label: __('Overview'),
+			component: markRaw(BatchOverview),
+			icon: 'lucide-list',
+			when: enrolled,
+			flow: true,
+		},
+		{
+			key: 'dashboard',
+			label: __('Dashboard'),
+			component: markRaw(AdminBatchDashboard),
+			icon: 'lucide-trending-up',
+			when: adminDashboard,
+		},
+		{
+			key: 'dashboard',
+			label: __('Dashboard'),
+			component: markRaw(StudentBatchDashboard),
+			icon: 'lucide-clipboard-pen',
+			when: !adminDashboard && isStudent.value,
+		},
+		{
+			key: 'classes',
+			label: __('Classes'),
+			component: markRaw(LiveClass),
+			icon: 'lucide-laptop',
+			// OSLMS-CUSTOM: Classes tab hidden when live classes are disabled site-wide
+			when:
+				enrolled && settingsStore.settings.data?.enable_live_classes !== 0,
+			// OSLMS-CUSTOM: unread notification badge (rendered by TabbedDetailPage)
+			badge: tabBadgeCount('classes'),
+		},
+		{
+			key: 'announcements',
+			label: __('Announcements'),
+			component: markRaw(Announcements),
+			icon: 'lucide-mail',
+			when: enrolled,
+			badge: tabBadgeCount('announcements'),
+		},
+		{
+			key: 'discussions',
+			label: __('Discussions'),
+			component: markRaw(Discussions),
+			icon: 'lucide-message-circle',
+			when: enrolled,
+			badge: tabBadgeCount('discussions'),
+		},
+		{
+			key: 'settings',
+			label: __('Settings'),
+			component: markRaw(BatchForm),
+			icon: 'lucide-settings-2',
+			when: isAdmin.value,
+			flow: true,
+		},
+	]
+})
+
+const openAnnouncementModal = () => {
+	openBatchForm(router, 'NewAnnouncement', props.batchName, route.hash)
+}
+
+const openStudentForm = () => {
+	openBatchForm(router, 'NewBatchStudent', props.batchName, route.hash)
+}
 
 const publishToggle = createResource({
 	url: 'frappe.client.set_value',
@@ -411,29 +361,44 @@ const togglePublishBatch = () => {
 	publishToggle.submit()
 }
 
-// Announcements moved to a dedicated, tab-scoped header button; the "..." menu
-// only carries batch-wide admin actions now (and hides itself when empty).
-const batchMenu = computed(() => {
-	if (!batch.data?.certification) {
-		return []
-	}
-	return [
-		{
+const batchMenu = (tab) => {
+	const options = []
+	if (batch.data?.certification) {
+		options.push({
 			label: __('Generate Certificates'),
-			onClick() {
-				openCertificateDialog.value = true
+			icon: 'lucide-award',
+			onClick: () => {
+				openBatchForm(router, 'BulkCertificates', props.batchName, route.hash)
 			},
-			condition: () => batch.data?.certification,
-		},
-	]
-})
+		})
+	}
+	if (tab?.key !== 'settings') return options
+	if (isMobile.value) {
+		options.push({
+			label: batch.data?.published
+				? __('Unpublish batch')
+				: __('Publish batch'),
+			icon: batch.data?.published ? 'lucide-globe-lock' : 'lucide-globe',
+			onClick: togglePublishBatch,
+		})
+	}
+	options.push({
+		label: __('Delete batch'),
+		icon: 'lucide-trash-2',
+		theme: 'red',
+		onClick: () => page.value?.instanceFor('settings')?.deleteBatch(),
+	})
+	return options
+}
 
 const breadcrumbs = computed(() => {
-	let crumbs = [{ label: __('Batches'), route: { name: 'Batches' } }]
-	crumbs.push({
-		label: batch?.data?.title,
-		route: { name: 'BatchDetail', params: { batchName: batch?.data?.name } },
-	})
+	const crumbs = [{ label: __('Batches'), route: { name: 'Batches' } }]
+	if (batch.data) {
+		crumbs.push({
+			label: batch.data.title,
+			route: { name: 'BatchDetail', params: { batchName: batch.data.name } },
+		})
+	}
 	return crumbs
 })
 

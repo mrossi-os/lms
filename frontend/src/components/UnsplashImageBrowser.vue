@@ -21,7 +21,10 @@
 								:debounce="300"
 							/>
 						</div>
-						<FileUploader @success="(file) => $emit('select', file.file_url)">
+						<FileUploader
+							:uploadArgs="{ private: false }"
+							@success="(file) => $emit('select', file.file_url)"
+						>
 							<template
 								v-slot="{ file, progress, uploading, openFileSelector }"
 							>
@@ -44,8 +47,10 @@
 						>
 							<img
 								:src="
-									image.urls.raw +
-									'&w=200&h=50&fit=crop&crop=entropy,faces,focalpoint'
+									safeUrl(
+										image.urls.raw +
+											'&w=200&h=50&fit=crop&crop=entropy,faces,focalpoint'
+									)
 								"
 								:alt="__('Unsplash photo')"
 							/>
@@ -53,7 +58,7 @@
 					</div>
 					<div class="mt-2 text-center text-sm text-ink-gray-4">
 						{{ __('Image search powered by') }}
-						<a class="underline" target="_blank" href="https://unsplash.com">
+						<a class="underline" v-external href="https://unsplash.com">
 							{{ __('Unsplash') }}
 						</a>
 					</div>
@@ -67,6 +72,7 @@
 // import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
 // OSLMS-CUSTOM: TextInput was used in the template but never imported
 import { Popover, FileUploader, Button, TextInput } from 'frappe-ui'
+import { safeUrl } from '@/utils/safeUrl'
 
 export default {
 	name: 'UnsplashImageBrowser',

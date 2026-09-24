@@ -1,10 +1,12 @@
 import { Pencil } from 'lucide-vue-next'
+import { registerDirectives } from '@/directives'
 import { createApp, h } from 'vue'
 import AssessmentPlugin from '@/components/AssessmentPlugin.vue'
 import translationPlugin from '../translation'
 import { call } from 'frappe-ui'
 import router from '@/router'
 import { getLmsRoute } from '@/utils/basePath'
+import { blockNotice, embedFrame } from '@/utils/blockDom'
 
 export class Assignment {
 	constructor({ data, api, readOnly, config }) {
@@ -18,6 +20,7 @@ export class Assignment {
 			render: () =>
 				h(Pencil, { size: 18, strokeWidth: 1.5, color: 'black' }),
 		})
+		registerDirectives(app)
 
 		const div = document.createElement('div')
 		app.mount(div)
@@ -48,9 +51,9 @@ export class Assignment {
 		// which otherwise renders "Assignment: undefined". Show a translated
 		// placeholder instead.
 		if (!assignment) {
-			this.wrapper.innerHTML = `<div class='border rounded-md p-4 text-center bg-surface-sidebar mb-4'>
-				<span class="font-medium">${__('No assignment selected')}</span>
-			</div>`
+			this.wrapper.replaceChildren(
+				blockNotice(`${__('No assignment selected')}`)
+			)
 			return
 		}
 		if (this.readOnly) {
@@ -64,7 +67,10 @@ export class Assignment {
 					}?fromLesson=1${studentView}`,
 				)
 				// OSLMS-CUSTOM: os-frame class gives the in-lesson submission iframe full viewport height
-				this.wrapper.innerHTML = `<iframe src="${submissionPath}" class="w-full h-[500px] os-frame"></iframe>`
+				const frame = embedFrame(submissionPath, {
+					class: 'w-full h-[500px] os-frame',
+				})
+				this.wrapper.replaceChildren(...(frame ? [frame] : []))
 			}
 			call('lms.lms.api.get_own_assignment_submission', {
 				assignment: assignment,
@@ -81,11 +87,9 @@ export class Assignment {
 			fieldname: ['title'],
 		}).then((data) => {
 			// OSLMS-CUSTOM: translated Assignment label in the editor preview
-			this.wrapper.innerHTML = `<div class='border rounded-md p-4 text-center bg-surface-sidebar mb-4'>
-				<span class="font-medium">
-					${__('Assignment')}: ${data.title}
-				</span>
-			</div>`
+			this.wrapper.replaceChildren(
+				blockNotice(`${__('Assignment')}: ${data.title}`)
+			)
 			return
 		})
 	}
@@ -101,6 +105,7 @@ export class Assignment {
 				this.renderAssignment(assignment)
 			},
 		})
+		registerDirectives(app)
 		app.use(translationPlugin)
 		app.use(router)
 		app.mount(this.wrapper)

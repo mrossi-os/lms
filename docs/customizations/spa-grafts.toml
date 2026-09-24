@@ -644,13 +644,15 @@ id = "course-outline-editor-hash"
 title = "Modifica lezione dal programma del corso apre la scheda giusta"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 Il pulsante di modifica di una lezione nel programma del corso porta al corso con l'hash
 '#editor', che è quello della scheda Editor; l'upstream usava '#course editor', che non
 corrisponde a nessuna scheda, e l'editor della lezione si apriva sulla scheda sbagliata.
 Se l'upstream corregge da sé l'hash in modo equivalente, accettare la sua versione e marcare
 la voce come accepted-drift.
-Merge di v2.61.0 (2026-09-23): la stessa regola viveva non censita in ChapterRow.vue (link alla lezione dall'indice dell'editor): marcata e aggiunta come sito; la query upstream non porta più lessonMode."""
+Merge di v2.61.0 (2026-09-23): la stessa regola viveva non censita in ChapterRow.vue (link alla lezione dall'indice dell'editor): marcata e aggiunta come sito; la query upstream non porta più lessonMode.
+accepted-drift (2026-09-24, merge di v2.62.0, decisione del committente): CourseOutline e ChapterRow upstream usano gia hash '#editor' (upstream 1f4d68faa), come previsto da questa voce."""
 
   [[entries.sites]]
   file = "frontend/src/components/CourseOutline.vue"
@@ -1038,12 +1040,18 @@ di merge 2026-06) ed è uno dei due punti di ricerca allineati da searchRoutes.t
 della voce è quello upstream precedente alla rimozione, conservato nei merge. Motivazione
 dedotta: senza questa voce la pagina /search non è raggiungibile dalla palette. Il titolo del
 gruppo resta il letterale 'Jump to' perché CommandPaletteGroup lo traduce già in fase di
-rendering."""
+rendering.
+Merge di v2.62.0 (2026-09-24, decisione del committente): la riga «Search for» non guida piu il gruppo Jump to ma e l'ULTIMA riga dell'elenco, in un gruppo proprio dopo tutti i risultati (i test upstream presuppongono che la prima riga sia una sezione o un risultato); durante l'aggiornamento dei risultati e marcata stale come le altre righe e non si apre con Invio. Restano incompatibili per natura con la riga 3 test upstream che si aspettano un elenco vuoto o un numero preciso di righe (riconciliazione finale dei test)."""
 
   [[entries.sites]]
   file = "frontend/src/components/CommandPalette/CommandPalette.vue"
   anchor = "name: 'Search',"
-  symbol = "appendSearchPage"
+  symbol = "searchPageItem"
+
+  [[entries.sites]]
+  file = "frontend/src/components/CommandPalette/CommandPalette.vue"
+  anchor = "? [{ title: 'Search', items: [searchPageItem.value], isStale: stale }]"
+  symbol = "groups"
 
 [[entries]]
 id = "command-palette-jobs-removed"
@@ -1070,19 +1078,12 @@ Il segnaposto del campo di ricerca passa per __() e i titoli Corsi/Classi dell'e
 sono getter invece di stringhe: l'elenco è costruito una volta al setup, che al ricaricamento
 completo della pagina avviene prima che le traduzioni asincrone siano caricate, e un __()
 valutato lì resterebbe in inglese (memoria translation_baked_ref_freezes_english). Il getter
-ripete __() a ogni rendering."""
+ripete __() a ogni rendering.
+Merge di v2.62.0 (2026-09-24): la palette upstream (categories.ts) traduce le etichette al rendering (title: __(entry.label)), quindi il problema dei __() valutati prima del caricamento delle traduzioni non si pone: siti dei getter tolti. Resta il segnaposto di ricerca."""
 
   [[entries.sites]]
   file = "frontend/src/components/CommandPalette/CommandPalette.vue"
   anchor = ":placeholder=\"__('Search')\""
-
-  [[entries.sites]]
-  file = "frontend/src/components/CommandPalette/CommandPalette.vue"
-  anchor = "return __('Courses')"
-
-  [[entries.sites]]
-  file = "frontend/src/components/CommandPalette/CommandPalette.vue"
-  anchor = "return __('Batches')"
 
 [[entries]]
 id = "command-palette-mark-theme-tokens"
@@ -1129,12 +1130,14 @@ id = "empty-state-mobile-full-width"
 title = "Stato vuoto a tutta larghezza su telefono"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 Le larghezze fisse dell'upstream (2/12, 4/12, 8/12 dello schermo) su telefono comprimono
 icona e testo dello stato vuoto in una colonna strettissima. Sotto il breakpoint sm il blocco
 occupa tutta la larghezza; da sm in su valgono le frazioni originali. ATTENZIONE al merge di
 v2.59.0: l'upstream cambia le classi del contenitore radice (min-h-64, grow) e del titolo
-(text-lg-medium), ma non widthClass: accettare le sue e mantenere questi valori."""
+(text-lg-medium), ma non widthClass: accettare le sue e mantenere questi valori.
+accepted-drift (2026-09-24, merge di v2.62.0, decisione del committente): EmptyStateLayout upstream parte da w-full e applica le frazioni solo da sm (sm:w-2/12, sm:w-8/12, sm:w-4/12): e la nostra regola. Redesign mobile."""
 
   [[entries.sites]]
   file = "frontend/src/components/Layouts/EmptyStateLayout.vue"
@@ -1527,11 +1530,12 @@ ListRow @click = openProfile e la cella azioni @click.stop; bisogna decidere qua
 cosa sulla nuova struttura.
 Risolto al merge di v2.59.0 (2026-09-23, decisione del committente): nella lista List/ListRow
 upstream il clic sulla riga apre la modifica del membro, il clic su avatar e nome apre il profilo
-(@click.stop sulle due celle); la cella ruoli/menu resta @click.stop come nell upstream."""
+(@click.stop sulle due celle); la cella ruoli/menu resta @click.stop come nell upstream.
+Merge di v2.62.0 (2026-09-24): l'elenco membri e ora una list view con evento row-click."""
 
   [[entries.sites]]
   file = "frontend/src/components/Settings/Members.vue"
-  anchor = '@click="openEditMember(member)"'
+  anchor = '@row-click="(member) => openEditMember(member as Member)"'
 
 [[entries]]
 id = "settings-members-valutatore-badge"
@@ -1543,7 +1547,8 @@ L'elenco dei membri mostra un badge anche per il ruolo personalizzato Valutatore
 una singola classe), che l'override get_members ora restituisce (commit 1af13d630); un ruolo
 sconosciuto mostra il proprio nome invece di un badge vuoto, e le etichette dei ruoli sono
 tradotte. ATTENZIONE al merge di v2.59.0: l'upstream riscrive il markup del badge
-(`<span class="text-sm leading-5">{{ getRole(role) }}</span>`): va rimesso __()."""
+(`<span class="text-sm leading-5">{{ getRole(role) }}</span>`): va rimesso __().
+Merge di v2.62.0 (2026-09-24): i badge dei ruoli sono ora dati della list view."""
 
   [[entries.sites]]
   file = "frontend/src/components/Settings/Members.vue"
@@ -1557,7 +1562,7 @@ tradotte. ATTENZIONE al merge di v2.59.0: l'upstream riscrive il markup del badg
 
   [[entries.sites]]
   file = "frontend/src/components/Settings/Members.vue"
-  anchor = "{{ __(getRole(role)) }}"
+  anchor = "(member.roles || []).map((role) => ({ label: __(getRole(role)) }))"
 
 # ── File con soli ritocchi ─────────────────────────────────────────────────
 
@@ -1596,10 +1601,12 @@ id = "settings-email-template-modal-formatting"
 title = "Solo formattazione nella finestra dei modelli email"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 Il file differisce dall'upstream solo per virgole finali aggiunte da Prettier; nessun
 comportamento cambiato, per questo non porta marcatori. Al merge (v2.59.0 passa a
-RichTextEditor e toglie :rows) prendere la versione upstream senza esitazioni."""
+RichTextEditor e toglie :rows) prendere la versione upstream senza esitazioni.
+accepted-drift (2026-09-24, merge di v2.62.0, decisione del committente): EmailTemplateModal.vue eliminata dall'upstream (sostituita dal modulo instradato EmailTemplateForm); la voce riguardava solo formattazione."""
 
   [[entries.sites]]
   file = "frontend/src/components/Modals/EmailTemplateModal.vue"
@@ -1775,19 +1782,20 @@ emettere l'open badge del certificato. Si valida il formato (16 caratteri, schem
 salva maiuscolo; vuoto è ammesso. È un dato personale e non passa da get_profile_details: viene
 letto a parte con frappe.client.get_value sul proprio record e confrontato a parte per lo stato
 "modificato". ATTENZIONE al merge di v2.59.0: l'upstream cambia lo slot dell'intestazione
-(#body-header → #title) e la colonna della bio (TextEditor → RichTextEditor)."""
+(#body-header → #title) e la colonna della bio (TextEditor → RichTextEditor).
+Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/ProfileEditForm.vue (EditProfile.vue eliminata); regola riapplicata li, ancore invariate."""
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/EditProfile.vue"
+  file = "frontend/src/pages/Forms/ProfileEditForm.vue"
   anchor = 'v-model="profile.codice_fiscale"'
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/EditProfile.vue"
+  file = "frontend/src/pages/Forms/ProfileEditForm.vue"
   anchor = "const CODICE_FISCALE_RE = "
   symbol = "saveProfile"
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/EditProfile.vue"
+  file = "frontend/src/pages/Forms/ProfileEditForm.vue"
   anchor = "fieldname: 'codice_fiscale',"
 
 [[entries]]
@@ -1795,11 +1803,13 @@ id = "profile-edit-image-optional"
 title = "Immagine del profilo facoltativa"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 Il profilo si salva anche senza immagine: l'upstream la rendeva obbligatoria, e uno studente che
 voleva solo correggere nome o codice fiscale era bloccato (commit 02839f37a). La modifica
 consiste nell'aver tolto `:required="true"` dall'Uploader e la voce 'Profile Image' dalla
-validazione dei campi obbligatori; l'ancora è il commento che lo segnala."""
+validazione dei campi obbligatori; l'ancora è il commento che lo segnala.
+accepted-drift (2026-09-24, merge di v2.62.0, decisione del committente): ProfileEditForm upstream (sostituisce EditProfile) non rende piu obbligatoria l'immagine: Uploader senza required e nessuna validazione sull'immagine."""
 
   [[entries.sites]]
   file = "frontend/src/components/Modals/EditProfile.vue"
@@ -1817,14 +1827,15 @@ LinkedIn, Twitter e l'intera colonna destra (disponibile per, lingua, bio) (comm
 (nome, cognome, immagine, codice fiscale). Nota: con la colonna destra commentata non si può più
 cambiare la lingua dal profilo. ATTENZIONE al merge di v2.59.0: l'upstream modifica righe
 dentro i blocchi commentati (RichTextEditor per la bio), il che darà conflitti in zone
-commentate."""
+commentate.
+Merge di v2.62.0 (2026-09-24): EditProfile.vue eliminata, il modulo vive in pages/Forms/ProfileEditForm.vue: colonna unica e campi nascosti riapplicati; ancora del contenitore aggiornata alla nuova griglia."""
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/EditProfile.vue"
-  anchor = '<div class="grid grid-cols-1 gap-10">'
+  file = "frontend/src/pages/Forms/ProfileEditForm.vue"
+  anchor = 'class="grid grid-cols-1 gap-6 text-base md:gap-10"'
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/EditProfile.vue"
+  file = "frontend/src/pages/Forms/ProfileEditForm.vue"
   anchor = "<!-- <FormControl v-model=\"profile.headline\" :label=\"__('Headline')\" />"
 
 # ── permissions.py ─────────────────────────────────────────────────────────
@@ -1934,11 +1945,8 @@ con il merge upstream 1f5978236 (04/06/2026) e ripristinato in d88fc97f4: senza 
 innesto i due interruttori restano configurabili ma non hanno alcun effetto. Le condizioni
 sono innestate sulle catene v-if esistenti (non un <template> che avvolge il corpo) per
 tenere piccola la superficie di conflitto. ATTENZIONE: v2.63.0 riscrive profondamente
-Lesson.vue; ricollocare schermate, guardie e pulsanti disabilitati nella nuova struttura."""
-
-  [[entries.sites]]
-  file = "frontend/src/pages/Lesson.vue"
-  anchor = "v-if=\"lessonBlocked\""
+Lesson.vue; ricollocare schermate, guardie e pulsanti disabilitati nella nuova struttura.
+Merge di v2.62.0 (2026-09-24): decisione del committente (F5): l'ordine delle lezioni lo impone ora l'upstream lato server (enforce_lesson_completion, lesson.data.locked, LockedLessonNotice) al posto del nostro enforce_lesson_order; schermata «Lezione bloccata» e guardia su markProgress tolte. Resta nostro solo il blocco del quiz a completamento (enforce_quiz_on_completion): schermate «Quiz bloccato» e applyAccessFromLesson. Da fare dopo il merge: patch dati enforce_lesson_order -> enforce_lesson_completion e override os_lms di get_lesson/get_course_outline che lascino passare locked/redirect_to."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Lesson.vue"
@@ -1947,11 +1955,6 @@ Lesson.vue; ricollocare schermate, guardie e pulsanti disabilitati nella nuova s
   [[entries.sites]]
   file = "frontend/src/pages/Lesson.vue"
   anchor = "v-if=\"quizBlocked && lesson.data?.quiz_id\""
-
-  [[entries.sites]]
-  file = "frontend/src/pages/Lesson.vue"
-  anchor = "if (lessonBlocked.value) return"
-  symbol = "markProgress"
 
   [[entries.sites]]
   file = "frontend/src/pages/Lesson.vue"
@@ -2275,11 +2278,8 @@ così non è schiacciato in una colonna stretta (commit a1437f5fa). Il titolo ha
 !bg-transparent (probabilmente per non ereditare lo sfondo dei campi dal tema Elite) e
 le note dell'istruttore un mb-2. ATTENZIONE al merge di v2.59.0: l'upstream cambia la
 stessa riga di classi del titolo (text-3xl -> text-2xl): prendere la sua e riaggiungere
-!bg-transparent."""
-
-  [[entries.sites]]
-  file = "frontend/src/pages/LessonForm.vue"
-  anchor = "class=\"space-y-6 px-3 sm:mx-10 sm:px-20\""
+!bg-transparent.
+Merge di v2.62.0 (2026-09-24): l'upstream toglie da se margine e padding su telefono (mx-0 px-4 sm:mx-10 sm:px-20): sito tolto (redesign mobile). Resta !bg-transparent sul titolo."""
 
   [[entries.sites]]
   file = "frontend/src/pages/LessonForm.vue"
@@ -2910,11 +2910,12 @@ Chi gestisce il corso può ordinare gli studenti per nome, avanzamento e data di
 cliccando le intestazioni (freccia di direzione). L'ordinamento è lato server (orderBy della
 list resource) così resta corretto anche sulle pagine caricate con "Carica altro"; il
 default esplicito 'creation desc' coincide con lo stato iniziale di sortColumn/sortOrder.
-Stessa funzione nella dashboard del batch (AdminBatchDashboard)."""
+Stessa funzione nella dashboard del batch (AdminBatchDashboard).
+Merge di v2.62.0 (2026-09-24): la tabella studenti e ora ResponsiveListView; ordinamento tenuto con un selettore accanto alla ricerca (toggleSort(sortColumn))."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Courses/CourseDashboard.vue"
-  anchor = "@click=\"toggleSort(item.key)\""
+  anchor = "@click=\"toggleSort(sortColumn)\""
 
   [[entries.sites]]
   file = "frontend/src/pages/Courses/CourseDashboard.vue"
@@ -2955,15 +2956,12 @@ Su telefono le griglie a più colonne della dashboard rendevano il contenuto pi�
 schermo e l'intera pagina scorreva di lato. I numeri vanno in una colonna sotto sm, elenco
 studenti e grafici laterali in una colonna sotto lg (con min-w-0 perché il contenuto non
 allarghi la griglia), legenda e torta impilate sotto sm, l'elenco studenti scorre in
-orizzontale dentro il suo riquadro."""
+orizzontale dentro il suo riquadro.
+Merge di v2.62.0 (2026-09-24): redesign mobile upstream (decisione del committente: ritocchi estetici superati): sito della legenda tolto, l'upstream impila gia sotto sm."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Courses/CourseDashboard.vue"
   anchor = "grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-5 items-start"
-
-  [[entries.sites]]
-  file = "frontend/src/pages/Courses/CourseDashboard.vue"
-  anchor = "grid grid-cols-1 sm:grid-cols-[2fr_1fr] gap-4 sm:gap-0"
 
 [[entries]]
 id = "course-dashboard-search-by-name"
@@ -3042,14 +3040,15 @@ correlati" la classe os-multilink: sono gli agganci con cui il tema elite
 ATTENZIONE al merge di v2.59.0: l'upstream sostituisce il TextEditor di frappe-ui con
 RichTextEditor proprio dentro il nostro contenitore: tenere la classe sul contenitore e
 verificare che il selettore .ProseMirror-wrapper div div:nth-child(1) colpisca ancora
-l'area di scrittura."""
+l'area di scrittura.
+Merge di v2.62.0 (2026-09-24): file spostato dall'upstream in components/Courses/."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Courses/CourseOverviewSection.vue"
+  file = "frontend/src/components/Courses/CourseOverviewSection.vue"
   anchor = "class=\"ProseMirror-wrapper rounded-t-lg"
 
   [[entries.sites]]
-  file = "frontend/src/pages/Courses/CourseOverviewSection.vue"
+  file = "frontend/src/components/Courses/CourseOverviewSection.vue"
   anchor = "class=\"os-multilink\""
 
 [[entries]]
@@ -3057,11 +3056,13 @@ id = "course-form-mobile-layout"
 title = "Creazione e copertina del corso utilizzabili su mobile"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 Su telefono il campo copertina del corso (anteprima + pulsanti) e i campi del dialogo "Nuovo
 corso" stavano su due colonne e uscivano dallo schermo: sotto sm anteprima e controlli si
 impilano, l'anteprima occupa la larghezza disponibile e i pulsanti vanno a capo; il dialogo
-usa una colonna."""
+usa una colonna.
+accepted-drift (2026-09-24, merge di v2.62.0, decisione del committente): CourseThumbnailField (ora in components/Courses/) impila anteprima e controlli sotto sm e NewCourseForm usa grid-cols-1 md:grid-cols-2: coperto dal redesign mobile upstream."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Courses/CourseThumbnailField.vue"
@@ -3076,9 +3077,11 @@ id = "course-new-modal-title-translated"
 title = "Ritocchi di traduzione nel dialogo Nuovo corso"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 Il titolo del dialogo "New Course" era una stringa fissa in inglese: passa da __() per
-comparire in italiano. Nessuna regola di business."""
+comparire in italiano. Nessuna regola di business.
+accepted-drift (2026-09-24, merge di v2.62.0, decisione del committente): NewCourseForm upstream (pagina instradata che sostituisce NewCourseModal) ha gia :title="__('New Course')"."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Courses/NewCourseModal.vue"
@@ -3170,7 +3173,8 @@ parole e le cerca in ordine con spazi liberi ("%Corso%p%"). Inoltre il ricaricam
 da update:modelValue e non dall'evento input del DOM, che arrivava prima dell'aggiornamento
 del v-model: la ricerca era sempre in ritardo di un carattere e svuotare la casella non
 toglieva il filtro. Stessa correzione negli elenchi di batch, quiz, compiti ed esercizi di
-programmazione (fuori da questo gruppo)."""
+programmazione (fuori da questo gruppo).
+Merge di v2.62.0 (2026-09-24): l'upstream ha cambiato le classi di larghezza del campo di ricerca; ancora spostata sulla riga type/update."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Courses/Courses.vue"
@@ -3179,7 +3183,7 @@ programmazione (fuori da questo gruppo)."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Courses/Courses.vue"
-  anchor = "class=\"w-full sm:min-w-40 lg:w-32 lg:min-w-0 xl:w-40\"\n\t\t\t\t@update:modelValue=\"updateCourses()\""
+  anchor = "type=\"text\"\n\t\t\t\t@update:modelValue=\"updateCourses()\""
 
   [[entries.sites]]
   file = "frontend/src/pages/Programs/Programs.vue"
@@ -3364,14 +3368,15 @@ dell'upstream era legato a program.name, quindi su un programma esistente modifi
 cambiava nulla di persistente. Ora il campo è legato a program.title e, se al salvataggio il
 titolo è diverso dal nome, il documento viene prima rinominato con frappe.client.rename_doc e
 poi salvato col nuovo nome. Nota: validateTitle (upstream) pulisce ancora program.name e non
-program.title."""
+program.title.
+Merge di v2.62.0 (2026-09-24): ProgramForm.vue spostato dall'upstream in pages/Forms/ (pagina instradata), ancore invariate."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  file = "frontend/src/pages/Forms/ProgramForm.vue"
   anchor = "v-model=\"program.title\""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  file = "frontend/src/pages/Forms/ProgramForm.vue"
   anchor = "'/api/method/frappe.client.rename_doc',"
   symbol = "updateProgram"
 
@@ -3387,14 +3392,15 @@ sanitizeRichHTML e non dal sanitizer a lista chiusa, che toglieva span/mark/s e 
 style usati per colore, evidenziazione e barrato. L'elenco dei programmi carica il campo
 description perché il modulo copia i dati del programma da quell'elenco. Il TextEditor è
 quello di frappe-ui: in v2.59.0 l'upstream sostituisce TextEditor con RichTextEditor in altri
-moduli, valutare se allinearsi."""
+moduli, valutare se allinearsi.
+Merge di v2.62.0 (2026-09-24): ProgramForm.vue spostato dall'upstream in pages/Forms/ (pagina instradata), ancore invariate."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  file = "frontend/src/pages/Forms/ProgramForm.vue"
   anchor = ":content=\"program.description\""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  file = "frontend/src/pages/Forms/ProgramForm.vue"
   anchor = "program.value.description = sanitizeRichHTML(program.value.description)"
   symbol = "saveProgram"
 
@@ -3418,14 +3424,15 @@ titolo del corso dalle opzioni in cache. È stato rotto una volta da un refactor
 3255d0a07: dialogo intitolato "Iscrivi membro", campo Link a un ref inesistente, aggiunta
 sempre rifiutata): il dialogo serve solo i corsi, i membri hanno i loro due dialoghi.
 ATTENZIONE al merge di v2.59.0: l'upstream riformatta proprio l'onClick con currentForm che
-noi abbiamo tolto: tenere la nostra versione."""
+noi abbiamo tolto: tenere la nostra versione.
+Merge di v2.62.0 (2026-09-24): ProgramForm.vue spostato dall'upstream in pages/Forms/ (pagina instradata), ancore invariate."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  file = "frontend/src/pages/Forms/ProgramForm.vue"
   anchor = "v-model=\"selectedCourses\""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  file = "frontend/src/pages/Forms/ProgramForm.vue"
   anchor = "const addCourses = (close: () => void) => {"
   symbol = "addCourses"
 
@@ -3439,18 +3446,19 @@ Al posto del singolo campo "Membro del programma" ci sono due azioni: "Aggiungi 
 utenti insieme, esclusi quelli già membri) e "Aggiungi gruppo", che elenca gli iscritti di un
 batch scelto (LMS Batch Enrollment, esclusi i già membri) e permette di selezionarli uno a
 uno o tutti. Serve a iscrivere un'intera classe a un programma senza inserire gli studenti a
-mano. Sparisce il collegamento upstream "crea nuovo utente" (onCreate → openSettings)."""
+mano. Sparisce il collegamento upstream "crea nuovo utente" (onCreate → openSettings).
+Merge di v2.62.0 (2026-09-24): ProgramForm.vue spostato dall'upstream in pages/Forms/ (pagina instradata), ancore invariate."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  file = "frontend/src/pages/Forms/ProgramForm.vue"
   anchor = "@click=\"openMemberForm('batch')\""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  file = "frontend/src/pages/Forms/ProgramForm.vue"
   anchor = "v-model=\"selectedMembers\""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  file = "frontend/src/pages/Forms/ProgramForm.vue"
   anchor = "const addMembersFromBatch = (close: () => void) => {"
   symbol = "addMembersFromBatch"
 
@@ -3467,25 +3475,26 @@ membri in locale (rimozione per chiave di riga, riordino) e salva tutto il docum
 PUT su /api/resource. Il riordino di un programma già salvato scrive l'idx di ogni riga con
 frappe.client.set_value. Dai commit risulta che le list resource lasciavano gli elenchi vuoti
 (commit 02e82b3bc "fix load program details", 3255d0a07); il motivo esatto della scelta del
-PUT al posto di setValue non è scritto."""
+PUT al posto di setValue non è scritto.
+Merge di v2.62.0 (2026-09-24): ProgramForm.vue spostato dall'upstream in pages/Forms/ (pagina instradata), ancore invariate."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  file = "frontend/src/pages/Forms/ProgramForm.vue"
   anchor = "url: 'frappe.client.get',"
   symbol = "programDoc"
 
   [[entries.sites]]
-  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  file = "frontend/src/pages/Forms/ProgramForm.vue"
   anchor = "/api/resource/LMS%20Program/"
   symbol = "updateProgram"
 
   [[entries.sites]]
-  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  file = "frontend/src/pages/Forms/ProgramForm.vue"
   anchor = "selectionsSet.has(item[rowKey])"
   symbol = "remove"
 
   [[entries.sites]]
-  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  file = "frontend/src/pages/Forms/ProgramForm.vue"
   anchor = "fieldname: { idx: course.idx },"
   symbol = "updateOrder"
 
@@ -3498,15 +3507,16 @@ intent = """
 Testi del modulo del programma resi traducibili: il banner di selezione delle righe usa
 l'override os_lms di ListSelectBanner (importato direttamente dal percorso overrides) con il
 testo "N righe selezionate" passato da selectionText, e le etichette delle colonne (Titolo,
-Membro, Nome completo) passano da __(). Nessuna regola di business."""
+Membro, Nome completo) passano da __(). Nessuna regola di business.
+Merge di v2.62.0 (2026-09-24): ProgramForm.vue spostato dall'upstream in pages/Forms/ (pagina instradata), ancore invariate."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  file = "frontend/src/pages/Forms/ProgramForm.vue"
   anchor = "const selectionText = (count: number) =>"
   symbol = "selectionText"
 
   [[entries.sites]]
-  file = "frontend/src/pages/Programs/ProgramForm.vue"
+  file = "frontend/src/pages/Forms/ProgramForm.vue"
   anchor = "import ListSelectBanner from '@/overrides/frappe-ui/src/components/ListView/ListSelectBanner.vue'"
 
 # --- Offerte di lavoro -----------------------------------------------------------
@@ -3519,10 +3529,11 @@ confidence = "high"
 intent = """
 Le tendine Tipo e Modalità di lavoro mostrano il segnaposto tradotto "Seleziona opzione"
 invece di un valore vuoto. Nessuna regola di business. L'ancora è su due righe perché il
-segnaposto compare due volte nel file."""
+segnaposto compare due volte nel file.
+Merge di v2.62.0 (2026-09-24): JobForm.vue spostato in pages/Forms/."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/JobForm.vue"
+  file = "frontend/src/pages/Forms/JobForm.vue"
   anchor = ":placeholder=\"__('Select option')\"\n\t\t\t\t\t\t\t:options=\"jobTypes\""
 
 # ---------------------------------------------------------------------------
@@ -3580,6 +3591,7 @@ id = "quiz-cached-remount"
 title = "Un quiz riaperto dalla cache non perde le domande"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 La risorsa del quiz è in cache per nome e frappe-ui restituisce lo stesso oggetto ai mount
 successivi, tenendo il transform del primo componente: la mappa delle domande in un ref locale
@@ -3588,7 +3600,8 @@ domande finché non si ricaricava la pagina. La mappa viaggia quindi dentro il d
 cache, e al mount di una risorsa già risolta si popolano subito domande, timer e tentativi
 (altrimenti lampeggia lo stato vuoto sopra il pulsante Start). Vale per tutti gli studenti che
 aprono un quiz dentro una lezione. v2.59.0 non tocca questa zona; se v2.63.0 riscrive il
-caricamento del quiz, verificare lo stesso scenario con il test di regressione."""
+caricamento del quiz, verificare lo stesso scenario con il test di regressione.
+accepted-drift (2026-09-24, merge di v2.62.0, decisione del committente): la risorsa del quiz upstream non e piu in cache (chiave di cache tolta), quindi un remount non riceve l'oggetto del mount precedente e la mappa delle domande in un ref locale e di nuovo corretta. Il test di regressione quizCachedRemount resta utile per verificarlo."""
 
   [[entries.sites]]
   file = "frontend/src/components/Quiz.vue"
@@ -3645,7 +3658,8 @@ plurali tradotti (1 volta / {0} volte, punto / punti) e intestazioni della tabel
 tradotte. Nota: la classe del riquadro istruzioni contiene il refuso «text-ink-grey-9» (grey),
 che non esiste; il colore arriva comunque dalle classi sui figli. Il titolo del quiz con
 «font-semibold text-lg» non è nostro (residuo di una vecchia versione upstream): al merge di
-v2.59.0 prendere text-lg-semibold dell'upstream."""
+v2.59.0 prendere text-lg-semibold dell'upstream.
+Merge di v2.62.0 (2026-09-24): la riga delle azioni upstream va a capo da se (flex-wrap): sito dell'impilamento tolto (redesign mobile, decisione del committente). Restano traduzioni, etichetta Submit Quiz e stile del riquadro istruzioni."""
 
   [[entries.sites]]
   file = "frontend/src/components/Quiz.vue"
@@ -3658,10 +3672,6 @@ v2.59.0 prendere text-lg-semibold dell'upstream."""
   [[entries.sites]]
   file = "frontend/src/components/Quiz.vue"
   anchor = "{{ __('Submit Quiz') }}"
-
-  [[entries.sites]]
-  file = "frontend/src/components/Quiz.vue"
-  anchor = "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-8"
 
   [[entries.sites]]
   file = "frontend/src/components/Quiz.vue"
@@ -3680,19 +3690,12 @@ laterale illeggibile. L'elenco delle domande usa la classe os-list-view del tema
 «Check Submissions» sono solid e l'eliminazione ghost, come nel resto delle pagine del tema.
 v2.59.0 tocca solo il titolo «Questions» (non nostro). v2.63.0 SOSTITUISCE tutta quest'area
 («rebuild quiz authoring around a shared question bank»): dopo quel merge riapplicare solo
-l'impilamento su telefono e lo stile dei pulsanti sulla nuova pagina, se servono ancora."""
+l'impilamento su telefono e lo stile dei pulsanti sulla nuova pagina, se servono ancora.
+Merge di v2.62.0 (2026-09-24): QuizForm.vue spostato in pages/Forms/ e ridisegnato dall'upstream con layout mobile proprio: siti dell'impilamento e os-list-view tolti (redesign mobile, decisione del committente). Resta lo stile dei pulsanti (solid Test Quiz / Check Submissions, delete ghost)."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/QuizForm.vue"
-  anchor = "grid min-h-0 flex-1 grid-cols-1 max-lg:overflow-y-auto lg:grid-cols-[7fr,3fr]"
-
-  [[entries.sites]]
-  file = "frontend/src/pages/QuizForm.vue"
-  anchor = "space-y-8 overflow-y-auto border-t p-5 lg:border-l lg:border-t-0"
-
-  [[entries.sites]]
-  file = "frontend/src/pages/QuizForm.vue"
-  anchor = 'class="flex overflow-y-auto px-5 os-list-view"'
+  file = "frontend/src/pages/Forms/QuizForm.vue"
+  anchor = "<!-- OSLMS-CUSTOM: solid Test Quiz / Check Submissions buttons and ghost delete button (house style) -->"
 
 [[entries]]
 id = "quiz-submission-valutatore-readonly"
@@ -3745,9 +3748,11 @@ id = "quiz-submission-list-style"
 title = "Tema della lista consegne del quiz"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 La lista delle consegne di un quiz usa la classe os-list-view del tema, come le altre liste.
-v2.59.0 tocca solo il titolo della pagina (non nostro)."""
+v2.59.0 tocca solo il titolo della pagina (non nostro).
+accepted-drift (2026-09-24, merge di v2.62.0, decisione del committente): la lista consegne del quiz passa al ListPage upstream, che disegna da se la tabella: os-list-view non impostabile dalla pagina. Stessa decisione di quiz-list-style in v2.61.0: aspetto upstream, DA VERIFICARE nell'app."""
 
   [[entries.sites]]
   file = "frontend/src/pages/QuizSubmissionList.vue"
@@ -3758,6 +3763,7 @@ id = "quiz-list-mobile-columns"
 title = "Lista dei quiz ridotta su telefono"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 Su telefono la lista dei quiz (Moderator, Docente, istruttori) mostra solo titolo, percentuale
 di superamento e data di aggiornamento, senza icone nelle intestazioni: con tutte le colonne la
@@ -3766,7 +3772,8 @@ template #prefix delle intestazioni (FeatherIcon → span con classe lucide-*) s
 nostro v-if="!isMobile", e cambia le icone delle colonne in quizColumns: tenere il v-if sulla
 nuova versione e il filtro mobileKeys. v2.63.0 ricostruisce le pagine dei quiz: riapplicare
 sulla nuova lista.
-Merge di v2.61.0 (2026-09-23): la pagina passa al ListPage upstream, che su telefono disegna schede (ResponsiveListView) e non la riga di intestazione: il v-if="!isMobile" sulle icone non ha più oggetto, sito tolto (coperto dall'upstream). Resta il filtro mobileKeys, che ora limita i campi delle schede."""
+Merge di v2.61.0 (2026-09-23): la pagina passa al ListPage upstream, che su telefono disegna schede (ResponsiveListView) e non la riga di intestazione: il v-if="!isMobile" sulle icone non ha più oggetto, sito tolto (coperto dall'upstream). Resta il filtro mobileKeys, che ora limita i campi delle schede.
+accepted-drift (2026-09-24, merge di v2.62.0, decisione del committente): la lista dei quiz su ListPage nasconde le colonne su telefono con hideOnMobile; mobileKeys non serve piu."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Quizzes.vue"
@@ -3830,10 +3837,11 @@ Nel modale di creazione della domanda la select del tipo mostra etichette tradot
 multipla, Risposta breve, Risposta aperta…) mantenendo i valori inglesi salvati nel database, e
 ha un segnaposto tradotto. v2.59.0 tocca solo Dialog e l'editor. v2.63.0 SOSTITUISCE il modale
 della domanda con la banca domande condivisa: riapplicare le etichette tradotte sulla nuova
-select del tipo."""
+select del tipo.
+Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/QuizQuestionForm.vue (Modals/Question.vue eliminata); regola riapplicata li, ancore invariate."""
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/Question.vue"
+  file = "frontend/src/pages/Forms/QuizQuestionForm.vue"
   anchor = "{ label: __('User Input'), value: 'User Input' },"
 
 [[entries]]
@@ -3846,10 +3854,11 @@ Il modale della domanda portava un blocco <style> non scoped che forzava in gray
 selezionato di tutta l'applicazione, sovrascrivendo il colore dei radio del tema (commit
 «Fix css for radio button»). Il blocco è stato tolto; il marcatore in fondo allo script
 ricorda che l'assenza è voluta. Se un merge lo reintroduce, toglierlo di nuovo. v2.63.0
-sostituisce il modale: verificare che il nuovo non reintroduca stili globali sui radio."""
+sostituisce il modale: verificare che il nuovo non reintroduca stili globali sui radio.
+Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/QuizQuestionForm.vue (Modals/Question.vue eliminata); regola riapplicata li, ancore invariate."""
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/Question.vue"
+  file = "frontend/src/pages/Forms/QuizQuestionForm.vue"
   anchor = "OSLMS-CUSTOM: upstream unscoped style block forcing every checked radio app-wide to gray-900 was removed on purpose"
 
 [[entries]]
@@ -3971,10 +3980,11 @@ intent = """
 Salvando un compito senza titolo, tipo di consegna o testo della domanda, chi crea il compito
 (Moderator, Docente, istruttori) riceve un avviso tradotto «{0} is required» sul campo mancante
 invece di un errore generico o di un salvataggio fallito in silenzio. v2.59.0 tocca solo Dialog
-ed editor del modulo."""
+ed editor del modulo.
+Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/AssignmentForm.vue; regola riapplicata li, ancore invariate."""
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/AssignmentForm.vue"
+  file = "frontend/src/pages/Forms/AssignmentForm.vue"
   anchor = "toast.warning(__('{0} is required').format(__('Submission Type')))"
   symbol = "saveAssignment"
 
@@ -3986,15 +3996,16 @@ confidence = "high"
 intent = """
 Nel modulo del compito le etichette dei tipi di consegna (PDF, Immagine, Documento, Testo, URL)
 sono tradotte con valori inglesi invariati, e i campi hanno segnaposto tradotti invece del
-vuoto. v2.59.0 non tocca queste righe."""
+vuoto. v2.59.0 non tocca queste righe.
+Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/AssignmentForm.vue; regola riapplicata li, ancore invariate."""
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/AssignmentForm.vue"
+  file = "frontend/src/pages/Forms/AssignmentForm.vue"
   anchor = "{ label: __('Image'), value: 'Image' },"
   symbol = "assignmentOptions"
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/AssignmentForm.vue"
+  file = "frontend/src/pages/Forms/AssignmentForm.vue"
   anchor = ":placeholder=\"__('Insert title')\""
 
 [[entries]]
@@ -4005,32 +4016,31 @@ confidence = "high"
 intent = """
 La lista delle consegne dei compiti ha filtri impilati su telefono, la classe os-list-view del
 tema, e stato, colonne, filtro di stato e breadcrumb tradotti (i valori restano inglesi).
-v2.59.0 tocca solo lo stato vuoto."""
+v2.59.0 tocca solo lo stato vuoto.
+Merge di v2.62.0 (2026-09-24): la pagina passa al ListPage upstream, che dispone da se i filtri (sito della griglia filtri tolto) e traduce il titolo/breadcrumb (sito tolto). Restano nostri il badge di stato tradotto (slot #cell, {{ __(value) }}) e le etichette di colonna tradotte. os-list-view non impostabile: stesso trattamento di quiz-list-style/assignment-list-style in v2.61.0 (aspetto upstream, da verificare nell'app)."""
 
   [[entries.sites]]
   file = "frontend/src/pages/AssignmentSubmissionList.vue"
-  anchor = '<div class="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-5 mb-5">'
+  anchor = "{{ __(value) }}"
 
   [[entries.sites]]
   file = "frontend/src/pages/AssignmentSubmissionList.vue"
-  anchor = "{{ __(row[column.key]) }}"
-
-  [[entries.sites]]
-  file = "frontend/src/pages/AssignmentSubmissionList.vue"
-  anchor = "label: __('Assignment Submissions'),"
+  anchor = "label: __('Member'),"
 
 [[entries]]
 id = "assignment-submission-list-header"
 title = "Intestazione a tema della lista consegne dei compiti"
 layer = "spa-graft"
 confidence = "low"
+status = "accepted-drift"
 intent = """
 La pagina usa un <header> sticky con la classe main-page-header del tema invece del
 LayoutHeader dell'upstream. La classe è stata messa da un commit di tema (e9b6577b7), ma la
 struttura <header> è quella di una vecchia versione upstream, poi passata a LayoutHeader: il
 merge ha tenuto la nostra. Non è chiaro se main-page-header serva ancora (non compare nei fogli
 di stile del tema) né se LayoutHeader dia già lo stesso aspetto: da confermare con il
-committente prima di decidere se tenere questa intestazione o prendere LayoutHeader."""
+committente prima di decidere se tenere questa intestazione o prendere LayoutHeader.
+accepted-drift (2026-09-24, merge di v2.62.0, decisione del committente): la pagina passa al ListPage upstream con PageHeader: la nostra intestazione <header class="main-page-header"> non esiste piu. Aspetto upstream, DA VERIFICARE nell'app (come per le altre liste su ListPage)."""
 
   [[entries.sites]]
   file = "frontend/src/pages/AssignmentSubmissionList.vue"
@@ -4069,11 +4079,12 @@ Lo studente consegna il compito dentro la lezione attraverso un iframe: con l'al
 500px dell'upstream editor e pulsanti restavano tagliati. La classe os-frame (in
 styles/theme/elite/main.css) porta l'iframe a 100vh. ATTENZIONE al merge di v2.59.0:
 l'upstream riscrive la riga dell'iframe dentro la nuova funzione renderSubmission: riaggiungere
-os-frame alla classe dell'iframe nella nuova versione."""
+os-frame alla classe dell'iframe nella nuova versione.
+Merge di v2.62.0 (2026-09-24): il blocco costruisce ora l'iframe via oggetto attributi."""
 
   [[entries.sites]]
   file = "frontend/src/utils/assignment.js"
-  anchor = 'class="w-full h-[500px] os-frame"'
+  anchor = "class: 'w-full h-[500px] os-frame',"
   symbol = "renderAssignment"
 
 [[entries]]
@@ -4117,10 +4128,11 @@ confidence = "high"
 intent = """
 Nel modulo dell'esercizio di programmazione la select del linguaggio ha un segnaposto tradotto e
 le intestazioni della tabella dei casi di test (Input, Expected Output) sono tradotte.
-v2.59.0 tocca solo gli slot del Dialog e l'editor del testo del problema."""
+v2.59.0 tocca solo gli slot del Dialog e l'editor del testo del problema.
+Merge di v2.62.0 (2026-09-24): ProgrammingExerciseForm.vue spostato in pages/Forms/. Bug preesistente noto: ChildTable ricava la chiave dall'etichetta tradotta, quindi in italiano Expected Output si perde (da correggere in ChildTable)."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/ProgrammingExercises/ProgrammingExerciseForm.vue"
+  file = "frontend/src/pages/Forms/ProgrammingExerciseForm.vue"
   anchor = "return [__('Input'), __('Expected Output')]"
   symbol = "testCaseColumns"
 
@@ -4129,13 +4141,15 @@ id = "exercise-submission-commented-icons"
 title = "Icone rinominate in un blocco commentato della consegna esercizio"
 layer = "spa-graft"
 confidence = "low"
+status = "accepted-drift"
 intent = """
 Nessun effetto a runtime: dentro un blocco che l'upstream tiene commentato, le icone Check e X
 sono state rinominate LucideCheck e LucideX durante una correzione di merge (commit 027c0c56f,
 «fix merge: Batch components»), presumibilmente per allinearle all'auto-import delle icone nel
 caso il blocco venga riattivato. Il resto del diff del file sono solo virgole finali. Al merge si
 può prendere liberamente la versione upstream; la voce esiste solo perché il file compaia
-nell'inventario."""
+nell'inventario.
+accepted-drift (2026-09-24, merge di v2.62.0, decisione del committente): il file differisce dall'upstream solo per virgole finali; come previsto dalla voce, presa la versione upstream."""
 
   [[entries.sites]]
   file = "frontend/src/pages/ProgrammingExercises/ProgrammingExerciseSubmission.vue"
@@ -4592,15 +4606,12 @@ confidence = "high"
 intent = """
 Il gestore seleziona uno o più studenti nella lista della dashboard e li toglie dalla classe
 (cancellazione delle LMS Batch Enrollment). La selezione è attiva solo con isFullAdmin: il
-Valutatore vede la dashboard in sola lettura, senza iscrizione, importazione né rimozione."""
+Valutatore vede la dashboard in sola lettura, senza iscrizione, importazione né rimozione.
+Merge di v2.62.0 (2026-09-24): selezione ora ResponsiveListView; il sito removeStudents(selections, unselectAll) compare due volte (desktop e mobile) e non era piu un'ancora unica: tolto, la regola resta ancorata a const removeStudents."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
-  anchor = "selectable: isFullAdmin,"
-
-  [[entries.sites]]
-  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
-  anchor = "removeStudents(selections, unselectAll)"
+  anchor = "selectable: Boolean(isFullAdmin.value),"
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
@@ -4620,11 +4631,12 @@ intent = """
 Il pulsante Importa nell'intestazione della classe (BatchDetail, via childRef) apre
 un'importazione dati di LMS Batch Enrollment già nominata, per iscrivere molti studenti in
 una volta senza passare dal desk. goToImport vive nella dashboard ed è esposto insieme a
-openEnrollModal; se sparisce da defineExpose il pulsante dell'intestazione non fa nulla."""
+openEnrollModal; se sparisce da defineExpose il pulsante dell'intestazione non fa nulla.
+Merge di v2.62.0 (2026-09-24): l'iscrizione passa dal modulo instradato BatchStudentForm, quindi openEnrollModal non e piu esposto; resta goToImport."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
-  anchor = "defineExpose({ openEnrollModal, goToImport })"
+  anchor = "defineExpose({ goToImport })"
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
@@ -4752,11 +4764,12 @@ layer = "spa-graft"
 confidence = "high"
 intent = """
 Ritocco cosmetico: la tabella dei corsi della classe porta la classe os-list-view del tema.
-Nessuna regola di comportamento."""
+Nessuna regola di comportamento.
+Merge di v2.62.0 (2026-09-24): il redesign mobile toglie bordo e raggio sotto sm; os-list-view tenuta; celle ora con slot value."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/BatchDashboard.vue"
-  anchor = "class=\"border rounded-lg os-list-view\""
+  anchor = "class=\"sm:border sm:rounded-lg os-list-view\""
 
 [[entries]]
 id = "batch-student-progress-lesson-drilldown"
@@ -4858,14 +4871,15 @@ notifica in piattaforma per i destinatari scelti e, se richiesto, invia anche l'
 campo Rispondi-a è stato tolto perché l'endpoint non lo usa. L'endpoint richiede subject,
 batch, recipients, content (più message e send_email facoltativi): il frontend li deve
 mandare tutti. Chi può inviare annunci lo decide l'intestazione di BatchDetail (gestori), il
-Valutatore li legge soltanto."""
+Valutatore li legge soltanto.
+Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/AnnouncementForm.vue; regola riapplicata li, ancore invariate. Il gate ammette anche is_docente."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Batches/components/AnnouncementModal.vue"
+  file = "frontend/src/pages/Forms/AnnouncementForm.vue"
   anchor = "url: 'os_lms.os_lms.api.send_batch_announcement',"
 
   [[entries.sites]]
-  file = "frontend/src/pages/Batches/components/AnnouncementModal.vue"
+  file = "frontend/src/pages/Forms/AnnouncementForm.vue"
   anchor = "<!-- <FormControl"
 
 [[entries]]
@@ -4885,27 +4899,28 @@ solo per questo annuncio, il documento Email Template non viene mai riscritto. I
 stato perso in un merge upstream (3caf07639) e ripristinato. ATTENZIONE al merge di v2.59.0:
 l'upstream sostituisce TextEditor con RichTextEditor nel ramo editor e nell'import; qui
 TextEditor serve in due rami e la cottura dei colori (announcement-named-colors) si basa sulla
-sua serializzazione var(--prose-color-*): verificarla prima di passare a RichTextEditor."""
+sua serializzazione var(--prose-color-*): verificarla prima di passare a RichTextEditor.
+Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/AnnouncementForm.vue; regola riapplicata li, ancore invariate. Il gate ammette anche is_docente."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Batches/components/AnnouncementModal.vue"
+  file = "frontend/src/pages/Forms/AnnouncementForm.vue"
   anchor = "v-model=\"sendEmail\""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Batches/components/AnnouncementModal.vue"
+  file = "frontend/src/pages/Forms/AnnouncementForm.vue"
   anchor = "const DEFAULT_TEMPLATE_NAME = 'Announcement Email Template'"
 
   [[entries.sites]]
-  file = "frontend/src/pages/Batches/components/AnnouncementModal.vue"
+  file = "frontend/src/pages/Forms/AnnouncementForm.vue"
   anchor = "const flagged = all.filter((t) => t.custom_available_for_announcements)"
   symbol = "templateOptions"
 
   [[entries.sites]]
-  file = "frontend/src/pages/Batches/components/AnnouncementModal.vue"
+  file = "frontend/src/pages/Forms/AnnouncementForm.vue"
   anchor = "v-if=\"sendEmail && isHtmlMode && hasMessagePlaceholder\""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Batches/components/AnnouncementModal.vue"
+  file = "frontend/src/pages/Forms/AnnouncementForm.vue"
   anchor = "v-else-if=\"sendEmail && isHtmlMode\""
 
 [[entries]]
@@ -4916,14 +4931,15 @@ confidence = "high"
 intent = """
 "Invia a" permette di mandare l'annuncio a tutta la classe o solo a studenti scelti da un
 elenco con ricerca (nome completo ed email); con "Studenti specifici" serve almeno una
-selezione. L'upstream mandava sempre a tutti gli studenti."""
+selezione. L'upstream mandava sempre a tutti gli studenti.
+Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/AnnouncementForm.vue; regola riapplicata li, ancore invariate. Il gate ammette anche is_docente."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Batches/components/AnnouncementModal.vue"
+  file = "frontend/src/pages/Forms/AnnouncementForm.vue"
   anchor = "v-if=\"recipientMode === 'specific'\""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Batches/components/AnnouncementModal.vue"
+  file = "frontend/src/pages/Forms/AnnouncementForm.vue"
   anchor = "const toggleStudent = (email, checked) => {"
 
 [[entries]]
@@ -4938,10 +4954,11 @@ evidenziazioni come var(--prose-highlight-<nome>), variabili definite solo dentr
 compariva solo a volte. Nel composer i colori si "cuociono" in esadecimale per anteprima ed
 email (sfondo chiaro); la notifica senza email tiene le variabili, che la card a tema della
 lista risolve con tonalità leggibili sia in chiaro sia in scuro, più la regola mark che
-mantiene il colore del testo evidenziato."""
+mantiene il colore del testo evidenziato.
+Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/AnnouncementForm.vue; regola riapplicata li, ancore invariate. Il gate ammette anche is_docente."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Batches/components/AnnouncementModal.vue"
+  file = "frontend/src/pages/Forms/AnnouncementForm.vue"
   anchor = "const inlineNamedColors = (html) =>"
 
   [[entries.sites]]
@@ -5009,7 +5026,8 @@ intent = """
 Il pulsante "Fai un annuncio" è nell'intestazione della classe, visibile solo sulla scheda
 Annunci e ai gestori (BatchDetail). Il composer è montato dalla scheda stessa, che espone
 openAnnouncementModal via childRef, così alla chiusura può tornare alla prima pagina e
-ricaricare la lista mostrando subito l'annuncio appena inviato."""
+ricaricare la lista mostrando subito l'annuncio appena inviato.
+Merge di v2.62.0 (2026-09-24): il compositore non e piu una modale ma la pagina instradata AnnouncementForm; il ricaricamento dell'elenco segue il cambio di route (route.name) al ritorno dal modulo."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/Announcements.vue"
@@ -5017,7 +5035,7 @@ ricaricare la lista mostrando subito l'annuncio appena inviato."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/Announcements.vue"
-  anchor = "() => showAnnouncementModal.value,"
+  anchor = "() => route.name,"
 
 # --- Lezioni live della classe (LiveClass.vue) --------------------------------
 
@@ -5053,11 +5071,12 @@ Il gestore della classe (Moderator, Batch Evaluator) modifica una lezione live d
 modal di creazione (carica il documento completo) e la elimina con conferma; l'eliminazione
 passa da os_lms.os_lms.api.delete_live_class e può avvisare gli studenti della classe via email
 e notifica in piattaforma (casella attiva di default). Una modifica di titolo, data, ora, durata
-o fuso riprogramma la riunione Zoom e avvisa gli studenti (lato backend)."""
+o fuso riprogramma la riunione Zoom e avvisa gli studenti (lato backend).
+Merge di v2.62.0 (2026-09-24): la modifica non apre piu una modale: route EditLiveClass verso il modulo instradato LiveClassForm (decisione v2.62.0: un solo modulo)."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Batches/components/LiveClass.vue"
-  anchor = ":liveClass=\"editingClass\""
+  file = "frontend/src/routes.js"
+  anchor = "name: 'EditLiveClass',"
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/LiveClass.vue"
@@ -5106,10 +5125,11 @@ confidence = "high"
 intent = """
 Prima di creare la classe il modal controlla uno per uno i campi obbligatori (titolo, date,
 orari, fuso, descrizione, istruttori, dettagli) e mostra un avviso che nomina il campo
-mancante, invece di lasciare all'utente l'errore generico del server."""
+mancante, invece di lasciare all'utente l'errore generico del server.
+Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/NewBatchForm.vue; regola riapplicata li, ancore invariate."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Batches/components/NewBatchModal.vue"
+  file = "frontend/src/pages/Forms/NewBatchForm.vue"
   anchor = "toast.warning(__('{0} is required').format(__('Title')))"
   symbol = "saveBatch"
 
@@ -5121,10 +5141,11 @@ confidence = "high"
 intent = """
 Ritocchi di traduzione: il titolo del dialog e i segnaposto dei selettori di data e ora
 passano da __() (i default di frappe-ui sono letterali inglesi). Nessuna regola di
-comportamento."""
+comportamento.
+Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/NewBatchForm.vue; regola riapplicata li, ancore invariate."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Batches/components/NewBatchModal.vue"
+  file = "frontend/src/pages/Forms/NewBatchForm.vue"
   anchor = ":title=\"__('New Batch')\""
 
 # --- Iscrizione alla classe (lms_batch_enrollment.py) -------------------------
@@ -5322,15 +5343,13 @@ L'etichetta Titolo e il testo del pulsante «Upload an ZIP file» (pacchetto SCO
 __() per comparire in italiano (commit cbc7146dd e d8b533a6b). Solo traduzione, nessuna
 regola. Resta in inglese «Uploading N%» dentro il template literal. Al merge di v2.61.0
 l'upstream trasforma lo span di rimozione del file SCORM in button con aria-label e cambia
-l'import dei tipi: righe lontane dalle nostre, nessun conflitto atteso."""
+l'import dei tipi: righe lontane dalle nostre, nessun conflitto atteso.
+Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/ChapterForm.vue; regola riapplicata li, ancore invariate.
+Merge di v2.62.0 (2026-09-24): il testo del pulsante SCORM ora e __('Upload a ZIP file') upstream (refuso corretto e tradotto): sito tolto, coperto dall'upstream."""
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/ChapterModal.vue"
+  file = "frontend/src/pages/Forms/ChapterForm.vue"
   anchor = ":label=\"__('Title')\""
-
-  [[entries.sites]]
-  file = "frontend/src/components/Modals/ChapterModal.vue"
-  anchor = "__('Upload an ZIP file')"
 
 # --- Modale prenotazione valutazione (EvaluationModal.vue) --------------------
 
@@ -5850,25 +5869,23 @@ di v2.61.0: l'upstream trasforma il div del contenuto in <main>, le voci del men
 <div> in <button> e la barra inferiore da <div> in <nav> con aria-label: conflitto su tutte e
 tre le righe. Accettare i nuovi elementi upstream e riapplicare bg-surface-base sulla radice,
 bg-surface-gray-1 al posto di bg-surface-base nella classe della <nav>, e
-class="text-ink-gray-9" + {{ __(link.label) }} nel div dell'etichetta dentro il <button>."""
+class="text-ink-gray-9" + {{ __(link.label) }} nel div dell'etichetta dentro il <button>.
+Merge di v2.62.0 (2026-09-24): il menu «altro» e diventato la pagina You (MobileYou.vue) e la barra traduce da se le etichette ({{ __(tabLabel(tab.label)) }}): sito delle etichette tolto. Restano bg-surface-base sulla radice (ora h-dvh) e bg-surface-gray-1 sulla barra."""
 
   [[entries.sites]]
   file = "frontend/src/components/Layouts/MobileLayout.vue"
-  anchor = 'class="relative flex h-screen flex-col bg-surface-base"'
+  anchor = 'class="relative flex h-dvh flex-col bg-surface-base"'
 
   [[entries.sites]]
   file = "frontend/src/components/Layouts/MobileLayout.vue"
   anchor = "border-t border-outline-gray-2 bg-surface-gray-1"
-
-  [[entries.sites]]
-  file = "frontend/src/components/Layouts/MobileLayout.vue"
-  anchor = '<div class="text-ink-gray-9">{{ __(link.label) }}</div>'
 
 [[entries]]
 id = "mobile-nav-sidebar-settings-toggles"
 title = "Menu mobile rispettoso delle impostazioni della sidebar"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 Le voci che MobileLayout aggiunge a mano al menu «altro» (Notifiche per tutti; Quiz, Compiti,
 Esercizi di programmazione per moderatori e docenti) ignoravano gli interruttori della sidebar
@@ -5881,7 +5898,8 @@ l'upstream riscrive updateSidebarLinks (loadSidebarSettings().then(...) al posto
 sidebarSettings.reload con onSuccess, più un watch su sidebarSettings.data) e conserva i tre
 helper e addPrograms: conflitto. Prendere la nuova struttura upstream e dentro il then
 riapplicare le tre chiamate addLink condizionate da isLinkEnabled (o condizionare gli helper) e
-isLinkEnabled('Notifications') in addOtherLinks; tenere isLinkEnabled."""
+isLinkEnabled('Notifications') in addOtherLinks; tenere isLinkEnabled.
+accepted-drift (2026-09-24, merge di v2.62.0, decisione del committente): il menu mobile upstream (stores/mobileNavLinks.ts) filtra barra e pagina You con isLinkEnabled sulle impostazioni della sidebar, anche Notifiche ed Esercizi: e la nostra correzione."""
 
   [[entries.sites]]
   file = "frontend/src/components/Layouts/MobileLayout.vue"
@@ -5902,6 +5920,7 @@ id = "mobile-nav-programs-hidden"
 title = "Voce Programmi assente dal menu mobile"
 layer = "spa-graft"
 confidence = "low"
+status = "accepted-drift"
 intent = """
 Sul telefono la navigazione non mostra Programmi, per nessun ruolo: l'upstream la inserisce
 in MobileLayout con addPrograms() dopo un controllo asincrono (checkIfCanAddProgram con
@@ -5911,7 +5930,8 @@ layout», dopo un tentativo di correggere la voce duplicata in 36a0d8531). Il co
 codice dice «intenzionalmente nascosti», ma il motivo di prodotto non è scritto: da confermare.
 ATTENZIONE al merge di v2.61.0: l'upstream conserva addPrograms/checkIfCanAddProgram e li
 richiama dentro il nuovo loadSidebarSettings().then(...): nella risoluzione non reintrodurre
-await addPrograms() né le due funzioni (né l'import di call se resta inutilizzato)."""
+await addPrograms() né le due funzioni (né l'import di call se resta inutilizzato).
+accepted-drift (2026-09-24, merge di v2.62.0, decisione del committente): Programmi torna visibile su telefono come scheda primaria della barra (scelta upstream): il nostro filtro in primaryTabs e stato tolto. Il motivo originale non era documentato; i programmi sono in uso (membri dei programmi)."""
 
   [[entries.sites]]
   file = "frontend/src/components/Layouts/MobileLayout.vue"
@@ -5955,10 +5975,11 @@ verso l'editor), da confermare, e forse oggi superflua. ATTENZIONE al merge di v
 riscrittura upstream «make student view a real route instead of an editor mode» (anteprima
 tolta da CourseEditor, link «Editor view» nell'intestazione di Lesson.vue verso CourseDetail
 con editLesson) non tocca router.js, ma rende ancora più probabile che questa rotta sia un
-residuo; se tenuta, verificare che LessonForm funzioni ancora montata da sola."""
+residuo; se tenuta, verificare che LessonForm funzioni ancora montata da sola.
+Merge di v2.62.0 (2026-09-24): l'upstream sposta le rotte da router.js al nuovo routes.js; rotta riaggiunta li con marcatore."""
 
   [[entries.sites]]
-  file = "frontend/src/router.js"
+  file = "frontend/src/routes.js"
   anchor = "path: '/courses/:courseName/learn/:chapterNumber-:lessonNumber/edit',"
 
 [[entries]]
@@ -5974,10 +5995,11 @@ oslms/utils/searchRoutes.ts. Senza la rotta, quella voce della palette non porta
 parte. ATTENZIONE al merge di v2.61.0: l'upstream aggiunge in coda all'array routes la rotta
 catch-all NotFound ('/:pathMatch(.*)*'), proprio dove stanno le nostre rotte accodate:
 conflitto. Tenere tutte le nostre rotte e la NotFound (Vue Router ordina per specificità, la
-catch-all resta comunque l'ultima scelta; per leggibilità metterla in fondo)."""
+catch-all resta comunque l'ultima scelta; per leggibilità metterla in fondo).
+Merge di v2.62.0 (2026-09-24): l'upstream sposta le rotte da router.js al nuovo routes.js; rotta riaggiunta li con marcatore."""
 
   [[entries.sites]]
-  file = "frontend/src/router.js"
+  file = "frontend/src/routes.js"
   anchor = "path: '/search',"
 
 [[entries]]
@@ -5991,10 +6013,11 @@ picker) permette di caricare file riusabili nei contenuti; la raggiunge la voce 
 menu utente (UserDropdown), visibile solo ai moderatori. Senza la rotta la voce di menu va in
 errore.
 ATTENZIONE al merge di v2.61.0: stesso conflitto di coda dell'array routes con la nuova
-rotta NotFound (vedi router-search-page-route)."""
+rotta NotFound (vedi router-search-page-route).
+Merge di v2.62.0 (2026-09-24): l'upstream sposta le rotte da router.js al nuovo routes.js; rotta riaggiunta li con marcatore."""
 
   [[entries.sites]]
-  file = "frontend/src/router.js"
+  file = "frontend/src/routes.js"
   anchor = "path: '/file-upload',"
 
 [[entries]]
@@ -6011,18 +6034,19 @@ devono vivere nell'array routes upstream. Le rotte statiche (/simulations/admin,
 /simulations/scenarios/…, /simulations/valutations-schema) devono restare riconoscibili
 prima di /simulations/:sessionId (Vue Router le classifica per specificità, quindi l'ordine
 non è critico). ATTENZIONE al merge di v2.61.0: stesso conflitto di coda dell'array routes con
-la nuova rotta NotFound (vedi router-search-page-route)."""
+la nuova rotta NotFound (vedi router-search-page-route).
+Merge di v2.62.0 (2026-09-24): l'upstream sposta le rotte da router.js al nuovo routes.js; rotta riaggiunta li con marcatore."""
 
   [[entries.sites]]
-  file = "frontend/src/router.js"
+  file = "frontend/src/routes.js"
   anchor = "path: '/simulations/admin',"
 
   [[entries.sites]]
-  file = "frontend/src/router.js"
+  file = "frontend/src/routes.js"
   anchor = "path: '/simulations/:sessionId',"
 
   [[entries.sites]]
-  file = "frontend/src/router.js"
+  file = "frontend/src/routes.js"
   anchor = "path: '/simulations/:sessionId/debrief',"
 
 [[entries]]
@@ -6035,10 +6059,11 @@ La pagina StudentStatsExport (oslms/pages/StudentStatsExport.vue, commit 68ce20f
 statistiche degli studenti con filtri; la voce di sidebar in utils/index.js è condizionata a
 can_export_stats (ruoli EXPORT_STATS_ROLES lato os_lms). Senza la rotta la voce di menu non
 apre nulla. ATTENZIONE al merge di v2.61.0: stesso conflitto di coda dell'array routes con la
-nuova rotta NotFound (vedi router-search-page-route)."""
+nuova rotta NotFound (vedi router-search-page-route).
+Merge di v2.62.0 (2026-09-24): l'upstream sposta le rotte da router.js al nuovo routes.js; rotta riaggiunta li con marcatore."""
 
   [[entries.sites]]
-  file = "frontend/src/router.js"
+  file = "frontend/src/routes.js"
   anchor = "path: '/statistics/export',"
 
 [[entries]]
@@ -6046,13 +6071,15 @@ id = "vitest-inline-frappe-ui"
 title = "frappe-ui trasformato da Vite nei test Vitest"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 frappe-ui è distribuito come sorgenti non transpilate: un test che importa suoi moduli
 interni (es. la vera cache delle risorse in quizCachedRemount.test.ts, che verifica che un quiz
 in cache riaperto conservi le domande) fallisce se Node lo risolve come ESM esterno. Con
 server.deps.inline lo processa Vite. ATTENZIONE al merge di v2.61.0: l'upstream aggiunge
 resolve.dedupe ['vue', 'frappe-ui'] nel blocco resolve, lontano dal nostro blocco test: merge
-atteso pulito; le due opzioni sono compatibili."""
+atteso pulito; le due opzioni sono compatibili.
+accepted-drift (2026-09-24, merge di v2.62.0, decisione del committente): vitest.config.ts identico a v2.62.0: l'upstream processa da se frappe-ui con server.deps.inline ['frappe-ui'] (piu resolve.dedupe)."""
 
   [[entries.sites]]
   file = "frontend/vitest.config.ts"
@@ -6144,6 +6171,7 @@ id = "batch-detail-mobile-header"
 title = "Intestazione della classe su due righe e compatta su telefono"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 Su telefono l'intestazione della classe (breadcrumb, badge Pubblicata, azioni) non stava in una
 riga e spingeva la pagina di lato: sotto sm si impila, breadcrumb e badge (shrink-0) sopra, le
@@ -6156,7 +6184,8 @@ sopra le nostre righe (variant solid, span sm:hidden/max-sm:hidden): conflitto p
 Accettare la regola upstream (pubblica solo sulla scheda Impostazioni) ma scriverla con
 currentTabKey (currentTabLabel da noi non esiste più, vedi batch-detail-tab-keys) e tenere le
 due etichette responsive. Le altre modifiche upstream dell'intestazione (label accessibili su
-Elimina e sul menu «...») sono fuori dalle nostre righe."""
+Elimina e sul menu «...») sono fuori dalle nostre righe.
+accepted-drift (2026-09-24, merge di v2.62.0, decisione del committente): l'intestazione della classe e ridisegnata dall'upstream per il telefono (TabbedDetailPage, azioni compatte); etichetta corta Unpubl. non piu necessaria."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/BatchDetail.vue"
@@ -6175,6 +6204,7 @@ id = "batch-detail-tab-keys"
 title = "Schede della classe con chiave non tradotta ed etichetta tradotta"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 Le etichette delle schede passano da __() (Panoramica, Dashboard, Lezioni, Annunci,
 Discussioni, Impostazioni), quindi ogni confronto fatto sull'etichetta si rompe in italiano:
@@ -6187,7 +6217,8 @@ compaiono (commit 792fdab8c, 027c0c56f).
 ATTENZIONE al merge di v2.61.0: l'upstream introduce un nuovo uso di currentTabLabel nel v-if
 del pulsante di pubblicazione; da noi currentTabLabel non è definito, quindi se il merge lo
 lascia passare il pulsante sparisce su tutte le schede. Riscriverlo con currentTabKey. Stessa
-attenzione per qualunque nuovo `tab.label ==` o `currentTabLabel` in arrivo dall'upstream."""
+attenzione per qualunque nuovo `tab.label ==` o `currentTabLabel` in arrivo dall'upstream.
+accepted-drift (2026-09-24, merge di v2.62.0, decisione del committente): BatchDetail e costruito su TabbedDetailPage, che identifica le schede con chiavi inglesi fisse (key) separate dall'etichetta tradotta e le usa per hash, istanze e azioni: la regola e dell'upstream."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/BatchDetail.vue"
@@ -6211,11 +6242,13 @@ id = "batch-detail-hash-sync"
 title = "La scheda attiva segue anche il solo cambio di hash"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 Cliccando una notifica della classe mentre si è già dentro quella classe cambia solo l'hash
 dell'URL: il componente non viene rimontato e batch non si ricarica, quindi watch(batch) non
 scatta e la scheda restava quella di prima. Un watch sull'hash richiama updateTabIndex
-(commit 0505a4140). v2.61.0 non tocca questa riga."""
+(commit 0505a4140). v2.61.0 non tocca questa riga.
+accepted-drift (2026-09-24, merge di v2.62.0, decisione del committente): TabbedDetailPage ha watch(() => route.hash, selectFromHash): la scheda segue anche il solo cambio di hash."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/BatchDetail.vue"
@@ -6234,11 +6267,12 @@ os_lms di get_batch_details in override_utils.py). Aprire la scheda le segna com
 publish_lms_notifications la classe si ricarica per aggiornare i contatori. Lo slot tab-item
 riscrive il pulsante della scheda upstream per ospitare il badge (commit 22ebe74c4, 027c0c56f).
 Se l'upstream cambia lo slot delle Tabs di frappe-ui, riportare icona, etichetta e badge.
-v2.61.0 non tocca queste righe."""
+v2.61.0 non tocca queste righe.
+Merge di v2.62.0 (2026-09-24): le schede sono disegnate da TabbedDetailPage (upstream): innestata li una prop badge opzionale per scheda (commento-marcatore come ancora: e l'unico punto non generico del rendering); BatchDetail passa badge: tabBadgeCount(...)."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/BatchDetail.vue"
-  anchor = "<Badge v-if=\"tabBadgeCount(tab.key)\" theme=\"red\" size=\"sm\">"
+  anchor = "badge: tabBadgeCount('classes'),"
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/BatchDetail.vue"
@@ -6253,6 +6287,10 @@ v2.61.0 non tocca queste righe."""
   file = "frontend/src/pages/Batches/BatchDetail.vue"
   anchor = "socket.on('publish_lms_notifications', onNotificationsPublished)"
 
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/TabbedDetailPage.vue"
+  anchor = "<!-- OSLMS-CUSTOM: unread notification badge per tab (batch Classes/Announcements/Discussions) -->"
+
 [[entries]]
 id = "batch-detail-valutatore-tabs"
 title = "Il Valutatore della classe vede le schede e la dashboard amministrativa"
@@ -6264,15 +6302,16 @@ calcolato lato server nel get_batch_details di lms/lms/utils.py, innesto backend
 pubblica ma le schede, con la Dashboard amministrativa (andamento degli studenti da valutare),
 Lezioni, Annunci e Discussioni in sola lettura; NON ha la scheda Impostazioni né i comandi di
 pubblicazione, importazione e iscrizione, che restano legati a isAdmin (commit f25d5ca3e).
-Vedi memoria valutatore_role_scoped_per_batch. v2.61.0 non tocca queste righe."""
+Vedi memoria valutatore_role_scoped_per_batch. v2.61.0 non tocca queste righe.
+Merge di v2.62.0 (2026-09-24): schede calcolate come array per TabbedDetailPage: il Valutatore della classe conta come iscritto e vede la dashboard amministrativa."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/BatchDetail.vue"
-  anchor = "v-if=\"!isAdmin && !isStudent && !isBatchValutatore\""
+  anchor = "const enrolled = isAdmin.value || isStudent.value || isBatchValutatore.value"
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/BatchDetail.vue"
-  anchor = "if (isAdmin.value || isBatchValutatore.value) {"
+  anchor = "const adminDashboard = isAdmin.value || isBatchValutatore.value"
   symbol = "updateTabs"
 
   [[entries.sites]]
@@ -6296,12 +6335,22 @@ classe conta come amministratore, quindi vede Dashboard amministrativa e Imposta
 pubblicare, importare e iscrivere studenti e fare annunci, come Moderator e Batch Evaluator.
 Vedi memoria docente_global_instructor_role. Nota: nelle schede Corsi e Valutazioni del modulo
 classe il pulsante Aggiungi è invece solo per Moderator (voce batch-content-add-moderator-only).
-v2.61.0 non tocca questa riga."""
+v2.61.0 non tocca questa riga.
+Merge di v2.62.0 (2026-09-24): gate replicato nel modulo instradato BulkCertificatesForm.
+Merge di v2.62.0 (2026-09-24): gate replicato anche nel modulo instradato EmailTemplateForm (modelli email delle impostazioni della classe)."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/BatchDetail.vue"
   anchor = "user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente"
   symbol = "isAdmin"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Forms/BulkCertificatesForm.vue"
+  anchor = "user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Forms/EmailTemplateForm.vue"
+  anchor = "!user.data?.is_moderator && !user.data?.is_evaluator && !user.data?.is_docente"
 
   [entries.visibility]
   subject = "gestione della classe (Dashboard amministrativa, Impostazioni, pubblicazione, iscrizioni, annunci)"
@@ -6339,15 +6388,16 @@ monta più AnnouncementModal e il menu «...» non ha più la voce annuncio (com
 Nota: il v-if usa !readOnlyMode ma dd55dbbbc ha tolto `const readOnlyMode =
 window.read_only_mode` e l'upstream ha poi reintrodotto il riferimento nel template: oggi
 readOnlyMode non è definito (sempre falso), quindi in modalità sola lettura il pulsante resta
-visibile. Segnalato, non corretto. v2.61.0 non tocca queste righe."""
+visibile. Segnalato, non corretto. v2.61.0 non tocca queste righe.
+Merge di v2.62.0 (2026-09-24): BatchDetail e ora costruito su TabbedDetailPage: il riferimento alla scheda e instance, l'annuncio apre la route del modulo."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/BatchDetail.vue"
-  anchor = "@click=\"childRef?.goToImport?.()\""
+  anchor = "@click=\"instance?.goToImport?.()\""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/BatchDetail.vue"
-  anchor = "@click=\"childRef?.openAnnouncementModal?.()\""
+  anchor = "@click=\"openAnnouncementModal\""
 
   [entries.visibility]
   subject = "pulsanti Importa, Iscrivi e Fai un annuncio nell'intestazione della classe"
@@ -6368,7 +6418,8 @@ che applica i permessi di lettura del doctype: un Batch Evaluator non legge LMS 
 il dialogo si apriva con una lista vuota e nessun messaggio. Il comando è offerto solo a chi
 può completarlo: is_moderator (commit 8a1086854). Le due schede vanno tenute allineate. Al
 merge di v2.61.0 l'upstream aggiunge solo :key e label accessibili nelle liste: nessun
-conflitto atteso. Se l'upstream ripristina `is_moderator || is_evaluator` il bug torna."""
+conflitto atteso. Se l'upstream ripristina `is_moderator || is_evaluator` il bug torna.
+Merge di v2.62.0 (2026-09-24): i moduli instradati BatchCourseForm e AssessmentForm hanno un proprio gate (upstream: moderatore o istruttore); ristretto al solo moderatore come i pulsanti."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/BatchCourses.vue"
@@ -6379,6 +6430,10 @@ conflitto atteso. Se l'upstream ripristina `is_moderator || is_evaluator` il bug
   file = "frontend/src/pages/Batches/components/Assessments.vue"
   anchor = "return user.data?.is_moderator\n}"
   symbol = "canAddAssessments"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Forms/BatchCourseForm.vue"
+  anchor = "if (!user.data?.is_moderator) {"
 
   [entries.visibility]
   subject = "pulsante Aggiungi nelle schede Corsi e Valutazioni della classe"
@@ -6412,19 +6467,20 @@ valutazione nel badge della lista Valutazioni (vista anche dallo studente nella 
 passa da __() e compare in italiano. Differenze solo di formattazione: virgola finale in
 removeAssessments e `<div class="">` come radice di BatchCourses. Al merge di v2.61.0
 l'upstream aggiunge :key a ListHeaderItem/ListRow, un :label sul pulsante di eliminazione e
-trasforma in h2 il titolo «Assessments»: righe diverse dalle nostre, nessun conflitto atteso."""
+trasforma in h2 il titolo «Assessments»: righe diverse dalle nostre, nessun conflitto atteso.
+Merge di v2.62.0 (2026-09-24): il redesign mobile toglie bordo e raggio sotto sm; os-list-view tenuta; celle ora con slot value."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/Assessments.vue"
-  anchor = 'class="border rounded-lg os-list-view"'
+  anchor = 'class="sm:border sm:rounded-lg os-list-view"'
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/Assessments.vue"
-  anchor = "{{ __(row[column.key]) }}"
+  anchor = "{{ __(value) }}"
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/BatchCourses.vue"
-  anchor = 'class="border rounded-lg os-list-view"'
+  anchor = 'class="sm:border sm:rounded-lg os-list-view"'
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/BatchCourses.vue"
@@ -6447,14 +6503,15 @@ separata da virgole; TagPicker segnala la modifica con @dirty. Tutta la logica u
 ATTENZIONE al merge di v2.61.0: l'upstream modifica proprio il trigger del MultiSelect che non
 abbiamo più (aggiunge :aria-expanded, text-left → text-start): conflitto sicuro nel blocco
 cancellato. Tenere il nostro <TagPicker> e scartare il blocco upstream; non reimportare
-MultiSelect né TagOption."""
+MultiSelect né TagOption.
+Merge di v2.62.0 (2026-09-24): file spostato dall'upstream in components/Courses/, ancore invariate."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Courses/CourseDetailsSection.vue"
+  file = "frontend/src/components/Courses/CourseDetailsSection.vue"
   anchor = "<TagPicker v-model=\"doc.tags\" @dirty=\"markDirty()\" />"
 
   [[entries.sites]]
-  file = "frontend/src/pages/Courses/CourseDetailsSection.vue"
+  file = "frontend/src/components/Courses/CourseDetailsSection.vue"
   anchor = "import TagPicker from '@/oslms/components/TagPicker.vue'"
 
 [[entries]]
@@ -6468,14 +6525,15 @@ upstream, per restilizzarlo con i colori del cliente senza toccare il componente
 batch-form-os-link) e il segnaposto della creazione in linea passa da __() («Category name»).
 Il ripuntamento dell'import è del commit 3f21af05c (preselezione dei Link dopo il cambio di
 Combobox). Dopo un merge l'import può tornare a '@/components/Controls/Link.vue': va ripuntato.
-v2.61.0 non tocca queste righe."""
+v2.61.0 non tocca queste righe.
+Merge di v2.62.0 (2026-09-24): file spostato dall'upstream in components/Courses/, ancore invariate."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Courses/CourseDetailsSection.vue"
+  file = "frontend/src/components/Courses/CourseDetailsSection.vue"
   anchor = "import Link from '@/oslms/components/Controls/Link.vue'"
 
   [[entries.sites]]
-  file = "frontend/src/pages/Courses/CourseDetailsSection.vue"
+  file = "frontend/src/components/Courses/CourseDetailsSection.vue"
   anchor = ":inlineCreatePlaceholder=\"__('Category name')\""
 
 [[entries]]
@@ -6489,10 +6547,11 @@ doc.tags…) non viene valutato prima che resource.doc esista. Introdotto da Gab
 commit «fix merge problems on course and lesson form» (6d6d2af78) insieme al titolo con
 text-base font-semibold al posto di text-base-semibold (ritocco di classe, senza regola).
 Confidenza bassa: la motivazione (errore a doc non ancora caricato) è dedotta, non
-documentata. v2.61.0 non tocca queste righe."""
+documentata. v2.61.0 non tocca queste righe.
+Merge di v2.62.0 (2026-09-24): file spostato dall'upstream in components/Courses/, ancore invariate."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Courses/CourseDetailsSection.vue"
+  file = "frontend/src/components/Courses/CourseDetailsSection.vue"
   anchor = "<section v-if=\"doc\" class=\"space-y-5\">"
 
 # --- Editor del corso (CourseEditor.vue) ----------------------------------------
@@ -6547,10 +6606,11 @@ Il campo Istruttori del modulo corso porta la classe os-multilink, l'aggancio co
 elite (styles/theme/elite/main.css, .os-multilink div button) dà al campo lo sfondo degli altri
 input; stesso aggancio di course-form-overview-theme-hooks per «Corsi correlati» (commit
 93cb00289). Nel file ci sono anche solo virgole finali aggiunte dal formatter. v2.61.0 cambia
-solo l'import dei tipi ('@/types/api' → '@/types'): nessun conflitto atteso."""
+solo l'import dei tipi ('@/types/api' → '@/types'): nessun conflitto atteso.
+Merge di v2.62.0 (2026-09-24): file spostato dall'upstream in components/Courses/, ancore invariate."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Courses/CourseInstructorsField.vue"
+  file = "frontend/src/components/Courses/CourseInstructorsField.vue"
   anchor = "class=\"os-multilink\""
 
 [[entries]]
@@ -6564,10 +6624,11 @@ lì è l'unico modo per togliere un istruttore. Un istruttore il cui utente è s
 torna mai dalla ricerca: l'upstream lo filtrava via, lasciandolo invisibile ma ancora nel
 modello, con ogni salvataggio del corso che falliva su un link rotto. Si ripiega sull'id
 utente grezzo, così resta elencato e si può rimuovere (commit 1f3614c65). v2.61.0 non tocca
-queste righe."""
+queste righe.
+Merge di v2.62.0 (2026-09-24): file spostato dall'upstream in components/Courses/, ancore invariate."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Courses/CourseInstructorsField.vue"
+  file = "frontend/src/components/Courses/CourseInstructorsField.vue"
   anchor = "resolvedDetails.value.get(v) ?? {"
   symbol = "resolvedSelected"
 
@@ -6819,7 +6880,8 @@ createApp: conflitto certo sull'hunk del segnaposto. Risolvere adottando blockNo
 registerDirectives upstream ma tenendo la regola: import di `call`, segnaposto iniziale col
 docname, get_value del titolo e label tradotta, cioè renderQuizPlaceholder(label) può
 diventare `this.wrapper.replaceChildren(blockNotice(`${__('Quiz')}: ${label}`))` e il nostro
-costruttore DOM si può eliminare."""
+costruttore DOM si può eliminare.
+Merge di v2.62.0 (2026-09-24): l'upstream introduce blockNotice per il segnaposto; titolo del quiz e __('Quiz') tenuti."""
 
   [[entries.sites]]
   file = "frontend/src/utils/quiz.js"
@@ -6828,7 +6890,7 @@ costruttore DOM si può eliminare."""
 
   [[entries.sites]]
   file = "frontend/src/utils/quiz.js"
-  anchor = "text.textContent = `${__('Quiz')}: ${label}`"
+  anchor = "blockNotice(`${__('Quiz')}: ${label}`)"
   symbol = "Quiz.renderQuizPlaceholder"
 
 # --- Modale «Aggiungi valutazione» della classe (AssessmentModal.vue) ---------
@@ -6854,14 +6916,15 @@ segnaposto; le stringhe nuove (rifiuto «You do not have permission to add asses
 this batch.», «This site is in read-only mode.», Save) vanno tradotte in it.csv/it.po.
 Il gate del nuovo form (is_moderator || is_instructor) copre Docente tramite is_instructor;
 l'import di AssessmentModal in Batches/components/Assessments.vue appartiene a un altro
-gruppo."""
+gruppo.
+Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/AssessmentForm.vue; regola riapplicata li, ancore invariate."""
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/AssessmentModal.vue"
+  file = "frontend/src/pages/Forms/AssessmentForm.vue"
   anchor = ":placeholder=\"__('Select option')\""
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/AssessmentModal.vue"
+  file = "frontend/src/pages/Forms/AssessmentForm.vue"
   anchor = "{ label: __('Programming Exercise'), value: 'LMS Programming Exercise' },"
 
 # --- Pagina Importazione dati (DataImport.vue) -------------------------------
@@ -7213,10 +7276,11 @@ accettare la cancellazione, togliere il filtro nel nuovo form (con il marcatore)
 qui il sito. Il nuovo form ha anche un proprio gate (is_moderator || is_instructor) copiato
 dal gate upstream di BatchCourses.vue, più largo del nostro (solo is_moderator,
 batch-content-add-moderator-only): riportare lì la stessa restrizione, perché l'URL del
-form è raggiungibile anche senza pulsante."""
+form è raggiungibile anche senza pulsante.
+Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/BatchCourseForm.vue; regola riapplicata li, ancore invariate. Filtro published: 1 upstream rimosso di nuovo."""
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/BatchCourseModal.vue"
+  file = "frontend/src/pages/Forms/BatchCourseForm.vue"
   anchor = 'doctype="LMS Course"'
 
 # --- Candidatura a un'offerta di lavoro (JobApplicationModal.vue) -------------
@@ -7277,41 +7341,46 @@ modifica/cancellazione. Decisione del committente necessaria: (a) tenere questo 
 la modifica (LiveClass.vue lo apre ancora con :liveClass) e usare il form upstream solo per
 creare, riportandovi promemoria e validazione; oppure (b) portare modifica e promemoria nel
 form upstream con una route di modifica (es. nome della lezione in params) e aggiornare
-LiveClass.vue. In ogni caso le regole sopra vanno riapplicate e i siti spostati."""
+LiveClass.vue. In ogni caso le regole sopra vanno riapplicate e i siti spostati.
+Merge di v2.62.0 (2026-09-24): LiveClassModal.vue eliminata; tutto portato nel modulo instradato pages/Forms/LiveClassForm.vue, che ora fa anche la modifica (route EditLiveClass), per decisione del committente (un solo modulo)."""
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/LiveClassModal.vue"
-  anchor = "const isEdit = computed(() => !!props.liveClass)"
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
+  anchor = "const isEdit = computed(() => !!props.liveClassName)"
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
   anchor = "url: 'os_lms.os_lms.api.update_live_class',"
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/LiveClassModal.vue"
-  anchor = "const scheduleLocked = computed(() => isEdit.value && !!props.liveClass?.started_at)"
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
+  anchor = "() => isEdit.value && !!liveClassDoc.data?.started_at"
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
   anchor = 'v-if="isEdit && scheduleLocked"'
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
   anchor = "validateSchedule(scheduleChanged())"
   symbol = "validateEditFields"
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/LiveClassModal.vue"
-  anchor = "liveClass.time = (props.liveClass.time || '').slice(0, 5)"
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
+  anchor = "liveClass.time = (doc.time || '').slice(0, 5)"
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
   anchor = "if (time.length < 2 || time.length > 3) {"
   symbol = "valideTime"
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/LiveClassModal.vue"
-  anchor = "v-if=\"!isEdit && props.conferencingProvider === 'Zoom'\""
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
+  anchor = "v-if=\"!isEdit && conferencingProvider === 'Zoom'\""
+
+  [[entries.sites]]
+  file = "frontend/src/routes.js"
+  anchor = "path: 'live-class/:liveClassName/edit',"
 
   [entries.visibility]
   subject = "modifica e riprogrammazione di una lezione live"
@@ -7333,22 +7402,23 @@ seconda chiamata a update_live_class sulla lezione appena creata (persistReminde
 In modifica sent_at non viene inviato: il server riallinea le righe e un offset cambiato
 riparte da solo. L'invio lo fa lo scheduler di os_lms (live_class_reminders.py).
 ATTENZIONE al merge di v2.62.0: il file è cancellato e LiveClassForm.vue upstream non ha la
-sezione promemoria; vedi live-class-modal-edit-reschedule per la scelta di come riapplicarla."""
+sezione promemoria; vedi live-class-modal-edit-reschedule per la scelta di come riapplicarla.
+Merge di v2.62.0 (2026-09-24): LiveClassModal.vue eliminata; tutto portato nel modulo instradato pages/Forms/LiveClassForm.vue, che ora fa anche la modifica (route EditLiveClass), per decisione del committente (un solo modulo)."""
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
   anchor = "const MIN_REMINDER_MINUTES = 15"
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
   anchor = '@click="addReminder"'
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/LiveClassModal.vue"
-  anchor = "const persistRemindersAfterCreate = (created, close) => {"
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
+  anchor = "const persistRemindersAfterCreate = (created) => {"
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
   anchor = "const validateReminders = () => {"
 
 [[entries]]
@@ -7370,16 +7440,17 @@ saving. La Dialog usa ancora la vecchia API (v-model + :options): righe upstream
 (Jannat Patel), residuo di merge, non una scelta nostra.
 ATTENZIONE al merge di v2.62.0: file cancellato; LiveClassForm.vue upstream usa
 submitResource (utils/resource) e HeaderButton con :loading, che probabilmente coprono già
-entrambe le regole: verificare prima di riapplicarle."""
+entrambe le regole: verificare prima di riapplicarle.
+Merge di v2.62.0 (2026-09-24): LiveClassModal.vue eliminata; tutto portato nel modulo instradato pages/Forms/LiveClassForm.vue, che ora fa anche la modifica (route EditLiveClass), per decisione del committente (un solo modulo)."""
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
   anchor = "if (saving.value) {"
   symbol = "submitLiveClass"
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/LiveClassModal.vue"
-  anchor = "const validation = validateFormFields()"
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
+  anchor = "validate: () => validateFormFields(),"
   symbol = "submitCreate"
 
 [[entries]]
@@ -7402,18 +7473,16 @@ Ritocchi di interfaccia:
   stessa correzione, quindi su questo punto non è più una personalizzazione.
 ATTENZIONE al merge di v2.62.0: file cancellato; in LiveClassForm.vue riportare use12Hour e,
 se ancora serve, l'etichetta; le opzioni di registrazione restano letterali inglesi anche
-lì. Domanda per il committente: l'etichetta doppia dell'ora serve ancora?"""
+lì. Domanda per il committente: l'etichetta doppia dell'ora serve ancora?
+Merge di v2.62.0 (2026-09-24): LiveClassModal.vue eliminata; tutto portato nel modulo instradato pages/Forms/LiveClassForm.vue, che ora fa anche la modifica (route EditLiveClass), per decisione del committente (un solo modulo).
+Merge di v2.62.0 (2026-09-24): LiveClassForm upstream ha una sola etichetta tradotta :label="__('Time')" sul campo ora: niente piu doppia etichetta, sito tolto (la domanda sull'etichetta doppia decade)."""
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
   anchor = ':use12Hour="false"'
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/LiveClassModal.vue"
-  anchor = "{{ __('Time') }}"
-
-  [[entries.sites]]
-  file = "frontend/src/components/Modals/LiveClassModal.vue"
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
   anchor = "{ label: __('No Recording'), value: 'No Recording' },"
 
 # --- Iscrizione studenti alla classe (StudentModal.vue) -----------------------
@@ -7443,17 +7512,22 @@ selezione multipla + ciclo di insert con messaggio aggregato + niente campo Paga
 aggiornare di conseguenza frontend/src/tests/batchStudentForm.test.ts (si aspetta payment:
 null e il flusso crea-pagamento → Transactions). Il gate del nuovo form (is_moderator ||
 is_evaluator) esclude il Docente, che da noi può iscrivere (isFullAdmin): aggiungere
-is_docente al refusal del form."""
+is_docente al refusal del form.
+Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/BatchStudentForm.vue; regola riapplicata li, ancore invariate. Anche il Docente puo iscrivere (come isFullAdmin in AdminBatchDashboard). Rischio preesistente: lato server validate_owner puo rifiutare l'iscrizione fatta dal Docente."""
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/StudentModal.vue"
+  file = "frontend/src/pages/Forms/BatchStudentForm.vue"
   anchor = 'v-model="selectedStudents"'
 
   [[entries.sites]]
-  file = "frontend/src/components/Modals/StudentModal.vue"
-  anchor = "const addStudents = async (close) => {"
+  file = "frontend/src/pages/Forms/BatchStudentForm.vue"
+  anchor = "const submit = async () => {"
 
 # --- Dettaglio gateway di pagamento (PaymentGatewayDetails.vue) --------------
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Forms/BatchStudentForm.vue"
+  anchor = "!user.data?.is_docente"
 
 [[entries]]
 id = "payment-gateway-details-formatting"
@@ -7488,10 +7562,11 @@ Certificates» e l'azione «Create» restano letterali inglesi.
 ATTENZIONE al merge di v2.62.0: l'upstream CANCELLA questo file e lo sostituisce con
 frontend/src/pages/Forms/BulkCertificatesForm.vue (route BulkCertificates), la cui select
 Corso non ha segnaposto: accettare la cancellazione e rimettere
-:placeholder="__('Select option')" sulla select del nuovo form (con il marcatore)."""
+:placeholder="__('Select option')" sulla select del nuovo form (con il marcatore).
+Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/BulkCertificatesForm.vue; regola riapplicata li, ancore invariate."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Batches/components/BulkCertificates.vue"
+  file = "frontend/src/pages/Forms/BulkCertificatesForm.vue"
   anchor = ":placeholder=\"__('Select option')\""
 
 # --- Iscrizione di uno studente al corso (CourseEnrollmentModal.vue) ----------
@@ -7517,10 +7592,11 @@ v-if="purchasedCertificate". Accettare la cancellazione e ricommentare (o toglie
 casella nel nuovo form; frontend/src/tests/courseEnrollmentForm.test.ts la usa e va adattato.
 Il lato server (enforce_server_managed_fields) riporta comunque purchased_certificate a
 false per chi non ne ha diritto. Domanda per il committente: confermare che la casella va
-nascosta anche nel nuovo form."""
+nascosta anche nel nuovo form.
+Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/CourseEnrollmentForm.vue; regola riapplicata li, ancore invariate."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Courses/CourseEnrollmentModal.vue"
+  file = "frontend/src/pages/Forms/CourseEnrollmentForm.vue"
   anchor = "<!-- <FormControl"
 
 [[entries]]
@@ -7535,11 +7611,12 @@ amministratore che iscrive un'altra persona; oggi it.csv traduce comunque Enroll
 Il titolo «Enroll a Student» passa da __() (commit 979d01269). Solo traduzione.
 ATTENZIONE al merge di v2.62.0: file cancellato e sostituito da CourseEnrollmentForm.vue,
 che ha già :title="__('Enroll a Student')" e usa un HeaderButton __('Save'): nessuna delle
-due modifiche va riapplicata, salvo che il committente voglia «Iscrivi» al posto di «Salva»."""
+due modifiche va riapplicata, salvo che il committente voglia «Iscrivi» al posto di «Salva».
+Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/CourseEnrollmentForm.vue; regola riapplicata li, ancore invariate. L'etichetta sta ora nella prop label del pulsante."""
 
   [[entries.sites]]
-  file = "frontend/src/pages/Courses/CourseEnrollmentModal.vue"
-  anchor = "{{ __('Iscrivi') }}"
+  file = "frontend/src/pages/Forms/CourseEnrollmentForm.vue"
+  anchor = ":label=\"__('Iscrivi')\""
 
 # ---------------------------------------------------------------------------
 # Censimento 2026-09-23 prima del merge di v2.62.0 — guscio dell'app, tema, menu utente, registrazione
@@ -7588,7 +7665,8 @@ dell'onMounted, NON reintrodurre la voce Toggle Theme, importare solo ciò che s
 Inoltre v2.62.0 porta sul telefono la pagina «You» (pages/MobileYou.vue +
 components/Settings/youRows.ts, mobileSettings.ts) con una riga «Colour mode»
 (colourModeRow → setThemePreference): va nascosta anche lì, altrimenti lo studente torna a
-poter cambiare tema dal telefono (file di altri gruppi, da riapplicare nel merge)."""
+poter cambiare tema dal telefono (file di altri gruppi, da riapplicare nel merge).
+Merge di v2.62.0 (2026-09-24): theme.ts riscritto dall'upstream (preferenza light/dark/system): applyTheme riespresso su setThemePreference, toggleTheme resta no-op; nel menu utente la regola e l'assenza della voce Toggle Theme, quindi l'ancora e il commento che la documenta."""
 
   [[entries.sites]]
   file = "frontend/src/App.vue"
@@ -7609,7 +7687,7 @@ poter cambiare tema dal telefono (file di altri gruppi, da riapplicare nel merge
 
   [[entries.sites]]
   file = "frontend/src/components/Sidebar/UserDropdown.vue"
-  anchor = "import { applyTheme, theme } from '@/utils/theme'"
+  anchor = "// OSLMS-CUSTOM: \"Toggle Theme\" item removed here (theme fixed by the admin)"
 
   [entries.visibility]
   subject = "commutatore di tema (voce «Toggle Theme» del menu utente, riga «Colour mode» su telefono)"

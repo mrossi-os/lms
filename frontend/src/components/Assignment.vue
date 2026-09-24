@@ -23,7 +23,7 @@
 				{{ __('Assignment') }}: {{ assignment.data.title }}
 			</div>
 			<div
-				v-html="sanitizeRichHTML(assignment.data.question)"
+				v-safe-html:rich="assignment.data.question"
 				class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal"
 			></div>
 		</div>
@@ -112,8 +112,8 @@
 					<div v-else>
 						<div class="flex items-center text-ink-gray-7">
 							<a
-								:href="attachment"
-								target="_blank"
+								:href="safeUrl(attachment)"
+								v-external
 								class="cursor-pointer !no-underline text-sm leading-5"
 							>
 								<div class="flex items-center">
@@ -176,7 +176,7 @@
 					</div>
 					<div
 						class="leading-6 text-ink-gray-9"
-						v-html="sanitizeRichHTML(submissionResource.doc.comments)"
+						v-safe-html:rich="submissionResource.doc.comments"
 					></div>
 				</div>
 
@@ -219,7 +219,6 @@
 	</div>
 </template>
 <script setup>
-import { sanitizeRichHTML } from '@/utils/sanitizeRichHTML'
 import {
 	Badge,
 	Button,
@@ -239,6 +238,7 @@ import {
 import { useRouter } from 'vue-router'
 import { validateFile } from '@/utils'
 import RichTextEditor from '@/components/RichTextEditor.vue'
+import { safeUrl } from '@/utils/safeUrl'
 
 const answer = ref(null)
 const attachment = ref(null)

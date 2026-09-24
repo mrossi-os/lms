@@ -20,7 +20,6 @@
 					v-for="(field, fieldIndex) in column.fields"
 					:key="`${columnIndex}-${fieldIndex}`"
 				>
-					<!-- Upload: full-width block (label/description sit above) -->
 					<div v-if="field.type == 'Upload'" class="py-3">
 						<div class="space-y-1 mb-2">
 							<div class="text-p-base-medium text-ink-gray-7">
@@ -33,19 +32,24 @@
 						<FileUploader
 							v-if="!data[field.name]"
 							:fileTypes="['image/*']"
+							:uploadArgs="{ private: !field.public }"
 							:validateFile="validateFile"
 							@success="(file) => (data[field.name] = file.file_url)"
 						>
 							<template
 								v-slot="{ file, progress, uploading, openFileSelector }"
 							>
-								<div class="">
+								<div>
 									<!-- OSLMS-CUSTOM: upload button texts translated with __() -->
-									<Button @click="openFileSelector" :loading="uploading">
+									<Button
+										class="text-p-base-medium"
+										:loading="uploading"
+										@click="openFileSelector"
+									>
 										{{
 											uploading
-											? __('Uploading {0}%').format(progress)
-											: __('Upload an image')
+												? __('Uploading {0}%').format(progress)
+												: __('Upload an image')
 										}}
 									</Button>
 								</div>
@@ -58,7 +62,8 @@
 									:class="field.size == 'lg' ? 'px-5 py-5' : 'px-20 py-8'"
 								>
 									<img
-										:src="fileUrl(data[field.name])"
+										:src="safeUrl(fileUrl(data[field.name]))"
+										alt=""
 										class="rounded"
 										:class="field.size == 'lg' ? 'w-36' : 'size-6'"
 									/>
@@ -78,7 +83,6 @@
 						</div>
 					</div>
 
-					<!-- Code/HTML: full-width block -->
 					<div v-else-if="field.type == 'Code'" class="py-3">
 						<CodeEditor
 							:label="__(field.label)"
@@ -94,15 +98,9 @@
 						</CodeEditor>
 					</div>
 
-					<!-- Textarea: full-width block (label/description above, like CRM) -->
 					<div v-else-if="field.type == 'textarea'" class="py-3">
-						<div class="space-y-1 mb-2">
-							<div class="text-p-base-medium text-ink-gray-7">
-								{{ __(field.label) }}
-							</div>
-							<div v-if="field.description" class="text-p-sm text-ink-gray-5">
-								{{ __(field.description) }}
-							</div>
+						<div class="text-p-base-medium text-ink-gray-7 mb-2">
+							{{ __(field.label) }}
 						</div>
 						<FormControl
 							type="textarea"
@@ -111,6 +109,29 @@
 							:required="field.reqd"
 							:aria-label="__(field.label)"
 							:placeholder="field.placeholder || __(field.label)"
+						/>
+						<div
+							v-if="field.description"
+							class="text-p-sm text-ink-gray-5 mt-2"
+						>
+							{{ __(field.description) }}
+						</div>
+					</div>
+
+					<!-- OSLMS-CUSTOM: welcome video field (external link or uploaded file), full-width block -->
+					<div v-else-if="field.type == 'VideoSourceInput'" class="py-3">
+						<div class="space-y-1 mb-2">
+							<div class="text-p-base-medium text-ink-gray-7">
+								{{ __(field.label) }}
+							</div>
+							<div v-if="field.description" class="text-p-sm text-ink-gray-5">
+								{{ __(field.description) }}
+							</div>
+						</div>
+						<VideoSourceInput
+							v-model="data[field.name]"
+							:placeholder="field.placeholder"
+							:allowedExtensions="field.allowedExtensions"
 						/>
 					</div>
 
@@ -172,7 +193,20 @@ import { reactive, watch } from 'vue'
 import { validateFile } from '@/utils'
 import Link from '@/components/Controls/Link.vue'
 import CodeEditor from '@/components/Controls/CodeEditor.vue'
-// OSLMS-CUSTOM: VideoSourceInput field type for the welcome video (link or uploaded file); its template branch is currently missing, see inventory
+import { seedCheckboxDefaults } from '@/components/Settings/mobileSettings'
+import { safeUrl } from '@/utils/safeUrl'
+
+// The FileUploader above binds :uploadArgs="{ private: !field.public }", and it
+// is written inline deliberately. Privacy is the FIELD's decision, never this
+// component's: the backend maps every Attach / Attach Image field of a
+// third-party <Gateway> Settings doctype to type 'Upload' (api.py
+// get_transformed_fields), and those reach here via PaymentGatewayDetails —
+// merchant QR codes and KYC documents among them. Only a field that opts in with
+// `public: true` may be world-readable; everything else keeps frappe's private
+// default. Behind a helper the privacy ratchet in publicImageUploads.test.ts can
+// only see "computed" and would stop catching a flip to public.
+
+// OSLMS-CUSTOM: VideoSourceInput field type for the welcome video (link or uploaded file)
 import FilePicker from '@/components/Controls/FilePicker.vue'
 import VideoSourceInput from '@/oslms/components/Form/VideoSourceInput.vue'
 
@@ -201,24 +235,10 @@ const fileName = (value) => {
 		: (url || '').split('/').pop()
 }
 
-// Seed each checkbox's default into the doc when it loads empty, without
-// overwriting an already-saved value. Watches props.data because the panel can
-// mount before the settings doc has loaded.
 watch(
 	() => props.data,
 	(data) => {
-		if (!data) return
-		props.sections.forEach((section) => {
-			section.columns.forEach((column) => {
-				column.fields.forEach((field) => {
-					if (field.type !== 'checkbox') return
-					const current = data[field.name]
-					if (current === null || current === undefined || current === '') {
-						data[field.name] = field.default ? 1 : 0
-					}
-				})
-			})
-		})
+		if (data) seedCheckboxDefaults(props.sections, data)
 	},
 	{ immediate: true }
 )

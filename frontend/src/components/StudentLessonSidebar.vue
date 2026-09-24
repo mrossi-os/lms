@@ -2,10 +2,16 @@
 	<div class="flex flex-col h-full">
 		<div class="bg-surface-gray-1 px-5 py-5 border-b">
 			<!-- OSLMS-CUSTOM: break-words: a long course title must not overflow the sidebar -->
-			<div class="text-lg-semibold text-ink-gray-9 leading-snug break-words">
+			<div
+				v-if="!hideHeader"
+				class="text-lg-semibold text-ink-gray-9 leading-snug break-words"
+			>
 				{{ courseTitle }}
 			</div>
-			<div class="mt-4 flex items-center gap-2 text-sm text-ink-gray-7">
+			<div
+				class="flex items-center gap-2 text-sm text-ink-gray-7"
+				:class="{ 'mt-4': !hideHeader }"
+			>
 				<Cloud class="size-4 stroke-1.5" />
 				<span>{{ __('Completed') }} {{ displayedProgress }}%</span>
 			</div>
@@ -50,10 +56,16 @@
 						<ul class="list-none">
 							<li v-for="lesson in chapter.lessons || []" :key="lesson.name">
 								<component
-									:is="inlineSelect ? 'button' : 'router-link'"
-									:type="inlineSelect ? 'button' : undefined"
+									:is="
+										lesson.locked
+											? 'div'
+											: inlineSelect
+											? 'button'
+											: 'router-link'
+									"
+									:type="!lesson.locked && inlineSelect ? 'button' : undefined"
 									:to="
-										inlineSelect
+										lesson.locked || inlineSelect
 											? undefined
 											: {
 													name: 'Lesson',
@@ -67,26 +79,31 @@
 									"
 									class="flex w-full items-center gap-3 rounded ps-9 pe-3 py-2 text-start text-sm leading-5 text-ink-gray-8 hover:bg-surface-gray-2"
 									:class="[
-										inlineSelect ? 'cursor-pointer' : '',
+										lesson.locked
+											? 'cursor-not-allowed opacity-60'
+											: inlineSelect
+											? 'cursor-pointer'
+											: '',
 										isActive(lesson.number)
 											? 'bg-surface-gray-2 text-ink-gray-9'
 											: '',
 									]"
-									@click="
-										inlineSelect &&
-											emit('select-lesson', {
-												chapterNumber: lesson.number.split('-')[0],
-												lessonNumber: lesson.number.split('-')[1],
-											})
-									"
+									@click="onLessonClick(lesson)"
 								>
 									<component
 										:is="iconFor(lesson.icon)"
 										class="size-4 stroke-1.5 shrink-0 text-ink-gray-7"
 									/>
 									<span class="truncate flex-1">{{ lesson.title }}</span>
+									<template v-if="lesson.locked">
+										<LockKeyhole
+											class="size-4 stroke-1.5 shrink-0 text-ink-gray-4"
+											aria-hidden="true"
+										/>
+										<span class="sr-only">{{ __('Locked') }}</span>
+									</template>
 									<CircleCheck
-										v-if="lesson.is_complete"
+										v-else-if="lesson.is_complete"
 										class="size-4 stroke-1.5 shrink-0 text-green-700 fill-none"
 									/>
 									<Circle
@@ -129,6 +146,7 @@ const props = defineProps({
 	completedLesson: { type: String, default: null },
 	inlineSelect: { type: Boolean, default: false },
 	withProgress: { type: Boolean, default: true },
+	hideHeader: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['select-lesson'])
@@ -197,6 +215,14 @@ function iconFor(icon) {
 
 function isActive(number) {
 	return props.selectedLessonNumber === number
+}
+
+function onLessonClick(lesson) {
+	if (lesson.locked) return
+	emit('select-lesson', {
+		chapterNumber: lesson.number.split('-')[0],
+		lessonNumber: lesson.number.split('-')[1],
+	})
 }
 
 function chapterDefaultOpen(chapter) {

@@ -8,11 +8,8 @@
 				:key="tabKey(group)"
 				:label="group.hideLabel ? undefined : group.label"
 			>
-				<!-- CRM's sidebar type: xs-medium group headings, sm item labels.
-				     Set on inner spans — the library's own text-base sits on the
-				     wrapper and would otherwise win the cascade. -->
 				<template #label>
-					<span class="text-xs-medium text-ink-gray-5">
+					<span class="text-p-xs-medium text-ink-gray-5">
 						{{ group.label }}
 					</span>
 				</template>
@@ -30,7 +27,7 @@
 						/>
 						<span v-else :class="[item.icon, 'size-4 shrink-0 text-ink-gray-7']" />
 					</template>
-					<span class="text-sm text-ink-gray-8">{{ __(item.label) }}</span>
+					<span class="text-p-sm text-ink-gray-7">{{ __(item.label) }}</span>
 				</SettingsNavItem>
 			</SettingsNavGroup>
 		</SettingsSidebar>
@@ -68,7 +65,15 @@ import {
 	SettingsSidebar,
 	createDocumentResource,
 } from 'frappe-ui'
-import { computed, inject, markRaw, ref, watch } from 'vue'
+import {
+	computed,
+	inject,
+	markRaw,
+	onBeforeUnmount,
+	onMounted,
+	ref,
+	watch,
+} from 'vue'
 import { useSettings } from '@/stores/settings'
 import SettingDetails from '@/components/Settings/SettingDetails.vue'
 import Members from '@/components/Settings/Members.vue'
@@ -117,6 +122,16 @@ const doctype = ref('LMS Settings')
 const activeTab = ref('')
 const settingsStore = useSettings()
 
+// Tells openSettings there is something here to open. Nothing mounts this on a
+// phone, and a moderator asking for Settings from a routed form there would
+// otherwise have their form closed for a dialog that never appeared.
+onMounted(() => {
+	settingsStore.isSettingsMounted = true
+})
+onBeforeUnmount(() => {
+	settingsStore.isSettingsMounted = false
+})
+
 const data = createDocumentResource({
 	doctype: doctype.value,
 	name: doctype.value,
@@ -125,6 +140,10 @@ const data = createDocumentResource({
 	auto: true,
 })
 
+// OSLMS-CUSTOM: the settings tree stays here instead of upstream's
+// settingsStructure.js (v2.62.0): ours carries role conditions, the os_lms tabs,
+// labels translated where defined and stable keys. settingsStructure.js is not
+// read by this dialog, so upstream changes to it must be ported here by hand.
 const tabsStructure = computed(() => {
 	return [
 		{
@@ -346,6 +365,7 @@ const tabsStructure = computed(() => {
 											label: __('Lesson dwell time (seconds)'),
 											name: 'lesson_dwell_time',
 											type: 'number',
+											min: 1,
 											description: __(
 												'Seconds a learner must stay on a lesson before it auto-marks complete.',
 											),
@@ -407,7 +427,7 @@ const tabsStructure = computed(() => {
 				{
 					key: 'Categories',
 					label: __('Categories'),
-					description: __('Double click to edit the category'),
+					description: __('Group courses under a category'),
 					icon: 'lucide-network',
 					template: markRaw(Categories),
 				},
@@ -808,6 +828,8 @@ const tabsStructure = computed(() => {
 											name: 'meta_image',
 											type: 'Upload',
 											size: 'lg',
+											// Open Graph image: unauthenticated crawlers fetch it.
+											public: true,
 											description:
 												'Default social-share image used when pages lack their own meta image.',
 										},

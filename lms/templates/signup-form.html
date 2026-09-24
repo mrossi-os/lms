@@ -1,140 +1,248 @@
-{% set custom_signup_content = frappe.db.get_single_value("LMS Settings",
-"custom_signup_content") %}
-<style>
-	/* Terms & conditions: scrollable notice + short acceptance checkbox */
-	.signup-form .terms-and-conditions {
-		text-align: left;
-	}
-	/* OSLMS-CUSTOM: terms notice in a scrollable box, short acceptance label */
-	.signup-form .terms-and-conditions-content {
-		max-height: 140px;
-		overflow-y: auto;
-		overflow-x: hidden;
-		margin-bottom: 12px;
-		padding: 10px 12px;
-		border: 1px solid var(--border-color, #d1d8dd);
-		border-radius: var(--border-radius, 6px);
-		background-color: var(--gray-50, #f7f7f7);
-		font-size: var(--text-sm, 12px);
-		line-height: 1.5;
-		color: var(--text-muted, #6c757d);
-	}
-	.signup-form .terms-and-conditions-content h1 {
-		font-size: 2.5rem;
-	}
-	.signup-form .terms-and-conditions-content p:last-child {
-		margin-bottom: 0;
-	}
-	.signup-form .terms-and-conditions-check {
-		display: flex;
-		align-items: flex-start;
-		gap: 8px;
-		margin: 0;
-		font-size: var(--text-sm, 12px);
-		color: var(--text-color, #1f272e);
-		cursor: pointer;
-	}
-	.signup-form .terms-and-conditions-check input[type="checkbox"] {
-		margin-top: 2px;
-		flex-shrink: 0;
-	}
-</style>
-<form class="signup-form" role="form">
-	<div class="page-card-body">
-		<div class="form-group">
-			<label class="form-label sr-only" for="signup_fullname">
-				{{ _("Full Name") }}
-			</label>
-			<input
-				type="text"
-				id="signup_fullname"
-				class="form-control"
-				placeholder="{{ _('Jane Doe') }}"
-				required
-				autofocus
-			/>
-		</div>
-		<div class="form-group">
-			<label class="form-label sr-only" for="signup_email">
-				{{ _("Email") }}
-			</label>
-			<input
-				type="email"
-				id="signup_email"
-				class="form-control"
-				placeholder="{{ _('jane@example.com') }}"
-				required
-			/>
-		</div>
+{% from "templates/includes/login/macros.html" import alert_banner %}
+{% set custom_signup_content = frappe.db.get_single_value("LMS Settings", "custom_signup_content") %}
+{% set login_link = '<a href="#login">' ~ _("Login") ~ '</a>' %}
+{% set already_registered_message = _("You are already registered. {0} instead.").format(login_link) %}
+<form class="form-signin signup-form flex flex-col gap-8" role="form" novalidate>
+    <div class="page-card-body flex flex-col gap-4">
+        {{ alert_banner("success") }}
+        {{ alert_banner("error") }}
+        <div class="form-group flex flex-col items-start gap-1.5 mb-0">
+            <label class="text-base text-ink-gray-5 w-full mb-0" for="signup_fullname">{{ _("Full Name") }}</label>
+            <input type="text" id="signup_fullname" class="form-control" placeholder="{{ _('Jane Doe') }}"
+                required autofocus autocomplete="name">
+            <p class="field-error text-base text-ink-red-8 mb-0"></p>
+        </div>
+        <div class="form-group flex flex-col items-start gap-1.5 mb-0">
+            <label class="text-base text-ink-gray-5 w-full mb-0" for="signup_email">{{ _("Email") }}</label>
+            <input type="email" id="signup_email" class="form-control"
+                placeholder="{{ _('jane@example.com') }}" required autocomplete="email">
+            <p class="field-error text-base text-ink-red-8 mb-0"></p>
+        </div>
 
-		<!-- OSLMS-CUSTOM: no user category select; terms = short checkbox label + scrollable notice -->
-		{% if custom_signup_content %}
-		<div class="form-group terms-and-conditions">
-			<label class="terms-and-conditions-check" for="signup-terms">
-				<input
-					type="checkbox"
-					autocomplete="off"
-					class="input-with-feedback"
-					data-fieldtype="Check"
-					data-fieldname="terms"
-					id="signup-terms"
-					name="signup-terms"
-					required
-				/>
-				<span style="color: black"
-					>{{ _("I agree to the Terms and Conditions") }}</span
-				>
-			</label>
-			<div class="terms-and-conditions-content">
-				{{ custom_signup_content }}
-			</div>
-		</div>
-		{% endif %}
-	</div>
-	<div class="page-card-actions">
-		<button
-			class="btn btn-sm btn-primary btn-block btn-signup"
-			type="submit"
-		>
-			{{ _("Sign up") }}
-		</button>
+        <!-- OSLMS-CUSTOM: no user category select; terms = short checkbox label + scrollable notice -->
 
-		<p class="text-center sign-up-message">
-			<a href="#login" class="blue">{{ _("Have an account? Login") }}</a>
-		</p>
-	</div>
+        {% if custom_signup_content %}
+        <div class="form-group terms-and-conditions flex flex-col items-start gap-1.5 mb-0">
+            <label class="terms-and-conditions-check flex items-start gap-2 text-p-sm text-ink-gray-7 mb-0" for="signup-terms">
+                <input type="checkbox" id="signup-terms" class="shrink-0 mt-1" data-fieldtype="Check"
+                    data-fieldname="terms" autocomplete="off" required>
+                <span>{{ _("I agree to the Terms and Conditions") }}</span>
+            </label>
+            <div class="terms-and-conditions-content">
+                {{ custom_signup_content }}
+            </div>
+            <p class="field-error text-base text-ink-red-8 mb-0"></p>
+        </div>
+        {% endif %}
+    </div>
+    <div class="page-card-actions flex flex-col gap-3">
+        <button class="es-button w-full btn-signup" data-variant="solid"
+            type="submit" disabled>{{ _("Sign up") }}</button>
+
+        <p class="text-center sign-up-message text-p-sm text-ink-gray-6 mt-auto mb-0">
+            <a href="#login" class="text-p-sm-semibold text-ink-gray-6">{{ _("Have an account? Login") }}</a>
+        </p>
+    </div>
 </form>
 
+<style>
+    .signup-form .select-input-wrapper {
+        position: relative;
+        width: 100%;
+    }
+
+    .signup-form select.form-control {
+        appearance: none;
+        height: 28px;
+        padding: 2px 8px;
+        padding-inline-end: 28px;
+        border: 1px solid var(--outline-gray-2);
+        border-radius: var(--radius);
+        background-color: var(--surface-base);
+        cursor: pointer;
+    }
+
+    .signup-form .form-group.invalid select.form-control {
+        border-color: var(--outline-red-3);
+    }
+
+    .signup-form .select-icon {
+        position: absolute;
+        top: 50%;
+        inset-inline-end: 8px;
+        transform: translateY(-50%);
+        pointer-events: none;
+        line-height: 0;
+    }
+
+    .signup-form .select-icon use {
+        stroke: var(--ink-gray-5);
+    }
+
+    .signup-form input[type="checkbox"] {
+        accent-color: var(--surface-gray-7);
+    }
+
+    /* OSLMS-CUSTOM: terms notice in a scrollable box, short acceptance label */
+    /* The long terms text used to be the checkbox label: reading or selecting it
+       ticked the box. It now sits in its own scrollable box under the checkbox. */
+    .signup-form .terms-and-conditions {
+        text-align: start;
+    }
+
+    .signup-form .terms-and-conditions-content {
+        width: 100%;
+        max-height: 140px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 10px 12px;
+        border: 1px solid var(--border-color, #d1d8dd);
+        border-radius: var(--border-radius, 6px);
+        background-color: var(--gray-50, #f7f7f7);
+        font-size: var(--text-sm, 12px);
+        line-height: 1.5;
+        color: var(--text-muted, #6c757d);
+    }
+
+    .signup-form .terms-and-conditions-content h1 {
+        font-size: 2.5rem;
+    }
+
+    .signup-form .terms-and-conditions-content p:last-child {
+        margin-bottom: 0;
+    }
+
+    .signup-form .terms-and-conditions-check {
+        cursor: pointer;
+    }
+
+    .signup-form .login-error-banner a {
+        color: inherit;
+        font-weight: 600;
+        text-decoration: underline;
+    }
+</style>
+
 <script>
-	frappe.ready(function () {
-		$(".signup-form").on("submit", (e) => {
-			signup(e);
-		});
-	});
+    let signup_button_label = "";
 
-	const signup = (e) => {
-		e.preventDefault();
-		const email = ($("#signup_email").val() || "").trim();
-		const full_name = frappe.utils.xss_sanitise(
-			($("#signup_fullname").val() || "").trim(),
-		);
+    frappe.ready(function () {
+        signup_button_label = $(".signup-form .btn-signup").text().trim();
 
-		if (!email || !validate_email(email) || !full_name) {
-			login.set_status('{{ _("Valid email and name required") }}', "red");
-			return false;
-		}
+        $("#user_category").on("change", (e) => {
+            style_category(e);
+            clear_field_error("user_category");
+        });
 
-		frappe.call({
-			method: "lms.lms.user.sign_up",
-			args: {
-				email: email,
-				full_name: full_name,
-				verify_terms: $("#signup-terms").prop("checked") ? 1 : 0,
-				// OSLMS-CUSTOM: user category select removed, always send an empty value
-				user_category: "",
-			},
-			statusCode: login.login_handlers,
-		});
-		return false;
-	};
+        $("#signup_fullname, #signup_email").on("input", () => {
+            toggle_signup_button();
+        });
+
+        $(window).on("hashchange", () => {
+            reset_signup_form();
+        });
+
+        $(".signup-form").on("submit", (e) => {
+            signup(e);
+        });
+
+        toggle_signup_button();
+    });
+
+    const style_category = (e) => {
+        let category_color = $(e.currentTarget).val() ? "var(--text-color)" : "var(--text-muted)";
+        $("#user_category").css("color", category_color);
+    }
+
+    const clear_field_error = (field) => {
+        $("#" + field).closest(".form-group").removeClass("invalid").find(".field-error").text("");
+    }
+
+    const toggle_signup_button = () => {
+        const filled = ($("#signup_fullname").val() || "").trim() && ($("#signup_email").val() || "").trim();
+        $(".signup-form .btn-signup").prop("disabled", !filled);
+    }
+
+    const reset_signup_form = () => {
+        const form = $(".signup-form");
+        form.find("input:not([type='submit'])").val("").prop("checked", false);
+        form.find("#user_category").val("").css("color", "var(--text-muted)");
+        form.find(".form-group").removeClass("invalid").find(".field-error").text("");
+        form.find(".page-card-body").removeClass("invalid");
+        form.find(".login-error-banner, .login-success-banner").addClass("hidden");
+        form.find(".btn-signup").removeAttr("aria-busy").text(signup_button_label);
+        toggle_signup_button();
+    }
+
+    const signup = (e) => {
+        e.preventDefault();
+        const email = ($("#signup_email").val() || "").trim();
+        const full_name = frappe.utils.xss_sanitise(($("#signup_fullname").val() || "").trim());
+        const user_category = $("#user_category").length ? $("#user_category").val() : "";
+
+        if (!full_name) {
+            login.show_field_error("signup_fullname", {{ _("Full name is required.") | tojson }});
+            return false;
+        }
+
+        if (!email || !validate_email(email)) {
+            login.show_field_error("signup_email", {{ _("Please enter a valid email.") | tojson }});
+            return false;
+        }
+
+        if ($("#user_category").length && !user_category) {
+            login.show_field_error("user_category", {{ _("Please select a category.") | tojson }});
+            return false;
+        }
+
+        if ($("#signup-terms").length && !$("#signup-terms").prop("checked")) {
+            login.show_field_error("signup-terms", {{ _("Please accept the terms to continue.") | tojson }});
+            return false;
+        }
+
+        frappe.call({
+            method: "lms.lms.user.sign_up",
+            args: {
+                "email": email,
+                "full_name": full_name,
+                "verify_terms": $("#signup-terms").prop("checked") ? 1 : 0,
+                // OSLMS-CUSTOM: user category select removed, always send an empty value
+                user_category: "",
+            },
+            statusCode: signup_handlers()
+        })
+        return false;
+    }
+
+    const signup_handlers = () => {
+        return Object.assign({}, login.login_handlers, {
+            200: (data) => {
+                const [code, message] = data.message;
+                const section = $("section:visible");
+
+                if (cint(code) === 0) {
+                    login.hide_loading();
+                    section.find(".login-success-banner").addClass("hidden");
+                    show_signup_error(message);
+                } else {
+                    login.set_status({{ _("Success") | tojson }}, "green");
+                    section.find(".login-error-banner").addClass("hidden");
+                    login.show_success_banner(message);
+                }
+            }
+        });
+    }
+
+    const show_signup_error = (message) => {
+        const banner = $("section:visible .login-error-banner");
+        const title = banner.find(".es-alert__title");
+
+        if (message === {{ _("Already Registered") | tojson }}) {
+            title.html({{ already_registered_message | tojson }});
+        } else {
+            title.text(message);
+        }
+
+        banner.removeClass("hidden");
+    }
 </script>

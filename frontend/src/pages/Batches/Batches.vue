@@ -4,6 +4,7 @@
 		:title="__('All Batches')"
 		:rows="batches.data || []"
 		:loading="batches.list.loading"
+		:total-count="batchCount"
 		:has-next-page="batches.hasNextPage"
 		v-model:page-length="pageLength"
 		empty-name="Batches"
@@ -18,7 +19,7 @@
 						label: __('New Batch'),
 						icon: 'lucide-users',
 						onClick() {
-							showBatchModal = true
+							openFormRoute(router, { name: 'NewBatch' })
 						},
 					},
 					{
@@ -52,24 +53,20 @@
 			</Dropdown>
 		</template>
 
-		<template #tabs>
+		<template #filters>
 			<!-- OSLMS-CUSTOM: students get no tab bar; their batch list is pinned to Enrolled -->
 			<TabButtons
 				v-if="user.data && !is_student"
 				:options="batchTabs"
 				v-model="currentTab"
-				class="w-fit"
+				class="!w-fit shrink-0"
 			/>
-		</template>
-
-		<template #filters>
 			<!-- OSLMS-CUSTOM: search matches words independently and reloads on update:modelValue -->
 			<FormControl
 				v-model="title"
 				:placeholder="__('Search')"
 				:aria-label="__('Search')"
 				type="text"
-				class="w-full sm:min-w-40"
 				@update:modelValue="updateBatches()"
 			>
 				<template #prefix>
@@ -82,14 +79,10 @@
 				v-model="currentCategory"
 				:options="categoryOptions"
 				:placeholder="__('Category')"
-				class="w-full sm:w-auto"
 				@update:modelValue="updateBatches()"
 			/>
+			<!-- OSLMS-CUSTOM: upstream "Certification" filter checkbox removed (still reachable via ?certification=true) -->
 		</template>
-
-		<!-- OSLMS-CUSTOM: upstream "Certification" filter checkbox removed (still reachable via ?certification=true) -->
-		<!-- The upstream #toggles slot (ToggleFilter) is omitted on purpose: ListPageHeader
-		     renders the toggle strip only when the slot exists. -->
 
 		<template #card="{ row }">
 			<router-link
@@ -100,23 +93,19 @@
 		</template>
 	</ListPage>
 
-	<NewBatchModal
-		v-if="showBatchModal"
-		v-model="showBatchModal"
-		:batches="batches"
-	/>
+	<router-view />
 </template>
 <script setup>
 import {
 	Button,
 	createListResource,
+	createResource,
 	Dropdown,
 	FormControl,
 	TabButtons,
 	usePageMeta,
 } from 'frappe-ui'
 import ClearableCombobox from '@/components/Controls/ClearableCombobox.vue'
-import ToggleFilter from '@/components/Controls/ToggleFilter.vue'
 import { computed, inject, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { sessionStore } from '@/stores/session'
@@ -124,7 +113,7 @@ import { useLocalStorage } from '@/utils/composables'
 import { searchLikeFilter } from '@/utils'
 import BatchCard from '@/pages/Batches/components/BatchCard.vue'
 import ListPage from '@/components/Layouts/ListPage.vue'
-import NewBatchModal from '@/pages/Batches/components/NewBatchModal.vue'
+import { openFormRoute } from '@/composables/useFormRoute'
 
 const user = inject('$user')
 const dayjs = inject('$dayjs')
@@ -172,7 +161,6 @@ const currentTab = is_student.value
 const orderBy = ref('start_date')
 const readOnlyMode = window.read_only_mode
 const router = useRouter()
-const showBatchModal = ref(false)
 
 onMounted(() => {
 	// OSLMS-CUSTOM: discard a persisted tab not valid for the current role
@@ -233,6 +221,19 @@ const setCategories = (data) => {
 	}
 }
 
+// Upcoming and Archived are settled against the current time in Python rather
+// than in the query, and `enrolled` is not a field, so only the endpoint that
+// resolves both can say how many batches a tab really holds.
+const batchCountResource = createResource({
+	url: 'lms.lms.utils.get_batch_count',
+	makeParams: () => ({ filters: filters.value }),
+	onError: (error) => {
+		console.error(error)
+	},
+})
+
+const batchCount = computed(() => batchCountResource.data ?? null)
+
 const updateBatches = () => {
 	updateFilters()
 	batches.update({
@@ -242,6 +243,10 @@ const updateBatches = () => {
 	batches.reload().then((data) => {
 		setCategories(data)
 	})
+	// Nothing orders the responses, so a slow count for a tab the user has
+	// left would overwrite the current one.
+	batchCountResource.abort()
+	batchCountResource.submit()
 }
 
 const updateFilters = () => {

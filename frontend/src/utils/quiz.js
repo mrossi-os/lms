@@ -1,4 +1,5 @@
 import QuizBlock from '@/components/QuizBlock.vue'
+import { registerDirectives } from '@/directives'
 import AssessmentPlugin from '@/components/AssessmentPlugin.vue'
 import { createApp, h } from 'vue'
 import { call } from 'frappe-ui'
@@ -6,6 +7,7 @@ import { usersStore } from '../stores/user'
 import translationPlugin from '../translation'
 import { CircleHelp } from 'lucide-vue-next'
 import router from '@/router'
+import { blockNotice } from '@/utils/blockDom'
 
 export class Quiz {
 	constructor({ data, api, readOnly }) {
@@ -17,6 +19,7 @@ export class Quiz {
 		const app = createApp({
 			render: () => h(CircleHelp, { size: 5, strokeWidth: 1.5 }),
 		})
+		registerDirectives(app)
 
 		const div = document.createElement('div')
 		app.mount(div)
@@ -45,10 +48,11 @@ export class Quiz {
 		if (this.readOnly) {
 			// Mount the quiz inline instead of loading the whole SPA in an iframe
 			// (which flashed the app shell/sidebar before the quiz appeared). It's
-			// a standalone mount — EditorJS blocks live outside the app's Vue tree —
+			// a standalone mount (EditorJS blocks live outside the app's Vue tree),
 			// so give it translation and the shared $user the quiz component needs.
 			const { userResource } = usersStore()
 			this.quizApp = createApp(QuizBlock, { quiz })
+			registerDirectives(this.quizApp)
 			this.quizApp.use(translationPlugin)
 			this.quizApp.provide('$user', userResource)
 			// Contain quiz render/runtime errors to this mount. Inline (unlike
@@ -62,7 +66,7 @@ export class Quiz {
 			return
 		}
 		// `quiz` is the link value (e.g. "untitled-quiz-5"), which says nothing to
-		// the author — show the docname only until the title comes back.
+		// the author: show the docname only until the title comes back.
 		// OSLMS-CUSTOM: editor placeholder shows the quiz title (fetched) instead of the docname
 		this.renderQuizPlaceholder(quiz)
 		call('frappe.client.get_value', {
@@ -77,18 +81,10 @@ export class Quiz {
 		return
 	}
 
-	// Built up with textContent instead of an innerHTML template so a quiz title
-	// can't inject markup into the lesson editor.
-	// OSLMS-CUSTOM: translated, XSS-safe quiz placeholder built via textContent
+	// OSLMS-CUSTOM: translated quiz placeholder; upstream's blockNotice builds it
+	// with textContent, so a quiz title can't inject markup into the lesson editor.
 	renderQuizPlaceholder(label) {
-		const box = document.createElement('div')
-		box.className =
-			'border rounded-md p-4 text-center bg-surface-sidebar mb-4'
-		const text = document.createElement('span')
-		text.className = 'font-medium'
-		text.textContent = `${__('Quiz')}: ${label}`
-		box.appendChild(text)
-		this.wrapper.replaceChildren(box)
+		this.wrapper.replaceChildren(blockNotice(`${__('Quiz')}: ${label}`))
 	}
 
 	// Tear down the inline quiz app when EditorJS removes the block so the mount
@@ -108,6 +104,7 @@ export class Quiz {
 				this.renderQuiz(quiz)
 			},
 		})
+		registerDirectives(app)
 		app.use(translationPlugin)
 		app.use(router)
 		app.mount(this.wrapper)

@@ -1,32 +1,57 @@
 <template>
 	<div v-if="lesson.data" class="">
-		<header
-			class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-base px-3 py-2.5 sm:px-5"
-		>
-			<Breadcrumbs class="h-7" :items="breadcrumbs" />
-			<div class="flex items-center gap-x-2">
+		<PageHeader :breadcrumbs="breadcrumbs">
+			<template #actions>
 				<CertificationLinks :courseName="courseName" />
 				<router-link
 					v-if="canEditLesson"
 					:to="{
 						name: 'CourseDetail',
 						params: { courseName: courseName },
-						// OSLMS-CUSTOM: Editor View deep-links with hash '#editor' (the tab id); upstream '#course editor' matched no tab
 						hash: '#editor',
 						query: { editLesson: `${chapterNumber}-${lessonNumber}` },
 					}"
 				>
-					<Button variant="outline">
-						<template #prefix>
-							<span class="lucide-pencil size-4" />
-						</template>
-						{{ __('Editor View') }}
-					</Button>
+					<HeaderButton :label="__('Editor View')" icon="lucide-pencil" />
 				</router-link>
+			</template>
+		</PageHeader>
+
+		<div
+			v-if="isMobile && lessonTotal"
+			class="flex items-center gap-2 border-b bg-surface-base px-5 py-2.5"
+		>
+			<Button
+				variant="subtle"
+				class="!size-9"
+				:label="__('Previous lesson')"
+				:disabled="!hasPrev"
+				@click="goPrev()"
+			>
+				<template #icon>
+					<span class="lucide-chevron-left size-4" />
+				</template>
+			</Button>
+			<div
+				class="min-w-0 flex-1 text-center text-p-xs font-medium tabular-nums text-ink-gray-5"
+			>
+				{{ lessonIndex }} / {{ lessonTotal }}
 			</div>
-		</header>
-		<div class="grid md:grid-cols-[70%,30%] h-[94vh]">
-			<div v-if="lesson.data.no_preview" class="border-e">
+			<Button
+				v-if="canGoNext"
+				variant="subtle"
+				class="!size-9"
+				:label="__('Next lesson')"
+				@click="goNext()"
+			>
+				<template #icon>
+					<span class="lucide-chevron-right size-4" />
+				</template>
+			</Button>
+		</div>
+
+		<div class="grid md:grid-cols-[70%,30%] sm:h-[94vh]">
+			<div v-if="lesson.data.no_preview" class="sm:border-e">
 				<div class="shadow rounded-md w-3/4 mt-10 mx-auto text-center p-4">
 					<div class="flex items-center justify-center mt-4 gap-x-2">
 						<span class="lucide-lock-keyhole size-4 text-ink-gray-5" />
@@ -64,6 +89,13 @@
 					</Button>
 				</div>
 			</div>
+			<div v-else-if="lesson.data.locked" class="sm:border-e">
+				<LockedLessonNotice
+					:redirect="!!lesson.data.redirect_to"
+					:notFound="!!lesson.data.not_found"
+					@done="goToCurrentLesson()"
+				/>
+			</div>
 			<div
 				v-else
 				ref="lessonContainer"
@@ -73,7 +105,7 @@
 				}"
 			>
 				<div
-					class="border-e pt-5 pb-10 h-full"
+					class="sm:border-e pt-8 sm:pt-5 pb-10 h-full"
 					:class="{
 						'w-full md:w-3/5 mx-auto border-none !pt-10': zenModeEnabled,
 					}"
@@ -107,7 +139,7 @@
 							</div>
 
 							<div
-								v-if="!zenModeEnabled"
+								v-if="!zenModeEnabled && !isMobile"
 								class="flex items-center gap-x-2 mt-2 md:mt-0"
 							>
 								<Tooltip v-if="canGoZen()" :text="__('Zen Mode')">
@@ -124,9 +156,8 @@
 									<span>{{ __('Previous') }}</span>
 								</Button>
 								<Button
-									v-if="lesson.data.next"
+									v-if="lesson.data.next && canGoNext"
 									@click="switchLesson('next')"
-									:disabled="lessonBlocked"
 								>
 									<template #suffix>
 										<span class="lucide-chevron-right size-4" />
@@ -140,7 +171,9 @@
 										params: { courseName: courseName },
 									}"
 								>
-									<Button>{{ __('Back to Course') }}</Button>
+									<Button class="text-p-base-medium">{{
+										__('Back to Course')
+									}}</Button>
 								</router-link>
 							</div>
 
@@ -158,9 +191,8 @@
 								</Button>
 
 								<Button
-									v-if="lesson.data.next"
+									v-if="lesson.data.next && canGoNext"
 									@click="switchLesson('next')"
-									:disabled="lessonBlocked"
 								>
 									<template #suffix>
 										<span class="lucide-chevron-right size-4" />
@@ -177,7 +209,7 @@
 										params: { courseName: courseName },
 									}"
 								>
-									<Button>
+									<Button class="text-p-base-medium">
 										{{ __('Back to Course') }}
 									</Button>
 								</router-link>
@@ -209,25 +241,8 @@
 							/>
 						</div>
 
-						<!-- Sequential access (os_lms): when the course enforces the lesson
-						order and the previous lesson is not complete, the locked screen
-						replaces the whole lesson body. -->
-						<div
-							v-if="lessonBlocked"
-							class="flex flex-col items-center justify-center mt-16 text-center"
-						>
-							<!-- OSLMS-CUSTOM: sequential access: locked-lesson screen replaces the lesson body -->
-							<span class="lucide-lock-keyhole size-12 text-ink-gray-4 mb-4" />
-							<div class="text-lg font-semibold text-ink-gray-7 mb-2">
-								{{ __('Lezione bloccata') }}
-							</div>
-							<div class="text-base text-ink-gray-5 max-w-sm leading-6">
-								{{ blockedReason }}
-							</div>
-						</div>
 						<div
 							v-if="
-								!lessonBlocked &&
 								lesson.data.instructor_content &&
 								JSON.parse(lesson.data.instructor_content)?.blocks?.length >
 									1 &&
@@ -244,17 +259,20 @@
 							></div>
 						</div>
 						<div
-							v-else-if="!lessonBlocked && lesson.data.instructor_notes"
+							v-else-if="lesson.data.instructor_notes"
 							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
 						>
-							<LessonContent :content="lesson.data.instructor_notes" />
+							<LessonContent
+								:key="lesson.data.name"
+								:content="lesson.data.instructor_notes"
+							/>
 						</div>
 						<div
-							v-if="!lessonBlocked && lesson.data.content"
+							v-if="lesson.data.content"
 							@mouseup="toggleInlineMenu"
 							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
 						>
-							<!-- OSLMS-CUSTOM: sequential access: locked-quiz screen for a quiz block inside EditorJS content -->
+							<!-- OSLMS-CUSTOM: quiz-on-completion: locked-quiz screen for a quiz block inside EditorJS content -->
 							<div
 								v-if="quizBlocked && contentHasQuiz"
 								class="flex flex-col items-center justify-center mt-8 mb-8 text-center"
@@ -272,10 +290,10 @@
 							<div v-else id="editor"></div>
 						</div>
 						<div
-							v-else-if="!lessonBlocked"
+							v-else
 							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
 						>
-							<!-- OSLMS-CUSTOM: sequential access: locked-quiz screen for a legacy body/quiz_id lesson -->
+							<!-- OSLMS-CUSTOM: quiz-on-completion: locked-quiz screen for a legacy body/quiz_id lesson -->
 							<div
 								v-if="quizBlocked && lesson.data?.quiz_id"
 								class="flex flex-col items-center justify-center mt-8 mb-8 text-center"
@@ -292,6 +310,7 @@
 							</div>
 							<LessonContent
 								v-else-if="lesson.data?.body"
+								:key="lesson.data.name"
 								:content="lesson.data.body"
 								:youtube="lesson.data.youtube"
 								:quizId="lesson.data.quiz_id"
@@ -299,12 +318,7 @@
 						</div>
 					</div>
 					<div
-						v-if="
-							!lessonBlocked &&
-							lesson.data &&
-							allowDiscussions &&
-							currentTab === 'Notes'
-						"
+						v-if="lesson.data && allowDiscussions && currentTab === 'Notes'"
 						class="mt-10 pb-20 pt-5 border-t px-5"
 					>
 						<!-- OSLMS-CUSTOM: Community/Discussions tab removed; only the students' Notes panel remains -->
@@ -316,17 +330,49 @@
 					</div>
 				</div>
 			</div>
-			<div class="sticky top-10 h-[94vh] min-w-0">
+			<!-- OSLMS-CUSTOM: min-w-0 keeps long strings from widening the 70/30 grid -->
+			<aside v-if="!isMobile" class="sticky top-10 h-[94vh] min-w-0">
 				<StudentLessonSidebar
 					:courseName="courseName"
 					:courseTitle="lesson.data.course_title"
 					:progress="lessonProgress"
 					:selectedLessonNumber="`${chapterNumber}-${lessonNumber}`"
 					:completedLesson="completedLesson"
-					:withProgress="lesson.data.membership ? true : false"
 				/>
-			</div>
+			</aside>
 		</div>
+
+		<div
+			v-if="isMobile"
+			class="pointer-events-none sticky bottom-4 z-10 flex justify-end px-4"
+		>
+			<Button
+				variant="outline"
+				class="pointer-events-auto !h-11 !rounded-full !px-4 !shadow-lg"
+				@click="showChapters = true"
+			>
+				<template #prefix>
+					<span class="lucide-layers size-4" />
+				</template>
+				{{ __('Chapters') }}
+			</Button>
+		</div>
+
+		<BottomSheet v-if="isMobile" v-model="showChapters">
+			<template #header>
+				<div class="min-w-0 truncate text-p-lg-semibold text-ink-gray-9">
+					{{ lesson.data.course_title }}
+				</div>
+			</template>
+			<StudentLessonSidebar
+				:courseName="courseName"
+				:progress="lessonProgress"
+				:selectedLessonNumber="`${chapterNumber}-${lessonNumber}`"
+				:completedLesson="completedLesson"
+				:hideHeader="true"
+				@select-lesson="showChapters = false"
+			/>
+		</BottomSheet>
 	</div>
 	<InlineLessonMenu
 		v-if="lesson.data?.name"
@@ -339,7 +385,6 @@
 <script setup>
 import {
 	Badge,
-	Breadcrumbs,
 	Button,
 	call,
 	createListResource,
@@ -369,6 +414,7 @@ import { sessionStore } from '@/stores/session'
 import { useSidebar } from '@/stores/sidebar'
 import { useSettings } from '@/stores/settings'
 import { useAiContext } from '@/stores/aiContext'
+import { useScreenSize } from '@/utils/composables'
 import {
 	resolveDwellSeconds,
 	isVideoComplete,
@@ -382,7 +428,11 @@ import CourseInstructors from '@/components/CourseInstructors.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
 import CertificationLinks from '@/components/CertificationLinks.vue'
 import CourseOutline from '@/components/CourseOutline.vue'
+import LockedLessonNotice from '@/components/LockedLessonNotice.vue'
 import StudentLessonSidebar from '@/components/StudentLessonSidebar.vue'
+import BottomSheet from '@/components/BottomSheet.vue'
+import PageHeader from '@/components/Layouts/PageHeader.vue'
+import HeaderButton from '@/components/HeaderButton.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import Notes from '@/components/Notes/Notes.vue'
 import InlineLessonMenu from '@/components/Notes/InlineLessonMenu.vue'
@@ -416,17 +466,18 @@ const plyrSources = ref([])
 const showInlineMenu = ref(false)
 const currentTab = ref(null)
 const completedLesson = ref(null)
-// OSLMS-CUSTOM: sequential lesson/quiz lock state, fed by the os_lms get_lesson override
-// Sequential access rules: `lesson_access` and `quiz_access` are computed
-// server-side by the os_lms override of `get_lesson`, out of the course
-// flags `enforce_lesson_order` and `enforce_quiz_on_completion`.
-const lessonBlocked = ref(false)
-const blockedReason = ref('')
+// OSLMS-CUSTOM: quiz-on-completion lock state, fed by the os_lms get_lesson override
+// `quiz_access` is computed server-side by the os_lms override of `get_lesson`
+// out of the course flag `enforce_quiz_on_completion`: the quiz inside a lesson
+// stays locked until that lesson is completed. The lesson order itself is
+// enforced by upstream's enforce_lesson_completion (lesson.data.locked).
 const quizBlocked = ref(false)
 const quizBlockedReason = ref('')
 const settingsStore = useSettings()
 // OSLMS-CUSTOM: AI tutor context: the floating tutor knows which lesson is open
 const aiContext = useAiContext()
+const { isMobile } = useScreenSize()
+const showChapters = ref(false)
 let timerInterval = null
 
 const tabs = ref([])
@@ -459,12 +510,19 @@ onMounted(() => {
 		collapsedByLesson = true
 	}
 	document.addEventListener('fullscreenchange', attachFullscreenEvent)
-	socket.on('update_lesson_progress', (data) => {
-		if (data.course === props.courseName) {
-			lessonProgress.value = data.progress
-		}
-	})
+	socket.on('update_lesson_progress', onLessonProgress)
 })
+
+const onLessonProgress = (data) => {
+	if (data.course !== props.courseName) return
+	lessonProgress.value = data.progress
+	// A quiz or an assignment completes its lesson by calling
+	// mark_lesson_progress directly, never touching this page's progress
+	// resource, so this event is the only signal that they unlocked the next
+	// lesson. The server now addresses it to the completing member alone.
+	// Skip the ones the progress resource already reloaded for.
+	if (data.lesson !== completedLesson.value) outline.reload()
+}
 
 const attachFullscreenEvent = () => {
 	if (document.fullscreenElement) {
@@ -480,6 +538,9 @@ const attachFullscreenEvent = () => {
 
 onBeforeUnmount(() => {
 	document.removeEventListener('fullscreenchange', attachFullscreenEvent)
+	// Without this the handler outlives the page, and every revisit adds another
+	// one — so a single progress event fires one outline reload per past visit.
+	socket.off('update_lesson_progress', onLessonProgress)
 	if (collapsedByLesson) sidebarStore.isSidebarCollapsed = false
 	trackVideoWatchDuration()
 })
@@ -502,6 +563,9 @@ const setupLesson = (data) => {
 			name: 'CourseDetail',
 			params: { courseName: props.courseName },
 		})
+		return
+	}
+	if (data.locked) {
 		return
 	}
 	if (data.is_scorm_package) {
@@ -572,11 +636,6 @@ const renderEditor = (holder, content) => {
 let progressSubmitting = false
 const markProgress = () => {
 	if (progressSubmitting) return
-	// OSLMS-CUSTOM: sequential access: a locked lesson is never marked complete
-	// A lesson locked by the sequential-access rule must not be marked
-	// complete: the dwell timer keeps running behind the locked screen and
-	// would otherwise unlock the next lesson without the content being read.
-	if (lessonBlocked.value) return
 	// Only enrolled students record progress; a moderator previewing has no
 	// membership row so save_progress would no-op server-side but still
 	// flip the in-memory `completedLesson` and show a green tick that
@@ -614,6 +673,9 @@ const progress = createResource({
 	onSuccess(data) {
 		lessonProgress.value = data
 		completedLesson.value = lesson.data?.name
+		// Reload here rather than waiting on the socket, so this page's own
+		// completion unlocks the next lesson even where realtime is unavailable.
+		outline.reload()
 	},
 })
 
@@ -625,7 +687,6 @@ const notes = createListResource({
 	},
 	// OSLMS-CUSTOM: text_offset lets a highlight land on the selected occurrence
 	fields: ['name', 'color', 'highlighted_text', 'text_offset', 'note'],
-	cache: ['notes', lesson.data?.name, user.data?.name],
 	onSuccess(data) {
 		data.forEach((note) => {
 			setTimeout(() => {
@@ -656,14 +717,96 @@ const breadcrumbs = computed(() => {
 	return crumbs
 })
 
-const switchLesson = (direction) => {
+const outline = createResource({
+	url: 'lms.lms.utils.get_course_outline',
+	cache: ['course_outline_student', props.courseName, 'progress'],
+	makeParams() {
+		return {
+			course: props.courseName,
+			progress: true,
+		}
+	},
+	auto: false,
+})
+outline.fetch()
+
+watch(
+	() => props.courseName,
+	() => outline.reload()
+)
+
+const lessonNumbers = computed(() =>
+	(outline.data ?? []).flatMap((c) => c.lessons?.map((l) => l.number) ?? [])
+)
+const currentIndex = computed(() =>
+	lessonNumbers.value.indexOf(`${props.chapterNumber}-${props.lessonNumber}`)
+)
+const lessonTotal = computed(() => lessonNumbers.value.length)
+const lessonIndex = computed(() =>
+	currentIndex.value >= 0 ? currentIndex.value + 1 : 0
+)
+const hasPrev = computed(() => currentIndex.value > 0)
+const hasNext = computed(
+	() => currentIndex.value >= 0 && currentIndex.value < lessonTotal.value - 1
+)
+const outlineLessons = computed(() =>
+	(outline.data ?? []).flatMap((c) => c.lessons ?? [])
+)
+const nextLessonLocked = computed(
+	() => !!outlineLessons.value[currentIndex.value + 1]?.locked
+)
+const outlineReady = computed(() => Array.isArray(outline.data))
+// Next used to be outline-independent (v-if="lesson.data.next"). Keep that
+// behaviour until the outline resolves, and if it never does: an unresolved,
+// errored or rate-limited outline would otherwise hide Next AND the Back to
+// Course fallback, leaving no forward affordance at all — on ungated courses too.
+const canGoNext = computed(() => {
+	if (!outlineReady.value) return !!lesson.data?.next
+	return hasNext.value && !nextLessonLocked.value
+})
+
+const goToLessonNumber = (number, { replace = false } = {}) => {
 	trackVideoWatchDuration()
-	let lessonIndex =
+	const [chapterNumber, lessonNumber] = number.split('-')
+	const target = {
+		name: 'Lesson',
+		params: {
+			courseName: props.courseName,
+			chapterNumber,
+			lessonNumber,
+		},
+		query: studentViewQuery.value,
+	}
+	if (replace) router.replace(target)
+	else router.push(target)
+}
+
+const goToCurrentLesson = () => {
+	if (lesson.data?.redirect_to)
+		goToLessonNumber(lesson.data.redirect_to, { replace: true })
+}
+
+const goPrev = () => {
+	if (hasPrev.value)
+		goToLessonNumber(lessonNumbers.value[currentIndex.value - 1])
+}
+
+const goNext = () => {
+	// The mobile pager is driven by the outline, so it needs the outline-derived
+	// index too — canGoNext alone can be true before the outline resolves.
+	if (canGoNext.value && hasNext.value)
+		goToLessonNumber(lessonNumbers.value[currentIndex.value + 1])
+}
+
+const switchLesson = (direction) => {
+	if (direction === 'next' && !canGoNext.value) return
+	trackVideoWatchDuration()
+	let target =
 		direction === 'prev'
 			? lesson.data.prev.split('.')
 			: lesson.data.next.split('.')
 
-	const [chapterNumber, lessonNumber] = lessonIndex
+	const [chapterNumber, lessonNumber] = target
 	router.push({
 		name: 'Lesson',
 		params: {
@@ -700,9 +843,7 @@ const resetLessonState = (newChapterNumber, newLessonNumber) => {
 		chapter: newChapterNumber,
 		lesson: newLessonNumber,
 	})
-	// OSLMS-CUSTOM: sequential access: reset lock state when switching lesson
-	lessonBlocked.value = false
-	blockedReason.value = ''
+	// OSLMS-CUSTOM: quiz-on-completion: reset the quiz lock state when switching lesson
 	quizBlocked.value = false
 	quizBlockedReason.value = ''
 	videoFallbackArmed = false
@@ -756,12 +897,9 @@ const cleanYouTubeUrl = (url) => {
 	return urlObj.toString()
 }
 
-// OSLMS-CUSTOM: sequential access: read lesson_access/quiz_access from get_lesson
+// OSLMS-CUSTOM: quiz-on-completion: read quiz_access from get_lesson
 const applyAccessFromLesson = (data) => {
-	const lessonAccess = data?.lesson_access || { allowed: true }
 	const quizAccess = data?.quiz_access || { allowed: true }
-	lessonBlocked.value = !lessonAccess.allowed
-	blockedReason.value = lessonAccess.reason || ''
 	quizBlocked.value = !quizAccess.allowed
 	quizBlockedReason.value = quizAccess.reason || ''
 }
@@ -804,7 +942,7 @@ watch(
 		)
 		// When the lesson has video AND enforcement is on, suppress dwell so
 		// completion is gated on play-to-end. When enforcement is off, dwell
-		// runs for every lesson type — including YouTube/Plyr — so admins can
+		// runs for every lesson type (including YouTube/Plyr), so admins can
 		// set a short dwell to mark video lessons complete without a full
 		// playthrough.
 		if (!shouldStartDwellTimer({ hasVideo: hasVideoListener, enforceVideo })) {
@@ -958,7 +1096,7 @@ const fallbackToDwellTimer = (reason) => {
 	console.warn('[Lesson] video fallback engaged:', reason)
 	toast.warning(
 		__(
-			'Video failed to load — this lesson will still be marked complete after you spend some time on it.'
+			'Video failed to load. This lesson will still be marked complete after you spend some time on it.'
 		)
 	)
 	clearInterval(timerInterval)

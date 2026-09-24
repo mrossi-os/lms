@@ -44,8 +44,8 @@ watch(
 )
 
 // Derive the layout from the current route, not a navigation guard. Flipping it
-// in beforeEach swaps the layout the instant a navigation starts — before a lazy
-// route component resolves — which re-mounts <router-view> while the old page is
+// in beforeEach swaps the layout the instant a navigation starts (before a lazy
+// route component resolves), which re-mounts <router-view> while the old page is
 // still showing, flashing it back into view. A route-driven computed changes in
 // the same tick as the route, so the swap and the page change happen together.
 const noSidebar = computed(

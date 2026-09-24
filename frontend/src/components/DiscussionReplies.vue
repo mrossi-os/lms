@@ -4,6 +4,7 @@
 		<div v-if="!singleThread" class="order-1 flex items-center mb-5 md:hidden">
 			<Button
 				variant="outline"
+				class="text-p-base-medium"
 				:label="__('Back to topics')"
 				@click="showTopics = true"
 			>

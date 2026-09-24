@@ -44,9 +44,13 @@
 						</template>
 					</Button>
 				</Tooltip>
-				<Button v-if="canCreateClass()" @click="openCreateModal">
+				<Button
+					v-if="canCreateClass()"
+					data-testid="live-class-add"
+					@click="openLiveClassForm"
+				>
 					<template #prefix>
-						<Plus class="h-4 w-4" />
+						<span class="lucide-plus h-4 w-4" />
 					</template>
 					<span>
 						{{ __('Add') }}
@@ -76,7 +80,7 @@
 							{
 								label: __('Edit'),
 								icon: 'edit-2',
-								onClick: () => openEditModal(cls),
+								onClick: () => openEditForm(cls),
 							},
 							{
 								label: __('Delete'),
@@ -123,18 +127,6 @@
 			</div>
 		</div>
 	</div>
-
-	<!-- OSLMS-CUSTOM: modal reused to edit an existing class (liveClass prop) -->
-	<LiveClassModal
-		v-if="showLiveClassModal"
-		v-model="showLiveClassModal"
-		:batch="batch.data?.name"
-		:zoomAccount="batch.data?.zoom_account"
-		:googleMeetAccount="batch.data?.google_meet_account"
-		:conferencingProvider="batch.data?.conferencing_provider"
-		:liveClass="editingClass"
-		v-model:reloadLiveClasses="liveClasses"
-	/>
 
 	<LiveClassAttendance
 		v-if="showAttendance"
@@ -200,8 +192,6 @@ import {
 	toast,
 } from 'frappe-ui'
 import {
-	Plus,
-	AlertCircle,
 	MoreVertical,
 	ChevronLeft,
 	ChevronRight,
@@ -209,19 +199,25 @@ import {
 	ArrowDown,
 } from 'lucide-vue-next'
 import { computed, inject, ref, watch } from 'vue'
-import LiveClassModal from '@/components/Modals/LiveClassModal.vue'
+import { useRoute, useRouter } from 'vue-router'
+import { openBatchForm } from '@/composables/useBatchForms'
+import { openFormRoute } from '@/composables/useFormRoute'
 import LiveClassAttendance from '@/components/Modals/LiveClassAttendance.vue'
 import LiveClassCard from '@/components/LiveClassCard.vue'
 
 // OSLMS-CUSTOM: server-side pagination of the class list
 const PAGE_SIZE = 20
 
+// OSLMS-CUSTOM: the create/edit form routes (children of BatchDetail); the list
+// goes back to page 1 and recounts when the route returns from one of them
+const LIVE_CLASS_FORM_ROUTES = ['NewLiveClass', 'EditLiveClass']
+
 const user = inject('$user')
-const showLiveClassModal = ref(false)
+const route = useRoute()
+const router = useRouter()
 const readOnlyMode = window.read_only_mode
 const showAttendance = ref(false)
 const attendanceFor = ref(null)
-const editingClass = ref(null)
 const deletingClass = ref(null)
 const showDeleteDialog = ref(false)
 const notifyStudentsOnDelete = ref(true)
@@ -320,41 +316,35 @@ watch([sortField, sortOrder], () => {
 		refreshList()
 	}
 })
-watch(showLiveClassModal, (isOpen, wasOpen) => {
-	if (wasOpen && !isOpen) {
-		resetToFirstPage()
+watch(
+	() => route.name,
+	(name, previousName) => {
+		if (LIVE_CLASS_FORM_ROUTES.includes(previousName) && name === 'BatchDetail') {
+			resetToFirstPage()
+		}
 	}
-})
+)
 
 const toggleSortOrder = () => {
 	sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
 }
-
-const fetchLiveClassDetails = createResource({
-	url: 'frappe.client.get',
-	makeParams(values) {
-		return {
-			doctype: 'LMS Live Class',
-			name: values.name,
-		}
-	},
-})
 
 // OSLMS-CUSTOM: delete through os_lms (Zoom/calendar cleanup + notification)
 const deleteLiveClass = createResource({
 	url: 'os_lms.os_lms.api.delete_live_class',
 })
 
-const openCreateModal = () => {
-	editingClass.value = null
-	showLiveClassModal.value = true
+const openLiveClassForm = () => {
+	openBatchForm(router, 'NewLiveClass', props.batch.data?.name, route.hash)
 }
 
-// OSLMS-CUSTOM: edit loads the full class document
-const openEditModal = async (cls) => {
-	const full = await fetchLiveClassDetails.submit({ name: cls.name })
-	editingClass.value = full
-	showLiveClassModal.value = true
+// OSLMS-CUSTOM: edit opens the EditLiveClass form route (it loads the full class document)
+const openEditForm = (cls) => {
+	openFormRoute(router, {
+		name: 'EditLiveClass',
+		params: { batchName: props.batch.data?.name, liveClassName: cls.name },
+		hash: route.hash,
+	})
 }
 
 const openDeleteModal = (cls) => {

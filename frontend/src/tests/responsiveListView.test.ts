@@ -26,7 +26,7 @@ vi.mock('@/utils/composables', async () => {
 
 // The stubs below are trimmed copies of the frappe-ui components they stand in
 // for, kept faithful on the one thing under test: where the selection lives.
-// The real ones cannot be imported here — frappe-ui's ListView pulls in its
+// The real ones cannot be imported here: frappe-ui's ListView pulls in its
 // resources plugin, which does not resolve outside a Vite app build.
 vi.mock('frappe-ui', async () => {
 	const { computed, defineComponent, inject, provide, reactive, watch } =
@@ -79,7 +79,17 @@ vi.mock('frappe-ui', async () => {
 			expose({ selections, toggleRow, toggleAllRows })
 			return {}
 		},
-		template: '<div data-testid="listview" v-bind="$attrs"><slot /></div>',
+		// Both wrappers are copied verbatim from frappe-ui's ListView.vue, class
+		// lists included. The inner one is the reason the cards need a scroll box
+		// of their own: it clips them, and the class a caller passes lands on it
+		// rather than replacing anything.
+		template: `<div class="relative flex w-full flex-1 flex-col overflow-x-auto">
+			<div
+				class="flex w-max min-w-full flex-col overflow-y-hidden"
+				data-testid="listview"
+				v-bind="$attrs"
+			><slot /></div>
+		</div>`,
 	})
 
 	const ListSelectBanner = defineComponent({
@@ -188,7 +198,12 @@ async function mountList(options?: Record<string, unknown>, withBanner = true) {
 					},
 			  }
 			: {},
-		global: { stubs: { 'router-link': { template: '<a><slot /></a>' } } },
+		// `__` in a template compiles to `_ctx.__`, which resolves through the
+		// instance rather than globalThis, so stubGlobal alone does not reach it.
+		global: {
+			mocks: { __: (text: string) => text },
+			stubs: { 'router-link': { template: '<a><slot /></a>' } },
+		},
 	})
 	await nextTick()
 	return { wrapper, banner }
@@ -206,9 +221,10 @@ async function selectFirstRow(wrapper: VueWrapper) {
 
 function clickCard(wrapper: VueWrapper, index: number) {
 	const event = new MouseEvent('click', { bubbles: true, cancelable: true })
-	// The card is the last child of its row; a checkbox, when there is one,
-	// sits beside it rather than inside it.
-	wrapper.findAll('li')[index].element.lastElementChild!.dispatchEvent(event)
+	wrapper
+		.findAll('li')
+		[index].element.querySelector('[data-list-card]')!
+		.dispatchEvent(event)
 	return event
 }
 
@@ -302,16 +318,23 @@ describe('ResponsiveListView cards and row navigation', () => {
 	})
 
 	// A card is the row's own link; once a selection is open, following it would
-	// throw the moderator off the page and drop what they had picked.
+	// throw the moderator off the page and drop what they had picked. It stops
+	// being a link entirely rather than preventing the default: RouterLink merges
+	// an outer @click BEHIND its own handler, which has already pushed the route.
 	it('turns a card into a selection target while a selection is open', async () => {
 		mobile.value = true
 		const { wrapper, banner } = await mountList(routedOptions)
 		await selectFirstRow(wrapper)
 
-		const event = clickCard(wrapper, 1)
+		const card = wrapper
+			.findAll('li')[1]
+			.element.querySelector('[data-list-card]') as HTMLElement
+		expect(card.tagName).toBe('DIV')
+		expect(card.getAttribute('href')).toBeNull()
+
+		clickCard(wrapper, 1)
 		await nextTick()
 
-		expect(event.defaultPrevented).toBe(true)
 		expect(Array.from(banner.value!.selections)).toEqual(['a', 'b'])
 	})
 
@@ -362,5 +385,62 @@ describe('ResponsiveListView without selection', () => {
 		expect(wrapper.find('[data-testid="list-rows"]').exists()).toBe(true)
 		expect(wrapper.find('ul').exists()).toBe(false)
 		expect(wrapper.find('[data-testid="row-checkbox"]').exists()).toBe(false)
+	})
+})
+
+/**
+ * frappe-ui hands its rows a box it has already clipped (`overflow-y-hidden`),
+ * and supplies the scrolling itself in ListRows. The card shape replaces
+ * ListRows, so it has to supply that scrolling too. Without it the cards past
+ * the first screenful are painted and unreachable, which is what a phone with
+ * 24 quizzes on it actually showed. jsdom has no layout to measure, so what is
+ * pinned here is the structure that produces it; the measurement lives in the
+ * handover.
+ */
+describe('ResponsiveListView card scrolling', () => {
+	const SCROLLS = 'overflow-y-auto'
+
+	// The cards must not scroll inside anything of their own. The page body owns
+	// the single scroll box, and on a phone even that is released so the page
+	// itself scrolls; a box here would take the page's scroll range away, and a
+	// browser only retracts its URL bar when the root scroller moves.
+	//
+	// It is worth stating because frappe-ui makes it easy to get wrong twice
+	// over: the box it hands these rows is `overflow-y-hidden`, and it supplies
+	// the scrolling in ListRows, which the card shape replaces. Give the cards
+	// nothing and they are clipped; give them a scroller and the page is.
+	it('never scrolls the cards inside a box of their own', async () => {
+		mobile.value = true
+		const { wrapper } = await mountList(routedOptions)
+
+		const list = wrapper.find('ul').element
+		const clipped = wrapper.find('[data-testid="listview"]').element
+		expect(clipped.className).toContain('overflow-y-hidden')
+
+		for (
+			let el = list.parentElement;
+			el && el !== clipped;
+			el = el.parentElement
+		) {
+			expect(el.className.includes(SCROLLS)).toBe(false)
+		}
+		// And nothing may bound their height either, or the clip bites instead.
+		for (
+			let el = list.parentElement;
+			el && el !== clipped;
+			el = el.parentElement
+		) {
+			expect(el.className.includes('min-h-0')).toBe(false)
+		}
+	})
+
+	it('leaves the selection banner outside the rows, so it does not scroll away', async () => {
+		mobile.value = true
+		const { wrapper } = await mountList(routedOptions)
+		await selectFirstRow(wrapper)
+
+		const banner = wrapper.find('[data-testid="select-banner"]').element
+		const list = wrapper.find('ul').element
+		expect(banner.contains(list)).toBe(false)
 	})
 })

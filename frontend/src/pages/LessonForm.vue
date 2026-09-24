@@ -1,7 +1,9 @@
 <template>
-	<div class="py-10">
-		<!-- OSLMS-CUSTOM: narrow mobile padding and transparent title background (style tweaks) -->
-		<div class="space-y-6 px-3 sm:mx-10 sm:px-20">
+	<div class="py-6 sm:py-10">
+		<!-- OSLMS-CUSTOM: OsLessonForm below carries include_in_preview on every screen
+		     width, so upstream's preview switch and its phone "Lesson details" sheet are
+		     not rendered; the title keeps a transparent background (style tweaks) -->
+		<div class="mx-0 space-y-6 px-4 sm:mx-10 sm:px-20">
 			<!-- Inline-editable lesson title -->
 			<textarea
 				ref="titleRef"
@@ -9,7 +11,7 @@
 				:placeholder="__('Lesson title')"
 				:aria-label="__('Lesson title')"
 				rows="1"
-				class="lesson-title w-full resize-none overflow-hidden border-0 !bg-transparent p-0 text-2xl font-bold leading-tight text-ink-gray-9 placeholder:text-ink-gray-4 focus:outline-none focus:ring-0"
+				class="lesson-title block w-full resize-none overflow-hidden border-0 !bg-transparent p-0 text-2xl font-bold leading-tight text-ink-gray-9 placeholder:text-ink-gray-4 focus:outline-none focus:ring-0"
 				@input="onTitleInput"
 				@keydown.enter="onTitleEnter"
 			/>
@@ -38,7 +40,7 @@
 						:label="__('private')"
 					/>
 					<ChevronRight
-						class="instructor-notes-chevron ms-auto size-4 stroke-2 text-ink-gray-5"
+						class="instructor-notes-chevron ms-auto size-4 text-ink-gray-5"
 					/>
 				</summary>
 				<BlockEditor
@@ -58,6 +60,9 @@
 	</div>
 </template>
 <script setup>
+// The title textarea is `block` because a textarea is inline-block by default,
+// so it would sit on the parent's line box and carry its descender: 5px of
+// space under the title belonging to no rule and no gap.
 import { Badge, Button, call, createResource, toast } from 'frappe-ui'
 import {
 	reactive,
@@ -77,6 +82,7 @@ import {
 	toSingleLineTitle,
 } from '@/utils/lessonForm'
 import { convertBodyToBlocks as convertToJSON } from '@/utils/lessonMacros'
+import { resourceErrorMessage, submitResource } from '@/utils/resource'
 import { hasVideoContent } from '@/utils/video'
 import BlockEditor from '@/components/BlockEditor.vue'
 import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
@@ -98,7 +104,7 @@ const aiContext = useAiContext()
 // A lesson title is one line. The field stays a textarea so a long title wraps
 // and grows; only the explicit break is refused.
 function onTitleEnter(event) {
-	// Enter also confirms an IME candidate — never swallow that one.
+	// Enter also confirms an IME candidate. Never swallow that one.
 	if (event.isComposing) return
 	event.preventDefault()
 }
@@ -152,6 +158,9 @@ const props = defineProps({
 })
 
 const isDirty = ref(false)
+// Set once the Course Lesson exists. Its Lesson Reference is a second request,
+// and a retry after that one fails must link this lesson, not create another.
+const createdLesson = ref(null)
 let isUnmounting = false
 let lessonDeleted = false
 function markDeleted() {
@@ -241,8 +250,8 @@ const lessonDetails = createResource({
 						// Loaded content isn't user input; arm autosave after render.
 						isDirty.value = false
 						initialLoadComplete = true
-						// A freshly created lesson opens empty as "Untitled lesson" —
-						// focus the title so it can be named (and so the block editor
+						// A freshly created lesson opens empty as "Untitled lesson".
+						// Focus the title so it can be named (and so the block editor
 						// doesn't grab the caret out from under the title). Existing
 						// lessons focus the body for content editing.
 						if (!data.lesson.content && !data.lesson.body) {
@@ -413,7 +422,7 @@ function saveLesson({ flush = false } = {}) {
 	Promise.all([bodyPromise, notesPromise]).then(([bodyData, notesData]) => {
 		const bodyHasContent = foldEditorData(bodyData, notesData)
 
-		// Skip when there's nothing to save — no title, no body.
+		// Skip when there's nothing to save: no title, no body.
 		if (shouldSkipLessonSave(lesson.title, bodyHasContent)) return
 
 		// During teardown only an explicit flush may persist.
@@ -435,36 +444,65 @@ const removeEmptyBlocks = (outputData) => {
 	return outputData
 }
 
+// submitResource, not a bare submit(): createResource rethrows after onError, so
+// a validation failure or a 500 left a rejected promise nobody handled. It also
+// awaits the chained reference insert, so the create only settles once the
+// lesson is actually in a chapter.
 const createNewLesson = () => {
-	newLessonResource.submit(
+	// A previous attempt created the lesson and failed on the reference; another
+	// insert would leave a second, orphaned lesson behind. Reuse that one, saving
+	// the title the user may have edited before retrying.
+	if (createdLesson.value) {
+		return submitResource(
+			editLesson,
+			{ lesson: createdLesson.value },
+			{
+				validate: validateLesson,
+				onSuccess: () => linkLesson(createdLesson.value),
+				onError(err) {
+					toast.error(resourceErrorMessage(err))
+				},
+			}
+		)
+	}
+	return submitResource(
+		newLessonResource,
 		{},
 		{
-			validate() {
-				return validateLesson()
-			},
+			validate: validateLesson,
 			onSuccess(data) {
-				lessonReference.submit(
-					{ lesson: data.name },
-					{
-						onSuccess() {
-							if (user.data?.is_system_manager)
-								updateOnboardingStep('create_first_lesson')
-
-							capture('lesson_created')
-							toast.success(__('Lesson created successfully'))
-							isDirty.value = false
-							emit('saved', { isNew: true })
-							lessonDetails.reload()
-						},
-					},
-				)
+				createdLesson.value = data.name
+				return linkLesson(data.name)
 			},
 			onError(err) {
-				toast.error(err.messages?.[0] || err)
+				toast.error(resourceErrorMessage(err))
 			},
 		},
 	)
 }
+
+const linkLesson = (lessonName) =>
+	submitResource(
+		lessonReference,
+		{ lesson: lessonName },
+		{
+			onSuccess() {
+				if (user.data?.is_system_manager)
+					updateOnboardingStep('create_first_lesson')
+
+				capture('lesson_created')
+				toast.success(__('Lesson created successfully'))
+				isDirty.value = false
+				emit('saved', { isNew: true })
+				lessonDetails.reload()
+			},
+			// The reference insert had no handler at all: it failed silently, and
+			// the lesson stayed out of the chapter with nothing said about it.
+			onError(err) {
+				toast.error(resourceErrorMessage(err))
+			},
+		}
+	)
 
 const editCurrentLesson = (isRetry = false) => {
 	// Catch the re-thrown rejection: a save racing a delete 404s harmlessly.

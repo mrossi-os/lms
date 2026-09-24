@@ -23,7 +23,7 @@
 		</div>
 		<div
 			v-if="showStudentsEmptyState"
-			class="flex min-h-[70vh] flex-col items-center justify-center gap-3 px-4 text-center"
+			class="flex min-h-[30vh] sm:min-h-[70vh] flex-col items-center justify-center gap-3 px-4 text-center"
 		>
 			<span class="lucide-users size-7.5 text-ink-gray-5" />
 			<div class="flex flex-col items-center gap-1">
@@ -31,7 +31,7 @@
 					{{ __('No students enrolled yet') }}
 				</span>
 				<span class="text-p-base text-ink-gray-6">
-					{{ __('Enroll students to track their progress here.') }}
+					{{ __('Enroll students to track their progress here') }}
 				</span>
 			</div>
 		</div>
@@ -42,7 +42,35 @@
 					<div class="text-lg-semibold text-ink-gray-9">
 						{{ __('Students') }}
 					</div>
-					<div class="flex items-center gap-x-2">
+					<div class="flex flex-wrap items-center gap-2">
+						<!-- OSLMS-CUSTOM: sortable students list. Upstream's ResponsiveListView owns
+						the column header (and phones get cards with no header at all), so the sort
+						lives in a control beside the search: pick a column, flip the direction. -->
+						<Select
+							:modelValue="sortColumn"
+							:options="studentSortOptions"
+							:aria-label="__('Sort students by')"
+							class="!w-36"
+							@update:modelValue="(value) => toggleSort(String(value))"
+						/>
+						<Button
+							:aria-label="
+								sortOrder === 'asc' ? __('Ascending') : __('Descending')
+							"
+							:title="sortOrder === 'asc' ? __('Ascending') : __('Descending')"
+							@click="toggleSort(sortColumn)"
+						>
+							<template #icon>
+								<span
+									class="size-4"
+									:class="
+										sortOrder === 'asc'
+											? 'lucide-arrow-up-narrow-wide'
+											: 'lucide-arrow-down-wide-narrow'
+									"
+								/>
+							</template>
+						</Button>
 						<!-- OSLMS-CUSTOM: compact search field labelled "Search by name" -->
 						<FormControl
 							v-model="searchFilter"
@@ -57,98 +85,50 @@
 						</FormControl>
 					</div>
 				</div>
-				<div class="max-h-[63vh] overflow-y-auto overflow-x-auto">
-					<ListView
+				<div class="sm:max-h-[63vh] sm:overflow-y-auto">
+					<ResponsiveListView
 						v-if="progressList.loading || progressList.data?.length"
 						:columns="progressColumns"
-						:rows="progressList.data"
-						rowKey="name"
-						:options="{
-							selectable: false,
-							showTooltip: false,
-						}"
+						:rows="progressList.data || []"
+						row-key="name"
+						:options="studentListOptions"
 					>
-						<ListHeader
-							class="mb-2 grid items-center md:space-x-4 rounded-sm border-b p-2"
-						>
-							<!-- OSLMS-CUSTOM: sortable student columns (click toggles asc/desc) -->
-							<ListHeaderItem
-								:item="item"
-								v-for="item in progressColumns"
-								:key="item.key"
-								class="cursor-pointer select-none"
-								@click="toggleSort(item.key)"
+						<template #cell="{ column, row, value }">
+							<span
+								v-if="column.key === 'member_name'"
+								class="flex items-center gap-2"
 							>
-								<template #suffix>
-									<LucideChevronUp
-										v-if="sortColumn === item.key"
-										class="size-3.5 shrink-0 text-ink-gray-7 transition-transform duration-200"
-										:class="sortOrder === 'desc' ? 'rotate-180' : ''"
-									/>
-									<LucideChevronsUpDown
-										v-else
-										class="size-3.5 shrink-0 text-ink-gray-4"
-									/>
-								</template>
-							</ListHeaderItem>
-						</ListHeader>
-						<ListRows>
-							<ListRow
-								v-for="row in progressList.data"
-								:key="row.name"
-								:row="row"
-								@click="
-									() => {
-										showProgressModal = true
-										currentStudent = row
-									}
-								"
-								class="cursor-pointer"
+								<Avatar
+									:image="row.member_image as string"
+									:label="String(value)"
+									size="sm"
+								/>
+								<span class="min-w-0 truncate">{{ value }}</span>
+							</span>
+							<span
+								v-else-if="column.key === 'progress'"
+								class="flex items-center gap-2"
 							>
-								<template #default="{ column, item }">
-									<ListRowItem
-										:item="row[column.key]"
-										:align="column.align"
-										class="w-full"
-									>
-										<template #prefix>
-											<div v-if="column.key == 'member_name'">
-												<Avatar
-													class="flex items-center"
-													:image="row['member_image']"
-													:label="item"
-													size="sm"
-												/>
-											</div>
-											<ProgressBar
-												v-else-if="column.key == 'progress'"
-												:progress="Math.ceil(row[column.key])"
-												class="!mx-0 !me-4"
-											/>
-										</template>
-										<div v-if="column.key == 'creation'">
-											{{ dayjs(row[column.key]).format('DD MMM YYYY') }}
-										</div>
-										<div
-											v-else-if="column.key == 'progress'"
-											class="text-xs !mx-0 w-10 text-right shrink-0"
-										>
-											{{ Math.ceil(row[column.key]) }}%
-										</div>
-										<div v-else>
-											{{ row[column.key].toString() }}
-										</div>
-									</ListRowItem>
-								</template>
-							</ListRow>
-						</ListRows>
-					</ListView>
+								<ProgressBar
+									:progress="Math.ceil(Number(value))"
+									class="!mx-0 min-w-0 flex-1"
+								/>
+								<span class="text-xs shrink-0">
+									{{ Math.ceil(Number(value)) }}%
+								</span>
+							</span>
+							<span v-else-if="column.key === 'creation'">
+								{{ dayjs(value as string).format('DD MMM YYYY') }}
+							</span>
+							<span v-else>{{ value }}</span>
+						</template>
+					</ResponsiveListView>
 					<div v-else class="min-h-[200px]">
 						<EmptyStateLayout
 							name="Students"
 							icon="lucide-users"
 							:title="__('No students match your search')"
-							:description="__('Try a different name.')"
+							:description="__('Try a different name')"
 						/>
 					</div>
 					<div
@@ -170,7 +150,7 @@
 						{{ __('Progress Summary') }}
 					</div>
 					<div
-						class="grid grid-cols-1 sm:grid-cols-[2fr_1fr] gap-4 sm:gap-0 items-center justify-between text-ink-gray-9"
+						class="grid grid-cols-1 sm:grid-cols-[2fr_1fr] gap-4 items-center justify-between text-ink-gray-9"
 					>
 						<ul class="flex flex-col space-y-4 flex-1 text-sm list-none">
 							<!-- OSLMS-CUSTOM: legend color by row position, because the labels are translated to Italian -->
@@ -255,7 +235,7 @@
 						/>
 					</div>
 					<ul
-						class="divide-y max-h-[40vh] divide-outline-elevation-2 text-ink-gray-7 overflow-y-auto list-none"
+						class="divide-y sm:max-h-[40vh] divide-outline-elevation-2 text-ink-gray-7 sm:overflow-y-auto list-none"
 					>
 						<li
 							v-for="progress in lessonProgress.data"
@@ -286,12 +266,6 @@
 			</div>
 		</div>
 	</div>
-	<CourseEnrollmentModal
-		v-if="showEnrollmentModal"
-		v-model="showEnrollmentModal"
-		:course="course"
-		:students="progressList"
-	/>
 	<StudentCourseProgress
 		v-if="showProgressModal"
 		v-model="showProgressModal"
@@ -306,35 +280,33 @@ import {
 	Button,
 	createListResource,
 	createResource,
-	Dropdown,
 	ECharts,
 	FormControl,
-	ListView,
-	ListHeader,
-	ListHeaderItem,
-	ListRows,
-	ListRow,
-	ListRowItem,
 	Tooltip,
 } from 'frappe-ui'
 import Select from '@/components/Controls/Select.vue'
 import { computed, inject, ref, watch } from 'vue'
 import type dayjsType from 'dayjs'
 import { formatAmount } from '@/utils'
-import CourseEnrollmentModal from '@/pages/Courses/CourseEnrollmentModal.vue'
 import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
 import NumberChartGraph from '@/components/NumberChartGraph.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
+import ResponsiveListView from '@/components/ResponsiveListView.vue'
 import StudentCourseProgress from '@/pages/Courses/StudentCourseProgress.vue'
 
-import type { CourseDetails, Resource } from '@/types'
+import type {
+	CourseDetails,
+	ListColumn,
+	ListRow,
+	ListViewOptions,
+	Resource,
+} from '@/types'
 
 const props = defineProps<{
 	course: Resource<CourseDetails | null>
 }>()
 
 const dayjs = inject<typeof dayjsType>('$dayjs')!
-const showEnrollmentModal = ref<boolean>(false)
 const searchFilter = ref<string | null>(null)
 
 // OSLMS-CUSTOM: sortable students list (server-side orderBy)
@@ -344,12 +316,6 @@ const searchFilter = ref<string | null>(null)
 // list resource's initial `orderBy: 'creation desc'`.
 const sortColumn = ref<string>('creation')
 const sortOrder = ref<'asc' | 'desc'>('desc')
-
-function openEnrollModal() {
-	showEnrollmentModal.value = true
-}
-
-defineExpose({ openEnrollModal })
 
 const showProgressModal = ref<boolean>(false)
 const currentStudent = ref<Record<string, unknown> | null>(null)
@@ -401,6 +367,9 @@ const progressList = createListResource({
 	orderBy: 'creation desc',
 	pageLength: 100,
 	auto: true,
+	// Also how CourseEnrollmentForm reaches this list through
+	// getCachedListResource after enrolling someone — it is a route of its own
+	// now, so it has no way in through props.
 	cache: ['courseProgress', props.course.data?.name],
 })
 
@@ -470,7 +439,7 @@ const progressColors = computed(() =>
 	['red', 'amber', 'blue', 'green'].map((color) => `var(--${color}-400)`)
 )
 
-const progressColumns = computed(() => {
+const progressColumns = computed<ListColumn[]>(() => {
 	return [
 		{
 			label: __('Name'),
@@ -485,10 +454,27 @@ const progressColumns = computed(() => {
 		{
 			label: __('Enrolled On'),
 			key: 'creation',
-			align: 'right',
+			align: 'left',
 		},
 	]
 })
+
+// OSLMS-CUSTOM: sortable students list; the sort control offers the list columns
+const studentSortOptions = computed(() =>
+	progressColumns.value.map((column) => ({
+		label: column.label,
+		value: column.key,
+	}))
+)
+
+const studentListOptions: ListViewOptions = {
+	selectable: false,
+	showTooltip: false,
+	onRowClick: (row: ListRow) => {
+		currentStudent.value = row
+		showProgressModal.value = true
+	},
+}
 
 const lessonProgressSortingOptions = [
 	{

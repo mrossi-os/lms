@@ -34,6 +34,12 @@
 									{{ formatTime(evaluation.start_time) }}
 								</span>
 							</div>
+							<div v-if="evaluation.timezone" class="flex items-center mb-3">
+								<span class="lucide-globe size-4" />
+								<span class="ms-2">
+									{{ formatTimezone(evaluation.timezone, evaluation.date) }}
+								</span>
+							</div>
 							<div class="flex items-center">
 								<GraduationCap class="w-4 h-4 stroke-1.5" />
 								<span class="ms-2">
@@ -170,10 +176,7 @@
 					)
 				}}
 			</div>
-			<router-link
-				:to="{ name: 'Courses', query: { newCourse: '1' } }"
-				class="mt-4"
-			>
+			<router-link :to="{ name: 'NewCourse' }" class="mt-4">
 				<Button>
 					<template #prefix>
 						<Plus class="size-4 stroke-1.5" />
@@ -195,6 +198,7 @@ import {
 	Plus,
 } from 'lucide-vue-next'
 import { formatTime } from '@/utils'
+import { formatTimezone } from '@/utils/timezone'
 import { profileRoute } from '@/utils/routes'
 import CourseCard from '@/components/CourseCard.vue'
 import BatchCard from '@/pages/Batches/components/BatchCard.vue'

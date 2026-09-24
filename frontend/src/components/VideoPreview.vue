@@ -11,7 +11,7 @@
 				ref="embedEl"
 				class="video-player"
 				:data-plyr-provider="provider"
-				:src="videoPreview.src"
+				:src="safeUrl(videoPreview.src)"
 			/>
 		</div>
 		<!-- An uploaded file plays through VideoBlock, the same component a lesson
@@ -26,7 +26,7 @@
 		</div>
 		<img
 			v-else-if="fallbackImage"
-			:src="fallbackImage"
+			:src="safeUrl(fallbackImage)"
 			:alt="__('Video preview')"
 			class="aspect-video w-full object-cover"
 		/>
@@ -37,6 +37,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { getVideoPreview } from '@/utils/video'
 import { enablePlyr } from '@/utils/plyr'
 import VideoBlock from '@/components/VideoBlock.vue'
+import { safeUrl } from '@/utils/safeUrl'
 
 // Shared display for a course/batch preview video. It renders a single root
 // element so the caller can size and frame it with a class, and nothing at all
@@ -67,6 +68,7 @@ const embedEl = ref<HTMLElement | null>(null)
 
 // Reset the in-browser playback error whenever the source changes.
 const videoError = ref(false)
+
 watch(
 	() => props.videoLink,
 	() => {

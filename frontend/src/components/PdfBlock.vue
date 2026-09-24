@@ -14,7 +14,7 @@
 					<ChevronLeft :size="18" :stroke-width="1.5" />
 				</button>
 				<span class="pdf-page-indicator">{{
-					numPages ? currentPage + ' / ' + numPages : '—'
+					numPages ? currentPage + ' / ' + numPages : '-'
 				}}</span>
 				<button
 					type="button"
@@ -56,9 +56,8 @@
 				</button>
 				<a
 					class="pdf-btn"
-					:href="fileURL"
-					target="_blank"
-					rel="noopener"
+					:href="safeFileURL"
+					v-external
 					:aria-label="__('Open in new tab')"
 				>
 					<ExternalLink :size="16" :stroke-width="1.5" />
@@ -73,12 +72,7 @@
 			</div>
 			<div v-else-if="error" class="pdf-status pdf-error">
 				<span>{{ __(error) }}</span>
-				<a
-					class="pdf-fallback-link"
-					:href="fileURL"
-					target="_blank"
-					rel="noopener"
-				>
+				<a class="pdf-fallback-link" :href="safeFileURL" v-external>
 					{{ __('Open the PDF in a new tab') }}
 				</a>
 			</div>
@@ -112,6 +106,7 @@ import {
 	ExternalLink,
 	Loader2,
 } from 'lucide-vue-next'
+import { safeUrl } from '@/utils/safeUrl'
 
 const props = defineProps({
 	file: { type: String, required: true },
@@ -124,8 +119,10 @@ const __ = (text) => (window.__ ? window.__(text) : text)
 // OSLMS-CUSTOM: private serve_resource URLs are already percent-encoded and are
 // not encoded again (rule in utils/pdfViewer encodePdfURL).
 const fileURL = computed(() => encodePdfURL(props.file || ''))
+// The encoded URL still goes through upstream's scheme allowlist before it is bound.
+const safeFileURL = computed(() => safeUrl(fileURL.value))
 
-// iOS Safari blanks a canvas past its area/memory limit — pdf.js's own failure
+// iOS Safari blanks a canvas past its area/memory limit: pdf.js's own failure
 // mode on large or high-DPI pages. Cap the backing store to pdf.js's default.
 const MAX_CANVAS_PIXELS = 16_777_216
 const MIN_SCALE = 0.25
@@ -173,7 +170,7 @@ async function load() {
 		// GlobalWorkerOptions.workerPort, pdf.js hands each loading task
 		// ownership of the shared worker, so one viewer's pdfDoc.destroy()
 		// tears down the port-level message handler every *sibling* viewer is
-		// still listening on — their getDocument() then never settles and the
+		// still listening on. Their getDocument() then never settles and the
 		// spinner runs forever. Passing `worker` keeps ownership here.
 		if (sharedWorker && !sharedPdfWorker) {
 			sharedPdfWorker = new pdfjsLib.PDFWorker({ port: sharedWorker })
@@ -181,7 +178,7 @@ async function load() {
 
 		const base = import.meta.env.BASE_URL || '/'
 		const loadingTask = pdfjsLib.getDocument({
-			url: fileURL.value,
+			url: safeFileURL.value,
 			worker: sharedPdfWorker || undefined,
 			cMapUrl: `${base}pdfjs/cmaps/`,
 			cMapPacked: true,
@@ -218,7 +215,7 @@ async function load() {
 	}
 }
 
-// Synchronous so the ref is taken at mount, before load()'s first await — the
+// Synchronous so the ref is taken at mount, before load()'s first await. The
 // GlobalWorkerOptions.workerPort wiring happens later in load() once pdf.js is
 // imported. pdf.js falls back to its main-thread worker if none is available.
 function acquireWorker() {

@@ -30,7 +30,7 @@
 						<div
 							v-if="isPlainNotification(comm.content)"
 							class="announcement-card prose prose-sm bg-surface-sidebar !min-w-full px-4 py-2 rounded-md"
-							v-html="sanitizeRichHTML(comm.content)"
+							v-safe-html:rich="comm.content"
 						></div>
 						<AnnouncementContent v-else :content="comm.content" />
 					</div>
@@ -63,25 +63,20 @@
 		<div v-else class="text-ink-gray-7 leading-5">
 			{{ __('No announcements have been made yet for this batch') }}
 		</div>
-		<AnnouncementModal
-			v-if="showAnnouncementModal"
-			v-model="showAnnouncementModal"
-			:batch="props.batch.data.name"
-			:students="props.batch.data.students"
-		/>
 	</div>
 </template>
 <script setup>
 import { computed, inject, ref, watch } from 'vue'
-import { sanitizeRichHTML } from '@/utils/sanitizeRichHTML'
+import { useRoute, useRouter } from 'vue-router'
 import { Button, createResource, Avatar } from 'frappe-ui'
 import { timeAgo } from '@/utils'
-import AnnouncementModal from '@/pages/Batches/components/AnnouncementModal.vue'
+import { openBatchForm } from '@/composables/useBatchForms'
 import AnnouncementContent from '@/pages/Batches/components/AnnouncementContent.vue'
 
 const user = inject('$user')
 const readOnlyMode = window.read_only_mode
-const showAnnouncementModal = ref(false)
+const route = useRoute()
+const router = useRouter()
 const currentPage = ref(1)
 const pageSize = 10
 
@@ -134,10 +129,12 @@ watch(currentPage, () => {
 })
 
 watch(
-	// OSLMS-CUSTOM: reload the list after sending from the modal
-	() => showAnnouncementModal.value,
-	(isOpen, wasOpen) => {
-		if (wasOpen && !isOpen) {
+	// OSLMS-CUSTOM: reload the list after sending from the routed announcement form
+	// The form is a child route of BatchDetail, so this tab stays mounted
+	// behind it: leaving the form route lands back here and reloads page 1.
+	() => route.name,
+	(name, previous) => {
+		if (previous === 'NewAnnouncement' && name !== 'NewAnnouncement') {
 			currentPage.value = 1
 			communications.reload()
 		}
@@ -150,11 +147,12 @@ const totalPages = computed(() =>
 	Math.max(1, Math.ceil(totalAnnouncements.value / pageSize)),
 )
 
-// OSLMS-CUSTOM: composer hosted here and opened from the BatchDetail header via childRef
+// OSLMS-CUSTOM: composer opened from the BatchDetail header via childRef
 // Opened from the batch header's "Make Announcement" button via the tab's
-// childRef (see BatchDetail).
+// childRef (see BatchDetail); the composer is now the routed AnnouncementForm,
+// opened with the current tab hash so closing it lands back on this tab.
 const openAnnouncementModal = () => {
-	showAnnouncementModal.value = true
+	openBatchForm(router, 'NewAnnouncement', props.batch.data?.name, route.hash)
 }
 defineExpose({ openAnnouncementModal })
 </script>
