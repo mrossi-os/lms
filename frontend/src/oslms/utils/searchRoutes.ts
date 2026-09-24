@@ -13,6 +13,8 @@
  * for the courses they are enrolled in, so that one branch is role-aware.
  */
 
+import { htmlToText } from '@/utils/inertHtml'
+
 type SearchRoute = {
 	name: string
 	params?: Record<string, string>
@@ -20,11 +22,7 @@ type SearchRoute = {
 }
 
 /** Result titles carry <mark> highlights, so unwrap them before reusing the text. */
-const plainText = (html: string): string => {
-	const el = document.createElement('div')
-	el.innerHTML = html ?? ''
-	return (el.textContent ?? '').trim()
-}
+const plainText = (html: string): string => htmlToText(html).trim()
 
 /**
  * Open the lesson itself when the result carries its position in the course

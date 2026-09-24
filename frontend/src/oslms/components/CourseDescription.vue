@@ -30,6 +30,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { Button } from 'frappe-ui'
 import { ChevronDown } from 'lucide-vue-next'
+import { decodeEntities } from '@/utils/inertHtml'
 
 const props = withDefaults(
 	defineProps<{
@@ -50,9 +51,7 @@ const showToggle = ref(false)
 const unescapedDescription = computed(() => {
 	const html = props.description
 	if (!html) return ''
-	const textarea = document.createElement('textarea')
-	textarea.innerHTML = html
-	return textarea.value
+	return decodeEntities(html)
 })
 
 // Show the toggle only when the rendered content is taller than the collapsed
