@@ -7680,7 +7680,8 @@ Inoltre v2.62.0 porta sul telefono la pagina «You» (pages/MobileYou.vue +
 components/Settings/youRows.ts, mobileSettings.ts) con una riga «Colour mode»
 (colourModeRow → setThemePreference): va nascosta anche lì, altrimenti lo studente torna a
 poter cambiare tema dal telefono (file di altri gruppi, da riapplicare nel merge).
-Merge di v2.62.0 (2026-09-24): theme.ts riscritto dall'upstream (preferenza light/dark/system): applyTheme riespresso su setThemePreference, toggleTheme resta no-op; nel menu utente la regola e l'assenza della voce Toggle Theme, quindi l'ancora e il commento che la documenta."""
+Merge di v2.62.0 (2026-09-24): theme.ts riscritto dall'upstream (preferenza light/dark/system): applyTheme riespresso su setThemePreference, toggleTheme resta no-op; nel menu utente la regola e l'assenza della voce Toggle Theme, quindi l'ancora e il commento che la documenta.
+Adeguamento post-merge v2.62.0 (2026-09-24): la nuova pagina «You» del telefono (MobileYou.vue) offre una riga «Colour mode» che apre un selettore light/dark/system: filtrata via nella pagina (youRows.ts upstream intatto). 4 test upstream di mobileYou.test.ts verificano quella riga: riconciliazione finale dei test. Nota: con Brand Customize vuoto il backend os_lms risponde comunque «light»; al primo accesso su un telefono in modalità scura può comparire un breve lampo scuro prima che le impostazioni arrivino (bootstrap di index.html sulla preferenza system)."""
 
   [[entries.sites]]
   file = "frontend/src/App.vue"
@@ -7702,6 +7703,10 @@ Merge di v2.62.0 (2026-09-24): theme.ts riscritto dall'upstream (preferenza ligh
   [[entries.sites]]
   file = "frontend/src/components/Sidebar/UserDropdown.vue"
   anchor = "// OSLMS-CUSTOM: \"Toggle Theme\" item removed here (theme fixed by the admin)"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/MobileYou.vue"
+  anchor = "rows: group.rows.filter((row) => row.action !== COLOUR_MODE_ACTION),"
 
   [entries.visibility]
   subject = "commutatore di tema (voce «Toggle Theme» del menu utente, riga «Colour mode» su telefono)"
