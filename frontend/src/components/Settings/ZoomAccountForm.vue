@@ -5,59 +5,8 @@
 		v-model:enabled="account.enabled"
 		@back="emit('updateStep', 'list')"
 	>
-		<template #body-content>
-			<div class="mb-4">
-				<BooleanSwitch
-					size="sm"
-					v-model="account.enabled"
-					:label="__('Enabled')"
-					:description="
-						__('Activate this Zoom account for scheduling meetings.')
-					"
-				/>
-			</div>
-			<div class="grid grid-cols-2 gap-5">
-				<FormControl
-					v-model="account.name"
-					:label="__('Account Name')"
-					type="text"
-					:required="true"
-				/>
-				<FormControl
-					v-model="account.client_id"
-					:label="__('Client ID')"
-					type="text"
-					:required="true"
-				/>
-				<Link
-					v-model="account.member"
-					:label="__('Member')"
-					doctype="Course Evaluator"
-					:onCreate="
-						(value: string, close: () => void) => openSettings('Members', close)
-					"
-					:required="true"
-				/>
-				<FormControl
-					v-model="account.client_secret"
-					:label="__('Client Secret')"
-					type="password"
-					:required="true"
-				/>
-				<FormControl
-					v-model="account.account_id"
-					:label="__('Account ID')"
-					type="text"
-					:required="true"
-				/>
-				<!-- OSLMS-CUSTOM: Google Calendar bound to the Zoom account, used to send live class invites -->
-				<Link
-					v-model="account.google_calendar"
-					:label="__('Google Calendar')"
-					doctype="Google Calendar"
-					:required="true"
-				/>
-			</div>
+		<template #header-actions>
+			<Button variant="solid" @click="save">{{ __('Save') }}</Button>
 		</template>
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
 			<FormControl
@@ -91,6 +40,13 @@
 				v-model="account.account_id"
 				:label="__('Account ID')"
 				type="text"
+				:required="true"
+			/>
+			<!-- OSLMS-CUSTOM: Google Calendar bound to the Zoom account, used to send live class invites -->
+			<Link
+				v-model="account.google_calendar"
+				:label="__('Google Calendar')"
+				doctype="Google Calendar"
 				:required="true"
 			/>
 		</div>

@@ -580,8 +580,9 @@ const selectAllBatchMembers = () => {
 	selectedMembers.value = batchMembersList.value.map((m) => m.member)
 }
 
+// OSLMS-CUSTOM: the input is bound to program.title (renamable), so clean that field, not the docname
 const validateTitle = () => {
-	program.value.name = sanitizeOnWrite(program.value.name.trim())
+	program.value.title = sanitizeOnWrite(program.value.title.trim())
 }
 
 const saveProgram = () => {

@@ -3412,8 +3412,9 @@ LMS Program ha come nome il titolo (autoname field:title, allow_rename). Il camp
 dell'upstream era legato a program.name, quindi su un programma esistente modificarlo non
 cambiava nulla di persistente. Ora il campo è legato a program.title e, se al salvataggio il
 titolo è diverso dal nome, il documento viene prima rinominato con frappe.client.rename_doc e
-poi salvato col nuovo nome. Nota: validateTitle (upstream) pulisce ancora program.name e non
-program.title.
+poi salvato col nuovo nome. Per lo stesso motivo validateTitle pulisce (trim + sanitizeOnWrite)
+program.title e non program.name, come faceva l'upstream (punto B4 del 2026-09-24): senza,
+uno spazio finale nel titolo faceva tentare una rinomina a ogni salvataggio.
 Merge di v2.62.0 (2026-09-24): ProgramForm.vue spostato dall'upstream in pages/Forms/ (pagina instradata), ancore invariate."""
 
   [[entries.sites]]
@@ -3424,6 +3425,11 @@ Merge di v2.62.0 (2026-09-24): ProgramForm.vue spostato dall'upstream in pages/F
   file = "frontend/src/pages/Forms/ProgramForm.vue"
   anchor = "'/api/method/frappe.client.rename_doc',"
   symbol = "updateProgram"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Forms/ProgramForm.vue"
+  anchor = "program.value.title = sanitizeOnWrite(program.value.title.trim())"
+  symbol = "validateTitle"
 
 [[entries]]
 id = "program-form-description-editor"
@@ -5556,9 +5562,9 @@ upstream senza esitazioni."""
 
 [[entries]]
 id = "zoom-account-google-calendar-field"
-title = "Account Zoom legato a un Google Calendar (form rotto dopo un merge)"
+title = "Account Zoom legato a un Google Calendar"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 Regola voluta (commit 0619704f2, «bind Google Calendar to Zoom accounts for live class
 invites»): ogni account Zoom ha un campo Google Calendar obbligatorio (campo google_calendar
@@ -5567,17 +5573,12 @@ su LMS Zoom Settings), usato per inviare gli inviti delle classi live dal calend
 lo azzera per un account nuovo e lo carica da quello esistente; la lista in ZoomSettings.vue
 carica il campo (settings-google-calendar-tab). È visibile a chi gestisce gli account Zoom
 nelle Impostazioni.
-PROBLEMA ATTUALE (da confermare col titolare, confidence bassa per questo): quando l'upstream
-ha trasformato il modale in pannello SettingsLayout (f6299b7c5), la risoluzione del merge
-(027c0c56f «fix merge: Batch components») ha tenuto il nostro corpo dentro
-<template #body-content>, uno slot che SettingsLayout non ha, e ha perso l'upstream
-<template #header-actions> con il pulsante Salva. Risultato: il campo Google Calendar non
-viene mostrato (si vede il corpo upstream di default, senza quel campo) e il form non ha il
-pulsante Salva (la funzione save esiste ma non è usata). Correzione suggerita, non applicata:
-rimettere #header-actions con il Button Salva, togliere il blocco #body-content e aggiungere
-il Link Google Calendar nella griglia del corpo di default.
-Al merge di v2.61.0 l'upstream cambia solo l'import di User ('@/types'): nessun conflitto
-atteso, ma è il momento buono per sistemare il template."""
+Corretto il 2026-09-24 (punto B4): la risoluzione del merge 027c0c56f aveva messo il nostro
+corpo dentro <template #body-content>, slot che SettingsLayout non ha, e perso
+<template #header-actions> con il pulsante Salva, così il campo non si vedeva e nessun
+account Zoom si poteva salvare. Ora il template è quello upstream (Salva in header-actions,
+interruttore Abilitato gestito da SettingsLayout con v-model:enabled) più il Link Google
+Calendar in fondo alla griglia."""
 
   [[entries.sites]]
   file = "frontend/src/components/Settings/ZoomAccountForm.vue"
@@ -5586,10 +5587,6 @@ atteso, ma è il momento buono per sistemare il template."""
   [[entries.sites]]
   file = "frontend/src/components/Settings/ZoomAccountForm.vue"
   anchor = "account.google_calendar = acc.google_calendar || ''"
-
-  [[entries.sites]]
-  file = "frontend/src/components/Settings/ZoomAccountForm.vue"
-  anchor = "<template #body-content>"
 
 [[entries]]
 id = "zoom-account-rename-keeps-account-name"
@@ -5601,8 +5598,8 @@ Salvando un account Zoom esistente con il nome cambiato, il form prima rinomina 
 (rename_doc) e poi salva i campi. L'upstream in quel salvataggio passa account_name =
 props.accountID, cioè il nome VECCHIO, riportando il campo al valore precedente; noi passiamo
 account.name, così account_name resta allineato al nuovo nome del documento (commit
-d2f1196b0 «Fix modal zoom settings»). Oggi il ramo non è raggiungibile finché manca il
-pulsante Salva (vedi zoom-account-google-calendar-field). Al merge di v2.61.0 nessuna
+d2f1196b0 «Fix modal zoom settings»). Raggiungibile di nuovo dal 2026-09-24, quando è
+tornato il pulsante Salva (vedi zoom-account-google-calendar-field). Al merge di v2.61.0 nessuna
 modifica upstream in setValue."""
 
   [[entries.sites]]
