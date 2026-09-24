@@ -6842,8 +6842,17 @@ limit_page_length, che i nostri override non dichiaravano e Frappe scartava in s
 Scoperto e corretto nella verifica di fine percorso (2026-09-24): get_instructor_info copiato
 in locale (serve ancora ad author_info della pagina /search), parametri aggiunti e passati
 all'originale. Guardia permanente: il test test_override_signatures.py fallisce se un override
-non si risolve o scarta un parametro dell'originale."""
+non si risolve o scarta un parametro dell'originale.
+Ponti verso Frappe (2026-09-24, framework_method_shims in hooks.py): metodi che il frontend chiama
+ma che Frappe version-16 non ha, oggi solo frappe.utils.telemetry.pulse.client.boot_config, che
+il plugin di telemetria di frappe-ui beta.29 chiede a ogni caricamento della SPA (senza ponte:
+417 in console, telemetria comunque spenta). Il ponte risponde «telemetria spenta»; il test
+fallisce quando Frappe introduce l'originale, e allora il ponte va tolto, non tenuto a coprirlo."""
 checks = { unit = "apps/os_lms/os_lms/os_lms/tests/test_override_signatures.py" }
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/hooks.py"
+  anchor = "\"frappe.utils.telemetry.pulse.client.boot_config\": \"os_lms.os_lms.framework_shims.telemetry_boot_config\","
 
   [[entries.sites]]
   file = "apps/os_lms/os_lms/os_lms/override_api.py"

@@ -136,6 +136,15 @@ override_whitelisted_methods = {
     "frappe.integrations.doctype.google_calendar.google_calendar.google_callback": "os_lms.os_lms.google_calendar.google_callback",
 }
 
+# Whitelisted methods our frontend calls that this Frappe release does not ship.
+# Unlike the overrides above there is no original to wrap; test_override_signatures
+# fails once Frappe ships one, so the shim gets removed instead of shadowing it.
+framework_method_shims = {
+    # frappe-ui's telemetry plugin (Frappe develop only): 417 on every SPA load without it.
+    "frappe.utils.telemetry.pulse.client.boot_config": "os_lms.os_lms.framework_shims.telemetry_boot_config",
+}
+override_whitelisted_methods.update(framework_method_shims)
+
 # override email
 standard_email_override = {
     "login_via_key": "os_lms/templates/emails/login_via_key.html"
