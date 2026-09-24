@@ -1043,23 +1043,6 @@ aggiungerli."""
   file = "frontend/vite.config.js"
   anchor = "'prosemirror-changeset',"
 
-[[entries]]
-id = "deps-editorjs-color-picker"
-title = "Dipendenza editorjs-color-picker per il colore del testo nelle lezioni"
-layer = "spa-graft"
-confidence = "high"
-intent = """
-Lo strumento di colore del testo nell'editor delle lezioni (ColorPickerInline in utils) usa
-editorjs-color-picker, dipendenza solo nostra: il package.json upstream non la conosce e un
-merge che prende la versione upstream la toglie, rompendo la build o lo strumento colore
-(memoria frappeui_1_0_beta_merge_2026_06). ATTENZIONE al merge di v2.59.0: la riga sta tra
-dompurify e editorjs-drag-drop, a ridosso di codemirror e feather-icons che l'upstream rimuove;
-nel conflitto conservare questa riga."""
-
-  [[entries.sites]]
-  file = "frontend/package.json"
-  anchor = '"editorjs-color-picker":'
-
 # --- Controllo Link (Controls/Link.vue) -------------------------------------
 
 [[entries]]
@@ -2533,32 +2516,6 @@ accepted-drift."""
   [[entries.sites]]
   file = "frontend/src/components/VideoBlock.vue"
   anchor = "OSLMS-CUSTOM: dead @timeupdate binding removed"
-
-[[entries]]
-id = "editor-color-picker-tool"
-title = "Tool colore editorjs-color-picker nell'editor della lezione"
-layer = "spa-graft"
-confidence = "low"
-intent = """
-Aggiunto il 20/05/2026 (6804b7d1d) per colorare il testo delle lezioni con la dipendenza
-editorjs-color-picker, adattata a tool inline da ColorPickerInline. Da allora l'upstream ha
-introdotto il proprio tool colore (utils/inline/Color.ts, <lms-inline-color>) e il nostro
-«ColorPicker» è ancora registrato ma non compare in INLINE_TOOLBAR_ORDER: non è chiaro se
-serva ancora (per esempio per rendere correttamente contenuti colorati salvati con il
-vecchio tool) o sia codice morto. ATTENZIONE: v2.63.0 rimuove il tool colore inline
-upstream; decidere con il committente prima di quel merge se questo tool deve tornare lo
-strumento colore delle lezioni o essere eliminato. Resta anche la dipendenza in
-package.json (memoria frappeui_1_0_beta_merge_2026_06).
-DECISIONE 2026-09-24 (v2.63.0): lo strumento colore delle lezioni NON torna a essere editorjs-color-picker; viene riscritto sul nuovo BaseInline (vedi editor-inline-color-persist). Questo tool resta registrato solo finché la riscrittura non è in piedi; la sua eliminazione e quella della dipendenza si valutano dopo."""
-
-  [[entries.sites]]
-  file = "frontend/src/utils/index.js"
-  anchor = "class ColorPickerInline extends ColorPicker {"
-
-  [[entries.sites]]
-  file = "frontend/src/utils/index.js"
-  anchor = "class: ColorPickerInline,"
-  symbol = "getEditorTools"
 
 [[entries]]
 id = "editor-inline-color-persist"

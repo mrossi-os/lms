@@ -27,50 +27,6 @@ import dayjs from '@/utils/dayjs'
 import Embed from '@editorjs/embed'
 import SimpleImage from '@editorjs/simple-image'
 import Table from '@editorjs/table'
-// OSLMS-CUSTOM: editorjs-color-picker text colour tool (custom dependency)
-import ColorPicker from 'editorjs-color-picker'
-
-// OSLMS-CUSTOM: colour picker adapted to behave as an inline tool
-class ColorPickerInline extends ColorPicker {
-	checkState() {
-		return false
-	}
-
-	renderActions() {
-		const el = super.renderActions()
-		el.style.display = 'none'
-		this._actionsEl = el
-		el.addEventListener(
-			'mousedown',
-			(e) => {
-				e.preventDefault()
-				const sel = window.getSelection()
-				if (sel && sel.rangeCount > 0) {
-					this.lastRange = sel.getRangeAt(0)
-				}
-			},
-			true,
-		)
-		el.addEventListener('click', (e) => {
-			if (
-				e.target.classList?.contains(
-					'editorjs__color-selector__container-item',
-				)
-			) {
-				el.style.display = 'none'
-			}
-		})
-		return el
-	}
-
-	surround(range) {
-		super.surround(range)
-		if (this._actionsEl) {
-			this._actionsEl.style.display =
-				this._actionsEl.style.display === 'none' ? '' : 'none'
-		}
-	}
-}
 import 'plyr/dist/plyr.css'
 import DOMPurify from 'dompurify'
 import { decodeEntities } from './inertHtml'
@@ -332,29 +288,6 @@ export function getEditorTools(
 		copyBlock: clipboardTunes.copyBlock,
 		cutBlock: clipboardTunes.cutBlock,
 		pasteBlock: clipboardTunes.pasteBlock,
-		// OSLMS-CUSTOM: register the editorjs-color-picker tool
-		ColorPicker: {
-			class: ColorPickerInline,
-			config: {
-				colors: [
-					'#000000',
-					'#5A5A5A',
-					'#9E9E9E',
-					'#EC7878',
-					'#FF9800',
-					'#FFBF00',
-					'#CDDC39',
-					'#4CAF50',
-					'#00BCD4',
-					'#0070FF',
-					'#3F51B5',
-					'#9C27B0',
-					'#795548',
-					'#FFFFFF',
-				],
-				columns: 7,
-			},
-		},
 		embed: {
 			// OSLMS-CUSTOM: VideoEmbed instead of the stock Embed (Vimeo share links)
 			class: VideoEmbed,
