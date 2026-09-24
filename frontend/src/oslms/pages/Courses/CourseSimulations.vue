@@ -93,14 +93,14 @@
 								{{ __('Modifica') }}
 							</Button>
 							<!-- Archive: only for Published scenarios (safe on scenarios
-								with sessions — keeps the history). Solid orange: the
-								Button has no `orange` theme, so it's a solid button with
-								amber tokens overridden. -->
+								with sessions — keeps the history). The Button has no
+								`orange` theme, so it is a subtle one on the theme's
+								orange tint (readable, unlike white on orange-500). -->
 							<Button
 								v-if="s.status === 'Published'"
 								size="sm"
-								variant="solid"
-								class="ml-2 !bg-orange-500 hover:!bg-orange-600 !text-white"
+								variant="subtle"
+								class="ml-2 !bg-surface-orange-1 !text-ink-orange-7"
 								@click="confirmArchive(s)"
 							>
 								{{ __('Archivia') }}
