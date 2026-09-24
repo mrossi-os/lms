@@ -3227,7 +3227,8 @@ perché l'Administrator ha implicitamente ogni ruolo e altrimenti perderebbe l'i
 regola controlla il nome del ruolo in roles (non esiste un flag is_manager). ATTENZIONE al
 merge di v2.59.0: l'upstream rinomina le icone del menu ('book-open' → 'lucide-book-open',
 'upload' → 'lucide-upload', 'folder-plus' → 'lucide-folder-plus') dentro l'array che noi
-abbiamo spezzato in menu + push: riapplicare i nuovi nomi nella nostra struttura."""
+abbiamo spezzato in menu + push: riapplicare i nuovi nomi nella nostra struttura.
+Merge di v2.62.0 (2026-09-24): l'import da ZIP è ora la pagina instradata CourseImportForm, raggiungibile anche per URL senza passare dal menu: stesso gate replicato nel modulo (Gestore senza System Manager vede il messaggio di rifiuto)."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Courses/Courses.vue"
@@ -3238,6 +3239,10 @@ abbiamo spezzato in menu + push: riapplicare i nuovi nomi nella nostra struttura
   file = "frontend/src/pages/Courses/Courses.vue"
   anchor = "if (!canImportCourse.value) return menu"
   symbol = "courseMenu"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Forms/CourseImportForm.vue"
+  anchor = "return !roles.includes('Gestore') || !!user?.data?.is_system_manager"
 
   [entries.visibility]
   subject = "import dei corsi da Data Import e da ZIP"

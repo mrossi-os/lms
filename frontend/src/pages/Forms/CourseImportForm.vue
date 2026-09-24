@@ -95,7 +95,7 @@
 // (Dialog.vue:260), which is what this rendered at before it had a URL, while
 // FormShell defaults to 3xl. Without it the desktop dialog changes width.
 import { call, FileUploadHandler, toast } from 'frappe-ui'
-import { computed, ref } from 'vue'
+import { computed, inject, ref } from 'vue'
 import FormShell from '@/components/FormShell.vue'
 import HeaderButton from '@/components/HeaderButton.vue'
 import { useFormRoute } from '@/composables/useFormRoute'
@@ -117,7 +117,14 @@ const { close, saveAndReplace } = useFormRoute({ name: 'Courses' })
 // "Import via ZIP" item. A URL does not go through a button, so re-check it
 // here. UX gate only — lms.lms.api.import_course_from_zip's own server-side
 // permission check is the authorization boundary.
-const canCreate = computed(() => canCreateCourse())
+// OSLMS-CUSTOM: a Gestore creates courses by hand only (courses-list-gestore-no-import)
+// Same rule as canImportCourse in Courses.vue; a System Manager keeps the import.
+const user = inject<any>('$user')
+const canCreate = computed(() => {
+	if (!canCreateCourse()) return false
+	const roles: string[] = user?.data?.roles || []
+	return !roles.includes('Gestore') || !!user?.data?.is_system_manager
+})
 
 const openFileSelector = () => {
 	fileInput.value?.click()
