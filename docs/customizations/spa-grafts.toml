@@ -858,6 +858,25 @@ riorganizzate): al prossimo merge verificare se il nuovo componente traduce già
   anchor = ":description=\"__('An image that represents the badge.')\""
 
 [[entries]]
+id = "color-swatch-names-i18n"
+title = "Nomi dei colori dei campioni letti in italiano"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+I campioni colore della miniatura del corso (CourseThumbnailField) e il controllo condiviso
+ColorSwatches usano come aria-label il nome inglese del colore (Red, Blue, Amber…), che è
+anche il valore salvato. L'etichetta passa per __() (traduzioni già presenti in it.csv); il
+valore salvato resta il nome inglese. Upstream/develop al 2026-09-24 non traduce ancora."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Courses/CourseThumbnailField.vue"
+  anchor = ":aria-label=\"__(c)\""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/ColorSwatches.vue"
+  anchor = ":aria-label=\"__(color)\""
+
+[[entries]]
 id = "vite-utils-alias-oslms"
 title = "@/utils risolto sul modulo utils di os_lms"
 layer = "spa-graft"

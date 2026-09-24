@@ -57,11 +57,12 @@
 						{{ __('Swatches') }}
 					</div>
 					<div class="grid grid-cols-7 gap-2">
+						<!-- OSLMS-CUSTOM: colour swatch names read out in Italian -->
 						<button
 							v-for="color in colors"
 							:key="color"
 							type="button"
-							:aria-label="color"
+							:aria-label="__(color)"
 							class="size-5 rounded-full cursor-pointer"
 							:style="{
 								backgroundColor: `var(--${color.toLowerCase()}-400)`,

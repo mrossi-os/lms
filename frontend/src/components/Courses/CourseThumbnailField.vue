@@ -87,6 +87,7 @@
 							{{ __('Color') }}
 						</div>
 						<div class="flex items-center gap-2 flex-wrap">
+							<!-- OSLMS-CUSTOM: colour swatch names read out in Italian -->
 							<button
 								v-for="c in colors"
 								:key="c"
@@ -98,7 +99,7 @@
 										: 'hover:scale-105'
 								"
 								:style="{ backgroundColor: `var(--${c.toLowerCase()}-400)` }"
-								:aria-label="c"
+								:aria-label="__(c)"
 								@click="pickColor(c)"
 							/>
 						</div>
