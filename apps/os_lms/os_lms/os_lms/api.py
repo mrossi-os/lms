@@ -100,45 +100,6 @@ def get_course_duration(course: str):
 
 
 @frappe.whitelist()
-def get_evaluator_details(evaluator: str):
-	frappe.only_for("Batch Evaluator")
-	calendar_name = None
-	is_authorised = None
-
-	if not frappe.db.exists("Google Calendar", {"user": evaluator}):
-		try:
-			calendar = frappe.new_doc("Google Calendar")
-			calendar.update({"user": evaluator, "calendar_name": evaluator})
-			calendar.insert()
-			calendar_name = calendar.name
-			is_authorised = calendar.authorization_code
-		except Exception:
-			pass  # Google API non configurata, ignora
-	else:
-		calendar = frappe.db.get_value(
-			"Google Calendar",
-			{"user": evaluator},
-			["name", "authorization_code"],
-			as_dict=1,
-		)
-		calendar_name = calendar.name
-		is_authorised = calendar.authorization_code
-
-	if frappe.db.exists("Course Evaluator", {"evaluator": evaluator}):
-		doc = frappe.get_doc("Course Evaluator", evaluator)
-	else:
-		doc = frappe.new_doc("Course Evaluator")
-		doc.evaluator = evaluator
-		doc.insert()
-
-	return {
-		"slots": doc.as_dict(),
-		"calendar": calendar_name,
-		"is_authorised": is_authorised,
-	}
-
-
-@frappe.whitelist()
 def try_import():
 	data_import = frappe.get_doc(
 		{

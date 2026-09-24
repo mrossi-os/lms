@@ -1754,21 +1754,16 @@ voce profile-own-without-lms-role (lato api.py): le due vanno riapplicate insiem
 
 [[entries]]
 id = "profile-evaluator-availability"
-title = "Disponibilità del valutatore senza Google Calendar configurato"
+title = "Disponibilità del valutatore: avviso sulla fascia incompleta"
 layer = "spa-graft"
 confidence = "high"
 intent = """
-La pagina delle disponibilità del valutatore legge i dati da os_lms.os_lms.api.get_evaluator_details
-invece che dall'endpoint upstream: la versione os_lms prova a creare il Google Calendar del
-valutatore ma ignora l'errore quando le API Google non sono configurate, così la pagina si apre
-lo stesso (commit 30838fc12 "Fix Slots profile"). Se l'utente aggiunge una fascia senza giorno o
-orari riceve un avviso invece di un nulla silenzioso; i segnaposto delle select sono tradotti.
+Se l'utente aggiunge una fascia senza giorno o orari riceve un avviso invece di un nulla
+silenzioso; i segnaposto delle select sono tradotti. Fino al 2026-09-24 la pagina leggeva i dati
+da un endpoint os_lms (commit 30838fc12) che creava il Google Calendar in lettura ignorando
+l'errore senza API Google: tolto, perché l'upstream ora legge senza scrivere, controlla l'accesso
+(enforce_evaluator_access) e restituisce is_authorized; la pagina usa di nuovo l'endpoint upstream.
 La scheda Slots è oggi nascosta nel profilo (profile-tabs-certificates-only), ma la route esiste."""
-
-  [[entries.sites]]
-  file = "frontend/src/pages/ProfileEvaluator.vue"
-  anchor = "url: 'os_lms.os_lms.api.get_evaluator_details',"
-  symbol = "evaluator"
 
   [[entries.sites]]
   file = "frontend/src/pages/ProfileEvaluator.vue"

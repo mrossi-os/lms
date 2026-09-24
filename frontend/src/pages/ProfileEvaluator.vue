@@ -232,8 +232,7 @@ const newSlot = reactive({
 })
 
 const evaluator = createResource({
-	// OSLMS-CUSTOM: os_lms endpoint that tolerates a site without Google Calendar API configured
-	url: 'os_lms.os_lms.api.get_evaluator_details',
+	url: 'lms.lms.api.get_evaluator_details',
 	params: {
 		evaluator: props.profile.data?.name,
 	},
