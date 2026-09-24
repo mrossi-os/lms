@@ -14,7 +14,10 @@
     "types": ["vite/client"],
     "ignoreDeprecations": "6.0",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "vue": ["./node_modules/vue"],
+      // OSLMS-CUSTOM: @framework/ui is stubbed locally (see vite.config.js)
+      "@framework/ui/ConditionBuilder": ["./src/oslms/stubs/frameworkUi/ConditionBuilder.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "src/**/*.js", "src/*.d.ts"],

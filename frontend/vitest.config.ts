@@ -48,11 +48,16 @@ export default defineConfig({
 			// (valid under Vite's resolver, invalid under Node's strict ESM loader).
 			// Vitest externalizes node_modules to Node's loader by default; inlining
 			// keeps frappe-ui on Vite's transform/resolve pipeline, matching dev/build.
-			deps: { inline: ['frappe-ui'] },
+			deps: { inline: ['frappe-ui', '@framework/ui'] },
 		},
 	},
 	resolve: {
 		alias: {
+			// OSLMS-CUSTOM: @framework/ui is stubbed locally (see vite.config.js)
+			'@framework/ui/ConditionBuilder': path.resolve(
+				path.dirname(fileURLToPath(import.meta.url)),
+				'src/oslms/stubs/frameworkUi/ConditionBuilder.ts'
+			),
 			'@': path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'src'),
 		},
 		dedupe: ['vue', 'frappe-ui'],

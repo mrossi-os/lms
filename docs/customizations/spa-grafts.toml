@@ -977,7 +977,8 @@ ATTENZIONE al merge di v2.59.0: l'upstream aggiunge :open="isOpen", imposta isOp
 onOpen (che da noi non esiste, sostituito da onFocus: conflitto sicuro) e chiude il menu in
 handleCreate prima di aprire il modale di creazione. Con l'override attuale la prop open non
 viene letta, quindi quella chiusura non avrà effetto: tenere @input/@focus, e valutare a parte
-se servono chiusura del menu e prop open nell'override."""
+se servono chiusura del menu e prop open nell'override.
+Merge di v2.63.0 (2026-09-24): l upstream aggiunge la prop align (e0d20a9b4) e ripassa loading/label/required/description/error al Combobox; l override non le conosce, quindi restano fuori e align viene mappata sulla prop placement dell override (che la inoltra come align a reka)."""
 
   [[entries.sites]]
   file = "frontend/src/components/Controls/Link.vue"
@@ -3581,7 +3582,8 @@ risposta: non va inviata, altrimenti submit_quiz riceveva [null] e l'intera cons
 e la domanda risultava «tentata». Next registra la risposta scritta ma non verificata.
 v2.59.0 non tocca questa zona, ma passa l'editor Open Ended a RichTextEditor: verificare che
 l'editor vuoto continui a essere riconosciuto da isBlankAnswer. v2.63.0 ricostruisce le pagine
-dei quiz attorno alla banca domande: se riscrive anche il player, riapplicare la regola."""
+dei quiz attorno alla banca domande: se riscrive anche il player, riapplicare la regola.
+Merge di v2.63.0 (2026-09-24): il player e ridisegnato upstream attorno al proctoring (pillola del timer, scheda informativa, registro attivita) e la conferma di consegna upstream mostra gia quante domande restano senza risposta: il nostro riquadro ambra e stato tolto e il testo upstream adeguato a «varranno 0 punti» (decisione del committente). Riapplicati Check/Next/Submit affiancati (Submit mai in anteprima autore), isBlankAnswer, recordCurrentAttempt su Check e Next, conferma in entrambe le modalita."""
 
   [[entries.sites]]
   file = "frontend/src/components/Quiz.vue"
@@ -3595,7 +3597,7 @@ dei quiz attorno alla banca domande: se riscrive anche il player, riapplicare la
 
   [[entries.sites]]
   file = "frontend/src/components/Quiz.vue"
-  anchor = "quiz.data.show_answers && activeQuestion != questions.length"
+  anchor = 'v-if="activeQuestion != questions.length"'
 
   [[entries.sites]]
   file = "frontend/src/components/Quiz.vue"
@@ -3603,7 +3605,7 @@ dei quiz attorno alla banca domande: se riscrive anche il player, riapplicare la
 
   [[entries.sites]]
   file = "frontend/src/components/Quiz.vue"
-  anchor = "Math.max(0, questions.value.length - attemptedQuestions.value.length),"
+  anchor = "Math.max(0, questions.value.length - attemptedQuestions.value.length)"
   symbol = "unattemptedCount"
 
 [[entries]]
@@ -3648,7 +3650,8 @@ timer possono arrivare insieme: un flag impedisce la doppia consegna, il timer s
 azzera a ogni nuovo tentativo e allo smontaggio, e un errore generico di consegna ora mostra un
 avviso invece di fallire in silenzio. Il timer non si reimposta mentre un tentativo è in corso
 (la risorsa in cache può ricaricarsi). Introdotto nel commit 96c6c73cb, il cui messaggio («fix
-mobile layout») non lo descrive. v2.59.0 non tocca questa zona."""
+mobile layout») non lo descrive. v2.59.0 non tocca questa zona.
+Merge di v2.63.0 (2026-09-24): l upstream ora mostra da se un avviso sugli errori generici di consegna («Could not submit the quiz. Please try again.») e passa il motivo della consegna (manual/timer_expired/…): sito del nostro avviso tolto (coperto, decisione del committente). Timer a orologio riapplicato con submitQuiz(timer_expired); guardia contro la doppia consegna dopo quella upstream sull anteprima."""
 
   [[entries.sites]]
   file = "frontend/src/components/Quiz.vue"
@@ -3658,11 +3661,6 @@ mobile layout») non lo descrive. v2.59.0 non tocca questa zona."""
   [[entries.sites]]
   file = "frontend/src/components/Quiz.vue"
   anchor = "if (submitting || quizSubmission.data) return"
-  symbol = "createSubmission"
-
-  [[entries.sites]]
-  file = "frontend/src/components/Quiz.vue"
-  anchor = "toast.error(__('Your quiz could not be submitted. Please try again.'))"
   symbol = "createSubmission"
 
 [[entries]]
@@ -3679,15 +3677,10 @@ tradotte. Nota: la classe del riquadro istruzioni contiene il refuso «text-ink-
 che non esiste; il colore arriva comunque dalle classi sui figli. Il titolo del quiz con
 «font-semibold text-lg» non è nostro (residuo di una vecchia versione upstream): al merge di
 v2.59.0 prendere text-lg-semibold dell'upstream.
-Merge di v2.62.0 (2026-09-24): la riga delle azioni upstream va a capo da se (flex-wrap): sito dell'impilamento tolto (redesign mobile, decisione del committente). Restano traduzioni, etichetta Submit Quiz e stile del riquadro istruzioni."""
+Merge di v2.62.0 (2026-09-24): la riga delle azioni upstream va a capo da se (flex-wrap): sito dell'impilamento tolto (redesign mobile, decisione del committente). Restano traduzioni, etichetta Submit Quiz e stile del riquadro istruzioni.
+Merge di v2.63.0 (2026-09-24, decisione del committente): il riquadro istruzioni non esiste piu (sostituito dalla scheda informativa a pillole) e il plurale punto/punti e tradotto dall upstream: siti tolti. Restano «Submit Quiz», «Try Again» solid, classe card sulla domanda e intestazioni della tabella tentativi tradotte."""
 
-  [[entries.sites]]
-  file = "frontend/src/components/Quiz.vue"
-  anchor = "text-ink-grey-9 space-y-2"
 
-  [[entries.sites]]
-  file = "frontend/src/components/Quiz.vue"
-  anchor = "quiz.data.marks_to_cut == 1 ? __('mark') : __('marks'),"
 
   [[entries.sites]]
   file = "frontend/src/components/Quiz.vue"
@@ -3703,6 +3696,7 @@ id = "quiz-form-mobile-layout"
 title = "Modulo del quiz usabile su telefono e pulsanti in stile del tema"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 Il modulo di authoring del quiz (Docente, Moderator, istruttori) sotto lg passa a una colonna:
 le impostazioni finiscono sotto l'elenco delle domande invece di restare in una colonna
@@ -3711,7 +3705,8 @@ laterale illeggibile. L'elenco delle domande usa la classe os-list-view del tema
 v2.59.0 tocca solo il titolo «Questions» (non nostro). v2.63.0 SOSTITUISCE tutta quest'area
 («rebuild quiz authoring around a shared question bank»): dopo quel merge riapplicare solo
 l'impilamento su telefono e lo stile dei pulsanti sulla nuova pagina, se servono ancora.
-Merge di v2.62.0 (2026-09-24): QuizForm.vue spostato in pages/Forms/ e ridisegnato dall'upstream con layout mobile proprio: siti dell'impilamento e os-list-view tolti (redesign mobile, decisione del committente). Resta lo stile dei pulsanti (solid Test Quiz / Check Submissions, delete ghost)."""
+Merge di v2.62.0 (2026-09-24): QuizForm.vue spostato in pages/Forms/ e ridisegnato dall'upstream con layout mobile proprio: siti dell'impilamento e os-list-view tolti (redesign mobile, decisione del committente). Resta lo stile dei pulsanti (solid Test Quiz / Check Submissions, delete ghost).
+accepted-drift (2026-09-24, merge di v2.63.0, decisione del committente): QuizForm.vue ricostruito upstream (#2710: salvataggio automatico, banca domande, anteprima); si adotta l aspetto upstream dei pulsanti (subtle, Anteprima/Consegne/Elimina) e il suo layout responsive."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Forms/QuizForm.vue"
@@ -3731,7 +3726,8 @@ ha DocPerm di sola lettura su LMS Quiz Submission), quindi nel dettaglio Save, i
 la scorciatoia Mod+S sono disattivati per lui. Il flag is_valutatore apre solo l'ingresso: il
 filtro per batch è lato server (submission_has_permission e query conditions in os_lms).
 v2.59.0 tocca solo i titoli (non nostri). v2.63.0 ricostruisce le pagine dei quiz: riapplicare
-l'accesso in sola lettura sulle nuove pagine di consegna."""
+l'accesso in sola lettura sulle nuove pagine di consegna.
+Merge di v2.63.0 (2026-09-24): QuizSubmissionList.vue eliminata, sostituita da QuizSubmissions.vue (tutte le consegne, filtri per quiz/membro/corso). Decisione del committente: il Valutatore vi è ammesso in sola lettura, senza selezione né Elimina e senza il filtro per quiz; nel dettaglio il Salva resta nascosto e i voti delle domande aperte restano disattivati."""
 
   [[entries.sites]]
   file = "frontend/src/pages/QuizSubmission.vue"
@@ -3748,15 +3744,27 @@ l'accesso in sola lettura sulle nuove pagine di consegna."""
 
   [[entries.sites]]
   file = "frontend/src/pages/QuizSubmission.vue"
-  anchor = '<div v-if="canGrade" class="flex gap-2 items-center">'
+  anchor = '<template v-else-if="canGrade">'
 
   [[entries.sites]]
   file = "frontend/src/pages/QuizSubmission.vue"
   anchor = "canGrade.value && !e.target?.classList?.contains('ProseMirror'),"
 
   [[entries.sites]]
-  file = "frontend/src/pages/QuizSubmissionList.vue"
+  file = "frontend/src/pages/QuizSubmissions.vue"
   anchor = "!user.data?.is_valutatore"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/QuizSubmissions.vue"
+  anchor = "selectable: !isValutatoreOnly.value,"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/QuizSubmissions.vue"
+  anchor = '#selection-actions="{ unselectAll, selections }"'
+
+  [[entries.sites]]
+  file = "frontend/src/pages/QuizSubmissions.vue"
+  anchor = "<!-- OSLMS-CUSTOM: no LMS Quiz filter for the per-batch Valutatore"
 
   [entries.visibility]
   subject = "pagine delle consegne dei quiz (elenco e dettaglio); correzione esclusa per il Valutatore"
@@ -3852,13 +3860,15 @@ id = "quiz-question-type-translated"
 title = "Tipi di domanda tradotti nel modale della domanda"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 Nel modale di creazione della domanda la select del tipo mostra etichette tradotte (Scelta
 multipla, Risposta breve, Risposta aperta…) mantenendo i valori inglesi salvati nel database, e
 ha un segnaposto tradotto. v2.59.0 tocca solo Dialog e l'editor. v2.63.0 SOSTITUISCE il modale
 della domanda con la banca domande condivisa: riapplicare le etichette tradotte sulla nuova
 select del tipo.
-Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/QuizQuestionForm.vue (Modals/Question.vue eliminata); regola riapplicata li, ancore invariate."""
+Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/QuizQuestionForm.vue (Modals/Question.vue eliminata); regola riapplicata li, ancore invariate.
+accepted-drift (2026-09-24, merge di v2.63.0, decisione del committente): QuizQuestionForm.vue eliminata (#2710); il nuovo editor della banca domande (components/Quiz/QuestionEditor.vue, utils/quizQuestion.js) traduce i tipi con getter __() e non ha stili globali sui radio (solo <style scoped>)."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Forms/QuizQuestionForm.vue"
@@ -3869,13 +3879,15 @@ id = "quiz-question-radio-style-removed"
 title = "Rimosso lo stile globale dei radio del modale domanda"
 layer = "spa-graft"
 confidence = "high"
+status = "accepted-drift"
 intent = """
 Il modale della domanda portava un blocco <style> non scoped che forzava in gray-900 ogni radio
 selezionato di tutta l'applicazione, sovrascrivendo il colore dei radio del tema (commit
 «Fix css for radio button»). Il blocco è stato tolto; il marcatore in fondo allo script
 ricorda che l'assenza è voluta. Se un merge lo reintroduce, toglierlo di nuovo. v2.63.0
 sostituisce il modale: verificare che il nuovo non reintroduca stili globali sui radio.
-Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/QuizQuestionForm.vue (Modals/Question.vue eliminata); regola riapplicata li, ancore invariate."""
+Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/QuizQuestionForm.vue (Modals/Question.vue eliminata); regola riapplicata li, ancore invariate.
+accepted-drift (2026-09-24, merge di v2.63.0, decisione del committente): QuizQuestionForm.vue eliminata (#2710); il nuovo editor della banca domande (components/Quiz/QuestionEditor.vue, utils/quizQuestion.js) traduce i tipi con getter __() e non ha stili globali sui radio (solo <style scoped>)."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Forms/QuizQuestionForm.vue"
@@ -5660,7 +5672,8 @@ riportare nello script disabled (sul <button> trigger: :disabled e classi cursor
 opacity-60, e niente apertura del Popover), toOptions, titleLookup/resolveMissing/watch e le
 due aggiunte a mergedOptions (import di watch). Senza, i MultiLink con valori salvati
 mostrano il docname invece del titolo finché non si apre la tendina.
-Merge di v2.61.0 (2026-09-23): portati nella nostra versione reka la prop disabled e la risoluzione dei titoli (titleLookup/resolveMissing) dell'upstream. Il test upstream multiLink.test.ts (11 casi) passa contro la nostra versione dopo aver aggiunto al suo mock Popover (reale) e uno stub di LoadingIndicator, su decisione del committente; asserzioni invariate. Domanda aperta: tornare al MultiSelect upstream alla riconciliazione degli override dopo v2.62.0."""
+Merge di v2.61.0 (2026-09-23): portati nella nostra versione reka la prop disabled e la risoluzione dei titoli (titleLookup/resolveMissing) dell'upstream. Il test upstream multiLink.test.ts (11 casi) passa contro la nostra versione dopo aver aggiunto al suo mock Popover (reale) e uno stub di LoadingIndicator, su decisione del committente; asserzioni invariate. Domanda aperta: tornare al MultiSelect upstream alla riconciliazione degli override dopo v2.62.0.
+Merge di v2.63.0 (2026-09-24, Raven #2706): la versione upstream resta su MultiSelect; tenuta la nostra riscrittura reka e portate a mano le novita upstream: prop emptyText e allowSelectAll (pulsante Seleziona tutto nel footer, oggi usato solo da Raven), ricerca dimenticata alla chiusura del popover, nuova ricerca quando cambiano url/doctype/filters/searchParams (searchKey)."""
 
   [[entries.sites]]
   file = "frontend/src/components/Controls/MultiLink.vue"
@@ -6766,6 +6779,41 @@ visibility = { allow = ["Administrator", "System Manager"], deny = ["Moderator",
   [[entries.sites]]
   file = "frontend/src/components/Settings/Settings.vue"
   anchor = "// OSLMS-CUSTOM: Raven is a platform-wide integration, administrators only"
+
+[[entries]]
+id = "raven-framework-ui-stub"
+title = "@framework/ui sostituito da uno stub locale (editor delle condizioni Raven)"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+v2.63.0 (#2706, 088b2d3f4) costruisce l'editor delle regole dei canali Raven sul pacchetto
+condiviso @framework/ui, dichiarato in package.json come link:../../frappe/ui e verificato da
+assertFrameworkUiLinked in vite.config.js. Il pacchetto esiste solo in Frappe develop; il nostro
+stack usa version-16, quindi il link non porta da nessuna parte e la build dell'intera SPA
+fallisce (in dev e in produzione). Decisione del committente (2026-09-24): stub locale via alias
+(Vite, Vitest, tsconfig), dipendenza tolta da package.json, niente assertFrameworkUiLinked né
+resolve.preserveSymlinks. Lo stub accetta le prop di RuleConditions.vue e mostra un avviso al
+posto dell'editor; la scheda Raven resta solo per gli amministratori (settings-raven-admin-only)
+e Raven non è installato. Da togliere quando lo stack passerà a una Frappe che include il
+pacchetto. Se un merge reintroduce la dipendenza in package.json o l'asserzione in
+vite.config.js, toglierle di nuovo: l'assenza non ha un'ancora che il rilevatore possa controllare."""
+visibility = { allow = ["Administrator", "System Manager"] }
+
+  [[entries.sites]]
+  file = "frontend/src/oslms/stubs/frameworkUi/ConditionBuilder.ts"
+  anchor = "export const ConditionBuilder = defineComponent({"
+
+  [[entries.sites]]
+  file = "frontend/vite.config.js"
+  anchor = "find: '@framework/ui/ConditionBuilder',"
+
+  [[entries.sites]]
+  file = "frontend/vitest.config.ts"
+  anchor = "'@framework/ui/ConditionBuilder': path.resolve("
+
+  [[entries.sites]]
+  file = "frontend/tsconfig.json"
+  anchor = '"@framework/ui/ConditionBuilder": ["./src/oslms/stubs/frameworkUi/ConditionBuilder.ts"]'
 
 [[entries]]
 id = "student-view-oslms-roles"
@@ -8218,7 +8266,8 @@ arriva dalla dashboard della sua classe: toccando «indietro» veniva rimandato 
 Decisione del committente (2026-09-24): per chi è SOLO Valutatore (né moderatore né istruttore)
 «indietro» torna alla pagina precedente nella cronologia (router.back()); se non c'è cronologia
 (link diretto) va all'elenco delle classi. Innesto generico e opzionale: prop historyBack su
-PageHeader, inoltrata da ListPage; senza la prop il comportamento upstream è invariato."""
+PageHeader, inoltrata da ListPage; senza la prop il comportamento upstream è invariato.
+Merge di v2.63.0 (2026-09-24): la lista consegne dei quiz è ora QuizSubmissions.vue (QuizSubmissionList.vue eliminata); regola riportata lì."""
 
   [[entries.sites]]
   file = "frontend/src/components/Layouts/PageHeader.vue"
@@ -8230,8 +8279,8 @@ PageHeader, inoltrata da ListPage; senza la prop il comportamento upstream è in
   anchor = '<PageHeader :breadcrumbs="breadcrumbs" :historyBack="historyBack">'
 
   [[entries.sites]]
-  file = "frontend/src/pages/QuizSubmissionList.vue"
-  anchor = "user.data?.is_valutatore && !user.data?.is_moderator && !user.data?.is_instructor"
+  file = "frontend/src/pages/QuizSubmissions.vue"
+  anchor = "isValutatoreOnly.value ? { name: 'Batches' } : null"
   symbol = "valutatoreOnlyBack"
 
   [[entries.sites]]

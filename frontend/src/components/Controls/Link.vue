@@ -7,7 +7,7 @@
 			:required="required"
 			class="mb-1.5"
 		/>
-		<!-- OSLMS-CUSTOM: bound to the stale Combobox override API (@input/@focus, open-on-click, no size/loading) -->
+		<!-- OSLMS-CUSTOM: bound to the stale Combobox override API (@input/@focus, open-on-click, placement for align, no size/loading) -->
 		<Combobox
 			:open="isOpen"
 			:modelValue="value"
@@ -17,6 +17,7 @@
 			:aria-label="attrs['aria-label'] as string"
 			:variant="attrs.variant as ComboboxVariant"
 			:open-on-click="true"
+			:placement="props.align"
 			@update:modelValue="onSelect"
 			@input="onQuery"
 			@focus="onFocus"
@@ -116,8 +117,11 @@ const props = withDefaults(
 		inlineCreate?: boolean
 		inlineCreatePlaceholder?: string
 		onCreate?: CreateHandler
+		// Where the popover hangs off the control. `end` is the trailing edge in
+		// either direction, so a control near the end of a row opens inwards.
+		align?: 'start' | 'center' | 'end'
 	}>(),
-	{ inlineCreatePlaceholder: 'Enter...' },
+	{ inlineCreatePlaceholder: 'Enter...', align: 'start' },
 )
 
 const emit = defineEmits<{

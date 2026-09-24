@@ -18,7 +18,9 @@
   "percentage",
   "passing_percentage",
   "section_break_6",
-  "result"
+  "result",
+  "violation_count",
+  "submission_reason"
  ],
  "fields": [
   {
@@ -112,13 +114,24 @@
    "fieldtype": "Data",
    "label": "Quiz Title",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "violation_count",
+   "fieldtype": "Int",
+   "label": "Violations"
+  },
+  {
+   "fieldname": "submission_reason",
+   "fieldtype": "Data",
+   "label": "Submission Reason"
   }
  ],
  "grid_page_length": 50,
  "in_create": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-20 16:22:57.711284",
+ "modified": "2026-05-13 10:33:14.489663",
  "modified_by": "Administrator",
  "module": "LMS",
  "name": "LMS Quiz Submission",
@@ -144,20 +157,7 @@
    "read": 1,
    "report": 1,
    "role": "LMS Student",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Course Creator",
-   "share": 1,
-   "write": 1
+   "share": 1
   }
  ],
  "row_format": "Dynamic",

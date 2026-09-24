@@ -15,7 +15,6 @@ import { Bold } from '@/utils/inline/Bold'
 import { Underline } from '@/utils/inline/Underline'
 import { Strikethrough } from '@/utils/inline/Strikethrough'
 import { AlignLeft, AlignCenter, AlignRight } from '@/utils/inline/TextAlign'
-import { Color } from '@/utils/inline/Color'
 // OSLMS-CUSTOM: Vimeo share links pasted in lessons are resolved server-side
 import { VIMEO_SHARE_RE } from '@/utils/video'
 import {
@@ -177,7 +176,6 @@ const INLINE_TOOLBAR_ORDER = [
 	'inlineCode',
 	'underline',
 	'strikeThrough',
-	'color',
 ]
 
 // OSLMS-CUSTOM: embed tool that resolves Vimeo share links via os_lms resolve_vimeo_share
@@ -325,7 +323,6 @@ export function getEditorTools(
 		alignLeft: AlignLeft,
 		alignCenter: AlignCenter,
 		alignRight: AlignRight,
-		color: Color,
 		copyBlock: clipboardTunes.copyBlock,
 		cutBlock: clipboardTunes.cutBlock,
 		pasteBlock: clipboardTunes.pasteBlock,
@@ -844,9 +841,11 @@ const getSidebarItems = (forMobile = false) => {
 					activeFor: [
 						'Quizzes',
 						'QuizForm',
+						'NewQuiz',
 						'QuizPage',
-						'QuizSubmissionList',
+						'QuizSubmissions',
 						'QuizSubmission',
+						'Questions',
 					],
 				},
 				{

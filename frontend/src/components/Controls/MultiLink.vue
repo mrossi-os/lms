@@ -81,7 +81,7 @@
 								<ComboboxEmpty
 									class="px-2.5 py-1.5 text-center text-base text-ink-gray-5"
 								>
-									{{ __('No results found') }}
+									{{ __(emptyText) }}
 								</ComboboxEmpty>
 								<ComboboxItem
 									v-for="item in mergedOptions"
@@ -115,18 +115,32 @@
 									>
 										{{ __('Clear') }}
 									</Button>
-									<Button
-										v-if="props.onCreate"
-										variant="ghost"
-										size="sm"
-										:aria-label="__(createLabel)"
-										@click="handleCreate"
+									<div
+										v-if="props.onCreate || allowSelectAll"
+										class="flex items-center gap-1"
 									>
-										<template #prefix>
-											<Plus class="size-4 stroke-1.5" />
-										</template>
-										{{ __(createLabel) }}
-									</Button>
+										<Button
+											v-if="props.onCreate"
+											variant="ghost"
+											size="sm"
+											:aria-label="__(createLabel)"
+											@click="handleCreate"
+										>
+											<template #prefix>
+												<Plus class="size-4 stroke-1.5" />
+											</template>
+											{{ __(createLabel) }}
+										</Button>
+										<Button
+											v-if="allowSelectAll"
+											variant="ghost"
+											size="sm"
+											:aria-label="__('Select all')"
+											@click="selectAll"
+										>
+											{{ __('Select all') }}
+										</Button>
+									</div>
 								</div>
 							</slot>
 						</ComboboxContent>
@@ -180,6 +194,13 @@ const props = withDefaults(
 		variant?: 'subtle' | 'outline' | 'ghost'
 		onCreate?: (close: CloseFn) => void
 		createLabel?: string
+		emptyText?: string
+		/** Offer a one-click select-all in the footer. Off unless asked for: on a
+		 *  picker whose list is one page of a server search, selecting everything
+		 *  is rarely what the reader means. What the button reaches is that page
+		 *  `page_length` defaults to 10 server-side, not every record of the
+		 *  doctype, which the label no longer says. */
+		allowSelectAll?: boolean
 	}>(),
 	{
 		filters: () => ({}),
@@ -188,12 +209,17 @@ const props = withDefaults(
 		extraOptions: () => [],
 		variant: 'subtle',
 		createLabel: 'Create New',
+		emptyText: 'No results',
+		allowSelectAll: false,
 	}
 )
 
 const value = defineModel<string[]>({ default: () => [] })
 
 const popoverOpen = ref<boolean>(false)
+// The typed search text, kept so a change of doctype can re-run it and a
+// reopened control starts from the base list. See onPopoverToggle().
+const query = ref<string>('')
 let loaded = false
 
 // OSLMS-CUSTOM: theme focus/open ring on the trigger (variants lose the bg/border swap)
@@ -247,7 +273,17 @@ function reload(txt: string = '') {
 // Popover has no `open` event; load the initial list the first time it opens.
 function onPopoverToggle(open: boolean) {
 	popoverOpen.value = open
-	if (open && !loaded) reload()
+	if (open) {
+		if (!loaded) reload()
+		return
+	}
+	// OSLMS-CUSTOM: the search input unmounts with the popover, so a control
+	// reopened after a search would show that search's hits under an empty box.
+	// Forget it: the next open loads the base list again.
+	if (query.value) {
+		query.value = ''
+		loaded = false
+	}
 }
 
 const onQuery = useDebounceFn(
@@ -257,7 +293,8 @@ const onQuery = useDebounceFn(
 
 // OSLMS-CUSTOM: server-side search driven by the reka ComboboxInput
 function onInput(event: Event) {
-	onQuery((event.target as HTMLInputElement).value)
+	query.value = (event.target as HTMLInputElement).value
+	onQuery(query.value)
 }
 
 const emit = defineEmits<{
@@ -367,6 +404,24 @@ function resolveMissing(vals: string[]): void {
 
 watch(value, (vals) => resolveMissing(vals || []), { immediate: true })
 
+// What this control is searching, as one comparable string. A Raven condition
+// row swaps its value cell's doctype in place when the rule type changes, and
+// Vue reuses this instance across that swap, so without this the picker would
+// go on offering the previous doctype's records, and would never re-query,
+// because `loaded` says it already has.
+const searchKey = computed<string>(() =>
+	JSON.stringify([props.url, props.doctype, props.filters, props.searchParams])
+)
+
+watch(searchKey, () => {
+	loaded = false
+	options.data = null
+	resolved.value = new Map()
+	requested.clear()
+	resolveMissing(value.value || [])
+	if (popoverOpen.value) reload(query.value)
+})
+
 const optionByValue = computed<Map<string, SelectOption>>(() => {
 	const map = new Map<string, SelectOption>()
 	mergedOptions.value.forEach((o) => map.set(o.value, o))
@@ -394,6 +449,15 @@ function defaultSummary(selected: { label: string }[]) {
 function clearAll() {
 	value.value = []
 	onChange([])
+}
+
+// Every option currently listed (one page of the server search), enabled ones only.
+function selectAll() {
+	const all = mergedOptions.value
+		.filter((o) => !o.disabled)
+		.map((o) => o.value)
+	value.value = all
+	onChange(all)
 }
 
 defineExpose({ reload, options, optionByValue })

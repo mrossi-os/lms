@@ -243,9 +243,7 @@
 
 						<div
 							v-if="
-								lesson.data.instructor_content &&
-								JSON.parse(lesson.data.instructor_content)?.blocks?.length >
-									1 &&
+								hasInstructorNotesToRender(lesson.data.instructor_content) &&
 								allowInstructorContent()
 							"
 							class="bg-surface-gray-2 p-3 rounded-md mt-6"
@@ -268,7 +266,29 @@
 							/>
 						</div>
 						<div
-							v-if="lesson.data.content"
+							v-if="contentUnreadable"
+							class="flex items-center gap-3 rounded-lg bg-surface-amber-2 p-3 mt-8"
+						>
+							<div
+								class="grid size-7 shrink-0 place-items-center text-ink-amber-6"
+							>
+								<span class="lucide-circle-alert size-4" aria-hidden="true" />
+							</div>
+							<div class="flex min-w-0 flex-1 flex-col">
+								<span class="text-p-sm-medium text-ink-gray-8">
+									{{ __('This lesson could not be displayed') }}
+								</span>
+								<span class="text-p-sm text-ink-gray-6">
+									{{
+										__(
+											'Its content is stored in a form we cannot read. Reload the page, and tell your instructor if it keeps happening.'
+										)
+									}}
+								</span>
+							</div>
+						</div>
+						<div
+							v-else-if="lesson.data.content"
 							@mouseup="toggleInlineMenu"
 							class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-8"
 						>
@@ -436,6 +456,7 @@ import HeaderButton from '@/components/HeaderButton.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import Notes from '@/components/Notes/Notes.vue'
 import InlineLessonMenu from '@/components/Notes/InlineLessonMenu.vue'
+import { parseStoredEditorJs } from '@/utils/lessonForm'
 import { getLmsRoute } from '@/utils/basePath'
 import { provideStudentView } from '@/composables/useStudentView'
 
@@ -557,6 +578,15 @@ const lesson = createResource({
 	auto: true,
 })
 
+// The stored body would not parse, so there is nothing to render and nothing
+// the student can do about it. Say so rather than show a lesson with no body.
+const contentUnreadable = ref(false)
+
+// A single stored block is EditorJS's empty default, so notes only count from
+// two up. Unreadable notes render nothing at all.
+const hasInstructorNotesToRender = (instructorContent) =>
+	(parseStoredEditorJs(instructorContent)?.blocks?.length ?? 0) > 1
+
 const setupLesson = (data) => {
 	if (Object.keys(data).length === 0) {
 		router.push({
@@ -580,11 +610,12 @@ const setupLesson = (data) => {
 	// OSLMS-CUSTOM: AI tutor context: publish the current lesson to the tutor
 	if (data.name) aiContext.setLesson(data.name)
 	lessonProgress.value = data.membership?.progress
-	if (data.content) editor.value = renderEditor('editor', data.content)
-	if (
-		data.instructor_content &&
-		JSON.parse(data.instructor_content)?.blocks?.length > 1
-	)
+	contentUnreadable.value = false
+	if (data.content) {
+		editor.value = renderEditor('editor', data.content)
+		contentUnreadable.value = !editor.value
+	}
+	if (hasInstructorNotesToRender(data.instructor_content))
 		instructorEditor.value = renderEditor(
 			'instructor-content',
 			data.instructor_content,
@@ -607,25 +638,31 @@ const checkQuiz = () => {
 	}
 }
 
+// Returns null when the stored payload will not parse. Throwing aborts
+// setupLesson mid-way and takes the timer, video sources and notes with it.
+const openLinksInNewTab = (holder) => {
+	const root = document.getElementById(holder)
+	if (!root) return
+	root.querySelectorAll('a').forEach((a) => {
+		a.setAttribute('target', '_blank')
+		a.setAttribute('rel', 'noopener noreferrer')
+	})
+}
+
 const renderEditor = (holder, content) => {
-	if (document.getElementById(holder))
-		document.getElementById(holder).innerHTML = ''
+	const data = parseStoredEditorJs(content)
+	if (!data) return null
+	const existing = document.getElementById(holder)
+	if (existing) existing.innerHTML = ''
 	return new EditorJS({
 		holder: holder,
 		tools: getEditorTools(false, {}, { studentView: isStudentView.value }),
-		data: sanitizeEditorJs(JSON.parse(content)),
+		data: sanitizeEditorJs(data),
 		readOnly: true,
 		defaultBlock: 'embed',
-		// OSLMS-CUSTOM: translated EditorJS UI labels
+		// OSLMS-CUSTOM: translated EditorJS UI labels (the helper also sets direction)
 		i18n: getEditorI18n(),
-		onReady() {
-			const root = document.getElementById(holder)
-			if (!root) return
-			root.querySelectorAll('a').forEach((a) => {
-				a.setAttribute('target', '_blank')
-				a.setAttribute('rel', 'noopener noreferrer')
-			})
-		},
+		onReady: () => openLinksInNewTab(holder),
 	})
 }
 
@@ -1459,10 +1496,6 @@ usePageMeta(() => {
 
 .tc-table {
 	border-inline-start: 1px solid #e8e8eb;
-}
-
-.plyr__volume input[type='range'] {
-	display: none;
 }
 
 .plyr__control--overlaid {

@@ -72,6 +72,16 @@ export default defineConfig(async ({ mode }) => {
 			}),
 		],
 		server: {
+			// The linked @framework/ui (apps/frappe/ui) is imported by name and
+			// resolved through its `exports`, so in dev vite serves it from source,
+			// outside this root, hence the allowance helpdesk makes for it too.
+			// Named by resolved path rather than by counting `..` levels: `../..`
+			// is apps/ only from apps/lms/frontend, and a worktree of this app sits
+			// two levels deeper, where it lands on .lms-worktrees/ and the framework
+			// files 403 with "not allowed to be served".
+			fs: {
+				allow: ['..', '../..', '../../..', '../../../..'],
+			},
 			host: '0.0.0.0', // Accept connections from any network interface
 			allowedHosts: true,
 			// SCORM packages are served by Frappe's SCORMRenderer at /scorm/... .
@@ -130,6 +140,16 @@ export default defineConfig(async ({ mode }) => {
 				// in — including the resource layer, whose fetcher is then unconfigured.
 				// They import runtime code from the `frappe-ui` barrel and frappe-ui's
 				// internal modules by relative path instead.
+				// OSLMS-CUSTOM: @framework/ui exists only in Frappe develop (we run
+				// version-16), so the Raven rules screen gets a local stand-in instead of
+				// the `link:../../frappe/ui` package. The Raven tab is admin-only.
+				{
+					find: '@framework/ui/ConditionBuilder',
+					replacement: path.resolve(
+						__dirname,
+						'src/oslms/stubs/frameworkUi/ConditionBuilder.ts'
+					),
+				},
 				// OSLMS-CUSTOM: @/utils resolves to the os_lms utils wrapper
 				{
 					find: /^@\/utils$/,
