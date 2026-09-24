@@ -38,6 +38,7 @@ def _scenario(max_turns=4):
 def _variant_ok():
 	return json.dumps({
 		"situation": "Cliente competitor.",
+		"student_brief": "Incontri Mario, CTO di AcmeCo.",
 		"persona": {
 			"name": "Mario", "role": "CTO", "context": "AcmeCo",
 			"mood": "scettico", "key_objection": "prezzo",
