@@ -1,8 +1,6 @@
 <template>
 	<SkeletonLoader v-if="!course.data" variant="course-page" />
-	<!-- OSLMS-CUSTOM: extra bottom padding on mobile so the fixed "Continue Learning"
-	bar (rendered below) never covers the last section. -->
-	<div v-else class="p-5" :class="{ 'pb-36': showMobileCta }">
+	<div v-else class="p-5">
 		<div
 			class="flex flex-col lg:flex-row items-start justify-between w-full gap-x-8 gap-y-8"
 		>
@@ -155,15 +153,12 @@
 
 		<RelatedCourses :courseName="course.data.name" class="mt-12" />
 
-		<!-- OSLMS-CUSTOM: phone-only (<640px) floating "Continue Learning" CTA — a
-		full-width bar pinned above the MobileLayout bottom nav (~48px = bottom-12).
-		Confined to the phone shell so it never overlaps the desktop sidebar. The
-		course outline moved to the page bottom so this stays the single primary
-		action. AiFixedButtons lifts above it via the shared mobile-cta store. -->
-		<div
-			v-if="showMobileCta"
-			class="fixed inset-x-0 bottom-12 standalone:bottom-16 z-30 p-3"
-		>
+		<!-- OSLMS-CUSTOM: phone-only (<640px) "Continue Learning" CTA, sticky to the bottom
+		of the scroll area, which ends right above the MobileLayout bottom nav whatever its
+		height (safe-area inset included), and taking its own room in the flow so it never
+		covers the last section. The course outline moved to the page bottom so this stays
+		the single primary action. AiFixedButtons lifts above it via the mobile-cta store. -->
+		<div v-if="showMobileCta" class="sticky bottom-0 z-30 p-3">
 			<router-link :to="continueRoute" class="flex w-full justify-center">
 				<Button variant="solid" size="md" class="w-2/3">
 					<template #prefix>

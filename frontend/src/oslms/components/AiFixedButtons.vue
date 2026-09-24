@@ -3,7 +3,9 @@
 		v-if="aiContext.isActive"
 		class="fixed end-3 z-50 flex flex-col gap-3"
 		:class="
-			mobileCta.barVisible ? 'bottom-34 sm:bottom-6' : 'bottom-20 sm:bottom-9'
+			mobileCta.barVisible
+				? 'bottom-[calc(9rem+env(safe-area-inset-bottom))] sm:bottom-6'
+				: 'bottom-[calc(5rem+env(safe-area-inset-bottom))] sm:bottom-9'
 		"
 	>
 		<AiChatButton
