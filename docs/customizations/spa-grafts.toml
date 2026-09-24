@@ -4394,6 +4394,22 @@ newLabel, quindi oggi la prop è inutilizzata ma innocua. v2.59.0 tocca solo il 
   anchor = ":title=\"newLabel || __('New {0}').format(title)\""
 
 [[entries]]
+id = "assignment-list-type-i18n"
+title = "Tipo di consegna tradotto nell'elenco Elaborati"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nell'elenco Elaborati la colonna Tipo mostrava il valore grezzo (Document, Image, PDF, URL,
+Text) mentre il filtro Tipo sopra la tabella lo traduce già con __(). La cella passa ora il
+valore da __(), così elenco e filtro dicono la stessa cosa («Documento», «Immagine», «Testo»).
+Le traduzioni esistono già in it.csv. Segnalato dal committente il 2026-09-24 guardando B6.1
+(aspetto upstream degli elenchi mantenuto)."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Assignments.vue"
+  anchor = "{{ value ? __(value) : '' }}"
+
+[[entries]]
 id = "assignment-list-style"
 title = "Ritocchi di stile della lista dei compiti"
 layer = "spa-graft"

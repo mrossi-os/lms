@@ -50,6 +50,10 @@
 			<div v-if="column.key == 'modified'" class="text-sm text-ink-gray-5">
 				{{ value }}
 			</div>
+			<!-- OSLMS-CUSTOM: submission type shown translated, like the Type filter -->
+			<div v-else-if="column.key == 'type'" class="text-xs sm:text-sm">
+				{{ value ? __(value) : '' }}
+			</div>
 			<div v-else class="text-xs sm:text-sm">{{ value }}</div>
 		</template>
 
