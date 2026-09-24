@@ -1010,7 +1010,8 @@ una lezione apre la lezione stessa, un quiz si apre nella lezione che lo ospita 
 e nell'editor per moderatore o docente (isManager: stesso controllo delle pagine di
 destinazione). Un risultato senza pagina da aprire restituisce una rotta nulla e navigateTo
 non fa nulla invece di andare in errore. Lato server l'override os_lms di search_sqlite filtra
-i risultati per permessi e aggiunge la posizione della lezione."""
+i risultati per permessi e aggiunge la posizione della lezione.
+Adeguamento post-merge v2.62.0 (2026-09-24): l'upstream ha ora un proprio routeForSearchHit (paletteTypes.ts) con i moduli instradati di v2.62.0; searchRoutes.ts si allinea: un compito apre AssignmentForm (non piu l'elenco filtrato per titolo), un programma apre ProgramForm per moderatore/istruttore (se il sito non e in sola lettura) e ProgramDetail per gli altri. La pagina /search apre i due moduli con openFormRoute (MODAL_FORM_ROUTES), come la palette, cosi la chiusura torna ai risultati. Restano nostri: lezione aperta nella sua posizione, quiz nella lezione per lo studente."""
 
   [[entries.sites]]
   file = "frontend/src/components/CommandPalette/CommandPalette.vue"

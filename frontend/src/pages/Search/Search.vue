@@ -123,6 +123,8 @@ import { Search, X } from 'lucide-vue-next'
 import { sessionStore } from '@/stores/session'
 import { useRouter, useRoute } from 'vue-router'
 import { getSearchResultRoute } from '@/oslms/utils/searchRoutes'
+import { MODAL_FORM_ROUTES } from '@/components/CommandPalette/paletteTypes'
+import { openFormRoute } from '@/composables/useFormRoute'
 
 const query = ref('')
 const searchInput = ref<HTMLInputElement | null>(null)
@@ -195,7 +197,10 @@ const isManager = computed(() =>
 
 const navigate = (result: any) => {
 	const route = getSearchResultRoute(result, isManager.value)
-	if (route) router.push(route)
+	if (!route) return
+	// Routed modal forms pop back here on close, as from their own list pages.
+	if (MODAL_FORM_ROUTES.has(route.name)) openFormRoute(router, route)
+	else router.push(route)
 }
 
 watch(query, () => {

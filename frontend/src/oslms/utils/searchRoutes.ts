@@ -9,20 +9,15 @@
  *
  * Assignment results only reach moderators and instructors (filtered server
  * side in `get_grouped_results_custom`), which is why they can point at the
- * management page without a role check here. Quiz results also reach learners,
+ * assignment form without a role check here. Quiz results also reach learners,
  * for the courses they are enrolled in, so that one branch is role-aware.
  */
-
-import { htmlToText } from '@/utils/inertHtml'
 
 type SearchRoute = {
 	name: string
 	params?: Record<string, string>
 	query?: Record<string, string>
 }
-
-/** Result titles carry <mark> highlights, so unwrap them before reusing the text. */
-const plainText = (html: string): string => htmlToText(html).trim()
 
 /**
  * Open the lesson itself when the result carries its position in the course
@@ -57,7 +52,11 @@ export const getSearchResultRoute = (
 		case 'Job Opportunity':
 			return { name: 'JobDetail', params: { job: result.name } }
 		case 'LMS Program':
-			return { name: 'ProgramDetail', params: { programName: result.name } }
+			// Same split as Programs.vue's cards: managers edit, everyone else (and
+			// every role on a read-only site) reads the program page.
+			return isManager && !(window as { read_only_mode?: boolean }).read_only_mode
+				? { name: 'ProgramForm', params: { programName: result.name } }
+				: { name: 'ProgramDetail', params: { programName: result.name } }
 		case 'Course Lesson':
 			return getLessonRoute(result)
 		case 'LMS Quiz':
@@ -68,8 +67,7 @@ export const getSearchResultRoute = (
 				? { name: 'QuizForm', params: { quizID: result.name } }
 				: getLessonRoute(result)
 		case 'LMS Assignment':
-			// There is no per-assignment page: the list pre-filters by title.
-			return { name: 'Assignments', query: { title: plainText(result.title) } }
+			return { name: 'AssignmentForm', params: { assignmentID: result.name } }
 		default:
 			return null
 	}
