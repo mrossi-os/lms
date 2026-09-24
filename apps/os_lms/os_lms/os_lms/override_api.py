@@ -101,6 +101,23 @@ def get_members(start: int = 0, search: str = None, role: str = "All"):
     return members
 
 
+@frappe.whitelist()
+def get_member(member: str):
+    """Wrap the single-member lookup of the member edit form, like get_members above.
+
+    The base method reports only the four upstream LMS roles, so the form showed
+    the Valutatore switch off for a member who already had the role.
+    """
+    from lms.lms.api import get_member as _original_get_member
+
+    row = _original_get_member(member)
+    if row and frappe.db.exists(
+        "Has Role", {"parent": row.name, "parenttype": "User", "role": "Valutatore"}
+    ):
+        row.roles = (row.roles or []) + ["Valutatore"]
+    return row
+
+
 # Roles the Members settings modal is allowed to grant: the four upstream LMS
 # roles plus the custom ones handled by `save_role` above.
 MANAGEABLE_ROLES = [

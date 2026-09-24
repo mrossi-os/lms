@@ -102,7 +102,7 @@ const ROLE_MAP: Record<string, string> = {
 	course_creator: 'Course Creator',
 	batch_evaluator: 'Batch Evaluator',
 	lms_student: 'LMS Student',
-	// Custom per-batch evaluator role (see os_lms.os_lms.valutatore).
+	// OSLMS-CUSTOM: custom per-batch evaluator role (see os_lms.os_lms.valutatore).
 	valutatore: 'Valutatore',
 }
 
@@ -179,7 +179,7 @@ const addMember = async (close?: () => void) => {
 
 	submitting.value = true
 	try {
-		// Single call: the user is created with exactly the selected roles. Creating
+		// OSLMS-CUSTOM: single call, the user is created with exactly the selected roles. Creating
 		// it client-side instead would leave it an "LMS Student" too, because the LMS
 		// app grants that role to every new user through a before_insert hook.
 		const user = await call('os_lms.os_lms.override_api.create_member', {

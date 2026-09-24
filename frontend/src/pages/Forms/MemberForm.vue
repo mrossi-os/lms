@@ -12,7 +12,7 @@
 				<FormControl
 					v-model="member.email"
 					:label="__('Email')"
-					placeholder="jane@doe.com"
+					:placeholder="__('jane@doe.com')"
 					type="email"
 					:required="!isEdit"
 					:disabled="isEdit"
@@ -22,14 +22,14 @@
 					<FormControl
 						v-model="member.first_name"
 						:label="__('First Name')"
-						placeholder="Jane"
+						:placeholder="__('Jane')"
 						type="text"
 						class="w-full"
 					/>
 					<FormControl
 						v-model="member.last_name"
 						:label="__('Last Name')"
-						placeholder="Doe"
+						:placeholder="__('Doe')"
 						type="text"
 						class="w-full"
 					/>
@@ -53,6 +53,12 @@
 							size="sm"
 							:label="__('Evaluator')"
 							v-model="roles.batch_evaluator"
+						/>
+						<!-- OSLMS-CUSTOM: custom per-batch evaluator role (os_lms.os_lms.valutatore) -->
+						<BooleanSwitch
+							size="sm"
+							:label="__('Valutatore')"
+							v-model="roles.valutatore"
 						/>
 						<BooleanSwitch
 							size="sm"
@@ -132,6 +138,8 @@ const ROLE_MAP: Record<string, string> = {
 	course_creator: 'Course Creator',
 	batch_evaluator: 'Batch Evaluator',
 	lms_student: 'LMS Student',
+	// OSLMS-CUSTOM: Valutatore role, read by the os_lms get_member override and saved by its save_role
+	valutatore: 'Valutatore',
 }
 
 const member = reactive({
@@ -145,6 +153,7 @@ const roles = reactive({
 	course_creator: false,
 	batch_evaluator: false,
 	lms_student: false,
+	valutatore: false,
 })
 
 const initialRoles = reactive({ ...roles })
@@ -200,16 +209,10 @@ const reloadMembers = () => {
 const errorMessage = (err: { messages?: string[] }, fallback: string): string =>
 	cleanError(err.messages?.[0]) || fallback
 
-const assignRoles = async (userEmail: string) => {
-	for (const [key, checked] of Object.entries(roles)) {
-		if (checked)
-			await call('lms.lms.api.save_role', {
-				user: userEmail,
-				role: ROLE_MAP[key],
-				value: 1,
-			})
-	}
-}
+const selectedRoleNames = () =>
+	Object.entries(roles)
+		.filter(([_, checked]) => checked)
+		.map(([key]) => ROLE_MAP[key])
 
 const addMember = async () => {
 	if (!member.email?.trim()) {
@@ -217,18 +220,24 @@ const addMember = async () => {
 		return
 	}
 
+	// OSLMS-CUSTOM: a member with no role would have no access to the app
+	const selectedRoles = selectedRoleNames()
+	if (!selectedRoles.length) {
+		toast.error(__('Select at least one role'))
+		return
+	}
+
 	submitting.value = true
 	try {
-		const created = await call('frappe.client.insert', {
-			doc: {
-				doctype: 'User',
-				email: member.email.trim(),
-				first_name: member.first_name.trim() || undefined,
-				last_name: member.last_name.trim() || undefined,
-			},
+		// OSLMS-CUSTOM: one call creates the user with exactly the selected roles
+		// Inserting the User client-side would leave it an "LMS Student" too: the LMS
+		// app grants that role to every new user through a before_insert hook.
+		await call('os_lms.os_lms.override_api.create_member', {
+			email: member.email.trim(),
+			first_name: member.first_name.trim() || undefined,
+			last_name: member.last_name.trim() || undefined,
+			roles: selectedRoles,
 		})
-
-		await assignRoles(created.name)
 
 		if (user.data?.is_system_manager) updateOnboardingStep('invite_students')
 		capture('user_added')

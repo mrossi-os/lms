@@ -8121,3 +8121,62 @@ istruttori: questo tocca solo l'elenco."""
   file = "lms/lms/doctype/course_lesson/course_lesson.py"
   anchor = "join `tabLMS Batch Valutatore` bv"
   symbol = "get_permission_query_conditions"
+
+[[entries]]
+id = "member-valutatore-role-exact-roles"
+title = "Gestione membri: ruolo Valutatore e creazione con i soli ruoli scelti"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La gestione dei membri (Impostazioni → Membri, e la creazione al volo di un istruttore dai campi
+Istruttori di corso e classe) deve conoscere il ruolo custom Valutatore (valutatore per classe,
+os_lms.os_lms.valutatore): interruttore nel modulo, ruolo letto dagli endpoint get_members e
+get_member (override os_lms, perché l'upstream riporta solo i suoi quattro ruoli LMS) e salvato
+dall'override os_lms di save_role (commit 1af13d630).
+Un nuovo membro viene creato con ESATTAMENTE i ruoli scelti, in una sola chiamata a
+os_lms.os_lms.override_api.create_member: creando l'utente dal client, l'hook before_insert
+dell'LMS gli aggiunge sempre «LMS Student», e un Valutatore risultava anche studente. Senza alcun
+ruolo scelto il modulo rifiuta («Select at least one role»), perché l'utente non avrebbe accesso
+(commit 290b14de4).
+Mai censita prima del merge di v2.62.0 (2026-09-24): l'upstream ha spostato Impostazioni → Membri
+sul modulo instradato pages/Forms/MemberForm.vue (con il nuovo endpoint get_member), perdendo in
+silenzio le due regole, che sono state riportate lì. NewMemberModal resta upstream e usata dai campi
+Istruttori; marcatori aggiunti. Il test upstream memberFormRoute.test.ts che si aspetta
+frappe.client.insert diverge da questa regola (riconciliazione dei test a fine percorso)."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/NewMemberModal.vue"
+  anchor = "valutatore: 'Valutatore',"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/NewMemberModal.vue"
+  anchor = "call('os_lms.os_lms.override_api.create_member', {"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Forms/MemberForm.vue"
+  anchor = "valutatore: 'Valutatore',"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Forms/MemberForm.vue"
+  anchor = "await call('os_lms.os_lms.override_api.create_member', {"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Forms/MemberForm.vue"
+  anchor = "toast.error(__('Select at least one role'))"
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/os_lms/override_api.py"
+  anchor = "def create_member("
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/os_lms/override_api.py"
+  anchor = "def get_member(member: str):"
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/hooks.py"
+  anchor = '"lms.lms.api.get_member": "os_lms.os_lms.override_api.get_member",'
+
+  [entries.visibility]
+  subject = "gestione dei membri e dei loro ruoli"
+  allow = ["Moderator"]
+  deny = ["Docente", "Valutatore", "Student", "Guest"]
