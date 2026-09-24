@@ -48,7 +48,7 @@
 					<FormControl
 						v-model="profile.open_to"
 						type="select"
-						:options="[' ', 'Work', 'Hiring']"
+						:options="[{ label: '', value: '' }, 'Work', 'Hiring']"
 						:label="__('Open to')"
 						:placeholder="__('Looking for new work or hiring talent?')"
 					/>
@@ -152,6 +152,7 @@ const profile = reactive({
 	last_name: '',
 	codice_fiscale: '',
 	headline: '',
+	language: '',
 	bio: '',
 	image: '',
 	open_to: '',
@@ -160,10 +161,11 @@ const profile = reactive({
 	twitter: '',
 })
 
-// Normalised to '' on both sides: `language` is nullable on User, so an unset
-// language would otherwise read as a change on every save.
+// Every key above is a User fieldname except `image`, which edits `user_image`.
+const serverField = (key) => (key === 'image' ? 'user_image' : key)
+
 const hasLanguageChanged = computed(
-	() => (profile.language ?? '') !== (profileData.value?.language ?? '')
+	() => profile.language !== (profileData.value?.language ?? '')
 )
 
 const updateProfile = createResource({
@@ -241,22 +243,17 @@ const saveProfile = () => {
 
 watch(
 	profile,
-	(newVal) => {
+	() => {
 		const data = profileData.value
 		if (!data) return
-		// codice_fiscale is not part of the profile payload; compared separately.
-		const keys = Object.keys(newVal).filter(
-			(key) => key !== 'image' && key !== 'codice_fiscale'
-		)
-		for (const key of keys) {
-			if (newVal[key] !== data[key]) {
-				isDirty.value = true
-				return
-			}
-		}
+		// OSLMS-CUSTOM: codice_fiscale is loaded apart (not in the profile payload), so it is
+		// compared with the value that load returned, not with the profile data.
 		isDirty.value =
-			profile.image !== data.user_image ||
-			profile.codice_fiscale !== originalCodiceFiscale.value
+			Object.keys(profile).some(
+				(key) =>
+					key !== 'codice_fiscale' &&
+					profile[key] !== (data[serverField(key)] ?? '')
+			) || profile.codice_fiscale !== originalCodiceFiscale.value
 	},
 	{ deep: true }
 )
@@ -285,16 +282,9 @@ watch(
 	profileData,
 	(data) => {
 		if (!data) return
-		profile.first_name = data.first_name
-		profile.last_name = data.last_name
-		profile.headline = data.headline
-		profile.language = data.language
-		profile.bio = data.bio
-		profile.open_to = data.open_to
-		profile.linkedin = data.linkedin
-		profile.github = data.github
-		profile.twitter = data.twitter
-		profile.image = data.user_image
+		for (const key of Object.keys(profile)) {
+			profile[key] = data[serverField(key)] ?? ''
+		}
 		isDirty.value = false
 		loadCodiceFiscale(data.name)
 	},
