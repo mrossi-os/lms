@@ -35,12 +35,3269 @@ Convenzioni:
 
 ---
 
+## 2026-09-24
+
+> **Report giornaliero:** `reports/2026-09-24-os-lms.md` — da compilare a fine giornata.
+
+---
+
+### Attività 1 — Percorso upstream: chiusura di v2.62.0 (merge, inventario, 14 adeguamenti), merge di v2.62.1, analisi e decisioni per v2.63.0
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Aggiornamento upstream (inventario, correzioni, adeguamenti di sicurezza, test) |
+| **Problema riscontrato** | Ripresa del percorso `/upstream-upgrade` fermo a metà merge di v2.62.0: 96 conflitti risolti nell'indice ma merge non committato, inventario non aggiornato (rilevatore: 166 errori), elenco lungo di adeguamenti post-merge in sospeso. |
+| **Problema effettivo** | (1) 83 siti su file spostati/eliminati dall'upstream e 61 ancore riscritte, più 22 file nuovi con marcatori; l'abbozzo di strumento d'inventario della sessione precedente non era neutro. (2) v2.62.0 introduce comportamenti che, senza adeguamento, rompono regole nostre in silenzio: blocco sequenziale lato server (il nostro interruttore diventava inerte), filtri sugli elenchi di Live Class/Batch/Course Lesson che si sommano in AND ai nostri e nascondono tutto ai 4 utenti solo-Valutatore di produzione, `MemberForm` instradato senza ruolo Valutatore né creazione con i soli ruoli scelti, nuova barra mobile più alta (CTA del corso sovrapposta), pagina «Tu» con scelta del tema (vietata), import ZIP raggiungibile per URL dal Gestore, selettore z-index radix inerte con reka. (3) Nuovi cancelli CI di sicurezza upstream che trovano codice nostro: `v-html` grezzi, `:href/:src` non filtrati, `target=_blank` senza direttiva, `window.open` fuori dall'helper; l'OAuth di Google Calendar dipende da `window.opener`. |
+| **Soluzione applicata** | Nuovo strumento `site_ops.py` (modifica per righe con verifica semantica, giro a vuoto identico byte per byte) → rilevatore 166 → 0 (168 spostamenti meccanici, 29 siti coperti in parte dall'upstream, 17 voci accepted-drift approvate). Decisioni del committente: Programmi sulla barra del telefono, riga «Cerca» della palette in fondo, «indietro» del Valutatore = cronologia, ordinamento a intestazioni su desktop, override frappe-ui dopo v2.63.0, pulsante «Archivia» tenue. Merge committato; poi 14 commit di adeguamento: patch dati `enforce_lesson_order`→`enforce_lesson_completion` e chiavi per l'app mobile sul gate upstream; filtri elenchi allargati a Docente/Valutatore (verificato in prod in sola lettura: tutti i Docenti hanno Moderator, 4 utenti solo Valutatore); porting in `MemberForm` + override `get_member`; decodifica HTML inerte; rotte di ricerca verso i moduli instradati; CTA `sticky` (barra misurata 62 px); gate import ZIP; selettore reka; riga tema tolta; `historyBack` su `PageHeader`/`ListPage`; intestazioni ordinabili in `ResponsiveListView`; allineamento ai cancelli di sicurezza con helper `safeImageData`, `openWithOpener`, `openPendingTab`. |
+| **Commit** | Merge v2.62.0 `335f9aa8d`; merge v2.62.1 `6f80186b7` (1 conflitto su `ProfileEditForm.vue`: regola del codice fiscale riespressa sul nuovo calcolo di «modificato»); rapporto `36f80fa56`; adeguamenti `f35a6babc`, `d0ab8953d`, `993f9448c`, `03b4e1122`, `628019520`, `88bdf9afe`, `68f64c2f3`, `2656865d9`, `0b7986a0b`, `4aeb85722`, `de0eda15e`, `887a6c1f3`, `44c0c6fd4`, `73a5836fc`; rapporto `c2c31018b`. Branch `merge/upstream-v2.63.0`, nulla pubblicato. |
+| **File toccati** | `docs/customizations/spa-grafts.toml` (≈240 operazioni, 5 voci nuove); backend: `lms_live_class.py`, `lms_batch.py`, `course_lesson.py`, os_lms `api.py`, `override_utils.py`, `override_api.py`, `hooks.py`, patch `v0_0_6/copy_enforce_lesson_order.py`, `lms/translations/it.csv`; frontend: ~40 file tra `pages/Forms/*`, `MobileLayout`, `MobileYou`, `CommandPalette`, `PageHeader`, `ListPage`, `ResponsiveListView`, `CourseDashboard`, `CourseOverview` (override), `AiFixedButtons`, `index.css`, `utils/openExternal.ts`, componenti `oslms/*`, override TextEditor e DataImport; nuovi `oslms/utils/safeImageData.ts` e relativo test. |
+| **Verifiche** | Rilevatore 0 errori a ogni passo; build verde (con controllo delle classi `calc(...)` generate); cancelli di sicurezza upstream tutti verdi salvo 9 righe dell'override `FontColor` (rimandate); Vitest completo 1467 test, 134 rossi tutti classificati in `fail-262.txt` (mock dei test upstream che non conoscono i nostri componenti, o comportamenti upstream cambiati da nostre regole: nessun bug di codice); misura della barra mobile nel browser (DevTools, viewport 390×844); query di sola lettura sul DB di produzione. **Non eseguiti:** test backend nel container (serve `migrate`, previsto al Passo 7), prova manuale nell'app. |
+
+**1. Obiettivo dell'attività** — Chiudere v2.62.0 senza perdere personalizzazioni e proseguire il percorso verso v2.63.0.
+
+**2. Modalità di esecuzione** — Skill `/upstream-upgrade` in modalità ripresa: verifica di coerenza dello stato, lettura delle note della sessione precedente, rilevatore, domande in blocco al committente (7 decisioni), commit del merge, adeguamenti in commit separati con voce d'inventario per ciascuno, build e Vitest confrontati con la baseline.
+
+**3. Attività svolte** — Vedi tabella; ogni regola nuova o riespressa ha la sua voce o nota d'inventario con data e motivo.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code (estensione VS Code), Chrome DevTools MCP per la misura della barra mobile. **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** aggiornamento dell'inventario, analisi dei nuovi comportamenti upstream, correzioni, classificazione dei test. **Perché:** lavoro lungo e con molte verifiche incrociate su codice, inventario e database; le scelte di prodotto sono state poste al committente. **Risultato:** v2.62.0 chiusa. **Verifiche e correzioni:** lo strumento d'inventario è stato provato su tutti i 662 siti prima dell'uso (una prima versione cambiava lo stile delle virgolette: corretta); un allarme su «immagine del profilo di nuovo obbligatoria» è stato smentito leggendo il file upstream; la riga «Cerca» spostata solo in fondo al gruppo non bastava (ancora 13 test rossi) ed è stata messa dopo tutti i risultati.
+
+**v2.63.0 (analisi, merge non ancora fatto)** — 4 agenti in sola lettura hanno valutato le 3 rotture dichiarate e le novità; verifiche in produzione in sola lettura (0 lezioni con contenuto illeggibile, 3 lezioni con testo colorato, 1 quiz su 7 con penalità, permessi reali di LMS Quiz Submission). Trovati: build della SPA che si romperebbe per la dipendenza `@framework/ui` (solo Frappe develop); il Valutatore che perderebbe le consegne dei quiz; l'anteprima del quiz che creerebbe consegne vere; permessi di produzione che consentono allo studente di scrivere le proprie consegne (segnalato, non toccato). 8 decisioni del committente registrate nello stato e nel rapporto. **Per riprendere:** `/upstream-upgrade` sul branch `merge/upstream-v2.63.0`, fermata `HANDOFF`, note in `.git/oslms-upstream-walk-tools/f4_263_notes.md`.
+
+**6. Problematiche incontrate** — Molti test upstream nuovi scritti contro le pagine upstream (mock incompleti): rinviati alla riconciliazione unica, come deciso in v2.61.0. Il flusso OAuth di Google Calendar richiede `window.opener`, incompatibile con l'helper upstream: risolto con una funzione gemella documentata.
+
+---
+
+### Attività 2 — Percorso upstream: merge di v2.63.0 (17 conflitti), 6 adeguamenti e impostazione per quiz «domanda saltata = 0 / −penalità»
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Aggiornamento upstream (merge, adeguamenti, sicurezza, traduzioni) + feature |
+| **Problema riscontrato** | Ripresa di `/upstream-upgrade` dalla fermata `HANDOFF` prima del merge di v2.63.0 (ultima release del percorso v2.58.0 → v2.63.0), con 8 decisioni del committente già prese e 17 conflitti previsti. |
+| **Problema effettivo** | (1) v2.63.0 riscrive authoring dei quiz (banca domande, nuove pagine, eliminate `QuizQuestionForm` e `QuizSubmissionList`), player del quiz (proctoring con webcam) e salvataggio lezioni (strumento colore eliminato), e aggiunge `@framework/ui` (esiste solo in Frappe develop: build rotta su v16). (2) `lms_quiz_submission.json` si sarebbe fuso **senza conflitto conservando** la nostra deriva sui permessi (Studente in scrittura): la decisione «prendi upstream» andava imposta a mano. (3) L'endpoint upstream del registro del proctoring dà le foto a chiunque legga la consegna, quindi anche al Valutatore di classe: nasconderlo solo nella pagina non bastava. (4) Il nuovo `BaseInline` riconosce i wrapper dal solo nome del tag: uno strumento colore su `span` avrebbe scambiato gli `span.lms-align` per colori. |
+| **Soluzione applicata** | F7 chiuso registrando le decisioni negli intent. Merge con 17 conflitti risolti preservando l'intento: pagine quiz prese upstream con le nostre regole riapplicate (Valutatore in sola lettura sulla nuova `QuizSubmissions.vue`, «indietro» dalla cronologia, spunta verde e ricerca multi-parola nei quiz, Check/Next/Submit affiancati e Submit mai in anteprima autore, risposte vuote non inviate, timer a orologio, consegna una sola volta, «varranno 0 punti»); `MultiLink` reka tenuta con porting a mano di `emptyText`/`allowSelectAll`/ricerca azzerata/`searchKey`; `align` del `Link` mappato su `placement` dell'override; stub locale di `@framework/ui/ConditionBuilder` via alias (dipendenza, asserzione e `preserveSymlinks` tolti). Due decisioni nuove del committente: 2 voci del modale domanda → accepted-drift; 3 siti superati del player tolti. Dopo il merge: registro violazioni negato al Valutatore con override os_lms di `get_quiz_violation_logs` + pagina; `<lms-align>` tolto dall'allowlist; **strumento colore riscritto** in `src/oslms/utils/inline/Color.ts` su `ToolButton` (emette `span.lms-inline-color`, con le tre protezioni della vecchia correzione) + patch os_lms `v0_0_7.convert_lms_inline_color`; 161+3 traduzioni IT; `contentHasQuiz` su `parseStoredEditorJs`. **Feature:** campo os_lms `LMS Quiz.penalize_unanswered` (default spento: ogni quiz esistente resta «saltata = 0»), letto in `submit_quiz`, applicato in `process_results`, interruttore nel nuovo `QuizForm`, testo della conferma nel player. |
+| **Commit** | F7 `c5f986bd3`; merge `b81e94159`; adeguamenti `fc4ff3791`, `1b486601c`, `b252e62b3`, `4ff63b218`, `b1cb0e654`, `4884db2e8`; rapporto `dc8818da8`; feature `1f6913194`. Branch `merge/upstream-v2.63.0`, nulla pubblicato né unito. |
+| **File toccati** | Merge: `Quiz.vue`, `QuizSubmission.vue`, `QuizSubmissions.vue`, `Quizzes.vue`, `Forms/QuizForm.vue`, `Controls/Link.vue`, `Controls/MultiLink.vue`, `ResponsiveListView.vue`, `Layouts/ListPage.vue`, `Lesson.vue`, `LessonForm.vue`, `utils/index.js`, `types/api.ts`, `vite.config.js`, `vitest.config.ts`, `tsconfig.json`, `package.json`, `yarn.lock`, `lms/patches.txt`, `lms_quiz_submission.json`; nuovi `oslms/stubs/frameworkUi/ConditionBuilder.ts`, `oslms/utils/inline/Color.ts`, `tests/oslmsColorTool.test.ts`; backend `lms/lms/utils.py`, `lms_quiz.py`, `test_lms_quiz.py`, os_lms `valutatore.py`, `hooks.py`, `fixtures/custom_field.json`, `patches/v0_0_7/*`, test `test_violation_log_access.py`, `test_convert_lms_inline_color.py`; `styles/theme/elite/main.css`; `lms/translations/it.csv`; `components.d.ts`; `docs/customizations/spa-grafts.toml` (3 voci nuove, 2 accepted-drift + 1 per decisione pulsanti, ancore e siti aggiornati); rapporto di percorso. |
+| **Verifiche** | Rilevatore 0 errori dopo ogni passo; ogni SFC risolto compilato con `f1_compile.cjs` (0 errori, 0 marcatori); build verde due volte (48-50 s); Vitest completo 1562 test, 156 rossi = baseline v2.62 + 18 nuovi, tutti classificati in `fail-263.txt`, nessun bug di codice; test mirati verdi (strumento colore 5/5, inline 9/9, quiz 30/30); patch colore provata a secco (conversione, classe esistente, idempotenza, JSON illeggibile). **Non eseguiti:** test backend Python e `migrate` nel container (Passo 7, serve il permesso), prova manuale nell'app, type-check (non è un cancello: 737 errori preesistenti). |
+
+**1. Obiettivo dell'attività** — Fondere l'ultima release del percorso (v2.63.0) senza perdere personalizzazioni, applicare gli adeguamenti decisi e costruire l'impostazione per quiz sulle domande saltate.
+
+**2. Modalità di esecuzione** — Skill `/upstream-upgrade` in modalità ripresa: verifica di coerenza, chiusura F7, merge con risoluzione file per file guidata dalle voci d'inventario (per `Quiz.vue`, `Quizzes.vue`, `QuizForm.vue` e `MultiLink.vue` base upstream o nostra con riapplicazione esplicita delle regole, invece del merge a blocchi), rilevatore dopo ogni passo, adeguamenti in commit separati, build e Vitest confrontati con la baseline.
+
+**3. Attività svolte** — Vedi tabella e sezione «v2.63.0 — fusa» del rapporto `docs/upstream-checks/2026-09-23-percorso-v2.58.0-v2.63.0.md`.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code (estensione VS Code). **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** risoluzione dei conflitti, riapplicazione delle regole, riscrittura dello strumento colore, override di sicurezza, patch dati, traduzioni, classificazione dei test. **Perché:** merge ampio (155 file) con molte personalizzazioni da preservare, dove serve leggere insieme inventario, diff upstream e nostri commit. **Risultato:** v2.63.0 fusa e adeguata, build verde, nessuna regola persa secondo il rilevatore. **Verifiche e correzioni:** un primo tentativo su `MultiLink.vue` partiva dal file già fuso da git (che aveva mescolato da solo parti upstream e nostre): rifatto partendo dalla nostra versione; il confronto con la baseline dei test inizialmente dava 156 «nuovi» per una differenza di formato, corretto prima di trarre conclusioni; il nuovo test del colore aveva un conflitto di tipi con la dichiarazione globale di `__`, sistemato.
+
+**6. Problematiche incontrate** — Git avrebbe tenuto in silenzio la nostra deriva sui permessi delle consegne quiz (fusione senza conflitto); l'endpoint upstream del proctoring bypassava la decisione sulla privacy del Valutatore; 18 test nuovi rossi (mock pensati per i componenti upstream, override `Combobox` vecchio, stub Raven) rinviati alla riconciliazione finale; resta da fare la riconciliazione dei 22 override frappe-ui (~3000 righe di differenza, `Combobox` 1082) e il Passo 7.
+
+---
+
+### Attività 3 — Chiusura del percorso upstream v2.58.0 → v2.63.0: suite completa, migrate, `/upstream-check`, due regressioni del backend trovate e corrette
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Test e verifica (con due correzioni) |
+| **Problema riscontrato** | Esigenza di chiudere il percorso (Passo 7 della skill): suite completa, test backend nel container, verifica delle personalizzazioni sull'intero percorso, lista di prove nell'app. Decisione del committente: Passo 7 prima della riconciliazione degli override frappe-ui. |
+| **Problema effettivo** | (1) **`override_api.py` di os_lms non si importava più da v2.62.0**: importava `get_instructor_info` da `lms.command_palette`, tolta dall'upstream. Tutti gli override di quel modulo (profilo utente all'avvio della SPA, impostazioni, barra laterale, membri, ruoli, annunci, notifiche, ricerca) sarebbero andati in errore. Nessun controllo del percorso esercita il backend os_lms: build solo frontend, rilevatore a ancore testuali, Vitest. (2) Gli override scartavano in silenzio parametri aggiunti dall'upstream: `category` della ricerca della palette, `limit_page_length` di corsi e classi. (3) Riscrivendo `can_access_quiz` per il gate sequenziale, l'upstream ha messo il controllo di iscrizione prima del nostro ramo: il Valutatore non apriva più i quiz dentro le lezioni. (4) I `tearDownClass` dei test quiz (upstream e nostri) cancellano **tutte** le `LMS Question`: eseguirli sul DB di sviluppo è distruttivo. |
+| **Soluzione applicata** | Migrate del sito di sviluppo (autorizzato; patch upstream e os_lms applicate e verificate). Test lms eseguiti con `commit` disattivato e rollback finale, con i conteggi confrontati prima e dopo (DB invariato). Verifica di ogni sito dell'inventario (664) confrontando il contesto dell'ancora fra `start_commit` e `HEAD`; 20 voci con contesto cambiato e non documentato giudicate da due agenti in sola lettura, e i casi a rischio riverificati a mano. Controllo di tutti i 74 percorsi degli hook os_lms e delle firme dei 23 override rispetto agli originali. Correzioni: `get_instructor_info` copiata in locale, parametri `category`/`limit_page_length` dichiarati e passati; ramo del Valutatore spostato prima del controllo di iscrizione. Guardia permanente `test_override_signatures.py`; voce d'inventario nuova `oslms-api-overrides-upstream-compat`. Rapporti di verifica e di percorso completati con la lista di 23 prove nell'app per ruolo. Branch lasciato per revisione (decisione del committente); stato archiviato in `.git/oslms-upstream-walk.v2.63.0.done.json`. |
+| **Commit** | `a4363c4a8` (override API), `b8b1e82a1` (quiz del Valutatore + guardia + inventario), `373dc4d91` (rapporti). Branch `merge/upstream-v2.63.0`, nulla unito né pubblicato. |
+| **File toccati** | `apps/os_lms/os_lms/os_lms/override_api.py`, `override_utils.py`, `lms/lms/permissions.py`, test nuovi `apps/os_lms/os_lms/os_lms/tests/test_valutatore_quiz_access.py`, `test_override_signatures.py`, `docs/customizations/spa-grafts.toml`, `docs/upstream-checks/2026-09-24-v2.63.0.md` (nuovo), `docs/upstream-checks/2026-09-23-percorso-v2.58.0-v2.63.0.md`. |
+| **Verifiche** | Rilevatore 0 errori (289 avvisi C4); test del rilevatore 68/68; Vitest 1562 test, 156 rossi tutti in baseline; os_lms 269 test, 266 verdi e 3 rossi nelle simulazioni AI (codice non toccato dal percorso, non riverificati su `start_commit`); lms 103 test mirati verdi, DB invariato; ricerca per categoria e paginazione provate sul sito di sviluppo. **Non eseguiti:** prova manuale nell'app (lista nel rapporto), test `integration` delle simulazioni (chiamano LLM veri), suite lms completa (rischio di commit impliciti su DB di sviluppo). |
+
+**1. Obiettivo dell'attività** — Chiudere il percorso con verifiche reali e consegnare al committente un branch controllato e una lista di prove.
+
+**2. Modalità di esecuzione** — Passo 7 della skill `/upstream-upgrade` e skill `/upstream-check` con riferimento `start_commit` (il percorso ha 8 merge). Test backend eseguiti con il Python dell'ambiente del container (il CLI `bench` non è utilizzabile). Verifica delle voci a rischio affidata a due agenti in parallelo e controllata a mano prima di correggere.
+
+**3. Attività svolte** — Vedi tabella; dettaglio nei rapporti `docs/upstream-checks/2026-09-24-v2.63.0.md` e sezione «Chiusura del percorso» del rapporto di percorso.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code (estensione VS Code), con due sotto-agenti general-purpose in sola lettura. **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** esecuzione e classificazione dei test, verifica delle 664 ancore, giudizio delle voci a rischio, correzioni. **Perché:** il diff del percorso (189 file, ~32.000 righe) non è verificabile a mano in tempi ragionevoli; gli agenti in parallelo hanno dimezzato il tempo della verifica voce per voce. **Risultato:** 2 regressioni e 1 guasto grave trovati prima di qualunque prova manuale, tutti corretti e coperti da test. **Verifiche e correzioni:** entrambe le segnalazioni degli agenti sono state riverificate leggendo il codice; correggendo la prima è emerso il guasto più grave (il modulo non si importava), che nessun agente aveva segnalato. Un conteggio scritto a memoria nel rapporto (voci accepted-drift) è stato ricontato e corretto (26, non 40).
+
+**6. Problematiche incontrate** — Il guasto dell'import è stato invisibile per due release: la lezione è che dopo ogni merge va esercitato anche il backend os_lms (ora c'è un test che lo fa). Il sito di sviluppo aveva già 0 `LMS Question` prima dell'esecuzione, segno di un lancio precedente dei test quiz senza protezione. Il migrate ha portato il DB di sviluppo allo schema di v2.63.0 e non torna indietro cambiando branch.
+
+---
+
+### Attività 4 — Supporto: la SPA in sviluppo (`localhost:8081`) non si carica dopo il merge di v2.63.0
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Correzione |
+| **Problema riscontrato** | Segnalazione del committente: in locale su `localhost:8081` (dev server Vite) la pagina non si carica. |
+| **Problema effettivo** | Dev server e backend rispondevano (HTML 200, moduli trasformati, API ok). In un Chrome headless la pagina si fermava su `SyntaxError: The requested module '/node_modules/interactjs/dist/interact.min.js' does not provide an export named 'default'`. `grid-layout-plus`, raggiunto attraverso frappe-ui (servito grezzo in sviluppo per il sistema di override), importa `interactjs` come default. L'upstream v2.63.0 lo mette in `optimizeDeps.include`, ma durante il merge la riga era stata scartata seguendo una nota sbagliata della sessione precedente. La build di produzione impacchetta tutto e non era colpita, per questo la build risultava verde. |
+| **Soluzione applicata** | Ripristinato `'interactjs'` in `optimizeDeps.include` di `frontend/vite.config.js`, con un commento sul perché; corretti la riga del rapporto di percorso e la nota in `.git/oslms-upstream-walk-tools/f4_263_notes.md`. |
+| **Commit** | `943a563d4` — `fix(oslms): pre-bundle interactjs again so the dev server loads` (branch `merge/upstream-v2.63.0`, non pubblicato). |
+| **File toccati** | `frontend/vite.config.js`, `docs/upstream-checks/2026-09-23-percorso-v2.58.0-v2.63.0.md`. |
+| **Verifiche** | Chrome headless separato su CDP (il Chrome di DevTools MCP era già occupato). Da non autenticato la SPA parte e reindirizza al login. Da Administrator si carica la Home in italiano con barra laterale e corsi; resta solo il 417 noto su `boot_config` della telemetria. |
+
+**1. Obiettivo dell'attività** — Far caricare di nuovo la SPA nel dev server locale.
+
+**2. Modalità di esecuzione** — Diagnosi a strati: processo in ascolto sulla porta, trasformazione dei moduli, chiamate API dal proxy, poi browser headless per le eccezioni reali.
+
+**3. Attività svolte** — Vedi tabella.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code (estensione VS Code), con uno script CDP (Chrome headless) scritto al momento. **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** diagnosi e correzione. **Perché:** l'errore era visibile solo nella console del browser, e il browser di DevTools MCP non era disponibile. **Risultato:** causa trovata e corretta, verificata in pagina sia da non autenticato sia da Administrator. **Verifiche e correzioni:** l'errore è stato ricondotto alla riga upstream scartata nel merge, controllando la `vite.config.js` di v2.63.0 e il commit upstream che l'aveva introdotta (`0bba749f5`).
+
+**6. Problematiche incontrate** — La build di produzione verde non garantisce che `yarn dev` funzioni: le differenze di `optimizeDeps` si vedono solo in sviluppo. Nel Passo 7 conviene aggiungere il caricamento della SPA in dev server.
+
+---
+
+### Attività 5 — Correzione: errore 417 su `boot_config` della telemetria a ogni caricamento della SPA
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Correzione |
+| **Problema riscontrato** | Segnalazione del committente: ricaricando la Home su `localhost:8081` la pagina si carica, ma in console compare `POST /api/method/frappe.utils.telemetry.pulse.client.boot_config 417 (EXPECTATION FAILED)` con il traceback `module 'frappe.utils.telemetry.pulse.client' has no attribute 'boot_config'`. |
+| **Problema effettivo** | Il plugin di telemetria di frappe-ui (`node_modules/frappe-ui/frappe/telemetry/`), installato in `frontend/src/main.js` appena l'utente è caricato, chiede la propria configurazione a `boot_config`, un metodo che esiste solo in Frappe develop: il Frappe version-16 del progetto ha solo `is_enabled`, `capture`, `bulk_capture` e `get_debug_info`. `fetchBootConfig` intercetta l'errore e torna `{}`, quindi la telemetria resta spenta e nulla si rompe; però la richiesta fallita e il traceback finiscono in console a ogni caricamento. Con frappe-ui 1.0.0-beta.29, arrivato con v2.63.0, dopo il merge lo stesso errore arriverebbe in produzione, come già successo con beta.24 (memoria `frappeui_caret_pin_drift`). Riportare frappe-ui a beta.7 non è possibile, perché il codice upstream v2.63.0 richiede beta.29. |
+| **Soluzione applicata** | Scelta del committente fra tre opzioni (ponte in os_lms, spegnere il plugin in `main.js`, lasciare così): **ponte in os_lms**. Nuovo modulo `framework_shims.py` con `telemetry_boot_config()` (`allow_guest`, risponde `{"enabled": False}`, cioè lo stesso esito di oggi senza errore). Registrato in un dizionario dedicato `framework_method_shims` di `hooks.py`, fuso in `override_whitelisted_methods`: in v16 `frappe.handler.execute_cmd` applica gli override prima di cercare il metodo, quindi funziona anche se l'originale non esiste. Il test `test_override_signatures.py` esclude i ponti dalle due verifiche esistenti (l'originale deve risolversi, nessun parametro scartato), che non potevano applicarsi. Aggiunge `test_every_framework_shim_is_still_needed` con la regola inversa: fallisce quando Frappe introduce l'originale, così il ponte si toglie invece di coprirlo. La modifica al test è stata autorizzata esplicitamente dal committente. Voce d'inventario `oslms-api-overrides-upstream-compat` estesa: intent e nuovo site sulla riga di `hooks.py`. Rapporto di percorso aggiornato nella decisione F6 di v2.62.0. |
+| **Commit** | `f60887410` — `fix(oslms): answer frappe-ui's telemetry boot_config on Frappe v16` (branch `merge/upstream-v2.63.0`, non pubblicato). |
+| **File toccati** | `apps/os_lms/os_lms/os_lms/framework_shims.py` (nuovo), `apps/os_lms/os_lms/hooks.py`, `apps/os_lms/os_lms/os_lms/tests/test_override_signatures.py`, `docs/customizations/spa-grafts.toml`, `docs/upstream-checks/2026-09-23-percorso-v2.58.0-v2.63.0.md`. |
+| **Verifiche** | Test delle firme nel container (dopo `frappe.clear_cache()` per ricaricare gli hook): 3/3 verdi. `POST boot_config` da Guest: 200 `{"message":{"enabled":false}}` sia su `lms.localhost:8000` sia su `localhost:8081`. Home caricata da Administrator in Chrome headless (CDP): nessuna eccezione, nessun `console.error`, nessuna risposta HTTP ≥ 400. Rilevatore: 0 errori, 289 avvisi (invariato), e la nuova ancora viene trovata. Righe nuove entro i 110 caratteri, controllate a mano: `ruff` non è installato né sull'host né nel container. |
+
+**1. Obiettivo dell'attività** — Togliere l'errore 417 dalla console della SPA senza cambiare il comportamento della telemetria e senza toccare file upstream, prima che il merge lo porti in produzione.
+
+**2. Modalità di esecuzione** — Lettura del plugin di telemetria di frappe-ui e di `frappe/handler.py` e `frappe/utils/telemetry/pulse/client.py` nel container, per capire cosa si aspetta il client e come Frappe risolve gli override. Poi la scelta al committente, perché l'opzione consigliata richiedeva di modificare un test. Infine implementazione, test e verifica in pagina.
+
+**3. Attività svolte** — Vedi tabella.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code (estensione VS Code), con lo script CDP `cdp_login.mjs` (Chrome headless) già usato nell'attività 4. **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** diagnosi, proposta delle opzioni, implementazione e verifica. **Perché:** serviva leggere insieme il sorgente di frappe-ui e quello di Frappe nel container, e verificare la console reale del browser. **Risultato:** 417 eliminato, telemetria invariata (spenta), guardia automatica per togliere il ponte quando non servirà più. **Verifiche e correzioni:** prima di proporre il ponte è stato verificato in `frappe/handler.py` che `override_whitelisted_method` venga applicato prima di `get_attr`. È stato scartato di delegare all'originale quando esiste, perché con `allow_guest` avrebbe esposto a un Guest la chiave di telemetria restituita dal metodo vero. Al suo posto c'è il test che obbliga a togliere il ponte.
+
+**6. Problematiche incontrate** — Il test delle firme, così com'era, sarebbe diventato rosso con qualunque ponte (originale inesistente): la regola del test è stata estesa, con l'ok del committente, invece di aggirarla. Nota: con la telemetria spenta il plugin scarica comunque lo script di Frappe Pulse dal CDN (`pulse.m.frappe.cloud`), come prima della modifica. Non è stato cambiato.
+
+---
+
+## 2026-09-23
+
+> **Report giornaliero:** `reports/2026-09-23-os-lms.md` — obiettivo e modalità della
+> giornata, aggregazione delle attività per filone, utilizzo dell'AI, problematiche,
+> prossime attività, avanzamento del progetto e spunti di miglioramento aziendale.
+> *(compilato: 8 ore dichiarate, avanzamento 100 % invariato, 14 attività aggregate in quattro filoni)*
+
+---
+
+### Attività 1 — Programmi: descrizione che perde colori/evidenziato/barrato e corsi non pubblicati invisibili agli studenti del programma
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Correzione (due difetti segnalati sulla funzione Programmi) |
+| **Problema riscontrato** | Segnalazione dell'utente sui Programmi: (1) nella descrizione del programma non vengono salvate le scritte colorate, le scritte evidenziate e il barrato; (2) i corsi collegati a un programma, se non pubblicati, non sono visibili agli studenti. Richiesta: i corsi devono essere visibili dentro i programmi a prescindere dalla loro pubblicazione. |
+| **Problema effettivo** | (1) **Lato client, non server.** `ProgramForm.vue` prima del salvataggio passa la descrizione per `sanitizeHTML` (`frontend/src/utils/index.js`), un sanitizer ad *allowlist* pensato per titoli e bio brevi: non ammette i tag `span`, `mark`, `s` né l'attributo `style`, cioè esattamente il markup con cui il `TextEditor` di frappe-ui rende colore (`<span style="color: var(--prose-color-*)">`), evidenziazione (`<mark style="background-color: var(--prose-highlight-*)">`) e barrato (`<s>`). Il server invece li conserva: il campo `description` è un custom field os_lms di tipo Text Editor e il `sanitize_html` di Frappe lascia intatti tag e stili (verificato). (2) **Tre cancelli indipendenti** legati al flag `published` del singolo corso, nessuno dei quali conosceva i programmi: `get_course_details` (utils.py) restituisce `{}` per un corso non pubblicato se l'utente non è iscritto/autore/valutatore → `get_program_details` scarta il corso dalla griglia del programma; la guardia in `CourseDetail.vue` rimanda a "Corsi" chi apre un corso non pubblicato; `LMSEnrollment.validate_course_enrollment_eligibility` rifiuta l'iscrizione con "You cannot enroll in an unpublished course". Per le classi (batch) esisteva già un'eccezione analoga, per i programmi no. |
+| **Soluzione applicata** | (1) In `ProgramForm.saveProgram` la descrizione passa ora per `sanitizeRichHTML` (sanitizer già esistente nel progetto per i contenuti ricchi: conserva tutto l'HTML presentazionale e rimuove script, handler e form). Il titolo resta su `sanitizeHTML`. (2) Nuovo helper `is_course_in_member_program(course, user)` in `lms/lms/utils.py`: vero se l'utente è **membro** di un programma che contiene il corso. Usato in tre punti: `get_course_details` (il membro vede il corso anche se non pubblicato → compare nella pagina del programma), `validate_course_enrollment_eligibility` (il membro può iscriversi al corso non pubblicato; restano invariati i controlli su self-learning disabilitato e corso a pagamento), e l'override os_lms `get_course_details` che espone il flag `in_member_program` usato dalla guardia di `CourseDetail.vue` per non rimandare a "Corsi". Scelta di legare l'eccezione all'**iscrizione al programma** e non alla sua pubblicazione: la pagina del programma è già riservata ai membri (`ProgramDetail.checkIfEnrolled`), quindi i membri sono esattamente gli studenti che "vedono i corsi nei programmi"; un non iscritto continua a non vedere né poter aprire un corso non pubblicato. |
+| **Commit** | Sì — `388292605` fix(programs): keep description formatting and show unpublished courses to program members, branch `feature/oslms` (non pushato). |
+| **File modificati** | [frontend/src/pages/Programs/ProgramForm.vue](frontend/src/pages/Programs/ProgramForm.vue), [frontend/src/pages/Courses/CourseDetail.vue](frontend/src/pages/Courses/CourseDetail.vue), [frontend/src/types/api.ts](frontend/src/types/api.ts), [frontend/src/tests/sanitizeRichHTML.test.ts](frontend/src/tests/sanitizeRichHTML.test.ts), [lms/lms/utils.py](lms/lms/utils.py), [lms/lms/doctype/lms_enrollment/lms_enrollment.py](lms/lms/doctype/lms_enrollment/lms_enrollment.py), [apps/os_lms/os_lms/os_lms/override_utils.py](apps/os_lms/os_lms/os_lms/override_utils.py), [apps/os_lms/os_lms/os_lms/tests/test_program_course_access.py](apps/os_lms/os_lms/os_lms/tests/test_program_course_access.py) (nuovo). |
+| **Verifiche** | **Backend** (stack Docker dev avviato per l'occasione): nuovo modulo `test_program_course_access` 5/5 OK (membro riconosciuto, membro vede il corso non pubblicato, estraneo non lo vede, membro si iscrive, estraneo viene rifiutato). **Controprova**: tolte temporaneamente le due condizioni nuove, falliscono esattamente i 2 test del membro; ripristinate, 5/5 OK. **Server sulla descrizione**: inserito da `bench execute` un LMS Program con descrizione contenente span colorato, mark evidenziato e `<s>`; il valore riletto dal DB li conserva tutti (Frappe normalizza solo lo spazio in `color:var(...)`); programma sonda cancellato per nome esatto, file sonda rimosso. **Frontend**: nuovo test vitest sul markup reale del TextEditor (letto da `color-extension.ts` e `highlight-extension.ts`) → `sanitizeRichHTML.test.ts` 5/5 OK; suite vitest completa 193 passati / 21 falliti, **gli stessi 21 falliscono anche senza le modifiche** (NewMemberModal, ReviewModal, blockEditor… preesistenti). Prettier: i warning su CourseDetail.vue, api.ts e sanitizeRichHTML.test.ts sono preesistenti (identici a modifiche rimosse). `py_compile` OK sui tre file Python; `ruff` non installato sull'host, non eseguito. **Non eseguita** una prova manuale nel browser (salvataggio della descrizione dalla SPA e navigazione studente nel programma). |
+
+**1. Obiettivo dell'attività**
+
+Far sì che la descrizione di un programma conservi la formattazione messa dall'editor
+(colore del testo, evidenziazione, barrato) e che gli studenti iscritti a un programma
+vedano, aprano e possano seguire tutti i corsi del programma, anche quelli non
+pubblicati singolarmente nel catalogo — senza però rendere quei corsi accessibili a
+chi non fa parte del programma.
+
+**2. Modalità di esecuzione**
+
+Debug sistematico (causa prima del fix). Per la descrizione: seguito il dato dal
+`TextEditor` al salvataggio in `ProgramForm.vue`, individuato il passaggio per
+`sanitizeHTML` e confrontata la sua allowlist con il markup che l'editor produce
+(letto dal sorgente frappe-ui in `node_modules`); verificato che il server non fosse a
+sua volta responsabile. Per i corsi: ricostruita l'intera catena di accesso a un corso
+non pubblicato partendo dall'eccezione già esistente per i batch
+(`enroll_via_batch_if_eligible`, `is_course_valutatore`, guardia SPA con
+`is_valutatore`), per replicarne la forma per i programmi in tutti i punti in cui il
+flag `published` blocca, non solo in quello visibile. Test scritti sul comportamento
+richiesto, eseguiti nel container e poi validati con controprova (rosso senza fix).
+
+**3. Attività svolte**
+
+- `ProgramForm.vue`: import di `sanitizeRichHTML` da `@/utils/sanitizeRichHTML` e suo
+  uso sulla descrizione in `saveProgram`, con commento che spiega perché non va usato
+  l'altro sanitizer.
+- `lms/lms/utils.py`: aggiunto `is_course_in_member_program` accanto a
+  `is_course_valutatore` (due query: programmi che contengono il corso, poi esistenza di
+  un `LMS Program Member` per l'utente; Guest sempre escluso); `get_course_details` lo
+  interroga solo nel ramo "corso non pubblicato e utente senza iscrizione", quindi nessun
+  costo aggiuntivo per i corsi pubblicati.
+- `lms_enrollment.py`: la regola "non ci si iscrive a un corso non pubblicato" ammette ora
+  il membro di un programma che contiene il corso. Import locale dell'helper perché
+  `lms.lms.utils` importa già questo modulo (evitato l'import circolare).
+- `override_utils.py` (os_lms): nuovo campo `in_member_program` nella risposta di
+  `get_course_details`, calcolato solo per i corsi non pubblicati; `types/api.ts` e la
+  guardia di `CourseDetail.vue` aggiornati di conseguenza.
+- Nuovi test: `apps/os_lms/.../tests/test_program_course_access.py` (5 casi,
+  cleanup per nome esatto dei record creati) e un caso in `sanitizeRichHTML.test.ts`.
+- Nota per i merge upstream: `utils.py`, `lms_enrollment.py` e `CourseDetail.vue` sono
+  file upstream; le modifiche sono piccole e commentate, da riapplicare se un merge le
+  sovrascrive.
+
+**4. Utilizzo dell'AI**
+
+- tool/agente: Claude Code (estensione VS Code), sessione singola senza sub-agenti.
+- modello: Claude Opus 5.5 (1M context).
+- attività per cui è stata utilizzata: individuazione della causa di entrambi i difetti
+  (lettura di SPA, utils backend, validazione iscrizioni, override os_lms, sorgente
+  frappe-ui), progettazione della regola di accesso, scrittura del codice e dei test,
+  esecuzione dei test nel container Docker e della controprova.
+- motivo della scelta del tool e del modello: i due difetti attraversano SPA, backend
+  upstream e app os_lms; serviva un agente capace di leggere il codice in più livelli,
+  eseguire comandi nel container e verificare in autonomia.
+- risultato ottenuto: cause individuate e corrette; test backend 5/5 e frontend 5/5 con
+  controprova rossa senza fix.
+- verifiche e correzioni effettuate: al primo giro i test backend fallivano per un
+  motivo di fixture (istruttore di default `frappe@example.com` inesistente sul sito dev),
+  corretto creando un istruttore dedicato nel test; verificato che le failure della suite
+  vitest e i warning Prettier fossero preesistenti confrontandoli con le modifiche rimosse.
+
+**6. Problematiche incontrate**
+
+Nessun blocco. Docker era spento: avviato lo stack `dev-elite` per eseguire i test
+backend (sul sistema risultava anche un container `mariadb` di un altro progetto partito
+insieme a Docker Desktop, senza conflitti rilevati). Resta da fare la prova manuale nel
+browser con un utente studente iscritto a un programma che contiene un corso non
+pubblicato.
+
+---
+
+### Attività 2 — Programmi lato studente: descrizione non visibile e programmi assenti dalla Home
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Feature (segnalata come bug) + verifica nel browser anche dell'Attività 1 |
+| **Problema riscontrato** | Segnalazione dell'utente, lato studente: (1) la descrizione del programma non viene visualizzata; (2) i programmi non compaiono nella Home. |
+| **Problema effettivo** | **Non sono regressioni: le due funzioni non sono mai esistite.** (1) La descrizione è un custom field os_lms (`LMS Program.description`, Text Editor) mostrato solo nel form di modifica: l'endpoint upstream `get_program_details` legge una lista fissa di campi che non la include, e né `ProgramDetail.vue` né `ProgramEnrollment.vue` la rendono. (2) `StudentHome.vue` non ha mai avuto una sezione programmi (`git log -S` sulla cartella Home: nessun commit li ha mai toccati). Vincolo di resa: i colori/evidenziazioni del TextEditor sono `var(--prose-color-*)`/`var(--prose-highlight-*)` definiti solo sotto `.ProseMirror`, quindi la descrizione va resa con quello scope. |
+| **Soluzione applicata** | (1) Override os_lms `get_program_details` (in `override_utils.py`, registrato in `hooks.py` → `override_whitelisted_methods`) che aggiunge `description` al payload upstream senza modificare `lms/lms/utils.py`. In `ProgramDetail.vue` (pagina del programma dello studente iscritto) e in `ProgramEnrollment.vue` (modale di conferma iscrizione di un programma pubblicato) la descrizione è resa con il componente esistente `oslms/components/CourseDescription.vue` (scope `.ProseMirror`, "Mostra altro" se lunga), passata per `sanitizeRichHTML`. Nuovo helper `hasRichContent` in `utils/sanitizeRichHTML.ts` per non mostrare un riquadro vuoto quando l'editor ha salvato `<p></p>`. (2) Nuova sezione in `StudentHome.vue`, collocata dopo "I miei corsi": "I miei programmi" (iscritti, con barra di avanzamento, click → dettaglio programma); se lo studente non è iscritto a nessuno mostra "Programmi disponibili" (pubblicati, click → modale di iscrizione), stesso schema della riga Classi. Nessuna nuova chiamata al backend: riusa la risorsa `programs` dello store `useSettings` (`get_programs`) che la sidebar carica già all'accesso; la Home la carica solo se nessuno l'ha ancora fatto (layout mobile senza sidebar). Traduzioni IT aggiunte in `lms/translations/it.csv` ("My Programs" → "I miei programmi", "Available Programs" → "Programmi disponibili"; nessuna voce in `it.po` che le sovrascriva). |
+| **Commit** | Sì — `cc402ce04` feat(programs): show the program description to learners and list programs on the home page, branch `feature/oslms` (non pushato). |
+| **File modificati** | [apps/os_lms/os_lms/os_lms/override_utils.py](apps/os_lms/os_lms/os_lms/override_utils.py), [apps/os_lms/os_lms/hooks.py](apps/os_lms/os_lms/hooks.py), [frontend/src/pages/Programs/ProgramDetail.vue](frontend/src/pages/Programs/ProgramDetail.vue), [frontend/src/pages/Programs/ProgramEnrollment.vue](frontend/src/pages/Programs/ProgramEnrollment.vue), [frontend/src/pages/Home/StudentHome.vue](frontend/src/pages/Home/StudentHome.vue), [frontend/src/utils/sanitizeRichHTML.ts](frontend/src/utils/sanitizeRichHTML.ts), [frontend/src/tests/sanitizeRichHTML.test.ts](frontend/src/tests/sanitizeRichHTML.test.ts), [lms/translations/it.csv](lms/translations/it.csv), [apps/os_lms/os_lms/os_lms/tests/test_program_course_access.py](apps/os_lms/os_lms/os_lms/tests/test_program_course_access.py). |
+| **Verifiche** | **Backend**: aggiunto al modulo `test_program_course_access` il caso "il membro riceve dalla pagina programma il corso non pubblicato e la descrizione" → 6/6 OK. **Frontend**: vitest `sanitizeRichHTML.test.ts` 7/7 (2 nuovi casi per `hasRichContent`). **Prova end-to-end nel browser** (Chrome DevTools MCP, contesto isolato, `yarn dev` su :8081 contro il container): creati da `bench execute` uno studente di prova, un programma pubblicato con descrizione colorata/evidenziata/barrata e due corsi di cui uno **non pubblicato** (`corso-design-a`); da studente: Home mostra "I miei programmi" con la card del programma (2 corsi, 0% completato); click → pagina del programma con la descrizione resa correttamente (rosso, evidenziato giallo, barrato) e **entrambi i corsi visibili**; apertura di `corso-design-a` → nessun rimando a "Corsi", pulsante "Iscriviti Ora"; click → `LMS Enrollment` creato (verificato in DB). Console senza errori. Questo verifica nel browser anche l'Attività 1. **Pulizia**: studente, programma e iscrizione cancellati per nome esatto (verificato 0/0/0 in DB), script sonda rimosso dal container, dev server fermato. Non verificato visivamente: la descrizione nel modale di iscrizione (stesso codice della pagina programma) e la Home su mobile. Prettier eseguito e poi **annullato** sui file upstream perché riformattava righe non toccate (virgole finali): le aggiunte sono formattate a mano nello stile del file. |
+
+**1. Obiettivo dell'attività**
+
+Rendere visibili allo studente la descrizione del programma (con la formattazione
+salvata grazie all'Attività 1) e i propri programmi nella Home, e verificare nel browser
+il flusso completo studente → programma → corso non pubblicato → iscrizione.
+
+**2. Modalità di esecuzione**
+
+Verifica preliminare che si trattasse di regressioni (storia git di Home e pagine
+Programmi): esito negativo, sono funzioni nuove. Scelte guidate dai vincoli del
+progetto: nessuna modifica all'endpoint upstream (override os_lms), nessuna nuova
+chiamata al caricamento della Home (riuso della risorsa già caricata dalla sidebar),
+riuso del componente di resa descrizione già usato per i corsi, commenti `OSLMS-CUSTOM`
+sui punti innestati nei file upstream. Verifica con test automatici e prova reale nel
+browser con dati di prova tracciati per nome.
+
+**3. Attività svolte**
+
+- Override `get_program_details` + registrazione in hooks.
+- Descrizione in `ProgramDetail.vue` e `ProgramEnrollment.vue` via `CourseDescription`.
+- Helper `hasRichContent` con test.
+- Sezione programmi in `StudentHome.vue` con fallback ai pubblicati e modale di
+  iscrizione riusato (`ProgramEnrollment`).
+- Traduzioni IT.
+- Test backend esteso; prova end-to-end nel browser; pulizia dei dati.
+
+**4. Utilizzo dell'AI**
+
+- tool/agente: Claude Code (estensione VS Code) con Chrome DevTools MCP per la prova nel browser.
+- modello: Claude Opus 5.5 (1M context).
+- attività per cui è stata utilizzata: diagnosi (regressione o funzione mancante),
+  progettazione dell'innesto a minimo impatto sui file upstream, scrittura di codice e
+  test, prova end-to-end automatizzata nel browser, pulizia dei dati di prova.
+- motivo della scelta del tool e del modello: serviva lavorare su backend, SPA e
+  browser nella stessa sessione, verificando il risultato reale e non solo i test.
+- risultato ottenuto: entrambe le funzioni operative e verificate da studente reale.
+- verifiche e correzioni effettuate: un primo innesto in `StudentHome.vue` conteneva un
+  `\n` letterale nell'import (corretto); Prettier aveva riformattato righe upstream non
+  toccate (annullato e riapplicato solo il diff proprio).
+
+**6. Problematiche incontrate**
+
+Nessun blocco. Punto aperto da segnalare all'utente: nel modale di iscrizione (studente
+**non ancora** iscritto a un programma pubblicato) i corsi non pubblicati del programma
+continuano a non essere elencati, perché l'eccezione dell'Attività 1 vale per i membri;
+di conseguenza il testo "Questo programma è composto da N corsi" conta solo quelli
+pubblicati. Da decidere con l'utente se estendere la visibilità anche ai non iscritti.
+
+---
+
+### Attività 3 — Deploy Agora: ricaricando la home l'URL diventa `:8080/lms` e la pagina va in errore
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Analisi (supporto deploy produzione) |
+| **Problema riscontrato** | Due deploy dello stesso progetto sul server `salescience-production`: su Academy (`/apps/elite/salescience`) il reload della home funziona; su Agora (`/apps/elite/agora`) il reload della home redirige a un URL con `:8080/lms` e la pagina va in errore. L'utente ha chiesto se il compose di Agora è sbagliato. |
+| **Problema effettivo** | I due compose sono **equivalenti**: le sole differenze sono la parametrizzazione (`name`, rete e volumi da `${PROJECT_NAME}`, porta DB da `${DB_PORT_HOST}`) e il percorso di `configurator.sh` (`./resources/configurator.sh` vs `./resources/bench/configurator.sh`); nessuna tocca l'URL. `8080` è la porta interna del nginx del container `frontend`: il redirect `/` → `/lms` viene costruito come URL assoluto con host/porta visti dal backend, e compare `:8080` quando il sito non ha un `host_name` corretto o il reverse proxy esterno non inoltra `Host`/`X-Forwarded-*`. La causa è quindi fuori dal compose: `sites/<SITE_NAME>/site_config.json` (chiave `host_name`), `sites/common_site_config.json` o la configurazione del proxy esterno. **Confermato** dal confronto dei due `site_config.json`: quello di Agora (`sites/agora.vademecumfondi.eu/site_config.json`) non ha né `"host_name"` né `"webserver_port"`, che su Academy valgono `"https://academy.salescience.it"` e `80`. |
+| **Soluzione applicata** | Causa reale (vedi Aggiornamento 5): `proxy_redirect` errati nel vhost nginx esterno di Agora (`0003-agora.vademecumfondi.eu`), da correggere in `http://127.0.0.1:3336/` e `http://agora.vademecumfondi.eu:8080/`. In precedenza indicato anche di aggiungere al `site_config.json` di Agora `"host_name": "https://agora.vademecumfondi.eu"` e `"webserver_port": 80`, allineandolo ad Academy, e di riavviare poi backend e frontend (`docker compose restart backend frontend`). Modifica da eseguire sul server a cura dell'utente. |
+| **Commit** | Non committata — attività di sola analisi, nessun file di progetto modificato (configurazione sul server di produzione, fuori dal repo). |
+| **File toccati** | Solo `docs/WORKLOG.md`. |
+| **Verifiche** | Confronto dei due compose, dei due `site_config.json` e dei due vhost nginx esterni; `curl -sI` sugli URL pubblici (Agora restituisce `Location: http://agora.vademecumfondi.eu:8080/lms`, Academy `https://academy.salescience.it/lms`) e, sul server, sul nginx interno di Agora (`127.0.0.1:3336` → `:8080/lms`). Dopo la correzione del vhost: `/lms/` → `301 https://agora.vademecumfondi.eu/lms`, `/lms` → `200`. Risolto. |
+
+**Aggiornamento.** Dopo aver aggiunto `host_name` e `webserver_port` l'utente segnala che il
+problema persiste e chiede se serva una configurazione nel desk e se esista una guida. Trovata
+nel repo di deploy (`~/Documents/Progetti/elite-deploy`, `readme.md`, sezione "FIX PROBLEMI
+COMUNI") la ricetta documentata: nel `site_config.json` impostare **sia** `"http_port": 80`
+**sia** `"webserver_port": 80`. Il mio primo suggerimento mancava di `http_port`: in Frappe
+`get_url()` usa `http_port` con precedenza su `webserver_port` per aggiungere la porta agli URL
+assoluti, quindi un `http_port` ereditato (es. da `common_site_config.json`) continua a far
+comparire `:8080`. Letti anche `resources/core/nginx/nginx-template.conf` (nginx interno in
+ascolto su 8080, `proxy_redirect off`, rewrite `permanent` per gli slash finali) e
+`resources/bench/configurator.sh` (non imposta mai `http_port`/`webserver_port`/`host_name`:
+per questo ogni nuovo deploy va corretto a mano). Indicato all'utente: aggiungere `http_port`,
+controllare `common_site_config.json`, riavviare backend/frontend, `clear-cache` e
+`clear-website-cache`, verificare con `curl -I` (il browser può tenere in cache i redirect 301).
+Nessuna configurazione nel desk necessaria. Proposta di follow-up: far scrivere al
+`configurator.sh` queste chiavi a ogni avvio.
+
+**Aggiornamento 2.** L'utente precisa che Academy funziona **senza** `http_port` e che i due
+`common_site_config.json` sono identici: la configurazione Frappe dei due siti è ormai
+equivalente, quindi la causa va cercata fuori da Frappe. Ipotesi principale: il redirect con
+`:8080` lo genera il **nginx interno** del container `frontend` (template in ascolto su 8080,
+`rewrite ^(.+)/$ $1 permanent;` → redirect assoluto con la porta di ascolto, perché
+`port_in_redirect`/`absolute_redirect` sono attivi di default), ad esempio su `/lms/` con slash
+finale; il nginx esterno generato da `resources/server/02-setup-nginx.sh` non ha un
+`proxy_redirect` che riscriva `http://<host>:8080/...`. La differenza con Academy va quindi
+cercata nel vhost nginx esterno (`/etc/nginx/sites-available/<dominio>`, magari modificato a
+mano su Academy) o nella cache 301 del browser. Chiesto all'utente di confrontare i due vhost e
+di tracciare la catena di redirect con `curl -sIL` su entrambi i siti; proposte due correzioni
+(nel vhost esterno di Agora `proxy_redirect http://$host:8080/ https://$host/;`, oppure
+`absolute_redirect off;` nel template nginx interno di `elite-deploy`).
+
+**Aggiornamento 3 — causa confermata.** L'utente precisa il sintomo esatto: ricaricando
+`https://agora.vademecumfondi.eu/lms/` (con slash finale) il browser va su
+`https://agora.vademecumfondi.eu:8080/lms` (senza slash). La rimozione dello slash è proprio il
+`rewrite ^(.+)/$ $1 permanent;` del nginx interno, che risponde 301 con URL assoluto e porta di
+ascolto 8080; lo schema diventa `https` per effetto dell'header HSTS (`Strict-Transport-Security
+... includeSubDomains; preload`) che forza il browser su HTTPS. Frappe e `site_config.json` non
+c'entrano. Correzioni indicate: immediata nel vhost nginx esterno di Agora
+(`proxy_redirect http://$host:8080/ https://$host/;` nel `location /` del blocco 443, poi
+`nginx -t && systemctl reload nginx`); definitiva in `elite-deploy`
+(`absolute_redirect off;` nel `server` di `resources/core/nginx/nginx-template.conf`, poi rebuild
+immagine). Avvisato che il 301 resta in cache nel browser: verificare in incognito o con `curl`.
+
+**Aggiornamento 4.** L'utente riferisce che anche Academy aveva lo stesso difetto, corretto in
+passato "modificando delle configurazioni", e chiede se su Agora manchino impostazioni nel desk.
+Risposta: no. Il redirect su `/lms/` lo produce il nginx del container `frontend` prima che la
+richiesta arrivi a Frappe (`rewrite` in testa a `location /`), quindi nessuna impostazione del
+desk (Website Settings, ecc.) può influire. La correzione fatta su Academy sta per forza in uno
+di questi punti, da confrontare tra i due deploy: vhost nginx esterno
+(`/etc/nginx/sites-available/*`), config nginx renderizzata nei container `frontend`
+(`/etc/nginx/conf.d/frappe.conf`, generata da `nginx-entrypoint.sh` dal template dell'immagine,
+quindi dipende anche da `APP_IMAGE_NAME`), `.env` dei due deploy. Forniti i comandi di confronto.
+Vhost nginx esterni rilevati su `salescience-production` (Ubuntu 24.04):
+`0000-salescience` (Academy), `0001-wander`, `0002-elite.dynapp.it`, `0003-agora.vademecumfondi.eu`
+(creato il 2026-09-22). Richiesto il confronto tra `0000-salescience` e `0003-agora.vademecumfondi.eu`.
+
+**Aggiornamento 5 — causa individuata nel vhost esterno.** Il `diff` tra i due vhost mostra che
+Academy corregge il redirect del nginx interno con due direttive nel `location /` del blocco 443:
+`proxy_redirect http://127.0.0.1:8080/ /;` e `proxy_redirect http://academy.salescience.it:8080/ /;`
+(la porta pubblicata di Academy coincide con quella interna, 8080). Su Agora le stesse righe sono
+state adattate male: `proxy_redirect http://127.0.0.1:3365/ /;` (refuso: la porta di
+`proxy_pass` è **3336**) e `proxy_redirect http://agora.vademecumfondi.eu:3336/ /;` (porta sbagliata:
+nel `Location` il nginx interno scrive sempre la **sua** porta di ascolto 8080, non la porta
+pubblicata sull'host). Nessuna delle due combacia con `http://agora.vademecumfondi.eu:8080/lms`,
+quindi il redirect passa inalterato. Correzione indicata: `proxy_redirect http://127.0.0.1:3336/ /;`
+e `proxy_redirect http://agora.vademecumfondi.eu:8080/ /;`, poi `nginx -t && systemctl reload nginx`
+e verifica con `curl -sI https://agora.vademecumfondi.eu/lms/`. Il `site_config.json` non era la
+causa del sintomo (le chiavi aggiunte restano comunque corrette e allineate ad Academy).
+Letti poi i due vhost completi: confermato che l'unica differenza rilevante sono le due righe
+`proxy_redirect`; il resto (header, SSL Certbot, redirect 80→443) è equivalente, e l'assenza di
+`ipv6only=on` su Agora è corretta (può comparire una sola volta per `[::]:443`).
+
+**Verifica della causa (prima della correzione).** Da locale (Claude, `curl -sI` sugli URL
+pubblici): `https://agora.vademecumfondi.eu/lms/` → `301 Location: http://agora.vademecumfondi.eu:8080/lms`
+(il `:8080` attraversa il nginx esterno inalterato); `https://academy.salescience.it/lms/` →
+`301 Location: https://academy.salescience.it/lms` (corretto dal `proxy_redirect`). Porte 3336 e
+8080 non raggiungibili dall'esterno. Sul server (utente): `curl -sI -H "Host: agora.vademecumfondi.eu"
+http://127.0.0.1:3336/lms/` → `301 Location: http://agora.vademecumfondi.eu:8080/lms`, cioè il
+redirect nasce nel nginx interno del container. Causa confermata.
+
+**Correzione applicata (utente, sul server).** In `/etc/nginx/sites-available/0003-agora.vademecumfondi.eu`
+le due righe sono diventate `proxy_redirect http://127.0.0.1:3336/ /;` e
+`proxy_redirect http://agora.vademecumfondi.eu:8080/ /;`; `nginx -t` OK, `systemctl reload nginx`.
+Verifica sul server: `Location: https://agora.vademecumfondi.eu/lms`. Verifica esterna (Claude):
+`/lms/` → `301 Location: https://agora.vademecumfondi.eu/lms`, `/lms` → `200`. **Problema risolto**, confermato dall'utente anche nel browser.
+Resta consigliata la correzione strutturale in `elite-deploy` (`absolute_redirect off;` nel
+template nginx interno, e/o `02-setup-nginx.sh` che generi le righe `proxy_redirect` con la porta
+interna 8080) per non ripetere l'errore sui prossimi deploy — non eseguita, in attesa di richiesta.
+Dettagliate all'utente, su richiesta, le tre modifiche proposte per `elite-deploy` (non
+applicate): `absolute_redirect off;` in `resources/core/nginx/nginx-template.conf` (copiato in
+`Containerfile.base`, quindi richiede il rebuild dell'immagine base con `--rebuild`);
+`ENV CYPRESS_INSTALL_BINARY=0` nel `Containerfile` prima di `bench build` (riga 24); rimozione di
+`services: - docker:26-dind` da `.gitlab-ci.yml` (righe 49-50).
+
+**4. Utilizzo dell'AI**
+
+Claude Code (VS Code), modello Claude Opus 5.5: confronto dei due `compose.yml` e
+diagnosi della provenienza di `:8080` nel redirect. Scelto perché il confronto e la
+conoscenza del flusso nginx→Frappe sono immediati; risultato: esclusa la causa nel
+compose e indicato il file da controllare. Diagnosi finale da confermare con i file
+di configurazione del sito.
+
+**6. Problematiche incontrate**
+
+Nessun blocco. Supporto aggiuntivo: forniti all'utente i comandi per controllare lo stato dello stack Docker di Agora (`docker compose ps -a`, log del `configurator` e del `backend`, `docker compose exec backend bench --site agora.vademecumfondi.eu show-config`). Nota di sicurezza: i due `site_config.json` sono stati incollati in chat con `db_password` ed `encryption_key` in chiaro.
+
+---
+
+### Attività 4 — Pipeline GitLab di build immagine (`elite-deploy`): lettura degli errori del job
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Analisi (supporto CI/CD) |
+| **Problema riscontrato** | L'utente ha incollato il log del job GitLab di build dell'immagine (runner `osgitDockerRunner`, repo `overside/elite/elite-deploy`, branch applicativo `feature/oslms`, commit deploy `4e570cbe`) segnalando "errori". Un primo log era troncato; la seconda versione incollata contiene la coda con l'errore: il job fallisce allo step `[5/6] bench build --force` (Containerfile riga 24), `ERROR: Job failed: exit code 1`. |
+| **Problema effettivo** | **Causa del fallimento: disco pieno sul runner.** Durante `bench build`, Frappe esegue `yarn install` per l'app `lms` e poi per `frontend/`; lo scaricamento dei pacchetti fallisce con `ENOSPC: no space left on device` scrivendo nella cache yarn (`/home/frappe/.cache/yarn/v6/...`) dentro il container di build. Il build usa buildx con driver `docker-container` (`elite-builder`), quindi lo spazio consumato è quello di Docker sull'host del runner `osgitDockerRunner` (immagini, cache BuildKit, volumi di stato dei builder ricreati a ogni job). Nessun problema nel codice. Gli altri due messaggi rossi non sono bloccanti: (1) **servizio `docker:26-dind` non avviato**: `failed to load listeners: can't create unix socket /var/run/docker.sock: device or resource busy`. Il runner monta già il socket Docker dell'host nei container (il job infatti usa `DOCKER_HOST=unix:///var/run/docker.sock`), quindi il dind trova il socket occupato e muore; il job prosegue sul Docker dell'host (login, push dei tag e build funzionano). Il servizio dind è inutile e genera solo ~30 s di attesa più il warning. (2) **conflitto pip su razorpay**: `payments` richiede `razorpay~=2.0.0`, `lms` (pyproject.toml riga 17, `razorpay~=1.4.1`, pin upstream) installa 1.4.2 sopra la 2.0.1. pip lo segnala ma non fallisce; è lo stesso stato che si ha già in dev. Rilevante solo per pagamenti Razorpay via app `payments`. |
+| **Soluzione applicata** | Nessuna modifica al codice. Indicato all'utente di liberare spazio sull'host del runner (`df -h`, `docker system df`, `docker buildx prune -af`, `docker image prune -af`, rimozione dei volumi `buildx_buildkit_*` orfani) e rilanciare il job; come prevenzione, pulizia periodica della cache buildx sul runner. Proposto inoltre di togliere `services: docker:dind` dal `.gitlab-ci.yml` di `elite-deploy`. |
+| **Commit** | Non committata — sola analisi; `.gitlab-ci.yml` sta nel repo `elite-deploy`, non in questo. |
+| **File toccati** | Solo `docs/WORKLOG.md`. |
+| **Verifiche** | Lettura del log incollato; verificato il pin `razorpay~=1.4.1` in `pyproject.toml` (ultima modifica commit `79dfccf07`). Esito del job letto dalla coda del log: fallito per ENOSPC. Stato del disco del runner non verificato (nessun accesso). |
+
+**Aggiornamento (secondo tentativo).** Il job rilanciato fallisce di nuovo con lo stesso
+`ENOSPC` nello stesso punto (`cd frontend && yarn install --check-files`, postinstall di
+`package.json`): lo spazio non è stato liberato, oppure è stato liberato nel posto sbagliato.
+Il build usa il builder buildx `elite-builder` (driver `docker-container`): la sua cache sta in
+un volume proprio (`buildx_buildkit_elite-builder0_state`) che `docker buildx prune` **senza**
+`--builder elite-builder` non tocca, e `docker system prune` non conta. Indicati all'utente i
+comandi mirati (`docker buildx du/prune --builder elite-builder`, `df -h` sul runner) e una
+riduzione strutturale dello spazio richiesto dal build: il `yarn install` della root di `lms`
+installa anche `cypress` (^14.5.4, devDependency) che scarica il binario (~500-700 MB) in
+`~/.cache/Cypress`; impostare `ENV CYPRESS_INSTALL_BINARY=0` nel Containerfile di
+`elite-deploy` prima di `bench build` lo evita. Nessuna modifica fatta: il Containerfile sta
+nel repo `elite-deploy`.
+
+Chiarimento richiesto dall'utente su *dove* controllare lo spazio: sulla macchina che ospita il
+GitLab Runner `osgitDockerRunner` (non sul server di produzione `salescience-production`, a meno
+che coincidano). Spiegato come individuarla (GitLab → progetto `elite-deploy` → Settings → CI/CD →
+Runners → IP del runner; oppure `gitlab-runner list` / `systemctl status gitlab-runner` sulla
+macchina) e come leggere `df -h` (colonna `Use%` al 100% sulla partizione di `/` o di
+`/var/lib/docker`).
+
+Stato del runner rilevato dall'utente (`df -h`, `docker system df` su `osgitDockerRunner`, Debian,
+kernel 6.1): disco `/dev/sda1` da **31 GB, 26 GB usati, 2,9 GB liberi (90%)**. Docker: immagini
+3,7 GB (3,34 GB recuperabili), volumi locali 25 per 7,1 GB (3,34 GB recuperabili), **Build Cache
+12,75 GB** (3,9 GB recuperabili senza `-a`). Il build dell'immagine (cache yarn di `lms` e
+`frontend`, binario Cypress, layer BuildKit) supera i 2,9 GB liberi → `ENOSPC`. Indicata la
+sequenza di pulizia (prima elenco dei volumi, poi `docker buildx prune -af` sul builder di
+default e su `elite-builder`, `docker image prune -af`, `docker volume prune -af` dopo verifica),
+atteso recupero di circa 15-20 GB; a regime consigliati disco più grande (60-80 GB), pulizia
+periodica via cron e `CYPRESS_INSTALL_BINARY=0` nel Containerfile.
+
+Pulizia eseguita dall'utente sul runner: disco sceso a **12 GB usati / 18 GB liberi (40%)**;
+Docker residuo: 1 immagine (356 MB, in uso), 1 volume (3,77 GB, in uso — lo stato di
+`elite-builder`), Build Cache 2,18 GB tutta attiva. Spazio sufficiente per rilanciare il job;
+esito del nuovo job non ancora noto.
+
+**4. Utilizzo dell'AI**
+
+Claude Code (VS Code), modello Claude Opus 5.5: lettura del log CI di ~50k caratteri e
+separazione dei warning innocui dagli errori reali; controllo del pin razorpay nel repo.
+Scelto per la velocità di triage su log lunghi. Risultato: causa del fallimento individuata
+(disco pieno sul runner, ENOSPC in `yarn install`) e due messaggi classificati come non bloccanti.
+
+**6. Problematiche incontrate**
+
+Il primo log incollato era troncato; la diagnosi è stata chiusa con la seconda versione completa.
+
+---
+
+### Attività 5 — Verifica di prontezza per il merge upstream e procedura da seguire con l'architettura progettata il 18/09
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Analisi / supporto — nessuna modifica al codice |
+| **Problema riscontrato** | Domanda dell'utente: se volesse fare adesso il merge dall'upstream ed eseguire tutti i test necessari usando l'architettura progettata il 18/09 (inventario, rilevatore, guardia, percorso a release), cosa dovrebbe fare. |
+| **Problema effettivo** | L'architettura esiste **solo come documentazione** (commit `68e37b78`): verificato che nessuno degli strumenti è stato costruito — mancano `scripts/check_customizations.py`, `scripts/inventory_guard.py`, `docs/customizations/`, le skill `upstream-check` e `upstream-upgrade`, il workflow CI e `scripts/upstream_walk.py`. Presente solo il prerequisito git (remote `upstream`, `rerere.enabled=true`). Due fatti nuovi rispetto al 18/09: i file con marcatore `OSLMS-CUSTOM` sono passati da **12 a 15**, e i commit del 22-23/09 sulla funzione Programmi hanno aggiunto innesti in file upstream (`CourseDetail.vue`, `StudentHome.vue`, pagine Programs, `lms/lms/utils.py`, `lms_enrollment.py`) che l'inventario dovrà coprire, con o senza marcatore. Verificato invece che **non ci sono nuove release upstream**: l'ultima resta `v2.63.0`, quindi i dati di ampiezza misurati il 18/09 (8 release, 513 commit, salto frappe-ui in `v2.59.0`) sono ancora validi. |
+| **Soluzione applicata** | Nessuna modifica. Fornita all'utente la sequenza operativa: (1) costruire la Fase 0 in una sessione nuova (il piano è autosufficiente, e questa conversazione è troppo lunga per eseguirlo bene); (2) primo merge limitato a `v2.58.1`, guidato manualmente seguendo `docs/Procedura-Aggiornamento-Upstream.md` perché la skill `/upstream-upgrade` non esiste ancora; (3) `v2.59.0` (salto frappe-ui) come attività dedicata separata. Chiarito che senza Fase 1 «tutti i test necessari» significa: rilevatore, suite Vitest e backend già esistenti, build, e prova sul campo guidata dalla lista delle voci toccate. **Aggiornamento poco dopo:** nei minuti successivi un'altra sessione ha costruito la Fase 0 (commit da `410a2d26` a `65d73526`). Verificato eseguendo il rilevatore: 28 voci in inventario, 0 errori, 28 avvisi C4 attesi, hook `Stop` registrato in `.claude/settings.json`; le voci coprono anche gli innesti Programmi del 22-23/09. Il passo 1 della sequenza è quindi già fatto; si parte dal merge di `v2.58.1`. Spiegata inoltre all'utente, su sua richiesta, la funzione della Fase 0 in breve e il suo limite (verifica la presenza delle righe, non il comportamento). |
+| **Commit** | No — nessuna modifica da committare. |
+| **File modificati** | [docs/WORKLOG.md](WORKLOG.md). |
+| **Verifiche** | In sola lettura: presenza/assenza dei sette strumenti progettati; configurazione `remote` e `rerere`; commit dal 18/09; file toccati dai commit successivi al `68e37b78`; conteggio dei file con marcatore (15); ultima release upstream via `git ls-remote --tags upstream` (`v2.63.0`, nessun fetch). |
+
+**1. Obiettivo dell'attività**
+
+Dare all'utente la procedura concreta per un merge upstream con l'architettura progettata, partendo dallo stato reale del repository e non da quello descritto nei documenti.
+
+**2. Modalità di esecuzione**
+
+Verifica in sola lettura dello stato degli strumenti, del prerequisito git, dei commit recenti e delle release upstream disponibili, poi risposta operativa.
+
+**3. Attività svolte**
+
+Constatato che nessuno strumento progettato è stato costruito; rilevate le nuove personalizzazioni dei giorni successivi e l'aumento dei file marcati; confermata la validità dei dati di ampiezza del 18/09; fornita la sequenza in tre passi con la motivazione dell'ordine.
+
+**4. Utilizzo dell'AI**
+
+**Tool:** Claude Code. **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** verifica dello stato del repository e definizione della sequenza operativa. **Perché:** la risposta dipendeva dallo stato reale — cosa è stato costruito, cosa è cambiato in cinque giorni — che si accerta solo interrogando il repository. **Risultato:** sequenza operativa aderente allo stato attuale, con l'evidenza che la risposta «usa l'architettura» presupponeva strumenti non ancora esistenti. **Verifiche:** tutte le affermazioni sullo stato sono state controllate con comandi in sola lettura.
+
+**6. Problematiche incontrate**
+
+*L'architettura non è ancora software.* La domanda presupponeva strumenti utilizzabili; esistono solo i documenti. Nessuna causa tecnica: la costruzione non è stata ancora avviata. Gestita chiarendolo all'utente e indicando la Fase 0 come passo obbligato prima del merge.
+
+
+---
+
+### Attività 6 — Esecuzione della Fase 0 del sistema di verifica delle personalizzazioni: inventario, rilevatore di scostamento, CI, skill `/upstream-check`, guardia `Stop`
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Feature (strumento di sviluppo, nessun codice applicativo toccato) |
+| **Problema riscontrato** | Richiesta dell'utente: eseguire il piano `docs/superpowers/plans/2026-09-18-upstream-regression-harness-fase-0.md`. Esigenza di fondo, dallo spec del 18/09: dopo un merge upstream le personalizzazioni vengono «ripulite» senza che nessuno se ne accorga, e l'Attività 5 di oggi ha constatato che l'architettura esisteva solo come documentazione. |
+| **Problema effettivo** | Il piano era scritto sullo stato del 18/09: **12 file marcati `OSLMS-CUSTOM`**, oggi sono **15** (49 → 54 marcatori) per i commit sui Programmi del 22-23/09 (`StudentHome.vue`, `ProgramDetail.vue`, `ProgramEnrollment.vue`, un marcatore in più in `api.ts`). Il codice del piano era già verificato, quindi il lavoro reale era il Task 5: leggere ogni marcatore, capire **perché** esiste la personalizzazione, raggrupparli per regola e scegliere ancore che portino la regola (non il commento), uniche nel file. |
+| **Soluzione applicata** | Eseguiti gli 8 task nell'ordine, un commit per task, codice copiato dal piano senza varianti. (1) `scripts/customizations/model.py`: caricamento e validazione dell'inventario TOML (solo stdlib, `tomllib`). (2-3) `checks.py`: C1 ancora persa, C2 file sparito, C3 marcatore non censito, C4 voce senza test (avviso). (4) `report.py` + `scripts/check_customizations.py`: tabella/JSON, uscita 0/1/2. (5) `docs/customizations/spa-grafts.toml` con **28 voci** sui 15 file, più `README.md` (schema, criterio del `layer`, scelta dell'ancora, regola di manutenzione). Censita anche la regola Docente in `isAdmin` di `CourseCardOverlay.vue`, che non porta marcatore ma è l'esempio del piano. 4 voci a `confidence = "low"` perché la motivazione non è scritta nel codice: sezione «Course content» rimossa, recensioni rimosse, card autore rimossa (e l'insieme resta da confermare col committente). (6) `.github/workflows/customizations.yml`, nuovo file, nessuna modifica ai workflow upstream. (7) opzione `--list-files` + skill `.claude/skills/upstream-check/SKILL.md`. (8) `scripts/inventory_guard.py` + hook `Stop` unito a `.claude/settings.json` (conservato `enabledPlugins`). |
+| **Commit** | Sì, branch `feature/oslms`, non pushati: `d2005e15c` feat(customizations): add the inventory model and its loader · `20b1b7417` feat(customizations): detect lost anchors and vanished files · `9e58179e8` feat(customizations): flag uncatalogued markers and entries without tests · `410a2d26c` feat(customizations): add the drift detector command line · `e4f8005a7` docs(customizations): catalogue the OSLMS-CUSTOM grafts · `997ed477f` ci: run the customization drift detector on every pull request · `24d5b4981` feat(customizations): add the upstream-check skill and the watched file listing · `65d735266` feat(customizations): guard turn end against uncatalogued markers. |
+| **File modificati** | Tutti nuovi tranne l'ultimo: [scripts/__init__.py](../scripts/__init__.py), [scripts/customizations/](../scripts/customizations/) (`__init__.py`, `model.py`, `checks.py`, `report.py`), [scripts/check_customizations.py](../scripts/check_customizations.py), [scripts/inventory_guard.py](../scripts/inventory_guard.py), [scripts/tests/](../scripts/tests/) (`__init__.py`, `test_model.py`, `test_checks.py`, `test_report.py`, `test_guard.py`), [docs/customizations/spa-grafts.toml](customizations/spa-grafts.toml), [docs/customizations/README.md](customizations/README.md), [.github/workflows/customizations.yml](../.github/workflows/customizations.yml), [.claude/skills/upstream-check/SKILL.md](../.claude/skills/upstream-check/SKILL.md), [.claude/settings.json](../.claude/settings.json) (prima non tracciato, ora committato con l'hook). |
+| **Verifiche** | `python3 -m unittest discover -s scripts/tests -t . -v` → **40 test, tutti OK** (9 + 12 + 10 + 9), ogni task verificato prima del commit. Rilevatore sul repository reale → `Inventario: 28 voci`, **`Esito: 0 errori, 28 avvisi`** (tutti `C4 nessun test collegato`, attesi in Fase 0), uscita 0, 0,3 s. Script di controllo: ogni `anchor` compare **esattamente una volta** nel suo file. `--json` validato con `json.tool`. `--list-files` → i 15 file. Diff mirato della skill provato su merge reali: vuoto su `6a5b54cba` (merge v2.58.0: i file censiti sono rimasti identici al nostro lato), **9 file** su `3caf07639` (`upstream/main` in `feature/update-version`). Guardia provata via stdin come la esegue l'hook: silenziosa con tutto censito; `{"decision": "block"}` che nomina `frontend/src/GuardProbe.vue` con un marcatore di prova; silenziosa al secondo passaggio nella stessa sessione; file di prova e sentinella rimossi. `jq` su `.claude/settings.json`: hook e `enabledPlugins` entrambi presenti. **Non eseguiti**: `ruff` (non installato sull'host, e il piano vieta di installare dipendenze); il workflow CI su GitHub (parte al primo push). L'hook entra in vigore solo dopo `/hooks` o una nuova sessione. |
+
+**1. Obiettivo dell'attività**
+
+Rendere operativa la Fase 0 del sistema di verifica delle personalizzazioni: dopo un merge upstream, sapere in meno di un secondo quali innesti sono stati ripuliti, e impedire che l'inventario invecchi quando si aggiungono nuove personalizzazioni.
+
+**2. Modalità di esecuzione**
+
+Esecuzione del piano task per task in sessione unica, con test prima di ogni commit. Codice dei Task 1-4, 6-8 estratto dal piano per intervalli di riga (tabulazioni preservate) e verificato. Task 5 svolto a mano: lettura di tutti i marcatori con il contesto, lettura del codice attorno per capire la regola, raggruppamento in voci, controllo automatico di unicità delle ancore.
+
+**3. Attività svolte**
+
+- Costruiti modello, quattro controlli, resa, riga di comando, guardia e relativi test (40).
+- Censite 28 personalizzazioni sui 15 file marcati: card corso (gate Docente, niente iscrizione per il Valutatore, certificato non duplicato, certificato TrueSkills, programma al posto delle statistiche, card che sparisce se vuota), trattamento mobile (barra «Continue Learning», programma in fondo, card completa sul tablet), pagina corso (hero, istruttori nascosti agli studenti, introduzione su più righe, descrizione comprimibile, sezioni in evidenza, colori dei tag, tre blocchi upstream rimossi), programma del corso (chevron, badge tag, stato AI), video Plyr, batch (descrizione su più righe, video), programmi (descrizione, riga in home, corsi non pubblicati visibili ai membri), traduzione dell'indice nel TextEditor.
+- Scritto il README dell'inventario, aggiunti workflow CI, skill e hook.
+- **Lacuna segnalata, non colmata (fuori dal perimetro del piano):** gli innesti dei Programmi **senza marcatore** in file upstream — guardia in `CourseDetail.vue`, `is_course_in_member_program` in `lms/lms/utils.py`, eccezione in `lms_enrollment.py` — non sono nell'inventario. C3 non li vede perché cerca solo il marcatore. Vanno censiti (e marcati) in un passo successivo; per le parti Python serve decidere il `layer`, perché `spa-graft` è pensato per la SPA.
+
+**4. Utilizzo dell'AI**
+
+**Tool:** Claude Code (estensione VS Code). **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** esecuzione dell'intero piano — scrittura dei file, esecuzione dei test, catalogazione dei marcatori, commit. **Perché questo tool e questo modello:** il piano era scritto per un agente e il Task 5 richiede di leggere e capire una cinquantina di punti di codice sparsi su 15 file, cosa che un modello con contesto ampio fa in un'unica passata mantenendo coerenti le voci tra loro. **Risultato:** 8 commit, 40 test verdi, rilevatore a 0 errori sul repository reale. **Verifiche e correzioni:** due estrazioni dal piano hanno incluso la riga di chiusura del blocco di codice (errore di sintassi nel test, corretto subito e rilanciato); un primo controllo del diff mirato è risultato vuoto per un errore dello script di prova (in zsh una variabile non quotata non si divide in parole), non del comando della skill: rifatto correttamente. Nei commit l'attribuzione è `Claude Opus 5.5 (1M context)` invece della `Claude Opus 5` scritta nel piano, perché è il modello che ha effettivamente eseguito il lavoro.
+
+**6. Problematiche incontrate**
+
+*Piano scritto su uno stato superato.* Il piano contava 12 file e 49 marcatori; i commit sui Programmi li hanno portati a 15 e 54. Gestita censendo anche i file nuovi: il criterio di completamento (zero C3) lo imponeva comunque. *Ruff non disponibile.* Il vincolo «solo libreria standard» vieta di installarlo per questa fase; lo stile (tab, 110 colonne, virgolette doppie) è quello del codice del piano, già conforme, ma il controllo formale lo farà pre-commit/CI.
+
+---
+
+### Attività 7 — Verifica che le correzioni ai Programmi del mattino siano intatte dopo la costruzione della Fase 0, e copertura dell'inventario
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Verifica — nessuna modifica al codice |
+| **Problema riscontrato** | Dopo la costruzione della Fase 0 da parte di un'altra sessione, l'utente ha chiesto se le correzioni ai Programmi committate alle 10:20 (`388292605`, `cc402ce04`) fossero ancora presenti. |
+| **Problema effettivo** | Le correzioni sono **intatte**: entrambi i commit sono antenati di `HEAD`, i 14 file che toccano sono identici allo stato di `cc402ce04` (`git diff cc402ce04 HEAD` vuoto su quei file), e nessun commit della Fase 0 ha toccato file dei Programmi. Emerso però un **buco di copertura**: l'inventario è stato costruito dai marcatori `OSLMS-CUSTOM`, e 4 file **upstream** modificati dalla correzione Programmi non portano marcatore e non sono censiti — `frontend/src/pages/Courses/CourseDetail.vue`, `frontend/src/utils/sanitizeRichHTML.ts`, `lms/lms/doctype/lms_enrollment/lms_enrollment.py`, `lms/lms/utils.py` (verificato che esistono tutti in `v2.63.0`). Oggi sono al loro posto, ma dopo un merge che li riscrivesse il rilevatore riporterebbe `0 errori`. `lms/lms/utils.py` è fra i file toccati già dalla prima release del percorso (`v2.58.1`). |
+| **Soluzione applicata** | Nessuna modifica: confermata all'utente l'integrità delle correzioni e segnalato il buco di copertura con la proposta di censire i quattro file (con marcatore) prima del merge. In attesa di sua decisione. |
+| **Commit** | No — nessuna modifica. |
+| **File modificati** | [docs/WORKLOG.md](WORKLOG.md). |
+| **Verifiche** | `git merge-base --is-ancestor` sui due commit; `git diff --name-only cc402ce04 HEAD` ristretto ai 14 file della correzione (vuoto); elenco dei file toccati dai commit Fase 0 (nessuno dei Programmi); confronto fra i file della correzione e i `sites` dell'inventario; presenza dei file non censiti nell'albero di `v2.63.0` con `git cat-file -e`. |
+
+**1. Obiettivo dell'attività** — Rassicurare l'utente con una verifica oggettiva sull'integrità delle correzioni del mattino.
+
+**2. Modalità di esecuzione** — Controlli git in sola lettura sulla storia del branch e sul contenuto dei file, più un confronto fra i file della correzione e la copertura dell'inventario.
+
+**3. Attività svolte** — Verificata l'integrità dei due commit e dei 14 file; individuati 4 file upstream della correzione non coperti dall'inventario perché privi di marcatore; segnalato che il primo di questi rischi si presenterebbe già al merge di `v2.58.1`.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code. **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** verifica dell'integrità dei commit e della copertura dell'inventario. **Perché:** la risposta richiedeva di confrontare storia git e contenuto dei file, non di ragionare sul progetto. **Risultato:** conferma oggettiva dell'integrità e individuazione di un buco di copertura non visibile dal rilevatore. **Verifiche:** tutte eseguite con comandi in sola lettura.
+
+**6. Problematiche incontrate** — *L'inventario copre solo le personalizzazioni marcate.* Le modifiche backend e di alcune pagine della correzione Programmi non hanno il marcatore `OSLMS-CUSTOM`, quindi né l'inventario né il controllo inverso C3 le vedono. Causa: la Fase 0 costruisce l'inventario a partire dai marcatori, per progetto. Non risolta: richiede la decisione dell'utente.
+
+---
+
+### Attività 8 — Censimento nell'inventario delle guardie Programmi non marcate, e misura del buco di copertura della Fase 0
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Correzione (copertura dell'inventario) + analisi |
+| **Problema riscontrato** | Seguito dell'Attività 7: quattro file upstream modificati dalla correzione Programmi del mattino non erano coperti dall'inventario. L'utente ha chiesto di censirli. |
+| **Problema effettivo** | La voce esistente `program-member-unpublished-course` affermava nell'intento che «le guardie server-side sono os_lms»: **falso**, due delle tre guardie (`get_course_details` in `lms/lms/utils.py` e `validate_course_enrollment_eligibility` in `lms_enrollment.py`) stanno in file upstream, e per questo erano state lasciate fuori. Causa di fondo, più ampia: la Fase 0 costruisce l'inventario **dai marcatori** `OSLMS-CUSTOM`, e la gran parte delle modifiche del fork a file upstream non ha marcatore. Misurato isolando i soli commit nostri (`git log --no-merges v2.58.0..HEAD --not --remotes=upstream --tags`: 202 commit): **106** file upstream toccati (esclusi traduzioni e test), solo **12** con marcatore, **94** senza; di questi **83** sono modificati anche dall'upstream fra `v2.58.0` e `v2.63.0`, quindi a rischio reale al merge. È un limite inferiore: innesti precedenti a `v2.58.0` e sopravvissuti al merge di luglio non rientrano nella finestra (es. `CourseForm.vue`, +14/−9 rispetto a `v2.58.0`, non censito e toccato già da `v2.58.1`). Fra i non censiti c'è il gate del Gestore `canManageOsIntegrations` in `Settings/Settings.vue` — cioè l'esempio da cui l'utente era partito. File a rischio non censiti toccati già dal primo passo `v2.58.1`: `CourseOutline.vue`, `lms/lms/api.py`, `course_lesson.py`, `lms_quiz.py`, più `CourseForm.vue`. |
+| **Soluzione applicata** | Aggiunti 5 marcatori `OSLMS-CUSTOM` (solo commenti, nessuna riga di codice modificata) in `lms/lms/utils.py` (definizione di `is_course_in_member_program` e guardia di `get_course_details`), `lms_enrollment.py`, `CourseDetail.vue`, `sanitizeRichHTML.ts`. Estese le due voci esistenti invece di crearne di nuove, perché è una regola sola su più file: `program-member-unpublished-course` passa da 1 a 5 siti con l'intento corretto e il test backend reale collegato (`test_program_course_access.py`); `program-description` acquisisce il sito `hasRichContent`. Il buco di copertura generale è stato **segnalato, non corretto**: richiede una decisione dell'utente. Su domanda dell'utente («sono ancora attività previste per la Fase 0?») chiarito, verificando il documento di progetto (§6.1 riga 142 e tabella delle fasi §11), che la Fase 0 prevedeva solo i 49 innesti marcati ed è completa; i gate per ruolo non marcati erano previsti in Fase 1 (`roles.toml`); le altre modifiche non marcate **non erano previste da nessuna fase**, perché il progetto presupponeva che i marcatori coprissero le personalizzazioni e il controllo C3 vede solo file già marcati. Proposta una «Fase 0-bis — completamento dell'inventario» prima del primo merge. |
+| **Commit** | No — non committata: in attesa di indicazione dell'utente. |
+| **File modificati** | `lms/lms/utils.py`, `lms/lms/doctype/lms_enrollment/lms_enrollment.py`, `frontend/src/pages/Courses/CourseDetail.vue`, `frontend/src/utils/sanitizeRichHTML.ts` (solo commenti), `docs/customizations/spa-grafts.toml`, `docs/WORKLOG.md`. |
+| **Verifiche** | Rilevatore **prima** dell'aggiornamento dell'inventario: 4 errori C3, esattamente sui quattro file (prova che il controllo inverso li vede); **dopo**: 0 errori, 27 avvisi (erano 28: la voce Programmi ha ora un test collegato). **Simulazione di merge** su una copia fuori dal repository con la guardia rimossa da `utils.py`: il rilevatore riporta `C1 program-member-unpublished-course … lms/lms/utils.py` — prima di questa modifica la stessa simulazione avrebbe dato 0 errori. `py_compile` sui due file Python: ok. Suite del rilevatore: ok. Guardia di fine turno: silenziosa. Diff complessivo sul codice: 5 righe aggiunte e 1 modificata, **tutte commenti**. Unicità delle ancore verificata con `grep -c`. Ruff non installato sull'host: lint non eseguito. Conteggi di copertura verificati due volte: il primo conteggio (157) includeva commit upstream arrivati da un vecchio merge di `upstream/develop` ed è stato scartato. |
+
+**1. Obiettivo dell'attività** — Proteggere dal prossimo merge le guardie della correzione Programmi e verificare quanto l'inventario copra davvero le personalizzazioni.
+
+**2. Modalità di esecuzione** — Lettura dei diff reali dei due commit sui quattro file; marcatori come soli commenti; estensione delle voci esistenti; verifica con il rilevatore prima e dopo e con una simulazione di merge su copia; misura della copertura isolando i soli commit nostri.
+
+**3. Attività svolte** — Marcati e censiti i quattro file; corretto l'intento errato della voce Programmi; collegato il test backend esistente; dimostrato con una simulazione che il rilevatore ora intercetta la perdita della guardia; misurato il buco di copertura generale e individuati i file a rischio già al primo passo del percorso.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code. **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** censimento, verifica e misura della copertura. **Perché:** servivano diff, simulazione su copia e conteggi incrociati sulla storia git. **Risultato:** guardie Programmi protette e un quadro misurato della copertura reale. **Verifiche e correzioni:** un primo conteggio di copertura (157) era gonfiato da commit upstream e l'ho scartato dopo averlo verificato; la misura buona isola i commit nostri escludendo tutti i riferimenti upstream e i tag.
+
+**6. Problematiche incontrate** — *L'inventario della Fase 0 copre solo le personalizzazioni marcate.* Circa l'11% dei file upstream toccati dai nostri commit ha un marcatore; il resto è invisibile al rilevatore, compreso il gate del Gestore. Non risolta: è un lavoro di censimento di dimensione rilevante, da decidere con l'utente. *Primo conteggio sbagliato.* Includeva commit upstream presenti nel branch per un vecchio merge di `upstream/develop`; rilevato perché il numero era implausibile, rifatto escludendo `--remotes=upstream --tags`. Risolta.
+
+---
+
+### Attività 9 — Fase 0-bis: censimento dei cinque file toccati dal primo merge (v2.58.1), e due personalizzazioni probabilmente già perse
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Correzione (copertura dell'inventario) + analisi |
+| **Problema riscontrato** | Richiesta dell'utente (opzione «Commit + censimento dei 5 file»): committare le modifiche Programmi e censire i cinque file upstream con modifiche nostre non marcate che `v2.58.1` riscrive — `CourseForm.vue`, `CourseOutline.vue`, `lms/lms/api.py`, `course_lesson.py`, `lms_quiz.py` — così da poter fare il primo merge con tutti i file coinvolti sotto sorveglianza. |
+| **Problema effettivo** | Per ogni file isolate le modifiche **nostre** dai commit non raggiungibili dall'upstream (`--not --remotes=upstream --tags`), non dal diff grezzo contro `v2.58.0`, che include formattazione e residui di merge. Emersi tre fatti. **Due sostituzioni upstream in `v2.58.1`**: `7e5a825e`/`48252d92` correggono da sé il bug di `send_private_file` che avevamo corretto il 14/07 (`e4c34671`), e `567da4f1` irrobustisce la consegna dei quiz contro input malformati, area sovrapposta alla nostra correzione sulle domande saltate (`17e39bfa`). **`CourseForm.vue` non ha commit nostri dopo `v2.58.0`**: le sue differenze vengono dalla risoluzione dei conflitti del merge di luglio, e le personalizzazioni attuali sono due componenti os_lms montati (`OsCourseDetailForm`, `OsCourseSettings`), non gli innesti per sezione descritti nella memoria di progetto. **Due personalizzazioni probabilmente già perse**, secondo la memoria `courseform-sectioned-custom-grafts`: (1) il Docente in `checkPermission()` — aggiunto il 01/06 (`943065cb`) e modificato il 04/06 dal commit «fix merge problems on course and lesson form» (`6d6d2af7`); oggi `checkPermission` ammette solo moderatori e istruttori del corso ed è chiamata a ogni caricamento del corso, quindi un Docente non istruttore di quel corso viene rimandato alla lista corsi, contro la decisione di giugno «Docente = istruttore globale»; (2) la protezione di salvataggio in `updateCourse()` (paragrafo con spazio a larghezza zero quando la descrizione contiene solo media) non esiste più né in `CourseForm.vue` né in `oslms/`. Entrambe **da confermare con l'utente**: potrebbero essere state rimosse di proposito. |
+| **Soluzione applicata** | Commit delle modifiche Programmi (`bd2f8cb1`). Censiti i cinque file: 6 marcatori `OSLMS-CUSTOM` (solo commenti) e 5 voci nuove in `spa-grafts.toml` in una sezione dedicata «Censimento 2026-09-23» — `course-form-os-sections` (2 siti), `course-outline-editor-hash`, `profile-own-without-lms-role`, `lesson-pdf-inline-filename`, `quiz-submit-unanswered` (con il test `test_lms_quiz.py` collegato). Le due voci toccate dalle sostituzioni upstream riportano nell'intento l'istruzione per il merge: preferire la versione upstream nella parte sovrapposta e far sopravvivere solo la parte nostra non coperta. Le due personalizzazioni probabilmente perse sono state **segnalate, non ripristinate**; l'utente ha poi **confermato che il comportamento attuale è corretto** (nessun bypass Docente in `checkPermission`, nessuna protezione di salvataggio): non sono perdite, restano così. Decisione registrata nella memoria di progetto. Chiusa inoltre la revisione prevista dal piano della Fase 0: le tre voci a bassa confidenza (`course-content-section-removed`, `course-reviews-removed`, `course-creator-card-removed`, rimozioni dalla pagina corso) sono state confermate volute dall'utente e portate a `confidence = "high"` (commit `e3cbd6cb`); verificati i quattro criteri di completamento del piano Fase 0 (40 test verdi, rilevatore 0 errori, skill presente, hook registrato con plugin preservati). Consigliato all'utente di proseguire il merge in una sessione nuova e di chiudere quella che ha costruito la Fase 0, per evitare che due sessioni modifichino l'inventario partendo da versioni diverse. Chiarito poi all'utente che la skill esistente `/upstream-check` serve dopo il merge (solo rapporto) e che quella che esegue il merge, `/upstream-upgrade`, è solo progettata: per `v2.58.1` basta una riga di prompt che rimanda alla procedura, perché le specificità della release sono già negli intent dell'inventario e nella memoria. Proposta una versione leggera di `/upstream-upgrade` (solo skill, senza lo script del progetto completo), in attesa di decisione. Commit del censimento `0c4edec8`. Aggiornata la memoria di progetto su `CourseForm`, che descriveva una struttura non più esistente. |
+| **Commit** | `bd2f8cb1` — `docs(customizations): catalogue the program-membership guards`; `0c4edec8` — `docs(customizations): catalogue unmarked grafts touched by v2.58.1`. Non pushati. Worklog non committato come da convenzione. |
+| **File modificati** | `frontend/src/pages/Courses/CourseForm.vue`, `frontend/src/components/CourseOutline.vue`, `lms/lms/api.py`, `lms/lms/doctype/course_lesson/course_lesson.py`, `lms/lms/doctype/lms_quiz/lms_quiz.py` (solo commenti), `docs/customizations/spa-grafts.toml`, `docs/WORKLOG.md`. |
+| **Verifiche** | Rilevatore dopo i marcatori e prima delle voci: esattamente i 5 file in C3. Dopo le voci: **0 errori**, 31 avvisi, 33 voci. **Merge simulato su copia** togliendo la prima ancora di ciascuna delle 5 voci nuove: 5 errori C1, uno per voce. Univocità delle 6 ancore verificata con `grep -cF`. `py_compile` sui tre file Python: ok. Suite del rilevatore: ok. Guardia di fine turno: silenziosa. Vitest `courseOutline.test.ts`: 11/11 (il marcatore sta dentro un oggetto JavaScript). Diff sul codice: ogni riga cambiata è un commento. Verificato che `.claude/settings.json` con l'hook è tracciato (committato in `65d73526`). Ruff non installato sull'host. |
+
+**1. Obiettivo dell'attività** — Mettere sotto sorveglianza tutti i file che il primo merge (`v2.58.1`) tocca e che contengono modifiche nostre, così che il merge possa essere fatto con il rilevatore realmente informativo.
+
+**2. Modalità di esecuzione** — Per ciascun file: commit nostri isolati escludendo i riferimenti upstream; lettura dei diff; confronto con i commit upstream di `v2.58.1` sugli stessi file; marcatori come soli commenti; una voce per personalizzazione; verifica prima/dopo e con merge simulato.
+
+**3. Attività svolte** — Censiti cinque file con sei ancore; documentate nelle voci le due sostituzioni upstream con l'istruzione per il merge; scoperto che la memoria su `CourseForm` era superata e che due personalizzazioni lì descritte non esistono più nel codice; aggiornata la memoria; due commit.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code. **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** censimento, confronto con i commit upstream, verifica. **Perché:** distinguere le modifiche nostre da formattazione e residui di merge richiede interrogare la storia git con i giusti filtri, e confrontarle con i commit upstream della release successiva è ciò che ha fatto emergere le due sostituzioni. **Risultato:** i cinque file del primo merge sono ora sorvegliati, con istruzioni di merge nelle voci dove l'upstream si sovrappone. **Verifiche e correzioni:** vedi campo «Verifiche»; nessuna correzione necessaria.
+
+**6. Problematiche incontrate** — *Personalizzazioni probabilmente perse in un merge precedente.* Il Docente in `checkPermission` di `CourseForm.vue` e la protezione di salvataggio non esistono più. Causa probabile: il commit «fix merge problems» del 04/06, cioè esattamente il fenomeno che questo sistema deve intercettare, avvenuto prima che esistesse. Verifica: `git log -S is_docente` sul file e ricerca della protezione in `oslms/`. Non risolte: serve la conferma dell'utente. *Memoria di progetto superata.* Descriveva innesti per sezione su `CourseForm`; oggi la struttura è a due componenti os_lms. Risolta aggiornando la memoria.
+
+---
+
+### Attività 10 — Mandato di costruzione della skill `/upstream-upgrade` (versione 1), per una sessione nuova
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Progettazione / documentazione — nessuna modifica al codice |
+| **Problema riscontrato** | L'utente vuole lanciare un solo comando che mostri le release upstream disponibili, gli faccia sceglierne una, crei un branch dedicato partendo da `feature/oslms` (o chiedendo da quale), esegua l'aggiornamento senza conflitti irrisolti e senza perdere personalizzazioni, e in caso di dubbio gli chieda e decida con lui. Vuole costruirlo in una sessione nuova e ha chiesto cosa fare. |
+| **Problema effettivo** | La skill che fa il merge, `/upstream-upgrade`, era solo progettata (documento del 18/09), e le decisioni nuove di oggi non erano scritte: la domanda sul branch di partenza, la regola esplicita «nel dubbio, chiedi», la fermata per le release che toccano modifiche nostre non censite (circa 78 file fuori inventario) e la scelta di una v1 fatta di skill più il solo script del piano. Senza scriverle, la sessione nuova avrebbe richiesto un prompt lungo o avrebbe ricostruito le decisioni da zero. |
+| **Soluzione applicata** | Presentato all'utente il design breve, che lo ha approvato chiedendo di costruirlo altrove. Aggiunta al documento di progetto la **§15 «Versione 1 da costruire»**, scritta come mandato autosufficiente: richieste del committente, stato di partenza verificato, scope (`SKILL.md`, `scripts/upstream_plan.py` con test, aggiornamento della procedura), fuori scope (motore `step`/`resume`), flusso in 9 passi, sette fermate (le sei di §8 più la nuova F7 per le modifiche non censite), sei regole con «nel dubbio, chiedi» al primo posto, criteri di completamento verificabili sul repository reale. Annotati i due tranelli già incontrati (modificatori zsh, conteggio gonfiato senza `--not --remotes=upstream --tags`). Stato del documento aggiornato. |
+| **Commit** | `388c1007` — `docs(upstream): specify version 1 of the upstream-upgrade skill`. Non pushato. |
+| **File modificati** | `docs/superpowers/specs/2026-09-18-upstream-release-walk-design.md`, `docs/WORKLOG.md`. |
+| **Verifiche** | Stato di partenza descritto nella §15.2 verificato nel corso della giornata: remote e `rerere`, criteri di completamento della Fase 0, 33 voci e 0 a bassa confidenza, file di `v2.58.1` censiti. I criteri di §15.6 sono formulati su dati già misurati (bump frappe-ui in `v2.59.0` e `v2.62.0`, 3 rotture in `v2.63.0`), così la sessione di costruzione può verificare il proprio lavoro contro valori noti. |
+
+**1. Obiettivo dell'attività** — Permettere la costruzione della skill in una sessione nuova con un prompt di una riga.
+
+**2. Modalità di esecuzione** — Design breve presentato e approvato; decisioni del giorno consolidate in una sezione del documento di progetto esistente; commit.
+
+**3. Attività svolte** — Scritta la §15; aggiornato lo stato del documento; preparate per l'utente le istruzioni operative per la sessione nuova.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code. **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** consolidamento in un mandato scritto delle decisioni prese in una conversazione lunga. **Perché:** il contesto di questa sessione conteneva tutte le decisioni e i tranelli incontrati; trascriverli nel documento è ciò che rende la sessione nuova autonoma. **Risultato:** mandato di costruzione con criteri verificabili. **Verifiche:** criteri basati su valori già misurati.
+
+**6. Problematiche incontrate** — Nessuna.
+
+*Nota successiva (stessa giornata):* verificato che la skill è stata costruita e già usata in un'altra sessione — percorso `v2.58.0 → v2.63.0` sul branch `merge/upstream-v2.63.0`, completate `v2.58.1`, `v2.59.0`, `v2.60.0`, `v2.60.1`, fermata attiva F6+F7 su `v2.61.0` (32 file non censiti, `CourseOverview` congelata toccata). Spiegato all'utente come gestire il contesto al 50%: la skill salva lo stato in `.git/oslms-upstream-walk.json` dopo ogni evento, quindi si chiude la sessione e si riprende con `/upstream-upgrade` in una nuova; momento ideale a fine release o su una fermata; evitare `/compact` durante il percorso; non far lavorare due sessioni sullo stesso repository contemporaneamente.
+
+*Nota successiva:* la guardia hook `Stop` di questa sessione si è attivata su 18 file con marcatori non censiti. Verificato che sono modifiche non committate dell'altra sessione, ferma sulla fermata F7 di `v2.61.0` a censimento in corso (marcatori già aggiunti, inventario non ancora aggiornato). Nessun intervento, di proposito: modificare l'inventario da qui avrebbe messo due sessioni sullo stesso file. Emerso un limite della guardia: non distingue i marcatori aggiunti dalla sessione corrente da quelli di un'altra sessione sullo stesso working tree. Possibile miglioramento (limitare il controllo ai file toccati dalla sessione) segnalato all'utente, non applicato.
+
+
+
+
+
+
+### Attività 11 — Costruzione della versione 1 della skill `/upstream-upgrade` e del piano `scripts/upstream_plan.py`
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Feature (strumenti di sviluppo) |
+| **Problema riscontrato** | Richiesta dell'utente: costruire la versione 1 di `/upstream-upgrade` secondo la §15 del documento `docs/superpowers/specs/2026-09-18-upstream-release-walk-design.md` — un solo comando che mostri le release upstream, faccia scegliere fin dove arrivare e da quale branch partire, crei il branch e attraversi le release senza conflitti irrisolti né personalizzazioni perse, chiedendo a ogni dubbio. |
+| **Problema effettivo** | Tre prescrizioni del mandato, applicate alla lettera, davano risultati sbagliati, scoperti misurando sul repository reale: (1) le rotture `!` di frappe/lms non stanno nei soggetti dei commit ma nel corpo dei commit di merge delle PR (titolo della PR in seconda riga): cercando nei soggetti `v2.63.0` risultava con 0 rotture invece di 3; (2) `git log … --not --remotes=upstream --tags` esclude anche i tag del fork (`ve1.0.1`, `vi1.0.6`, `vi1.0.7`), che stanno sul nostro branch, e fa sparire 535 dei nostri 741 commit (verificato: tutti di Riccardo Liciotti e Gabriele Pagnotta); (3) di conseguenza i file con modifiche nostre non censite sono 154 e non «circa 78». Inoltre `git diff --name-only` mostra solo il percorso nuovo di un file rinominato, e un nostro file rinominato dall'upstream sfuggirebbe agli incroci. |
+| **Soluzione applicata** | **`scripts/upstream_plan.py`** (sola libreria standard, stile del rilevatore: tab, bootstrap di `sys.path`, `subprocess` con liste di argomenti): trova la base (ultimo tag `vX.Y.Z` antenato di `HEAD`, ignorando i tag del fork), elenca le release successive discendenti dalla base in ordine di versione, e per ciascuna calcola commit (`rev-list --count`) e file (`diff --name-status -z`: un rinomino conta 1 ma porta entrambi i percorsi negli incroci), rotture (ogni riga del messaggio, soggetto e corpo, più il piè `BREAKING CHANGE:`, senza duplicati), versione di `frappe-ui` e salto rispetto alla precedente, voci di inventario toccate, pagine congelate il cui originale è toccato (`overrides/<rel>` → `frontend/src/<rel>`), file con modifiche nostre non censiti (commit nostri = `--not --remotes=upstream` + i soli tag di release upstream; il file deve esistere al tag base, differire ancora da esso, non avere marcatore né voce; esclusi traduzioni, test, `yarn.lock`, `components.d.ts`); raccomandazione = ultima release prima del primo bump o rottura (o la prima da sola se è lei quella rischiosa). Uscita a tabella e `--json`, opzioni `--from/--to/--head`, codice 2 se il piano non è calcolabile. **`scripts/tests/test_upstream_plan.py`**: 28 test, funzioni pure più un repository git temporaneo che riproduce i tranelli reali (tag del fork su un nostro commit, vecchio merge di `upstream/develop`, rottura nel corpo di un merge, override congelato, file marcato, file censito, test escluso). **`.claude/skills/upstream-upgrade/SKILL.md`**: regole («nel dubbio, chiedi» per prima), stato in `$(git rev-parse --git-dir)/oslms-upstream-walk.json` con formato definito, passi 0-7 (controlli, fetch, piano, due domande con `AskUserQuestion`, branch con baseline del rilevatore e rapporto di percorso, ciclo per release, chiusura con suite completa, `/upstream-check`, lista di cosa provare con ruolo), ripresa di un percorso interrotto. Nel ciclo le fermate di giudizio F7, F6, F4, F5 si valutano **prima** del merge dal piano; poi merge `--no-ff --no-commit` (F1, con controllo delle risoluzioni `rerere`), rilevatore differenziale, commit del merge, ripristini F2 in commit separati `fix(oslms): restore <id> after <tag>`, build (F3) con gestione di `frappe-ui-colors.json` tracciato e rigenerato dalla build. Il `migrate` del DB di sviluppo per i test backend va chiesto, perché non si annulla cambiando branch. **Procedura** aggiornata (⚙️ tolti dai passi reali, ciclo e fermate a sette, comando del piano). **Documento di progetto**: aggiunta §15.7 con le tre correzioni e le scelte non previste. |
+| **Commit** | Non committata: l'utente non ha chiesto il commit. |
+| **File toccati** | Nuovi: `scripts/upstream_plan.py`, `scripts/tests/test_upstream_plan.py`, `.claude/skills/upstream-upgrade/SKILL.md`. Modificati: `docs/Procedura-Aggiornamento-Upstream.md`, `docs/superpowers/specs/2026-09-18-upstream-release-walk-design.md` (§15.7), `docs/WORKLOG.md`. |
+| **Verifiche** | Criterio 1: `python3 -m unittest discover -s scripts/tests -t .` → 68 test OK (40 esistenti + 28 nuovi); il test sui file nostri è stato visto fallire con la formula `--tags` prima della correzione. Criterio 2: `python3 scripts/upstream_plan.py` sul repository reale (1,4 s) → base `v2.58.0`, release `v2.58.1`→`v2.63.0` con commit/file uguali alla §3.4, bump `frappe-ui` in `v2.59.0` (`^1.0.0-beta.7 → ^1.0.0-beta.24`) e in `v2.62.0` (`→ 1.0.0-beta.29`), 3 rotture in `v2.63.0`, 0 non censiti in `v2.58.1`, raccomandazione `v2.58.1`. Controllo a campione di un file emerso con la correzione: `frontend/src/App.vue` porta davvero modifiche nostre (bottone del tutor AI, popup di installazione rimosso). Criterio 3: la skill compare fra quelle disponibili; passi 0-2 eseguiti a mano (stato: solo `docs/WORKLOG.md` e file non tracciati, tollerati; `git fetch upstream --tags` riuscito; piano corretto); il branch **non** è stato creato: il merge non fa parte della costruzione e cambiare branch avrebbe spostato il lavoro in corso. Ruff 0.8.1 (versione del pre-commit, installato in un venv temporaneo): check e format puliti sui file nuovi. Rilevatore: 0 errori. |
+
+**1. Obiettivo dell'attività** — Rendere eseguibile `/upstream-upgrade`, in modo che il primo aggiornamento reale (`v2.58.1`) possa partire con un solo comando e fermarsi solo dove serve una decisione.
+
+**2. Modalità di esecuzione** — Lettura del mandato e dei componenti esistenti (rilevatore, inventario, guardia, skill `/upstream-check`, procedura); misura sul repository reale di ogni dato che il piano deve produrre prima di scrivere codice; scrittura del motore e dei test; confronto dei risultati con i valori noti della §3.4; scrittura della skill; aggiornamento di procedura e documento di progetto.
+
+**3. Attività svolte** — Misurati conteggi di commit e file per release, versioni di `frappe-ui` ai tag, posizione delle rotture nei messaggi, effetto di `--tags` e dei rinomini; scritti motore (circa 480 righe) e 28 test; corretta la formula dei commit nostri dopo averla vista fallire nel test; formattazione ruff; scritta la skill; verificati i riferimenti che cita (id di voce, nomi di memoria, `git log --grep` sul corpo dei merge); aggiornati procedura e §15.7.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code (estensione VS Code). **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** costruzione completa di motore, test e skill a partire dal mandato scritto. **Perché:** il lavoro richiedeva di incrociare un mandato lungo con il codice esistente e con misure git reali, e di scrivere una skill che un altro agente eseguirà: un modello con contesto ampio tiene insieme mandato, inventario e misure. **Risultato:** v1 funzionante con tutti i criteri di §15.6 soddisfatti. **Verifiche e correzioni:** ogni numero confrontato con la §3.4; tre prescrizioni del mandato corrette perché smentite dalle misure (rotture nel corpo dei merge, `--tags`, conteggio dei non censiti); un esempio della procedura (`chapter-row-lesson-lock`, voce inesistente) sostituito nella skill con una voce reale.
+
+**6. Problematiche incontrate** — Le tre divergenze dal mandato descritte sopra, documentate in §15.7. Ruff non installato sulla macchina: usato un venv temporaneo; resta un avviso di ordinamento import preesistente in `scripts/customizations/model.py`, non toccato. La F7 sarà il lavoro principale dei passi dopo `v2.58.1`: `v2.59.0` tocca 82 file con modifiche nostre non censite, `v2.62.0` 125.
+
+---
+
+### Attività 5 — Istanza Elite (`elite.overside.it`): stesso redirect a `:8080/lms`
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Analisi (supporto deploy) |
+| **Problema riscontrato** | L'utente segnala lo stesso difetto dell'Attività 3 (Agora) sull'istanza Elite, `https://elite.overside.it`: ricaricando `/lms/` si finisce su `:8080/lms`. |
+| **Problema effettivo** | Verificato da locale con `curl -sI`: `https://elite.overside.it/lms/` → `301 location: http://elite.overside.it:8080/lms`; `/` → `200`. Stessa causa di Agora (redirect assoluto del nginx interno del container, in ascolto su 8080, per il `rewrite` dello slash finale), ma qui il reverse proxy esterno è diverso: header `server: openresty` (tipico di **Nginx Proxy Manager**) e il dominio risolve su `88.35.136.154`, non sul server di produzione `157.180.117.149` che ospita Academy e Agora. Quindi la correzione va fatta nella configurazione di quel proxy, non nei vhost di `salescience-production`. |
+| **Soluzione applicata** | Nessuna modifica: indicato all'utente di aggiungere `proxy_redirect http://elite.overside.it:8080/ /;` nel proxy esterno (se Nginx Proxy Manager: Proxy Host → Edit → Advanced → Custom Nginx Configuration), in alternativa la correzione strutturale `absolute_redirect off;` nel template nginx di `elite-deploy`. |
+| **Commit** | Non committata — sola analisi, configurazione su server esterno al repo. |
+| **File toccati** | Solo `docs/WORKLOG.md`. |
+| **Verifiche** | `curl -sI` su `/lms/` e `/`; `dig` dei domini Elite e Agora. Correzione non ancora applicata. |
+
+**4. Utilizzo dell'AI**
+
+Claude Code (VS Code), modello Claude Opus 5.5: controllo dei redirect pubblici con `curl` e
+confronto con la diagnosi già fatta per Agora; riconoscimento del proxy diverso (openresty) e
+dell'host diverso via DNS. Scelto per riusare il contesto dell'Attività 3; risultato: causa
+identica, punto di correzione diverso.
+
+**6. Problematiche incontrate**
+
+Non noto con certezza il tipo di proxy davanti a Elite (openresty suggerisce Nginx Proxy Manager).
+
+**Aggiornamento.** Sulla macchina di Elite (`elite-v2`, stack compose `elite-local`, immagine
+`app:internal-4e570cbe`, frontend pubblicato su `3333->8080`, presente Portainer) **non c'è alcun
+reverse proxy**: nessun nginx/openresty installato né container Nginx Proxy Manager. L'openresty
+che risponde su `88.35.136.154` è quindi su un'altra macchina della rete (NAT dell'IP pubblico
+verso un proxy separato). Proposte due strade: (a) trovare quella macchina e aggiungere lì il
+`proxy_redirect`; (b) correggere su `elite-v2` senza toccare il proxy, sovrascrivendo il template
+nginx del container `frontend` con un bind mount (`/templates/nginx/frappe.conf.template`, letto
+da `nginx-entrypoint.sh` a ogni avvio) che aggiunge `absolute_redirect off;`, poi
+`docker compose up -d frontend`.
+Conferma sul server: `curl -sI -H "Host: elite.overside.it" http://127.0.0.1:3333/lms/` →
+`301 Location: http://elite.overside.it:8080/lms`, stessa origine del difetto di Agora.
+
+### Attività 12 — Primo percorso reale di aggiornamento upstream con `/upstream-upgrade`: da v2.58.0 a v2.60.1 fuse, v2.61.0 censita (percorso verso v2.63.0 in corso)
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Aggiornamento upstream (merge guidato) + censimento personalizzazioni |
+| **Problema riscontrato** | L'utente ha lanciato `/upstream-upgrade` e scelto di arrivare a `v2.63.0` (8 release) partendo da `feature/oslms`. |
+| **Problema effettivo** | Il piano mostrava 154 file con modifiche nostre non censite, 2 bump di frappe-ui (beta.7→beta.24 in v2.59.0, →beta.29 in v2.62.0) e 3 rotture dichiarate in v2.63.0. Lungo il percorso sono emerse novità upstream che sostituiscono o toccano funzioni nostre (PdfBlock pdf.js, onboarding persona, permessi di correzione, controllo di accesso ai quiz, editor RichTextEditor), non visibili come conflitti. |
+| **Soluzione applicata** | Branch `merge/upstream-v2.63.0` da `feature/oslms` (dopo aver committato la v1 della skill, `9f36bf4e8`). Fuse **v2.58.1** (`6581b4cbb`), **v2.59.0** (`f02f4448f`), **v2.60.0** (`b994e4ddc`), **v2.60.1** (`5cb884477`). Censite prima di ogni merge tutte le modifiche nostre non censite (82 file per v2.59.0, 2 per v2.60.0, 32 per v2.61.0) con soli marcatori-commento verificati riga per riga + voci di inventario (**da 33 a 280 voci**). Conflitti risolti per intent (1 + 32 + 7), con agenti in parallelo su gruppi di file disgiunti e verifica centrale. Decisioni del committente applicate (tutte nel rapporto): quiz saltati = 0 con impostazione per-quiz da fare dopo v2.63.0; frappe-ui fissato esatto a `1.0.0-beta.24`; override riconciliati una sola volta dopo v2.62.0; niente Embed nelle discussioni (prop `excludeItems` su RichTextEditor); riga membri apre la modifica; risposta del compito in sola lettura per chi corregge; Valutatore ammesso ai quiz; stile del dialogo impostazioni riapplicato; PdfBlock pdf.js upstream adottato con le nostre correzioni (URL privati, traduzioni); Questionnaire eliminato accettato ma da verificare. Adeguamenti build: colori grafici (`67f2c1008`), indigo negli annunci (`2d6b67dc2`), `components.d.ts` (`c63738cc9`). v2.61.0: F5/F6/F7 chiuse, **merge non eseguito** (59 conflitti previsti): sessione fermata su richiesta per contesto esaurito. |
+| **Commit** | Sul branch `merge/upstream-v2.63.0` (locale, non pushato): 4 merge, 10 commit di censimento, 3 adeguamenti, 1 rinomina test (`7ee6053e1`), rapporto `ef968d244`. Più `9f36bf4e8` su `feature/oslms` (v1 della skill). |
+| **File toccati** | `docs/customizations/spa-grafts.toml` (+247 voci), ~130 file frontend/backend con marcatori `OSLMS-CUSTOM` (solo commenti), file risolti nei merge (es. `Settings.vue`, `permissions.py`, `lms_assignment_submission.py`, `RichTextEditor.vue`, `PdfBlock.vue`, `upload.js`, `Assignment.vue`, `AdminBatchDashboard.vue`, `it.po`, `package.json`, `yarn.lock`), `frontend/src/tests/pdfBlockPrivateUrl.test.ts` (riscritto dalla nuova regola), `docs/upstream-checks/2026-09-23-percorso-v2.58.0-v2.63.0.md`. |
+| **Verifiche** | A ogni release: rilevatore 0 errori; build frontend verde; Vitest confrontato con una baseline presa su un worktree del commit precedente al merge di v2.59.0: 21 fallimenti **preesistenti e identici** nome per nome, nessuna regressione (passati da 215 a 277 con i test nuovi); test upstream `PdfBlock.test.ts` 5/5 senza modifiche; `msgfmt -c` su `it.po`; una sola copia di `prosemirror-state`. Test backend e prova nell'app NON ancora eseguiti (previsti alla chiusura del percorso). |
+
+**1. Obiettivo dell'attività** — Portare il fork da v2.58.0 a v2.63.0 una release alla volta senza perdere personalizzazioni, decidendo con il committente ogni sostituzione.
+
+**2. Modalità di esecuzione** — Skill `/upstream-upgrade`: piano, due domande, branch, per ogni release analisi prima del merge (F7 censimento, F6 bump/pagine congelate, F4 rotture, F5 sovrapposizioni), simulazione dei conflitti con `git merge-tree`, merge, risoluzione per intent, rilevatore, build, test. Stato persistente in `.git/oslms-upstream-walk.json`.
+
+**3. Attività svolte** — 4 release fuse; 3 cicli di censimento (116 file); ~40 conflitti risolti; 20 decisioni chieste e registrate; 2 collisioni tecniche evitate (`PdfBlock.test.ts` vs `pdfBlock.test.ts` su filesystem case-insensitive; caret di frappe-ui); raccolta di domande e probabili bug preesistenti (ZoomAccountForm senza Salva, readOnlyMode non definito in BatchDetail, sanitizeHTML che reinserisce iframe senza DOMPurify, BatchOverview senza sanitizeRichHTML, NewBatchModal MultiLink non importato, ecc.) elencati nel rapporto e NON corretti.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code (estensione VS Code) con subagenti in parallelo. **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** conduzione del percorso, analisi delle sovrapposizioni, censimento (6+3 agenti per area) e risoluzione conflitti (5 agenti) con verifica centralizzata. **Perché:** il volume (centinaia di file) richiedeva lavoro parallelo, ma il giudizio sulle sostituzioni è rimasto al committente tramite domande esplicite. **Risultato:** percorso a metà (4/8 release), inventario ~8 volte più completo. **Verifiche e correzioni:** ogni lavoro di agente ricontrollato (solo commenti, validatore, compilazione SFC); una scelta di un agente (stato vuoto CourseDashboard) sottoposta al committente; un mio errore di script (marcatori non inseriti in un commit) rilevato e corretto con amend locale.
+
+**6. Problematiche incontrate** — La formula della specifica per le rotture e per i commit nostri era errata (già corretta nella v1); 21 test Vitest falliscono da prima del percorso; il contesto della sessione si è esaurito prima del merge di v2.61.0. **Per riprendere:** `/upstream-upgrade` sul branch `merge/upstream-v2.63.0` (stato `HANDOFF`, prossimi passi in `stop.next_steps`; strumenti in `.git/oslms-upstream-walk-tools/`).
+
+---
+
+### Attività 13 — Ripresa del percorso upstream: merge di v2.61.0 (59 conflitti) e adeguamenti decisi con il committente
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Aggiornamento upstream (merge guidato, ripresa da `HANDOFF`) + adeguamenti (correzione/feature) |
+| **Problema riscontrato** | Ripresa di `/upstream-upgrade` sul branch `merge/upstream-v2.63.0`: v2.61.0 censita ma non fusa, 59 conflitti previsti. |
+| **Problema effettivo** | Oltre ai conflitti testuali, v2.61.0 porta novità che toccano personalizzazioni senza generare conflitti: (1) il visualizzatore PDF pdf.js servito solo su WebKit (Android torna al segnaposto di download, gli URL privati vengono codificati due volte nell'iframe); (2) un job notturno che rinomina le lezioni «Untitled lesson», mentre i vettori dell'AI tutor in Redis sono etichettati col nome della lezione (9 lezioni indicizzate in produzione coinvolte); (3) la «vista studente» che non spegne i ruoli os_lms (un Valutatore in anteprima vedeva il pannello di correzione); (4) un nuovo layout `ListPage` che disegna da sé le tabelle (lo stile `os-list-view` non si può più applicare dalla pagina); (5) un endpoint del valutatore reso sicuro upstream mentre il nostro override resta insicuro; (6) nuovi test upstream che non conoscono le nostre personalizzazioni. |
+| **Soluzione applicata** | Merge `--no-commit` di v2.61.0; 3 conflitti risolti a mano (`components.d.ts`, `patches.txt`, eliminazione di `style.css`), 56 da 7 agenti in parallelo per gruppi disgiunti secondo gli intent d'inventario, con verifica centrale (marcatori, compilazione SFC, ancore). Decisioni del committente: PDF «gate allargato» (pdf.js su WebKit e su mobile/Android, iframe nativo su desktop, `encodePdfURL` unico punto per gli URL privati) in `utils/pdfViewer.ts`, `upload.js`, `LessonContent.vue`, `PdfBlock.vue`; scheda Raven solo amministratori; aspetto upstream degli elenchi da verificare; 4 voci `accepted-drift`; mock dei test `multiLink` e `pdfBlockPrivateUrl` adeguati senza toccare asserzioni; hook os_lms `after_rename` per ripulire e reindicizzare i vettori RAG; vista studente che spegne anche Valutatore/Docente/Gestore; override del valutatore rimandato; 16 test nuovi upstream rossi messi in baseline. Inventario aggiornato (ancore, siti, 3 voci nuove: 283 voci). |
+| **Commit** | Branch `merge/upstream-v2.63.0` (locale, non pushato): `1b4b2d2f5` merge v2.61.0; `6362b39f4` components.d.ts; `31677fd69` test multiLink; `8788bdcbb` vista studente; `060a3642b` reindicizzazione RAG alla rinomina; `fcb2cb6bf` rapporto. |
+| **File toccati** | 59 file in conflitto (pagine Corsi/Classi/Programmi/Home/Profilo/Quiz/Compiti/Esercizi, Lesson/LessonForm/CourseEditor, layout, Settings, router, utils, `lms/lms/api.py`, `patches.txt`); `frontend/src/utils/pdfViewer.ts`, `LessonContent.vue`, `PdfBlock.vue`, `upload.js`; `frontend/src/composables/useStudentView.ts`; `apps/os_lms/os_lms/hooks.py`, `apps/os_lms/os_lms/events/lesson.py`; test nuovi `pdfInlineViewerMobile.test.ts`, `studentViewOslmsRoles.test.ts`, `apps/os_lms/.../tests/test_lesson_rename_reindex.py`; mock in `multiLink.test.ts`, `pdfBlockPrivateUrl.test.ts`; `docs/customizations/spa-grafts.toml`; rapporto di percorso. |
+| **Verifiche** | Rilevatore 0 errori prima e dopo il commit del merge (baseline 0); `yarn install --frozen-lockfile` pulito; build verde (47 s e 42 s); Vitest 570 passati / 37 falliti = 21 preesistenti identici + 16 in test nuovi upstream (nessun test che passava si è rotto); test PDF 28/28, multiLink 11/11, vista studente 29/29; test backend os_lms 4/4 nel container (python dell'ambiente, `bench` CLI assente). Query di sola lettura sul DB di produzione (lezioni rinominabili, PDF privati). Prova nell'app non ancora eseguita (prevista a fine percorso). |
+
+**1. Obiettivo dell'attività** — Fondere v2.61.0 senza perdere personalizzazioni e adeguare il fork alle novità upstream che toccano funzioni nostre, decidendo le scelte di prodotto con il committente.
+
+**2. Modalità di esecuzione** — Skill `/upstream-upgrade` ripresa dallo stato persistente (`.git/oslms-upstream-walk.json`); brief di risoluzione aggiornato a P=v2.60.1/T=v2.61.0 con le risoluzioni già note; 7 agenti su gruppi di file disgiunti; domande al committente raccolte e poste in blocchi; ogni adeguamento in un commit separato con voce d'inventario e test.
+
+**3. Attività svolte** — Merge e risoluzione di 59 conflitti; 11 decisioni chieste e registrate; 4 adeguamenti post-merge; analisi d'impatto in produzione (9 lezioni rinominabili tutte indicizzate; 3 lezioni con PDF, 3 PDF privati con spazi); confronto Vitest normalizzato con la baseline; rapporto di percorso e stato aggiornati; v2.61.0 chiusa.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code (estensione VS Code) con 7 subagenti general-purpose in parallelo. **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** risoluzione dei conflitti per gruppi, analisi delle sovrapposizioni upstream, implementazione degli adeguamenti e dei test. **Perché:** 59 file in conflitto richiedevano lavoro parallelo; il giudizio sulle scelte di prodotto è rimasto al committente. **Risultato:** merge chiuso con 0 errori del rilevatore e build verde. **Verifiche e correzioni:** rapporti degli agenti ricontrollati (compilazione, marcatori, ancore); un confronto Vitest iniziale con formato di baseline diverso (37 «nuovi») corretto con la normalizzazione (16 nuovi reali, tutti in test upstream); un marcatore `OSLMS-CUSTOM` in un file di test (C3) tolto; commento upstream ripristinato su `get_profile_details` diventato accepted-drift.
+
+**6. Problematiche incontrate** — Il `bench` CLI manca nel container (test backend lanciati con il python dell'ambiente); i nuovi test upstream presuppongono le pagine upstream (mock incompleti rispetto alle nostre personalizzazioni); restano aperti: override del valutatore insicuro (rimandato), stile degli elenchi da verificare, traduzioni IT delle nuove stringhe, riconciliazione unica dei 37 test rossi. **Prossimo passo:** v2.62.0 (200 commit, bump frappe-ui → beta.29, riconciliazione dei 23 override).
+
+---
+
+### Attività 14 — Percorso upstream: v2.62.0 censita e fusa nell'indice (96 conflitti risolti), commit del merge ancora da fare
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Aggiornamento upstream (analisi, censimento, risoluzione conflitti) |
+| **Problema riscontrato** | Proseguire il percorso con v2.62.0, la release più grande (200 commit, 515 file, 258 voci toccate, 24 file non censiti, frappe-ui → `1.0.0-beta.29`). |
+| **Problema effettivo** | v2.62.0 ridisegna il mobile (moduli come pagine instradate, elenchi a schede, nuova barra), sposta le route in `routes.js`, elimina 13 modali che noi avevamo personalizzato, introduce il blocco lezioni lato server, la direttiva anti-XSS `v-safe-html` e quattro nuovi filtri server sugli elenchi (lezioni live, classi, programmi, lezioni) che si sommano ai nostri e possono nascondere contenuti a Valutatore/Docente. Diverse personalizzazioni vivevano in modali ora sostituite da pagine (compositore annunci, modifica/promemoria lezioni live, codice fiscale nel profilo, iscrizione multipla, creazione membri). |
+| **Soluzione applicata** | F7: 24 file censiti in 4 commit (inventario 320 voci). Decisioni del committente: blocco lezioni upstream al posto del nostro ordine lezioni (resta il nostro «quiz dopo la lezione»); redesign mobile adottato; filtri elenchi allargati (Valutatore vede le live della sua classe in sola lettura e le classi non pubblicate che valuta; Docente crea/modifica le live); modulo live upstream esteso con tutte le nostre funzioni; voce di menu «Carica file». Merge: `package.json`/`yarn.lock` (beta.29 esatto, una sola copia di prosemirror-state), `tsconfig`, `vitest.config`, `patches.txt`, `components.d.ts` risolti a mano; 89 file da 11 agenti in parallelo; 12 modali eliminate e le loro regole riportate nelle nuove pagine `pages/Forms/*`; innesti per il badge delle notifiche nelle schede e per il Docente nel modulo modelli email. |
+| **Commit** | Censimento: `6715d8a5a`, `83f69df67`, `68832c6b8`, `7be817a2d`. **Merge di v2.62.0 NON committato**: risoluzioni in stage (0 unmerged), sessione fermata su richiesta del committente. |
+| **File toccati** | ~100 file frontend (pagine Corsi/Classi/Programmi/Lezioni/Quiz/Compiti, layout, palette, impostazioni, nuove pagine `pages/Forms/*`, `routes.js`, `TabbedDetailPage.vue`), `lms_batch.py`, `lms_course.py`, `signup-form.html`, `package.json`, `yarn.lock`; marcatori di censimento in 24 file; `docs/customizations/spa-grafts.toml` (+35 voci, aggiornamento ancore per v2.62.0 ancora da fare). |
+| **Verifiche** | Compilazione SFC di tutti i file risolti e delle pagine-modulo (0 errori), nessun marcatore di conflitto residuo, 0 file unmerged; `yarn install` con lock rigenerato (una sola `prosemirror-state` 1.4.4); query di sola lettura in produzione (1 corso con ordine lezioni, 2 con quiz dopo la lezione). **Non ancora eseguiti:** rilevatore dopo l'aggiornamento dell'inventario, build, Vitest, test backend. |
+
+**1. Obiettivo dell'attività** — Portare il fork a v2.62.0 preservando le personalizzazioni, con le scelte di prodotto decise dal committente.
+
+**2. Modalità di esecuzione** — Skill `/upstream-upgrade`: piano, fermate F7/F6/F5 prima del merge (4 agenti di censimento, 8 domande al committente), merge con simulazione preventiva (`git merge-tree`: 96 conflitti, confermati), brief di risoluzione con le decisioni, 11 agenti su gruppi disgiunti verificati per copertura, verifica centrale.
+
+**3. Attività svolte** — Censimento di 24 file; analisi di 40 commit `feat` sovrapposti; risoluzione di 96 conflitti (di cui 13 modifica/eliminazione); porting delle regole di 12 modali in pagine-modulo; raccolta dei rapporti (ancore da spostare, candidati accepted-drift, test upstream in contrasto, traduzioni mancanti, rischi) in `.git/oslms-upstream-walk-tools/f1_262_notes.md`.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code (estensione VS Code) con 15 subagenti general-purpose (4 censimento + 11 risoluzione). **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** censimento, risoluzione per gruppi, porting delle modali, analisi dei permessi. **Perché:** 96 conflitti e 12 porting richiedevano parallelismo; le scelte di prodotto sono state poste al committente. **Risultato:** merge risolto nell'indice, non ancora committato. **Verifiche e correzioni:** controllo «solo commenti» e validatore per ogni gruppo di censimento (un mio primo controllo con variabile zsh non spezzata è stato rifatto correttamente); uno strumento di aggiornamento dell'inventario scritto in sessione non superava la prova di neutralità (perdeva commenti) ed è stato scartato ripristinando l'inventario dalla copia: resta come abbozzo `site_ops_WIP.py`.
+
+**6. Problematiche incontrate** — Volume molto alto di sovrapposizioni; nuovi test upstream scritti contro le pagine upstream (da riconciliare); filtri server sugli elenchi che toccano i nostri ruoli. **Per riprendere:** `/upstream-upgrade` sul branch `merge/upstream-v2.63.0`: stato `HANDOFF` con `next_steps` dettagliati; NON annullare il merge in corso.
+
+---
+
+## 2026-09-18
+
+> **Report giornaliero:** `reports/2026-09-18-os-lms.md` — obiettivo e modalità della
+> giornata, aggregazione delle attività per filone, utilizzo dell'AI, problematiche,
+> prossime attività, avanzamento del progetto e spunti di miglioramento aziendale.
+> *(compilato: 8 ore dichiarate, avanzamento 100 % invariato, 21 attività aggregate in sei filoni)*
+
+---
+
+### Attività 1 — Analisi di fattibilità della sostituzione dell'editor delle lezioni con quello delle descrizioni di corsi e classi
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Analisi — studio di fattibilità con stima oraria, nessuna modifica al codice |
+| **Problema riscontrato** | Richiesta dell'utente: è fattibile cambiare l'editor di testo delle lezioni e usare al suo posto quello con cui si scrivono le descrizioni dei corsi e delle classi? Richiesti tre elementi: analisi di fattibilità, conseguenze sulle lezioni già create, stima oraria dell'intervento. Nessuna indicazione sul motivo della richiesta (quale limite dell'editor attuale la origini). **Vincolo aggiunto in corso di attività**: esclusa la migrazione dei testi delle lezioni già create. |
+| **Problema effettivo** | La richiesta sembra la sostituzione di un componente Vue con un altro, ma i due editor non sono intercambiabili perché **non salvano lo stesso tipo di dato**: le descrizioni usano `TextEditor` di frappe-ui (tiptap 3/ProseMirror) che produce **una stringa HTML**, le lezioni usano EditorJS che produce **un JSON a blocchi tipizzati**. Quel JSON non è un dettaglio di serializzazione: è un contratto dati letto da **14 punti del backend**, fra cui `get_quiz_progress` e `get_assignment_progress` che decidono il completamento della lezione (e quindi il progresso del corso e i certificati), l'import/export dei corsi e il parser che alimenta il RAG dell'assistente AI. Secondo vincolo emerso: sull'editor delle lezioni sono stratificati **52 commit** e ~2.700 righe di codice custom (blocchi quiz, compito, esercizio, upload con player Plyr e quiz temporizzati nel video, embed a 9 servizi con risoluzione server-side dei link Vimeo `/share/`, strumenti inline colore/allineamento con allowlist dedicata lato server, i18n della chrome dell'editor), nessuno dei quali esiste nel `TextEditor`. Terzo vincolo, non previsto: su questo branch frappe-ui è alla 1.0.0-beta.7, dove `TextEditor` è **deprecato** a favore di `Editor` + `RichTextKit` — quindi "usare lo stesso delle descrizioni" significherebbe comunque adottare un componente diverso da quello che le descrizioni usano oggi. |
+| **Soluzione applicata** | Nessuna modifica al codice. Consegnata l'analisi in cinque parti: (1) la differenza di formato e i 14 punti di accoppiamento backend; (2) l'inventario del codice custom dell'editor attuale; (3) le conseguenze sulle lezioni esistenti quantificate sul database di produzione; (4) quattro opzioni con stima oraria; (5) raccomandazione. Individuata e proposta come via preferibile l'**opzione ibrida C**: tenere EditorJS e sostituire **solo il blocco di testo** con il `TextEditor`, possibile perché il blocco di testo attuale (`markdownParser.js`) salva già `data.text` come HTML, cioè esattamente il formato che tiptap consuma e produce — quindi zero migrazione dati, zero modifiche al backend, nessun impatto su quiz, video, AI e import/export. Stime: A (sostituzione integrale a parità di funzioni) 145–195 h; B (sostituzione rinunciando ai blocchi) 60–85 h ma con perdita del video su 48 lezioni su 103 e del tracciamento del progresso; C (ibrida) 30–45 h; D (solo arricchimento della toolbar EditorJS) 8–20 h. Posta all'utente la domanda che discrimina fra C e D: quale limite concreto dell'editor attuale ha originato la richiesta. **Dopo il vincolo sulla migrazione** (dettaglio al punto 7): A e B diventano modelli a convivenza che lasciano il vecchio editor alle lezioni già scritte e risparmiano solo ~20 h su ~165 in cambio di un doppio ramo permanente, mentre C è l'unica che porta il nuovo editor anche sulle 103 lezioni esistenti senza convertire un record; stima C aggiornata a 32–50 h e scelta ridotta a C oppure D. |
+| **Commit** | No — analisi, nessuna modifica al codice. Nessun file del repository toccato oltre a questo worklog. |
+| **File modificati** | Nessuno. File letti: [frontend/src/components/BlockEditor.vue](frontend/src/components/BlockEditor.vue), [frontend/src/utils/index.js](frontend/src/utils/index.js) (`getEditorTools`, `getEditorI18n`, `highlightText`, `getRootNode`), [frontend/src/utils/markdownParser.js](frontend/src/utils/markdownParser.js), [frontend/src/utils/upload.js](frontend/src/utils/upload.js), [frontend/src/utils/quiz.js](frontend/src/utils/quiz.js), [frontend/src/utils/assignment.js](frontend/src/utils/assignment.js), [frontend/src/utils/inline/](frontend/src/utils/inline/), [frontend/src/utils/blockTunes/clipboardTunes.ts](frontend/src/utils/blockTunes/clipboardTunes.ts), [frontend/src/pages/LessonForm.vue](frontend/src/pages/LessonForm.vue), [frontend/src/pages/Lesson.vue](frontend/src/pages/Lesson.vue), [frontend/src/components/LessonContent.vue](frontend/src/components/LessonContent.vue), [frontend/src/components/VideoBlock.vue](frontend/src/components/VideoBlock.vue), [frontend/src/components/Notes/InlineLessonMenu.vue](frontend/src/components/Notes/InlineLessonMenu.vue), [frontend/src/pages/Courses/CourseOverviewSection.vue](frontend/src/pages/Courses/CourseOverviewSection.vue), [frontend/src/pages/Courses/NewCourseModal.vue](frontend/src/pages/Courses/NewCourseModal.vue), [frontend/src/pages/Batches/BatchForm.vue](frontend/src/pages/Batches/BatchForm.vue), [lms/lms/doctype/course_lesson/course_lesson.py](lms/lms/doctype/course_lesson/course_lesson.py) e relativo `.json`, [lms/lms/utils.py](lms/lms/utils.py) (`get_lesson_icon`, `get_course_content_stats`, `rewrite_private_media`, `sanitize_editorjs`), [lms/lms/api.py](lms/lms/api.py), [lms/lms/course_import_export.py](lms/lms/course_import_export.py), [apps/os_lms/os_lms/os_lms/api.py](apps/os_lms/os_lms/os_lms/api.py), [apps/os_lms/os_lms/os_lms/ai/utils/lesson_parser.py](apps/os_lms/os_lms/os_lms/ai/utils/lesson_parser.py), [apps/os_lms/os_lms/os_lms/ai/utils/video_transcriber.py](apps/os_lms/os_lms/os_lms/ai/utils/video_transcriber.py), `frontend/node_modules/frappe-ui/src/components/TextEditor/` e `src/molecules/editor/` (capacità e deprecazione). |
+| **Verifiche** | Tutti i numeri dell'analisi sono misurati, non stimati. **Database di produzione interrogato in sola lettura** con il profilo `.private/db/oslms-prod.cnf`: 103 lezioni, di cui 100 con contenuto EditorJS e 100 con note del docente anch'esse EditorJS, **0 con il vecchio formato markdown**; ~451 blocchi complessivi così distribuiti — testo 137 `markdown` + 162 `paragraph`, 42 `header`, 36 `list`, 50 `embed`, 8 `image`, 6 `upload`, 6 `quiz`, 4 `assignment`, 0 `table`, 0 `codeBox`, 0 `program`; 32 lezioni con video Vimeo e 16 con YouTube, 4 con media privati, 1 con colore inline, 0 con allineamento, 0 con quiz temporizzati nel video; 47 note studente di cui 36 con evidenziazione. **Codice**: contati per lettura i 14 punti backend che deserializzano il contenuto; contati con `git log` i 52 commit sui file dell'editor dal 2025; verificata la deprecazione di `TextEditor` leggendo l'avviso in `TextEditor.vue:167` e la presenza dell'entry point `./editor` (`Editor`, `RichTextKit`) in `package.json` di frappe-ui 1.0.0-beta.7; verificato in `markdownParser.js` che il blocco di testo salva HTML (è il fatto su cui poggia l'opzione C); verificato in `video_transcriber.py` che le trascrizioni sono in cache per (provider, id), quindi una reindicizzazione AI non le rigenera **a patto** che il nuovo formato conservi provider e id del video. Nessuna prova eseguita su un prototipo: la fattibilità dell'opzione C è argomentata sul formato dei dati, non ancora dimostrata sul campo. |
+
+**1. Obiettivo dell'attività**
+
+Rispondere a tre domande dell'utente con numeri verificabili e non con impressioni: se
+sia tecnicamente possibile adottare per le lezioni l'editor delle descrizioni, cosa
+accadrebbe alle 103 lezioni già scritte, e quante ore costerebbe. Obiettivo implicito ma
+decisivo: stabilire se l'intervento convenga, cioè se il guadagno atteso giustifichi il
+costo, e in caso contrario proporre l'alternativa che porta lo stesso beneficio a costo
+inferiore.
+
+**2. Modalità di esecuzione**
+
+Indagine in tre passaggi. Primo, ricostruzione del funzionamento attuale leggendo il
+componente dell'editor, i suoi strumenti custom, la pagina di scrittura e quella di
+lettura della lezione. Secondo, mappatura dell'accoppiamento: ricerca sistematica nel
+backend di ogni punto che deserializza il contenuto delle lezioni (`grep` su
+`get("blocks")` e `json.loads` in `lms/` e `apps/os_lms/`), perché è lì che si misura il
+costo reale di un cambio di formato. Terzo, quantificazione dell'impatto sul parco
+lezioni esistente interrogando il database di produzione in sola lettura, per sostituire
+ogni "dipende da quanti sono" con il numero esatto. Solo dopo queste tre fasi sono state
+formulate le opzioni e le stime, ciascuna scomposta in voci di lavoro nominate.
+
+**3. Attività svolte**
+
+Ricostruito il funzionamento dell'editor delle lezioni: `BlockEditor.vue` monta EditorJS
+con l'elenco di strumenti restituito da `getEditorTools`, che registra blocchi
+proprietari (`quiz`, `assignment`, `program`, `upload`, `markdown`, `embed` con nove
+servizi video, `codeBox`, immagine, tabella) e strumenti inline proprietari (sottolineato,
+barrato, allineamento, colore), più i *tunes* di copia/taglia/incolla blocco e un
+dizionario i18n per tradurre la chrome dell'editor. Verificato che `LessonForm.vue`
+serializza l'uscita dell'editor in `content` e `instructor_content` con salvataggio
+automatico, e che `Lesson.vue` ricrea un'istanza EditorJS in sola lettura per mostrare la
+lezione allo studente.
+
+Mappati i 14 punti backend che leggono il JSON: completamento quiz e compiti
+(`get_quiz_progress`, `get_assignment_progress` in `course_lesson.py`), aggancio dei quiz
+alla lezione in validazione, icona della lezione e statistiche del corso in `utils.py`,
+elenco valutazioni in `api.py`, quattro punti di import/export corsi (export asset,
+export valutazioni, rimappatura dei nomi di quiz/compiti e degli asset in import), due
+punti in `os_lms/api.py` per lo streaming Vimeo e la "prossima lezione video", il parser
+del RAG in `lesson_parser.py`, la sanificazione ricorsiva `sanitize_editorjs`.
+
+Confrontate le capacità del `TextEditor` (tiptap: formattazione, titoli, liste, tabelle,
+immagini, video, iframe, blocchi di codice, link, menzioni, emoji, comandi slash) con
+quelle richieste da una lezione, isolando ciò che mancherebbe e andrebbe riscritto come
+nodo tiptap con node view Vue: quiz, compito, esercizio, upload di file/PDF/audio, player
+video con tracciamento e quiz temporizzati, embed multi-provider.
+
+Interrogato il database di produzione e ricavata la fotografia del parco lezioni
+riportata nelle verifiche. Da essa sono discese le conseguenze: migrazione obbligatoria
+di 200 campi (ma con l'84% dei blocchi convertibile meccanicamente perché già HTML);
+rischio concentrato sui 50 embed e 6 upload, la cui mancata ricostruzione toglierebbe il
+video a 48 lezioni su 103 e con esso il tracciamento del progresso, che dipende dal
+player; possibile disallineamento delle 36 evidenziazioni degli studenti, che si ancorano
+per offset di testo dentro il nodo renderizzato `#editor` e quindi si spostano se cambia
+il renderer; riscrittura del parser AI e reindicizzazione completa; rottura
+dell'import/export nei due versi; e il rischio di mantenere per sempre un terzo formato,
+visto che il primo (il campo `body` markdown del 2021) è ancora servito oggi da
+`LessonContent.vue`.
+
+Formulate quattro opzioni con stima. L'opzione A (parità di funzioni) è stata scomposta
+in tredici voci nominate per rendere la stima discutibile voce per voce. L'opzione C è
+stata riconosciuta leggendo `markdownParser.js`: il blocco di testo salva già HTML, quindi
+il `TextEditor` può leggerlo e riscriverlo senza toccare nulla d'altro. Annotata come
+insidia nota della C la duplicazione di ProseMirror in sviluppo, già incontrata su questo
+repository e presidiata dal test `prosemirrorDedupe.test.ts`.
+
+Chiusa la risposta con una domanda all'utente — quale limite concreto dell'editor attuale
+abbia originato la richiesta — perché è l'unico dato mancante per scegliere fra C e D, e
+non è ricavabile dal codice.
+
+**4. Utilizzo dell'AI**
+
+Strumento: Claude Code (estensione VS Code). Modello: **Opus 5 (contesto 1M)**. Attività:
+l'intera analisi di fattibilità — ricostruzione del funzionamento dei due editor,
+mappatura dell'accoppiamento backend, interrogazione del database di produzione,
+formulazione delle opzioni e delle stime orarie. Perché questo strumento: l'analisi
+richiedeva di attraversare contemporaneamente frontend Vue, backend Frappe, l'app
+`os_lms` e il database di produzione, tenendo in vista insieme file distanti fra loro
+(l'editor, i quattordici punti che ne leggono l'uscita, il parser AI, l'import/export);
+il contesto esteso permette di tenere aperti tutti questi file nello stesso ragionamento
+senza perdere i collegamenti, che è esattamente ciò da cui dipende la correttezza della
+stima. Perché questo modello: la domanda non è di ricerca puntuale ma di giudizio
+architetturale — riconoscere che il vero costo non sta nel componente ma nel formato dei
+dati, e che esiste una via ibrida a un quinto del costo. Risultato ottenuto: analisi in
+cinque parti con quattro opzioni stimate, e individuazione dell'opzione ibrida non
+richiesta ma preferibile. Verifiche e correzioni fatte: ogni numero citato è stato
+misurato e non dedotto — i conteggi di lezioni e blocchi vengono da query SQL sul
+database di produzione (sola lettura), i 52 commit da `git log`, i 14 punti di
+accoppiamento da ricerca testuale seguita da lettura di ciascun punto, la deprecazione di
+`TextEditor` dall'avviso nel sorgente del pacchetto e non dalla memoria del modello. È
+stata corretta in corso d'opera un'ipotesi iniziale sbagliata, cioè che il blocco di
+testo delle lezioni contenesse markdown: la lettura del sorgente ha mostrato che contiene
+HTML, ed è questo fatto che ha reso possibile l'opzione C. Resta non verificata sul campo
+la fattibilità pratica della C, che è argomentata sul formato dei dati ma non ancora
+dimostrata con un prototipo.
+
+**6. Problematiche incontrate**
+
+Tre. La prima è di metodo: senza conoscere il motivo della richiesta, la raccomandazione
+rischia di essere generica; è stata gestita producendo comunque l'analisi completa e
+isolando la domanda che discrimina fra le due opzioni consigliabili, invece di
+sospendere il lavoro in attesa di risposta. La seconda riguarda il perimetro di
+consegna: l'analisi dimostra che un'operazione presentata come "cambio di editor" è in
+realtà un cambio di contratto dati, il che impone di dire chiaramente che la strada
+letterale costa quattro-cinque settimane uomo — informazione scomoda ma necessaria
+prima di qualunque impegno. La terza è un rischio latente emerso e non risolto: il campo
+`body` in formato markdown del 2021 è ancora servito da un renderer dedicato, prova che
+in questo prodotto i formati di contenuto non vengono mai davvero dismessi; qualunque
+opzione comporti un nuovo formato va quindi valutata mettendo in conto una manutenzione
+a tre rami, non a due.
+
+**7. Aggiornamento in corso di attività — vincolo posto dall'utente: nessuna migrazione dei contenuti esistenti**
+
+L'utente ha escluso esplicitamente la migrazione dei testi delle lezioni già create.
+Il vincolo non restringe le opzioni, ne ribalta la classifica, e la rivalutazione è
+stata consegnata nella stessa sessione.
+
+*Effetto sulle opzioni A e B.* Senza migrazione non spariscono, diventano **modelli a
+convivenza**: le 100 lezioni esistenti restano JSON EditorJS servite dal vecchio
+renderer, il nuovo editor vale solo per le lezioni create da lì in avanti. Ne discende
+la conseguenza che pesa più di ogni altra e che è stata dichiarata per prima
+all'utente: **chi riapre una lezione vecchia per modificarla continua a vedere il
+vecchio editor**, quindi il beneficio della richiesta non arriverebbe mai sul materiale
+già prodotto. Il costo, per contro, scende poco: ricalcolata l'opzione A in versione
+convivenza a **140–185 h** contro le 145–195 h con migrazione. Si risparmiano ~20 h su
+~165 (16 h di migrazione, 3 h di riancoraggio evidenziazioni, nessuna reindicizzazione
+AI) e se ne riaggiungono ~8 per l'instradamento per formato — scelta dell'editor in
+scrittura, due renderer in lettura, due bundle. In cambio il doppio ramo sui 14 punti
+backend e sui due renderer frontend non è più temporaneo ma **permanente**, da
+mantenere a ogni merge upstream. Valutazione consegnata: cattivo affare, perché la
+migrazione è un costo una tantum e terminabile mentre la convivenza è ricorrente e
+senza scadenza; escludere la migrazione sposta la spesa dal preventivo alla
+manutenzione. Il precedente interno citato a sostegno è il campo `body` markdown del
+2021, mai migrato e ancora servito oggi da `LessonContent.vue`.
+
+*Effetto sull'opzione C.* Nessuno: l'ibrida non cambia il formato dei dati, quindi il
+vincolo non la tocca. In più fa ciò che A e B senza migrazione non possono fare, cioè
+portare il nuovo editor **anche sulle 103 lezioni già scritte**, senza convertire un
+record.
+
+*Tre accertamenti aggiuntivi eseguiti sul database di produzione per confermare la C.*
+**Primo**: campionati blocchi reali e verificato che i blocchi `paragraph` e `markdown`
+hanno **forma dati identica** — entrambi salvano HTML in `data.text` — quindi
+registrando il nuovo blocco tiptap per entrambi i nomi di tipo si coprono tutti i 299
+blocchi di testo esistenti senza toccarne nessuno. Resta non dimostrata la
+registrazione doppia in EditorJS: è la prima cosa che lo spike deve provare, mentre la
+forma dati è verificata. **Secondo**: il tag proprietario `<lms-inline-color>` compare
+in **una sola lezione**, `0790 — "Solo Testo"` del corso *Sales Transformation*, il cui
+testo è materiale di prova incollato dalla documentazione demo di Frappe; `<lms-align>`
+non è usato da nessuno. Il rischio "tiptap scarta i tag che non conosce" vale quindi su
+una lezione di scarto, coperto da una regola di parsing per ~2-4 h oppure accettato.
+**Terzo**: individuata una decisione di comportamento e non di costo — titoli (42) e
+liste (36) sono oggi blocchi EditorJS separati, mentre dentro un blocco tiptap si
+possono creare anche da lì, con due modi per la stessa cosa; va scelto se disabilitarli
+nel blocco di testo o lasciarli convivere.
+
+*Esito.* Stima della C aggiornata a **32–50 h** (le 30–45 iniziali più la regola di
+parsing per il tag di colore). Con il vincolo posto, la scelta si riduce a C (32–50 h,
+nuovo editor su tutte le lezioni, nessun impatto su quiz, video, upload, embed e
+tracciamento del progresso) oppure D (8–20 h, solo arricchimento della toolbar
+attuale). Resta aperta, e ribadita all'utente, la domanda che discrimina fra le due:
+quale limite concreto dell'editor attuale abbia originato la richiesta. Nessuna
+modifica al codice anche in questa fase.
+
+---
+
+### Attività 2 — Progettazione dell'editor di testo tiptap dentro l'editor a blocchi delle lezioni (design congelato, implementazione sospesa)
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Analisi/progettazione — sessione di design guidata, nessuna modifica al codice del prodotto |
+| **Problema riscontrato** | Dopo l'analisi di fattibilità (Attività 1) l'utente ha scelto la direzione e precisato il perimetro: «nella lezione voglio le stesse funzionalità di prima, solo che quando scrivo il testo lo faccio con l'altro editor», mantenendo la possibilità di inserire quiz, elaborati ed esercizi di programmazione. In un secondo passaggio ha allargato la richiesta: «tutto il resto che riguarda testi, formattazione, tabelle, video, immagini e altro deve essere gestito dall'altro editor». Vincolo confermato dall'attività precedente: nessuna migrazione dei contenuti già scritti. |
+| **Problema effettivo** | Il perimetro allargato includeva il video, e il video nelle lezioni **non è un contenuto ma il meccanismo di completamento**: `enablePlyr()` avvolge nel player Plyr gli elementi `.video-player` prodotti dai blocchi `upload`/`embed`, e `Lesson.vue` ci aggancia il completamento automatico a fine video, la ripresa dal secondo in cui lo studente aveva lasciato (`seekTo(watch_time)`), la registrazione del tempo guardato (`track_video_watch_duration`), il cronometro di riserva se il player non parte, i quiz temporizzati dentro il video e lo streaming Vimeo con titolo e autore. L'estensione video di frappe-ui è invece un semplice tag `<video>` con upload del file: nessun player, nessun provider YouTube/Vimeo, nessun aggancio al progresso. Spostare il video avrebbe quindi significato ricostruire quella macchina da zero, portando l'intervento da ~40 a ~150 ore e mettendo a rischio il progresso di 48 lezioni su 103 già pubblicate. Secondo vincolo emerso: siccome `upload` ed `embed` sono strumenti unici, se resta il video restano necessariamente anche PDF, audio, allegati e gli incorporamenti Google, perché condividono lo stesso codice. |
+| **Soluzione applicata** | Nessuna modifica al codice. Condotta la sessione di brainstorming sul percorso architetturale, con tre decisioni prese dall'utente: (1) il blocco di testo diventa **ricco** — titoli, elenchi, tabelle e formattazione si scrivono dentro al testo, e i blocchi titolo/elenco/immagine delle lezioni vecchie restano come sono ma spariscono dal menu "+"; (2) **il video resta un blocco della lezione** insieme a quiz, elaborato ed esercizio, e con esso PDF, audio, allegati e incorporamenti; (3) approvata la Sezione 1 del design (perimetro e architettura). Architettura scelta: tiptap montato **dentro** il blocco di testo di EditorJS, registrato sui nomi di tipo già esistenti `markdown` e `paragraph`, così i 299 blocchi di testo attuali si aprono nel nuovo editor senza convertire alcun record. La vista studente non monta tiptap e continua a renderizzare HTML semplice, il che preserva l'ancoraggio delle 47 note con 36 evidenziazioni. Il tasto `/` resta invariato (menu dei blocchi della lezione), il menu `/` di tiptap viene spento, e dal menu di tiptap vanno rimosse le voci Immagine/Video/Embed perché inserirebbero un video privo di tracciamento del progresso. Consegnata la Sezione 2 (comportamenti, rischi, stima) e richiesta l'approvazione prima di scrivere la specifica. |
+| **Commit** | No — progettazione in corso, nessuna modifica al codice. Prossimo passo: specifica in `docs/superpowers/specs/`, revisione dell'utente, poi piano di implementazione. |
+| **File modificati** | Nessuno del prodotto. File letti in aggiunta all'Attività 1: [frontend/src/utils/plyr.js](frontend/src/utils/plyr.js), `frontend/src/pages/Lesson.vue` (tracciamento video, righe 745-955), `frappe-ui/src/components/TextEditor/extensions/video-extension.ts`, `.../extensions/slash-commands/slash-commands-extension.ts`, `.../extensions/color/color-extension.ts`, `frappe-ui/src/molecules/editor/kits.ts`, `frappe/utils/html_utils.py` (copia locale in `~/Downloads/frappe`). |
+| **Verifiche** | Tre accertamenti eseguiti. **Primo**, sul sanitizzatore: installato `nh3` in un ambiente virtuale usa-e-getta e riprodotta la configurazione di `sanitize_editorjs_html`; l'output del nuovo editor sopravvive integro — `color: var(--prose-color-red)`, `background-color: var(--prose-highlight-yellow)`, i colori vecchi in `rgb(...)`, `text-align: center` e gli attributi `data-*` passano tutti. Verificato inoltre per lettura che `style` e `class` sono nell'allowlist `acceptable_attributes` di Frappe. Era il rischio principale, perché in questo repository i tag inline sono già stati rimossi dal sanitizzatore in passato. **Secondo**, sul menu dei comandi: le voci `/` di frappe-ui sono un registro fisso non configurabile nel componente deprecato, mentre il kit `RichTextKit` del componente nuovo permette di spegnerlo (`slashCommands: false`) o sostituirlo — quindi tutte le varianti discusse sono realizzabili. **Terzo**, sul tracciamento video: letto il percorso completo da `enablePlyr()` fino a `markProgress()` e confermato che il completamento della lezione dipende dagli eventi del player. Resta non verificata la registrazione della stessa classe EditorJS su due nomi di tipo (`markdown` e `paragraph`): è il primo punto dello spike, con ripiego già individuato (una sottoclasse registrata sul secondo nome). |
+
+**1. Obiettivo dell'attività**
+
+Trasformare la direzione scelta dall'utente in un progetto eseguibile: fissare il
+perimetro esatto di cosa passa al nuovo editor e cosa resta, scegliere come i due
+editor convivono, e portare alla luce prima dell'implementazione i comportamenti e i
+rischi che altrimenti si scoprirebbero a lavoro iniziato.
+
+**2. Modalità di esecuzione**
+
+Percorso architetturale della skill di brainstorming: classificazione dichiarata
+all'utente, esplorazione del contesto, domande una alla volta con opzioni illustrate,
+design a sezioni con approvazione dopo ciascuna. Ogni domanda è stata posta solo dopo
+aver verificato nel codice il fatto che la rende necessaria, così che la scelta fosse
+informata e non teorica. Una domanda è stata riformulata da capo perché l'utente ha
+segnalato di non aver capito il problema.
+
+**3. Attività svolte**
+
+Posta la prima domanda sul perimetro del blocco di testo, con tre opzioni illustrate;
+scelta l'opzione "testo ricco". Posta la seconda domanda sul conflitto del tasto `/`,
+riformulata dopo che l'utente ha segnalato di non averla capita, e infine superata dal
+chiarimento di perimetro arrivato dall'utente stesso.
+
+Verificato che il perimetro allargato al video avrebbe comportato la ricostruzione
+dell'intera macchina del progresso, e riportato il fatto all'utente con i numeri prima
+di chiedere la conferma: 48 lezioni su 103 coinvolte, 50-70 ore per la sola voce video,
+totale da ~40 a ~150 ore. Scelta dell'utente: il video resta un blocco.
+
+Dedotta e comunicata la conseguenza non richiesta ma inevitabile: PDF, audio, allegati
+e incorporamenti Google restano blocchi anch'essi, perché condividono lo strumento con
+il video.
+
+Consegnata la Sezione 1 del design (tabella di ripartizione delle responsabilità fra i
+due editor, schema di come si compone una lezione, spiegazione del perché non serve
+migrazione, elenco di ciò che non cambia per nessuno) e approvata dall'utente.
+Consegnata la Sezione 2 (gesto di formattazione su selezione senza barra fissa, tasto
+`/` invariato, vista studente senza montaggio di tiptap per preservare l'ancoraggio
+delle note, due rischi dichiarati in anticipo, stima rifinita a 45-60 ore con tabella
+per voce) e richiesta l'approvazione.
+
+Dichiarati in anticipo i due punti scomodi: il primo salvataggio di una lezione vecchia
+normalizza l'HTML dei suoi blocchi di testo, con contromisura un test di round-trip sul
+contenuto reale delle 100 lezioni di produzione; e i colori scritti con il vecchio
+strumento inline vanno convertiti al volo oppure quella lezione li perde.
+
+**4. Utilizzo dell'AI**
+
+Strumento: Claude Code (estensione VS Code). Modello: **Opus 5 (contesto 1M)**. Attività:
+conduzione della sessione di progettazione — esplorazione del codice a sostegno di ogni
+domanda, formulazione delle opzioni, stesura delle due sezioni di design, stima per
+voce. Perché questo strumento: il design richiedeva di tenere insieme il funzionamento
+di due motori di editing, il percorso del tracciamento video, il comportamento del
+sanitizzatore lato server e lo stato reale del contenuto in produzione; il contesto
+esteso permette di attraversarli nello stesso ragionamento. Perché questo modello: le
+scelte in gioco erano di giudizio, non di ricerca — riconoscere che il video è il
+meccanismo di completamento e non un contenuto, e fermare l'utente prima che
+confermasse un perimetro da 150 ore credendo di confermarne uno da 40. Risultato
+ottenuto: perimetro chiuso, architettura scelta, due sezioni di design di cui la prima
+approvata. Verifiche e correzioni fatte: il comportamento del sanitizzatore è stato
+**provato** installando `nh3` in un ambiente usa-e-getta invece di essere dedotto; la
+configurabilità del menu `/` è stata letta nel sorgente del pacchetto; il percorso del
+tracciamento video è stato seguito riga per riga. Una domanda mal posta è stata
+riscritta da zero su segnalazione dell'utente, senza difenderla.
+
+**6. Problematiche incontrate**
+
+Due. La prima: una domanda è stata formulata in modo incomprensibile, aprendo con il
+dettaglio tecnico invece che con l'esempio concreto; corretta riscrivendola dall'inizio
+con un caso d'uso reale. La seconda, più seria: l'utente stava per confermare un
+perimetro che comprendeva il video, senza sapere che il video regge il completamento
+delle lezioni; il rischio era far approvare un intervento da ~150 ore credendolo da ~40.
+Gestita fermando il flusso di domande, verificando il percorso del codice e riportando
+il fatto con i numeri prima di chiedere la conferma. Resta aperto un punto non
+verificato, la doppia registrazione della classe EditorJS, che è il primo elemento dello
+spike e ha già un ripiego individuato.
+
+**7. Chiusura dell'attività — lavoro sospeso su decisione dell'utente**
+
+L'utente ha chiesto, prima di chiudere, una stima nell'ipotesi che l'implementazione la
+scriva Claude e il collaudo lo faccia lui. Consegnata la rimodulazione: con
+l'implementazione assistita il costo non si traduce una a uno, perché il codice smette
+di essere il collo di bottiglia e lo diventano tre cose che non si comprimono — la
+convergenza sull'esperienza di scrittura (i difetti di un editor stanno sotto le dita e
+si vedono solo usandolo, quindi li trova l'utente e non Claude), la messa a punto
+visiva (che richiede schermate o guida diretta del browser) e il collaudo dell'utente.
+Stima consegnata: **9-12 sessioni di lavoro da 1-2 ore ciascuna**, ognuna chiusa da una
+consegna provabile, più **7-8 ore di collaudo dell'utente**, per un tempo di calendario
+di **5-8 giorni lavorativi** se il collaudo è in giornata, **2-3 settimane** se i giri
+si diluiscono. Su richiesta successiva dell'utente la stessa stima è stata dettagliata per fase e
+convertita in ore: **14-21 ore di lavoro di Claude e 9-10 ore dell'utente** (collaudo 7,5-8,5 h più
+1,5 h di coordinamento), cioè **circa 3 giornate uomo complessive distribuite su 5-8 giorni
+lavorativi**; nel caso sfavorevole, se l'innesto dell'editor nel blocco dà problemi di cursore e
+focus, +3-5 ore di Claude e +2 dell'utente, con calendario a 10-12 giorni. Segnalati tre fattori di
+allungamento: i container Docker sono spenti da
+17 ore e la riaccensione in questo repository non è sempre indolore; la versione di
+`frappe-ui` in `apps/os_lms` non è bloccata (c'è un `^` davanti a `1.0.0-beta.7`, e quel
+`^` ha già causato un guasto in produzione in passato), quindi va fissata prima di
+cominciare; la sessione dedicata all'innesto di tiptap nel blocco è quella che può
+sforare se cursore e focus si comportano male, e lo spike serve proprio a saperlo prima
+di bruciare sessioni.
+
+A quel punto l'utente ha deciso di **non procedere ora**: nessuna implementazione,
+nessuna specifica scritta. Richiesti solo due esiti: che le decisioni prese restino
+registrate, e una stima da comunicare al cliente. Entrambi consegnati — decisioni
+congelate nel registro e nella memoria di progetto, e stima commerciale formulata in
+**6-8 giornate/uomo con consegna in 2 settimane lavorative dalla conferma e circa una
+giornata di collaudo a carico del cliente**, cifra allineata alle 45-60 ore di sviluppo
+tradizionale, con i numeri dell'implementazione assistita dati a parte perché la scelta
+di come quotare spetta all'utente e non a Claude.
+
+**Stato a fine attività**: perimetro chiuso, architettura scelta, Sezione 1 del design
+approvata, Sezione 2 consegnata e non formalmente approvata, specifica non scritta,
+nessuna riga di codice toccata. Le due domande rimaste aperte sono state poi chiuse dall'utente
+nella stessa sessione: **(a)** i colori scritti con il vecchio strumento inline **non vanno
+gestiti** — l'unica lezione che li usa (`0790 Solo Testo`, materiale di prova) potrà perderli al
+primo risalvataggio; **(b)** il **test di round-trip sui testi vecchi non si fa**, perché l'utente
+ha dichiarato di non attribuire importanza alla formattazione dei testi storici e perché esiste
+un **ambiente di staging con dati affidabili** su cui collaudare la modifica. Lo **spike resta**,
+trattandosi di verifica dell'innesto tecnico e non dei contenuti vecchi. Compromesso accettato
+consapevolmente dall'utente e da mettere agli atti: lo staging intercetta ciò che qualcuno va a
+guardare, il confronto automatico prima/dopo avrebbe intercettato anche ciò che nessuno pensa di
+controllare. Stima rivista dopo i due tagli: **12-19 ore di Claude e 8-9 ore dell'utente**,
+sempre nell'ordine delle 3 giornate uomo su 5-8 giorni lavorativi. Alla ripresa il passo successivo è la specifica in
+`docs/superpowers/specs/`, la revisione dell'utente e poi il piano di implementazione.
+
+---
+
+### Attività 3 — Progettazione del sistema di configurazioni della piattaforma (sezioni Corsi, Classi e nuova sezione App), con stima
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Analisi e progettazione — documento di progetto con stima, nessuna modifica al codice applicativo |
+| **Problema riscontrato** | Richiesta dell'utente: progettare una feature che "toccherà molte parti in codice e che nel futuro diventerà sempre più grande". Nel pannello impostazioni esiste oggi il gruppo **Configurazioni** con le voci **Corsi** e **Classi**, il cui scopo è attivare o rendere visibili logiche, funzioni ed elementi grafici. Va aggiunta la sezione **App** con lo stesso scopo; i parametri di Corsi e Classi devono valere anche nell'app, ma non viceversa. Requisiti espressi: struttura solida e manutenibile per ~20 parametri per sezione, non solo interruttori ma qualsiasi tipo di dato, parametri dichiarati **sempre lato codice** e mai creati dal pannello, documentazione dedicata da aggiornare a ogni modifica, e soprattutto la capacità di **sopravvivere agli aggiornamenti dall'upstream** ("in futuro potremmo avere diverse linee di codice sparse in giro da gestire"). Richiesti il documento di progetto e la stima per la base con 5/6 parametri. Vincoli emersi durante il confronto: l'unico parametro concreto già deciso è **quali filtri nascondere nell'elenco corsi** (Pubblicato / In arrivo / Creato / Non pubblicato), con la precisazione che si devono poter **solo nascondere** filtri, non aggiungerne; a volte un parametro dovrà nascondere anche **una sola scritta**; e **tutto lo sviluppo sarà affidato all'assistente AI sotto supervisione dell'utente**. |
+| **Problema effettivo** | Il meccanismo attuale non è un sistema ma una somma di innesti, e il suo costo per parametro è costante e alto: aggiungerne uno richiede **quattro modifiche coordinate** (Custom Field nella fixture, whitelist dei campi lato server, voce scritta a mano nel pannello, punto di lettura nella SPA) più una patch di migrazione — a 60 parametri significa ripetere 60 volte quel lavoro. In più mancano le fondamenta: i Custom Field sono dichiarati **in due posti** che possono divergere senza segnalazione (`fixtures/custom_field.json` e il dizionario `CUSTOM_FIELDS` in `setup.py`), e `enable_live_classes` compare **sia** nella whitelist dentro il file upstream `lms/lms/api.py` **sia** nell'override os_lms che già sostituisce quella funzione — quindi la riga upstream è ridondante e produce un conflitto a ogni merge. Ma il vincolo davvero decisivo, emerso dall'analisi del caso concreto dei filtri, è un altro: **il costo non sta nel dichiarare il parametro, sta nel punto di lettura**. Nascondere i filtri dei corsi richiede di intervenire in `frontend/src/pages/Courses/Courses.vue` (il `computed` `courseTabs`, righe 374-400), cioè dentro un file dell'upstream che mescola già logica di ruolo; oggi nulla registra che quell'innesto esista, quindi un aggiornamento che riscrive il file lo cancella in silenzio. Qualunque architettura elegante dei parametri non risolve nulla se non affronta questo. |
+| **Soluzione applicata** | Nessuna modifica al codice: consegnato il documento di progetto `docs/superpowers/specs/2026-09-18-sistema-configurazioni-design.md` (326 righe), costruito dopo esplorazione del codice e quattro giri di chiarimento con l'utente. L'architettura scelta poggia su otto decisioni esplicite: **D1** un unico file Python dichiara i parametri e da lì si generano pannello, validazione, payload web, payload app, documentazione e tipi TypeScript; **D2** i valori vivono in uno storage chiave → valore (nuovo doctype `OS LMS Config Value`) invece che in colonne dedicate, così aggiungere un parametro non richiede **mai** una migrazione di schema — è lo stesso pattern che Frappe usa internamente per i doctype Single (`tabSingles`); **D3** l'ambito per singolo corso o classe è **predisposto ma non implementato** (firma e storage già pronti, nella v1 si accetta solo `global`); **D4** ogni parametro dichiara le superfici su cui è visibile (`WEB`, `APP`), così la regola "Corsi e Classi valgono anche nell'app ma non viceversa" diventa una conseguenza automatica della dichiarazione e non una logica da mantenere; **D5** semantica **sottrattiva** — i parametri dicono cosa togliere, non cosa tenere, perché un elenco di "visibili" farebbe sparire silenziosamente ogni voce aggiunta in futuro dall'upstream; **D6** il default di ogni parametro riproduce esattamente il comportamento upstream, così un innesto perso in un merge non produce un guasto ma un ritorno al comportamento di serie; **D7** il pannello SPA è l'unica superficie di modifica supportata, la list view del desk serve a ispezionare e correggere in emergenza; **D8** gli innesti nei file upstream sono marcati con un commento cercabile `// os-config: <chiave>`, dichiarati nel registry del parametro e **verificati da un test** che diventa rosso se il marcatore sparisce. Scartati due approcci alternativi con motivazione scritta: estendere l'esistente (costo per parametro invariato) e generare Custom Field dal registry (ogni parametro resta una colonna più una patch, e il vantaggio del form nativo svanisce proprio sui tipi non booleani, perché Frappe non ha un fieldtype per "elenco di valori da un insieme chiuso" e il caso reale dei filtri finirebbe comunque in `Long Text`). Individuato che **nessuna delle due porte d'ingresso richiede di toccare l'upstream**: il payload del sito passa da `get_lms_settings`, già sostituito da os_lms via `override_whitelisted_methods`, e quello dell'app da `get_instance_info`, che è codice nostro. |
+| **Commit** | Non committata — documento di progetto in attesa di revisione dell'utente; nessuna modifica al codice applicativo. |
+| **File modificati** | Creato: [docs/superpowers/specs/2026-09-18-sistema-configurazioni-design.md](docs/superpowers/specs/2026-09-18-sistema-configurazioni-design.md). Aggiornato: [docs/WORKLOG.md](docs/WORKLOG.md). File letti per l'analisi: [frontend/src/oslms/utils/settings.js](frontend/src/oslms/utils/settings.js) (`buildOslmsSettingsTabs`), [frontend/src/components/Settings/Settings.vue](frontend/src/components/Settings/Settings.vue), [frontend/src/components/Settings/SettingFields.vue](frontend/src/components/Settings/SettingFields.vue), [frontend/src/components/Settings/SettingDetails.vue](frontend/src/components/Settings/SettingDetails.vue), [frontend/src/stores/settings.js](frontend/src/stores/settings.js), [frontend/src/pages/Courses/Courses.vue](frontend/src/pages/Courses/Courses.vue) (`courseTabs`), [frontend/vite.config.js](frontend/vite.config.js) (plugin `osOverrideTheme`), [lms/lms/api.py](lms/lms/api.py) (`get_lms_settings`), [lms/lms/doctype/lms_settings/lms_settings.json](lms/lms/doctype/lms_settings/lms_settings.json), [apps/os_lms/os_lms/hooks.py](apps/os_lms/os_lms/hooks.py), [apps/os_lms/os_lms/os_lms/override_api.py](apps/os_lms/os_lms/os_lms/override_api.py), [apps/os_lms/os_lms/setup.py](apps/os_lms/os_lms/setup.py) (`CUSTOM_FIELDS`, `create_custom_fields`), [apps/os_lms/os_lms/fixtures/custom_field.json](apps/os_lms/os_lms/fixtures/custom_field.json), [apps/os_lms/os_lms/os_lms/app/api.py](apps/os_lms/os_lms/os_lms/app/api.py) (`get_instance_info`), [docs/OS_LMS_OVERRIDES.md](docs/OS_LMS_OVERRIDES.md). |
+| **Verifiche** | Ogni affermazione del documento è verificata sul codice, non dedotta. Contati i **17 Custom Field os_lms su `LMS Settings`** leggendo la fixture; confermata la **doppia dichiarazione** dei Custom Field confrontando la fixture con `CUSTOM_FIELDS` in `setup.py`; verificata la presenza di `enable_live_classes` **sia** in `lms/lms/api.py` (riga 1496, dentro la whitelist upstream) **sia** nell'override os_lms, e verificato in `hooks.py` che `override_whitelisted_methods` sostituisce già `lms.lms.api.get_lms_settings` — cioè che l'esposizione dei nuovi parametri **non richiede** di toccare l'upstream; contati i **14 punti di lettura** delle impostazioni nella SPA e i nomi effettivamente usati; letto `courseTabs` in `Courses.vue` e verificato che i quattro filtri sono costruiti in un file upstream insieme alla logica di ruolo (studente → solo "Iscritto"; moderatore/docente/valutatore → anche "Creato" e "Non pubblicato"), cioè che l'innesto va applicato **dopo** la costruzione dell'elenco per non alterare le regole di ruolo; verificato che `get_instance_info` è codice os_lms; verificata l'esistenza dell'attrezzatura di test citata nella stima (**31 test frontend** con Vitest in `frontend/src/tests/`, contati con `ls`, più i test Python di Frappe in os_lms). Rilettura critica del documento dopo la stesura, con due correzioni applicate: una tabella resa illeggibile da caratteri `|` dentro un blocco di codice, e il conteggio dei test frontend indicato erroneamente come 32. **Correzione dichiarata anche all'utente in corso di confronto**: avevo presentato l'approccio chiave → valore dicendo che i valori non sarebbero stati visibili dal desk Frappe; è falso, perché un doctype normale riceve gratuitamente list view e form — la sola differenza rispetto all'alternativa è l'assenza di controlli tipizzati nel desk, e questo ha eliminato una delle tre opzioni che avevo proposto all'utente. Nessuna implementazione eseguita, quindi nessuna build e nessun test lanciato: la fattibilità è argomentata sulla struttura del codice esistente, non dimostrata su un prototipo. |
+
+**1. Obiettivo dell'attività**
+
+Dare alle configurazioni della piattaforma una struttura che regga la crescita prevista
+— circa venti parametri per ciascuna delle tre sezioni — invece di continuare ad
+aggiungerne uno alla volta con il metodo attuale, che costa quattro modifiche coordinate
+ogni volta. Obiettivo secondario ma decisivo, perché è quello che l'utente ha indicato
+come sua preoccupazione principale: fare in modo che le modifiche introdotte
+sopravvivano agli aggiornamenti del progetto originale, dato che il codice che le
+contiene è destinato a essere sparso in molti file non nostri. Terzo obiettivo, emerso
+in corso di confronto: poiché ogni futuro parametro sarà scritto dall'assistente AI su
+richiesta dell'utente, la procedura deve essere documentata in modo da essere
+ripetibile da una sessione che non ha memoria di questa.
+
+**2. Modalità di esecuzione**
+
+Percorso di progettazione in quattro passaggi, condotto con la skill `brainstorming` e
+classificato fin dall'inizio come intervento **architetturale** (sottosistema nuovo, non
+modifica circoscritta), il che impone il ciclo completo domande → approcci → design a
+sezioni → documento.
+
+Primo, ricostruzione dello stato attuale leggendo la catena completa di una
+configurazione esistente, da dove è dichiarata a dove viene letta: la voce nel pannello,
+il Custom Field, la funzione che la espone al frontend, il punto che la consuma. Questo
+ha fatto emergere i tre difetti strutturali (costo costante, doppia dichiarazione,
+innesti non registrati) che nessuna lettura del solo pannello avrebbe mostrato.
+
+Secondo, quattro giri di domande all'utente per fissare i vincoli che il codice non può
+rivelare: se i parametri debbano poter essere sovrascritti sul singolo corso o classe
+(risposta: non ora, ma predisposto), cosa significhi esattamente che i parametri dei
+corsi influiscono sull'app (risposta: l'app riceve anche quelli, ma i suoi non toccano
+il sito), quali fossero i primi parametri (risposta: uno solo deciso, i filtri dei
+corsi, da poter solo nascondere). La prima domanda è stata riformulata due volte perché
+posta in modo troppo astratto, e la seconda formulazione ha usato un esempio preso dal
+codice dell'utente invece di categorie teoriche.
+
+Terzo, formulazione di **tre approcci alternativi** con i rispettivi compromessi, messi
+a confronto su tre criteri scelti perché discriminanti: quanto costa il ventesimo
+parametro rispetto al primo, se il vantaggio dell'approccio regge sui tipi di dato
+realmente richiesti (l'unico parametro concreto è un **elenco**, non un interruttore), e
+quale direzione di cambiamento è reversibile in futuro. Il terzo criterio ha deciso la
+scelta a parità di dubbio.
+
+Quarto, presentazione del progetto a sezioni con approvazione progressiva dell'utente,
+in linguaggio deliberatamente non tecnico su sua richiesta esplicita ("spiega più
+semplice"), e infine stesura del documento seguita da rilettura critica per placeholder,
+contraddizioni interne e ambiguità.
+
+**3. Attività svolte**
+
+Ricostruita e documentata in forma tabellare la catena completa delle configurazioni
+attuali, dalla dichiarazione al consumo, con l'indicazione per ciascun anello del file
+che lo contiene. Individuati e nominati i tre difetti strutturali che rendono il
+meccanismo non scalabile, ciascuno verificato sul codice e non ipotizzato.
+
+Progettata l'architettura del nuovo sistema in dieci componenti descritti singolarmente:
+la struttura dei file, il registry con i suoi undici attributi per parametro, gli otto
+tipi di dato supportati con il controllo corrispondente nel pannello, lo storage chiave →
+valore con la sua strategia di cache e invalidazione, le regole di risoluzione e lettura
+lato server, l'esposizione al sito e all'app, la lettura nella SPA, la gestione degli
+innesti nei file upstream, il pannello generato dal registry e la documentazione.
+
+Prese e motivate per iscritto otto decisioni architetturali numerate, ciascuna con la
+sua ragione, così che una sessione futura possa capire perché una strada è stata scelta
+e non doverla ridiscutere. Documentati anche i **due approcci scartati** con la ragione
+dello scarto, che è l'informazione che più spesso va perduta.
+
+Definita la strategia di tenuta agli aggiornamenti su tre livelli con il rischio
+dichiarato per ciascuno: nullo per il codice lato server e per il pannello, perché
+vivono interamente in cartelle nostre e si agganciano con i meccanismi ufficiali del
+framework; reale solo per gli innesti nelle pagine, dove è stata definita una difesa in
+tre mosse — evitare l'innesto quando l'elemento vive già in un componente nostro,
+marcarlo con un commento cercabile quando è inevitabile, e verificarlo con un test
+automatico che fallisce se il marcatore scompare.
+
+Definita la struttura della documentazione in due file con ruoli distinti: l'elenco dei
+parametri, **generato** dal registry e quindi strutturalmente incapace di disallinearsi,
+e la ricetta scritta a mano su come aggiungere un parametro, richiamata da `CLAUDE.md`
+perché sia la prima cosa che una sessione futura trova. Data la scelta di affidare lo
+sviluppo all'assistente AI, la ricetta è stata trattata non come documentazione
+accessoria ma come l'interfaccia operativa con cui il sistema verrà usato.
+
+Prodotta la stima, articolata in otto fasi con l'indicazione dei cinque punti in cui
+serve una revisione dell'utente: circa cinque sessioni di lavoro, equivalenti a 2,5-3
+giornate effettive, con costo a regime del parametro successivo fra i 15 e i 45 minuti.
+Aggiunta una tabella di quattro rischi con probabilità, impatto e mitigazione, e due
+attività correlate stimate separatamente perché da non svolgere durante la costruzione:
+la migrazione del parametro esistente `enable_live_classes` nel nuovo sistema (che
+eliminerebbe la riga innestata nel file upstream) e la riconciliazione dei due
+meccanismi di dichiarazione dei Custom Field. Chiusi il documento con otto criteri di
+accettazione verificabili e con l'elenco esplicito di ciò che resta fuori ambito.
+
+**4. Utilizzo dell'AI**
+
+**Tool e agente:** Claude Code, in sessione interattiva dentro l'estensione VS Code, con
+la skill `brainstorming` del pacchetto Superpowers che ne ha imposto il metodo
+(classificazione dell'intervento, domande una alla volta, approcci alternativi prima del
+progetto, approvazione a sezioni, documento finale con rilettura critica).
+
+**Modello:** Claude Opus 5 con finestra di contesto da 1 milione di token.
+
+**Per quale attività:** esplorazione del codice esistente per ricostruire la catena
+completa delle configurazioni attuali; individuazione dei difetti strutturali;
+formulazione e confronto di tre approcci architetturali; conduzione del dialogo di
+chiarimento con l'utente; stesura del documento di progetto e della stima.
+
+**Perché questo tool e questo modello:** il lavoro richiedeva di tenere
+simultaneamente in vista frammenti di almeno quindici file distribuiti su tre livelli
+diversi del progetto (l'app custom `os_lms`, il codice originale `lms`, il frontend Vue)
+e di trarne conclusioni architetturali coerenti fra loro — un compito di sintesi, non di
+ricerca puntuale. La finestra di contesto ampia serviva a non perdere per strada i
+dettagli raccolti nella prima metà dell'esplorazione mentre si formulavano gli approcci
+nella seconda: la scoperta che `get_lms_settings` è già sostituita da os_lms, fatta
+leggendo `hooks.py`, è quella che ha reso possibile progettare l'esposizione dei
+parametri senza toccare un solo file originale, ed è arrivata molte letture prima del
+momento in cui è stata usata. Claude Code è stato scelto perché la ricostruzione
+richiedeva accesso diretto al repository: quasi ogni affermazione del documento nasce
+da una lettura o da un conteggio sul codice.
+
+**Risultato ottenuto:** un documento di progetto di 326 righe, approvato a sezioni
+dall'utente durante la stesura, con architettura in dieci componenti, otto decisioni
+motivate, due approcci scartati con ragione, strategia di tenuta agli aggiornamenti su
+tre livelli, stima in otto fasi con cinque punti di revisione, quattro rischi con
+mitigazione e otto criteri di accettazione.
+
+**Verifiche e correzioni fatte:** ogni dato quantitativo del documento è stato misurato
+sul codice e non stimato (17 Custom Field, 14 punti di lettura, 31 test frontend, le
+righe esatte di `courseTabs`, la presenza simultanea di `enable_live_classes` nei due
+punti). Due correzioni sono nate dalla rilettura del documento: una tabella resa
+illeggibile da caratteri di separazione dentro un blocco di codice e un conteggio di
+test sbagliato per eccesso, corretto dopo verifica con `ls`. Una terza correzione,
+più rilevante, è stata dichiarata all'utente durante il confronto: avevo attribuito
+all'approccio raccomandato uno svantaggio inesistente — l'impossibilità di ispezionare i
+valori dal pannello tecnico di Frappe — che ha portato a proporre una terza opzione
+inutile; riconosciuto l'errore, l'opzione è stata eliminata e la scelta si è ridotta a
+due alternative reali. L'utente ha inoltre corretto due volte il registro linguistico,
+chiedendo spiegazioni più semplici, e la seconda parte del confronto è stata riscritta
+di conseguenza.
+
+**6. Problematiche incontrate**
+
+*Prima domanda posta in modo incomprensibile.* La domanda iniziale sull'ambito dei
+parametri — se globali o sovrascrivibili sul singolo corso — ha ricevuto in risposta
+"non ho capito". La causa non era la complessità dell'argomento ma la formulazione: era
+posta in categorie astratte ("ambito", "risoluzione a cascata") senza un solo esempio
+concreto. Riformulata usando il parametro che l'utente già conosce, cioè l'interruttore
+delle classi dal vivo esistente nel suo pannello, e mostrando in tabella cosa succede
+nei due casi, la risposta è arrivata immediata. Risolta.
+
+*Registro linguistico troppo tecnico.* Alla presentazione dei tre approcci l'utente ha
+risposto "spiega più semplice". La causa è la stessa della precedente, ripetuta: la
+spiegazione usava il vocabolario dell'architettura software invece di quello del
+risultato. Riscritta senza termini tecnici, con il confronto ridotto a tre domande in
+lingua corrente e una tabella di due righe. Risolta, e assunta come registro per tutto
+il resto del confronto.
+
+*Svantaggio inesistente attribuito all'approccio raccomandato.* Presentando lo storage
+chiave → valore avevo scritto che i valori non sarebbero stati visibili né modificabili
+dal pannello tecnico di Frappe, e su quella base avevo costruito una terza opzione
+intermedia. La causa è un'assunzione non verificata: in Frappe ogni doctype normale
+riceve automaticamente elenco e scheda di modifica, quindi la visibilità non si perde —
+si perde soltanto la presenza di controlli tipizzati, che è tutt'altra cosa e molto meno
+rilevante. Rilevato l'errore prima che l'utente scegliesse, dichiarato apertamente e
+corretto: la terza opzione è stata eliminata perché ridondante. Risolta.
+
+*Nessun blocco tecnico.* L'attività non ha incontrato ostacoli sul codice: tutte le
+informazioni necessarie erano leggibili nel repository.
+
+---
+
+### Attività 4 — Piano di implementazione del sistema di configurazioni, con codice completo e test
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Progettazione esecutiva — piano di implementazione pronto all'esecuzione, nessuna modifica al codice applicativo |
+| **Problema riscontrato** | Esigenza dell'utente subito dopo l'approvazione del documento di progetto (Attività 3): *"non aggiornare, prepara il piano di implementazione"*. Il piano deve essere eseguibile dall'assistente AI sotto supervisione, quindi non può limitarsi a elencare le fasi: deve contenere il codice reale, i comandi reali e i test reali, perché a eseguirlo sarà una sessione futura che non ha vissuto il confronto di progettazione. |
+| **Problema effettivo** | Scrivere il codice ha fatto emergere tre vincoli che l'analisi architetturale non aveva toccato. **Primo, un conflitto con le regole del progetto**: la specifica usava identificatori italiani (`chiave`, `sezione`, `corsi.filtri_nascosti`), mentre `CLAUDE.md` impone identificatori e commenti in inglese, regola che il codice esistente rispetta (`enable_live_classes`). La chiave finisce dentro il marcatore degli innesti e nel payload dell'app, quindi andava fissata subito: nel piano diventa `courses.hidden_tabs`, con etichette e descrizioni che restano in italiano. **Secondo, un limite del pannello upstream**: `Settings.vue` passa ai componenti personalizzati soltanto `label` e `description`, quindi non c'è modo di dirgli quale sezione deve disegnare senza modificarlo — e `Settings.vue` è un file upstream. Risolto con una funzione di una riga in `settings.js` (file nostro) che avvolge il renderer generico fissando la sezione, così l'upstream resta intatto. **Terzo, una dipendenza circolare all'avvio**: il doctype dello storage invalida la cache dello store, e lo store legge il doctype; risolta con import differiti dentro i metodi e con la creazione dello store in due passi lungo il piano. |
+| **Soluzione applicata** | Prodotto `docs/superpowers/plans/2026-09-18-sistema-configurazioni.md` (3165 righe), articolato in **14 task** ciascuno con ciclo TDD completo: scrivi il test che fallisce, verificalo rosso, implementa il minimo, verificalo verde, committa. Il piano contiene il codice integrale di 11 file nuovi (tipi, registry, dichiarazioni, doctype, store, endpoint, generatore di documentazione, composable SPA, renderer del pannello) e di 9 file di test, i comandi esatti per eseguirli nel container Docker, gli scostamenti dichiarati rispetto alla specifica e una tabella che mappa ciascuno degli 8 criteri di accettazione sul task che lo soddisfa. Tre ambiti sono stati **esclusi con motivazione scritta** invece che rinviati genericamente: il file di costanti TypeScript previsto dalla specifica (rimandato perché finché i parametri sono pochi non intercetta nessun errore che i test non colgano già), gli altri 4-5 parametri (non ancora definiti dal committente), e la migrazione di `enable_live_classes` (che la specifica colloca dopo il collaudo). |
+| **Commit** | Non committata — piano in attesa della scelta della modalità di esecuzione da parte dell'utente. |
+| **File modificati** | Creato: [docs/superpowers/plans/2026-09-18-sistema-configurazioni.md](docs/superpowers/plans/2026-09-18-sistema-configurazioni.md). Aggiornato: [docs/WORKLOG.md](docs/WORKLOG.md). File letti per allinearsi alle convenzioni: [apps/os_lms/os_lms/os_lms/doctype/lms_os_tag/](apps/os_lms/os_lms/os_lms/doctype/lms_os_tag/) (struttura di un doctype os_lms), [apps/os_lms/os_lms/patches.txt](apps/os_lms/os_lms/patches.txt), [apps/os_lms/os_lms/os_lms/ai/simulations/tests/test_prompts.py](apps/os_lms/os_lms/os_lms/ai/simulations/tests/test_prompts.py) (stile dei test Python), [frontend/src/tests/SettingFields.test.ts](frontend/src/tests/SettingFields.test.ts) (stile dei test di componente), [frontend/vitest.config.ts](frontend/vitest.config.ts), [frontend/src/components/Layouts/SettingsLayout.vue](frontend/src/components/Layouts/SettingsLayout.vue), [frontend/src/oslms/components/trueskills/TrueSkillsSettings.vue](frontend/src/oslms/components/trueskills/TrueSkillsSettings.vue) (pattern di un pannello custom), [lms/hooks.py](lms/hooks.py) (`require_type_annotated_api_methods`), più il codice os_lms già esaminato nell'Attività 3. |
+| **Verifiche** | Nessun comando eseguito sul codice: il piano non implementa nulla, quindi non c'è build né test da lanciare. Eseguita invece **l'autoverifica del piano in tre passaggi** prevista dalla procedura, con sei correzioni applicate. (1) *Copertura della specifica*: mappato ogni criterio di accettazione su un task; individuato che il file di costanti TypeScript di §4.1 non era coperto e trasformato da omissione silenziosa in esclusione dichiarata con motivazione. (2) *Ricerca di segnaposto*: nessun "TBD", nessun "come il Task N", nessun passo che descrive senza mostrare; verificato con ricerca testuale. (3) *Coerenza dei tipi e dei nomi*: controllato che ogni firma usata in un task corrisponda a quella definita nel task precedente (percorsi di import, nome dei campi del doctype, forma del dizionario restituito dallo schema, nomi delle funzioni SPA). **Correzione più rilevante**: in quattro file di test avevo scritto `frappe.db.delete("OS LMS Config Value")` senza filtri come pulizia fra un test e l'altro — su un sito di sviluppo quel comando cancella **tutte le configurazioni reali**, non solo le righe create dal test. Sostituito con un modulo di helper che agisce solo sulle chiavi toccate, con chiavi dedicate ai test (`courses.test_multi`, `app.test_flag`) dove è possibile e con salvataggio e ripristino del valore preesistente dove la chiave è reale; rimossa anche la stessa istruzione da un passo di verifica manuale. Altre correzioni: il test di comportamento dei filtri replicava la logica invece di legarsi al file reale, e ora verifica anche che il marcatore in `Courses.vue` sia seguito dalla chiamata come **ultimo** passaggio di `courseTabs`, cioè applicato dopo le regole di ruolo; l'endpoint dello schema sollevava un errore sui parametri che l'utente non può modificare invece di ometterli; il test sul controllo dei ruoli sceglieva un utente qualsiasi e sarebbe passato per la ragione sbagliata su un sito pieno di amministratori; due note del piano erano scritte come ragionamento a voce alta anziché come decisione. |
+
+**1. Obiettivo dell'attività**
+
+Trasformare il documento di progetto approvato in un piano che una sessione futura
+possa eseguire senza rileggere la conversazione di oggi e senza dover prendere
+decisioni architetturali per conto proprio. Il criterio di riuscita è preciso: chi
+esegue deve poter copiare il codice, lanciare il comando indicato, vedere l'esito
+atteso e committare, in quest'ordine, per quattordici volte.
+
+**2. Modalità di esecuzione**
+
+Piano costruito con la skill `writing-plans` del pacchetto Superpowers, che impone
+tre cose: la mappa dei file prima dei task, task della dimensione minima che porta
+con sé il proprio ciclo di test, e il divieto assoluto di segnaposto.
+
+Prima di scrivere una riga di piano è stata fatta una raccolta mirata delle
+convenzioni del progetto, perché un piano scritto su convenzioni immaginate è un
+piano che chi esegue deve correggere: struttura di un doctype os_lms esistente,
+elenco delle patch registrate, stile dei test Python e dei test di componente,
+configurazione di Vitest, componente di layout delle impostazioni, pattern di un
+pannello personalizzato già in uso, e la verifica che i metodi esposti debbano
+avere annotazioni di tipo obbligatorie.
+
+I task sono stati ordinati in modo che ciascuno sia verificabile da solo e che le
+dipendenze corrano in una sola direzione: prima i tipi (Python puro, nessuna
+dipendenza), poi il registry, poi lo storage, poi la risoluzione, poi l'esposizione,
+poi il pannello, e solo alla fine l'innesto nel file upstream. Il test che verifica
+la presenza degli innesti è stato messo **prima** dell'innesto stesso e lasciato
+deliberatamente rosso, così che a farlo passare sia l'innesto: è la dimostrazione
+che la rete di sicurezza funziona, non un'affermazione.
+
+Chiusura con l'autoverifica in tre passaggi prevista dalla skill, e correzione
+inline di tutto quanto emerso.
+
+**3. Attività svolte**
+
+Raccolte le convenzioni del progetto leggendo otto file di riferimento, per
+allineare struttura dei doctype, stile dei test, comandi di esecuzione e vincoli
+sulle API esposte.
+
+Costruita la mappa dei file da creare, dieci in tutto, ciascuno con la sua
+responsabilità dichiarata in una riga, separando deliberatamente i tipi (senza
+dipendenze dal framework, quindi verificabili da soli) dal resto del sistema.
+
+Scritti i quattordici task con il codice integrale: tipi di valore con la loro
+validazione, registry con registrazione severa che rifiuta chiave duplicata,
+prefisso incoerente con la sezione, default che non rispetta il proprio tipo e
+ambito non ancora supportato; doctype dello storage che valida anche quando viene
+modificato a mano dal pannello tecnico; risoluzione con cache e con la regola che
+un valore corrotto viene registrato e sostituito dal default invece di propagare
+l'errore; esposizione al sito e all'app senza toccare alcun file upstream;
+endpoint del pannello con validazione e controllo dei ruoli; lettura nella SPA;
+renderer generico del pannello; verifica automatica degli innesti; l'innesto vero
+e proprio nei filtri dei corsi; generatore della documentazione; ricetta per le
+sessioni future; collaudo finale.
+
+Definito il collaudo come sequenza di verifiche eseguibili e non come intenzione:
+suite completa backend e frontend, build, sette controlli manuali numerati sulle
+tre sezioni del pannello, controllo della superficie di ispezione tecnica, e in
+chiusura la verifica del criterio di accettazione più importante — con lo storage
+vuoto la piattaforma deve comportarsi esattamente come prima del piano.
+
+Eseguita l'autoverifica e applicate sei correzioni, fra cui la rimozione di
+un'istruzione di pulizia dei test che avrebbe cancellato tutte le configurazioni
+reali del sito di sviluppo.
+
+**4. Utilizzo dell'AI**
+
+**Tool e agente:** Claude Code, sessione interattiva in VS Code, con la skill
+`writing-plans` del pacchetto Superpowers, invocata su indicazione della skill
+`brainstorming` che aveva guidato l'attività precedente.
+
+**Modello:** Claude Opus 5 con finestra di contesto da 1 milione di token.
+
+**Per quale attività:** raccolta delle convenzioni del progetto; scrittura del
+piano di implementazione in quattordici task con il codice completo di venti file
+fra sorgenti e test; autoverifica del piano contro la specifica.
+
+**Perché questo tool e questo modello:** il piano è un documento in cui la
+coerenza conta più della singola riga — il nome di un campo inventato nel task 3
+deve essere identico nel task 12, e un percorso di import sbagliato blocca chi
+esegue. Tenere simultaneamente in vista venti file che non esistono ancora, e
+verificarne le firme incrociate, è esattamente il compito per cui serve una
+finestra di contesto ampia. Claude Code perché le convenzioni andavano lette dal
+repository e non ipotizzate: lo stile dei test, la struttura dei doctype e i
+vincoli sulle API esposte sono stati copiati da file reali del progetto.
+
+**Risultato ottenuto:** un piano di 3165 righe, 14 task, ciascuno con test,
+implementazione, comando di verifica ed esito atteso; tabella di copertura degli
+otto criteri di accettazione; tre esclusioni dichiarate con motivazione; nessun
+segnaposto.
+
+**Verifiche e correzioni fatte:** eseguita l'autoverifica in tre passaggi prevista
+dalla skill (copertura della specifica, ricerca di segnaposto, coerenza di tipi e
+firme) con sei correzioni applicate. La più importante riguarda la sicurezza dei
+dati e non il funzionamento: quattro file di test contenevano una pulizia non
+filtrata che avrebbe cancellato tutte le configurazioni reali del sito su cui
+girano i test. La correzione è stata guidata da un episodio già avvenuto su questo
+progetto, in cui un filtro troppo largo in uno script di pulizia aveva eliminato
+undici corsi reali. Corretto anche un test che sembrava verificare il
+comportamento della pagina dei corsi mentre in realtà ne replicava la logica,
+quindi sarebbe rimasto verde anche con l'innesto cancellato — cioè avrebbe fallito
+proprio nel caso per cui era stato scritto.
+
+**6. Problematiche incontrate**
+
+*Pulizia dei test distruttiva.* Scrivendo i test avevo usato la cancellazione
+totale della tabella delle configurazioni come pulizia fra un test e l'altro. La
+causa è un'abitudine corretta in un ambiente di test isolato e sbagliata qui,
+dove i test girano sullo stesso sito di sviluppo che contiene configurazioni
+reali. Rilevata durante l'autoverifica e corretta con helper che agiscono solo
+sulle chiavi toccate, chiavi dedicate ai test dove possibile, e salvataggio con
+ripristino dove la chiave è reale. Risolta.
+
+*Test di comportamento che non testava il comportamento.* Il test dei filtri
+replicava la costruzione dei tab invece di legarsi al file reale: sarebbe rimasto
+verde anche cancellando l'innesto, cioè non avrebbe rilevato il guasto che è la
+sua unica ragione di esistere. Aggiunta una verifica che legge il file e controlla
+che il marcatore sia seguito dalla chiamata come ultimo passaggio, dopo le regole
+di ruolo. Risolta.
+
+*Conflitto fra la specifica e le regole del progetto.* La specifica approvata
+usava identificatori italiani, che il `CLAUDE.md` del progetto vieta. La causa è
+mia: durante la progettazione avevo scritto gli esempi nella lingua del confronto
+invece che in quella del codice. Corretto nel piano, dichiarato come scostamento
+esplicito e segnalato all'utente. La specifica non è stata riallineata: da valutare
+se farlo. **Aperto.**
+
+*Il pannello upstream non sa ricevere il nome della sezione.* Non previsto in fase
+di progettazione: `Settings.vue` passa ai componenti personalizzati solo etichetta
+e descrizione, e modificarlo significherebbe toccare un file upstream proprio nella
+feature che nasce per evitarlo. Risolto con una funzione di una riga in un file
+nostro che avvolge il renderer fissando la sezione. Risolta.
+
+---
+
+### Attività 5 — Progettazione del sistema di verifica delle personalizzazioni contro gli aggiornamenti upstream
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Progettazione — intervento architetturale, documento di progetto approvato; nessuna modifica al codice applicativo |
+| **Problema riscontrato** | Esigenza dell'utente: dopo ogni aggiornamento del progetto originale (`frappe/lms`) è costretto a ritestare a mano l'intera piattaforma, perché non sa quali sue personalizzazioni siano state toccate. Due sintomi distinti riportati: (a) «se in un file faccio delle modifiche mie, poi il file aggiornato mi ripulisce tutto»; (b) non ha modo di sapere se una regola di visibilità legata a un ruolo custom è rimasta valida — esempio citato: un bottone reso visibile al ruolo `Gestore`, che è un ruolo introdotto da lui e che l'upstream non conosce. Richiesta esplicita: quando qualcosa cambia, lo strumento deve **rimettere com'era o notificare**, e i test devono essere **scritti ed eseguiti da un agente AI**, non a mano. |
+| **Problema effettivo** | Tre vincoli emersi dall'analisi, nessuno dei quali era visibile nella richiesta iniziale. **Primo**: i due sintomi sono problemi di natura diversa e richiedono strumenti diversi — (a) è una perdita *testuale* (una riga sparita da un file) e si rileva al meglio con un inventario delle personalizzazioni più un rilevatore di scostamento, in due secondi e senza avviare nulla; (b) è una regressione *comportamentale* e richiede un test. **Secondo, il vincolo che ha determinato l'architettura**: un test è un predicato booleano, passa o fallisce, e quindi **non sa ripristinare nulla**; la richiesta «rimettere com'era prima» impone per forza un artefatto che conservi *l'intenzione* della personalizzazione e non solo il suo esito, altrimenti è realizzabile solo la metà «notifica». **Terzo**: la SPA di LMS non controlla i permessi Frappe ma dei flag booleani calcolati da `override_api.get_user_info`, quindi la catena `ruolo → flag → elemento visibile` ha una giuntura netta a metà e si può verificare con due test veloci invece che con un test end-to-end lento. Vincolo aggiuntivo rilevato sull'infrastruttura esistente: le 3 spec Cypress presenti girano **tutte come `Administrator`**, che in Frappe bypassa ogni controllo di permesso — nessuna di esse potrebbe quindi rilevare una regressione sulle regole di visibilità, per costruzione. |
+| **Soluzione applicata** | Nessuna modifica al codice. Progettato e documentato un sistema in **quattro componenti**, con l'inventario dichiarativo come unica fonte di verità: (1) `docs/customizations/*.yaml`, una voce per personalizzazione con dove sta (`file` + `anchor`), cosa deve fare (`intent` in linguaggio naturale), chi la vede (`allow`/`deny`) e come si verifica (`checks`); (2) un rilevatore di scostamento `scripts/check_customizations.py` con quattro controlli testuali, fra cui quello **inverso** che segnala i marcatori `OSLMS-CUSTOM` presenti nel codice ma non censiti; (3) tre suite di test — backend Frappe per `ruolo → flag`, Vitest per `flag → DOM`, Cypress per gli smoke di visibilità per ruolo e i flussi funzionali critici; (4) un flusso agentico `/upstream-check` in sette passi, il cui passaggio di maggior valore è il **diff mirato** ai soli file censiti, che riduce la superficie da controllare dopo un merge da migliaia di file a circa cinquanta. Due regole di progetto fissate perché sono le più facili da perdere: l'agente **non può mai modificare un test per farlo passare** (davanti a un test rosso ripara il codice oppure si ferma e chiede), e il cleanup del seeding cancella **solo i nomi registrati dal seed**, mai con un filtro `LIKE`. Adozione pianificata in cinque fasi, con la Fase 0 (inventario + rilevatore, senza scrivere un test) indicata come quella dal miglior rapporto valore/costo perché chiude da sola il sintomo (a). |
+| **Commit** | Sì, a fine giornata insieme agli altri documenti prodotti: `68e37b78` — `docs: design the upstream customization safety net` (4 file, 2.864 righe aggiunte). **Non pushato.** Il worklog resta non committato come da convenzione di progetto. |
+| **File modificati** | Creato: [docs/superpowers/specs/2026-09-18-upstream-regression-harness-design.md](superpowers/specs/2026-09-18-upstream-regression-harness-design.md) (526 righe). Aggiornato: [docs/WORKLOG.md](WORKLOG.md). File letti per la misurazione del perimetro e per il progetto: [docs/OS_LMS_OVERRIDES.md](OS_LMS_OVERRIDES.md), [frontend/src/components/CourseCardOverlay.vue](../frontend/src/components/CourseCardOverlay.vue), [apps/os_lms/os_lms/os_lms/override_api.py](../apps/os_lms/os_lms/os_lms/override_api.py), [apps/os_lms/os_lms/os_lms/api.py](../apps/os_lms/os_lms/os_lms/api.py), [frontend/vitest.config.ts](../frontend/vitest.config.ts), [frontend/src/tests/SettingsLayout.test.ts](../frontend/src/tests/SettingsLayout.test.ts), [cypress/support/commands.js](../cypress/support/commands.js), [cypress.config.js](../cypress.config.js), i workflow [.github/workflows/ci.yml](../.github/workflows/ci.yml), `frontend-tests.yml` e `ui-tests.yml`, e sei memorie di progetto (`upstream-merge-maintenance-strategy`, `gestore-role-bundle`, `docente-global-instructor-role`, `valutatore-role-scoped-per-batch`, `test-cleanup-must-not-use-broad-filters`, `courseform-sectioned-custom-grafts`). |
+| **Verifiche** | Tutti i numeri del documento sono **misurati sul repository**, non stimati: 49 marcatori `OSLMS-CUSTOM` in file sorgente (esclusi i bundle generati sotto `lms/public/frontend/`, che ne contengono altre occorrenze nelle sourcemap e che sono stati deliberatamente scartati dal conteggio); 169 occorrenze di gate per ruolo su 48 file della SPA, escludendo i file di test; 37 funzioni di override backend; 31 test Vitest esistenti; 3 spec Cypress, tutte con login `Administrator`; **un solo** attributo `data-test` presente oggi in tutta la SPA e **zero** selettori `data-test` usati da Cypress, che è il dato su cui poggia la decisione D6. Verificata l'esistenza di `cy.login` in `cypress/support/commands.js:31` e del workflow `frontend-tests.yml` già attivo, cioè che due dei tre livelli di esecuzione esistono già e non vanno costruiti. Eseguita la rilettura critica del documento prevista dalla procedura, che ha prodotto **tre correzioni**: il confine fra `spa-grafts.yaml` e `roles.yaml` non era definito (risolto dichiarando che il criterio è *dove vive il codice*, non cosa fa la regola); il campo `checks` era dato per obbligatorio, in contraddizione con la Fase 0 che non prevede test scritti (risolto ammettendolo vuoto e declassando il controllo C4 a `warning`); gli pseudo-attori usati negli esempi (`course-instructor`, `batch-valutatore`, `Guest`) non erano definiti da nessuna parte (risolto con un paragrafo che ne impone la dichiarazione in `actors.yaml`). Nessuna verifica eseguibile: il sistema non è ancora implementato, quindi nulla di ciò che è progettato è stato provato sul campo. |
+
+**1. Obiettivo dell'attività**
+
+Dare all'utente uno strumento che sostituisca il ritest manuale integrale della
+piattaforma dopo ogni aggiornamento del progetto originale. L'obiettivo primario è la
+**rilevazione**: sapere, subito dopo un merge, quali personalizzazioni sono state
+perse o alterate. L'obiettivo secondario, esplicitamente richiesto, è la **riparazione**:
+riportare la personalizzazione al comportamento voluto, o quantomeno notificarne con
+precisione la perdita. Terzo obiettivo, posto dall'utente come vincolo di metodo e non
+come contorno: la scrittura e l'esecuzione dei test devono essere affidate a un agente
+AI, quindi il sistema va progettato perché sia un agente a poterlo usare, non una
+persona.
+
+**2. Modalità di esecuzione**
+
+Percorso di progettazione condotto con la skill `brainstorming`, classificato fin
+dall'inizio come intervento **architetturale** — sottosistema nuovo che tocca backend,
+SPA e processo di merge — il che impone il ciclo completo domande → design a sezioni con
+approvazione progressiva → documento → rilettura critica.
+
+Primo, misurazione del perimetro reale prima di qualunque proposta, perché la
+dimensione del problema decide quale soluzione è sostenibile: conteggio dei marcatori di
+personalizzazione, dei gate per ruolo, delle funzioni di override e della copertura di
+test già esistente. Questa misurazione ha cambiato il progetto: sapere che l'infrastruttura
+di test esiste già su tre livelli e che 50 personalizzazioni sono già marcate nel codice
+ha spostato il lavoro da «costruire una suite» a «collegare ciò che c'è a un inventario».
+
+Secondo, cinque domande all'utente per fissare i vincoli che il codice non può rivelare:
+il perimetro da coprire (risposta: personalizzazioni **più** percorsi funzionali critici),
+il livello a cui verificare le regole di visibilità (risposta: due metà separate, backend
+e componente, invece che end-to-end), come stabilire la verità di riferimento (risposta:
+inventario dichiarativo con revisione a campione), cosa fare quando qualcosa si rompe
+(risposta: riparazione assistita in branch, non ripristino automatico), quali percorsi
+coprire in browser (risposta: smoke di visibilità per ruolo **più** flussi funzionali).
+
+La terza domanda è stata posta due volte. Alla prima formulazione l'utente ha risposto
+«fammi capire meglio, ragioniamo insieme»: la domanda chiedeva di scegliere fra tre modi
+di stabilire una baseline senza mostrare cosa producesse ciascuno. È stata riformulata
+prendendo un caso reale del suo codice — il gate che decide chi vede il menu di gestione
+del corso — e mostrando, sullo stesso caso, il test prodotto da ciascuna opzione e cosa
+succede dopo un merge. La riformulazione ha reso decidibile la domanda e ha fatto
+emergere l'argomento che ha poi retto l'intera architettura (un test non può ripristinare).
+
+Terzo, presentazione del progetto in quattro sezioni con approvazione dell'utente dopo
+ognuna. Quarto, stesura del documento e rilettura critica per placeholder, contraddizioni
+interne e ambiguità.
+
+**3. Attività svolte**
+
+Misurato e documentato il perimetro delle personalizzazioni esposte agli aggiornamenti,
+distinguendo i tre livelli con esposizione al conflitto diversa (app separata, override
+tramite plugin, innesti dentro file upstream) e quantificando l'ultimo, che è l'unico
+problematico.
+
+Individuata e argomentata la distinzione fra i due sintomi riportati dall'utente, che
+nella richiesta erano presentati come un problema solo. Da essa discende la scelta di
+affiancare un rilevatore testuale ai test invece di affidarsi ai soli test: il rilevatore
+copre l'intero perimetro censito a costo quasi nullo, i test coprono solo ciò per cui
+qualcuno li ha scritti.
+
+Progettato l'inventario dichiarativo: struttura dei file per area, schema di una voce con
+i suoi dieci campi, tre esempi completi tratti da personalizzazioni reali del progetto
+(un innesto in un file upstream, un contratto di override backend, un flusso funzionale) e
+il file degli attori, nel quale è stata codificata una regola che finora viveva solo nella
+memoria di progetto: il ruolo `Gestore` non viene mai assegnato da solo ma sempre insieme
+al gruppo completo di ruoli, quindi testarlo isolato produrrebbe falsi allarmi.
+
+Progettato il rilevatore di scostamento con quattro controlli, di cui uno inverso — i
+marcatori presenti nel codice ma assenti dall'inventario — che è l'unico meccanismo in
+grado di segnalare ciò che non è stato censito, cioè la modalità con cui questi sistemi
+smettono silenziosamente di coprire il reale.
+
+Progettate le tre suite di test e la loro divisione del lavoro, con la giustificazione
+per ciascuna del perché sta a quel livello, e progettato il seeding degli utenti per
+ruolo, oggi assente: le spec esistenti girano come utente amministratore, che bypassa i
+permessi. Fissate tre protezioni non negoziabili sul seeding (guardia sul sito, prefisso
+fisso, cancellazione solo per nome esplicito), la terza motivata nel documento citando
+l'incidente realmente avvenuto in questo progetto in cui uno script di pulizia con filtro
+per somiglianza ha cancellato undici corsi veri.
+
+Progettato il flusso agentico post-aggiornamento in sette passi e la regola che ne
+garantisce la tenuta nel tempo: l'agente non può modificare un test per farlo passare,
+perché è il modo tipico in cui una suite affidata a un'AI si svuota restando verde.
+Definita la gestione degli scostamenti legittimi, perché una suite di cui non ci si fida
+viene ignorata.
+
+Definito il piano di adozione in cinque fasi con stima, indicando quale fase da sola
+chiude quale dei due sintomi. Scritto il documento di progetto e corretti i tre difetti
+emersi dalla rilettura.
+
+**4. Utilizzo dell'AI**
+
+**Tool:** Claude Code. **Modello:** Opus 5 (contesto 1M). **Per quale attività:** l'intera
+progettazione — misurazione del perimetro sul repository, conduzione del confronto con
+l'utente, formulazione dell'architettura, stesura del documento di progetto e sua
+rilettura critica.
+
+**Perché questo tool:** l'attività richiedeva di leggere il codice reale (componenti Vue,
+override backend, configurazione dei test, workflow di integrazione continua) e di
+contarne le occorrenze, non di ragionare su un'architettura astratta: un assistente senza
+accesso al filesystem avrebbe prodotto un progetto plausibile e non misurato, e la
+misurazione è esattamente ciò che ha cambiato l'impostazione.
+
+**Perché questo modello:** la progettazione doveva tenere simultaneamente in memoria il
+perimetro misurato, sei memorie di progetto su come è fatto questo fork, la struttura dei
+test esistenti e il filo del confronto con l'utente attraverso cinque domande; il contesto
+ampio evita di perdere i vincoli già fissati e di riproporre alternative già scartate. La
+qualità di ragionamento serviva sul punto decisivo, che non era tecnico ma logico:
+riconoscere che un test non può soddisfare la richiesta di ripristino e che quindi serviva
+un secondo artefatto.
+
+**Risultato ottenuto:** un documento di progetto di 526 righe con le sei decisioni prese e
+la relativa alternativa scartata, lo schema completo dell'inventario, il progetto dei
+quattro componenti, il piano in cinque fasi con stime e una tabella di rischi con le
+mitigazioni.
+
+**Verifiche e correzioni fatte:** tutti i conteggi citati nel documento sono stati eseguiti
+sul repository e non stimati, con esclusione deliberata dei bundle generati dal conteggio
+dei marcatori per non gonfiare il dato. Il progetto è stato sottoposto all'utente a
+sezioni e approvato sezione per sezione. La rilettura critica finale ha trovato e corretto
+tre difetti (un confine fra file non definito, un campo dichiarato obbligatorio in
+contraddizione con la prima fase del piano, tre pseudo-attori usati ma mai definiti). Una
+domanda posta male all'utente è stata riconosciuta come tale e riformulata su un caso
+concreto del suo codice.
+
+**6. Problematiche incontrate**
+
+*Il CLI della skill di rendicontazione non è installato su questa macchina.* La skill
+`work-reporting` prevede di registrare la nota di sessione tramite
+`~/.agent-skills/work-reporting/scripts/worklog.py`, che qui non esiste (è presente solo
+la cartella `~/.worklog/` di un altro progetto). Verificata l'assenza con una ricerca sul
+filesystem prima di procedere. Risolta ripiegando sul registro di progetto
+`docs/WORKLOG.md`, che è la convenzione effettivamente in uso in questo repository e che
+le istruzioni dell'utente indicano come destinazione. Risolta, ma **da segnalare**: se il
+CLI è atteso anche su questa macchina, va installato, altrimenti le note di sessione di
+questo progetto resteranno fuori dall'aggregazione che quello strumento produce.
+
+*Una domanda di progettazione posta a un livello troppo astratto.* La domanda su come
+stabilire la verità di riferimento chiedeva di scegliere fra tre approcci descritti per
+categoria, senza mostrare cosa producesse ciascuno: l'utente ha risposto chiedendo di
+ragionarci insieme. Causa: la domanda descriveva i metodi invece dei loro esiti. Risolta
+riformulandola su un caso reale del suo codice e mostrando, per ogni opzione, il test che
+ne sarebbe uscito e il comportamento dopo un aggiornamento. Risolta, e con un effetto
+positivo: la riformulazione ha fatto emergere l'argomento decisivo dell'intera architettura.
+
+
+---
+
+### Attività 6 — Analisi di fattibilità dello storico delle chat del tutor AI visibile agli studenti, in un modello "progetti" per corso
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Analisi — studio di fattibilità con stima oraria, nessuna modifica al codice applicativo |
+| **Problema riscontrato** | Richiesta dell'utente su indicazione del cliente (Carlo): verificare fattibilità, tempistiche e modalità per inserire uno storico delle chat del tutor AI **visibile agli studenti**, prendendo spunto dai *progetti* di NotebookLM — creare dei "progetti", cioè i corsi, e dentro ciascuno tutto lo storico della chat del tutor AI relativo esclusivamente a quel corso. Richiesto esplicitamente un report su fattibilità e tempistiche. Nessuna indicazione su privacy, numero di conversazioni per corso, o se le citazioni alle fonti facciano parte della richiesta. |
+| **Problema effettivo** | La richiesta sembra "salvare le chat", ma le chat **sono già salvate**: `TutorAi._log_query` scrive un record su `LMSA Query Log` per ogni scambio, dentro un `finally`, quindi anche quando la chiamata al modello fallisce. Ciò che manca non è la persistenza ma **tre cose sopra di essa**: (1) il concetto di conversazione — le righe sono eventi isolati, nessun identificativo lega fra loro i turni della stessa chat; (2) i permessi e gli endpoint che rendano quelle righe leggibili dallo studente, che oggi non ha alcun accesso (il doctype è visibile solo dal Desk a System Manager, Moderator, Course Creator); (3) l'interfaccia. Secondo fatto emerso, decisivo per la stima: **lo stesso problema è già risolto nel prodotto** dalle simulazioni AI (`LMSA Simulation Session` + `LMSA Simulation Turn` con `turn_index`/`role`/`text_content`, hook `permission_query_conditions` e `has_permission` registrati in `hooks.py`, endpoint `list_my_sessions` filtrato su `frappe.session.user`, UI `SimulationLauncher.vue` per l'elenco e `TranscriptDrawer.vue` per la trascrizione) — quindi l'intervento è una clonazione di pattern, non una progettazione da zero. Terzo vincolo, non previsto e non visibile dalla richiesta: `_build_messages` **non tronca la cronologia** inviata al modello (tutta la `history` ricevuta dal client finisce nel prompt, e la documentazione affida al frontend il compito di limitarla). Finché la chat si perdeva al ricaricamento della pagina il problema non si manifestava; con le conversazioni persistite ogni domanda successiva in una chat lunga costerebbe progressivamente di più — una finestra scorrevole diventa parte obbligata dell'intervento, non un'ottimizzazione. Quarto: il tratto più riconoscibile di NotebookLM sono le **citazioni cliccabili alla fonte**, non l'archivio; il tutor calcola già la provenienza di ogni brano (`_label_chunks` etichetta i chunk con il titolo della lezione) ma **la scarta prima di rispondere al client**, dove il campo `sources` della UI è sempre un array vuoto. C'è quindi un rischio di aspettativa fra "storico delle chat" e "come NotebookLM". |
+| **Soluzione applicata** | Nessuna modifica al codice. Redatto il report [docs/ai/STORICO-CHAT-FATTIBILITA.md](ai/STORICO-CHAT-FATTIBILITA.md) (333 righe) in nove parti: risposta in breve; stato di fatto misurato sul codice; traduzione del modello "progetti" di NotebookLM sulle entità di OS LMS con una tabella di corrispondenza che distingue ciò che esiste già da ciò che manca; tre livelli di intervento con stima; architettura proposta; punti di attenzione; tempistiche dettagliate voce per voce; decisioni da prendere prima di partire; raccomandazione. Stime: **opzione A** (una conversazione continua per corso, persistita e ripresa, nessuna UI nuova) 24–32 h; **opzione B**, consigliata (conversazioni multiple per corso, titolo automatico, rinomina e cancellazione, pagina "Tutor AI del corso" con elenco e trascrizione) 72–92 h; **opzione C** (citazioni cliccabili, pannello fonti, ricerca nello storico, esportazione, vista docente) +44–60 h. Consigliata la consegna in due fasi — A dopo 3–4 giorni, completamento a B in altri 6–8 — accettando 4–6 h di sovrapprezzo per il doppio passaggio sullo store del frontend, in cambio del beneficio principale in mano agli studenti entro la prima settimana. Scelta di architettura motivata nel report: **non riusare `LMSA Query Log` come archivio dello studente** ma affiancargli due doctype nuovi (`LMSA Tutor Conversation` + `LMSA Tutor Message`), perché mescolare l'archivio consultabile con il registro di audit significa che la cancellazione di una conversazione da parte dello studente distrugge la tracciabilità, e perché ogni lettura dello storico si trascinerebbe il campo `context`, che contiene il system prompt completo (8–15 KB per riga con i parametri attuali) contro 1–2 KB per turno di una tabella messaggi dedicata. Poste sette domande al cliente, di cui **tre bloccanti** (chi legge le chat altrui, se lo studente può cancellarle, per quanto si conservano) perché determinano lo schema dei permessi e rifarlo dopo costa più che deciderlo prima. |
+| **Commit** | No — analisi. Nuovo file di documentazione non committato (il worklog e i documenti di analisi non si committano salvo richiesta esplicita). |
+| **File modificati** | Creato: [docs/ai/STORICO-CHAT-FATTIBILITA.md](ai/STORICO-CHAT-FATTIBILITA.md). File letti: [apps/os_lms/os_lms/os_lms/ai/tutor/tutor_ai.py](../apps/os_lms/os_lms/os_lms/ai/tutor/tutor_ai.py), [apps/os_lms/os_lms/os_lms/ai/tutor/api.py](../apps/os_lms/os_lms/os_lms/ai/tutor/api.py), `apps/os_lms/os_lms/os_lms/doctype/lmsa_query_log/` (JSON e classe), `apps/os_lms/os_lms/os_lms/doctype/lmsa_simulation_session/` e `lmsa_simulation_turn/` (schemi), [apps/os_lms/os_lms/os_lms/ai/simulations/api.py](../apps/os_lms/os_lms/os_lms/ai/simulations/api.py) (`list_my_sessions`), [apps/os_lms/os_lms/hooks.py](../apps/os_lms/os_lms/hooks.py) (hook permessi e metodi sovrascritti), [apps/os_lms/os_lms/os_lms/override_api.py](../apps/os_lms/os_lms/os_lms/override_api.py) (esposizione dei flag alla SPA), [apps/os_lms/os_lms/os_lms/ai/utils/oslms_settings.py](../apps/os_lms/os_lms/os_lms/ai/utils/oslms_settings.py) e `lmsa_settings.json` (`top_k`, `chunk_size`, interruttori), [frontend/src/stores/aiChat.js](../frontend/src/stores/aiChat.js), [frontend/src/stores/aiContext.js](../frontend/src/stores/aiContext.js), [frontend/src/oslms/components/ai/ChatBot.vue](../frontend/src/oslms/components/ai/ChatBot.vue), [frontend/src/oslms/components/ai/AiChatButton.vue](../frontend/src/oslms/components/ai/AiChatButton.vue), [frontend/src/oslms/components/AiFixedButtons.vue](../frontend/src/oslms/components/AiFixedButtons.vue), `frontend/src/oslms/components/simulations/` (`SimulationLauncher.vue`, `TranscriptDrawer.vue`, `ChatSession.vue`), [docs/ai/TUTOR.md](ai/TUTOR.md). |
+| **Verifiche** | Ogni affermazione del report è stata letta nel codice, non ricordata. Verificato che la scrittura dell'audit avviene per ogni richiesta e anche in caso di errore (blocco `finally` in `TutorAi.ask`) e che il doctype non ha alcun campo che raggruppi i turni. Verificato che lo store `aiChat` è memoria volatile (array Pinia azzerato al cambio corso, perso al ricaricamento) e che il pulsante cestino chiama `chat.clear()`, cioè non tocca il database — è questo il comportamento percepito come "la chat è sparita". Verificato sul JSON dei permessi che `LMSA Query Log` non è leggibile dallo studente in alcun modo diretto. Verificata l'esistenza e la completezza del modello gemello delle simulazioni leggendo schemi, hook e componenti Vue citati. Misurati i parametri che determinano la dimensione del campo `context`: `top_k = 6` e `chunk_size = 1000` dai default di `LMSA Settings`, da cui la stima 8–15 KB per riga. Verificato in `_build_messages` che non esiste troncamento della cronologia e nella documentazione che il limite è demandato al client. Verificato in `ChatBot.vue` che il campo `sources` dei messaggi viene sempre valorizzato a array vuoto, quindi le citazioni non arrivano alla UI. **Due imprecisioni trovate nella documentazione esistente** e riportate correttamente nel nuovo report: `docs/ai/TUTOR.md` afferma che `_system_prompt` restituisce una coppia `(prompt, context)` e che il campo `context` contenga i soli chunk, mentre il codice restituisce il solo prompt e registra nel campo l'**intero system prompt**; la stessa pagina descrive un metodo `_course_description` che nel codice attuale è stato sostituito da `format_course_context`. Nessuna prova su prototipo: la fattibilità è argomentata sugli schemi dati e sul pattern già in produzione, non dimostrata sul campo. Nessun database interrogato per questa attività. |
+
+**1. Obiettivo dell'attività**
+
+Rispondere con numeri verificabili a tre domande: se lo storico delle chat del tutor sia
+realizzabile, in quanto tempo, e in che modo. Obiettivo implicito e altrettanto importante:
+capire quanto la richiesta "come i progetti di NotebookLM" corrisponda a ciò che il
+prodotto può dare senza un intervento di natura diversa, per evitare che il cliente veda
+consegnato un archivio di chat mentre si aspettava un ambiente con le fonti citate.
+
+**2. Modalità di esecuzione**
+
+Indagine in sola lettura, in quattro passaggi. Primo, ricostruzione del funzionamento
+attuale del tutor leggendo endpoint, classe `TutorAi`, doctype di log e componenti Vue
+della chat. Secondo, ricerca di un precedente interno: prima di stimare la costruzione di
+un sistema di conversazioni persistite, verificare se il prodotto ne contenga già uno —
+ed è così, nelle simulazioni. Terzo, misurazione dei parametri che influenzano costo e
+spazio (`top_k`, `chunk_size`, contenuto effettivo del campo `context`, assenza di
+troncamento della cronologia), perché sono le voci che trasformano una funzione
+apparentemente innocua in un costo ricorrente. Quarto, scomposizione dell'intervento in
+voci di lavoro nominate e stimate singolarmente, raggruppate in tre livelli di ambizione
+crescente, e formulazione delle domande la cui risposta cambia lo schema dati.
+
+**3. Attività svolte**
+
+Ricostruito il percorso di una domanda dello studente: `tutor.api.ask` istanzia `TutorAi`,
+che costruisce il system prompt con il recupero RAG vincolato alle sole lezioni completate
+dallo studente (protezione anti-spoiler), interroga il provider LLM e in `finally` registra
+lo scambio su `LMSA Query Log`. Accertato che il record contiene corso, lezione, studente,
+domanda, risposta, contesto ed esito, e che quindi la materia prima dello storico è già a
+database dal primo giorno di esercizio. Accertato, di contro, che non esiste alcun
+raggruppamento in conversazioni, nessun titolo, nessuna possibilità di gestione e nessuna
+via d'accesso per lo studente.
+
+Individuato il modello gemello delle simulazioni e verificatane la completezza: contenitore
+di sessione, turni ordinati con ruolo e testo, hook di filtro sugli elenchi e di veto
+sull'accesso diretto, endpoint che elenca le sole sessioni dell'utente corrente, componente
+di elenco e componente di lettura della trascrizione. È su questa base che la stima
+dell'opzione B si tiene sotto le cento ore: struttura, permessi e interfaccia sono
+trasposizioni di codice già in produzione.
+
+Tradotto il modello NotebookLM sulle entità del prodotto in una tabella di corrispondenza:
+il progetto è il corso (e il tutor è già vincolato al corso, sia nel prompt sia nei
+permessi); le fonti sono le lezioni indicizzate più gli allegati dei badge, che esistono
+come dati ma non sono mostrate; le conversazioni sono la richiesta; le citazioni esistono
+come calcolo interno ma vengono scartate; le note salvate esistono sulle lezioni ma sono
+scollegate dal tutor. Da questa tabella è emerso l'avvertimento sull'aspettativa.
+
+Proposta l'architettura: due doctype nuovi modellati sulle simulazioni, `LMSA Query Log`
+lasciato al suo ruolo di audit, gli stessi due hook di permesso già usati per le
+simulazioni (con il richiamo al comportamento noto di Frappe per cui un `has_permission`
+che restituisce `None` vale diniego), la persistenza dei turni innestata in `TutorAi.ask`
+così da coprire anche il percorso audio che passa dallo stesso metodo, l'interruttore in
+`LMSA Settings` esposto alla SPA dalla funzione che già espone `ai_enabled` e
+`simulations_enabled`, e una conservazione configurabile con attività pianificata di
+pulizia.
+
+Redatte le stime voce per voce (backend 33–41 h, frontend 29–37 h, configurazione e
+consegna 10–14 h) e la sequenza di consegna in due fasi, con il sovrapprezzo del doppio
+passaggio dichiarato esplicitamente invece che nascosto nel totale. Elencati i punti di
+attenzione: costo per domanda, spazio occupato, privacy, invecchiamento delle risposte
+archiviate, indici di database. Segnalato in una riga, senza intervenire, un `console.log`
+di debug dimenticato in `aiContext.js`.
+
+**4. Utilizzo dell'AI**
+
+- **tool/agente:** Claude Code (estensione VS Code), sessione interattiva con la skill
+  *superpowers:brainstorming*, percorso "spike" — la classificazione che il metodo prevede
+  per le domande di fattibilità, il cui esito è una risposta e non codice da tenere.
+- **modello:** Opus 5 (contesto 1M).
+- **attività per cui è stata utilizzata:** ricostruzione del funzionamento del tutor AI
+  attraverso backend e frontend; ricerca di un precedente interno riusabile; misurazione
+  dei parametri di costo e spazio; stesura del report di fattibilità con scomposizione
+  oraria; formulazione delle domande bloccanti per il cliente.
+- **motivo della scelta del tool e del modello:** l'analisi attraversa nove file fra
+  Python, JSON di schema e componenti Vue in tre sottosistemi diversi (tutor, simulazioni,
+  impostazioni) e la sua qualità dipende dal tenere insieme tutti quei pezzi
+  contemporaneamente — è il caso in cui il contesto ampio e la capacità di ragionamento
+  del modello maggiore contano più della velocità. La skill di brainstorming è stata
+  invocata perché impone di classificare il tipo di richiesta prima di rispondere: qui ha
+  imposto il percorso "spike", cioè nessun documento di design e nessuna riga di codice,
+  solo l'indagine e la raccomandazione — che è esattamente ciò che era stato chiesto.
+- **risultato ottenuto:** report di 333 righe con tre opzioni stimate, architettura
+  proposta, cinque punti di attenzione, tabella oraria di diciassette voci, sequenza di
+  consegna e sette domande al cliente di cui tre bloccanti. Due scoperte non contenute
+  nella richiesta e determinanti per la stima: la persistenza già esistente (che abbassa
+  il costo) e l'assenza di troncamento della cronologia (che aggiunge una voce obbligata).
+- **verifiche e correzioni effettuate:** ogni numero del report è stato letto nel codice,
+  non stimato a memoria: i parametri `top_k = 6` e `chunk_size = 1000` dai default del
+  doctype delle impostazioni, il contenuto effettivo del campo `context` dalla chiamata a
+  `_log_query`, l'assenza di troncamento da `_build_messages`, l'array `sources` vuoto da
+  `ChatBot.vue`. Corrette due imprecisioni della documentazione esistente (`docs/ai/TUTOR.md`
+  descrive una firma di `_system_prompt` e un metodo `_course_description` che il codice
+  attuale non ha più): il report riporta il comportamento reale, non quello documentato.
+  Scartata la prima ipotesi formulata — riusare `LMSA Query Log` come archivio dello
+  studente, che sarebbe la via più economica — perché confonde archivio consultabile e
+  registro di audit sul piano della cancellazione dei dati; la motivazione dello scarto è
+  scritta nel report invece di essere taciuta.
+
+**6. Problematiche incontrate**
+
+*Rischio di aspettativa fra "storico delle chat" e "come NotebookLM".* La richiesta cita
+NotebookLM come riferimento, ma il suo tratto più riconoscibile sono le citazioni cliccabili
+alla fonte, che nel prodotto oggi non arrivano all'interfaccia benché il dato di provenienza
+sia già calcolato e poi scartato. Causa: il riferimento a un prodotto esterno trasporta
+aspettative che la formulazione della richiesta non esplicita. Non risolvibile
+tecnicamente: portata in superficie nel report come terza domanda bloccante, così che sia
+il cliente a dire se le citazioni fanno parte della richiesta — nel qual caso l'opzione C
+non è facoltativa e va messa a preventivo.
+
+*Tre decisioni di prodotto mancanti e bloccanti sullo schema.* Chi può leggere le chat
+altrui, se lo studente può cancellare le proprie, per quanto tempo si conservano: sono
+scelte di privacy, non tecniche, e determinano lo schema dei permessi. Rifarlo dopo
+l'implementazione costa più che deciderlo prima. Segnalate come bloccanti invece di
+assumere un default: qui un'assunzione sbagliata non produce una funzione da correggere ma
+un trattamento di dati personali da rifare. In attesa di risposta dal cliente.
+
+---
+
+### Attività 7 — Progettazione dello storico delle chat del tutor AI ("progetto corso"), con misurazione in produzione e specifica approvata
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Analisi e progettazione — specifica architetturale approvata, nessuna riga di codice scritta |
+| **Problema riscontrato** | Dopo l'analisi di fattibilità dell'Attività 6, l'utente sceglie l'**opzione B** ("progetto corso": conversazioni multiple per corso, pagina dedicata, gestione) e chiede un'analisi completa della soluzione. Nessuna indicazione iniziale su privacy, cancellazione, conservazione e recupero dello storico esistente: erano le quattro domande lasciate aperte dal documento di fattibilità. |
+| **Problema effettivo** | Le risposte dell'utente hanno spostato il progetto in due punti che la richiesta non lasciava prevedere. **Primo**, "visibilità a studente e ruolo Gestore e basta" non è implementabile riusando il modello delle simulazioni, perché quello concede a `{System Manager, Moderator, LMS Manager}` e per gli istruttori del corso: siccome **un Gestore possiede anche Moderator** (il ruolo non viene mai assegnato da solo), concedere su Moderator aprirebbe a tutti i moderatori, e l'ordine dei rami del gate diventa load-bearing. **Secondo**, la via economica che avevo prospettato — "il Gestore legge dal Desk" — si è rivelata inesistente: interrogando la produzione, **due Gestori su tre sono `Website User`**, e in Frappe un Website User non ha accesso a `/app`; farli entrare significherebbe promuoverli a System User, cioè concedere l'intero back-office per autorizzare la lettura di una chat. Terzo vincolo emerso dall'indagine, estraneo alla richiesta ma incompatibile con la policy appena decisa: **`LMSA Query Log` concede oggi `read` al ruolo `LMS Student` senza `if_owner` e senza `permission_query_conditions` registrata**, quindi qualunque studente può leggere via API REST domande e risposte di tutti gli altri — la stessa policy applicata al contrario, e un canale che aggirerebbe l'archivio appena costruito. Quarto: la produzione misurata dice che **nessuno studente reale ha mai usato il tutor** (100 righe di log, nove utenti, tutti account interni), il che rende controproducente il recupero dello storico. |
+| **Soluzione applicata** | Nessuna modifica al codice. Quattro decisioni raccolte dall'utente (visibilità studente+Gestore; nessuna cancellazione, solo archiviazione; conservazione illimitata; recupero da decidere sui dati). Misurata la produzione in sola lettura per sciogliere la quarta e per dimensionare il resto. Presentato il design a sezioni con tre approcci sulla collocazione dell'interfaccia; l'utente ha approvato la **rotta dedicata** `/courses/:courseName/tutor` e, dopo lo scarto dell'ipotesi Desk, la **Forma 1** per il Gestore (stessa pagina, con selettore studente) al posto di una pagina di archivio separata — scelta che riusa un componente già a preventivo e costa 5–7 h invece di 12–16. Redatta la specifica [docs/superpowers/specs/2026-09-18-tutor-chat-history-design.md](superpowers/specs/2026-09-18-tutor-chat-history-design.md) (450 righe): obiettivo, registro delle sei decisioni, dati misurati, fuori perimetro, modello dati completo dei due doctype con tipi e indici, alternativa scartata e suo costo, matrice dei permessi con la trappola dell'ordine dei rami, correzione obbligatoria su `LMSA Query Log`, backend (persistenza dei turni, cronologia spostata lato server con finestra di 12 turni, titolo automatico, cinque endpoint con firma, helper `can_view_tutor_archive`), frontend (store, pannello, pagina, selettore Gestore, gating che non deve poggiare su `isAdmin`), configurazione, piano di test in 15 casi, stima per voce, rischi, file toccati. Fornita infine, su richiesta, la **stima nell'ipotesi di sviluppo assistito**: 4–6 giornate di calendario con 12–15 ore di impegno diretto dell'utente, contro le 87–105 ore-uomo della specifica. |
+| **Commit** | No — progettazione. La specifica non è committata, coerentemente con gli altri documenti in `docs/superpowers/specs/` che risultano non tracciati. |
+| **File modificati** | Creato: [docs/superpowers/specs/2026-09-18-tutor-chat-history-design.md](superpowers/specs/2026-09-18-tutor-chat-history-design.md). File letti in aggiunta a quelli dell'Attività 6: `apps/os_lms/os_lms/os_lms/doctype/lmsa_simulation_session/lmsa_simulation_session.py` e `lmsa_simulation_turn/lmsa_simulation_turn.py` (implementazione dei due hook di permesso, riusata come modello), [apps/os_lms/os_lms/setup.py](../apps/os_lms/os_lms/setup.py) (ruolo Gestore e suoi DocPerm), [apps/os_lms/os_lms/os_lms/api.py](../apps/os_lms/os_lms/os_lms/api.py) (`EXPORT_STATS_ROLES`, `can_export_student_stats`, `_role_label`), [apps/os_lms/os_lms/os_lms/override_api.py](../apps/os_lms/os_lms/os_lms/override_api.py) (`get_user_info`, `get_lms_settings`), [apps/os_lms/os_lms/os_lms/override_utils.py](../apps/os_lms/os_lms/os_lms/override_utils.py) (`get_roles`), [frontend/src/pages/Courses/CourseDetail.vue](../frontend/src/pages/Courses/CourseDetail.vue) (costruzione delle schede e gate `showTabs`), [frontend/src/utils/index.js](../frontend/src/utils/index.js) (voce di menu gated su `can_export_stats`, helper `isAdmin`), [frontend/src/oslms/pages/StudentStatsExport.vue](../frontend/src/oslms/pages/StudentStatsExport.vue) (controllo `MultiLink` dei filtri), [frontend/src/oslms/utils/settings.js](../frontend/src/oslms/utils/settings.js) (dichiarazione della sezione AI), `apps/os_lms/os_lms/os_lms/ai/simulations/tests/_fixtures.py`, `frontend/src/stores/session.js` e `user.js`. |
+| **Verifiche** | **Produzione interrogata in sola lettura** con il profilo `.private/db/oslms-prod.cnf`. `LMSA Query Log`: 100 righe, 9 utenti, 11 corsi, dal 15/04/2026 al 14/09/2026; esiti 85 `Answered` e **15 `Failed`** (tasso di errore 15%, che ha prodotto il campo `status` sul doctype dei messaggi); lunghezze medie domanda 31 caratteri, risposta 591, **contesto 6.266** con massimo 17.048 (che ha prodotto la scelta di non leggere mai il campo `context` per la vista dell'archivio); 63 righe su 100 legate a una lezione. Composizione degli utenti verificata nominativamente: `Administrator` 46 domande, `c.trentuno@overside.it` 36, e le restanti fra varianti `+docente`/`+gestore`/`+studente` e due Gmail di prova — **nessuno studente reale**, da cui la raccomandazione di non recuperare lo storico (42 gruppi studente/corso/giorno, di cui ~37 interni). Piattaforma: 113 iscrizioni, 20 studenti, 18 corsi di cui 4 pubblicati, 93 sessioni di simulazione. **Tipo di utenza dei tre Gestori verificato singolarmente**: `a.antonini@overside.it` System User, `c.trentuno+gestore@overside.it` e `gestore@gmail.com` Website User — è il dato che ha chiuso l'ipotesi "lettura dal Desk"; sul totale, 7 System User contro 53 Website User attivi. Letto nel JSON di `LMSA Query Log` il blocco di permessi `LMS Student` con `read` e `create` e verificata in `hooks.py` l'assenza di qualunque `permission_query_conditions` per quel doctype: è su queste due letture che poggia la segnalazione del buco. Verificato in `CourseDetail.vue` che `showTabs = isAdmin || isValutatore`, quindi gli studenti non vedono schede — fatto che ha escluso l'approccio "scheda Tutor AI nella pagina corso" — e letto il commento che registra la decisione già presa per le simulazioni ("students review past attempts through the floating launcher button"). Verificata l'esistenza dell'override `frontend/src/overrides/pages/Courses/CourseOverview.vue`, che rende il punto d'ingresso a impatto zero sui file upstream. Stima con sviluppo assistito calibrata su dati del repository e non a impressione: `git log` della giornata del 17 settembre (10 commit fra le 10:56 e le 18:11) e `git show --stat` dei quattro commit della funzione "lezione dal vivo riprogrammabile" (512 righe nel commit di funzione più tre giri di correzione da ~270 righe complessive). Nessuna prova su prototipo: la specifica è argomentata su schemi dati e codice esistente, non dimostrata sul campo. |
+
+**1. Obiettivo dell'attività**
+
+Trasformare l'opzione B del documento di fattibilità in una specifica abbastanza precisa da
+poter essere implementata da un'altra persona — o da un sistema AI — senza dover
+ricostruire alcuna decisione, e stabilire il costo reale dell'intervento nelle due ipotesi
+di esecuzione (sviluppatore umano, sviluppo assistito con supervisione del committente).
+
+**2. Modalità di esecuzione**
+
+Percorso architetturale della skill di brainstorming: raccolta delle decisioni mancanti
+prima di progettare, misurazione dei dati reali dove una decisione dipendeva da essi,
+proposta di approcci alternativi con costo per ciascuno, approvazione a sezioni, e solo
+alla fine stesura del documento. Ogni affermazione sul comportamento attuale è stata
+verificata leggendo il codice o interrogando la produzione in sola lettura; nessuna
+è stata assunta dalla documentazione esistente, che su questo modulo è già risultata
+disallineata (vedi Attività 6).
+
+**3. Attività svolte**
+
+Poste al committente le quattro domande che il documento di fattibilità aveva lasciato
+aperte, ciascuna con l'effetto sulla stima esplicitato nelle opzioni. Raccolte le risposte:
+visibilità limitata a studente e Gestore, nessuna cancellazione ma solo archiviazione,
+conservazione illimitata, recupero dello storico da decidere sui dati reali.
+
+Misurata la produzione per sciogliere la quarta domanda, ottenendo tre risultati che hanno
+poi modellato l'intera specifica: il tutor non è mai stato usato da uno studente reale
+(niente recupero), il 15% delle risposte fallisce (serve uno stato esplicito per il turno
+fallito, altrimenti l'archivio mostrerebbe bolle vuote allo studente), il contesto medio di
+6,3 KB per riga (il campo non va mai letto nelle query dell'archivio).
+
+Letta l'implementazione dei due hook di permesso delle simulazioni e constatato che la loro
+tabella dei ruoli è incompatibile con la decisione presa: da lì la regola invertita
+`{System Manager, Gestore}`, l'assenza di qualunque ramo per istruttori e moderatori, e
+l'annotazione che l'ordine dei rami è load-bearing perché i Gestori possiedono anche
+Moderator.
+
+Trovato, mentre si verificava chi può leggere cosa, il permesso `read` concesso a
+`LMS Student` su `LMSA Query Log` senza filtri né condizioni di query: segnalato al
+committente come condizione preesistente ma incompatibile con la policy appena decisa, e
+incluso nel perimetro (2 h) perché consegnare l'archivio ristretto lasciando aperto il
+canale che lo aggira sarebbe indifendibile.
+
+Presentati tre approcci per la collocazione dell'interfaccia, con il vincolo verificato che
+gli studenti non vedono le schede della pagina corso; approvata la rotta dedicata. Alla
+domanda del committente su cosa significasse "il Gestore legge dal back-office" si è
+verificato il tipo di utenza dei tre Gestori, scoprendo che due su tre non possono entrare
+nel Desk: l'opzione è stata ritirata e sostituita da tre forme alternative dentro la SPA,
+fra cui il committente ha scelto la Forma 1 (stessa pagina, selettore studente), che riusa
+un componente già a preventivo.
+
+Redatta la specifica in quattordici sezioni e fornita infine la stima nell'ipotesi di
+sviluppo assistito, calibrata sul ritmo reale del repository invece che su un fattore di
+conversione arbitrario, con la distinzione esplicita fra ciò che si comprime (scrittura di
+codice replicativo, test, documentazione) e ciò che non si comprime (collaudo umano,
+iterazione visiva, attrito dell'ambiente Docker, decisioni).
+
+**4. Utilizzo dell'AI**
+
+- **tool/agente:** Claude Code (estensione VS Code), skill *superpowers:brainstorming*,
+  percorso "architectural" — riclassificato rispetto all'Attività 6, che era uno "spike",
+  perché l'opzione B introduce due doctype, un modello di permessi e una pagina.
+- **modello:** Opus 5 (contesto 1M).
+- **attività per cui è stata utilizzata:** formulazione delle domande decisive con le
+  relative opzioni e costi; interrogazione in sola lettura del database di produzione;
+  lettura del modello di permessi delle simulazioni e sua trasposizione; individuazione
+  del buco di permessi su `LMSA Query Log`; proposta e confronto degli approcci di
+  interfaccia; stesura della specifica; calibrazione della stima sul ritmo storico del
+  repository.
+- **motivo della scelta del tool e del modello:** la progettazione attraversa permessi
+  Frappe, schemi doctype, endpoint, store Pinia e componenti Vue, e la sua correttezza
+  dipende dal tenere insieme vincoli che vivono in file distanti fra loro — è il caso in
+  cui il contesto ampio conta più della velocità. La skill è stata invocata per la
+  riclassificazione: ha imposto di non scrivere codice prima dell'approvazione e di
+  raccogliere le decisioni prima di progettare, che è ciò che ha evitato di produrre una
+  specifica da rifare quando è emerso che i Gestori non hanno il Desk.
+- **risultato ottenuto:** specifica di 450 righe pronta per l'implementazione, con registro
+  delle decisioni, piano di test in 15 casi e previsione dei file toccati; tre scoperte non
+  contenute nella richiesta (nessuno studente ha mai usato il tutor, 15% di errori, due
+  Gestori su tre senza accesso al Desk) e una segnalazione di sicurezza preesistente.
+- **verifiche e correzioni effettuate:** ogni numero della specifica proviene da una query
+  di sola lettura o da una lettura di codice. **Corretta un'affermazione sbagliata data al
+  committente**: avevo prospettato "il Gestore legge dal Desk" come opzione a costo zero
+  senza aver verificato il tipo di utenza dei Gestori; la verifica successiva l'ha smentita
+  e l'opzione è stata ritirata. Scartata esplicitamente, con la motivazione scritta nella
+  specifica, l'alternativa più economica (estendere `LMSA Query Log` invece di creare i due
+  doctype, −12/16 h). Scartato l'approccio "scheda nella pagina corso" dopo aver verificato
+  il gate `showTabs`. La stima assistita non è stata ricavata applicando un divisore alle
+  ore-uomo ma misurando una giornata di lavoro reale del repository e confrontandone la
+  dimensione in righe con quella prevista.
+
+**6. Problematiche incontrate**
+
+*Un'opzione presentata al committente senza averne verificato il presupposto.* Avevo
+indicato come via a costo zero la lettura dal back-office da parte del Gestore, dando per
+scontato un accesso al Desk che due Gestori su tre non hanno. Causa: il ragionamento si è
+fermato al livello dei permessi del doctype senza scendere al tipo di utenza, che in Frappe
+è un gate precedente e indipendente. Rilevata dalla domanda del committente ("in che
+senso?"), verificata sul database e corretta nello stesso scambio, con le opzioni
+alternative e i rispettivi costi. Nessun impatto sul lavoro prodotto, perché la specifica
+non era ancora stata scritta — che è esattamente il motivo per cui il percorso della skill
+impone l'approvazione a sezioni prima della stesura.
+
+*Una policy di prodotto in conflitto con lo stato attuale dei permessi.* La regola
+"visibilità a studente e Gestore e basta" convive oggi con un doctype di audit leggibile da
+qualunque studente. Causa: `LMSA Query Log` è nato come strumento interno e i suoi permessi
+non sono mai stati rivisti quando è diventato il contenitore delle conversazioni. Verificato
+leggendo il JSON del doctype e l'assenza di condizioni di query in `hooks.py`. Non risolta
+in questa attività perché non si scrive codice in fase di progettazione: inclusa nel
+perimetro dell'implementazione (§6.3 della specifica) con due ore dedicate e un test che
+ne verifica la chiusura.
+
+---
+
+### Attività 8 — Piano di implementazione dello storico chat del tutor AI, con codice e test per ogni passo, e stima rifatta sul modello di esecuzione reale
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Pianificazione — piano di implementazione eseguibile, nessuna riga di codice applicativo scritta |
+| **Problema riscontrato** | Dopo l'approvazione della specifica (Attività 7) l'utente chiede di preparare il piano. In corso di lavoro aggiunge un vincolo che cambia una sezione: **la stima deve tener conto che lo sviluppo lo fa interamente l'assistente AI**, non uno sviluppatore umano. |
+| **Problema effettivo** | Due cose emerse solo scrivendo il piano. **Primo**, la stima della specifica era in ore-uomo, cioè misurava un'esecuzione che non avverrà: le voci che si comprimono quasi a zero con lo sviluppo assistito (replica di schemi già presenti, test, documentazione, traduzioni) sono la maggioranza del totale, mentre quelle irriducibili (collaudo del committente, iterazione visiva, attrito dell'ambiente Docker) restano invariate — un fattore di conversione unico avrebbe mentito in entrambe le direzioni. **Secondo**, scrivere il codice vero dentro i passi ha fatto emergere **quattro difetti di progettazione invisibili al livello della specifica**: (a) archiviando il turno fallito con la domanda marcata `Answered` e la risposta `Failed`, la finestra di replay avrebbe rimandato al modello una domanda priva di risposta, rompendo l'alternanza user/assistant; (b) il pulsante d'ingresso leggeva `tutor_history_enabled` dalla risorsa utente, dove non esiste, invece che dalle impostazioni; (c) i comandi Rinomina e Archivia venivano offerti anche su una conversazione non ancora salvata, che non ha un nome, producendo una chiamata con identificativo fittizio; (d) mancava il test del percorso audio, benché la specifica lo elencasse come caso 4 del piano di test. Terzo elemento non previsto, trovato leggendo `ask` per modificarlo: **un bug latente preesistente** — `system_prompt` è assegnata dentro il `try` ma usata nel `finally`, quindi se la costruzione del prompt solleva un'eccezione il `finally` fallisce con `UnboundLocalError` e **maschera l'errore reale**. |
+| **Soluzione applicata** | Nessuna modifica al codice applicativo. Scritto [docs/superpowers/plans/2026-09-18-tutor-chat-history.md](superpowers/plans/2026-09-18-tutor-chat-history.md) (3.201 righe): intestazione con obiettivo, architettura e rimando alla specifica; **13 vincoli globali** fra cui la regola dei permessi, la convenzione di indentazione file per file (tabulazioni in `tutor_ai.py`, `api.py`, `os_lms/api.py` e i controller dei doctype; quattro spazi in `hooks.py`, `override_api.py`, `setup.py` e tutti i test), i comandi Docker per test e migrazione, e il divieto di cancellazioni a filtro largo nei test; mappa dei file da creare e modificare; **14 task in tre fasi**, ciascuno con blocco Interfaces (cosa consuma, cosa produce, con firme esatte) e passi da 2-5 minuti in ciclo TDD — scrivi il test, verificalo rosso, implementa, verificalo verde, committa; due checkpoint di revisione a fine Fase 1 e Fase 2; checklist di collaudo finale in otto punti a carico del committente. Il codice nei passi è reale e completo: JSON dei due doctype, controller con gli hook di permesso, modifiche puntuali a `TutorAi` e agli endpoint, il modulo `history.py` per intero, lo store Pinia riscritto, tre componenti Vue nuovi e le modifiche a quelli esistenti, oltre 40 casi di test. **Stima rifatta** in due tabelle distinte: esecuzione reale (4-6 giornate di calendario, 12-15 ore di impegno diretto del committente) e ore-uomo equivalenti (87-105 h) tenute esplicitamente come base per il preventivo al cliente e non come costo di esecuzione. Specifica aggiornata di conseguenza (§11.1 esecuzione, §11.2 riferimento per l'offerta, §11.3 sequenza) e collegata al piano. |
+| **Esito e modalità di esecuzione** | Piano approvato. Modalità di esecuzione concordata: **subagent-driven** — un agente dedicato per task con revisione fra un task e l'altro, più i due checkpoint del piano. **Implementazione non avviata su indicazione del committente**, che a questo giro voleva soltanto i piani di sviluppo e la documentazione. Lo stato è scritto in testa al piano perché una sessione futura non parta per inerzia. |
+| **Commit** | No — pianificazione. Piano e specifica non committati, coerentemente con gli altri documenti in `docs/superpowers/`, che risultano non tracciati. |
+| **File modificati** | Creato: [docs/superpowers/plans/2026-09-18-tutor-chat-history.md](superpowers/plans/2026-09-18-tutor-chat-history.md). Aggiornato: [docs/superpowers/specs/2026-09-18-tutor-chat-history-design.md](superpowers/specs/2026-09-18-tutor-chat-history-design.md) (sezione stima riscritta, rimando al piano, rinumerazione della sezione finale). File letti per scrivere codice aderente: `apps/os_lms/os_lms/os_lms/doctype/lmsa_simulation_turn/lmsa_simulation_turn.json` (boilerplate del JSON di un doctype), `apps/os_lms/os_lms/os_lms/ai/tutor/tests/test_api.py` e `apps/os_lms/os_lms/os_lms/ai/simulations/tests/_fixtures.py` (stile dei test e trucco del throttle sulla creazione utenti), [apps/os_lms/os_lms/os_lms/ai/utils/oslms_settings.py](../apps/os_lms/os_lms/os_lms/ai/utils/oslms_settings.py) e `ai/utils/llm/__init__.py` (dataclass delle impostazioni e suo caricamento), `ai/utils/llm/provider.py` (campi `model` e `provider` di `ChatResponse`), [frontend/src/overrides/pages/Courses/CourseOverview.vue](../frontend/src/overrides/pages/Courses/CourseOverview.vue) (punto d'innesto del pulsante), [frontend/src/router.js](../frontend/src/router.js) (schema delle rotte `/courses/:courseName/...`), [frontend/src/oslms/utils/settings.js](../frontend/src/oslms/utils/settings.js) (dichiarazione dei campi della sezione AI), `docs/superpowers/plans/2026-07-02-single-call-audio-chat.md` (convenzioni di casa per i piani e comando esatto dei test in Docker). |
+| **Verifiche** | **Auto-revisione del piano contro la specifica**, come previsto dalla skill, in tre passaggi. (a) *Copertura*: percorse una per una le quattordici sezioni della specifica e i quindici casi del suo piano di test, associando a ciascuno il task che lo realizza; **trovato un caso scoperto** — il numero 4, "`ask_audio` produce gli stessi record del percorso testuale" — e aggiunta la classe di test corrispondente al Task 6, con le fixture audio e il conteggio atteso aggiornato da 9 a 10 test. (b) *Scansione dei segnaposto*: nessun "TBD", nessun "gestire gli errori in modo appropriato", nessun "come il Task N"; **trovata e riscritta** una frase del Task 12 che conteneva un'autocorrezione visibile ("aggiungi qui — no: crea un componente"), inadatta a un documento che qualcun altro deve eseguire. (c) *Coerenza dei tipi e dei nomi*: verificato che ogni funzione, campo e componente citato in un task sia definito in un task precedente; corretti i tre difetti di progettazione elencati nella riga "Problema effettivo" (stato del turno fallito, origine del flag, azioni su conversazione senza nome), più l'aggiunta di un `watch` sull'identificativo di conversazione perché la pagina si aggiorni quando il backend battezza una conversazione nuova. **Sette sostituzioni applicate in tutto**, ciascuna verificata con un `assert` sulla presenza esatta del testo da sostituire, così che una modifica andata a vuoto fallisse invece di passare inosservata. Nessun test eseguito e nessun comando di migrazione lanciato: il piano non è stato ancora eseguito, e le sue previsioni sull'esito dei comandi sono dichiarate come attese, non come risultati. |
+
+**1. Obiettivo dell'attività**
+
+Produrre un piano che una persona — o un agente — possa eseguire senza conoscere questo
+progetto e senza dover ricostruire alcuna decisione: quali file toccare, quale codice
+scrivere, quale test lanciare, cosa aspettarsi da ciascun comando, dove fermarsi per la
+revisione. Obiettivo secondario, imposto in corsa dall'utente: che la stima misuri
+l'esecuzione che avverrà davvero, non quella teorica.
+
+**2. Modalità di esecuzione**
+
+Percorso della skill `superpowers:writing-plans`, che chiude il ciclo iniziato con il
+brainstorming: prima la mappa dei file con la relativa responsabilità, poi la
+scomposizione in task della dimensione minima che porti con sé un proprio ciclo di test e
+meriti il giudizio di un revisore, infine i passi da due-cinque minuti. Regola vincolante
+della skill e rispettata alla lettera: **niente segnaposto** — ogni passo che tocca codice
+contiene il codice, non la sua descrizione. Prima di scrivere sono state raccolte le
+informazioni che rendono il codice aderente invece che plausibile: convenzione di
+indentazione misurata file per file con un conteggio delle righe che iniziano per
+tabulazione contro quelle che iniziano per quattro spazi, boilerplate reale di un doctype
+esistente, stile dei test già in uso, comando esatto per eseguirli dentro il container,
+schema delle rotte per non collidere con quelle presenti.
+
+**3. Attività svolte**
+
+Scritto il piano in tre parti. **Fase 1** (Task 1-6, backend): i due doctype con JSON e
+controller, le fixture di test con un tracciatore dei record creati, gli hook di permesso
+su entrambi i doctype più la registrazione in `hooks.py` e la concessione dei DocPerm al
+ruolo Gestore attraverso `setup.py` — scelta motivata nel piano: il ruolo può non esistere
+su un sito nuovo, e `setup_gestore_role_permissions`, già agganciato a `after_migrate`,
+salta in silenzio in quel caso; la chiusura del buco di permessi su `LMSA Query Log`; la
+persistenza dei turni dentro `TutorAi` dietro un interruttore spento di default; lo
+spostamento della cronologia lato server con finestra di dodici turni. **Fase 2** (Task
+7-11): il modulo `history.py` con i quattro endpoint, il gate `can_view_tutor_archive` e
+l'endpoint che alimenta il selettore studente, lo store Pinia riscritto, il pannello
+flottante con selettore e archiviazione, la pagina del progetto con rotta e pulsante
+d'ingresso. **Fase 3** (Task 12-14): selettore studente per il Gestore con trascrizione in
+sola lettura, interruttore nel pannello impostazioni con le ventidue etichette italiane, e
+documentazione.
+
+Tre decisioni prese scrivendo il piano e motivate nel documento. La prima: nei test la
+pulizia cancella **solo** i record creati, tracciati per nome da una classe dedicata, e il
+piano vieta esplicitamente di copiare la funzione omologa delle simulazioni, che cancella
+ogni riga del doctype — è la pratica che su questo progetto ha già distrutto dati reali sul
+sito di sviluppo. La seconda: `frappe.get_all` scavalca i permessi per progetto, quindi
+ogni endpoint di elenco filtra esplicitamente sul membro e chiama il gate, con gli hook dei
+doctype come seconda linea per l'accesso REST diretto; la cosa è scritta nei vincoli
+globali perché è il tipo di dettaglio che un esecutore ignaro sbaglia. La terza: in
+`ask_audio` l'istanza di `TutorAi` viene sollevata fuori dalla closure `_produce`, perché
+altrimenti il nome della conversazione creata al primo turno resterebbe inaccessibile al
+chiamante.
+
+Inclusa infine la correzione del bug latente in `ask`: `system_prompt` viene inizializzata
+prima del `try`, così un errore nella costruzione del prompt arriva all'utente invece di
+essere sostituito da un `UnboundLocalError` sollevato dal `finally`.
+
+Su richiesta dell'utente la stima è stata rifatta separando due grandezze che fino a quel
+momento erano confuse in una sola: il costo di esecuzione (giornate di calendario e ore
+del committente) e il valore da preventivo (ore-uomo equivalenti). Entrambe sono nel piano
+e nella specifica, etichettate per quello che sono.
+
+Chiusa infine la consegna documentale: il committente ha scelto la modalità subagent-driven
+ma ha chiesto di **non avviare l'implementazione**, perché a questo giro gli servivano solo
+i piani di sviluppo e la documentazione. Registrato lo stato in testa al piano ("approved,
+NOT started", con il divieto di iniziare il Task 1 senza un via libera esplicito) e chiusa
+la catena dei tre documenti: il documento di fattibilità, che prima non sapeva nulla dei
+suoi successori, ora rimanda a specifica e piano e dichiara che le sue sette domande
+aperte sono state chiuse nel registro delle decisioni. Verificati con uno script tutti i
+collegamenti relativi dei tre documenti: **nessuno rotto**.
+
+**4. Utilizzo dell'AI**
+
+- **tool/agente:** Claude Code (estensione VS Code), skill `superpowers:writing-plans`,
+  invocata come passo terminale del percorso architetturale del brainstorming.
+- **modello:** Opus 5 (contesto 1M).
+- **attività per cui è stata utilizzata:** raccolta delle convenzioni di codice del
+  progetto (indentazione, boilerplate, stile dei test, comandi); stesura dei quattordici
+  task con codice e test reali; auto-revisione del piano contro la specifica; ricalcolo
+  della stima sul modello di esecuzione assistita.
+- **motivo della scelta del tool e del modello:** il piano contiene circa 2.000 righe di
+  codice che devono essere coerenti fra loro — una funzione definita nel Task 1 e usata nel
+  Task 7 deve avere lo stesso nome e la stessa firma in entrambi — e coerenti con un
+  codice esistente sparso su una dozzina di file. È un compito di consistenza a lungo
+  raggio, dove il contesto ampio del modello maggiore è il fattore determinante. La skill
+  è stata invocata perché impone il divieto di segnaposto e l'auto-revisione finale: sono
+  esattamente i due passaggi che hanno prodotto le correzioni elencate.
+- **risultato ottenuto:** piano di 3.201 righe, quattordici task, oltre quaranta casi di
+  test, due checkpoint, checklist di collaudo in otto punti, stima in due grandezze
+  distinte; quattro difetti di progettazione intercettati prima di scrivere una riga di
+  codice applicativo e un bug latente preesistente individuato e messo a piano.
+- **verifiche e correzioni effettuate:** auto-revisione in tre passaggi descritta nella
+  riga "Verifiche", con sette sostituzioni applicate al documento, ciascuna protetta da un
+  `assert` sul testo esatto da sostituire. Le convenzioni di indentazione non sono state
+  assunte ma misurate con un conteggio per file. I comandi di test riportati nei passi non
+  sono stati inventati ma ripresi da un piano precedente dello stesso progetto, dove erano
+  già stati usati con successo. Resta non verificato, e dichiarato tale nel documento,
+  tutto ciò che solo l'esecuzione può dire: che i test falliscano e passino nei punti
+  previsti, e che le migrazioni dei doctype vadano a buon fine nel container.
+
+**6. Problematiche incontrate**
+
+*Una stima che misurava l'esecuzione sbagliata.* La specifica quantificava ore-uomo di uno
+sviluppatore, mentre lo sviluppo sarà interamente assistito. Causa: la stima era stata
+prodotta prima che il modello di esecuzione fosse deciso, e nessuno dei due documenti
+diceva quale delle due grandezze stesse misurando. Segnalata dall'utente in corso di
+lavoro. Risolta tenendo entrambe le grandezze, ciascuna etichettata per il suo uso —
+l'una per il preventivo al cliente, l'altra per pianificare le giornate — e ancorando la
+seconda a un dato misurato del repository (una giornata reale di lavoro del 17 settembre,
+confrontata in righe di codice con il lavoro previsto) invece che a un fattore di
+conversione arbitrario.
+
+*Quattro difetti che la specifica non poteva mostrare.* Sono emersi solo scrivendo il
+codice vero dei passi: lo stato del turno fallito, l'origine del flag nel frontend, le
+azioni offerte su una conversazione non ancora salvata, il caso di test mancante. Causa:
+una specifica descrive le entità e le regole, non le sequenze di chiamata; difetti di
+quel livello si vedono quando si scrive la riga. Tutti e quattro corretti nel piano prima
+della consegna. È l'argomento pratico per cui vale la pena scrivere il piano per intero
+prima di iniziare, invece di improvvisare task per task.
+
+---
+
+### Attività 6 — Piano di implementazione della Fase 0 del sistema di verifica delle personalizzazioni, con codice eseguito e verificato
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Pianificazione — piano di implementazione eseguibile con codice completo; nessuna modifica al codice applicativo |
+| **Problema riscontrato** | Richiesta dell'utente subito dopo l'approvazione del documento di progetto (Attività 5): scrivere il piano di implementazione. Il piano deve essere eseguibile da un'altra sessione o da un agente senza contesto, quindi con il codice per esteso e non con descrizioni. |
+| **Problema effettivo** | Due vincoli tecnici scoperti solo verificandoli sulla macchina, entrambi in grado di rendere inapplicabile ciò che il documento di progetto prevedeva. **Primo**: il progetto indicava l'inventario in formato YAML, ma sul `python3` di sistema **PyYAML non è installato** (né pytest); il rilevatore di scostamento, il cui valore dichiarato è girare in due secondi senza avviare nulla, avrebbe richiesto un `pip install` e la gestione di un ambiente virtuale, annullando il proprio senso. `tomllib` è invece nella libreria standard dal Python 3.11 (macchina: 3.13.2, CI: 3.14). **Secondo**: `unittest discover` rifiuta una cartella di partenza non importabile, quindi servono i marcatori `__init__.py` — verificato con un esperimento prima di scriverlo nel piano, perché la documentazione non lo rende evidente. Terzo vincolo, emerso solo **eseguendo** il codice scritto: invocare lo script come `python3 scripts/check_customizations.py` mette `scripts/` nel percorso di import invece della root del repository, quindi il comando documentato falliva con `ModuleNotFoundError` pur avendo tutti i test verdi (i test girano con la root nel percorso, e quindi non potevano accorgersene). |
+| **Soluzione applicata** | Aggiornato il documento di progetto portando l'inventario da YAML a **TOML**, con la motivazione scritta e i quattro esempi riconvertiti. Scritto il piano della **Fase 0** in sette task, ognuno con il proprio ciclo test-implementazione-verifica-commit e con il codice per esteso: modello e caricamento dell'inventario, controlli C1-C2 (ancora persa, file sparito), controlli C3-C4 (marcatori non censiti, voci senza test), resa a tabella e JSON più riga di comando, popolamento dell'inventario con i 49 marcatori reali, workflow di integrazione continua, skill `/upstream-check`. I tre difetti individuati sono stati corretti **dentro il piano** prima della consegna: bootstrap esplicito del percorso nello script, con il test che lo esegue da una cartella diversa e che quindi cattura proprio quel caso; i tre `__init__.py`; e la sostituzione dell'uscita rumorosa della riga di comando durante i test con un helper che la cattura. Le Fasi 1-4 non sono pianificate: ognuna avrà il proprio piano, scritto quando la precedente è in funzione, perché il piano della Fase 1 deve poter tenere conto di quante voci la Fase 0 avrà classificato a bassa confidenza. |
+| **Commit** | Sì, a fine giornata insieme agli altri documenti prodotti: `68e37b78` — `docs: design the upstream customization safety net` (4 file, 2.864 righe aggiunte). **Non pushato.** Il worklog resta non committato come da convenzione di progetto. |
+| **File modificati** | Creato: [docs/superpowers/plans/2026-09-18-upstream-regression-harness-fase-0.md](superpowers/plans/2026-09-18-upstream-regression-harness-fase-0.md) (1.458 righe). Aggiornato: [docs/superpowers/specs/2026-09-18-upstream-regression-harness-design.md](superpowers/specs/2026-09-18-upstream-regression-harness-design.md) (da YAML a TOML: elenco file, paragrafo di motivazione, quattro esempi, esempio di scostamento accettato, riferimenti sparsi) e [docs/WORKLOG.md](WORKLOG.md). Nessun file del codice applicativo toccato. |
+| **Verifiche** | Il codice del piano **è stato eseguito, non solo scritto**. Estratti i 13 blocchi Python dal piano, assemblati in un prototipo funzionante in cartella temporanea e mandati in esecuzione: **31 test, tutti verdi**. Rilevatore eseguito contro il **repository reale** con inventario vuoto: riporta esattamente i **12 file** che portano il marcatore `OSLMS-CUSTOM`, senza falsi positivi provenienti dai bundle generati sotto `lms/public/frontend/` — il che convalida sul campo le regole di scansione e di esclusione, che erano l'unica parte del rilevatore impossibile da verificare a tavolino. Tempo di esecuzione misurato sul repository reale: **0,48 secondi**, coerente con il requisito «risponde in secondi». Verificati inoltre: la disponibilità di `tomllib` e l'assenza di PyYAML e pytest; il comportamento di `unittest discover` con e senza i marcatori di pacchetto, con un esperimento dedicato; la validità sintattica di tutti i blocchi Python del piano tramite compilazione; l'assenza di segnaposto; la coerenza dei nomi di funzione fra i task, garantita dal fatto che il prototipo assemblato dai blocchi si importa ed esegue. **Due conteggi di test scritti inizialmente nel piano erano sbagliati** (25 invece di 29, 26 invece di 30): scoperti eseguendo la suite e corretti, poi diventati 30 e 31 con l'aggiunta del test sullo script autonomo. |
+
+**1. Obiettivo dell'attività**
+
+Produrre il documento che permette a un'altra sessione, o a un agente senza memoria di
+questa conversazione, di costruire la Fase 0 del sistema senza dover ricostruire alcuna
+decisione: quali file creare, con quale codice, in quale ordine, con quale test e con
+quale criterio di completamento. Obiettivo di qualità implicito ma vincolante: il piano
+deve contenere codice che funziona, non codice plausibile, perché un piano con codice
+che non compila trasferisce il lavoro di progettazione a chi esegue.
+
+**2. Modalità di esecuzione**
+
+Procedura in quattro passaggi, condotta con la skill `writing-plans`.
+
+Primo, verifica dei vincoli d'ambiente **prima** di scrivere una riga di piano:
+disponibilità delle librerie sul `python3` di sistema, configurazione dello stile Python
+del progetto, versione dell'interprete in locale e in integrazione continua. Questo
+passaggio ha cambiato una scelta del documento di progetto (il formato dell'inventario)
+e ha evitato di consegnare un piano inapplicabile.
+
+Secondo, decomposizione in task secondo il criterio della skill: un task è la più piccola
+unità che porta il proprio ciclo di test e che un revisore potrebbe respingere
+indipendentemente dal task accanto. Ne sono usciti sette, con la configurazione di
+integrazione continua e la documentazione assorbite dal task il cui risultato le richiede
+invece che isolate in task propri.
+
+Terzo, scrittura del codice per esteso in ogni task, nell'ordine test fallito →
+esecuzione che conferma il fallimento → implementazione minima → esecuzione che conferma
+il successo → commit.
+
+Quarto, e non previsto dalla procedura standard, **esecuzione reale del codice del
+piano**: estrazione automatica dei blocchi, assemblaggio in un prototipo, esecuzione dei
+test e del rilevatore contro il repository vero. È il passaggio che ha trovato i difetti
+che né la lettura né la compilazione avrebbero rivelato.
+
+**3. Attività svolte**
+
+Verificati i vincoli d'ambiente e, alla luce dell'assenza di PyYAML, aggiornato il
+documento di progetto portando l'inventario a TOML: sostituiti l'elenco dei file, i
+quattro esempi, l'esempio di scostamento accettato e tutti i riferimenti sparsi, e
+aggiunto il paragrafo che spiega la scelta, in modo che nessuno la ribalti per abitudine.
+
+Definita la struttura dei file della Fase 0 separando modello, controlli, resa ed
+eseguibile in quattro moduli distinti, così che ogni pezzo sia testabile senza gli altri
+e nessun file superi le duecento righe.
+
+Scritti i sette task con il codice completo: circa 500 righe fra implementazione e test.
+Il controllo C3, quello inverso che segnala i marcatori non censiti, è stato progettato
+con radici di scansione, suffissi sorvegliati ed esclusioni esplicite, perché è l'unica
+parte del rilevatore il cui comportamento dipende dalla forma reale del repository.
+
+Costruito ed eseguito il prototipo. Corretti nel piano i tre difetti emersi e i due
+conteggi di test sbagliati. Aggiunta al piano una sezione che dichiara cosa è stato
+verificato e con quale esito, in modo che chi esegue sappia che il codice non è ipotetico
+e non perda tempo a dubitarne.
+
+Definito il criterio di completamento della fase in tre condizioni verificabili con un
+comando, e la tabella di ciò che resta fuori con l'indicazione della fase in cui rientra
+e del perché non prima.
+
+**4. Utilizzo dell'AI**
+
+**Tool:** Claude Code. **Modello:** Opus 5 (contesto 1M). **Per quale attività:** verifica
+dei vincoli d'ambiente, aggiornamento del documento di progetto al formato TOML, stesura
+integrale del piano con il suo codice, costruzione ed esecuzione del prototipo di verifica,
+correzione dei difetti trovati.
+
+**Perché questo tool:** l'attività richiedeva di eseguire comandi sulla macchina reale —
+provare l'import di una libreria, eseguire una suite di test, cronometrare il rilevatore
+sul repository vero — e non solo di scrivere testo. Un assistente senza esecuzione avrebbe
+consegnato un piano con l'inventario in YAML, con i tre `__init__.py` mancanti e con un
+comando documentato che fallisce: tutti difetti che sarebbero emersi a carico di chi
+esegue.
+
+**Perché questo modello:** il piano è lungo e internamente vincolato — i nomi di funzione
+introdotti nel Task 1 vengono consumati nel Task 4, i conteggi di test dipendono dalla
+somma dei task precedenti, il formato dell'inventario compare in tre documenti diversi.
+Il contesto ampio consente di mantenere la coerenza senza rileggere, e la qualità di
+ragionamento è servita sulla decisione di deviare dal documento di progetto sul formato
+dell'inventario, che richiedeva di pesare una scelta già approvata contro un vincolo
+tecnico scoperto dopo.
+
+**Risultato ottenuto:** un piano di 1.458 righe in sette task, con il codice completo,
+verificato in esecuzione, e un documento di progetto reso coerente.
+
+**Verifiche e correzioni fatte:** dettagliate nel campo "Verifiche" della tabella. In
+sintesi: prototipo costruito ed eseguito (31 test verdi), rilevatore provato sul
+repository reale (12 file trovati, 0,48 secondi), tre difetti e due conteggi errati
+corretti prima della consegna.
+
+**6. Problematiche incontrate**
+
+*Il documento di progetto prevedeva un formato che l'ambiente non supporta a costo zero.*
+Il progetto, approvato poche ore prima, indicava l'inventario in YAML. Verifica svolta:
+tentato l'import di `yaml` sul `python3` di sistema, fallito; verificata la presenza di
+`tomllib` nella libreria standard, riuscita. Causa: in fase di progettazione il formato è
+stato scelto per leggibilità senza verificare la disponibilità della libreria, e YAML in
+Python richiede sempre una dipendenza esterna. Risolta portando l'inventario a TOML e
+aggiornando il documento di progetto invece di lasciare i due documenti in disaccordo.
+Risolta.
+
+*Il comando principale del sistema non funzionava, pur con tutti i test verdi.* Eseguendo
+`python3 scripts/check_customizations.py` il programma terminava con `ModuleNotFoundError:
+No module named 'scripts'`. Causa reale: Python mette nel percorso di import la cartella
+del file eseguito, non quella da cui lo si invoca, quindi gli import assoluti verso la
+root non si risolvevano; i test non lo rilevavano perché `unittest` gira con la root già
+nel percorso. Verifica: eseguito lo script da una cartella diversa. Risolta con un
+bootstrap esplicito del percorso in testa allo script e, soprattutto, con un test che
+esegue lo script come comando da una cartella diversa, così che il difetto non possa
+tornare. Risolta, ed è il difetto più istruttivo dell'attività: una suite verde al 100%
+non dice nulla su un'interfaccia che la suite non usa.
+
+*Due conteggi di test scritti nel piano erano sbagliati.* Il piano dichiarava 25 e 26 test
+dove erano 29 e 30. Causa: i numeri erano stati sommati a mente invece che misurati.
+Risolta eseguendo la suite e correggendoli. Risolta, e la stessa esecuzione ha poi tenuto
+allineati i conteggi quando l'aggiunta di un test li ha spostati a 30 e 31.
+
+
+---
+
+### Attività 9 — Documento di presentazione degli sviluppi in programma, destinato a interlocutori non tecnici
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Supporto / redazione documentale — nessuna modifica al codice applicativo |
+| **Problema riscontrato** | Richiesta dell'utente: «scrivimi un documento che devo presentare a dei non programmatori su tutti i progetti di oggi da fare nella piattaforma», con due vincoli espliciti — la presentazione deve essere **breve** e l'elenco dei progetti va **confermato prima** di scrivere. Nessuna indicazione iniziale su formato, destinatario preciso e livello di dettaglio economico. |
+| **Problema effettivo** | I quattro filoni progettati oggi **non sono omogenei**, e presentarli come quattro voci dello stesso tipo avrebbe fatto perdere la metà del lavoro. Due sono funzioni visibili (editor delle lezioni, storico del tutor AI) e si raccontano mostrando cosa cambia per chi usa la piattaforma; due sono **infrastruttura invisibile** (sistema di configurazioni, verifica delle personalizzazioni dopo gli aggiornamenti) il cui valore non si può mostrare con una schermata e che davanti a un pubblico non tecnico va giustificato per il problema che elimina, non per come è costruita. Secondo scarto, sullo stato: tre progetti hanno il piano di lavoro pronto, l'editor delle lezioni è fermo al design senza specifica — un documento che non lo dicesse avrebbe fatto credere che tutti e quattro siano pronti a partire. Terzo vincolo, emerso dalla scelta dell'utente e non dall'analisi: le stime esistono, sono misurate e sono scritte nei documenti di progetto, ma vanno **omesse**, perché un numero in ore letto da un pubblico non tecnico viene interpretato come preventivo. |
+| **Soluzione applicata** | Ricostruito il perimetro della giornata leggendo il worklog (nove attività, di cui otto di progettazione distribuite su quattro filoni) e risalendo alle fonti primarie di ciascun filone: le tre specifiche in `docs/superpowers/specs/`, i tre piani in `docs/superpowers/plans/`, il report di fattibilità `docs/ai/STORICO-CHAT-FATTIBILITA.md` e la memoria di progetto `lesson-editor-swap-feasibility` per l'unico filone privo di specifica. Sottoposto all'utente l'elenco dei **quattro progetti più due voci minori collegate** (correzione del buco di riservatezza su `LMSA Query Log`, migrazione di `enable_live_classes` nel nuovo sistema di configurazioni), con tre domande: perimetro, formato, dettaglio delle stime. Scelte dell'utente: **solo i quattro progetti**, **documento markdown nel repository**, **nessuna stima**. Redatto [docs/OS-LMS-Sviluppi-in-Programma.md](OS-LMS-Sviluppi-in-Programma.md) (158 righe) nello stile del documento di presentazione funzionale già presente in `docs/`, con: tabella di sintesi che distingue i due progetti visibili dai due infrastrutturali; una sezione per progetto con lo stesso schema in quattro tempi — *com'è oggi*, *cosa cambia*, *cosa resta come prima*, *a che punto siamo* — perché il pubblico deve poter confrontare i progetti fra loro; chiusura con le tre decisioni necessarie per partire (ordine di priorità, quali altri parametri rendere configurabili, documento di dettaglio mancante per l'editor). Scelte di scrittura: nessun nome di file, libreria o componente; i due progetti infrastrutturali aperti dal problema concreto (l'aggiornamento che cancella una modifica in silenzio; l'opzione che oggi richiede uno sviluppo) e non dall'architettura; per l'editor delle lezioni messa in evidenza la rassicurazione che conta per chi ha già prodotto contenuti, cioè che le lezioni pubblicate non vengono convertite. |
+| **Commit** | No — non committata. Il documento è sul disco ma non committato, coerentemente con gli altri documenti prodotti oggi, che sono tutti non tracciati in attesa di indicazione dell'utente. |
+| **File modificati** | Creato: [docs/OS-LMS-Sviluppi-in-Programma.md](OS-LMS-Sviluppi-in-Programma.md). Aggiornato: [docs/WORKLOG.md](WORKLOG.md). File letti: [docs/WORKLOG.md](WORKLOG.md) (sezione 2026-09-18, nove attività), [docs/superpowers/specs/2026-09-18-sistema-configurazioni-design.md](superpowers/specs/2026-09-18-sistema-configurazioni-design.md), [docs/superpowers/specs/2026-09-18-tutor-chat-history-design.md](superpowers/specs/2026-09-18-tutor-chat-history-design.md), [docs/superpowers/specs/2026-09-18-upstream-regression-harness-design.md](superpowers/specs/2026-09-18-upstream-regression-harness-design.md), [docs/superpowers/plans/2026-09-18-sistema-configurazioni.md](superpowers/plans/2026-09-18-sistema-configurazioni.md) (intestazione, ambito, stima), [docs/superpowers/plans/2026-09-18-tutor-chat-history.md](superpowers/plans/2026-09-18-tutor-chat-history.md) (sezione stima), la memoria di progetto `lesson-editor-swap-feasibility`, [docs/OS-LMS-Presentazione-Funzionalita.md](OS-LMS-Presentazione-Funzionalita.md) (stile e convenzioni dei documenti per il cliente). Nessun file di codice letto né modificato. |
+| **Verifiche** | Nessuna build e nessun test: l'attività non tocca il codice. Eseguite invece tre verifiche sul documento. **Prima, tracciabilità dei fatti**: ogni affermazione fattuale è ripresa da un documento della giornata e non riformulata a memoria — le quarantanove personalizzazioni censite (documento di progetto §2), le tre sezioni Corsi/Classi/App e la regola "Corsi e Classi valgono anche per l'app, non viceversa" (specifica configurazioni §1), la visibilità limitata a studente e Gestore con archiviazione al posto della cancellazione e conservazione illimitata (specifica storico chat, decisioni D1-D3), il video come meccanismo di completamento e l'assenza di conversione dei contenuti già scritti (worklog Attività 1 e 2). **Seconda, controllo del gergo**: ricerca testuale sul documento di `editorjs`, `tiptap`, `doctype`, `upstream`, `frappe`, `vue`, `pinia`, `endpoint`, `json`, `repository`, `commit`, `branch` — **zero occorrenze**. **Terza, controllo delle stime**: ricerca di `ore`, `giornat`, `session`, `stima`, `preventiv` — **zero occorrenze**, come richiesto dall'utente. Non verificato, perché non verificabile a tavolino: se la lunghezza scelta corrisponda davvero a ciò che l'utente intende per "presentazione non lunga" — il documento sta in poco più di tre pagine e la tabella iniziale permette di esporlo anche senza leggerlo per intero. |
+
+**1. Obiettivo dell'attività**
+
+Dare all'utente un documento che gli permetta di esporre a interlocutori non tecnici i
+quattro progetti progettati oggi, ciascuno con il problema che risolve e il punto in cui
+si trova, senza che chi ascolta debba conoscere come la piattaforma è costruita.
+Obiettivo secondario, imposto dal contesto più che dalla richiesta: non far sparire i due
+progetti infrastrutturali, che sono metà del lavoro della giornata e sono quelli che un
+pubblico non tecnico tende a percepire come costo senza risultato.
+
+**2. Modalità di esecuzione**
+
+Tre passaggi. Primo, ricostruzione del perimetro: rilettura del worklog della giornata per
+elencare i filoni, e risalita alle fonti primarie di ciascuno, perché lo stato di
+avanzamento e le decisioni prese stanno nei documenti di progetto e non nel registro.
+Secondo, conferma esplicita con l'utente prima di scrivere una riga, come richiesto: elenco
+proposto con i quattro progetti più due voci minori collegate, e tre domande su perimetro,
+formato e dettaglio delle stime. Terzo, stesura sul modello del documento di presentazione
+funzionale già presente in `docs/`, che è la convenzione di casa per i testi destinati al
+cliente.
+
+**3. Attività svolte**
+
+Ricostruiti i quattro filoni della giornata con il loro stato: editor delle lezioni
+(analisi e design congelati, specifica mancante), sistema di configurazioni (progetto
+approvato e piano pronto), verifica delle personalizzazioni contro gli aggiornamenti
+(progetto approvato, piano della Fase 0 pronto e provato in prototipo), storico delle chat
+del tutor AI (specifica e piano approvati). Estratte da ciascun documento le stime, poi
+escluse dal testo su indicazione dell'utente. Presentato l'elenco con le due voci minori
+collegate e raccolte le tre risposte: solo i quattro progetti, markdown nel repository,
+nessuna stima. Scritto il documento in quattro sezioni più sintesi iniziale e chiusura
+operativa; applicato a tutte e quattro le sezioni lo stesso schema in quattro tempi, così
+che il confronto fra progetti sia immediato. Eseguiti i controlli testuali su gergo e
+stime.
+
+**4. Utilizzo dell'AI**
+
+- **tool/agente:** Claude Code (estensione VS Code), sessione interattiva.
+- **modello:** Opus 5 con contesto esteso (1M).
+- **attività per cui è stata utilizzata:** ricostruzione del perimetro della giornata dai
+  documenti prodotti, proposta dell'elenco dei progetti per la conferma, stesura integrale
+  del documento di presentazione e controlli di coerenza sul testo.
+- **motivo della scelta del tool e del modello:** il materiale di partenza è molto esteso
+  (tre specifiche, tre piani di cui due sopra le 3.000 righe, un worklog di giornata con
+  nove attività) e la riduzione a testo divulgativo richiede di tenere insieme tutte le
+  fonti contemporaneamente per non attribuire a un progetto una decisione presa in un
+  altro; il contesto esteso evita la lettura frammentata, che è proprio il modo in cui
+  nascono quegli errori.
+- **risultato ottenuto:** elenco dei progetti confermato dall'utente con tre scelte di
+  impostazione, e documento consegnato in una sola stesura, senza rilavorazioni.
+- **verifiche e correzioni effettuate:** la conferma preventiva ha corretto il perimetro in
+  due punti rispetto alla mia proposta — escluse le due voci minori collegate e rimosse
+  tutte le stime, che avevo previsto di includere. Sul testo finale: controllo di
+  tracciabilità di ogni dato citato sulle fonti della giornata, e due ricerche testuali
+  (gergo tecnico, riferimenti a tempi e costi) entrambe a zero occorrenze.
+
+**6. Problematiche incontrate**
+
+Nessun ostacolo tecnico. Una sola difficoltà di merito: rendere presentabile a un pubblico
+non tecnico il progetto di verifica delle personalizzazioni, che non produce nulla di
+visibile e il cui beneficio è la mancata occorrenza di un guasto. Risolta impostando la
+sezione sul rischio concreto già in essere — l'aggiornamento che cancella una modifica
+senza che nessuno se ne accorga, e il fatto che oggi l'unica alternativa è riprovare tutta
+la piattaforma a mano — e usando come esempio una regola di visibilità che l'interlocutore
+riconosce (il pulsante riservato al ruolo Gestore).
+
+### Attività 10 — Verifica della segnalazione sulle notifiche di punteggio di quiz ed elaborati non apribili dallo studente
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Correzione — **fase di sola diagnosi**: verifica del difetto su codice e su dati di produzione, nessuna modifica applicata in attesa di una decisione dell'utente sulla destinazione del link |
+| **Problema riscontrato** | Segnalazione dell'utente: «Le notifiche che riguardano il punteggio dei quiz ed elaborati non vengono aperte e non portano al punteggio del quiz (Lato studente)», con richiesta esplicita di **verificare se si tratti davvero di un bug** prima di intervenire. Nessuna indicazione su quale notifica specifica, su quale ambiente e su quale account sia stata osservata. |
+| **Problema effettivo** | La segnalazione è **confermata per i quiz e smentita per gli elaborati**, e sul quiz i difetti sono **tre, sovrapposti**. (1) *Il link non viene mai scritto*: la notifica del punteggio quiz è creata con il campo `link` **letteralmente vuoto** in [lms/lms/doctype/lms_quiz_submission/lms_quiz_submission.py:67](../lms/lms/doctype/lms_quiz_submission/lms_quiz_submission.py#L67) (`"link": ""`). È un difetto **upstream di frappe/lms**, non una regressione di os_lms: il commit upstream `45e98b9dd` del 2026-01-07 («fix: notification on quiz update and mention») ha rimaneggiato proprio quella funzione — grassetto nel soggetto, `from_user` da `Administrator` a utente di sessione — **lasciando `"link": ""` intatto**. Tutte le altre notifiche della piattaforma (corso pubblicato, classe pubblicata, commento, menzione, lezione dal vivo, elaborato) costruiscono invece il link con `get_lms_route(...)`: il quiz è l'unica eccezione. (2) *Il fallimento è silenzioso*: il pannello notifiche esce in `return` alla prima riga di `navigateToPage` quando il link è vuoto ([frontend/src/components/Notifications/NotificationPanel.vue:175](../frontend/src/components/Notifications/NotificationPanel.vue#L175), `if (!log.link) return`) — cioè **prima** di poter raggiungere il toast di errore `notifyUnavailable()` definito due righe sopra. L'effetto osservabile è esattamente quello descritto dall'utente: il click segna la notifica come letta, chiude il pannello e non fa altro, senza alcun messaggio. (3) *Non esiste comunque una destinazione raggiungibile dallo studente*: l'unica pagina che mostra punteggio, percentuale e risposte di una submission, la rotta `/quiz-submission/:submission`, **espelle lo studente** verso l'elenco corsi in `onMounted` ([frontend/src/pages/QuizSubmission.vue:115-116](../frontend/src/pages/QuizSubmission.vue#L115-L116)), perché ammette solo istruttore, moderatore e valutatore. Quindi anche scrivendo il link il difetto resterebbe. Ricaduta collaterale: la notifica push di os_lms propaga `"link": doc.link or ""` ([apps/os_lms/os_lms/os_lms/push_notifications.py](../apps/os_lms/os_lms/os_lms/push_notifications.py)), per cui anche il push del punteggio quiz arriva senza destinazione. **Sugli elaborati il difetto non esiste**: [lms/lms/doctype/lms_assignment_submission/lms_assignment_submission.py:95](../lms/lms/doctype/lms_assignment_submission/lms_assignment_submission.py#L95) scrive un link valido, il pannello lo riconosce, la rotta `AssignmentSubmission` esiste e lo studente ha permesso di lettura `if_owner` sulla propria submission e lettura piena su `LMS Assignment`. Resta vero, ma **per costruzione e non per errore**, che l'elaborato «non porta a un punteggio»: gli elaborati non hanno un voto numerico, solo lo stato Pass/Fail e il commento del docente, entrambi mostrati nella pagina di destinazione. |
+| **Soluzione applicata** | Nessuna modifica al codice, coerentemente con la richiesta («verifica e capiamo se sia un bug»). Consegnata all'utente la diagnosi con la distinzione quiz/elaborati, l'attribuzione del difetto a monte e l'indicazione che la correzione richiede **tre interventi** e non uno: scrittura del link nel backend, riconoscimento del percorso nel pannello, apertura di una destinazione visibile allo studente. Posta la domanda che discrimina fra le due destinazioni possibili, perché è una scelta di prodotto e non tecnica: **(A)** rimandare alla lezione che contiene il quiz — o a `/quiz/<quiz>` per i quiz non agganciati a una lezione — cioè il punto in cui lo studente vede oggi il proprio risultato nel rispetto delle opzioni `show_answers` e `show_submission_history` del quiz; **(B)** aprire allo studente, in sola lettura, la pagina `/quiz-submission/<submission>`, che però mostra le risposte corrette **ignorando** quelle due opzioni e quindi può costituire una fuga di informazioni sui quiz a tentativi multipli. Segnalato inoltre, senza correggerlo, che il `return` silenzioso del pannello rende muta **qualunque** notifica senza link, non solo quella del quiz. |
+| **Commit** | Non committata — nessuna modifica al codice. L'unico file toccato è questo worklog, che per direttiva non va committato. |
+| **File modificati** | Nessun file di codice. Aggiornato: [docs/WORKLOG.md](WORKLOG.md). File letti: [lms/lms/doctype/lms_quiz_submission/lms_quiz_submission.py](../lms/lms/doctype/lms_quiz_submission/lms_quiz_submission.py), [lms/lms/doctype/lms_assignment_submission/lms_assignment_submission.py](../lms/lms/doctype/lms_assignment_submission/lms_assignment_submission.py), [frontend/src/components/Notifications/NotificationPanel.vue](../frontend/src/components/Notifications/NotificationPanel.vue), [frontend/src/stores/notifications.js](../frontend/src/stores/notifications.js), [lms/lms/api.py](../lms/lms/api.py) (`get_notifications`), [lms/lms/utils.py](../lms/lms/utils.py) (`get_lms_route`, `get_lesson_url`, `create_notification_log`, `notify_mentions_on_portal`), [lms/lms/doctype/lms_batch/lms_batch.py](../lms/lms/doctype/lms_batch/lms_batch.py) e [lms/lms/doctype/lms_course/lms_course.py](../lms/lms/doctype/lms_course/lms_course.py) (pattern di riferimento), [frontend/src/router.js](../frontend/src/router.js), [frontend/src/pages/QuizSubmission.vue](../frontend/src/pages/QuizSubmission.vue), [frontend/src/pages/QuizPage.vue](../frontend/src/pages/QuizPage.vue), [frontend/src/pages/AssignmentSubmission.vue](../frontend/src/pages/AssignmentSubmission.vue), [frontend/src/components/Assignment.vue](../frontend/src/components/Assignment.vue), [frontend/src/components/Quiz.vue](../frontend/src/components/Quiz.vue), [apps/os_lms/os_lms/os_lms/push_notifications.py](../apps/os_lms/os_lms/os_lms/push_notifications.py), i JSON dei doctype `LMS Quiz`, `LMS Quiz Submission`, `LMS Assignment`, `LMS Assignment Submission`. |
+| **Verifiche** | La diagnosi non è dedotta dal solo codice: è **confermata sui dati di produzione**, interrogati in sola lettura con il profilo `.private/db/oslms-prod.cnf`. Conteggio delle notifiche per tipo di documento: `LMS Quiz Submission` **13 su 13 con link vuoto (100 %)**, `LMS Assignment Submission` **10 su 10 con link valorizzato (0 % vuoti)**, `LMS Batch` 541 e `LMS Live Class` 446 tutte con link. Ispezionati i record: i link degli elaborati hanno la forma `/lms/assignment-submission/ASG-00046/ASG-SUB-00752`, che il pannello risolve correttamente nella rotta `AssignmentSubmission`; i soggetti dei quiz sono italiani e regolari («Hai ottenuto un punteggio di **2** per il quiz …»), quindi il difetto non è di traduzione né di generazione del testo. Verificato che i destinatari sono account studente reali, fra cui `…+studente@gmail.com`, e che le notifiche risultano già lette: gli studenti le hanno aperte davvero, senza ottenere nulla. Verificati i permessi effettivi sul database (`tabDocPerm` e `tabCustom DocPerm`): lo studente legge `LMS Assignment` e, `if_owner`, la propria `LMS Assignment Submission` — quindi la pagina degli elaborati si apre e si popola, non è un caso di schermata bianca da permesso mancante. Verificato che la rotta `/quiz-submission/:submission` esiste ma è protetta dal redirect in `onMounted`, e che `/quiz/:quizID` è invece accessibile a qualunque utente autenticato. Misurato, perché determina la fattibilità dell'opzione (A): dei 7 quiz in produzione **4 non sono agganciati ad alcuna lezione**, e 5 delle 13 notifiche riguardano proprio quei quiz — un link costruito solo sulla lezione lascerebbe morte circa due notifiche su cinque, quindi la variante (A) richiede obbligatoriamente il ripiego su `/quiz/<quiz>`. Ricostruita con `git show 45e98b9dd` la storia del difetto per attribuirlo a monte. **Non verificato sul campo**: la riproduzione dal vivo in un browser con un account studente, perché lo stack Docker di sviluppo è spento (`dev-elite-frappe-1` in stato *Exited*) e sull'ambiente di produzione non è previsto l'accesso applicativo; la catena sintomo→causa è però chiusa da entrambi i capi, codice e dati, senza passaggi ipotetici. |
+
+**1. Obiettivo dell'attività**
+
+Stabilire se la segnalazione dell'utente descriva un difetto reale del prodotto o un
+comportamento atteso frainteso, e in caso di difetto individuarne la causa prima di
+proporre qualsiasi correzione. Obiettivo secondario, imposto dalla formulazione della
+segnalazione, che accorpa «quiz ed elaborati» in un unico sintomo: verificare
+**separatamente** i due flussi, perché condividono l'interfaccia (lo stesso pannello
+notifiche) ma non il codice che genera la notifica.
+
+**2. Modalità di esecuzione**
+
+Applicata la procedura di debug sistematico, che vieta di proporre correzioni prima di
+aver chiuso l'indagine sulla causa. Percorso in tre passaggi. Primo, **dall'interfaccia
+al dato**: letto il gestore del click sulle notifiche nel pannello, ricavata la
+condizione che produce il "non succede niente" (`link` assente) e risalito all'API che
+fornisce i campi, per escludere che il link fosse presente ma scartato lungo la strada.
+Secondo, **dal dato al codice che lo scrive**: censiti tutti i punti della piattaforma
+che creano notifiche — otto fra `lms` e `os_lms` — e confrontato il quiz con gli altri
+sette, che è il modo per distinguere un difetto puntuale da una scelta di progetto.
+Terzo, **conferma sul campo**: invece di fermarsi all'ispezione del codice, interrogato
+il database di produzione in sola lettura per misurare quante notifiche reali sono
+effettivamente prive di link, chi le ha ricevute e se le abbiano aperte. Aggiunta infine
+la verifica della destinazione, cioè la domanda che il codice non pone da solo: *ammesso
+di scrivere il link, dove atterrerebbe lo studente e riuscirebbe a entrarci?* — è da lì
+che è emerso il terzo difetto, il redirect della pagina di submission.
+
+**3. Attività svolte**
+
+Mappata la catena completa della notifica: creazione nel backend con
+`make_notification_logs`, lettura tramite `lms.lms.api.get_notifications`, resa nel
+pannello `NotificationPanel.vue`, risoluzione del percorso in `navigateToPage`, rotta
+Vue di destinazione, permessi sul doctype di destinazione. Individuato il punto di
+rottura del quiz (`"link": ""`) e la ragione per cui non produce alcun messaggio di
+errore (uscita anticipata prima del toast). Verificato che gli elaborati percorrono la
+stessa catena senza rompersi. Attribuito il difetto a monte tramite la storia del file.
+Misurata la diffusione reale del problema sui dati di produzione e misurata la
+distribuzione dei quiz fra agganciati e non agganciati a una lezione, che è il vincolo
+da cui dipende la forma della correzione. Preparate e sottoposte all'utente le due
+destinazioni possibili con il rispettivo compromesso. Nessuna riga di codice modificata.
+
+**4. Utilizzo dell'AI**
+
+Strumento: **Claude Code** (estensione VS Code), modello **Opus 5 con contesto esteso a
+1M token**. Attività svolta: l'intera indagine — mappatura della catena delle notifiche
+su due applicazioni (`lms` e `os_lms`) e su due linguaggi, confronto del quiz con gli
+altri sette generatori di notifiche, interrogazione del database di produzione,
+attribuzione storica del difetto tramite `git show`. Perché questo strumento: la causa
+non era localizzabile leggendo un singolo file, perché il sintomo compare nel frontend
+Vue mentre la causa è in un doctype Python e la conferma sta nei dati; serviva uno
+strumento che leggesse il repository, eseguisse `git` e interrogasse il database nella
+stessa sessione. Perché questo modello: il contesto esteso ha permesso di tenere
+simultaneamente aperti i due flussi (quiz ed elaborati) e i loro quattro livelli —
+backend, API, componente, permessi — evitando di chiudere la diagnosi sul primo difetto
+trovato, che da solo avrebbe portato a una correzione incompleta (il link scritto ma la
+pagina ancora inaccessibile allo studente). Risultato ottenuto: causa individuata su tre
+livelli, ambito ristretto ai soli quiz, difetto attribuito a monte, correzione non
+applicata perché dipende da una scelta di prodotto. Verifiche e correzioni fatte
+sull'operato dell'AI: **nessuna conclusione è stata accettata sulla sola lettura del
+codice**. L'ipotesi iniziale — «link vuoto» — è stata sottoposta al controllo sui 13
+record reali prima di essere dichiarata causa. L'ipotesi di comodo che anche gli
+elaborati fossero rotti, suggerita dalla formulazione della segnalazione, è stata
+**scartata** dopo aver letto i link reali nel database e verificato i permessi effettivi
+dello studente: riportarla per compiacere la segnalazione avrebbe prodotto una correzione
+inutile su un flusso sano. È stata inoltre respinta la prima destinazione che sembrava
+ovvia (la pagina della submission) dopo aver letto il redirect in `onMounted`, e la
+seconda (la lezione) è stata corretta in «lezione **con ripiego** su `/quiz/<quiz>`»
+dopo aver misurato che 4 quiz su 7 non hanno lezione. Non verificato in ambiente
+applicativo: lo stack Docker era spento e non è stato avviato.
+
+**6. Problematiche incontrate**
+
+Due. La prima, di merito: la segnalazione accorpa quiz ed elaborati in un unico sintomo,
+e il modo più rapido di rispondere sarebbe stato dare per buono che fossero rotti
+entrambi. Risolta verificando i due flussi separatamente e portando la prova numerica
+della differenza (13 su 13 senza link contro 10 su 10 con link), perché l'ambito della
+correzione cambia di conseguenza. La seconda, operativa: non è stato possibile
+riprodurre il difetto in un browser con un account studente, perché lo stack di sviluppo
+era spento e sull'ambiente di produzione non è previsto l'accesso applicativo. Aggirata
+chiudendo la catena dai due capi — il codice che non scrive il link e i record reali che
+risultano privi di link e già letti dagli studenti — ma resta il fatto che la conferma
+visiva sull'interfaccia non è stata eseguita e andrà fatta insieme alla verifica della
+correzione.
+
+---
+
+### Attività 7 — Progettazione dell'aggiornamento upstream guidato, release per release (solo documentazione, nessuna operazione eseguita)
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Progettazione — documento di progetto di un sottosistema nuovo; nessuna modifica al codice, nessun aggiornamento scaricato, nessun merge tentato |
+| **Problema riscontrato** | Esigenza dell'utente, formulata dopo l'approvazione del piano della Fase 0: «quando decido di aggiornare il progetto faccio partire un agente indicando quale versione aggiornare, lui partendo dalla release più vecchia, se ci sono conflitti si attiva e decide come risolverli stando attento a non cancellare le mie personalizzazioni e implementando i nuovi aggiornamenti. Deve anche controllare le note delle release per capire cosa viene inserito, se le novità vanno a sostituire qualcosa che noi già abbiamo o se rende deprecabili funzionalità che utilizziamo». Vincoli espliciti aggiunti: è molto lavoro, la precisione è importante, e si procede a step di release. Vincolo finale dato in corso di progettazione: **non eseguire nulla, non aggiornare, produrre solo la documentazione**. |
+| **Problema effettivo** | Tre fatti rilevati sul repository che cambiano l'ordine e la fattibilità delle cose, nessuno dei quali era visibile nella richiesta. **Primo, manca il presupposto**: `git remote -v` mostra solo `origin` (il fork `mrossi-os/lms`), **non esiste un remote verso `frappe/lms`**, e il branch `develop` che dovrebbe essere lo specchio pulito dell'upstream è fermo al **19 marzo 2026** mentre l'ultimo merge upstream reale (`v2.58.0`) è del 2 luglio su un branch separato — quindi oggi, dentro il repository, non esiste un modo riproducibile di sapere cosa c'è di nuovo a monte, e il primo pezzo della richiesta non è la parte facile ma la parte che non c'è. **Secondo, le note di release mentono sull'ampiezza**: quelle di `v2.59.0` elencano 206 PR, ma 193 hanno numero inferiore alla #2542 già inclusa in `v2.58.1` — sono note rigenerate contro una base molto più vecchia, quindi un agente che si fidasse delle note si metterebbe a "importare" 193 modifiche già possedute. **Terzo, esiste una categoria che il processo di merge non vede affatto**: i 24 componenti in `frontend/src/overrides/` sono serviti al posto degli originali dal plugin `osOverrideTheme`, quindi dall'upstream non arriva né conflitto né aggiornamento né segnale — se una correzione arriva a monte non la si riceve e nessuno lo viene a sapere. Quarto vincolo tecnico, relativo alla soluzione: il confronto **a due vie** (file upstream nuovo contro il nostro) è lo strumento sbagliato perché mostra come differenze tutte le personalizzazioni ogni volta, indistinguibili dalle novità; serve il confronto a tre vie, che è ciò che `git merge` già calcola — quindi il valore dell'agente non è rifare il merge ma risolvere i conflitti con cognizione e trovare i **merge puliti ma sbagliati**, che git non segnala. |
+| **Soluzione applicata** | Nessuna operazione eseguita, come richiesto. Scritto il documento di progetto `docs/superpowers/specs/2026-09-18-upstream-release-walk-design.md` (296 righe) con: i dati misurati sulle 8 release da attraversare (`v2.58.1` → `v2.63.0`, con PR, `feat` e rotture per ciascuna); le cinque decisioni prese dall'utente con l'alternativa scartata e il motivo; l'architettura a **motore più pilota** — uno script deterministico `scripts/upstream_walk.py` per tutto ciò che è meccanico e ripetibile, e una skill `/upstream-upgrade` per i soli punti di giudizio; lo stato del percorso in `.git/oslms-upstream-walk.json`, scelto lì perché git non traccia mai la propria directory, quindi lo stato non finisce in un commit, non crea conflitti e non obbliga a modificare `.gitignore` che è un file upstream; il ciclo di una release in sette passi; le **sei condizioni di fermata** con cosa fa l'agente in ciascuna; il problema del dato mancante per le pagine congelate (§9) con soluzione in due tempi e degrado onesto quando la base non è attendibile; cinque regole inviolabili; rischi con mitigazioni; e una sezione finale che elenca i cinque punti rimasti aperti, perché la procedura di approvazione sezione per sezione è stata interrotta su richiesta dell'utente. |
+| **Commit** | Sì, a fine giornata insieme agli altri documenti prodotti: `68e37b78` — `docs: design the upstream customization safety net` (4 file, 2.864 righe aggiunte). **Non pushato.** Il worklog resta non committato come da convenzione di progetto. |
+| **File modificati** | Creato: [docs/superpowers/specs/2026-09-18-upstream-release-walk-design.md](superpowers/specs/2026-09-18-upstream-release-walk-design.md) (296 righe). Aggiornato: [docs/WORKLOG.md](WORKLOG.md). **Nessun file di codice toccato, nessun remote configurato, nessun oggetto git scaricato.** |
+| **Verifiche** | Tutti i dati del documento sono misurati, in sola lettura. **Repository locale**: `git remote -v` (solo `origin`); date dei tip di `origin/develop` (2026-03-19), `develop` (2026-03-19), `merge/upstream-v2.58.0` (2026-07-02) e `feature/oslms` (2026-09-17); `git config --get rerere.enabled` non configurato; 24 file `.vue` in `frontend/src/overrides/`. **Upstream via API pubblica GitHub, senza autenticazione e senza scaricare oggetti**: 86 tag totali, 8 release fra `v2.58.0` e `v2.63.0`; per ciascuna, conteggio delle PR citate, dei `feat` e delle rotture marcate `!` secondo Conventional Commits; per `v2.59.0`, verificato con estrazione dei numeri di PR che 193 su 206 sono anteriori alla #2542 già inclusa in `v2.58.1`, il che dimostra che le note sono cumulative e non rappresentano l'ampiezza reale. Verificata la raggiungibilità di `frappe/lms` con `git ls-remote` (sola lettura, nessun fetch). Non verificato, e dichiarato come tale nel documento: quanto siano arretrate le 24 pagine congelate, perché misurarlo richiederebbe di scaricare l'upstream, operazione esclusa dalla richiesta. |
+
+**1. Obiettivo dell'attività**
+
+Stabilire se l'idea dell'utente sia realizzabile e, in caso affermativo, documentarla a un
+livello sufficiente perché una sessione futura possa costruirla senza rifare il
+ragionamento. L'idea: un agente che, indicata una versione di arrivo, attraversi le
+release upstream una alla volta a partire dalla più vecchia, risolva i conflitti senza
+cancellare le personalizzazioni, implementi le novità e legga le note di release per
+capire cosa viene introdotto, cosa sostituisce funzionalità esistenti e cosa ne rende
+altre obsolete. Vincolo sopravvenuto e determinante per l'esito dell'attività: nessuna
+operazione doveva essere eseguita, solo la documentazione prodotta.
+
+**2. Modalità di esecuzione**
+
+Percorso di progettazione con la skill `brainstorming`, classificato come intervento
+**architetturale**: sottosistema nuovo, non modifica circoscritta.
+
+Primo, misurazione dello stato di fatto prima di qualunque proposta, su due fronti: il
+repository locale (remote configurati, età dei branch, presenza di `rerere`, numero di
+pagine congelate) e l'upstream tramite API pubblica di GitHub (elenco dei tag, note di
+release, classificazione delle PR). La misurazione dell'upstream è stata condotta **senza
+scaricare oggetti git**, usando `git ls-remote` e chiamate REST in sola lettura, per
+rispettare il vincolo di non eseguire operazioni.
+
+Secondo, cinque domande all'utente per fissare i vincoli che il codice non può rivelare:
+cosa deve succedere alla fine di ogni release (risposta: fermata solo quando serve), cosa
+fare quando una novità sostituisce una personalizzazione (risposta: analisi comparativa e
+domanda), quanto verificare a ogni step (risposta: leggera a ogni step, completa alle
+fermate), se le pagine congelate entrano nel percorso (risposta: sì, ma solo quando
+l'upstream tocca l'originale), come costruire il percorso (risposta: copione
+deterministico più agente ai punti di giudizio).
+
+Terzo, presentazione della prima sezione di progetto, interrotta su richiesta dell'utente
+che ha chiesto di passare direttamente alla documentazione. Le sezioni di dettaglio sono
+state quindi scritte senza l'approvazione progressiva prevista dalla procedura, e il
+documento lo dichiara esplicitamente con l'elenco dei punti rimasti aperti.
+
+**3. Attività svolte**
+
+Misurato lo stato di fatto e documentate le tre scoperte che cambiano l'ordine delle cose:
+l'assenza del remote upstream con lo specchio fermo da sei mesi, le note di release che
+sovrastimano l'ampiezza di un fattore quindici sulla release più grande, e le 24 pagine
+congelate che non ricevono nulla senza che niente lo segnali.
+
+Quantificato il percorso: 8 release da `v2.58.0` a `v2.63.0`, con la distribuzione del
+lavoro per release. Rilevato che `v2.63.0` contiene **tre rotture dichiarate** con il
+marcatore `!` dei Conventional Commits, due delle quali cadono sulle aree più
+personalizzate del progetto — il contenuto delle lezioni, dove esistono circa 2.700 righe
+di personalizzazione, e l'authoring dei quiz, che il progetto ha innestato dentro l'editor
+a blocchi. Questo è il caso concreto che rende la richiesta dell'utente non teorica, ed è
+anche il motivo per cui il documento propone di valutare se fermare il primo percorso a
+`v2.62.1`.
+
+Argomentata la differenza fra confronto a due vie e a tre vie e le sue conseguenze sul
+progetto, e individuata la vera area di valore dell'agente: non rifare ciò che `git merge`
+già calcola, ma risolvere i conflitti con cognizione di cosa protegge ogni riga e
+soprattutto trovare i merge puliti ma semanticamente sbagliati, che sono la classe di
+problemi che oggi costa il ritest manuale.
+
+Progettata l'architettura a motore e pilota con la motivazione della separazione, i quattro
+comandi del motore, la collocazione dello stato in `.git/` e le dipendenze dalle fasi già
+progettate. Descritto il ciclo di una release in sette passi con il criterio differenziale
+sul rilevatore, e le sei condizioni di fermata con il comportamento dell'agente in ciascuna.
+
+Individuato e documentato un problema che nessuno aveva ancora nominato: il confronto a tre
+vie sulle pagine congelate richiede di sapere da quale commit upstream ogni override è stato
+copiato, e **questo dato oggi non esiste**. Proposta una soluzione in due tempi con la
+marcatura esplicita delle stime, e stabilito il degrado onesto — mostrare il diff upstream
+puro senza tentare la fusione — perché un confronto a tre vie partito da una base sbagliata
+produce un risultato plausibile e scorretto, che è peggio di nessun risultato.
+
+**4. Utilizzo dell'AI**
+
+**Tool:** Claude Code. **Modello:** Opus 5 (contesto 1M). **Per quale attività:** misurazione
+dello stato di fatto locale e upstream, conduzione del confronto con l'utente, progettazione
+del sottosistema, stesura del documento.
+
+**Perché questo tool:** l'analisi richiedeva di interrogare il repository (remote, date dei
+branch, configurazione, conteggio degli override) e l'upstream (tag, note di release,
+classificazione delle PR), e di farlo **senza eseguire operazioni che modificassero lo
+stato**, distinzione che un assistente senza accesso agli strumenti non avrebbe potuto né
+rispettare né dimostrare. Le tre scoperte che hanno cambiato il progetto sono tutte venute
+dalla misurazione, non dal ragionamento.
+
+**Perché questo modello:** la progettazione doveva tenere insieme il contesto di due
+documenti prodotti nella stessa giornata, sei memorie di progetto sulla struttura del fork,
+i dati misurati su otto release e il filo di cinque domande all'utente. Il contesto ampio
+evita di riproporre alternative già scartate. La qualità di ragionamento è servita su due
+punti non ovvi: riconoscere che il confronto a due vie richiesto dall'utente è lo strumento
+sbagliato per il problema che vuole risolvere, e accorgersi che le note di `v2.59.0` erano
+cumulative — un dettaglio che, non colto, avrebbe prodotto un progetto che su quella release
+avrebbe fatto lavorare l'agente su 193 modifiche già possedute.
+
+**Risultato ottenuto:** un documento di progetto di 296 righe con dati misurati, cinque
+decisioni motivate, architettura, ciclo operativo, sei condizioni di fermata, un problema
+aperto documentato con la sua soluzione proposta, rischi con mitigazioni e l'elenco esplicito
+di ciò che resta da decidere.
+
+**Verifiche e correzioni fatte:** tutti i dati sono stati misurati e non stimati; l'assunto
+iniziale che le note di release rappresentassero l'ampiezza è stato verificato ed è risultato
+falso, e la verifica è diventata un vincolo di progetto. Il vincolo dell'utente di non
+eseguire nulla è stato rispettato usando esclusivamente comandi in sola lettura: `git
+ls-remote` senza fetch, API REST pubbliche, lettura del repository locale. Nessun remote
+aggiunto, nessun oggetto scaricato, nessun file di codice toccato.
+
+**6. Problematiche incontrate**
+
+*Il repository non sa raggiungere il progetto da cui dipende.* Non esiste un remote verso
+`frappe/lms` e lo specchio interno è vecchio di sei mesi. Verifica: `git remote -v` e
+confronto delle date dei tip dei branch. Causa: i merge upstream sono stati fatti agganciando
+l'upstream a mano, fuori dalla configurazione del repository, quindi la capacità di sapere
+cosa c'è a monte è vissuta nella memoria di chi eseguiva il merge e non nel progetto. **Non
+risolta di proposito**: il rimedio è di tre comandi ed è documentato come prerequisito, ma
+eseguirlo avrebbe violato la richiesta dell'utente di non fare nulla. Va eseguito prima di
+qualunque passo successivo.
+
+*Le note di release non misurano ciò che sembrano misurare.* Verifica: estratti i numeri di
+PR dalle note di `v2.59.0` e confrontati con quelli già inclusi in `v2.58.1` — 193 su 206
+sono anteriori. Causa: le note sono generate automaticamente rispetto a una base che per
+quella release non è il tag precedente. Risolta trasformando la scoperta in un vincolo di
+progetto scritto: l'ampiezza si ricava solo dal diff dei commit, le note servono solo a
+interpretare l'intento. Risolta.
+
+*Manca il dato necessario a riconciliare le pagine congelate.* Il confronto a tre vie richiede
+il commit upstream di provenienza di ogni override, che non è registrato da nessuna parte.
+Verifica: cercato nel repository un riferimento alla provenienza degli override, assente.
+Causa: gli override sono stati creati copiando il file originale senza annotare da dove.
+Risolta parzialmente, a livello di progetto: campo obbligatorio per i nuovi, ricostruzione
+approssimata e marcata per i 24 esistenti, e degrado onesto quando la base non è attendibile.
+Resta una decisione aperta per l'utente (§13 del documento), perché la ricostruzione
+approssimata potrebbe non valere il suo costo.
+
+*Procedura di progettazione interrotta a metà.* La presentazione a sezioni con approvazione
+progressiva si è fermata dopo la prima sezione, su richiesta dell'utente di produrre
+direttamente la documentazione. Conseguenza: le sezioni 7-12 del documento non sono state
+validate dall'utente. Gestita dichiarandolo nello stato del documento e aggiungendo la
+sezione 13 con i cinque punti che restano da decidere, invece di presentarle come approvate.
+
+
+---
+### Attività 11 — Correzione delle notifiche di punteggio quiz: link di destinazione e apertura della lezione dal pannello
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Correzione — implementazione della diagnosi svolta nell'Attività 10, con test |
+| **Problema riscontrato** | Esito dell'Attività 10: la notifica «Hai ottenuto un punteggio di X per il quiz Y» è un click a vuoto per lo studente, confermato su 13 record di produzione su 13. Scelta dell'utente sulla destinazione, fra le due proposte: **opzione A**, cioè rimandare alla lezione che contiene il quiz, con ripiego sulla pagina del quiz per i quiz non agganciati ad alcuna lezione. Scartata l'opzione B (pagina della consegna in sola lettura) perché mostrerebbe le risposte corrette ignorando l'opzione `show_answers` del singolo quiz. |
+| **Problema effettivo** | Tre difetti sovrapposti, non uno, già isolati nell'Attività 10: link vuoto scritto dal backend upstream, uscita silenziosa del pannello sul link vuoto, e assenza di una destinazione raggiungibile dallo studente. L'opzione A ne neutralizza due su tre senza toccare le guardie di accesso, ma ne ha fatto emergere **un quarto, latente**, che la sola lettura del codice del quiz non avrebbe rivelato: il pannello notifiche **non sa aprire una lezione**. Un link nella forma `courses/<corso>/learn/<cap>-<lez>` cade sul ramo generico `courses` di `navigateToPage` e atterra sulla scheda del corso, perdendo la lezione — perché la rotta `Lesson` spezza l'ultimo segmento in due parametri distinti (`chapterNumber` e `lessonNumber`) mentre il ramo esistente ne legge solo uno. Il difetto non si era mai manifestato perché in produzione **non esiste ancora nessuna notifica verso una lezione** (verificato: 0 record con `link LIKE '%/learn/%'`), ma è la forma esatta dei link che l'opzione A comincia a generare, e riguarda anche le notifiche di commento e menzione sulle lezioni, che quella forma di link la producono già oggi in upstream. |
+| **Soluzione applicata** | Tre modifiche, **nessuna riga scritta dentro `lms/`**. (1) Nuovo modulo [apps/os_lms/os_lms/os_lms/notification_links.py](../apps/os_lms/os_lms/os_lms/notification_links.py): `build_quiz_submission_link()` risale dalla submission al quiz e restituisce l'URL della lezione (`get_lesson_url` + `get_lesson_index`, gli stessi helper che upstream usa per le notifiche di menzione) quando il quiz ha lezione e corso, altrimenti `/lms/quiz/<quiz>`; `set_missing_link()` è l'hook che scrive il campo. (2) Registrato in [apps/os_lms/os_lms/hooks.py](../apps/os_lms/os_lms/hooks.py) come `before_insert` su `Notification Log`, accanto all'`after_insert` del push già presente. (3) In [frontend/src/components/Notifications/NotificationPanel.vue](../frontend/src/components/Notifications/NotificationPanel.vue), dentro `navigateToPage`, il ramo `courses` ora riconosce la forma `learn/<cap>-<lez>` e instrada sulla rotta `Lesson` ripiegando sulla scheda corso se l'indice è malformato, ed è stato aggiunto un ramo `quiz` verso la rotta `QuizPage`. **Scelta architetturale sul punto (1)**: usato un hook `before_insert` su `Notification Log` invece di un `override_doctype_class` su `LMS Quiz Submission`. Sovrascrivere `notify_member` avrebbe comportato copiare in os_lms anche il soggetto e il corpo email di upstream, congelandoli qui: upstream li ha già riscritti una volta (commit `45e98b9dd`, gennaio 2026) e lo rifarà. L'hook tocca **solo** il campo mancante e lascia tutto il resto a upstream. Effetto collaterale voluto: il push di os_lms legge `doc.link` in `after_insert`, quindi eredita la destinazione senza una riga dedicata. La pagina `/quiz-submission/:submission` **non è stata toccata**: con l'opzione A la sua guardia di accesso resta legittima. |
+| **Commit** | `5b491f0c` — *fix(notifications): give quiz score alerts a destination the learner can open*, su `feature/oslms`, 5 file, 153 inserzioni. Committata dopo le verifiche a stack acceso. Il worklog resta non committato, come da direttiva. |
+| **File modificati** | Creati: [apps/os_lms/os_lms/os_lms/notification_links.py](../apps/os_lms/os_lms/os_lms/notification_links.py), [apps/os_lms/os_lms/os_lms/tests/test_notification_links.py](../apps/os_lms/os_lms/os_lms/tests/test_notification_links.py) e relativo `__init__.py`. Modificati: [apps/os_lms/os_lms/hooks.py](../apps/os_lms/os_lms/hooks.py) (4 righe), [frontend/src/components/Notifications/NotificationPanel.vue](../frontend/src/components/Notifications/NotificationPanel.vue) (17 righe). Aggiornato: [docs/WORKLOG.md](WORKLOG.md). |
+| **Verifiche** | **Frontend, sul codice realmente spedito**: scritto uno script Node che **estrae dal file `.vue` il blocco di risoluzione del percorso** e lo esegue, così da non collaudare una copia della logica ma quella vera. 11 asserzioni superate: le due forme nuove (`/lms/courses/<corso>/learn/2-3` → rotta `Lesson` con i tre parametri corretti; `/lms/quiz/<quiz>` → rotta `QuizPage`) e, come **prova di non regressione**, le quattro forme di link realmente presenti nel database di produzione (elaborato, classe, classe in forma `batches/details/...`, corso), più la conservazione del frammento `#discussions` e tre link malformati che devono continuare a produrre l'avviso invece di una destinazione sbagliata. **Backend, sul modulo reale**: il bench è spento, quindi il modulo è stato caricato direttamente ed eseguito sostituendo `frappe` e `lms.lms.utils` con stub **riscritti fedelmente sulle implementazioni vere** di `get_lms_route` e `get_lesson_url`. 8 asserzioni superate: quiz con lezione, quiz senza lezione, submission inesistente, hook che riempie il campo vuoto, hook che non tocca un link già presente, hook che ignora gli elaborati, hook che ignora le classi, errore di lettura che non blocca la notifica. **Chiusura della catena**: le stringhe prodotte dal backend nel primo collaudo sono esattamente quelle date in pasto al secondo, quindi i due capi combaciano e non c'è un formato intermedio dato per buono. **Formattazione**: `npx prettier --check` sul file Vue → conforme. Sintassi Python verificata su tutti e tre i file. `eslint` non eseguibile (nel repository c'è la configurazione legacy `.eslintrc`, la versione 9 installata richiede il formato flat); la formattazione è comunque coperta da Prettier, che è il formattatore del progetto. **Test di unità versionato ed eseguito**: `test_notification_links.py`, 7 casi con `frappe.tests.UnitTestCase` e dipendenze sostituite, nessun accesso al database — **7 su 7 verdi** sullo stack acceso. Il CLI `bench` nel container è rotto (difetto noto: shebang pyenv, `ModuleNotFoundError: No module named 'bench'`), quindi i test sono stati lanciati con il python dell'env di frappe, `cd .../frappe-bench/sites && ../env/bin/python`, caricando la suite con `unittest.TestLoader().loadTestsFromName(...)` dopo `frappe.init` e `frappe.connect`. **Prova di integrazione, quella che i test con stub non possono dare**: verificato sul sito `lms.localhost` che `frappe.get_hooks("doc_events")["Notification Log"]["before_insert"]` contiene effettivamente `os_lms.os_lms.notification_links.set_missing_link`, e poi inserite davvero 5 `Notification Log` su altrettante submission reali — **tutte e 5 hanno ricevuto il link** `/lms/courses/a-guide-to-frappe-learning/learn/3-1`. Controllato che l'indirizzo non sia il ripiego `1-1` di `get_lesson_index` ma la lezione giusta: capitolo 3, lezione 1, titolo **"Quiz Time"**, che è la lezione a cui il quiz appartiene. Inserita anche una **controprova** su `LMS Batch`, che l'hook deve ignorare: link rimasto vuoto. L'intera prova si chiude con `frappe.db.rollback()`, quindi **nessun record è rimasto sul sito di sviluppo** e nessun push è partito (l'invio è agganciato al commit). **Regressione sulla suite frontend**: `yarn test` → 21 test falliti su 213. Verificato che **non c'entrano con questa modifica** ripristinando temporaneamente il file originale e rieseguendo gli stessi 5 file di test su albero pulito: **identici 21 fallimenti**, quindi preesistenti (riguardano `blockEditor`, `blockEditorTeardown`, `lessonFormTeardown`, `ReviewModal`, `NewMemberModal`, nessuno dei quali tocca le notifiche). **Non verificato**: il click reale nel browser con un account studente. Le prove coprono i due capi della catena — il link generato dal backend sul sito vero e la risoluzione di quel link da parte del blocco estratto dal file `.vue` — ma non il gesto dell'utente in pagina. |
+
+**1. Obiettivo dell'attività**
+
+Rendere apribile la notifica del punteggio quiz portando lo studente dove il proprio
+risultato è realmente consultabile, senza esporre le risposte corrette dei quiz
+configurati per non mostrarle e senza introdurre righe nuove dentro il codice upstream,
+che al prossimo aggiornamento andrebbero ri-risolte a mano.
+
+**2. Modalità di esecuzione**
+
+Partito dalla diagnosi già chiusa nell'Attività 10 e dalla scelta dell'utente (opzione A),
+quindi senza ripetere l'indagine. Prima di scrivere codice sono stati verificati i due
+fatti che l'opzione A rende decisivi e che, se dati per scontati, avrebbero prodotto una
+correzione solo apparente: la quota di quiz senza lezione (4 su 7, quindi il ripiego non
+è un caso limite ma riguarda 5 delle 13 notifiche esistenti) e il comportamento del
+pannello davanti a un link di lezione — da cui è emerso il quarto difetto. Scelta poi la
+sede della correzione backend valutando il costo di manutenzione contro gli aggiornamenti
+upstream, non la comodità immediata. Collaudo impostato per evitare l'errore tipico di
+queste correzioni, cioè verificare una riscrittura della logica invece della logica
+spedita: lo script Node legge il blocco dal file `.vue`, il modulo Python viene caricato
+dal suo percorso reale.
+
+**3. Attività svolte**
+
+Misurata la distribuzione dei quiz fra agganciati e non agganciati a una lezione e
+misurata l'assenza di notifiche verso lezioni in produzione. Scritto il modulo del link
+con la funzione di calcolo e l'hook, registrato l'hook, esteso `navigateToPage` con il
+riconoscimento della lezione e il ramo del quiz. Scritto il test di unità versionato.
+Eseguiti i due collaudi fuori bench (frontend sul blocco estratto dal file, backend sul
+modulo caricato direttamente) e il controllo di formattazione. Nessuna modifica alla
+pagina della consegna quiz e nessuna modifica al database di produzione.
+
+**4. Utilizzo dell'AI**
+
+Strumento: **Claude Code** (estensione VS Code), modello **Opus 5 con contesto esteso a
+1M token**. Attività svolta: progettazione e scrittura delle tre modifiche, del test di
+unità e dei due collaudi eseguibili senza bench. Perché questo strumento: la correzione
+attraversa tre livelli — un modulo Python nuovo, la registrazione di un hook, un
+componente Vue — più la scelta di dove collocarla rispetto al codice upstream, e serviva
+uno strumento che leggesse il repository, eseguisse Node e Python e interrogasse il
+database nella stessa sessione. Perché questo modello: il contesto esteso ha permesso di
+tenere aperti contemporaneamente il codice upstream del quiz, il pannello notifiche, le
+rotte Vue e i dati di produzione, ed è questo che ha fatto emergere il quarto difetto
+(il pannello che non apre le lezioni) prima di scrivere il codice anziché dopo, quando si
+sarebbe manifestato come "il link c'è ma porta nel posto sbagliato". Risultato ottenuto:
+tre file di prodotto, un test versionato, 19 asserzioni superate fra i due collaudi.
+Verifiche e correzioni fatte sull'operato dell'AI: la prima stesura prevedeva un
+`override_doctype_class` sul doctype della submission ed è stata **scartata** dopo aver
+constatato con `git show` che upstream aveva già riscritto il testo di quella notifica —
+duplicarlo avrebbe significato congelarne la versione vecchia in os_lms; sostituita con
+l'hook `before_insert`, che tocca solo il campo mancante. La prima stesura del link
+prevedeva la sola lezione ed è stata **corretta** dopo la misura sui dati (4 quiz su 7
+senza lezione) aggiungendo il ripiego. Il primo collaudo frontend era una riscrittura
+della logica in Node ed è stato **rifatto** estraendo il blocco dal file `.vue`, perché
+un test su una copia non prova nulla sul codice spedito. Il primo tentativo di collaudo
+backend importava il modulo dal package e falliva trascinando mezzo frappe: **corretto**
+caricando il file direttamente. Non verificato: il comportamento nel browser.
+
+**6. Problematiche incontrate**
+
+Due. La prima, tecnica e risolta: la correzione "ovvia" — scrivere il link — sarebbe
+stata insufficiente, perché il pannello non sa aprire una lezione e lo studente sarebbe
+atterrato sulla scheda del corso, con il sintomo che cambiava forma invece di sparire.
+Intercettata verificando la destinazione prima di scrivere il codice anziché dopo averlo
+scritto. La seconda, risolta a stack acceso: i collaudi fuori bench coprivano la
+logica ma non l'integrazione, cioè non provavano che l'hook fosse davvero chiamato da
+Frappe all'inserimento. Colmata accendendo l'ambiente ed eseguendo la prova diretta —
+hook presente nel registro degli eventi e 5 notifiche reali inserite con il link
+corretto, il tutto annullato con un rollback. Ostacolo incontrato lungo la strada: nel
+container il comando `bench` non funziona (difetto già noto e registrato), aggirato
+invocando direttamente il python dell'ambiente di frappe. Resta fuori una sola cosa, il
+click nel browser con un account studente: le due estremità della catena sono provate
+separatamente, il gesto in pagina no.
+
+---
+
+### Attività 8 — Analisi dell'ampiezza reale dell'aggiornamento upstream dopo il collegamento al remote, e definizione della procedura operativa
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Analisi e definizione di procedura — nessuna modifica al codice, nessun merge tentato |
+| **Problema riscontrato** | Dopo la progettazione del sistema di aggiornamento (Attività 7), l'utente ha chiesto due cose in sequenza: cosa facessero e se fossero rischiosi i due comandi di prerequisito (`git remote add upstream` e `git config rerere.enabled true`), e poi — dopo averli eseguiti lui stesso insieme al `git fetch` — la procedura operativa completa, prima applicata al caso reale e poi in forma generale riutilizzabile. Richiesta finale: ridurre i cinque passi iniziali a un comando solo, che chieda interattivamente la release di arrivo e il nome del branch. |
+| **Problema effettivo** | Finché il remote upstream non era collegato, l'ampiezza dell'aggiornamento era stimabile **solo dalle note di release**, che l'Attività 7 aveva già dimostrato inaffidabili. Con il `fetch` eseguito dall'utente è stato possibile misurarla dal diff dei commit, e il risultato ha ribaltato il quadro in tre punti. **Primo**: l'ampiezza reale è 513 commit, 672 file, +109.960 / −35.319 righe, e le note **sottostimano** quasi ovunque invece di sovrastimare — `v2.62.0` dichiara 26 PR ma porta 200 commit e 515 file. **Secondo**: 7 degli 8 file personalizzati verificati sono toccati dall'upstream, `ChapterRow.vue` da 12 commit. **Terzo, e determinante**: l'upstream porta `frappe-ui` da `^1.0.0-beta.7` (versione attuale del progetto) a `^1.0.0-beta.24` **già in `v2.59.0`, cioè al secondo passo di otto**, e poi lo blocca a `1.0.0-beta.29` in `v2.62.0`. beta.24 è esattamente la versione che in passato ha causato un incidente in produzione su questo progetto (deriva del caret nel `yarn.lock`, errore 417 su `boot_config` assente in Frappe v16), e 23 delle 24 pagine congelate in `frontend/src/overrides/` sono copie di componenti frappe-ui dell'era beta.7. Questo salto **non è un conflitto git**: viene fuso pulito, il rilevatore di scostamento non vede nulla, la build può passare, e le rotture si manifestano a runtime nei componenti copiati. È quindi il rischio maggiore dell'intero aggiornamento e arriva quasi subito, non alla fine. |
+| **Soluzione applicata** | Nessuna operazione di aggiornamento eseguita. Prodotta la risposta sui due comandi di prerequisito, distinguendo il rischio nullo di `git remote add` (due righe in `.git/config`, nessun download, reversibile) dal rischio basso ma reale di `rerere`, che riapplica fedelmente anche le risoluzioni sbagliate e il cui unico contrappeso è il rilevatore della Fase 0. Misurata l'ampiezza reale per release e l'impatto sui file personalizzati. Individuata la traiettoria di `frappe-ui` release per release. Definita la procedura operativa completa in forma generale, poi rivista secondo la richiesta dell'utente riducendo i cinque passi iniziali (fetch, piano, decisione di ambito, creazione branch, avvio) a un unico comando interattivo che esegue i controlli preliminari, scarica, mostra il piano con una raccomandazione motivata su dove fermarsi, e pone due sole domande: fino a quale release arrivare e con quale nome/partenza creare il branch. Aggiunti due controlli preliminari non richiesti dall'utente ma necessari: working tree pulito, e dichiarazione esplicita del branch di partenza nella domanda, perché partire per distrazione da `develop` invece che dal branch di lavoro farebbe lavorare il percorso per ore su una base sbagliata. Raccomandato di spezzare l'aggiornamento in quattro attività distinte anziché in un percorso unico, isolando il salto frappe-ui e l'ultima release con le tre rotture. Su richiesta dell'utente la guida è stata poi consolidata in un documento operativo dedicato, separato dal documento di progetto perché ha un lettore diverso, e il documento di progetto è stato aggiornato con i dati misurati e la nuova forma di avvio. Chiarita infine, in una sezione apposita della guida, la distinzione fra le tre attività che nel linguaggio comune si chiamano tutte "testare" — suite automatica eseguita dall'agente, revisione del codice preparata dall'agente e giudicata dall'utente, prova nell'applicazione eseguita dall'utente ma con la lista puntuale di cosa provare fornita dall'agente — perché era il punto su cui l'utente aveva chiesto chiarimento. |
+| **Commit** | La guida operativa creata da questa attività è stata committata a fine giornata in `68e37b78` — `docs: design the upstream customization safety net` (4 file, 2.864 righe aggiunte). **Non pushato.** Il worklog resta non committato come da convenzione di progetto. Nessun file di codice toccato. |
+| **File modificati** | Creato: [docs/Procedura-Aggiornamento-Upstream.md](Procedura-Aggiornamento-Upstream.md) (191 righe) — guida operativa per chi esegue l'aggiornamento, con lettore diverso dal documento di progetto: qui c'è cosa lanciare e cosa tocca a chi, non come è fatto il sistema. Aggiornato: [docs/superpowers/specs/2026-09-18-upstream-release-walk-design.md](superpowers/specs/2026-09-18-upstream-release-walk-design.md) con le nuove sezioni 3.4 (ampiezza reale misurata, traiettoria di frappe-ui, impatto sui file personalizzati), 3.5 (le pagine congelate si dividono in due categorie con conseguenze operative diverse), 6.2.1 (forma di avvio interattiva), il rimando alla guida operativa e la chiusura di due dei cinque punti aperti. Aggiornato: [docs/WORKLOG.md](WORKLOG.md). Nessun file di codice toccato. |
+| **Verifiche** | Tutti i dati sono misurati sul repository dopo il `fetch` eseguito dall'utente, in sola lettura. Verificato lo stato del prerequisito: remote `upstream` presente, `rerere.enabled=true`, 94 riferimenti upstream e 95 tag in locale (erano 3). Ampiezza per release calcolata con `git log <prec>..<tag>` e `git diff --name-only`; totale con `git diff --stat v2.58.0..v2.63.0`. Impatto sui file personalizzati calcolato con `git log v2.58.0..v2.63.0 -- <file>` per ciascuno degli 8 file con marcatori verificabili. Traiettoria di `frappe-ui` letta da `frontend/package.json` a ogni tag. Separazione delle 24 pagine congelate: verificato che **una sola** (`pages/Courses/CourseOverview.vue`, toccata da 5 commit upstream) rispecchia un file di lms, mentre le altre 23 sono componenti frappe-ui e quindi non toccate dalle release di lms ma dal bump della libreria. Verificato infine il contenuto di `v2.58.0..v2.58.1` per costruire un esempio d'uso basato su dati veri e non inventati: 19 file, fra cui `ChapterRow.vue` (personalizzato, 5 marcatori), `CourseForm.vue` (sede di innesti custom secondo la memoria di progetto) e `markdownParser.js`. |
+
+**1. Obiettivo dell'attività**
+
+Rispondere a due domande dell'utente — il rischio dei comandi di prerequisito e la procedura
+operativa da seguire — e, una volta collegato l'upstream, sostituire le stime basate sulle
+note di release con misure reali, perché l'Attività 7 aveva già stabilito che le note non
+sono una misura di ampiezza attendibile.
+
+**2. Modalità di esecuzione**
+
+Prima la risposta sui due comandi, costruita distinguendo ciò che ciascuno modifica
+davvero: lettura di `.git/config`, verifica dell'assenza di una cache `rr-cache`,
+dimensione degli oggetti già presenti e presenza della storia upstream fino a `v2.58.0`,
+per poter affermare che il fetch sarebbe stato un delta e non una clonazione.
+
+Poi, dopo che l'utente ha eseguito i comandi, misurazione dell'ampiezza reale per release
+e dell'impatto sui file personalizzati, e ricerca del punto in cui l'upstream cambia le
+dipendenze — controllo non previsto, aggiunto perché nell'Attività 7 era emerso che le
+categorie invisibili a git sono quelle pericolose, e un bump di dipendenza è la più
+invisibile di tutte.
+
+Infine definizione della procedura, prima applicata al caso reale e poi riscritta in forma
+generale su richiesta dell'utente, e sua revisione per ridurre i passi iniziali a un solo
+comando interattivo.
+
+**3. Attività svolte**
+
+Documentata la differenza di rischio fra i due comandi di prerequisito, con le tre modalità
+di annullamento di `rerere` (dimenticare una singola risoluzione, spegnerlo, cancellare la
+cache) e la regola di non attivare mai `rerere.autoUpdate`, che toglierebbe il passaggio di
+revisione.
+
+Misurata e tabulata l'ampiezza reale delle otto release, con il confronto contro ciò che le
+note dichiaravano, che mostra scostamenti in entrambe le direzioni e conferma il vincolo di
+progetto già stabilito.
+
+Individuata la traiettoria di `frappe-ui` e collegata alle memorie di progetto
+sull'incidente in produzione da deriva del caret e sugli override frappe-ui che si rompono
+a ogni bump. Da qui la raccomandazione di trattare `v2.59.0` come attività separata invece
+che come passo di un percorso automatico.
+
+Separate le 24 pagine congelate in due categorie con conseguenze operative diverse: una
+sola dipende dalle release di lms, 23 dipendono dalla versione di frappe-ui.
+
+Definita la procedura operativa in forma generale, e poi rivista in forma interattiva: un
+comando, controlli preliminari, piano con raccomandazione, due domande, avvio.
+
+**4. Utilizzo dell'AI**
+
+**Tool:** Claude Code. **Modello:** Opus 5 (contesto 1M). **Per quale attività:** analisi del
+rischio dei comandi di prerequisito, misurazione dell'ampiezza reale dell'aggiornamento,
+individuazione del salto di dipendenza, definizione e revisione della procedura operativa.
+
+**Perché questo tool:** l'intera attività è misurazione su un repository reale — diff fra
+tag, contenuto di `package.json` a versioni diverse, storia per singolo file. Senza
+esecuzione di comandi sarebbe stata una riproposizione delle stime già note come inaffidabili.
+
+**Perché questo modello:** il collegamento decisivo — che il bump di `frappe-ui` a beta.24
+è la stessa versione di un incidente di produzione già registrato nelle memorie di progetto,
+e che colpisce 23 pagine congelate copiate dall'era beta.7 — richiedeva di tenere insieme
+un dato appena misurato con tre memorie di progetto scritte in momenti diversi. È il tipo
+di connessione che il contesto ampio rende possibile e che una lettura a compartimenti
+non produce.
+
+**Risultato ottenuto:** la risposta sui comandi di prerequisito, la tabella di ampiezza
+reale per release, l'individuazione del rischio principale dell'aggiornamento e la sua
+collocazione temporale (secondo passo su otto, non ultimo), la raccomandazione di spezzare
+il lavoro in quattro attività, e la procedura operativa in forma generale e interattiva.
+
+**Verifiche e correzioni fatte:** tutti i numeri misurati e non stimati; l'esempio d'uso
+costruito sul contenuto reale di `v2.58.0..v2.58.1` invece che inventato. Corretti in corso
+d'opera due comandi di ispezione che fallivano silenziosamente per l'espansione dei
+parametri in zsh (`$t:frontend/...` interpretato come modificatore), il che aveva prodotto
+una prima lettura errata della traiettoria di `frappe-ui` — rilevata perché il risultato
+era incoerente con una misura precedente, e ripetuta con `${t}` fino a ottenere il dato
+corretto.
+
+**6. Problematiche incontrate**
+
+*Il rischio principale dell'aggiornamento non era stato individuato nella progettazione.*
+L'Attività 7 aveva concentrato l'attenzione sulle tre rotture dichiarate di `v2.63.0`,
+cioè sull'ultima release. La misurazione ha mostrato che il problema maggiore è il bump di
+`frappe-ui` in `v2.59.0`, cioè il secondo passo. Causa: senza il remote collegato non era
+possibile leggere `package.json` alle varie versioni, e le note di release **non menzionano
+i cambi di dipendenza**. Risolta aggiungendo il controllo delle dipendenze fra i dati che
+il comando di pianificazione deve mostrare prima di partire. Risolta, ed è la conferma che
+la fase di misurazione va fatta prima di considerare chiuso un progetto.
+
+*Due comandi di ispezione fallivano silenziosamente.* La lettura di `package.json` ai vari
+tag restituiva "non trovato" per tutti i tag. Causa reale: in zsh `$t:frontend/...` viene
+interpretato come parametro con modificatore, e la revisione passata a git risultava
+troncata. Verifica: ripetuto con `${t}`. Risolta. Rilevante perché il primo risultato
+errato era plausibile — sembrava che nessuna release cambiasse la dipendenza — e sarebbe
+passato inosservato se non fosse stato incoerente con una misura precedente che mostrava
+il valore a `v2.63.0`.
+
+
+---
+---
+
+### Attività 12 — Riscrittura del documento di presentazione degli sviluppi, con il quinto progetto e i dati misurati sull'arretrato upstream
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Supporto / redazione documentale — aggiornamento di un documento esistente, nessuna modifica al codice |
+| **Problema riscontrato** | Richiesta dell'utente: «riscrivi la presentazione dei progetti», senza altra indicazione. Alle due domande poste prima di procedere (cosa non va nella versione attuale, quale struttura preferisce) ha risposto **«ci sono stati degli aggiornamenti»** e **«com'è ora e basta»**: quindi non un problema di impostazione ma di contenuto non più aggiornato, con struttura da lasciare invariata. |
+| **Problema effettivo** | Fra la stesura della versione precedente (ore 14:25) e la richiesta di riscrittura, la giornata è proseguita e ha prodotto **un progetto nuovo che il documento non contemplava**: l'aggiornamento guidato della piattaforma di base, release per release (Attività 7 e 8 della giornata, documento di progetto `2026-09-18-upstream-release-walk-design.md` più la guida operativa `docs/Procedura-Aggiornamento-Upstream.md`). Non è un progetto qualsiasi rispetto agli altri quattro: **cambia l'ordine consigliato di esecuzione**, perché le release da recepire contengono due rotture dichiarate che colpiscono l'area delle lezioni e la creazione dei quiz, cioè esattamente la materia del progetto 1 (editor delle lezioni). Una presentazione che avesse elencato i cinque progetti senza dire questo avrebbe lasciato prendere la decisione di priorità su un'informazione mancante. Secondo scarto di contenuto: nel frattempo il remote upstream è stato collegato e l'ampiezza dell'arretrato è passata da stimata a **misurata** (8 release, 513 commit, 672 file), quindi il progetto 3 e il nuovo progetto 4 si possono raccontare con numeri veri. Terzo elemento, deliberatamente **escluso**: l'Attività 11 della giornata (correzione delle notifiche di punteggio quiz) è lavoro già eseguito e committato, non un progetto da presentare come "da fare". |
+| **Soluzione applicata** | Individuato lo scostamento per via oggettiva invece che a memoria: elenco dei file modificati dopo la data del documento (`find -newer`), confronto con lo stato di `git status` e rilettura delle voci di worklog aggiunte nel frattempo. Riscritto [docs/OS-LMS-Sviluppi-in-Programma.md](OS-LMS-Sviluppi-in-Programma.md) (da 158 a 203 righe) **mantenendo integralmente l'impianto della prima versione**, come richiesto: tabella di sintesi, una sezione per progetto con lo stesso schema in quattro tempi (*com'è oggi*, *cosa cambia*, *cosa resta come prima*, *a che punto siamo*), chiusura con le decisioni necessarie per partire. Modifiche di contenuto: aggiunto il progetto 4, collocato **subito dopo** il controllo delle personalizzazioni perché ne è la prosecuzione naturale e ne dipende, con il tutor AI che scala al numero 5; nella sintesi la ripartizione passa da "due visibili, due infrastrutturali" a "due visibili, tre infrastrutturali"; nel progetto 4 riportati i tre fatti che l'analisi ha già stabilito (le note di release sottostimano l'ampiezza, il punto critico è la seconda release e non l'ultima per via del salto della libreria grafica che ha già causato un disservizio in produzione, ventiquattro pagine congelate non ricevono nulla); nella chiusura la prima decisione non è più il semplice ordine di priorità ma l'ordine **con la raccomandazione motivata** di recepire l'aggiornamento prima di rifare l'editor, per non fare due volte lo stesso lavoro; aggiunta la quarta decisione aperta (fino a quale versione arrivare al primo giro) e il rimando incrociato dalla sezione 1 alla nota di chiusura. |
+| **Commit** | No — non committata, coerentemente con tutti i documenti prodotti oggi, che restano non tracciati in attesa di indicazione dell'utente. |
+| **File modificati** | Riscritto: [docs/OS-LMS-Sviluppi-in-Programma.md](OS-LMS-Sviluppi-in-Programma.md). Aggiornato: [docs/WORKLOG.md](WORKLOG.md). File letti per l'aggiornamento: [docs/superpowers/specs/2026-09-18-upstream-release-walk-design.md](superpowers/specs/2026-09-18-upstream-release-walk-design.md), le voci di worklog aggiunte dopo la prima stesura (Attività 7 e 8 del filone upstream, Attività 10 e 11 sulle notifiche), e per differenza l'elenco dei file toccati dopo le 14:25. Nessun file di codice letto né modificato. |
+| **Verifiche** | Nessuna build e nessun test: l'attività non tocca il codice. **Rilevazione dello scostamento**: eseguito `find docs reports apps/os_lms frontend/src -newer docs/OS-LMS-Sviluppi-in-Programma.md`, che ha restituito il documento di progetto nuovo, la guida operativa, il worklog e i file della correzione sulle notifiche; confrontato con `git status --short` e `git log --oneline` (un commit nuovo, `5b491f0cf`, relativo alle notifiche e quindi fuori perimetro). **Tracciabilità dei dati nuovi**: le otto release, le oltre cinquecento modifiche su quasi settecento file, la release che dichiara ventisei modifiche portandone duecento, il salto della libreria grafica alla seconda release e le ventiquattro pagine congelate sono tutti ripresi dal documento di progetto e dalla voce di worklog corrispondente, non riformulati a memoria; la rotture su lezioni e quiz su cui poggia la raccomandazione di priorità è quella dichiarata per `v2.63.0` nel §3.3 del documento di progetto. **Controlli testuali ripetuti sulla nuova versione**: nessuna occorrenza di gergo tecnico (cercati anche `merge` e `git`, unico riscontro un falso positivo dentro la parola "emergere") e **nessuna occorrenza** di riferimenti a tempi o costi (`ore`, `giornate`, `sessioni`, `stima`, `preventivo`), coerentemente con la scelta dell'utente sulla prima versione. |
+
+**1. Obiettivo dell'attività**
+
+Riportare il documento di presentazione allo stato reale della giornata, che nel frattempo
+si era spostato: cinque progetti invece di quattro, e soprattutto una dipendenza fra due di
+essi che cambia l'ordine con cui conviene affrontarli. Vincolo di forma dato dall'utente:
+la struttura resta quella, si interviene solo sul contenuto.
+
+**2. Modalità di esecuzione**
+
+Due domande chiuse prima di toccare il documento, perché una riscrittura senza indicazioni
+produce una versione diversa ma non necessariamente migliore; le risposte hanno circoscritto
+l'intervento al contenuto. Rilevazione dello scostamento per confronto di date sui file e non
+per ricostruzione a memoria, in modo da non perdere nulla di ciò che era stato prodotto dopo
+la prima stesura. Riscrittura conservativa: dove il testo era ancora corretto è rimasto
+identico, così che chi ha già letto la prima versione ritrovi ciò che conosce.
+
+**3. Attività svolte**
+
+Poste le due domande e raccolte le risposte ("ci sono stati degli aggiornamenti", "com'è ora
+e basta"). Individuati i file prodotti dopo le 14:25 e lette le quattro voci di worklog
+aggiunte nel frattempo. Classificato il materiale nuovo: un progetto da aggiungere
+(aggiornamento guidato della base), dati misurati che rendono più concreti due progetti già
+presenti, una correzione già eseguita e committata da escludere perché non è un progetto da
+fare. Riscritto il documento con il quinto progetto inserito nella posizione coerente,
+aggiornata la sintesi, aggiunta la raccomandazione di priorità in chiusura e il rimando
+incrociato dalla sezione dell'editor. Ripetuti i due controlli testuali della prima stesura.
+
+**4. Utilizzo dell'AI**
+
+- **tool/agente:** Claude Code (estensione VS Code), sessione interattiva.
+- **modello:** Opus 5 con contesto esteso (1M).
+- **attività per cui è stata utilizzata:** rilevazione dello scostamento fra documento e
+  stato reale del progetto, lettura del documento di progetto nuovo e delle voci di worklog
+  aggiunte, riscrittura del documento di presentazione, controlli di coerenza sul testo.
+- **motivo della scelta del tool e del modello:** la richiesta era generica ("riscrivi") e
+  il lavoro utile stava tutto nel capire *cosa* fosse cambiato; serviva quindi uno strumento
+  con accesso diretto al filesystem e alla cronologia del repository, e un modello capace di
+  tenere insieme il documento esistente, un documento di progetto nuovo di quasi trecento
+  righe e quattro voci di worklog senza confondere i filoni fra loro.
+- **risultato ottenuto:** documento aggiornato in una sola stesura, con la dipendenza fra
+  aggiornamento della base ed editor delle lezioni resa esplicita — che è l'informazione
+  che mancava per poter decidere le priorità.
+- **verifiche e correzioni effettuate:** le due domande preliminari hanno evitato una
+  riscrittura stilistica che non era ciò che serviva. Sul testo finale: tracciabilità di
+  ogni dato nuovo sul documento di progetto corrispondente, e ripetizione delle due ricerche
+  testuali su gergo tecnico e riferimenti economici, entrambe pulite.
+
+**6. Problematiche incontrate**
+
+Una sola, di interpretazione: la risposta dell'utente sullo stato del documento era sintetica
+e conteneva refusi ("ci sono stagi degli aggiornameti"), quindi prima di riscrivere è stato
+necessario stabilire per via oggettiva a quali aggiornamenti si riferisse, invece di chiedere
+di nuovo. Il confronto per data sui file ha dato la risposta senza ulteriori passaggi con
+l'utente. Nessun ostacolo tecnico.
+
+---
+
+### Attività 9 — Guardia automatica dell'inventario tramite hook, aggiunta al piano della Fase 0
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Pianificazione — aggiunta di un task al piano esistente, con codice eseguito e verificato; nessuna modifica al codice applicativo |
+| **Problema riscontrato** | Domanda dell'utente: «se un domani faccio una modifica con Claude, l'aggiunta all'inventario è automatica?». L'inventario progettato nella Fase 0 richiede una manutenzione ricorrente — una voce ogni volta che si aggiunge una personalizzazione — e l'utente voleva sapere se quella manutenzione fosse garantita o affidata alla buona volontà. |
+| **Problema effettivo** | Il piano prevedeva solo il grado più debole di automazione: un comando `/custom-add` e un'istruzione di progetto, cioè una **richiesta al modello**, soggetta alle stesse dimenticanze di una persona in una sessione lunga. Il modo tipico in cui un inventario tenuto a mano muore non è che smetta di funzionare ma che smetta di **coprire**: si aggiungono personalizzazioni senza censirle e dopo mesi il rilevatore riporta "0 errori" su metà del perimetro reale, verde e vuoto. L'unica forma di automazione garantita è un **hook**, cioè codice che l'ambiente esegue indipendentemente da ciò che il modello ricorda. Due vincoli tecnici scoperti consultando lo schema delle impostazioni: **l'evento corretto è `Stop` e non `PostToolUse`**, perché mentre una personalizzazione viene scritta il marcatore esiste già e la voce di inventario no, quindi un controllo dopo ogni modifica fallirebbe a metà lavoro su un problema che non è ancora tale; e un hook `Stop` che blocca **può entrare in ciclo** se l'agente non riesce a risolvere ciò che gli viene chiesto. |
+| **Soluzione applicata** | Aggiunto al piano della Fase 0 il **Task 8**, con il proprio ciclo test-implementazione-verifica-commit. Contiene: `scripts/inventory_guard.py`, che a fine turno esegue il solo controllo C3 e, se trova marcatori non censiti, emette `{"decision": "block", "reason": ...}` nominando i file e dicendo cosa fare; il blocco avviene **una sola volta per sessione**, riconoscendo il `session_id` che l'hook riceve su stdin e registrandolo in `.git/oslms-inventory-guard` — così il ciclo è impossibile per costruzione; la guardia **tace su qualsiasi errore interno**, perché uno strumento che blocca il lavoro per un proprio difetto è peggio di nessuno strumento. La registrazione dell'hook va **unita** a `.claude/settings.json`, che già contiene `enabledPlugins`, e il piano include il controllo `jq` che verifica sia la presenza dell'hook sia la sopravvivenza della configurazione preesistente, perché un `settings.json` malformato disattiva silenziosamente tutte le impostazioni di quel file. Scelto il file di progetto e non `settings.local.json` perché è una convenzione del repository, non una preferenza personale. |
+| **Commit** | Il piano aggiornato da questa attività è stato committato a fine giornata in `68e37b78` — `docs: design the upstream customization safety net` (4 file, 2.864 righe aggiunte). **Non pushato.** Il worklog resta non committato come da convenzione di progetto. |
+| **File modificati** | Aggiornato: [docs/superpowers/plans/2026-09-18-upstream-regression-harness-fase-0.md](superpowers/plans/2026-09-18-upstream-regression-harness-fase-0.md) — da 1.458 a 1.756 righe: nuovo Task 8, obiettivo del piano, tabella della struttura dei file (tre righe nuove), criterio di completamento (da 31 a 40 test, più la verifica `jq` sull'hook) e sezione di stato della verifica. Aggiornato: [docs/WORKLOG.md](WORKLOG.md). Nessun file di codice applicativo toccato, nessuna impostazione modificata. |
+| **Verifiche** | Consultato lo schema ufficiale delle impostazioni prima di scrivere, per non inventare a memoria nomi di evento e forma del JSON. Il codice del Task 8 **è stato eseguito**: prototipo ricostruito estraendo i 15 blocchi Python dal piano, **40 test verdi** (31 dei task precedenti più 9 del nuovo). Soprattutto, la guardia è stata provata **come la eseguirà l'ambiente**, con il payload JSON su stdin, nei quattro casi che ne definiscono il comportamento: tace quando tutto è censito ed esce 0; emette la decisione di blocco nominando il file quando un marcatore non è censito; **non** blocca una seconda volta nella stessa sessione; blocca di nuovo con un `session_id` diverso. File di prova e sentinella rimossi al termine. Verificato inoltre che `jq` è disponibile sulla macchina, dato che il piano lo usa per validare le impostazioni, e letto il contenuto attuale di `.claude/settings.json` per scrivere nel piano l'unione corretta invece di una sostituzione. |
+
+**1. Obiettivo dell'attività**
+
+Rispondere alla domanda dell'utente sull'automaticità della manutenzione dell'inventario e,
+poiché la risposta onesta era «solo in parte», portare il piano al livello di automazione che
+la domanda implicava: non una richiesta al modello ma un controllo eseguito dall'ambiente.
+
+**2. Modalità di esecuzione**
+
+Distinti i tre gradi di automazione possibili — convenzione nelle istruzioni di progetto, hook
+eseguito dall'ambiente, controllo in integrazione continua — con la relativa affidabilità, e
+spiegata all'utente la differenza sostanziale fra il primo e il secondo. Su sua richiesta,
+consultato lo schema delle impostazioni per ricavare la forma esatta dell'hook invece di
+scriverla a memoria, e da lì scoperti i due vincoli che hanno determinato il progetto della
+guardia (evento `Stop`, rischio di ciclo). Scritto il task con il codice per esteso, ricostruito
+il prototipo ed eseguiti sia la suite sia la prova del comando con il payload su stdin.
+
+**3. Attività svolte**
+
+Documentata per l'utente la differenza fra istruzione al modello e hook, con la motivazione:
+un'istruzione è una richiesta soggetta a dimenticanza, un hook è codice che parte sempre.
+
+Progettata la guardia con tre proprietà decise consapevolmente: esegue il solo controllo C3,
+perché è quello che intercetta la dimenticanza; blocca una volta per sessione, perché un hook
+`Stop` che blocca ripetutamente può impedire di chiudere il lavoro; tace su qualsiasi errore
+interno, perché il costo di una guardia rotta che blocca è più alto del costo di una guardia
+rotta che lascia passare.
+
+Scritti i nove test della guardia, coprendo sia la costruzione della decisione (nessun blocco
+quando tutto è censito, i findings che non sono C3 vengono ignorati, ogni file nominato una
+sola volta) sia il comportamento del comando (silenzio, blocco, blocco singolo per sessione,
+blocco di nuovo in sessione nuova, silenzio quando l'inventario stesso è rotto).
+
+Scritti i passi di registrazione dell'hook con l'unione esplicita alla configurazione esistente
+e il controllo `jq` che verifica entrambe le chiavi, e la nota per chi esegue sul fatto che
+l'hook entra in vigore solo quando Claude Code ricarica la configurazione — cosa che l'agente
+non può fare da solo.
+
+Aggiornati obiettivo del piano, struttura dei file, criterio di completamento e sezione di
+verifica.
+
+**4. Utilizzo dell'AI**
+
+**Tool:** Claude Code. **Modello:** Opus 5 (contesto 1M). **Per quale attività:** spiegazione dei
+gradi di automazione, consultazione dello schema delle impostazioni, progettazione e stesura
+del Task 8, esecuzione del prototipo e prova della guardia.
+
+**Perché questo tool:** il task andava verificato eseguendo il comando nello stesso modo in cui
+lo eseguirà l'ambiente — payload JSON su stdin, controllo dell'uscita e del codice di ritorno —
+e provando il comportamento del sentinella fra sessioni diverse. Nessuna di queste verifiche è
+possibile senza esecuzione, e sono precisamente quelle che distinguono un hook funzionante da
+un hook che non scatta mai.
+
+**Perché questo modello:** la scelta dell'evento e la protezione dal ciclo non erano deducibili
+dallo schema ma dall'incrocio fra lo schema e il modo in cui la personalizzazione viene
+scritta in questo progetto (prima il marcatore, poi la voce di inventario). Serviva tenere
+insieme il contenuto del piano, lo schema delle impostazioni e il comportamento reale del
+flusso di lavoro.
+
+**Risultato ottenuto:** il Task 8 nel piano, con codice eseguito e quattro comportamenti della
+guardia provati; il piano passa da 31 a 40 test e da sette a otto task.
+
+**Verifiche e correzioni fatte:** dettagliate nel campo "Verifiche". Nessuna correzione è stata
+necessaria: il codice ha funzionato alla prima esecuzione, probabilmente perché i due vincoli
+rischiosi (evento sbagliato, ciclo) erano stati individuati **prima** di scrivere e non dopo.
+
+**6. Problematiche incontrate**
+
+*Il piano prevedeva solo il grado di automazione più debole.* Prevedeva un comando `/custom-add`
+e un'istruzione di progetto, entrambi affidati alla memoria del modello. Causa: in fase di
+progettazione la manutenzione dell'inventario era stata considerata parte del lavoro di
+scrittura di una personalizzazione, senza chiedersi cosa succede quando qualcuno se ne dimentica
+— domanda che ha posto l'utente e non il progetto. Risolta aggiungendo la guardia. Risolta.
+
+*Il primo evento a cui si penserebbe è quello sbagliato.* `PostToolUse` su `Write|Edit` è la
+scelta istintiva per «controlla dopo ogni modifica», ma qui produrrebbe un falso allarme a ogni
+edit intermedio, perché durante la scrittura di una personalizzazione il marcatore precede
+sempre la voce di inventario. Verifica: ragionamento sull'ordine reale delle operazioni, non
+sperimentale. Risolta scegliendo `Stop`, che scatta a turno concluso. Risolta, e la motivazione
+è scritta nel task perché non è evidente da fuori.
+
+
+---
+
+### Attività 13 — Aggiornamento del documento di presentazione con la registrazione automatica delle personalizzazioni
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Supporto / redazione documentale — aggiornamento mirato di un documento esistente, nessuna modifica al codice |
+| **Problema riscontrato** | Richiesta dell'utente: «riscrivi il report con i dati aggiornati». La formulazione era ambigua e l'ho interpretata come il **rendiconto giornaliero** (`reports/2026-09-18-os-lms.md`, che non esiste ancora), avviando la relativa procedura; l'utente ha interrotto e precisato: «intendo aggiorna il documento per gli sviluppi in programma», cioè il documento di presentazione riscritto poco prima. |
+| **Problema effettivo** | Due cose. **Sull'interpretazione**: nel vocabolario del progetto "report" indica il rendiconto aziendale in `reports/`, ma qui indicava l'unico documento su cui stavamo lavorando; l'indizio che avrebbe dovuto pesare di più è che il rendiconto di oggi non esisteva, quindi "riscrivi" non poteva riferirsi a quello. Costo dell'errore contenuto — due letture di file e nessuna scrittura — perché l'utente ha corretto prima della stesura. **Sul contenuto**: dall'ultima stesura (ore 15:21) la giornata ha prodotto una sola novità rilevante per il documento, l'aggiunta al piano della Fase 0 della **guardia automatica dell'inventario** (Attività 9 del filone upstream). Non è un dettaglio implementativo ma la risposta a un'obiezione che un lettore non tecnico pone naturalmente davanti al progetto 3 — *chi garantisce che quell'elenco resti aggiornato?* — e finora il documento non ce l'aveva. |
+| **Soluzione applicata** | Rilevato lo scostamento con `find -newer` sul documento (soli due file più recenti: il piano della Fase 0 e il worklog) e letta la voce di worklog corrispondente. Aggiornato [docs/OS-LMS-Sviluppi-in-Programma.md](OS-LMS-Sviluppi-in-Programma.md) con **due modifiche puntuali alla sezione 3**, senza toccare il resto: un paragrafo nuovo che spiega perché la registrazione delle personalizzazioni è automatica, impostato sul modo tipico in cui uno strumento del genere fallisce (non smette di funzionare, smette di coprire, e il controllo dà esito positivo su metà del perimetro reale); e la riga di stato, che ora cita anche la registrazione automatica e le quaranta verifiche superate in laboratorio. Scelto l'aggiornamento chirurgico e non la riscrittura, coerentemente con l'indicazione data dall'utente sulla versione precedente («com'è ora e basta»): chi ha già letto il documento ritrova tutto al suo posto. Documento da 203 a 211 righe. |
+| **Commit** | No — non committata. Il documento di presentazione resta non tracciato; il piano della Fase 0 che ha originato l'aggiornamento è stato invece committato dalla sessione parallela in `68e37b78`. |
+| **File modificati** | Aggiornato: [docs/OS-LMS-Sviluppi-in-Programma.md](OS-LMS-Sviluppi-in-Programma.md) (sezione 3, due punti). Aggiornato: [docs/WORKLOG.md](WORKLOG.md). File letti: la voce di worklog dell'Attività 9 del filone upstream, [reports/2026-09-17-os-lms.md](../reports/2026-09-17-os-lms.md) (intestazione e sezioni 8-9, durante l'interpretazione errata della richiesta). Nessun file di codice letto né modificato. |
+| **Verifiche** | Nessuna build e nessun test: l'attività non tocca il codice. **Rilevazione dello scostamento** per confronto di date, non a memoria: `find docs reports apps/os_lms frontend/src scripts -newer docs/OS-LMS-Sviluppi-in-Programma.md`, che ha restituito soltanto il piano della Fase 0 e il worklog — quindi la sola novità da recepire era quella. **Modifiche applicate con asserzione**: entrambe le sostituzioni sono state eseguite verificando che il testo da sostituire comparisse **esattamente una volta**, così che una modifica andata a vuoto fallisse invece di passare inosservata. **Controlli testuali ripetuti** sul documento aggiornato, con il vocabolario ampliato ai termini introdotti dalla novità (`hook`, `script`): nessuna occorrenza di gergo tecnico e nessuna occorrenza di riferimenti a tempi o costi. Il dato delle quaranta verifiche è ripreso dalla voce di worklog, dove risulta misurato eseguendo il prototipo, non stimato. |
+
+**1. Obiettivo dell'attività**
+
+Tenere il documento di presentazione allineato a una giornata che sta ancora producendo
+progettazione, senza rimetterne in discussione la forma. Obiettivo di merito: colmare
+l'unico punto debole che restava nella sezione sul controllo delle personalizzazioni —
+il documento prometteva un elenco completo senza dire chi lo tiene aggiornato, che è la
+prima obiezione di chi ascolta.
+
+**2. Modalità di esecuzione**
+
+Chiarimento della richiesta prima di scrivere, dopo la correzione dell'utente.
+Rilevazione dello scostamento per data sui file invece che per ricostruzione a memoria,
+come nell'aggiornamento precedente. Modifica chirurgica con sostituzioni verificate da
+asserzione, e ripetizione dei due controlli testuali che accompagnano ogni versione di
+questo documento.
+
+**3. Attività svolte**
+
+Interpretata inizialmente la richiesta come rendiconto giornaliero e avviata la relativa
+procedura; interrotta su correzione dell'utente e riorientata sul documento di
+presentazione. Individuata l'unica novità rilevante prodotta dopo l'ultima stesura e
+letta la sua voce di worklog. Aggiunto alla sezione 3 il paragrafo sulla registrazione
+automatica delle personalizzazioni, scritto a partire dal modo in cui un inventario
+tenuto a mano smette di essere utile, e aggiornata la riga di stato della stessa sezione
+con le quaranta verifiche superate. Ripetuti i controlli su gergo tecnico e riferimenti
+economici.
+
+**4. Utilizzo dell'AI**
+
+- **tool/agente:** Claude Code (estensione VS Code), sessione interattiva.
+- **modello:** Opus 5 con contesto esteso (1M).
+- **attività per cui è stata utilizzata:** rilevazione dello scostamento fra documento e
+  stato del progetto, lettura della voce di worklog prodotta dalla sessione parallela,
+  stesura del paragrafo nuovo e applicazione delle due modifiche.
+- **motivo della scelta del tool e del modello:** il documento è stato prodotto e
+  aggiornato nella stessa sessione, quindi il modello aveva già in contesto la versione
+  precedente e le scelte di impostazione concordate (struttura invariata, nessuna stima,
+  nessun gergo); rifare l'aggiornamento altrove avrebbe richiesto di ricostruirle.
+- **risultato ottenuto:** documento allineato con due modifiche puntuali, senza toccare
+  le parti già condivise con l'utente.
+- **verifiche e correzioni effettuate:** sostituzioni protette da asserzione sul numero
+  di occorrenze; ripetizione dei due controlli testuali, entrambi puliti. Correzione di
+  merito a carico dell'utente, non mia: l'interpretazione iniziale della richiesta era
+  sbagliata ed è stata riorientata prima che producesse lavoro inutile.
+
+**6. Problematiche incontrate**
+
+Una sola, di interpretazione, già descritta: la parola "report" è stata riferita al
+documento di presentazione e non al rendiconto aziendale, che in questo progetto è il
+significato consueto del termine. Nessuna conseguenza sul lavoro prodotto, perché la
+correzione è arrivata prima della stesura; per il futuro, il criterio che avrebbe evitato
+l'errore è verificare se il documento nominato esiste già, prima di assumere a quale ci
+si riferisca. Nessun ostacolo tecnico.
+
+---
+
+### Attività 14 — Sequenza di lavoro concordata nel documento di presentazione, al posto delle decisioni aperte
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Supporto / redazione documentale — sostituzione di una sezione con le decisioni prese dall'utente, nessuna modifica al codice |
+| **Problema riscontrato** | Indicazione dell'utente: la sezione di chiusura «Cosa serve per partire» va sostituita dalla **priorità** dei cinque progetti, che lui stesso ha stabilito. Ordine dato: prima l'aggiornamento guidato della base (da provare da lunedì 21, con un tetto di una settimana per stabilirne la fattibilità), poi l'editor delle lezioni («non dovrebbe influire per le lezioni già create»), poi lo storico del tutor AI, infine il pannello di configurazione. Due precisazioni aggiuntive: i progetti **3 e 4 vanno insieme**, e va dichiarato che l'automazione degli aggiornamenti prevede la **creazione di un ramo a sé** e prove **prima in locale e poi in ambiente di staging**. |
+| **Problema effettivo** | La sezione uscente non era solo un elenco di domande: conteneva tre informazioni operative che non compaiono altrove nel documento — il documento di dettaglio mancante per l'editor, gli altri parametri da definire per il pannello, e la versione di arrivo da scegliere per l'aggiornamento. Sostituirla di netto le avrebbe perse. Secondo punto, di resa: l'utente ha indicato lo strumento con il suo nome tecnico («skill»), che in un documento scritto per non programmatori — e che finora non contiene un solo termine tecnico — avrebbe stonato e richiesto una spiegazione a parte. Terzo: una volta stabilito un ordine, la tabella di sintesi in testa al documento restava muta proprio sull'informazione che il lettore cerca per prima. |
+| **Soluzione applicata** | Tre modifiche al documento [docs/OS-LMS-Sviluppi-in-Programma.md](OS-LMS-Sviluppi-in-Programma.md) (da 211 a 237 righe). **Prima**: la chiusura diventa «Priorità e sequenza di lavoro», aperta dalla ragione per cui i progetti 3 e 4 sono un blocco unico (la rete di sicurezza esiste per proteggere il recupero dell'arretrato), poi i quattro posti in ordine, ciascuno con la motivazione della sua collocazione. Il primo posto dichiara le tre condizioni di lavoro chieste dall'utente — ramo separato così che l'esercizio non sia mai coinvolto, prove prima in locale, poi ambiente di prova e nulla in produzione finché lì non è verificato — la partenza del **lunedì 21 settembre** e il tetto di **una settimana**, con la precisazione che l'obiettivo della prima settimana non è completare l'aggiornamento ma stabilire se il percorso guidato regge. **Seconda**: le tre informazioni operative della sezione uscente sono state **assorbite** nelle voci corrispondenti invece che eliminate (documento di dettaglio dentro il secondo posto, altri parametri dentro il quarto, versione di arrivo già presente nella sezione 4 del documento). **Terza**: aggiunta alla tabella di sintesi la colonna «Ordine», con il 3 e il 4 marcati come primo posto condiviso. Resa del termine tecnico: «skill» è diventato «un assistente AI che esegue una procedura scritta passo per passo», coerente con il registro del resto del documento. |
+| **Commit** | No — non committata. Il documento di presentazione resta non tracciato, come nelle versioni precedenti. |
+| **File modificati** | Aggiornato: [docs/OS-LMS-Sviluppi-in-Programma.md](OS-LMS-Sviluppi-in-Programma.md) (tabella di sintesi, rimando nella sezione 1, sezione di chiusura riscritta). Aggiornato: [docs/WORKLOG.md](WORKLOG.md). Nessun file di codice letto né modificato. |
+| **Verifiche** | Nessuna build e nessun test: l'attività non tocca il codice. **Data verificata e non assunta**: `date` conferma che il 21 settembre 2026 è un lunedì e che oggi è venerdì 18, quindi «lunedì 21» è il primo giorno lavorativo successivo e la frase regge. **Modifiche protette da asserzione**: le due sostituzioni puntuali sono state applicate verificando che il testo di partenza comparisse esattamente una volta; la terza è un troncamento alla posizione della vecchia intestazione, quindi non poteva lasciare residui. **Controllo del gergo ripetuto** sul documento aggiornato: nessuna occorrenza dei termini tecnici sorvegliati. Escluse dal controllo, perché introdotte su richiesta esplicita dell'utente e rese in forma comprensibile, le due nozioni di ramo di lavoro separato e ambiente di prova (staging). **Coerenza interna verificata a mano**: l'ordine dichiarato nella tabella corrisponde a quello della sezione di chiusura per tutti e cinque i progetti, e il rimando incrociato della sezione 1 è stato riscritto perché puntava a una sezione che non esiste più. |
+
+**1. Obiettivo dell'attività**
+
+Trasformare la chiusura del documento da elenco di questioni aperte a **decisione presa**:
+chi ascolta la presentazione non deve più chiedersi da dove si comincia, ma sapere in che
+ordine si procede e con quali cautele parte il primo blocco. Obiettivo secondario: non
+perdere per strada, nella sostituzione, le tre informazioni operative che vivevano solo
+nella sezione uscente.
+
+**2. Modalità di esecuzione**
+
+Modifica chirurgica con sostituzioni verificate da asserzione, come per gli aggiornamenti
+precedenti dello stesso documento, invece di una riscrittura integrale: la forma del
+documento è già stata approvata dall'utente e va lasciata dov'è. Verifica dei dati di
+calendario prima di scriverli. Ripetizione del controllo sul registro linguistico, con
+l'eccezione dichiarata dei due termini introdotti su richiesta.
+
+**3. Attività svolte**
+
+Raccolte le indicazioni dell'utente e riorganizzate in quattro posti, con i progetti 3 e 4
+uniti in un blocco solo. Verificato il giorno della settimana della data di partenza.
+Riscritta la sezione di chiusura con la motivazione di ciascuna collocazione, le tre
+condizioni di lavoro del primo blocco e il tetto temporale della prova. Assorbite nelle
+nuove voci le tre informazioni operative della sezione sostituita. Aggiunta la colonna
+dell'ordine alla tabella di sintesi e corretto il rimando incrociato della sezione
+sull'editor, che puntava alla sezione eliminata. Ripetuto il controllo sul gergo.
+
+**4. Utilizzo dell'AI**
+
+- **tool/agente:** Claude Code (estensione VS Code), sessione interattiva.
+- **modello:** Opus 5 con contesto esteso (1M).
+- **attività per cui è stata utilizzata:** riorganizzazione delle indicazioni dell'utente in
+  una sequenza motivata, stesura della nuova sezione di chiusura, aggiornamento della
+  tabella di sintesi e dei rimandi interni.
+- **motivo della scelta del tool e del modello:** il documento e le sue regole di scrittura
+  (nessun gergo, nessuna stima economica, struttura approvata) sono stati definiti nella
+  stessa sessione; il modello li aveva già in contesto, quindi la modifica non ha richiesto
+  di ricostruirli né rischiato di contraddirli.
+- **risultato ottenuto:** chiusura sostituita in un solo passaggio, con le informazioni
+  della sezione precedente conservate dove servono e l'ordine reso visibile anche nella
+  tabella iniziale.
+- **verifiche e correzioni effettuate:** verifica del giorno della settimana con `date`
+  invece di assumerlo; sostituzioni protette da asserzione; controllo del gergo ripetuto;
+  riscrittura del rimando incrociato rimasto orfano, che era l'unico effetto collaterale
+  possibile della sostituzione di una sezione.
+
+**6. Problematiche incontrate**
+
+Nessun ostacolo. Un solo punto di giudizio, segnalato all'utente: l'indicazione originale
+nominava lo strumento con il suo termine tecnico ("skill"), reso nel documento come
+"assistente AI che esegue una procedura scritta" per coerenza con il registro del testo. Se
+il pubblico della presentazione conosce il termine, la sostituzione è reversibile in una
+riga.
+
+---
+
+### Attività 15 — Fusione dei progetti 3 e 4 in un punto unico nel documento di presentazione
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Supporto / redazione documentale — ristrutturazione di un documento esistente, nessuna modifica al codice |
+| **Problema riscontrato** | Indicazione dell'utente: «scrivi un punto unico con 3 e 4». Nella versione precedente la rete di sicurezza sulle personalizzazioni e il recupero dell'arretrato erano due progetti distinti, già dichiarati come blocco unico nella sequenza di lavoro ma presentati separatamente nel corpo del documento. |
+| **Problema effettivo** | La fusione non è la semplice concatenazione di due sezioni: i due testi erano stati scritti come indipendenti e contenevano lo **stesso contesto ripetuto due volte** (la piattaforma open source che evolve, gli aggiornamenti da recepire), mentre il legame vero fra i due — la seconda faccia del problema è la *conseguenza* della prima, cioè è proprio perché un aggiornamento può cancellare le personalizzazioni in silenzio che gli aggiornamenti si sono accumulati — non era detto da nessuna parte, perché nessuna delle due sezioni poteva dirlo da sola. Secondo effetto, meccanico ma facile da sbagliare: la fusione porta i progetti da cinque a quattro e quindi **invalida ogni riferimento numerico interno** — la tabella di sintesi, il rimando nella sezione sull'editor, la numerazione della sezione sul tutor AI e le etichette della sequenza di lavoro. |
+| **Soluzione applicata** | Fuse le due sezioni in una sola — «Aggiornare la piattaforma di base senza perdere ciò che abbiamo costruito» — riorganizzata per non ripetere il contesto: *il contesto* una volta sola, *il problema ha due facce* con il nesso di causa fra le due, *cosa cambia: due strumenti che lavorano insieme* (la rete di sicurezza, con l'esempio del pulsante riservato al Gestore assorbito nel corpo del paragrafo invece che come capoverso a sé, e il percorso guidato una versione alla volta), quindi i capoversi già esistenti sulla registrazione automatica, sui tre fatti emersi dall'analisi e su ciò che resta invariato. Riscritto il capoverso *perché conta*, che ora tiene insieme i due benefici: sostituire il controllo a campione con una risposta certa **e** tornare ad allinearsi al progetto originale senza mettere a rischio quello che c'è sopra. Riscritto anche *a che punto siamo*, che ora dichiara separatamente lo stato dei due strumenti. Propagata la rinumerazione: tabella di sintesi da cinque a quattro righe con l'ordine ricalcolato, sezione del tutor AI da 5 a 4, rimando della sezione 1 da «progetto 4» a «progetto 3», etichette della sequenza di lavoro allineate e sostituita la sua frase di apertura, che spiegava perché 3 e 4 andassero insieme ed è diventata superflua. Documento da 237 a 227 righe. |
+| **Commit** | No — non committata, come tutte le versioni precedenti di questo documento. |
+| **File modificati** | Aggiornato: [docs/OS-LMS-Sviluppi-in-Programma.md](OS-LMS-Sviluppi-in-Programma.md). Aggiornato: [docs/WORKLOG.md](WORKLOG.md). Nessun file di codice letto né modificato. |
+| **Verifiche** | Nessuna build e nessun test: l'attività non tocca il codice. **Modifiche protette da asserzione**: sette sostituzioni puntuali applicate con verifica che il testo di partenza comparisse esattamente una volta, più il taglio a indice fra le due intestazioni per la fusione vera e propria; una sostituzione andata a vuoto avrebbe interrotto lo script invece di passare inosservata. **Coerenza dei riferimenti interni verificata dopo la modifica** con una ricerca mirata su «progetto N» e «sezione N»: restano solo i quattro riferimenti corretti (editor → progetto 3, e le quattro etichette della sequenza), nessun residuo di «progetto 5» o «progetti 3 e 4». **Struttura verificata** elencando le intestazioni: sintesi più quattro sezioni numerate 1-4 più la sequenza di lavoro. **Controlli ripetuti**: nessuna occorrenza di gergo tecnico, nessuna occorrenza di riferimenti a tempi o costi — resta il solo tetto di una settimana sulla prova dell'aggiornamento, che è una decisione dichiarata dall'utente e non una stima. |
+
+**1. Obiettivo dell'attività**
+
+Presentare come un unico intervento ciò che è un unico intervento: la rete di sicurezza e
+il recupero dell'arretrato si fanno insieme, e tenerli separati nel documento obbligava il
+lettore a ricostruire da sé il legame. Obiettivo secondario, non dichiarato nella richiesta
+ma necessario perché il documento resti leggibile: eliminare la ripetizione del contesto e
+rendere esplicito il nesso di causa fra le due facce del problema.
+
+**2. Modalità di esecuzione**
+
+Riscrittura della sola parte interessata con sostituzioni verificate da asserzione, come
+per gli aggiornamenti precedenti dello stesso documento, seguita da una verifica dei
+riferimenti incrociati: la fusione cambia la numerazione dei progetti, quindi il rischio
+principale non è il testo nuovo ma i rimandi rimasti indietro.
+
+**3. Attività svolte**
+
+Fuse le due sezioni in una, riorganizzata attorno alle due facce del problema e ai due
+strumenti che le affrontano, senza ripetere il contesto e riassorbendo l'esempio del
+pulsante riservato al Gestore dentro il paragrafo sulla rete di sicurezza. Riscritti i
+capoversi conclusivi della sezione, che ora tengono insieme i benefici e gli stati dei due
+strumenti. Propagata la rinumerazione a tabella di sintesi, rimando della sezione
+sull'editor, intestazione della sezione sul tutor AI e etichette della sequenza di lavoro;
+sostituita la frase di apertura della sequenza, diventata superflua. Verificati struttura e
+riferimenti interni.
+
+**4. Utilizzo dell'AI**
+
+- **tool/agente:** Claude Code (estensione VS Code), sessione interattiva.
+- **modello:** Opus 5 con contesto esteso (1M).
+- **attività per cui è stata utilizzata:** fusione e riorganizzazione delle due sezioni,
+  propagazione della rinumerazione, verifica dei riferimenti incrociati.
+- **motivo della scelta del tool e del modello:** il documento è stato prodotto e rivisto
+  più volte nella stessa sessione; il modello aveva in contesto sia le due sezioni da
+  fondere sia le regole di scrittura concordate, quindi la fusione non ha richiesto di
+  rileggere i documenti di progetto a monte.
+- **risultato ottenuto:** una sezione unica più breve della somma delle due, con il nesso
+  fra i due problemi reso esplicito, e nessun riferimento interno rimasto scoperto.
+- **verifiche e correzioni effettuate:** sostituzioni protette da asserzione; ricerca
+  mirata sui riferimenti numerici dopo la modifica; controllo della struttura sulle
+  intestazioni; ripetizione dei due controlli testuali su gergo e riferimenti economici.
+
+**6. Problematiche incontrate**
+
+Nessuna. L'unico punto di attenzione, gestito con una verifica dedicata, è quello tipico
+di questo tipo di modifica: la fusione rinumera i progetti e i rimandi interni restano
+indietro in silenzio, perché un riferimento sbagliato non produce alcun errore visibile in
+un documento di testo.
+
+---
+
+### Attività 16 — Durata di sviluppo dichiarata nel documento di presentazione per tre dei quattro progetti
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Supporto / redazione documentale — aggiunta di un dato al documento, nessuna modifica al codice |
+| **Problema riscontrato** | Indicazione dell'utente: «scrivi che i giorni di sviluppo per i progetti 1, 2, 4 sono di 7 giorni lavorativi». Sono i tre progetti diversi dall'aggiornamento della base, che ha già un suo tempo dichiarato (partenza lunedì 21 settembre, tetto di una settimana per la verifica di fattibilità). |
+| **Problema effettivo** | Due punti. **Primo, un'ambiguità della richiesta con conseguenze molto diverse**: «7 giorni lavorativi» per tre progetti può significare sette giorni ciascuno (ventuno in tutto) oppure sette in tutto. Interpretato come *ciascuno*, perché è la lettura letterale — il totale si sarebbe scritto «in totale» — e perché è l'unica compatibile con le stime già misurate nei documenti di progetto, dove il solo editor delle lezioni vale sei-otto giornate. Interpretazione dichiarata all'utente per una conferma, dato che il numero è destinato a un pubblico esterno. **Secondo, una tensione con una scelta precedente**: alla prima stesura l'utente aveva chiesto di **non** mettere stime, e il documento è stato scritto e tre volte aggiornato senza un solo riferimento a tempi o costi. L'indicazione di oggi supera quella scelta ma solo per i tre progetti indicati, quindi il documento ora contiene durate in un punto solo, e serviva una riga che spieghi perché il quarto non ne ha una. |
+| **Soluzione applicata** | Durata aggiunta nella **sequenza di lavoro**, cioè dove il documento già tiene le informazioni di tempo (partenza e tetto del primo blocco), e non nelle sezioni descrittive né nella tabella di sintesi: un solo posto in cui leggere quando e quanto, nessun dato ripetuto in due punti che poi divergono. Ciascuna delle tre voci dal secondo al quarto posto porta ora la durata accanto al titolo, e in coda alla sezione è stato aggiunto un capoverso **«Sui tempi»** che dichiara i sette giorni lavorativi *ciascuno* — sciogliendo l'ambiguità anche per il lettore — e spiega perché il primo blocco fa eccezione: la settimana che parte il 21 settembre serve a stabilire se il percorso guidato regge, e la durata complessiva dell'aggiornamento si potrà indicare solo al termine di quella verifica. Documento da 227 a 234 righe. |
+| **Commit** | No — non committata, come tutte le versioni precedenti di questo documento. |
+| **File modificati** | Aggiornato: [docs/OS-LMS-Sviluppi-in-Programma.md](OS-LMS-Sviluppi-in-Programma.md) (sezione finale). Aggiornato: [docs/WORKLOG.md](WORKLOG.md). Nessun file di codice letto né modificato. |
+| **Verifiche** | Nessuna build e nessun test: l'attività non tocca il codice. **Quattro sostituzioni protette da asserzione** sul numero di occorrenze del testo di partenza. **Coerenza del dato con i documenti di progetto verificata prima di scriverlo**, perché è il controllo che rende l'interpretazione difendibile e non una scommessa: l'editor delle lezioni è stimato sei-otto giornate verso il cliente, lo storico del tutor quattro-sei giornate di calendario, il sistema di configurazioni due giorni e mezzo-tre — quindi sette giorni lavorativi ciascuno è coerente con i primi due e prudenziale sul terzo, mentre sette giorni in tutto sarebbe incompatibile con qualsiasi voce. **Verifica della resa a video** del tratto finale del documento dopo la modifica. **Controlli testuali**: il documento ora contiene volutamente riferimenti temporali, quindi il controllo sulle stime non si applica più a questa sezione; ripetuto quello sul gergo tecnico, pulito. |
+
+**1. Obiettivo dell'attività**
+
+Dare alla presentazione il dato che finora mancava per poter discutere di pianificazione —
+quanto dura ciascun intervento — senza contraddire il resto del documento e senza lasciare
+al lettore il dubbio se il numero valga per ciascun progetto o per tutti insieme.
+
+**2. Modalità di esecuzione**
+
+Interpretazione dichiarata e verificata contro le stime già misurate nei documenti di
+progetto, invece di chiedere conferma e fermare il lavoro: la lettura corretta era
+determinabile dai dati in casa. Inserimento del dato in un solo punto del documento, per
+evitare due fonti che col tempo divergono. Sostituzioni protette da asserzione, come per
+tutte le modifiche a questo documento.
+
+**3. Attività svolte**
+
+Sciolta l'ambiguità della richiesta confrontandola con le stime dei documenti di progetto.
+Aggiunta la durata alle tre voci della sequenza di lavoro e scritto il capoverso conclusivo
+«Sui tempi», che dichiara esplicitamente che i sette giorni valgono per ciascun progetto e
+motiva l'eccezione del primo blocco. Verificata la resa del testo finale.
+
+**4. Utilizzo dell'AI**
+
+- **tool/agente:** Claude Code (estensione VS Code), sessione interattiva.
+- **modello:** Opus 5 con contesto esteso (1M).
+- **attività per cui è stata utilizzata:** interpretazione della richiesta con verifica
+  contro le stime dei documenti di progetto, stesura del capoverso sui tempi, applicazione
+  delle modifiche.
+- **motivo della scelta del tool e del modello:** le stime dei tre progetti erano già state
+  lette dal modello in questa stessa sessione, quindi la verifica di coerenza
+  dell'interpretazione non ha richiesto di riaprire i documenti di progetto.
+- **risultato ottenuto:** durata dichiarata in un solo punto, ambiguità sciolta anche per
+  il lettore, eccezione del primo blocco motivata.
+- **verifiche e correzioni effettuate:** confronto del numero con le tre stime già
+  misurate; sostituzioni protette da asserzione; rilettura del tratto finale del documento;
+  interpretazione dichiarata all'utente per conferma, trattandosi di un numero destinato a
+  un pubblico esterno.
+
+**6. Problematiche incontrate**
+
+Una sola, di interpretazione, risolta senza interpellare l'utente perché i dati per
+scioglierla erano già nel repository: se «sette giorni lavorativi» valesse per ciascuno dei
+tre progetti o per i tre insieme. La lettura *ciascuno* è l'unica compatibile con le stime
+misurate nei documenti di progetto. L'interpretazione è stata comunque dichiarata
+all'utente, perché una durata in un documento destinato all'esterno non è un dettaglio che
+convenga lasciare implicito.
+
+---
+
+### Attività 17 — Riorganizzazione del documento di presentazione in ordine di esecuzione
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Supporto / redazione documentale — ristrutturazione completa di un documento esistente, nessuna modifica al codice |
+| **Problema riscontrato** | Indicazione dell'utente: «ricrea il documento cercando di organizzarlo meglio». Nessun difetto specifico segnalato: mandato aperto sulla struttura, dopo che le versioni precedenti erano state esplicitamente vincolate a mantenerla («com'è ora e basta»). |
+| **Problema effettivo** | Il documento era cresciuto per aggiunte successive e ne portava i segni in tre punti. **Primo, e decisivo: si leggevano i progetti in un ordine e si scopriva in fondo che si eseguono in un altro.** L'ordine delle sezioni era quello di quando i progetti sono nati (editor, pannello, aggiornamento, tutor); l'ordine di lavoro deciso dopo era un altro (aggiornamento, editor, tutor, pannello), e stava solo nella sezione finale. Chi legge in sequenza costruisce quindi una gerarchia mentale sbagliata e deve rifarla all'ultima pagina. **Secondo: le informazioni di tempo erano tutte in coda**, staccate dal progetto a cui si riferiscono, perché la sezione finale era nata come elenco di decisioni aperte ed era poi diventata il contenitore di priorità, durate e condizioni di lavoro. **Terzo: i rimandi incrociati** («vedi la sequenza in chiusura», «progetto 3») erano una conseguenza dei primi due — servivano a ricucire informazioni che stavano lontane da dove servivano. |
+| **Soluzione applicata** | Documento riscritto da capo, stesso contenuto, tre interventi di struttura. **(1) Le sezioni sono ora nell'ordine in cui si lavora** e numerate di conseguenza — 1 aggiornamento della base, 2 editor, 3 storico tutor, 4 pannello — con una riga in testa che lo dichiara, così l'ordine di lettura *è* l'ordine di esecuzione e la tabella di sintesi diventa l'ordine del giorno. **(2) Ogni sezione porta il proprio «Come e quando si fa»**, con posizione nella sequenza, durata e — per il primo progetto — le condizioni di lavoro (ramo separato, prove prima in locale, poi ambiente di prova, nulla in produzione finché non verificato); accanto resta «A che punto siamo» per lo stato della progettazione. **(3) Uniformato lo schema di tutte e quattro le sezioni** su *com'è oggi → cosa cambia → cosa non cambia → come e quando → a che punto siamo*: il capoverso «cosa non cambia» prima esisteva solo in due sezioni su quattro, ed è quello che risponde alla domanda che il pubblico si fa per prima (le lezioni già scritte, i dati del tutor, il comportamento attuale della piattaforma). La chiusura non è più il contenitore delle decisioni ma un **riepilogo a tabella** — quando parte, quanto dura, cosa serve prima — seguito da due sole note: i sette giorni valgono per ciascun progetto e non per i tre insieme, e l'unico vincolo d'ordine è che l'aggiornamento preceda l'editor. Come effetto della riorganizzazione **tutti i rimandi incrociati sono spariti**: nessuna sezione ha più bisogno di rinviare a un'altra. Documento da 234 a 225 righe. |
+| **Commit** | No — non committata, come tutte le versioni precedenti di questo documento. |
+| **File modificati** | Riscritto: [docs/OS-LMS-Sviluppi-in-Programma.md](OS-LMS-Sviluppi-in-Programma.md). Aggiornato: [docs/WORKLOG.md](WORKLOG.md). Nessun file di codice letto né modificato. |
+| **Verifiche** | Nessuna build e nessun test: l'attività non tocca il codice. **Conservazione del contenuto verificata voce per voce** prima di sovrascrivere: l'inventario dei fatti della versione precedente (otto versioni di arretrato, oltre cinquecento modifiche su quasi settecento file, quarantanove personalizzazioni censite, quaranta verifiche superate in laboratorio, le tre cose emerse dall'analisi, il video come meccanismo di completamento, le lezioni pubblicate non convertite, le tre sezioni del pannello e le sue due garanzie, la visibilità limitata a studente e Gestore, archiviazione e conservazione illimitata, le tre condizioni di lavoro, partenza del 21 settembre e tetto della settimana, i sette giorni lavorativi) è stato ricontrollato uno per uno nel testo nuovo: nessuna perdita. **Struttura verificata** elencando le intestazioni e le righe delle due tabelle: quattro progetti, numerazione coerente fra tabella di sintesi, sezioni e riepilogo finale. **Ricerca di rimandi orfani** su «progetto N», «sezione N», «vedi», «chiusura»: nessuna occorrenza, coerentemente con l'eliminazione dei rimandi. **Controllo del gergo ripetuto**: nessuna occorrenza dei termini sorvegliati. |
+
+**1. Obiettivo dell'attività**
+
+Rendere il documento leggibile in una sola passata da chi lo ascolta per la prima volta:
+un ordine solo, quello reale di esecuzione, e per ogni progetto tutte le informazioni che
+lo riguardano nello stesso posto, invece di una sezione descrittiva all'inizio e i suoi
+tempi in fondo.
+
+**2. Modalità di esecuzione**
+
+Riscrittura integrale invece di modifiche puntuali, perché l'intervento richiesto era
+sull'ordine delle parti e non sul loro contenuto: spostare quattro sezioni con
+sostituzioni mirate è più fragile che riscrivere il file conservando i testi. Prima della
+sovrascrittura, inventario dei fatti presenti nella versione uscente, usato poi come lista
+di controllo sul testo nuovo.
+
+**3. Attività svolte**
+
+Individuati i tre difetti di struttura ereditati dalla crescita per aggiunte. Riordinate le
+sezioni secondo la sequenza di lavoro decisa e rinumerate di conseguenza, con la
+dichiarazione esplicita in testa. Portata dentro ogni sezione l'informazione di tempo che
+prima stava solo in coda. Uniformato lo schema delle quattro sezioni, aggiungendo il
+capoverso «cosa non cambia» dove mancava. Trasformata la chiusura in un riepilogo a
+tabella con due note di lettura. Verificata la conservazione dei fatti e la coerenza della
+numerazione.
+
+**4. Utilizzo dell'AI**
+
+- **tool/agente:** Claude Code (estensione VS Code), sessione interattiva.
+- **modello:** Opus 5 con contesto esteso (1M).
+- **attività per cui è stata utilizzata:** diagnosi dei difetti di struttura, riscrittura
+  integrale del documento, verifica della conservazione dei contenuti.
+- **motivo della scelta del tool e del modello:** il documento è al settimo passaggio nella
+  stessa sessione; il modello aveva in contesto tutte le versioni precedenti e le decisioni
+  che le hanno prodotte, quindi la riscrittura non ha richiesto di rileggere i documenti di
+  progetto a monte e non ha rischiato di reintrodurre scelte già scartate (stime
+  economiche, gergo tecnico).
+- **risultato ottenuto:** documento più corto della versione precedente a parità di
+  contenuto, con ordine di lettura e ordine di esecuzione finalmente coincidenti.
+- **verifiche e correzioni effettuate:** inventario dei fatti usato come lista di controllo
+  dopo la riscrittura; verifica della numerazione fra le due tabelle e le intestazioni;
+  ricerca di rimandi orfani; controllo del gergo.
+
+**6. Problematiche incontrate**
+
+Nessun ostacolo. Un rischio proprio di questo tipo di intervento, gestito con la lista di
+controllo: una riscrittura integrale può perdere in silenzio un dettaglio presente solo
+nella versione precedente, e il testo nuovo resta comunque coerente e plausibile, quindi
+la perdita non si manifesta come errore. Per questo l'inventario dei fatti è stato
+ricavato prima della sovrascrittura e verificato dopo.
+
+---
+
+### Attività 18 — Redazione del report giornaliero aziendale del 18 settembre
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Rendicontazione — redazione del report giornaliero per il cliente, nessuna modifica al codice |
+| **Problema riscontrato** | Richiesta dell'utente: «ora scrivi il report di oggi». Il report della giornata non esisteva: il worklog lo indicava come da compilare a fine giornata. |
+| **Problema effettivo** | Tre vincoli, nessuno risolvibile leggendo il repository. **Primo**: il report copre **tutte** le sessioni della giornata, non solo quella di chi lo scrive; oggi su questo progetto hanno lavorato più sessioni in parallelo, e le 21 attività registrate nel worklog sono la sola fonte che le tiene insieme — un report costruito sulla memoria di una sessione sola sarebbe risultato completo e sarebbe stato falso. **Secondo**: due dati non sono deducibili da nessuna traccia — le ore lavorate, perché sulla postazione non esiste lo strumento di registrazione dei tempi, e la percentuale di avanzamento, che per procedura conferma sempre il committente. **Terzo, di registro**: il report ha un lettore diverso dal worklog — un responsabile del cliente che non ha visto il codice e non lo vedrà — quindi le 21 attività, che nel worklog sono descritte con i nomi propri del codice, vanno riaggregate per **filone funzionale** e riscritte senza alcun riferimento tecnico. |
+| **Soluzione applicata** | Raccolti prima i dati verificabili: elenco delle attività della giornata dal worklog, riaggregate in sei filoni (aggiornamenti della base con la rete di sicurezza; editor delle lezioni; storico del tutor AI; configurazioni; notifiche di punteggio; documento di presentazione), e stato delle registrazioni sul ramo di lavoro. Poi poste all'utente le tre domande che sole potevano chiudere il documento — ore della giornata, avanzamento da dichiarare, spunto di miglioramento — con le opzioni motivate. Risposte: **8 ore tutte su OS LMS**, **100 % invariato**, spunto sulla **progettazione per iscritto prima del codice**. Scritto [reports/2026-09-18-os-lms.md](../reports/2026-09-18-os-lms.md) nelle nove sezioni del template aziendale (1-4 e 6-9), con l'intestazione che dichiara tipo di giornata, interventi rilasciati, tempi e rimando al worklog. Aggiornata l'intestazione della giornata nel worklog, che segnalava il report come ancora da compilare. |
+| **Commit** | No — non committata. Il report e il worklog non si committano salvo richiesta esplicita. |
+| **File modificati** | Creato: [reports/2026-09-18-os-lms.md](../reports/2026-09-18-os-lms.md) (197 righe, ~1.980 parole). Aggiornato: [docs/WORKLOG.md](WORKLOG.md) (intestazione della giornata e questa voce). Nessun file di codice letto né modificato. |
+| **Verifiche** | Nessuna build e nessun test: l'attività non tocca il codice. **Copertura della giornata verificata per conteggio** e non a memoria: 21 attività registrate sotto la data di oggi, contate sul worklog, tutte ricondotte a uno dei sei filoni del report. **Stato delle registrazioni verificato** e non dedotto: due interventi sul ramo di lavoro, la correzione delle notifiche già sincronizzata e la registrazione documentale ancora locale. **Dati non deducibili dichiarati come tali**: le ore sono riportate nell'intestazione con la nota che sono dichiarate dall'operatore e non misurate, come nei report precedenti, e la percentuale di avanzamento è quella confermata dal committente. **Registro linguistico controllato** con una ricerca mirata sui termini tecnici e sui nomi di strumento: nessuna occorrenza nel testo del report. **Coerenza con i documenti della giornata**: i numeri citati (quarantanove personalizzazioni, quaranta verifiche superate, otto versioni arretrate, oltre cinquecento modifiche su quasi settecento file) sono ripresi dalle voci di worklog corrispondenti, dove risultano misurati. |
+
+**1. Obiettivo dell'attività**
+
+Consegnare il rendiconto della giornata nella forma richiesta dal cliente, con una
+copertura reale di tutto ciò che è stato fatto sul progetto — comprese le attività svolte
+da sessioni diverse da quella che scrive — e con i dati non verificabili dichiarati per
+quello che sono, invece che ricostruiti.
+
+**2. Modalità di esecuzione**
+
+Procedura di rendicontazione del pacchetto di skill aziendali, adattata alla convenzione di
+questo progetto, che tiene il registro delle attività in `docs/WORKLOG.md` e il report in
+`reports/`. Ordine seguito: prima la raccolta di ciò che è verificabile, poi le sole
+domande al committente che i dati non possono sostituire, infine la stesura. Le domande si
+pongono in chat e non restano nel documento consegnato.
+
+**3. Attività svolte**
+
+Contate e riaggregate in sei filoni le 21 attività della giornata, comprese quelle delle
+sessioni parallele. Verificato lo stato delle registrazioni sul ramo di lavoro. Poste tre
+domande al committente e raccolte le risposte. Scritto il report nelle nove sezioni, con la
+sezione sull'uso dell'AI aggregata in un unico blocco perché tutta la giornata è stata
+svolta con lo stesso strumento e lo stesso modello. Aggiornata l'intestazione della giornata
+nel worklog, che indicava il report come ancora da compilare.
+
+**4. Utilizzo dell'AI**
+
+- **tool/agente:** Claude Code (estensione VS Code), sessione interattiva.
+- **modello:** Opus 5 con contesto esteso (1M).
+- **attività per cui è stata utilizzata:** aggregazione delle attività della giornata in
+  filoni, stesura del report nelle nove sezioni, traduzione del contenuto tecnico nel
+  registro adatto al lettore del cliente.
+- **motivo della scelta del tool e del modello:** il report si costruisce sopra 21 voci di
+  worklog molto dettagliate e sui documenti di progetto della giornata; il modello li aveva
+  già in contesto per averli prodotti o letti, e il contesto esteso ha permesso di
+  riaggregarli senza rileggerli a pezzi, che è il modo in cui un filone viene attribuito al
+  progetto sbagliato.
+- **risultato ottenuto:** report completo nelle nove sezioni, con la giornata coperta per
+  intero e i due dati non misurabili dichiarati come dichiarati.
+- **verifiche e correzioni effettuate:** conteggio delle attività per verificare la
+  copertura; controllo dello stato di sincronizzazione delle registrazioni; ricerca mirata
+  sui termini tecnici per verificare il registro linguistico; riscontro dei numeri citati
+  sulle voci di worklog di provenienza.
+
+**6. Problematiche incontrate**
+
+Nessun ostacolo. Un punto di metodo, gestito e non subito: la giornata ha avuto più sessioni
+in parallelo, quindi il rischio concreto era consegnare un rendiconto formalmente completo
+che raccontasse solo una parte del lavoro. È stato evitato partendo dal conteggio delle
+attività registrate invece che dalla memoria della sessione, e verificando che ognuna
+finisse in un filone del report.
+
+---
+
 ## 2026-09-17
 
-> **Report giornaliero:** `reports/2026-09-17-os-lms.md` — **ancora da redigere**:
-> a fine giornata le attività qui registrate vanno aggregate in quel file insieme
-> ai punti 7-8-9 della direttiva (prossime attività, avanzamento, spunti di
-> miglioramento).
+> **Report giornaliero:** [`reports/2026-09-17-os-lms.md`](../reports/2026-09-17-os-lms.md)
+> — obiettivo e modalità della giornata, aggregazione delle attività per filone,
+> utilizzo dell'AI, problematiche, prossime attività, avanzamento del progetto e
+> spunti di miglioramento aziendale.
 
 ---
 
@@ -333,6 +3590,225 @@ versioni di prettier in circolazione (la 2.7.1 fissata in `.pre-commit-config.ya
 3.8.3 installata in `frontend/node_modules`), che non concordano sulle virgole finali;
 `CourseCardOverlay.vue` risulta già non conforme alla 2.7.1 prima di questa modifica, per
 cui un eventuale hook pre-commit lo riformatterebbe per intero.
+
+---
+
+### Attività 4 — Procedura di configurazione del template dell'email di aggiornamento sull'ambiente di staging
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Supporto — istruzioni operative post-rilascio |
+| **Problema riscontrato** | L'utente ha rilasciato la feature sul server di staging e ha chiesto come si imposta il template dell'email di aggiornamento su quell'ambiente. |
+| **Problema effettivo** | La configurazione non è un singolo passaggio ma una catena con due punti in cui è facile sbagliare senza accorgersene: il campo *Live Class Updated* esiste nelle impostazioni solo dopo la migrazione dello schema, e l'*Email Template* funziona solo se si spunta **Use HTML**, perché Frappe legge `response_html` soltanto in quel caso e altrimenti usa il campo rich-text, ignorando l'HTML incollato. In più il campo *Subject* del template da desk sostituisce l'oggetto scritto nel codice: se non lo si sa, si perde il titolo della lezione nell'oggetto senza capire perché. |
+| **Soluzione applicata** | Nessuna modifica al codice. Consegnata la procedura in quattro passi (verifica della presenza del campo, creazione dell'Email Template con i valori esatti dei campi, collegamento nelle impostazioni, prova controllata), con l'avvertenza sulla spunta *Use HTML*, la spiegazione della sostituzione dell'oggetto e il modo rapido per capire se il collegamento ha preso: controllare l'oggetto delle righe in coda email, perché il template di default produce un oggetto diverso da quello personalizzato. Indicato inoltre che la prova va fatta su una classe con account di test e non su una classe reale, perché il salvataggio invia davvero le email agli iscritti. |
+| **Commit** | No — nessuna modifica al codice |
+| **File modificati** | Nessuno. Citato all'utente il file già prodotto nell'Attività 3, `docs/email-template-aggiornamento-lezione-live.html`. |
+| **Verifiche** | Verificato sul codice sorgente di Frappe nel container di sviluppo il comportamento dichiarato all'utente: `get_email_template` costruisce il messaggio con `get_formatted_email`, che sceglie `response_html` solo se `use_html` è attivo e passa sia l'oggetto sia il corpo da Jinja con gli argomenti dell'email. Non verificata direttamente la configurazione dello staging: per quell'ambiente non esiste un profilo di accesso al database fra quelli disponibili in locale, quindi la procedura è stata scritta con la verifica iniziale a carico dell'utente (presenza del campo nella pagina delle impostazioni). |
+
+**1. Obiettivo dell'attività**
+
+Mettere l'utente in condizione di completare da solo la configurazione sullo staging, senza tentativi a vuoto, e di accorgersi subito se qualcosa non ha funzionato.
+
+**2. Modalità di esecuzione**
+
+Ricostruzione della catena di configurazione dal codice appena scritto (campo sul singleton, chiave del template, fallback sul file) più lettura del doctype *Email Template* di Frappe per confermare il ruolo della spunta *Use HTML* e il fatto che l'oggetto del template ha la precedenza su quello passato dal codice. Traduzione in una procedura numerata con i valori esatti da inserire nei campi e una prova finale osservabile.
+
+**3. Attività svolte**
+
+Procedura consegnata: (1) verificare che nella sezione "Live Class" di `/app/os-lms-email-settings` compaia il campo *Live Class Updated*, e in caso contrario lanciare la migrazione; (2) creare l'Email Template con nome e oggetto «Aggiornamento lezione live», spunta *Use HTML* e il contenuto del file preparato; (3) collegarlo nel campo e salvare, senza bisogno di riavvii perché il template è letto al momento dell'invio; (4) provare su una classe di prova e controllare la coda email.
+
+Chiarito anche il caso in cui sullo staging gli altri template non siano configurati: la configurazione diventa facoltativa, perché l'email parte comunque con il template di default incluso nell'app; serve solo a rendere l'aggiornamento visivamente uniforme alle altre tre comunicazioni.
+
+**4. Utilizzo dell'AI**
+
+- tool/agente: Claude Code (estensione VS Code)
+- modello: Opus 5 (contesto 1M)
+- attività per cui è stata utilizzata: stesura della procedura di configurazione post-rilascio e verifica delle sue premesse sul codice di Frappe
+- motivo della scelta del tool e del modello: la procedura tocca codice appena scritto, comportamenti del framework e configurazione da interfaccia; il tool aveva già in contesto la catena completa e ha potuto confermare sui sorgenti i due punti critici invece di darli per noti
+- risultato ottenuto: procedura in quattro passi con i valori esatti, le due avvertenze non ovvie (spunta *Use HTML*, oggetto che sovrascrive quello del codice) e un criterio osservabile per verificare l'esito
+- verifiche e correzioni effettuate: il comportamento di `use_html` e della precedenza dell'oggetto è stato letto nel sorgente di Frappe nel container, non affermato a memoria; è stato dichiarato esplicitamente all'utente che la configurazione dello staging non è stata ispezionata direttamente per mancanza di un accesso a quell'ambiente
+
+**6. Problematiche incontrate**
+
+Nessun ostacolo. Unico limite dichiarato: nessun accesso al database di staging fra i profili disponibili, quindi la verifica del primo passo resta a carico dell'utente.
+
+---
+
+### Attività 5 — Errore 500 "Record has changed since last read" nel salvataggio di una lezione dal vivo modificata
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Correzione — difetto introdotto dalla feature dell'Attività 2, emerso al collaudo su staging |
+| **Problema riscontrato** | Sullo staging (`elite.overside.it`), modificando una lezione dal vivo e confermando, la chiamata `POST /api/method/os_lms.os_lms.api.update_live_class` risponde **500** con `frappe.exceptions.QueryDeadlockError: (1020, "Record has changed since last read in table 'tabLMS Live Class'")`. La traccia si ferma in `doc.save()` → `check_if_latest()` → `load_doc_before_save(raise_exception=True)`, cioè su una `SELECT ... FOR UPDATE`. |
+| **Problema effettivo** | L'errore MariaDB 1020 si verifica quando una lettura con lock trova la riga modificata da un'altra transazione dopo l'apertura della propria: la richiesta che fallisce è quella che **perde la corsa**, e fallisce prima ancora di scrivere. La causa è una scelta sbagliata fatta nell'Attività 2: gli effetti collaterali dell'aggiornamento — le due chiamate HTTP a Zoom, con timeout di 10 secondi ciascuna, più una scrittura in coda email per ogni partecipante — erano eseguiti dentro `on_update`, cioè **dentro la transazione di salvataggio**. Il lock di scrittura sulla riga restava quindi aperto per decine di secondi, mentre l'interfaccia non dava alcun segnale che il salvataggio fosse in corso. In quella finestra basta un secondo clic su "Submit", o lo scheduler dei promemoria (che salva il documento ogni 15 minuti), o il job orario delle presenze, per far fallire il salvataggio. Prima della feature il problema non poteva presentarsi: la modifica scriveva solo il documento e la transazione durava millisecondi. |
+| **Soluzione applicata** | Gli effetti collaterali sono stati spostati **fuori** dalla transazione: `_handle_class_update` non li esegue più, ma accoda un job breve con `enqueue_after_commit=True`, quindi la transazione si chiude appena il nuovo orario è salvato e il lavoro pesante parte a commit avvenuto. Introdotti `apply_update_side_effects` sulla classe e la funzione di ingresso `apply_live_class_update` a livello di modulo. Sul frontend il pulsante "Submit" ora mostra lo stato di avanzamento ed è protetto contro il doppio invio, che è la causa scatenante più probabile in questo caso. |
+| **Commit** | Sì — `e78ce251` *fix(live-class): run the update side effects outside the save transaction*, branch `feature/oslms`. Due file, +51/-5. |
+| **File modificati** | [apps/os_lms/os_lms/overrides/lms_live_class.py](apps/os_lms/os_lms/overrides/lms_live_class.py), [frontend/src/components/Modals/LiveClassModal.vue](frontend/src/components/Modals/LiveClassModal.vue) |
+| **Verifiche** | Test end-to-end rieseguito sul container di sviluppo con la stessa lezione di prova: il salvataggio ora **non** produce alcuna email dentro la transazione (verificato: zero righe in coda email subito dopo il salvataggio), mentre l'esecuzione diretta della funzione di job produce le 10 email e le 7 notifiche attese, con l'oggetto corretto. Dati di prova ripristinati e artefatti rimossi puntualmente (verificato: zero righe residue in coda email e nelle notifiche). Componente Vue verificato con il compilatore SFC e build del frontend completata. Non riproducibile in locale l'errore originale, che richiede due transazioni concorrenti su un'istanza reale. |
+
+**1. Obiettivo dell'attività**
+
+Rimuovere la causa dell'errore 500 in modo che il salvataggio di una lezione modificata non possa più entrare in conflitto con un'altra scrittura sulla stessa riga, e che l'interfaccia non inviti l'utente a cliccare due volte.
+
+**2. Modalità di esecuzione**
+
+Lettura della traccia per stabilire **in quale punto** il salvataggio fallisse: `check_if_latest` viene eseguito prima di qualunque scrittura, quindi la richiesta non era quella che aveva modificato la riga ma quella che se l'è trovata cambiata sotto. Da lì, censimento di tutti i punti che scrivono su `tabLMS Live Class` (job presenze orario, avvio lezione, scheduler dei promemoria che salva l'intero documento, e la risincronizzazione dei link Zoom introdotta dalla feature) e misura di quanto a lungo la transazione restasse aperta. Verificate sul sorgente di Frappe le due strade disponibili per differire il lavoro (`frappe.db.after_commit` e `enqueue_after_commit`), scegliendo la seconda perché restituisce subito la risposta all'utente invece di tenerlo in attesa dei tempi di Zoom.
+
+**3. Attività svolte**
+
+Spostato il blocco "riprogramma Zoom + invia le email + crea le notifiche" in un job breve accodato dopo il commit. La logica di decisione (quali campi sono cambiati) resta dov'era, dentro `on_update`, così continua a valere anche per le modifiche fatte da desk; cambia solo il momento in cui il lavoro pesante viene eseguito. Aggiunta la funzione di ingresso del job, che ricarica il documento e richiama il nuovo metodo pubblico della classe.
+
+Sul frontend, il pulsante di conferma riceve lo stato di caricamento e un controllo che ignora i clic successivi finché la richiesta è in volo; la validazione della creazione è stata portata fuori dal callback `validate` della risorsa, in modo che lo stato di caricamento venga sempre azzerato anche quando la validazione fallisce.
+
+Nota per il rilascio: il job richiede che i worker siano attivi, condizione già necessaria oggi perché la coda email venga svuotata e perché partano i promemoria.
+
+**4. Utilizzo dell'AI**
+
+- tool/agente: Claude Code (estensione VS Code)
+- modello: Opus 5 (contesto 1M)
+- attività per cui è stata utilizzata: diagnosi dell'errore 500 dalla sola traccia e correzione della causa
+- motivo della scelta del tool e del modello: la diagnosi richiedeva di collegare un codice di errore di MariaDB al punto preciso del ciclo di vita del documento in cui viene emesso e al comportamento del codice scritto il giorno stesso; il contesto ampio ha permesso di ragionare sulla feature appena realizzata senza doverla rileggere da zero
+- risultato ottenuto: causa individuata (lavoro di rete e scritture email dentro la transazione di salvataggio), correzione applicata su due file e verificata in sviluppo
+- verifiche e correzioni effettuate: la diagnosi è stata ancorata al punto della traccia (`check_if_latest`, prima di ogni scrittura) e al censimento dei writer concorrenti, non dedotta dal messaggio di errore; la correzione è stata verificata provando che il salvataggio non genera più email dentro la transazione e che il job, eseguito a parte, le genera tutte. È stato dichiarato all'utente che l'errore originale non è riproducibile in locale perché richiede concorrenza reale.
+
+**6. Problematiche incontrate**
+
+Il difetto era stato introdotto dall'attività precedente e non era emerso nei test di sviluppo, che sono per loro natura sequenziali: senza concorrenza la transazione lunga non dà fastidio a nessuno. È il motivo per cui un collaudo su un ambiente con più utenti e con lo scheduler attivo resta indispensabile anche dopo verifiche locali positive. Resta da confermare sullo staging, dopo il nuovo rilascio, che l'errore non si ripresenti; se ricomparisse nonostante la transazione ora breve, il passo successivo sarebbe un nuovo tentativo automatico del salvataggio in caso di conflitto.
+
+---
+
+### Attività 6 — Riscrittura del template dell'email di aggiornamento nello stile grafico fornito dal cliente
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Nuova feature — rifacimento grafico di una comunicazione, con le modifiche di supporto necessarie |
+| **Problema riscontrato** | L'utente ha fornito un modello HTML di riferimento — quello usato per il promemoria lezione, impaginato a tabelle con intestazione brandizzata, scheda dettagli con icone e piè di pagina — e ha chiesto il template dell'email di aggiornamento della lezione dal vivo scritto in quello stile. |
+| **Problema effettivo** | Il modello fornito non era utilizzabile così com'è, per tre motivi emersi solo mettendolo a terra. **Primo**: è un documento HTML completo (`<!DOCTYPE>`, `<html>`, `<head>`, `<body>`), mentre un *Email Template* di Frappe deve contenere solo il frammento, perché viene inserito dentro il layout email dell'applicazione. **Secondo**: la scheda dettagli prevede campi che il codice non passava affatto — l'ora di fine, il nome del relatore e il nome leggibile della classe; in particolare `batch_name` è lo slug del documento (`prima-media`), inutilizzabile come etichetta. **Terzo**, scoperto solo rendendo l'email lungo il percorso reale di invio: Frappe antepone al contenuto una propria riga di intestazione, ricavata dal parametro `header` passato a `sendmail`, che con questo layout stampava il titolo «Lezione dal vivo aggiornata» una seconda volta sopra l'intestazione grafica del template. |
+| **Soluzione applicata** | Template riscritto interamente nello stile fornito, come frammento e non come documento. Aggiunti tre valori agli argomenti passati alle email della lezione dal vivo — `end_time` (ora di fine, calcolata da orario più durata), `host_name` (nome completo dell'utente indicato come Host) e `batch_title` (titolo leggibile della classe) — disponibili quindi anche al template di invito. Rimosso il parametro `header` per la sola email di aggiornamento, così il layout resta quello del template. Aggiornate le descrizioni dei campi nelle impostazioni email con le nuove variabili. La stessa identica versione è disponibile sia come template di default dell'app sia come file da incollare nel desk. |
+| **Commit** | Sì — `dbda9275` *style(live-class): restyle the update email on the client layout*, branch `feature/oslms`. Tre file, +201/-81. |
+| **File modificati** | [apps/os_lms/os_lms/templates/emails/live_class_updated.html](apps/os_lms/os_lms/templates/emails/live_class_updated.html) (riscritto), [apps/os_lms/os_lms/overrides/lms_live_class.py](apps/os_lms/os_lms/overrides/lms_live_class.py) (tre argomenti in più, `header` rimosso per l'aggiornamento), [apps/os_lms/os_lms/os_lms/doctype/os_lms_email_settings/os_lms_email_settings.json](apps/os_lms/os_lms/os_lms/doctype/os_lms_email_settings/os_lms_email_settings.json) (descrizioni delle variabili). Fuori commit, copia per il desk: `docs/email-template-aggiornamento-lezione-live.html`. |
+| **Verifiche** | Email generata lungo il **percorso reale di invio** sul container di sviluppo, non solo renderizzata: `send_update_email` su una lezione di prova spostata al 15/10/2026 alle 16:30 con durata 90 minuti ha prodotto 10 messaggi, dei quali è stato decodificato il corpo HTML dalla coda email. Verificata la presenza di tutti gli elementi: intestazione «Lezione aggiornata», sottotitolo con il titolo leggibile della classe («Prima Media», quindi `batch_title` funziona), scheda «Dettagli aggiornati», data «15-10-2026» e orario «dalle ore 16:30 alle ore 18:00», cioè l'ora di fine calcolata correttamente dalla durata. Verificato inoltre, decodificando il testo visibile, che dopo la rimozione del parametro `header` l'email inizia direttamente con l'intestazione grafica del template e non più con il titolo ripetuto. Dati di prova ripristinati e messaggi eliminati (zero residui). |
+
+**1. Obiettivo dell'attività**
+
+Consegnare l'email di aggiornamento nella veste grafica che il cliente usa per le proprie comunicazioni, pronta da incollare nel desk, e verificata non a occhio ma sul messaggio effettivamente prodotto dal sistema di invio.
+
+**2. Modalità di esecuzione**
+
+Adattamento del modello fornito alla struttura dei dati realmente disponibili: mappatura di ogni riga della scheda dettagli su una variabile esistente, e per le tre righe scoperte, aggiunta dei valori mancanti lato codice invece di calcoli acrobatici dentro Jinja, così che siano disponibili anche a un template gestito da desk. Verifica finale non con un semplice `render_template` ma generando davvero le email e leggendo il corpo dalla coda, perché è l'unico modo per vedere anche ciò che Frappe aggiunge attorno al contenuto.
+
+**3. Attività svolte**
+
+Riscritto il template mantenendo del modello fornito impaginazione a tabelle, palette, intestazione con logo, scheda dettagli con icone e riga etichetta, divisore e piè di pagina. Le righe della scheda sono state mappate così: Lezione (titolo), Relatore (solo se valorizzato), Data, Orario con «dalle ore … alle ore …» quando la durata è nota, e Dove, che per una lezione dal vivo è sempre «Online» con rimando al pulsante. Sotto la scheda restano la descrizione facoltativa, il pulsante di partecipazione, il pulsante verso la classe e i tre pulsanti di calendario, che nel modello fornito non erano previsti ma sono indispensabili in questa email, perché è proprio il calendario dello studente a dover essere aggiornato.
+
+Aggiunti in `_mail_participants` i tre valori mancanti, calcolati una volta sola per tutti i destinatari. Rimosso il parametro `header` per la sola email di aggiornamento.
+
+Segnalate all'utente due cose che restano sue decisioni: la riga «Relatore» mostra il campo *Host* della lezione, che è l'utente che l'ha creata e quindi non sempre il docente; e le altre tre email della lezione dal vivo hanno ancora la riga di intestazione di Frappe sopra la grafica, quindi se saranno rifatte in questo stile andrà tolta anche lì.
+
+**4. Utilizzo dell'AI**
+
+- tool/agente: Claude Code (estensione VS Code)
+- modello: Opus 5 (contesto 1M)
+- attività per cui è stata utilizzata: riscrittura del template nello stile fornito e adeguamento del codice che lo alimenta
+- motivo della scelta del tool e del modello: il lavoro non è di sola grafica — richiede di sapere quali dati esistono davvero, di aggiungerne tre lato codice e di conoscere come Frappe avvolge il contenuto di un Email Template; il contesto ampio teneva insieme il template, il codice di invio e il ciclo dell'email
+- risultato ottenuto: template pronto nello stile del cliente, verificato sull'email realmente generata, con le variabili documentate nelle impostazioni
+- verifiche e correzioni effettuate: la verifica è stata fatta sul messaggio prodotto dalla coda email e non su un rendering isolato; è così che è emersa l'intestazione duplicata di Frappe, corretta subito e riverificata. L'ora di fine è stata controllata sul caso reale (16:30 + 90 minuti = 18:00) e non solo sulla presenza della variabile.
+
+**6. Problematiche incontrate**
+
+Nessun ostacolo tecnico. Da tenere presente per il rilascio: il template usa tre variabili introdotte da questo commit, quindi va rilasciato il codice prima di collegare il template nel desk, altrimenti le righe «Relatore» e «alle ore …» semplicemente non compaiono — il template è scritto per degradare senza errori, non per rompersi.
+
+---
+
+### Attività 7 — Modifica di una lezione dal vivo rifiutata per il formato dell'orario, e avviso inviato anche per lezioni già concluse
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Correzione — due difetti distinti emersi dall'uso della feature |
+| **Problema riscontrato** | Due segnalazioni dell'utente. **(a)** «quando modifico una live l'input dell'ora ce l'ho formattato così: 18:45:00 e così mi dà errore se aggiorno la live; devo aprire la select ed impostare l'orario per formattarlo così 18:45». **(b)** Domanda: «le live terminate, se ricevono una modifica cosa succede, parte l'email?». |
+| **Problema effettivo** | **(a)** Difetto introdotto dall'Attività 2. La funzione di validazione `valideTime` spezza l'orario sui due punti e pretende esattamente due elementi, mentre il documento restituisce l'orario nella forma `HH:mm:ss`: il controllo falliva quindi su **qualsiasi** modifica, compresa la sola correzione del titolo, finché l'utente non riapriva il selettore che riscriveva il valore senza secondi. Prima della feature il difetto non era raggiungibile, perché in modifica l'orario non veniva validato affatto: è stato reso raggiungibile portando le validazioni della creazione anche nella modifica. **(b)** Comportamento non voluto, mai deciso esplicitamente: la validazione impediva di cambiare data, ora e durata di una lezione **avviata**, ma niente impediva l'invio dell'email di aggiornamento per una lezione **già svolta**; correggere il titolo di una lezione del mese scorso avvisava l'intera classe di un «aggiornamento» relativo a un appuntamento passato. |
+| **Soluzione applicata** | **(a)** Il form carica l'orario già normalizzato a `HH:mm` e la validazione accetta entrambe le forme, con e senza secondi. **(b)** Una lezione la cui ora di fine è già trascorsa non attiva più nulla: né email, né notifica, né chiamata a Zoom. Il confronto usa l'orario **nuovo** e non quello precedente, così resta coperto il caso utile: rinviare una lezione passata a una data futura avvisa regolarmente i partecipanti. |
+| **Commit** | Sì — `7365f7e3` *fix(live-class): accept the stored time format and leave finished classes alone*, branch `feature/oslms`. Due file, +15/-4. |
+| **File modificati** | [frontend/src/components/Modals/LiveClassModal.vue](frontend/src/components/Modals/LiveClassModal.vue), [apps/os_lms/os_lms/overrides/lms_live_class.py](apps/os_lms/os_lms/overrides/lms_live_class.py) |
+| **Verifiche** | Test sul container di sviluppo con la lezione di prova già usata nelle attività precedenti, tre casi: lezione **passata** con la sola correzione del titolo → **0 email e 0 notifiche**; **stessa lezione rinviata** al 20/11/2026 → 10 email e 7 notifiche, quindi il rinvio continua ad avvisare; orario inviato nella forma `18:45:00` → accettato e salvato senza errori. Componente Vue verificato con il compilatore SFC e build del frontend completata. Dati di prova ripristinati e artefatti rimossi (zero residui verificati). |
+
+**1. Obiettivo dell'attività**
+
+Rendere la modifica di una lezione utilizzabile davvero — oggi era bloccata da un controllo sbagliato in un caso banalissimo — e impedire che una comunicazione di aggiornamento raggiunga gli iscritti quando non ha più alcun senso, cioè quando la lezione si è già svolta.
+
+**2. Modalità di esecuzione**
+
+Per il primo punto, risalita dal messaggio di errore riferito dall'utente alla funzione che lo produce e confronto con il formato in cui l'orario viene realmente restituito dal documento. Per il secondo, rilettura delle condizioni che governano l'invio: la validazione copriva il caso della lezione avviata ma nessuno aveva definito cosa dovesse accadere per una lezione conclusa. La regola scelta guarda l'orario di fine risultante dalla modifica, in modo da distinguere una correzione a posteriori (che non deve avvisare) da un rinvio (che deve).
+
+**3. Attività svolte**
+
+Normalizzazione dell'orario al caricamento del form e validazione resa tollerante a entrambi i formati, così il campo funziona sia con il valore che arriva dal documento sia con quello prodotto dal selettore. Sul backend, aggiunta la condizione di uscita anticipata per le lezioni concluse, prima di accodare il lavoro di riprogrammazione e invio; l'uscita viene registrata nel log di diagnostica insieme ai campi che erano cambiati, così resta tracciato che una modifica c'è stata ma non è stata comunicata.
+
+**4. Utilizzo dell'AI**
+
+- tool/agente: Claude Code (estensione VS Code)
+- modello: Opus 5 (contesto 1M)
+- attività per cui è stata utilizzata: diagnosi e correzione dei due difetti, e definizione della regola per le lezioni concluse
+- motivo della scelta del tool e del modello: entrambi i punti richiedevano di ricollegare un sintomo al codice scritto nelle attività precedenti della stessa sessione e di valutarne gli effetti su casi non ancora considerati; il contesto ampio ha permesso di farlo senza rileggere la feature da capo
+- risultato ottenuto: modifica di una lezione di nuovo utilizzabile senza artifici, e comunicazioni limitate ai casi in cui servono davvero
+- verifiche e correzioni effettuate: la regola sulle lezioni concluse è stata verificata nei due versi — silenzio per la correzione a posteriori, invio per il rinvio — e non solo nel verso che la motivava; il formato dell'orario è stato provato con il valore reale `18:45:00` invece che con un caso costruito
+
+**6. Problematiche incontrate**
+
+Il primo difetto è una regressione introdotta dall'Attività 2 e sfuggita ai test, che avevano sempre inviato l'orario nella forma `HH:mm` — la stessa che usa il selettore — senza mai riprodurre il caricamento del valore salvato. Il secondo non è un difetto di programmazione ma una casistica mai decisa: le domande dell'utente stanno di fatto completando la specifica della feature man mano che viene usata.
+
+---
+
+### Attività 8 — Redazione del report giornaliero aziendale del 17 settembre
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Altro — rendicontazione |
+| **Problema riscontrato** | Richiesta dell'utente: «c'è il report di oggi?», e alla risposta negativa, «scrivi il report di oggi». A report consegnato, seconda richiesta: includere nello stesso documento anche il rendiconto della giornata sul progetto **Elite Mobile App**, fornito dall'utente come testo già redatto. Il report giornaliero è il documento che l'utente consegna in azienda; il worklog ne è solo la materia prima. |
+| **Problema effettivo** | Il registro non era una fonte sufficiente. Il confronto con la cronologia delle consegne ha fatto emergere **due commit della giornata non annotati** — `f7070242` (lingua delle elaborazioni in sottofondo, l'intervento rimasto in sospeso dall'11 settembre) e `0393d188` (informazione sull'ordine obbligato delle lezioni esposta all'app mobile) — più il merge su `master` con l'allineamento della versione a 1.12.5, anch'esso assente dal registro. Scriverne solo sulla base del worklog avrebbe prodotto un report completo nell'aspetto e incompleto nei fatti, la stessa lacuna già rilevata l'11 settembre. |
+| **Soluzione applicata** | Redatto `reports/2026-09-17-os-lms.md` seguendo il formato delle giornate precedenti (nove sezioni della direttiva, con il punto 5 soddisfatto dentro il punto 4). Le sette attività del registro sono state aggregate in cinque filoni — riprogrammazione della lezione dal vivo (attività 1, 2, 5, 7), email di aggiornamento nella grafica del cliente (attività 3, 4-bis, 6), lettore del video di anteprima (attività 4), lingua delle elaborazioni in sottofondo, supporto all'app mobile — con gli ultimi due ricostruiti dai messaggi di commit, che descrivono per esteso causa e intervento. Registro di scrittura rispettato: nessun nome di file, funzione o componente nel corpo del report, i riferimenti tecnici solo nella tabella degli interventi consegnati. Aggiornata l'intestazione della giornata nel worklog, che ora rimanda al report scritto. **Seconda stesura**: il report è stato rifuso per coprire entrambi i progetti della giornata. Scelta di impianto — un solo insieme di nove sezioni, con OS LMS e app mobile distinti dentro ciascuna, invece di due report accodati con numerazione ripetuta, che al destinatario sarebbe arrivato come due documenti in un file solo. Le due differenze di template fra i due testi sono state riconciliate: mantenuta la numerazione aziendale in uso nei report di questo progetto (il punto 5 confluisce nel punto 4, il 6 è «Problematiche»), e il punto «Tempi» del testo dell'app — assente in questo template — è stato portato come riga dell'intestazione. Il dato è poi stato completato dall'utente per l'intera giornata: **6 ore, 3 su OS LMS e 3 sull'app mobile**, dichiarate e non misurate. La sezione «Utilizzo dell'AI» è stata **fusa in un blocco unico**, perché su entrambi i progetti valgono lo stesso tool e lo stesso modello. |
+| **Commit** | Non committata — il worklog e i report non si committano salvo richiesta esplicita dell'utente. Da notare che oggi, con `2520c654`, l'utente ha versionato per la prima volta `docs/WORKLOG.md`, `reports/` e il documento di presentazione: la regola resta, ma il file è ora tracciato. |
+| **File modificati** | Nuovo file: `reports/2026-09-17-os-lms.md` (riscritto per intero nella seconda stesura). Modificato: [docs/WORKLOG.md](docs/WORKLOG.md) (intestazione della giornata 2026-09-17 e questa voce). Il registro delle attività dell'app mobile non vive in questo repository e non è stato toccato. |
+| **Verifiche** | Commit della giornata contati con `git log --since/--until --all`: **11**, di cui 9 di lavoro più il merge su `master` e l'allineamento di versione; incrociati uno per uno con le voci del registro, da cui i due assenti. Verificato con `git rev-parse` che `master` e `origin/master` coincidano e che `master` contenga l'allineamento di versione, quindi l'affermazione «consegnato e pubblicato» del report è misurata e non dedotta. Verificato con `git show` che l'allineamento porti la versione da 1.12.1 a 1.12.5. Accertato che `docs/OS-LMS-Presentazione-Funzionalita.md/.docx`, pur comparendo fra i file non tracciati a inizio sessione, risalga al 4 agosto e non sia lavoro odierno (già verificato l'11 settembre): è stato solo versionato oggi, quindi non entra nel report. Rilevata, e non corretta perché fuori ambito, una **numerazione duplicata** nel registro della giornata: due voci portano il numero «Attività 4». Sulla parte app mobile nessuna verifica indipendente è stata eseguita: il testo è stato fornito dall'utente come rendiconto già redatto e validato, e i suoi contenuti (15 incrementi, 79 test superati, avanzamento al 90 % confermato dal committente) sono riportati come dichiarati, non misurati in questa sessione. Lo stesso vale per i tempi dell'intera giornata, dichiarati dall'utente in 6 ore ripartite a metà fra i due progetti: sulla postazione non esiste un registro tempi da cui verificarli. |
+
+**1. Obiettivo dell'attività**
+
+Consegnare all'utente il report giornaliero del 17 settembre nel formato aziendale, scritto per un referente del cliente che non vede il codice e che dal documento deve capire due cose: che cosa la piattaforma sa fare in più stasera rispetto a stamattina, e se il tempo impiegato è coerente con quel risultato.
+
+**2. Modalità di esecuzione**
+
+Lettura integrale del blocco 2026-09-17 del worklog (sette attività), poi verifica della sua completezza contro la cronologia delle consegne invece di darlo per esaustivo. Le due consegne non annotate sono state ricostruite dai rispettivi messaggi di commit, che ne riportano causa ed effetto per esteso, e non da supposizioni. Lo stato del rilascio (ramo principale, pubblicazione, versione) è stato accertato con comandi di lettura sul repository. Formato e livello di scrittura ripresi dai report del 7, 8 e 11 settembre, per continuità di lettura fra le giornate.
+
+**3. Attività svolte**
+
+Scritto il report con le nove sezioni della direttiva, in due stesure: la prima sul solo OS LMS, la seconda estesa all'app mobile su richiesta dell'utente. Le sezioni 7, 8 e 9 — prossime attività, avanzamento, spunti di miglioramento — sono di livello giornaliero e vivono solo qui: le prossime attività raccolgono le sei verifiche e decisioni rimaste aperte (riconferma sull'ambiente di collaudo, configurazione del modello di email, prova contro il servizio di videoconferenza reale, riscontro visivo sul lettore di anteprima, correzione del saluto in produzione ed estensione della nuova veste alle altre comunicazioni, identità del relatore). L'avanzamento resta al 100 %, con la precisazione che oggi, a differenza delle giornate precedenti, non è stata solo manutenzione: la riprogrammazione di una lezione dal vivo è una funzionalità nuova che elimina una procedura manuale onerosa, ma non amplia il perimetro concordato. Gli spunti di miglioramento derivano dai fatti della giornata e non sono generici: mettere in conto il collaudo su ambiente realmente in uso per gli interventi che toccano salvataggi o servizi esterni, procurarsi un account di prova per la videoconferenza, rifare le quattro comunicazioni della lezione dal vivo in un passaggio unico.
+
+Nella seconda stesura le sezioni di livello giornaliero sono diventate a due voci: l'avanzamento riporta ora entrambe le percentuali (OS LMS al 100 %, app mobile al 90 % confermato dal committente), le prossime attività proseguono la numerazione con i tre punti dell'app, e fra gli spunti è stato messo in evidenza il legame emerso fra i due progetti — l'avanzamento guidato fra le lezioni, realizzato sull'app, ha richiesto sulla piattaforma di esporre un'informazione che esisteva già, che è esattamente il caso descritto negli spunti del rendiconto dell'app. Quel collegamento non era in nessuno dei due testi di partenza ed è il principale valore aggiunto della fusione.
+
+Su indicazione dell'utente è stato infine aggiunto in apertura del punto 7 un **impegno con scadenza**: stimare e consegnare entro **venerdì 18 settembre** il piano delle prossime modifiche, con per ciascun intervento comportamento atteso, dipendenze e tempo richiesto. È collocato prima delle liste per progetto perché ne fissa l'ordine, e rimanda ai punti già elencati invece di duplicarli, richiamando i due vincoli di sequenza già noti (la configurazione della comunicazione va fatta dopo il rilascio; la prova sul servizio di videoconferenza dipende da un account di prova non ancora disponibile).
+
+**4. Utilizzo dell'AI**
+
+- tool/agente: Claude Code (estensione VS Code)
+- modello: Opus 5 (contesto 1M)
+- attività per cui è stata utilizzata: stesura completa del report giornaliero in due passaggi, aggregazione delle attività in filoni, accertamento della completezza del registro e fusione con il rendiconto dell'app mobile fornito dall'utente
+- motivo della scelta del tool e del modello: il report richiede di riassumere una giornata densa cambiando registro — dal dettaglio tecnico del worklog al linguaggio di un referente che non vede il codice — e insieme di controllare sulla cronologia del repository che il registro non abbia buchi; il contesto ampio consente di tenere in memoria tutte e sette le voci della giornata, ciascuna lunga, e di riconoscere quali appartengano allo stesso filone
+- risultato ottenuto: report in nove sezioni su due progetti, cinque filoni OS LMS più cinque blocchi dell'app, tabella di otto interventi consegnati con il relativo stato, due consegne recuperate che il solo registro avrebbe fatto perdere e un legame fra i due progetti reso esplicito
+- verifiche e correzioni effettuate: la completezza del registro non è stata assunta ma verificata contro `git log`, ed è così che sono emersi i due commit mancanti; lo stato di pubblicazione è stato accertato con `git rev-parse` invece di essere dedotto dalla presenza dei commit; la data del documento di presentazione è stata controllata per non attribuire alla giornata un lavoro di agosto. Restano da confermare dall'utente due punti che il repository non può dimostrare: se dopo le correzioni del pomeriggio sia stato fatto un nuovo rilascio sull'ambiente di collaudo, e se la percentuale di avanzamento resti al 100 %.
+
+**6. Problematiche incontrate**
+
+Due consegne della giornata non erano state registrate al momento in cui sono avvenute, e sarebbero uscite dal rendiconto se il registro fosse stato usato come fonte unica. È la seconda volta in una settimana: la contromisura non è scrivere meglio il report, ma annotare la voce di registro **contestualmente al commit**, perché a fine giornata ciò che manca non si ricorda, si ricostruisce. Resta inoltre da chiarire con l'utente lo stato del rilascio sull'ambiente di collaudo dopo le correzioni del pomeriggio: il repository dice che il codice è sul ramo principale e pubblicato, non se sia stato messo in esercizio.
 
 ---
 

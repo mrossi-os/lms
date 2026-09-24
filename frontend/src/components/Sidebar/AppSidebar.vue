@@ -75,7 +75,9 @@
 					</Tooltip>
 					<!-- OSLMS-CUSTOM: upstream help, onboarding-call and "Powered by Frappe Learning" icons removed -->
 					<!-- OSLMS-CUSTOM: app version label shown in the sidebar footer -->
-					<span id="versionApp" class="text-xs text-ink-gray-5"> 1.12.5 </span>
+					<span id="versionApp" class="text-xs text-ink-gray-5">
+						1.13.0 - beta
+					</span>
 				</div>
 
 				<Tooltip
@@ -215,7 +217,7 @@ const updateSidebarLinksVisibility = () => {
 			if (!parseInt(data[key])) {
 				sidebarLinks.value.forEach((link) => {
 					link.items = link.items.filter(
-						(item) => item.label.toLowerCase().split(' ').join('_') !== key
+						(item) => item.label.toLowerCase().split(' ').join('_') !== key,
 					)
 				})
 			}
@@ -519,7 +521,7 @@ watch(settingsStore.settings, () => {
 watch(
 	() => sidebarSettings.data,
 	() => updateSidebarLinks(),
-	{ deep: true }
+	{ deep: true },
 )
 
 const updateSidebarLinks = () => {
