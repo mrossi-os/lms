@@ -2467,7 +2467,8 @@ serva ancora (per esempio per rendere correttamente contenuti colorati salvati c
 vecchio tool) o sia codice morto. ATTENZIONE: v2.63.0 rimuove il tool colore inline
 upstream; decidere con il committente prima di quel merge se questo tool deve tornare lo
 strumento colore delle lezioni o essere eliminato. Resta anche la dipendenza in
-package.json (memoria frappeui_1_0_beta_merge_2026_06)."""
+package.json (memoria frappeui_1_0_beta_merge_2026_06).
+DECISIONE 2026-09-24 (v2.63.0): lo strumento colore delle lezioni NON torna a essere editorjs-color-picker; viene riscritto sul nuovo BaseInline (vedi editor-inline-color-persist). Questo tool resta registrato solo finché la riscrittura non è in piedi; la sua eliminazione e quella della dipendenza si valutano dopo."""
 
   [[entries.sites]]
   file = "frontend/src/utils/index.js"
@@ -2491,7 +2492,8 @@ correzione: la metà server è l'allowlist EDITORJS_CUSTOM_TAGS in lms/lms/utils
 lesson_editorjs_custom_tags_server_strip). Lacuna nota: <lms-align> (allineamento) non è
 nell'ADD_TAGS client e si perde al caricamento. ATTENZIONE: v2.63.0 rimuove il tool colore
 inline (utils/inline/Color.ts) e riscrive il salvataggio del contenuto; i contenuti già
-salvati con <lms-inline-color> vanno comunque mostrati, decidere con il committente come."""
+salvati con <lms-inline-color> vanno comunque mostrati, decidere con il committente come.
+DECISIONE 2026-09-24 (v2.63.0): la nostra correzione su utils/inline/Color.ts (nodo attivo catturato all apertura del pannello, listener persistenti sugli input colore, mousedown che non fa perdere la selezione) cade con il file, eliminato upstream (cc66dc6e0). Al merge si prende la cancellazione; lo strumento colore viene riscritto subito dopo sul nuovo BaseInline/ToolButton, emettendo <span class="lms-inline-color" style>, e riporta le stesse tre protezioni. Una patch os_lms converte i 2 <lms-inline-color> della lezione di produzione 0790; i <span style=color> esistenti restano. Questa voce va ripuntata sul nuovo file dello strumento."""
 
   [[entries.sites]]
   file = "frontend/src/utils/index.js"
