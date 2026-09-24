@@ -15,6 +15,8 @@ import { Bold } from '@/utils/inline/Bold'
 import { Underline } from '@/utils/inline/Underline'
 import { Strikethrough } from '@/utils/inline/Strikethrough'
 import { AlignLeft, AlignCenter, AlignRight } from '@/utils/inline/TextAlign'
+// OSLMS-CUSTOM: our text colour tool (upstream removed its own in v2.63.0)
+import { Color } from '@/oslms/utils/inline/Color'
 // OSLMS-CUSTOM: Vimeo share links pasted in lessons are resolved server-side
 import { VIMEO_SHARE_RE } from '@/utils/video'
 import {
@@ -176,6 +178,8 @@ const INLINE_TOOLBAR_ORDER = [
 	'inlineCode',
 	'underline',
 	'strikeThrough',
+	// OSLMS-CUSTOM: text colour + highlight
+	'color',
 ]
 
 // OSLMS-CUSTOM: embed tool that resolves Vimeo share links via os_lms resolve_vimeo_share
@@ -323,6 +327,8 @@ export function getEditorTools(
 		alignLeft: AlignLeft,
 		alignCenter: AlignCenter,
 		alignRight: AlignRight,
+		// OSLMS-CUSTOM: text colour + highlight (src/oslms/utils/inline/Color.ts)
+		color: Color,
 		copyBlock: clipboardTunes.copyBlock,
 		cutBlock: clipboardTunes.cutBlock,
 		pasteBlock: clipboardTunes.pasteBlock,

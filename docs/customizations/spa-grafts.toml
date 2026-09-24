@@ -2495,12 +2495,32 @@ nell'ADD_TAGS client e si perde al caricamento. ATTENZIONE: v2.63.0 rimuove il t
 inline (utils/inline/Color.ts) e riscrive il salvataggio del contenuto; i contenuti già
 salvati con <lms-inline-color> vanno comunque mostrati, decidere con il committente come.
 DECISIONE 2026-09-24 (v2.63.0): la nostra correzione su utils/inline/Color.ts (nodo attivo catturato all apertura del pannello, listener persistenti sugli input colore, mousedown che non fa perdere la selezione) cade con il file, eliminato upstream (cc66dc6e0). Al merge si prende la cancellazione; lo strumento colore viene riscritto subito dopo sul nuovo BaseInline/ToolButton, emettendo <span class="lms-inline-color" style>, e riporta le stesse tre protezioni. Una patch os_lms converte i 2 <lms-inline-color> della lezione di produzione 0790; i <span style=color> esistenti restano. Questa voce va ripuntata sul nuovo file dello strumento.
-Merge di v2.63.0 (2026-09-24): la metà server (EDITORJS_CUSTOM_TAGS in lms/lms/utils.py) ora è marcata e censita qui; <lms-align> tolto dall allowlist (l upstream emette <span class="lms-align">, 0 lezioni di produzione usavano il vecchio elemento, e il test upstream test_a_custom_element_is_unwrapped ne richiede lo scarto)."""
+Merge di v2.63.0 (2026-09-24): la metà server (EDITORJS_CUSTOM_TAGS in lms/lms/utils.py) ora è marcata e censita qui; <lms-align> tolto dall allowlist (l upstream emette <span class="lms-align">, 0 lezioni di produzione usavano il vecchio elemento, e il test upstream test_a_custom_element_is_unwrapped ne richiede lo scarto).
+Riscrittura (2026-09-24, dopo il merge di v2.63.0): lo strumento vive in frontend/src/oslms/utils/inline/Color.ts, su ToolButton (non BaseInline, che riconosce i wrapper dal solo nome del tag e scambierebbe gli span.lms-align per colori), registrato in utils/index.js (tools.color + INLINE_TOOLBAR_ORDER) e con lo stile del pannello in styles/theme/elite/main.css. Emette <span class="lms-inline-color" style>; riporta le tre protezioni della vecchia correzione (nodi catturati, listener fissi sugli input, mousedown che conserva la selezione). La patch os_lms v0_0_7.convert_lms_inline_color converte i vecchi elementi salvati. Test: frontend/src/tests/oslmsColorTool.test.ts, apps/os_lms/.../tests/test_convert_lms_inline_color.py."""
+
+checks = { unit = "frontend/src/tests/oslmsColorTool.test.ts" }
 
   [[entries.sites]]
   file = "frontend/src/utils/index.js"
   anchor = "ADD_TAGS: ['lms-inline-color']"
   symbol = "sanitizeJSON"
+
+  [[entries.sites]]
+  file = "frontend/src/oslms/utils/inline/Color.ts"
+  anchor = "export class Color extends ToolButton {"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = "import { Color } from '@/oslms/utils/inline/Color'"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = "		color: Color,"
+  symbol = "getEditorTools"
+
+  [[entries.sites]]
+  file = "frontend/src/styles/theme/elite/main.css"
+  anchor = ".lms-inline-color__panel {"
 
   [[entries.sites]]
   file = "lms/lms/utils.py"

@@ -194,3 +194,30 @@ textarea {
 .text-ink-orange-5 {
 	color: var(--ink-orange-2, #ea8259);
 }
+
+/* OSLMS-CUSTOM: action panel of the lesson editor's colour tool
+   (src/oslms/utils/inline/Color.ts): text colour + highlight, under the buttons. */
+.lms-inline-color__panel {
+	display: flex;
+	gap: 10px;
+	padding: 8px 10px;
+	border-top: 1px solid var(--outline-gray-2);
+}
+
+.lms-inline-color__field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-size: 11px;
+	color: var(--ink-gray-6);
+}
+
+.lms-inline-color__field input[type='color'] {
+	width: 64px;
+	height: 24px;
+	padding: 0;
+	border: 1px solid var(--outline-gray-2);
+	border-radius: 6px;
+	background: none;
+	cursor: pointer;
+}
