@@ -32,12 +32,37 @@ def save_role(user: str, role: str, value: int):
 
 
 from lms.command_palette import (
-    get_instructor_info,
     can_access_course,
     can_access_batch,
     can_access_job,
     can_create_batch,
 )
+
+
+def get_instructor_info(doctype, record):
+    """Author shown next to a search hit on the /search page (author_info).
+
+    Copied from lms.command_palette as of v2.61.0: upstream v2.62.0 dropped it
+    along with author_info, and importing it from there then broke this whole
+    module (every override below failed with ImportError)."""
+    instructors = frappe.get_all(
+        "Course Instructor", filters={"parenttype": doctype, "parent": record.get("name")}, pluck="instructor"
+    )
+    instructor = record.get("author")
+    if len(instructors):
+        for ins in instructors:
+            if ins.split("@")[0] in (record.get("content") or ""):
+                instructor = ins
+                break
+        if not instructor:
+            instructor = instructors[0]
+
+    return frappe.db.get_value(
+        "User",
+        instructor,
+        ["full_name", "email", "user_image", "username"],
+        as_dict=True,
+    )
 
 
 @frappe.whitelist(allow_guest=True)
@@ -245,14 +270,24 @@ def get_user_info():
 
 # region search_sqlite
 @frappe.whitelist()
-def search_sqlite(query: str):
+def search_sqlite(query: str, category: str | None = None):
     from os_lms.overrides.sqlite import CustomLearningSearch
+    from lms.command_palette import CATEGORY_DOCTYPES
     from lms.sqlite import LearningSearchIndexMissingError
+
+    # Upstream v2.63.0 searches inside one palette category (Jump to > Courses…)
+    # by passing `category`. Frappe silently drops a kwarg this signature does
+    # not declare, so without it a category search returned every doctype.
+    filters = {}
+    if category is not None:
+        if not isinstance(category, str) or category not in CATEGORY_DOCTYPES:
+            frappe.throw(frappe._("Unknown search category: {0}").format(category))
+        filters["doctype"] = CATEGORY_DOCTYPES[category]
 
     search = CustomLearningSearch()
 
     try:
-        result = search.search(query)
+        result = search.search(query, filters=filters)
     except LearningSearchIndexMissingError:
         return []
 

@@ -286,9 +286,11 @@ def _scope_filters_for_valutatore(filters: dict, doctype: str, get_own_names) ->
 
 @frappe.whitelist(allow_guest=True)
 @rate_limit(limit=500, seconds=60 * 60)
-def get_courses(filters: dict = None, start: int = 0) -> list:
+def get_courses(filters: dict = None, start: int = 0, limit_page_length: int | str = None) -> list:
 	filters = _scope_filters_for_valutatore(filters, "LMS Course", get_valutatore_course_names)
-	courses = _orginal_get_courses(filters, start)
+	# limit_page_length is passed through: the list pages advance `start` by the page
+	# size they asked for (upstream v2.63.0), so dropping it repeated or skipped rows.
+	courses = _orginal_get_courses(filters, start, limit_page_length)
 
 	if courses:
 		course_names = [course.name for course in courses]
@@ -322,9 +324,14 @@ def get_course_categories(filters: dict = None) -> list:
 
 @frappe.whitelist(allow_guest=True)
 @rate_limit(limit=500, seconds=60 * 60)
-def get_batches(filters: dict = None, start: int = 0, order_by: str = "start_date") -> list:
+def get_batches(
+	filters: dict = None,
+	start: int = 0,
+	order_by: str = "start_date",
+	limit_page_length: int | str = None,
+) -> list:
 	filters = _scope_filters_for_valutatore(filters, "LMS Batch", get_valutatore_batches)
-	return _original_get_batches(filters, start, order_by)
+	return _original_get_batches(filters, start, order_by, limit_page_length)
 
 
 @frappe.whitelist(allow_guest=True)
