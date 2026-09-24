@@ -1,6 +1,7 @@
 <template>
 	<ListPage
 		:breadcrumbs="breadcrumbs"
+		:historyBack="valutatoreOnlyBack"
 		:title="quizTitle"
 		layout="list"
 		:columns="quizColumns"
@@ -31,6 +32,14 @@ import ListPage from '@/components/Layouts/ListPage.vue'
 const { brand } = sessionStore()
 const router = useRouter()
 const user = inject('$user')
+
+// OSLMS-CUSTOM: a Valutatore-only viewer cannot open the parent list the phone back
+// button points at, so it goes back in history instead (fallback: the batches list)
+const valutatoreOnlyBack = computed(() =>
+	user.data?.is_valutatore && !user.data?.is_moderator && !user.data?.is_instructor
+		? { name: 'Batches' }
+		: null
+)
 
 // OSLMS-CUSTOM: the per-batch Valutatore may open the quiz submissions list (read-only)
 onMounted(() => {

@@ -3,8 +3,18 @@
 	<header v-else class="header-frame sticky top-0 z-10 justify-between">
 		<div class="flex min-w-0 flex-1 items-center gap-2">
 			<template v-if="isMobile">
+				<!-- OSLMS-CUSTOM: history back for viewers the parent crumb would refuse -->
+				<button
+					v-if="historyBack"
+					type="button"
+					:aria-label="__('Back')"
+					class="-ms-3 shrink-0 rounded p-1.5 text-ink-gray-9 transition-colors hover:bg-surface-gray-2"
+					@click="goBack"
+				>
+					<span class="lucide-chevron-left size-4 block" />
+				</button>
 				<router-link
-					v-if="backTo"
+					v-else-if="backTo"
 					:to="backTo"
 					:aria-label="__('Back')"
 					class="-ms-3 shrink-0 rounded p-1.5 text-ink-gray-9 transition-colors hover:bg-surface-gray-2"
@@ -28,6 +38,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import type { RouteLocationRaw } from 'vue-router'
 import { Badge, Breadcrumbs } from 'frappe-ui'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
@@ -39,9 +50,21 @@ const props = withDefaults(
 		breadcrumbs: Breadcrumb[]
 		published?: boolean
 		loading?: boolean
+		/**
+		 * OSLMS-CUSTOM: the phone back button goes back in history instead of to the
+		 * parent crumb; this route is the fallback when there is no history (deep link).
+		 */
+		historyBack?: RouteLocationRaw | null
 	}>(),
-	{ published: false, loading: false }
+	{ published: false, loading: false, historyBack: null }
 )
+
+const router = useRouter()
+
+const goBack = () => {
+	if (window.history.state?.back) router.back()
+	else if (props.historyBack) router.push(props.historyBack)
+}
 
 const { isMobile } = useScreenSize()
 

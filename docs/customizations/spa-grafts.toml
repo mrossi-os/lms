@@ -8193,3 +8193,42 @@ frappe.client.insert diverge da questa regola (riconciliazione dei test a fine p
   subject = "gestione dei membri e dei loro ruoli"
   allow = ["Moderator"]
   deny = ["Docente", "Valutatore", "Student", "Guest"]
+
+[[entries]]
+id = "valutatore-phone-back-history"
+title = "Su telefono il Valutatore torna indietro nella cronologia dalle liste consegne"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Su telefono PageHeader (v2.62.0) trasforma la briciola padre in un pulsante «indietro» verso
+quella rotta. Nelle liste consegne di quiz e compiti la briciola padre è l'elenco dei quiz (o il
+modulo del quiz) e l'elenco dei compiti, pagine vietate al Valutatore per classe, che vi
+arriva dalla dashboard della sua classe: toccando «indietro» veniva rimandato ai Corsi.
+Decisione del committente (2026-09-24): per chi è SOLO Valutatore (né moderatore né istruttore)
+«indietro» torna alla pagina precedente nella cronologia (router.back()); se non c'è cronologia
+(link diretto) va all'elenco delle classi. Innesto generico e opzionale: prop historyBack su
+PageHeader, inoltrata da ListPage; senza la prop il comportamento upstream è invariato."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/PageHeader.vue"
+  anchor = "if (window.history.state?.back) router.back()"
+  symbol = "goBack"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Layouts/ListPage.vue"
+  anchor = '<PageHeader :breadcrumbs="breadcrumbs" :historyBack="historyBack">'
+
+  [[entries.sites]]
+  file = "frontend/src/pages/QuizSubmissionList.vue"
+  anchor = "user.data?.is_valutatore && !user.data?.is_moderator && !user.data?.is_instructor"
+  symbol = "valutatoreOnlyBack"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/AssignmentSubmissionList.vue"
+  anchor = "user.data?.is_valutatore && !user.data?.is_moderator && !user.data?.is_instructor"
+  symbol = "valutatoreOnlyBack"
+
+  [entries.visibility]
+  subject = "pulsante indietro con la cronologia su telefono"
+  allow = ["Valutatore"]
+  deny = ["Moderator", "Docente", "Course Creator"]

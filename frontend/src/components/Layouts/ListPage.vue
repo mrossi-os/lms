@@ -1,5 +1,6 @@
 <template>
-	<PageHeader :breadcrumbs="breadcrumbs">
+	<!-- OSLMS-CUSTOM: historyBack forwarded to PageHeader's phone back button -->
+	<PageHeader :breadcrumbs="breadcrumbs" :historyBack="historyBack">
 		<template #actions>
 			<slot name="actions" />
 		</template>
@@ -88,6 +89,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Button, ListFooter } from 'frappe-ui'
+import type { RouteLocationRaw } from 'vue-router'
 import EmptyStateLayout from '@/components/Layouts/EmptyStateLayout.vue'
 import PageHeader from '@/components/Layouts/PageHeader.vue'
 import PageBody from '@/components/Layouts/PageBody.vue'
@@ -120,6 +122,7 @@ const props = withDefaults(
 		/** What the empty state calls these rows, e.g. "Courses". */
 		emptyName?: string
 		emptyIcon?: string
+		historyBack?: RouteLocationRaw | null
 	}>(),
 	{
 		title: '',
@@ -135,6 +138,7 @@ const props = withDefaults(
 		pageLengthOptions: () => [24, 60, 120],
 		emptyName: '',
 		emptyIcon: 'lucide-graduation-cap',
+		historyBack: null,
 	}
 )
 

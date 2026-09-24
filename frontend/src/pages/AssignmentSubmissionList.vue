@@ -1,6 +1,7 @@
 <template>
 	<ListPage
 		:breadcrumbs="breadcrumbs"
+		:historyBack="valutatoreOnlyBack"
 		:title="__('Assignment Submissions')"
 		layout="list"
 		:columns="submissionColumns"
@@ -55,6 +56,14 @@ import Link from '@/components/Controls/Link.vue'
 import ListPage from '@/components/Layouts/ListPage.vue'
 
 const user = inject('$user')
+
+// OSLMS-CUSTOM: a Valutatore-only viewer cannot open the parent list the phone back
+// button points at, so it goes back in history instead (fallback: the batches list)
+const valutatoreOnlyBack = computed(() =>
+	user.data?.is_valutatore && !user.data?.is_moderator && !user.data?.is_instructor
+		? { name: 'Batches' }
+		: null
+)
 const dayjs = inject('$dayjs')
 const { brand } = sessionStore()
 const router = useRouter()
