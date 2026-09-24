@@ -173,6 +173,250 @@ Convenzioni:
 
 ---
 
+### Attività 6 — Analisi: punto della situazione del percorso upstream v2.58.0 → v2.63.0
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Analisi |
+| **Problema riscontrato** | Richiesta del committente: punto della situazione, aggiornamenti upstream principali, prove da fare, correzioni posticipate. |
+| **Problema effettivo** | Le informazioni sono sparse fra il rapporto di percorso (sezioni per release, «Cosa resta aperto», 23 prove, elenco «Domande aperte e probabili bug» del 2026-09-23) e il rapporto di verifica. Alcuni «probabili bug» della lista vecchia potevano essere superati dal redesign di v2.62.0. |
+| **Soluzione applicata** | Sintesi in chat. Riverificati sul codice attuale i probabili bug della lista vecchia. Ancora presenti: `ZoomAccountForm.vue` con lo slot `#body-content`, `ProgramForm.vue` `validateTitle` che pulisce `name` invece di `title`, refuso «restoredshortly» in `AppSidebar.vue`, 2 `console.log` in `sanitizeHTML` (`utils/index.js`), `is_authorised`/`is_authorized` fra `os_lms/api.py` e `ProfileEvaluator.vue`. Superati: `NewBatchModal.vue` non esiste più, `batch_details` non è più reso con `v-html`. |
+| **Commit** | Non committata: sola analisi, nessuna modifica al codice. |
+| **File toccati** | Nessuno, a parte questo worklog. |
+| **Verifiche** | Lettura del rapporto `docs/upstream-checks/2026-09-23-percorso-v2.58.0-v2.63.0.md` e grep mirati nel codice del branch `merge/upstream-v2.63.0` (HEAD `51bbf7158`). |
+
+**1. Obiettivo dell'attività** — Dare al committente una visione d'insieme per decidere i passi successivi.
+
+**2. Modalità di esecuzione** — Lettura dei rapporti e riverifica puntuale nel codice.
+
+**3. Attività svolte** — Vedi tabella.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code (estensione VS Code). **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** sintesi dei rapporti e riverifica dei bug aperti. **Perché:** i rapporti sono lunghi (400 righe) e andavano confrontati con il codice attuale. **Risultato:** sintesi in quattro parti, con l'elenco dei bug aperti aggiornato. **Verifiche e correzioni:** ogni probabile bug citato è stato ricercato nel codice prima di darlo come ancora aperto.
+
+**6. Problematiche incontrate** — Nessuna.
+
+---
+
+### Attività 7 — Documentazione: checklist delle prove e delle correzioni dopo v2.63.0
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Altro (documentazione operativa) |
+| **Problema riscontrato** | Richiesta del committente: tenere nota delle correzioni da fare dopo l'aggiornamento e delle prove da eseguire nell'app. |
+| **Problema effettivo** | Le prove (23 più quella della console) e le correzioni erano sparse fra le sezioni del rapporto di percorso, il rapporto di verifica e la lista «Domande aperte» del 2026-09-23, in parte superata. Mancava un elenco unico da spuntare. |
+| **Soluzione applicata** | Nuovo file `docs/upstream-checks/2026-09-24-v2.63.0-da-fare.md`. **Parte A:** 24 prove con ruolo, azione, esito atteso e motivo; la A2 (console senza 417) è nuova. **Parte B:** correzioni per priorità. B1 sicurezza (Custom DocPerm su LMS Quiz Submission, `get_evaluator_details`, `is_authorised`/`is_authorized`, `sanitizeHTML` con iframe non puliti e `console.log`); B2 override frappe-ui su un branch dedicato; B3 test; B4 probabili bug riverificati (`ZoomAccountForm`, `ProgramForm.validateTitle`, refuso in `AppSidebar`); B5 traduzioni; B6 decisioni del committente; B7 pulizie minori. Riverificato nel codice che l'import `ClipboardList, Plus` è ancora inutilizzato; tolta la voce `readOnlyMode` in `BatchDetail`, ora definito. Memoria `upstream_walk_v2_63_done` aggiornata con il rimando alla checklist. |
+| **Commit** | `f7624b0a3` — `docs(upstream): list the in-app checks and follow-up fixes after v2.63.0` (branch `merge/upstream-v2.63.0`, non pubblicato). |
+| **File toccati** | `docs/upstream-checks/2026-09-24-v2.63.0-da-fare.md` (nuovo). |
+| **Verifiche** | Grep nel codice attuale per ogni probabile bug e pulizia minore riportata; rimandi interni fra A e B ricontrollati e corretti (A18 → B2.1, A21 → B6.1). |
+
+**1. Obiettivo dell'attività** — Avere un unico elenco operativo, versionato col branch, per le prove prima del merge e per le correzioni successive.
+
+**2. Modalità di esecuzione** — Consolidamento dei rapporti esistenti e riverifica puntuale nel codice.
+
+**3. Attività svolte** — Vedi tabella.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code (estensione VS Code). **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** raccolta, deduplicazione e riverifica delle voci aperte, stesura della checklist. **Perché:** le fonti erano lunghe e in parte superate dal percorso. **Risultato:** checklist A1-A24 e B1-B7 committata. **Verifiche e correzioni:** una voce superata è stata tolta (`readOnlyMode`) e due rimandi interni sbagliati sono stati corretti prima del commit definitivo.
+
+**6. Problematiche incontrate** — Nessuna.
+
+---
+
+### Attività 8 — Supporto: riepilogo di cosa resta da fare dopo l'aggiornamento upstream v2.63.0
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Analisi / supporto |
+| **Problema riscontrato** | Domanda del committente: «che cosa rimane da fare dopo l'aggiornamento dell'upstream?». |
+| **Problema effettivo** | Lo stato è già tutto nella checklist `docs/upstream-checks/2026-09-24-v2.63.0-da-fare.md` (commit `f7624b0a3`): nessuna casella è ancora spuntata, il branch `merge/upstream-v2.63.0` non è unito in `feature/oslms` né pubblicato. |
+| **Soluzione applicata** | Letta la checklist e lo stato del branch; riassunto al committente per blocchi: prove A1-A24 prima del merge, poi merge, poi B1 sicurezza prima della produzione, B2-B7 a seguire. Su richiesta successiva, riscritte le correzioni B1-B7 come lista puntata in linguaggio semplice (problema e conseguenza per l'utente). A fine B2, su richiesta, riscritta la lista numerata aggiornata con lo stato di ogni punto (1-7 chiusi, 8 ridotto a 124 rossi) e i punti emersi durante il lavoro. Poi analisi del punto 1 (B1.1): Custom DocPerm su `LMS Quiz Submission` letti in sola lettura su dev e prod. Prod: LMS Student if_owner con read/write/create; dev: read/write. Poiché `validate_marks` ricalcola lo score dai `marks` delle righe, lo studente può alzarsi il voto via `frappe.client.save` (se ha ancora tentativi). La consegna normale passa da `create_submission(... ignore_permissions=True)`, quindi togliere write/create non la rompe. Proposta: patch os_lms mirata che azzera write/create solo sulla riga LMS Student (non cancellare tutti i Custom DocPerm: si perderebbero le righe Gestore/Tutor/Valutatore). Staging: nessun profilo di accesso disponibile, chiesto al committente. Nessuna modifica al codice. |
+| **Commit** | Non committata: attività di sola consultazione; il worklog non si committa. |
+| **File toccati** | `docs/WORKLOG.md` (questa voce). |
+| **Verifiche** | `git log develop..HEAD` e `git status` per confermare lo stato del branch; lettura integrale della checklist. |
+
+**1. Obiettivo dell'attività** — Dare al committente il quadro dei lavori residui dopo il percorso v2.58.0 → v2.63.0.
+
+**2. Modalità di esecuzione** — Lettura della checklist versionata e dello stato git.
+
+**3. Attività svolte** — Vedi tabella.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code (estensione VS Code). **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** lettura della checklist e sintesi ordinata per priorità. **Perché:** risposta rapida partendo dalla fonte già versionata, senza ricostruire lo stato dai rapporti. **Risultato:** riepilogo consegnato in chat. **Verifiche e correzioni:** confermato che nessuna voce risulta chiusa.
+
+**6. Problematiche incontrate** — Nessuna.
+
+---
+
+### Attività 9 — Correzione di sicurezza B1.1: lo studente poteva alzarsi il voto dei quiz
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Correzione (sicurezza) |
+| **Problema riscontrato** | Punto B1.1 della checklist post-v2.63.0: Custom DocPerm su `LMS Quiz Submission` che danno allo Studente scrittura (e in produzione anche creazione) sulle proprie consegne. |
+| **Problema effettivo** | Upstream (`876504f39`) ha reso il doctype di sola lettura per LMS Student nel JSON, ma i Custom DocPerm, quando esistono, sostituiscono del tutto i permessi del JSON. Righe lette in sola lettura: prod LMS Student if_owner read/write/create; dev read/write; altre righe: Course Creator, System Manager, Gestore (completi), Tutor e Valutatore (lettura). Poiché `validate_marks()` ricalcola lo score dai `marks` delle righe, lo studente può salvare la propria consegna con `frappe.client.save` e darsi il massimo (bloccato solo da `validate_if_max_attempts_exceeded` quando ha finito i tentativi). La consegna normale passa da `create_submission(... ignore_permissions=True)`, quindi togliere i permessi non la rompe. Nessuna altra funzione (install, `give_discussions_permission`, fixture) rimette il permesso. |
+| **Soluzione applicata** | Patch `os_lms.patches.v0_0_8.restrict_student_quiz_submission_perms` (post_model_sync): azzera write/create/delete/submit/cancel/amend/import solo sulle righe Custom DocPerm di LMS Student per `LMS Quiz Submission`, lascia read/if_owner, non tocca le altre righe; idempotente; pulisce la cache del doctype. Scelta mirata invece di cancellare tutti i Custom DocPerm, che farebbe perdere le righe Gestore/Tutor/Valutatore. Test `test_student_quiz_submission_perms.py`: permessi da proprietario prima/dopo (con `get_role_permissions(..., is_owner=True)`, perché con if_owner la scrittura compare solo sul documento proprio) e righe degli altri ruoli invariate. |
+| **Commit** | Non committata: in attesa di revisione del committente. |
+| **File toccati** | `apps/os_lms/os_lms/patches.txt`, `apps/os_lms/os_lms/patches/v0_0_8/__init__.py` (nuovo), `apps/os_lms/os_lms/patches/v0_0_8/restrict_student_quiz_submission_perms.py` (nuovo), `apps/os_lms/os_lms/os_lms/tests/test_student_quiz_submission_perms.py` (nuovo). |
+| **Verifiche** | Test nel container tramite python di Frappe (il CLI `bench` non funziona): 2/2 OK, con rollback. Prova reale sul DB dev dentro rollback: uno studente salva la propria consegna mettendo i punti massimi → prima della patch **score 0 → 1 salvato**, dopo la patch **PermissionError**. DB dev lasciato invariato (la patch si applicherà col prossimo migrate). Ruff/pre-commit non disponibili sulla macchina: controllata a mano la lunghezza righe ≤ 110. **Da fare:** prove manuali (studente consegna un quiz; Docente/Gestore correggono una domanda aperta; Valutatore vede la consegna) dopo il migrate; verifica su staging (accesso non ancora disponibile). |
+
+**1. Obiettivo dell'attività** — Chiudere la falla che permette allo studente di modificare il punteggio delle proprie consegne, in modo ripetibile su dev, staging e produzione.
+
+**2. Modalità di esecuzione** — Lettura del JSON e della storia upstream, query di sola lettura su dev e prod, patch versionata, test automatico, prova d'attacco reale in rollback.
+
+**3. Attività svolte** — Vedi tabella.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code (estensione VS Code). **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** analisi dei permessi, scrittura di patch e test, simulazione dell'attacco. **Perché:** serviva incrociare codice upstream, storia git e dati di due DB. **Risultato:** patch e test pronti, attacco dimostrato e bloccato. **Verifiche e correzioni:** il primo test falliva perché controllava i permessi senza documento (con if_owner Frappe restituisce write=0); riscritto sul caso proprietario. La prima prova d'attacco si fermava su link a domande cancellate nel DB dev: saltati i controlli link solo nella prova.
+
+**6. Problematiche incontrate** — CLI `bench` e `ruff` non disponibili; accesso a staging mancante.
+
+**Aggiornamento:** committata su richiesta del committente → `1e0fcb011` `fix(oslms): stop students from rewriting their own quiz submissions`. Checklist B1.1 spuntata in `9fd3dd4fe`.
+
+---
+
+### Attività 10 — Correzione di sicurezza B1.2 + B1.3: disponibilità del valutatore tramite l'endpoint upstream
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Correzione (sicurezza + bug) |
+| **Problema riscontrato** | Punti B1.2 e B1.3 della checklist: l'override os_lms `get_evaluator_details` scrive dentro una lettura e non controlla l'accesso; «Your calendar is set.» non compare mai. |
+| **Problema effettivo** | L'override (`30838fc12`, 2026-03-20) era una copia della vecchia versione upstream, fatta solo per non andare in errore senza API Google configurate. Creava `Google Calendar` e `Course Evaluator` a ogni apertura della pagina (salvare un Course Evaluator concede il ruolo Batch Evaluator), ammetteva solo Batch Evaluator (non Moderator) senza verificare che l'evaluator richiesto fosse l'utente stesso, e restituiva `is_authorised` mentre la pagina legge `is_authorized`. L'upstream attuale (`lms/lms/api.py` `get_evaluator_details`) legge senza scrivere, usa `enforce_evaluator_access` (proprio o Moderator), crea il calendario solo su richiesta (`ensure_evaluator_calendar`, già usato dalla pagina) e restituisce `is_authorized` + fuso orario: il motivo dell'override non esiste più. Unico chiamante: `ProfileEvaluator.vue`. |
+| **Soluzione applicata** | Tolta la funzione da `apps/os_lms/os_lms/os_lms/api.py`; in `ProfileEvaluator.vue` l'URL torna identico all'upstream (`lms.lms.api.get_evaluator_details`, marcatore OSLMS-CUSTOM rimosso). Voce d'inventario `profile-evaluator-availability` aggiornata: tolto il sito dell'URL, titolo e intento riscritti (resta il graft dell'avviso sulla fascia incompleta). |
+| **Commit** | `d2ae7d446` — `fix(oslms): read evaluator availability through the upstream endpoint again`; checklist B1.2/B1.3 spuntate in `9fd3dd4fe`. Branch `merge/upstream-v2.63.0`, non pubblicato. |
+| **File toccati** | `apps/os_lms/os_lms/os_lms/api.py`, `frontend/src/pages/ProfileEvaluator.vue`, `docs/customizations/spa-grafts.toml`, `docs/upstream-checks/2026-09-24-v2.63.0-da-fare.md`. |
+| **Verifiche** | Rilevatore `scripts/check_customizations.py`: 0 errori. Vitest `ProfileEvaluator.test.ts`: 6/6 (prima tutti e 6 in `fail-263.txt`). Test backend upstream `lms.tests.security.test_evaluator_availability` nel container: 37/37 OK. Grep: nessun altro chiamante dell'endpoint os_lms. **Da fare:** prova manuale della pagina disponibilità da Batch Evaluator (e «Authorize Google Calendar Access» su un sito senza API Google: ora l'errore compare solo al clic, come toast). |
+
+**1. Obiettivo dell'attività** — Eliminare scritture e accessi impropri dall'endpoint delle disponibilità e far comparire lo stato del calendario.
+
+**2. Modalità di esecuzione** — Confronto override/upstream, storia git del graft, ricerca dei chiamanti, rimozione dell'override, inventario, test frontend e backend.
+
+**3. Attività svolte** — Vedi tabella.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code (estensione VS Code). **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** analisi del perché dell'override, rimozione, aggiornamento inventario, esecuzione dei test. **Perché:** serviva ricostruire la motivazione storica e verificare che l'upstream la coprisse. **Risultato:** override eliminato, B1.2 e B1.3 chiusi insieme. **Verifiche e correzioni:** nessuna correzione necessaria dopo i test.
+
+**Verifica aggiuntiva (su richiesta):** chiamata reale nel container come Batch Evaluator non Moderator, in rollback: risposta con `is_authorized` (chiavi `calendar`, `is_authorized`, `slots`, `timezone`); conteggi Course Evaluator / Google Calendar invariati (4, 4) → nessuna scrittura; richiesta sul profilo di un altro valutatore → PermissionError.
+
+**6. Problematiche incontrate** — Nessuna. Segnalato a parte: in `api.py` c'è ancora `try_import`, endpoint whitelisted di debug che importa un file fisso in `LMS Batch Enrollment`.
+
+---
+
+### Attività 11 — Correzione di sicurezza B1.4: `sanitizeHTML` reinseriva gli iframe senza pulirli
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Correzione (sicurezza) |
+| **Problema riscontrato** | Punto B1.4 della checklist: `sanitizeHTML` (`frontend/src/utils/index.js`) estrae gli iframe prima di DOMPurify e li reinserisce dopo, con tutti gli attributi, su campi `v-html` (notifiche, bio): possibile XSS; più 2 `console.log` di debug. |
+| **Problema effettivo** | L'iframe reinserito è il testo originale: `srcdoc`, `onload` e qualunque altro attributo arrivavano intatti nel DOM. Però dalla v2.63.0 l'upstream ha spostato tutti i chiamanti (NotificationPanel, EditProfile, AssignmentForm, NewCourseModal, NewBatchModal, …) fuori da `sanitizeHTML`, che resta definita ma **senza nessun chiamante** né in upstream né in os_lms (unico riferimento: un mock in `programForm.test.ts`). La falla quindi non era raggiungibile oggi, ma si sarebbe riattivata al primo riuso. Anche lo scopo del graft (`514f89cf0`, video YouTube nella descrizione del corso) non passa più da questa funzione. |
+| **Soluzione applicata** | Funzione riportata byte per byte alla versione upstream v2.63.0 (solo allowlist DOMPurify, niente iframe/video, niente log): nessuna differenza residua con l'upstream su quel tratto, quindi niente conflitti ai prossimi merge. Tolta la voce d'inventario `sanitize-html-keep-iframes` da `docs/customizations/spa-grafts.toml`. |
+| **Commit** | `3c01bc8ec` — `fix(oslms): restore upstream sanitizeHTML without re-inserted raw iframes`; checklist B1.4 spuntata in `f74f0def2`. Branch `merge/upstream-v2.63.0`, non pubblicato. |
+| **File toccati** | `frontend/src/utils/index.js`, `docs/customizations/spa-grafts.toml`, `docs/upstream-checks/2026-09-24-v2.63.0-da-fare.md`. |
+| **Verifiche** | `git grep` dei chiamanti su HEAD, v2.58.0 e v2.63.0; `git diff v2.63.0` sulla funzione: nessuna differenza. Rilevatore: 0 errori. Vitest completo: 150 rossi / 1412 verdi; confronto nominativo con `fail-263.txt` (normalizzati i separatori `>`): nessun rosso nuovo, risolti i 6 di `ProfileEvaluator` (attività 10). |
+
+**1. Obiettivo dell'attività** — Chiudere l'ultimo punto di sicurezza B1 prima del rilascio.
+
+**2. Modalità di esecuzione** — Lettura della funzione e della versione upstream, ricerca dei chiamanti nella storia, ripristino dell'upstream, inventario, suite Vitest confrontata con la baseline.
+
+**3. Attività svolte** — Vedi tabella.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code (estensione VS Code). **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** analisi della falla, verifica dei chiamanti, ripristino e test. **Perché:** la verifica che la funzione fosse inutilizzata richiedeva il confronto fra più versioni. **Risultato:** B1 completamente chiuso. **Verifiche e correzioni:** il primo confronto dei test segnalava falsi «nuovi rossi» per una differenza di formato fra i due elenchi; normalizzati e riconfrontati.
+
+**6. Problematiche incontrate** — Nessuna.
+
+---
+
+### Attività 12 — B2: riallineamento degli override frappe-ui a 1.0.0-beta.29
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Correzione / manutenzione (allineamento dipendenza) |
+| **Problema riscontrato** | Punto B2.1 della checklist: 22 override in `frontend/src/overrides/frappe-ui/` rimasti indietro rispetto a frappe-ui 1.0.0-beta.29, «circa 3000 righe di differenza»; campi collegati che si vedono vuoti (A18); `Menu.vue` con originale inesistente. |
+| **Problema effettivo** | Le 3000 righe sommavano personalizzazioni nostre e drift upstream. Con un merge a tre vie (basi scaricate con `npm pack`: beta.7 per la maggior parte, 0.1.276/0.1.278 per Combobox, Switch, TextEditor, Link) il drift reale era: 9 file invariati upstream; 8 con sole classi di stile; Combobox riscritto upstream (1045 righe) mentre la nostra modifica vera era una riga (`__()` sul testo vuoto, ora prop `emptyText`); `Controls/Link.vue` adattato a mano all'API del Combobox vecchio (eventi `@input`/`@focus`, causa dei campi vuoti); frappe/Link con API nuova (`creatable`, slot `item-create`); `Menu.vue` **rinominato** `TextEditorMenu.vue` in beta.29 (contenuto identico) → etichette della barra editor tornate in inglese; FileUploader in beta.29 è `<script setup>` → il difetto che l'override correggeva non esiste più; Switch e TextEditor sono involucri e ricevono già beta.29. |
+| **Soluzione applicata** | Branch `chore/frappe-ui-overrides-beta29` da `merge/upstream-v2.63.0`. (1) merge a tre vie di DataImportList, MappingStep, PreviewStep, UploadStep, Autocomplete, MediaNodeView, IframeNodeView, InsertIframe (2 conflitti risolti tenendo classe nuova + `__()`); `Menu.vue` spostato su `TextEditorMenu.vue`. (2) Combobox trasformato in involucro (alias Vite `frappe-ui-combobox-original`, passa `$attrs`, slot, `clear`/`focus`, traduce `emptyText`); `Controls/Link.vue` riportato identico a v2.63.0; frappe/Link rifatto da beta.29 con le nostre 2 modifiche (resourceFetcher con lista DocType LMS, etichette DocType tradotte) e import riscritti; CalendarPanel con merge a tre vie sul nuovo selettore mese/anno (mesi e giorni italiani mantenuti); override FileUploader e relativo alias tolti. Inventario: tolta `link-control-stale-combobox-events`, aggiornata `vite-original-component-aliases`. Traduzione `"No results","Nessun risultato"` in `it.csv`. |
+| **Commit** | `fa9361e92` (override piccoli + TextEditorMenu), `2a99fc847` (override grossi), `1cc7e8296` (checklist). Branch `chore/frappe-ui-overrides-beta29`, non pubblicato. |
+| **File toccati** | 8 override piccoli sotto `frontend/src/overrides/frappe-ui/`; `.../TextEditor/components/Menu.vue` → `TextEditorMenu.vue`; `.../Combobox/Combobox.vue`; `.../DatePicker/CalendarPanel.vue`; `.../FileUploader/FileUploader.vue` (eliminato); `.../frappe/Link/Link.vue`; `frontend/src/components/Controls/Link.vue`; `frontend/vite.config.js`; `docs/customizations/spa-grafts.toml`; `lms/translations/it.csv`; `docs/upstream-checks/2026-09-24-v2.63.0-da-fare.md`. |
+| **Verifiche** | Build di prova (`vite build` su cartella temporanea) verde dopo ogni blocco; rilevatore 0 errori; Vitest 148 rossi / 1414 verdi, confronto nominativo con `fail-263.txt`: nessun rosso nuovo, risolti i 2 test di allineamento del Link (`linkOnCreate`). **Non eseguite:** prove nell'app (A17, A18: campi collegati con valore salvato, ricerca, «Nessun risultato»; barra dell'editor tradotta; calendario in italiano; import dati con scelta del DocType). |
+
+**1. Obiettivo dell'attività** — Eliminare il drift degli override frappe-ui, che causava bug silenziosi a ogni merge, e ridurre le copie integrali a quanto strettamente necessario.
+
+**2. Modalità di esecuzione** — Misura del drift per file con basi reali da npm, merge a tre vie con `git merge-file`, riscrittura come involucri dove l'API upstream lo consente, build e Vitest confrontati con la baseline dopo ogni blocco.
+
+**3. Attività svolte** — Vedi tabella.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code (estensione VS Code). **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** individuazione delle basi, merge, riscrittura di Combobox e Link, verifica. **Perché:** lavoro meccanico ma esteso su molti file, con rischio di regressioni silenziose. **Risultato:** 20 override su 22 risolti (FontColor in attesa di decisione, MultiLink da decidere). **Verifiche e correzioni:** un primo confronto Vitest era vuoto per una redirezione di stderr sbagliata; rifatto con output catturato. Memoria `combobox_override_event_api` riscritta sul nuovo stato.
+
+**Aggiornamento — prova nell'app e correzione del Link (su richiesta: «l'avevamo cambiato perché non funzionava»).** Il nostro `Controls/Link.vue` era stato modificato perché la versione upstream non funzionava con la copia vecchia del Combobox; tra v2.58.0 e v2.63.0 l'upstream lo ha aggiornato 5 volte per l'API di beta.29 (`a52e67d55`, `b3bf47f67`, `752596d9c`, `64e10dbf0`, `e0d20a9b4`). Prova reale su `yarn dev` (localhost:8081, Administrator, sessione aperta via API senza scrivere la password), corso `corso-c02` → Impostazioni → Categoria: valore salvato visibile («Design»), apertura al clic, ricerca lato server («Fin» → Finance), «Nessun risultato» tradotto (dopo `frappe.clear_cache()` sul sito dev per caricare la nuova riga di `it.csv`), scelta + chiusura del menu senza riapertura, salvataggio automatico verificato nel DB. Trovato un **difetto upstream** (presente anche su `upstream/develop`): dopo una scelta, il watch di `value` non aggiornava `currentLabel` se il valore era già tra i risultati → alla ricerca successiva opzione finta `{label: "Design", value: "Finance"}` e voce doppia. Corretto con graft marcato + voce d'inventario `link-control-picked-label` (commit `9e5d17e42`), riprovato nel browser: opzioni coerenti. Categoria del corso di prova riportata a «Design» (verificato nel DB). **Scoperta collaterale:** upstream `d29fbca79` (v2.63.0) ha sostituito il vecchio TextEditor con un `RichTextEditor` locale (nuovo editor `frappe-ui/editor`) in 21 punti; il vecchio resta solo in `QuestionEditor.vue` e `ProgramForm.vue`, quindi i nostri override dell'editor (barra tradotta, FontColor, LinkPopup…) valgono ormai solo lì e la barra del nuovo editor è in inglese: segnalato al committente, non toccato.
+
+**Aggiornamento — decisione FontColor.** Verificato che il nuovo editor di frappe-ui (`molecules/editor/components/font-color/swatches.ts`) usa gli stessi 9 `bg-*-100` per i campioni: sono voluti (devono coincidere con l'evidenziazione). Il committente ha scelto l'opzione A: override mantenuto (serve alle traduzioni, obbligatorie), classi invariate, `inkOnTintContrast` resta rosso come eccezione accettata, annotata nell'intestazione dell'override e nella checklist (B2.1 spuntata) — commit `a49d9ee48`. Salvata la regola in memoria `translations_always_required` (mai proporre di lasciare testi in inglese).
+
+**Aggiornamento — traduzione del nuovo editor (regola del committente: le traduzioni si fanno sempre).** (1) Barra e menu del nuovo editor `frappe-ui/editor`: override «involucro» `src/overrides/frappe-ui/src/molecules/editor/MenuItems.vue` (alias `frappe-ui-menuitems-original`) che traduce `label`, `getLabel` e i gruppi al render; 16 traduzioni aggiunte; verificato nel browser (barra tutta in italiano) — commit `3dea9e265`. (2) Popup del nuovo editor (colori, link, incorporamento, galleria, media, video, visualizzatore immagini, codice, sommario, menu «/»): circa 60 testi in 22 file, metà `.ts`. Il committente ha scelto (opzione 2) di non creare altre copie: nuovo plugin Vite `os-translate-frappe-ui` (`frontend/oslms-vite/translate-frappe-ui.js`) che in fase di compilazione riscrive i testi elencati in `__()` e avvisa se un testo non si trova più. Due problemi trovati e risolti durante la prova: `_ctx.__ is not a function` (il riquadro colori è montato da frappe-ui in un'istanza Vue separata senza `globalProperties` → il plugin inietta una costante `__` da `window` nello `<script setup>`); i `.ts` non venivano trasformati in sviluppo perché gli id hanno `?v=<hash>` (filtro ristretto alle sole sotto-richieste `?vue`). Prova a secco su tutte le 22 regole: 0 avvisi. Build di produzione verde senza avvisi del plugin, `__("…")` presenti nel pacchetto. Browser: riquadro colori con «Colore testo», «Colore sfondo», campioni «Predefinito/Rosso/…». 64 traduzioni aggiunte a `it.csv`; cache del sito dev svuotata. Commit `eca70e183`. Voce d'inventario `vite-translate-frappe-ui-strings`; memoria `frappeui_build_time_translation_plugin`. Nota: la build con `--outDir` scrive comunque in `lms/public/frontend` (configurazione frappe-ui), quindi il sito dev su `:8000` serve ora la build di questo branch. Visti a margine, da tradurre in seguito: etichette accessibili del modulo corso («Red», «Upload a course thumbnail image», «Remove video», «YouTube or Vimeo link»), e il plugin `osTranslateTocFallback` che per lo stesso motivo del `?v=` non si applica in sviluppo.
+
+**Aggiornamento — verifica del deploy (domanda: «se faccio il deploy funziona?»).** Letto `~/Documents/Progetti/elite-deploy`: `build.sh` clona l'intero repo (`APP_REPO_BRANCH`) in `tmp/apps/lms`, il `Containerfile` esegue `bench build --force` (→ `yarn build` con `frontend/vite.config.js`, quindi con il plugin), `resources/bench/configurator.sh` esegue `bench migrate` + `clear-cache` (carica le nuove righe di `it.csv` e applica la patch v0_0_8). Funziona purché il codice arrivi sul branch del deploy (oggi è su `chore/frappe-ui-overrides-beta29`, non unito). Il plugin avvisa ma non blocca la build: proposto al committente di renderlo bloccante, nessuna risposta per ora.
+
+**Aggiornamento — punto 7 (B2.2) MultiLink, prova della versione upstream.** Motivo della nostra riscrittura reka (voce `multilink-reka-combobox`, commit `265842cde`/`9b609dbae`): il fork era su frappe-ui 0.1.276 senza `MultiSelect` e la pagina andava in errore; su beta.29 il motivo non esiste più, mentre a ogni merge (v2.61, v2.63) abbiamo dovuto riportare a mano le novità upstream. Prova con `frontend/src/components/Controls/MultiLink.vue` sostituito temporaneamente dalla versione v2.63.0 (nostra copia salvata nello scratchpad): `multiLink.test.ts` 29/29 verdi (con la nostra 11 rossi); props usate dagli 8 chiamanti (compresa la nostra `oslms/pages/StudentStatsExport.vue`) tutte presenti upstream, `defineExpose` identico (`reload`, `options`, `optionByValue`); browser: Istruttori del corso (valore salvato, lista con spunte/email, ricerca server «luca», piede «Cancella / Crea nuovo»), pagina Esporta statistiche (3 filtri caricati), console senza errori. Il committente ha approvato: tenuta la versione upstream, riportato all'originale anche `frontend/src/tests/multiLink.test.ts` (aveva 8 righe di mock aggiunte per la nostra versione, marcate OSLMS-CUSTOM, segnalate dal rilevatore dopo la rimozione della voce), tolta la voce `multilink-reka-combobox`. Rilevatore 0 errori; Vitest completo 124 rossi / 1438 verdi, nessun rosso nuovo rispetto a `fail-263.txt`, 24 risolti in più (MultiLink, NewCourseForm, NewBatchForm). Commit `68e1aaadb`, checklist B2.2 spuntata in `cf2936458`. **B2 chiusa.**
+
+**6. Problematiche incontrate** — FontColor: il test upstream `inkOnTintContrast` segnala 9 classi `bg-*-100` che sono codice frappe-ui copiato (campioni dei colori di evidenziazione): serve una decisione del committente. Da segnalare: `resourceFetcherPlugin.js` contiene un `console.log` di debug.
+
+### Attività 13 — B4: analisi e correzione di tre difetti (Zoom, programma, avviso della barra laterale)
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Analisi + correzione |
+| **Problema riscontrato** | Punti B4.1-B4.3 della checklist: campo Google Calendar forse invisibile e Salva mancante nel modulo account Zoom; `validateTitle` del modulo programma che pulisce il campo sbagliato; refuso «restoredshortly». Il committente ha chiesto una nuova analisi prima di correggere. |
+| **Problema effettivo** | (1) Zoom — peggio del previsto: la risoluzione del merge `027c0c56f` aveva messo il nostro corpo in `<template #body-content>` (slot inesistente in `SettingsLayout`) e perso `<template #header-actions>` con il pulsante Salva: **nessun account Zoom si poteva salvare** e il campo Google Calendar non compariva; difetto antico, quindi quasi certamente presente in produzione. La voce d'inventario `zoom-account-google-calendar-field` lo descriveva già con la correzione suggerita, mai applicata. (2) Programma: l'input è legato a `program.title` (nostra personalizzazione di rinomina), ma `validateTitle` faceva trim/sanificazione di `program.name` (come l'upstream, dove l'input è legato a `name`); il titolo non ripulito arrivava al confronto con il nome del documento (tentativo di rinomina con uno spazio finale) e alla creazione. Nessun rischio di crash (`name` parte da `''`). (3) Refuso da `c634f2bd1` (2026-03-17): oltre all'errore visibile, la frase non combaciava con la chiave in `it.csv`, quindi l'avviso «sito in aggiornamento» usciva in inglese. |
+| **Soluzione applicata** | (1) Template riportato a quello upstream (Salva in `#header-actions`, interruttore Abilitato gestito da `SettingsLayout`) più il Link Google Calendar in fondo alla griglia, con marcatore; voce d'inventario aggiornata (confidence alta, sito `#body-content` tolto), aggiornata anche `zoom-account-rename-keeps-account-name` (ramo di nuovo raggiungibile). (2) `validateTitle` ora ripulisce `program.title` (marcatore OSLMS-CUSTOM, sito aggiunto a `program-form-title-rename`). (3) Refuso corretto. |
+| **Commit** | `32c5a6b69` — `fix(oslms): restore the Zoom account Save button and clean the program title`; checklist B4 spuntata in `aaa0f377a`. Branch `chore/frappe-ui-overrides-beta29`, non pubblicato. |
+| **File toccati** | `frontend/src/components/Settings/ZoomAccountForm.vue`, `frontend/src/pages/Forms/ProgramForm.vue`, `frontend/src/components/Sidebar/AppSidebar.vue`, `docs/customizations/spa-grafts.toml`, `docs/upstream-checks/2026-09-24-v2.63.0-da-fare.md`. |
+| **Verifiche** | Rilevatore 0 errori. Browser (yarn dev, Administrator): Impostazioni → Zoom → account di prova «asfewf»: visibili Salva, Abilitato e Calendario Google; salvataggio senza calendario → errore server «Campo Calendario Google mancante» (regola nostra, corretta); con calendario «prova» → «Account Zoom aggiornato con successo», DB aggiornato (`google_calendar = prova`: dato di prova lasciato così). Programma «Programma 1» con due spazi finali nel titolo → «Programma aggiornato con successo», DB con titolo e nome invariati e senza spazi. Vitest completo: 124 rossi / 1438 verdi, identico al passo precedente. |
+
+**1. Obiettivo dell'attività** — Chiudere i tre probabili bug della B4 dopo averli riverificati sul codice attuale.
+
+**2. Modalità di esecuzione** — Lettura del codice e confronto con v2.63.0, storia git dei difetti, voci d'inventario, correzione minima, prova nel browser e sul DB di sviluppo, Vitest.
+
+**3. Attività svolte** — Vedi tabella.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code (estensione VS Code) con Chrome DevTools MCP. **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** analisi, correzioni, prove nel browser. **Perché:** serviva confrontare tre file con l'upstream e verificare il comportamento reale. **Risultato:** B4 chiusa; scoperto che il form Zoom era completamente inutilizzabile. **Verifiche e correzioni:** nessuna correzione successiva necessaria.
+
+**6. Problematiche incontrate** — Nessuna. Annotati per la B5 testi non tradotti visti durante le prove: «Manage your settings across the tabs in this dialog.», «User Management», «Search accounts», «Select option» (segnaposto dei Link), traduzione errata «classi live dai classi» nella descrizione della scheda Zoom. Da verificare: il modulo programma mostra «Non Salvato» appena aperto, senza modifiche. Dopo un errore di salvataggio il form Zoom torna all'elenco perdendo le modifiche (comportamento upstream).
+
+### Attività 14 — B5: traduzioni italiane (frasi senza traduzione, testi fissi, traduzioni errate)
+
+#### In sintesi
+
+| Campo | Valore |
+| --- | --- |
+| **Tipo** | Correzione (localizzazione) |
+| **Problema riscontrato** | Punti B5.1-B5.3 della checklist (72 frasi senza traduzione, 70 Raven, liste v2.61/v2.62) più i testi inglesi visti durante le prove (modulo corso, impostazioni, «classi live dai classi»). Regola del committente: tutte le traduzioni vanno fatte. |
+| **Problema effettivo** | Le liste della checklist erano parziali. Scansione completa di tutte le frasi `__()` (frontend) e `_()` (lms, os_lms) — 2981 — confrontate con il dizionario reale del sito (`get_all_translations("it")`, che unisce framework e app): 1018 senza traduzione, di cui ~450 già scritte in italiano nel codice (nostri componenti simulazioni/TrueSkill) e **570 inglesi** (classificazione con il dizionario `/usr/share/dict/words` + controllo manuale del gruppo ambiguo). Inoltre: testi inglesi fissi nei template senza `__()` (override frappe-ui, Billing, BadgeForm, etichette dei campioni colore), il segnaposto predefinito «Select option» del Combobox di frappe-ui, il sottotitolo di `SettingsDialog` di frappe-ui, 2 traduzioni errate («Gestisci gli account Zoom/Google Meet per condurre classi live dai classi»). Trovate anche 390 chiavi ripetute in `it.csv` con traduzioni diverse (vince l'ultima riga): non toccate, segnalate. |
+| **Soluzione applicata** | **Fase A** (`f40ad2982`): 531 traduzioni aggiunte a `it.csv` (le restanti 39 sono nomi propri o frasi già italiane; 2 email predefinite su più righe scritte con a-capo reali); verifica dei segnaposto `{0}` coerenti. **Fase B** (`5f6a34f5c`): `__()` negli override Link, Autocomplete, CalendarPanel, IframeNodeView e MediaNodeView (vecchio editor); involucro Combobox che traduce anche il segnaposto; regola del plugin di build per `SettingsDialog.vue`; Billing con la stessa modifica già presente in `upstream/develop`; BadgeForm con marcatore + voce `badge-form-image-i18n`; 13 traduzioni. **Fase C** (`5f6a34f5c`): le due frasi errate ora dicono «…con cui tenere le lezioni live delle classi» («lezione live» è il termine prevalente dell'app per Live Class). Campioni colore (`6c4f33567`): `__(c)`/`__(color)` in CourseThumbnailField e ColorSwatches, voce `color-swatch-names-i18n`. Checklist B5 spuntata (`cf9ebb6fa`). |
+| **Commit** | `f40ad2982`, `5f6a34f5c`, `cf9ebb6fa`, `6c4f33567`. Branch `chore/frappe-ui-overrides-beta29`, non pubblicato. |
+| **File toccati** | `lms/translations/it.csv`; override `frontend/src/overrides/frappe-ui/…` (Link, Autocomplete, CalendarPanel, Combobox, IframeNodeView, MediaNodeView); `frontend/oslms-vite/translate-frappe-ui.js`; `frontend/src/pages/Billing.vue`; `frontend/src/components/Settings/Badges/BadgeForm.vue`; `frontend/src/components/Courses/CourseThumbnailField.vue`; `frontend/src/components/Controls/ColorSwatches.vue`; `docs/customizations/spa-grafts.toml`; `docs/upstream-checks/2026-09-24-v2.63.0-da-fare.md`. |
+| **Verifiche** | Dizionario del sito dopo `clear_cache` (esempi controllati, comprese le chiavi su più righe); nuova scansione: restano solo le 41 frasi escluse volutamente; prova a secco del plugin: 23 file, 0 avvisi; rilevatore 0 errori; Vitest 124 rossi / 1438 verdi, invariato. Browser: finestra Impostazioni («Gestisci le impostazioni nelle schede di questa finestra.», «Gestione utenti», «Seleziona opzione», descrizione Zoom corretta, «Cerca account», «Azioni per …»), modulo corso («Rosso/Blu/Ambra», «Carica un'immagine di copertina del corso», «Rimuovi video», «Link YouTube o Vimeo»). |
+
+**1. Obiettivo dell'attività** — Nessun testo inglese visibile all'utente, in modo verificabile e non solo sulle liste parziali.
+
+**2. Modalità di esecuzione** — Script di scansione (scratchpad `scan_tr.py`, `scan_raw.py`) contro il dizionario reale del sito; traduzione a blocchi in JSON, controllo dei segnaposto, scrittura con il modulo `csv`; correzioni nei template; prove nel browser.
+
+**3. Attività svolte** — Vedi tabella.
+
+**4. Utilizzo dell'AI** — **Tool:** Claude Code (estensione VS Code) con Chrome DevTools MCP. **Modello:** Opus 5.5 (contesto 1M). **Per quale attività:** scansione, classificazione, traduzione di ~560 frasi, correzioni, verifica. **Perché:** volume elevato e necessità di coerenza terminologica («classe» per batch, «lezione live» per live class). **Risultato:** B5 chiusa. **Verifiche e correzioni:** la prima classificazione confondeva frasi italiane brevi con l'inglese ed era imprecisa sulle forme flesse: aggiunta riduzione dei suffissi e revisione manuale del gruppo ambiguo (~20 frasi inglesi recuperate); il sottotitolo delle Impostazioni risultava ancora inglese per la cache del browser sui moduli `?v=` (solo sviluppo), risolto ricaricando senza cache.
+
+**6. Problematiche incontrate** — Il server Vite di sviluppo si è chiuso una volta riavviandosi durante una richiesta (errore noto di Vite, `ERR_CLOSED_SERVER`), riavviato. Punti aperti segnalati: 390 chiavi ripetute con traduzioni diverse in `it.csv`; traduzioni con termine incoerente (es. «Upcoming Live Classes» → «Prossime Classi Live»).
+
+---
+
 ## 2026-09-23
 
 > **Report giornaliero:** `reports/2026-09-23-os-lms.md` — obiettivo e modalità della
