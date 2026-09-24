@@ -154,41 +154,16 @@ def try_import():
 
 
 def evaluate_lesson_access(course: str, lesson: str) -> dict:
+	"""Whether the current user may open the lesson, per upstream's sequential gate.
+
+	The order rule is upstream's enforce_lesson_completion (it replaced our
+	enforce_lesson_order); this keeps the {"allowed", "reason"} contract that the
+	mobile app reads from get_lesson and check_lesson_access.
 	"""
-	Verifica se l'utente può accedere alla lezione richiesta.
-	Se il corso ha enforce_lesson_order attivo, controlla che
-	la lezione precedente sia completata.
-	"""
-	course_doc = frappe.get_doc("LMS Course", course)
+	from lms.lms.permissions import get_lesson_gate
 
-	if not course_doc.get("enforce_lesson_order"):
-		return {"allowed": True}
-
-	all_lessons = []
-	for chapter_ref in course_doc.chapters:
-		chapter = frappe.get_doc("Course Chapter", chapter_ref.chapter)
-		for lesson_ref in chapter.lessons:
-			all_lessons.append(lesson_ref.lesson)
-
-	if lesson not in all_lessons:
-		return {"allowed": True}
-
-	lesson_index = all_lessons.index(lesson)
-	if lesson_index == 0:
-		return {"allowed": True}
-
-	prev_lesson = all_lessons[lesson_index - 1]
-	is_completed = frappe.db.exists(
-		"LMS Course Progress",
-		{
-			"member": frappe.session.user,
-			"lesson": prev_lesson,
-			"course": course,
-			"status": "Complete",
-		},
-	)
-
-	if is_completed:
+	locked, _resume = get_lesson_gate(course)
+	if lesson not in locked:
 		return {"allowed": True}
 	return {
 		"allowed": False,

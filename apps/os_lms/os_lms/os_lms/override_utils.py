@@ -2,6 +2,7 @@ import json
 
 import frappe
 from frappe.rate_limiter import rate_limit
+from lms.lms.permissions import enforces_lesson_completion
 
 from lms.lms.utils import get_batch_details as _original_get_batch_details
 from lms.lms.utils import get_batches as _original_get_batches
@@ -141,9 +142,9 @@ def get_lesson(course: str, chapter: int, lesson: int) -> dict:
 			# disabled until the lesson is complete, the way the web shows the
 			# following lesson as blocked. The flag is a course custom field and
 			# isn't part of get_course_fields(), so expose it here.
-			lesson_details["enforce_lesson_order"] = (
-				1 if frappe.db.get_value("LMS Course", course, "enforce_lesson_order") else 0
-			)
+			# Mirrors upstream's gate (enforce_lesson_completion, exemptions included)
+			# under the key the mobile app already reads.
+			lesson_details["enforce_lesson_order"] = 1 if enforces_lesson_completion(course) else 0
 
 		# Published simulation scenarios visible from this lesson. Returns the
 		# lesson-specific ones first (course_lesson == lesson_name) and falls

@@ -2,11 +2,7 @@
 	<div v-if="doc" class="">
 		<CollapsibleSection :label="__('Regole di Apprendimento')">
 			<div class="flex flex-col gap-y-4">
-				<Switch size="sm"  v-model="doc.enforce_lesson_order"
-					:label="__('Blocca lezioni in sequenza')" :description="__(
-						'Lo studente deve completare ogni lezione prima di accedere alla successiva.',
-					)
-						" @change="markDirty()" />
+				<!-- Lesson order is upstream's enforce_lesson_completion switch (CoursePublishSettings) -->
 				<Switch size="sm"  v-model="doc.enforce_quiz_on_completion"
 					:label="__('Blocca quiz al completamento')" :description="__(
 						'Lo studente deve completare tutte le lezioni precedenti al quiz per accedervi.',

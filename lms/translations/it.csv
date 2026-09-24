@@ -5523,3 +5523,5 @@ restrict_ip
 "Video failed to load — this lesson will still be marked complete after you spend some time on it.","Caricamento del video non riuscito — questa lezione verrà comunque segnata come completata dopo un po' di tempo di permanenza."
 "My Programs","I miei programmi"
 "Available Programs","Programmi disponibili"
+"Enforce Lesson Completion","Blocca lezioni in sequenza"
+"Students must complete each lesson before the next one opens.","Lo studente deve completare ogni lezione prima di accedere alla successiva."
