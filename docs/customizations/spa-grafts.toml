@@ -818,6 +818,30 @@ esistano ancora, altrimenti la build fallisce su un alias che non risolve."""
   anchor = "find: 'frappe-ui-texteditor-original',"
 
 [[entries]]
+id = "vite-translate-frappe-ui-strings"
+title = "Traduzione in fase di build dei testi inglesi fissi di frappe-ui (nuovo editor)"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il nuovo editor di frappe-ui (frappe-ui/editor, usato da RichTextEditor dalla v2.63.0) mostra
+popup, finestre e controlli dei media con testi inglesi fissi e senza aggancio per le
+traduzioni. Invece di copiare circa 20 file in src/overrides, il plugin os-translate-frappe-ui
+(frontend/oslms-vite/translate-frappe-ui.js) riscrive in __() i testi elencati mentre Vite
+compila frappe-ui; i file originali restano intatti. Nei .vue inietta anche una costante __
+nello <script setup>, perché alcuni popup sono montati da frappe-ui in un'istanza Vue separata
+senza le globalProperties dell'app. Se una regola non trova più il suo testo (frappe-ui l'ha
+cambiato) il plugin avvisa in dev e in build: aggiornare l'elenco e aggiungere le traduzioni
+in lms/translations/it.csv. Le etichette della barra passano invece dall'override MenuItems."""
+
+  [[entries.sites]]
+  file = "frontend/vite.config.js"
+  anchor = "import { osTranslateFrappeUi } from './oslms-vite/translate-frappe-ui.js'"
+
+  [[entries.sites]]
+  file = "frontend/vite.config.js"
+  anchor = "osTranslateFrappeUi(),"
+
+[[entries]]
 id = "vite-utils-alias-oslms"
 title = "@/utils risolto sul modulo utils di os_lms"
 layer = "spa-graft"

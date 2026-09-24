@@ -4,6 +4,8 @@ import path, { resolve } from 'path'
 import { VitePWA } from 'vite-plugin-pwa'
 import { readFileSync, existsSync } from 'fs'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
+// OSLMS-CUSTOM: build-time translation of frappe-ui strings
+import { osTranslateFrappeUi } from './oslms-vite/translate-frappe-ui.js'
 
 export default defineConfig(async ({ mode }) => {
 	const isDev = mode === 'development'
@@ -22,6 +24,8 @@ export default defineConfig(async ({ mode }) => {
 			osOverrideTheme(),
 			// OSLMS-CUSTOM: Italian fallback for the TOC block serialization
 			osTranslateTocFallback(),
+			// OSLMS-CUSTOM: translate hardcoded English strings inside frappe-ui (new editor)
+			osTranslateFrappeUi(),
 			frappeui({
 				frappeProxy: true,
 				lucideIcons: true,
