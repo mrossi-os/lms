@@ -5473,22 +5473,15 @@ nessun conflitto atteso."""
 
 [[entries]]
 id = "review-modal-submit-translation"
-title = "Pulsante Invia tradotto nel modale recensione (con residuo della vecchia API Dialog)"
+title = "Pulsante Invia tradotto nel modale recensione"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 La nostra modifica voluta è solo l'etichetta dell'azione «Submit» passata da __() (commit
-f33c6ca45, righe nostre in blame). Il resto del diff NON è una scelta nostra: la Dialog usa
-ancora la vecchia API (v-model + :options con onClick: (close) => ...), mentre l'upstream
-v2.60.1 è sulla nuova (v-model:open, :title, size, :actions con onClick: ({ close }) => ...,
-migrazione db53a0996); le righe vecchie sono di Jannat Patel, quindi è residuo della
-risoluzione di un merge che ha tenuto la nostra versione per non perdere la traduzione.
-Probabili effetti: frontend/src/tests/ReviewModal.test.ts (stub di Dialog che legge la prop
-actions) non trova il pulsante e dovrebbe fallire; a runtime, se la Dialog 1.0-beta passa
-all'onClick legacy un oggetto { close } e non la funzione, submitReview(close) chiamerebbe
-close() su un oggetto. Impatto basso: le recensioni sono nascoste (course-reviews-removed).
-Al merge di v2.61.0 (che cambia solo l'import dei tipi) conviene prendere la versione
-upstream e rimettere solo label: __('Submit')."""
+f33c6ca45). Il resto del file è quello upstream. 2026-09-24 (B3.1): tolto il residuo di merge
+che teneva la vecchia API della Dialog (v-model + :options, onClick: (close) => ...) al posto
+di quella upstream (v-model:open, :title, size, :actions, onClick: ({ close }) => ...);
+ReviewModal.test.ts torna verde (3/3)."""
 
   [[entries.sites]]
   file = "frontend/src/components/Modals/ReviewModal.vue"

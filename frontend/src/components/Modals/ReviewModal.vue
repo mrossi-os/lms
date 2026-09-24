@@ -1,20 +1,18 @@
 <template>
 	<Dialog
-		v-model="show"
-		:options="{
-			title: __('Write a Review'),
-			size: 'xl',
-			actions: [
-				{
-					label: __('Submit'),
-					variant: 'solid',
-					onClick: (close) => submitReview(close),
-				},
-			],
-		}"
+		v-model:open="show"
+		:title="__('Write a Review')"
+		size="xl"
+		:actions="[
+			{
+				label: __('Submit'),
+				variant: 'solid',
+				onClick: ({ close }) => submitReview(close),
+			},
+		]"
 	>
 		<template #default>
-			<!-- OSLMS-CUSTOM: Submit action label translated via __() (the legacy v-model/:options Dialog API around it is merge residue) -->
+			<!-- OSLMS-CUSTOM: Submit action label translated via __() -->
 			<div class="flex flex-col gap-4">
 				<Rating v-model="review.rating" :label="__('Rating')" />
 				<FormControl
