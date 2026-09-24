@@ -7231,12 +7231,17 @@ Course Creator senza Moderator. Nella condizione upstream aggiungere l'OR sulle 
 Valutatore (select parent from `tabLMS Batch Valutatore` where valutatore = utente) e decidere
 col titolare il bypass per Docente/Course Creator. Stesso rischio per la nuova
 get_permission_query_conditions di LMS Batch (pubblicate o con iscrizione): il Valutatore di
-una classe non pubblicata non la troverebbe più nelle liste."""
+una classe non pubblicata non la troverebbe più nelle liste.
+Merge di v2.62.0 (2026-09-24, decisione del committente): v2.62.0 aggiunge un filtro sugli elenchi di LMS Live Class (solo iscritti) che si combina in AND con il nostro live_class_query_conditions: il Valutatore non iscritto non vedeva piu nulla. Allargato il filtro upstream alle classi di cui e Valutatore (sola lettura invariata: has_permission nega la scrittura)."""
 
   [[entries.sites]]
   file = "lms/lms/doctype/lms_live_class/lms_live_class.py"
   anchor = "or is_batch_valutatore(doc.batch_name, user)"
   symbol = "has_permission"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_live_class/lms_live_class.py"
+  anchor = "select parent from `tabLMS Batch Valutatore`"
 
   [entries.visibility]
   subject = "lettura delle classi live di una classe"
@@ -8003,3 +8008,116 @@ continue., You are already registered. {0} instead., Success)."""
   [[entries.sites]]
   file = "lms/templates/signup-form.html"
   anchor = 'user_category: "",'
+
+# ---------------------------------------------------------------------------
+# Filtri upstream sugli elenchi (v2.62.0) allineati ai ruoli Docente e Valutatore
+# ---------------------------------------------------------------------------
+
+[[entries]]
+id = "live-class-docente-manage"
+title = "Il Docente vede, crea, modifica ed elimina le lezioni live"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Decisione del committente al merge di v2.62.0 (2026-09-23): il Docente, istruttore globale, gestisce
+le lezioni live di ogni classe come Moderator e Batch Evaluator. L'upstream conosce solo quei due
+ruoli in ogni punto: has_permission e il nuovo filtro sugli elenchi di LMS Live Class (v2.62.0,
+solo iscritti), create_live_class / create_google_meet_live_class, e da noi
+_ensure_live_class_admin (modifica ed eliminazione) e i gate isAdmin della SPA (LiveClass.vue,
+LiveClassForm.vue). Senza il Docente in tutti questi punti il pulsante comparirebbe ma il server
+rifiuterebbe, o viceversa. I permessi di ruolo (Custom DocPerm Docente su LMS Live Class, RWCD)
+sono configurati da desk in produzione, non nel codice. Oggi in produzione ogni Docente ha anche
+Moderator, quindi l'effetto pratico riguarda i Docenti senza Moderator."""
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_live_class/lms_live_class.py"
+  anchor = "or \"Docente\" in roles:\n\t\treturn True"
+  symbol = "has_permission"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_live_class/lms_live_class.py"
+  anchor = "or \"Docente\" in roles:\n\t\treturn \"\""
+  symbol = "get_permission_query_conditions"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_batch/lms_batch.py"
+  anchor = 'if not any(role in roles for role in ["Moderator", "Batch Evaluator", "Docente"]):'
+  symbol = "create_live_class"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_batch/lms_batch.py"
+  anchor = 'frappe.only_for(["Moderator", "Batch Evaluator", "Docente"])'
+  symbol = "create_google_meet_live_class"
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/os_lms/api.py"
+  anchor = 'frappe.only_for(["Moderator", "Batch Evaluator", "Docente"])'
+  symbol = "_ensure_live_class_admin"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/LiveClass.vue"
+  anchor = "return user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente"
+  symbol = "isAdmin"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
+  anchor = "user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente"
+  symbol = "isAdmin"
+
+  [entries.visibility]
+  subject = "creazione, modifica ed eliminazione delle lezioni live"
+  allow = ["Moderator", "Batch Evaluator", "Docente"]
+  deny = ["Valutatore", "Student", "Guest"]
+
+[[entries]]
+id = "batch-list-valutatore-docente"
+title = "Elenco classi: il Valutatore vede le classi non pubblicate che valuta, il Docente tutte"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+v2.62.0 aggiunge un filtro sugli elenchi di LMS Batch (pubblicate, oppure quelle in cui si è
+iscritti; tutte per Moderator e Batch Evaluator). Decisione del committente (2026-09-23): il
+Valutatore deve vedere anche le classi NON pubblicate che valuta, altrimenti le sue classi
+spariscono da ogni elenco letto con get_list. Il Docente gestisce ogni classe (can_modify_batch lo
+ammette, bozze comprese), quindi vede tutto come il Moderator. Il filtro upstream si combina in AND
+con i nostri filtri os_lms (valutatore.py), quindi la regola va scritta dentro quello upstream."""
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_batch/lms_batch.py"
+  anchor = "or \"Docente\" in roles:\n\t\treturn \"\""
+  symbol = "get_permission_query_conditions"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_batch/lms_batch.py"
+  anchor = "select parent from `tabLMS Batch Valutatore`"
+  symbol = "get_permission_query_conditions"
+
+  [entries.visibility]
+  subject = "classi non pubblicate negli elenchi"
+  allow = ["Moderator", "Batch Evaluator", "Docente", "Valutatore-of-batch"]
+  deny = ["Student", "Guest"]
+
+[[entries]]
+id = "course-lesson-list-mirrors-read-gate"
+title = "Elenco lezioni allineato al gate di lettura (Docente e Valutatore)"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+v2.62.0 aggiunge un filtro sugli elenchi di Course Lesson che traduce in SQL resolve_lesson_access
+(istruttore del corso, iscritto, lezione di anteprima di un corso pubblicato; tutto al Moderator).
+Il nostro gate di lettura ammette però anche il Docente (can_modify_course lo tratta come
+istruttore globale) e il Valutatore dei corsi delle classi che valuta
+(permissions-valutatore-lesson-access): senza lo stesso allargamento sull'elenco, una lezione
+leggibile per nome sparirebbe dagli elenchi (per esempio il selettore delle lezioni nell'editor
+delle simulazioni, che usa frappe.client.get_list). Il Valutatore resta senza i media riservati agli
+istruttori: questo tocca solo l'elenco."""
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/course_lesson/course_lesson.py"
+  anchor = 'if "Moderator" in roles or "Docente" in roles:'
+  symbol = "get_permission_query_conditions"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/course_lesson/course_lesson.py"
+  anchor = "join `tabLMS Batch Valutatore` bv"
+  symbol = "get_permission_query_conditions"

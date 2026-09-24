@@ -391,8 +391,9 @@ const canCreateClass = () => {
 	return isAdmin()
 }
 
+// OSLMS-CUSTOM: the Docente (global instructor) manages live classes too
 const isAdmin = () => {
-	return user.data?.is_moderator || user.data?.is_evaluator
+	return user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente
 }
 
 const openAttendanceModal = (cls) => {

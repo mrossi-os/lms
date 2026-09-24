@@ -290,7 +290,8 @@ def create_live_class(
 	description: str = None,
 ):
 	roles = frappe.get_roles()
-	if not any(role in roles for role in ["Moderator", "Batch Evaluator"]):
+	# OSLMS-CUSTOM: the Docente (global instructor) creates live classes too
+	if not any(role in roles for role in ["Moderator", "Batch Evaluator", "Docente"]):
 		frappe.throw(_("You do not have permission to create a live class."))
 
 	# OSLMS-CUSTOM: a Zoom live class needs an enabled account bound to a Google Calendar
@@ -369,7 +370,8 @@ def create_google_meet_live_class(
 	timezone: str,
 	description: str = None,
 ):
-	frappe.only_for(["Moderator", "Batch Evaluator"])
+	# OSLMS-CUSTOM: the Docente (global instructor) creates live classes too
+	frappe.only_for(["Moderator", "Batch Evaluator", "Docente"])
 
 	google_meet_settings = frappe.get_doc("LMS Google Meet Settings", google_meet_account)
 	if not google_meet_settings.enabled:
@@ -612,10 +614,15 @@ def get_permission_query_conditions(user=None):
 		return "1 = 0"
 
 	roles = frappe.get_roles(user)
-	if "Moderator" in roles or "Batch Evaluator" in roles:
+	# OSLMS-CUSTOM: the Docente manages every batch (can_modify_batch), drafts included
+	if "Moderator" in roles or "Batch Evaluator" in roles or "Docente" in roles:
 		return ""
 
 	escaped = frappe.db.escape(user)
+	# OSLMS-CUSTOM: a batch Valutatore also lists the unpublished batches they evaluate
 	return f"""(`tabLMS Batch`.published = 1 or `tabLMS Batch`.name in (
 		select batch from `tabLMS Batch Enrollment` where member = {escaped}
+	) or `tabLMS Batch`.name in (
+		select parent from `tabLMS Batch Valutatore`
+		where parenttype = 'LMS Batch' and valutatore = {escaped}
 	))"""

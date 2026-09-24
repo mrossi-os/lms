@@ -323,7 +323,8 @@ def has_permission(doc, ptype="read", user=None):
 
 	user = user or frappe.session.user
 	roles = frappe.get_roles(user)
-	if "Moderator" in roles or "Batch Evaluator" in roles:
+	# OSLMS-CUSTOM: the Docente (global instructor) creates and edits live classes too
+	if "Moderator" in roles or "Batch Evaluator" in roles or "Docente" in roles:
 		return True
 
 	if ptype not in ("read", "select", "print"):
@@ -354,10 +355,15 @@ def get_permission_query_conditions(user=None):
 		return ""
 
 	roles = frappe.get_roles(user)
-	if "Moderator" in roles or "Batch Evaluator" in roles:
+	# OSLMS-CUSTOM: Docente sees every live class, like has_permission above
+	if "Moderator" in roles or "Batch Evaluator" in roles or "Docente" in roles:
 		return ""
 
 	escaped = frappe.db.escape(user)
+	# OSLMS-CUSTOM: a batch Valutatore also lists the live classes of the batches they evaluate
 	return f"""(`tabLMS Live Class`.batch_name in (
 		select batch from `tabLMS Batch Enrollment` where member = {escaped}
+	) or `tabLMS Live Class`.batch_name in (
+		select parent from `tabLMS Batch Valutatore`
+		where parenttype = 'LMS Batch' and valutatore = {escaped}
 	))"""

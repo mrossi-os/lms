@@ -1862,7 +1862,8 @@ MIN_REMINDER_MINUTES = 15
 
 
 def _ensure_live_class_admin():
-	frappe.only_for(["Moderator", "Batch Evaluator"])
+	# The Docente (global instructor) edits and deletes live classes too
+	frappe.only_for(["Moderator", "Batch Evaluator", "Docente"])
 
 
 def _ensure_can_start_live_class(doc) -> None:

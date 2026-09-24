@@ -277,10 +277,12 @@ const conferencingProvider = computed(
 )
 
 // OSLMS-CUSTOM: same gate as LiveClass.vue's isAdmin() and the server
-// (create_live_class / os_lms _ensure_live_class_admin): Moderator and Batch
-// Evaluator only; a batch Valutatore sees the classes read-only.
+// (create_live_class / os_lms _ensure_live_class_admin): Moderator, Batch
+// Evaluator and Docente; a batch Valutatore sees the classes read-only.
 const isAdmin = computed(() =>
-	Boolean(user.data?.is_moderator || user.data?.is_evaluator)
+	Boolean(
+		user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente
+	)
 )
 
 // Copied from LiveClass.vue's canCreateClass()/hasProviderAccount(), which gate

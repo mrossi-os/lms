@@ -135,7 +135,8 @@ def get_permission_query_conditions(user=None):
 		return ""
 
 	roles = frappe.get_roles(user)
-	if "Moderator" in roles:
+	# OSLMS-CUSTOM: the Docente authors every course (can_modify_course), so reads every lesson
+	if "Moderator" in roles or "Docente" in roles:
 		return ""
 
 	escaped = frappe.db.escape(user)
@@ -146,6 +147,13 @@ def get_permission_query_conditions(user=None):
 		)""",
 		f"""`tabCourse Lesson`.course in (
 			select course from `tabLMS Enrollment` where member = {escaped}
+		)""",
+		# OSLMS-CUSTOM: Valutatore branch of resolve_lesson_access (courses of the evaluated batches)
+		f"""`tabCourse Lesson`.course in (
+			select bc.course from `tabBatch Course` bc
+			join `tabLMS Batch Valutatore` bv
+				on bv.parent = bc.parent and bv.parenttype = 'LMS Batch'
+			where bc.parenttype = 'LMS Batch' and bv.valutatore = {escaped}
 		)""",
 	]
 
