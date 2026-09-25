@@ -272,12 +272,17 @@ os_lms di get_course_details."""
 
 [[entries]]
 id = "course-instructors-hidden-from-students"
-title = "Istruttori del corso nascosti agli studenti"
+title = "Istruttori nascosti agli studenti (pagina corso e intestazione della lezione)"
 layer = "override-file"
 confidence = "high"
 intent = """
 L'elenco degli istruttori in testa alla pagina corso è visibile solo a moderatori e
-istruttori del corso, non agli studenti."""
+istruttori del corso, non agli studenti.
+Stessa regola nell'intestazione della lezione (Lesson.vue): avatar e nomi degli istruttori li
+vedono solo moderatori e istruttori della lezione (isAdmin), non gli studenti; stesso commit
+1cf84e356. Se l'upstream riscrive l'intestazione, rimettere il gate isAdmin sulla riga degli
+istruttori. 2026-09-25 (B6.5): unificata con la vecchia voce
+lesson-instructors-hidden-from-students."""
 
   [[entries.sites]]
   file = "frontend/src/overrides/pages/Courses/CourseOverview.vue"
@@ -287,6 +292,10 @@ istruttori del corso, non agli studenti."""
   subject = "elenco istruttori nella pagina corso"
   allow = ["Moderator", "course-instructor"]
   deny = ["Student", "Guest"]
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "v-if=\"!zenModeEnabled && isAdmin\""
 
 [[entries]]
 id = "course-short-intro-preline"
@@ -903,7 +912,12 @@ Nell'ambiente Docker di sviluppo (e in bench con porte non standard) la porta di
 nella cartella superiore per la build locale) e la inietta come costante __SOCKETIO_PORT__,
 usata da main.js (opzioni socketio di FrappeUI) e da socket.js. Se la define sparisce, la build
 fallisce su __SOCKETIO_PORT__ non definito, oppure le notifiche in tempo reale non si
-connettono."""
+connettono.
+Le metà da tenere insieme: la define in vite.config, FrappeUI inizializzato con
+socketio.port = __SOCKETIO_PORT__ in main.js (commit eb04db67c) e socket.js, che legge la
+costante al posto dell'import upstream di common_site_config.json (non raggiungibile dalla
+build Docker). 2026-09-25 (B6.5): unificata con la vecchia voce main-frappeui-socketio-port e
+aggiunto il sito di socket.js, prima non censito."""
 
   [[entries.sites]]
   file = "frontend/vite.config.js"
@@ -912,6 +926,14 @@ connettono."""
   [[entries.sites]]
   file = "frontend/vite.config.js"
   anchor = "async function importConfigSite(isDev) {"
+
+  [[entries.sites]]
+  file = "frontend/src/main.js"
+  anchor = "port:__SOCKETIO_PORT__"
+
+  [[entries.sites]]
+  file = "frontend/src/socket.js"
+  anchor = "const socketio_port = __SOCKETIO_PORT__"
 
 [[entries]]
 id = "vite-toc-fallback-translation"
@@ -1305,24 +1327,6 @@ Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
   [[entries.sites]]
   file = "frontend/src/components/Modals/Event.vue"
   anchor = ":placeholder=\"__('Select option')\""
-
-[[entries]]
-id = "event-modal-certificate-chrome-pdf"
-title = "Certificato dal modale evento scaricato con il generatore PDF Chrome"
-layer = "spa-graft"
-confidence = "high"
-intent = """
-download_pdf usa wkhtmltopdf se non riceve pdf_generator, ignorando sia il campo del Print
-Format sia l'impostazione globale di stampa. Il modello di certificato custom usa
-transform:rotate, che solo il generatore Chrome rende: con il predefinito il PDF esce vuoto
-(memoria certificate_print_format_setup). Ogni URL di download del certificato nella SPA
-aggiunge quindi &pdf_generator=chrome; la stessa regola vive anche in CertificationLinks.vue,
-CourseCardOverlay.vue, CourseCertification.vue e ProfileCertificates.vue (commit 28976b969)."""
-
-  [[entries.sites]]
-  file = "frontend/src/components/Modals/Event.vue"
-  anchor = "&pdf_generator=chrome"
-  symbol = "openCertificate"
 
 # ---------------------------------------------------------------------------
 # Censimento 2026-09-23 prima del merge di v2.59.0 — impostazioni, profilo e ruoli
@@ -2035,27 +2039,6 @@ Adeguamento post-merge v2.62.0 (2026-09-24): patch os_lms v0_0_6.copy_enforce_le
   file = "frontend/src/pages/Lesson.vue"
   anchor = "const applyAccessFromLesson = (data) => {"
   symbol = "applyAccessFromLesson"
-
-[[entries]]
-id = "lesson-instructors-hidden-from-students"
-title = "Istruttori nascosti agli studenti nell'intestazione della lezione"
-layer = "spa-graft"
-confidence = "high"
-intent = """
-Stessa regola di course-instructors-hidden-from-students (pagina corso), applicata
-all'intestazione della lezione: avatar e nomi degli istruttori li vedono solo moderatori e
-istruttori della lezione (isAdmin), non gli studenti. Introdotta con lo stesso commit
-1cf84e356; se l'upstream riscrive l'intestazione, rimettere il gate isAdmin sulla riga
-degli istruttori."""
-
-  [[entries.sites]]
-  file = "frontend/src/pages/Lesson.vue"
-  anchor = "v-if=\"!zenModeEnabled && isAdmin\""
-
-  [entries.visibility]
-  subject = "istruttori nell'intestazione della lezione"
-  allow = ["Moderator", "course-instructor"]
-  deny = ["Student", "Guest"]
 
 [[entries]]
 id = "lesson-edit-button-editor-hash"
@@ -2904,21 +2887,31 @@ versione."""
 
 [[entries]]
 id = "course-certificate-pdf-chrome"
-title = "Certificato del corso scaricato con il generatore PDF Chrome"
+title = "Certificato scaricato con il generatore PDF Chrome"
 layer = "spa-graft"
 confidence = "high"
 intent = """
 download_pdf usa wkhtmltopdf se non riceve pdf_generator, ignorando sia il Print Format sia
 le Print Settings; il modello di certificato del cliente usa transform:rotate, che solo il
 generatore Chrome rende, e con wkhtmltopdf il PDF usciva bianco (memoria
-certificate-print-format-setup). Ogni link di download del certificato nella SPA aggiunge
-&pdf_generator=chrome; lo stesso innesto vive anche in components/Modals/Event.vue e in
-oslms/composables/useCertificateViewer.js."""
+certificate-print-format-setup). Ogni URL di download del certificato nella SPA aggiunge
+quindi &pdf_generator=chrome (commit 28976b969): pagina Certificazione del corso, modale
+dell'evento di valutazione e composable del visualizzatore (usato da Get/View Certificate e
+dal profilo, che ha preso il posto di CertificationLinks, CourseCardOverlay e
+ProfileCertificates). 2026-09-25 (B6.5): unificata con la vecchia voce
+event-modal-certificate-chrome-pdf, stessa regola."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Courses/CourseCertification.vue"
   anchor = "&pdf_generator=chrome"
-  symbol = "openCertificate"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Modals/Event.vue"
+  anchor = "&pdf_generator=chrome"
+
+  [[entries.sites]]
+  file = "frontend/src/oslms/composables/useCertificateViewer.js"
+  anchor = "&pdf_generator=chrome"
 
 # --- Dashboard del corso (CourseDashboard.vue) --------------------------------
 
@@ -7839,24 +7832,6 @@ registerDirectives (import e chiamata), lontano da queste righe: merge atteso pu
   [[entries.sites]]
   file = "frontend/src/main.js"
   anchor = "brandLink.href = '/api/method/os_lms.os_lms.branding.brand_css'"
-
-[[entries]]
-id = "main-frappeui-socketio-port"
-title = "FrappeUI inizializzato con la porta socket.io della build"
-layer = "spa-graft"
-confidence = "high"
-intent = """
-FrappeUI riceve socketio.port = __SOCKETIO_PORT__, la costante che vite.config legge da
-common_site_config (voce vite-socketio-port-define, commit eb04db67c «docker development
-environment and improve socket.io configuration»): nell'ambiente Docker e con porte non
-standard la porta predefinita non è quella giusta e le notifiche in tempo reale non si
-connetterebbero. Le due metà vanno tenute insieme: senza la define la build fallisce su
-__SOCKETIO_PORT__, senza questa opzione la define non serve. Merge di v2.62.0 atteso pulito
-(registerDirectives(app) arriva quattro righe più sotto)."""
-
-  [[entries.sites]]
-  file = "frontend/src/main.js"
-  anchor = "port:__SOCKETIO_PORT__"
 
 # --- utils/video.ts ---------------------------------------------------------------
 
