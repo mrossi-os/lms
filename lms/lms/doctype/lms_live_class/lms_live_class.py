@@ -12,21 +12,9 @@ from frappe.utils import cint, format_date, format_time, get_datetime, nowdate
 from lms.lms.doctype.lms_batch.lms_batch import authenticate
 
 
-# OSLMS-CUSTOM: debug logger for live class calendar/Meet creation
-def _lc_log(msg):
-	frappe.logger("lms_live_class_debug", allow_site=True).info(msg)
-
-
 class LMSLiveClass(Document):
 	def after_insert(self):
-		# OSLMS-CUSTOM: log and record calendar-event creation failures
-		_lc_log(f"[after_insert] LMS Live Class={self.name} provider={self.conferencing_provider} meet_account={self.google_meet_account} zoom_account={self.zoom_account}")
-		try:
-			self.create_calendar_event()
-		except Exception:
-			_lc_log(f"[after_insert] EXCEPTION in create_calendar_event for {self.name}")
-			frappe.log_error(title="LMS Live Class create_calendar_event failed")
-			raise
+		self.create_calendar_event()
 
 	def on_update(self):
 		if not self.event:
@@ -83,8 +71,6 @@ class LMSLiveClass(Document):
 			calendar = frappe.db.get_value(
 				"Google Calendar", {"user": frappe.session.user, "enable": 1}, "name"
 			)
-		# OSLMS-CUSTOM: debug logging of the calendar/Meet creation steps
-		_lc_log(f"[create_calendar_event] {self.name} resolved calendar={calendar}")
 
 		if not calendar:
 			frappe.throw(
@@ -94,57 +80,13 @@ class LMSLiveClass(Document):
 			)
 
 		if calendar:
-			_lc_log(f"[create_calendar_event] {self.name} creating local event")
 			event = self.create_event()
-			_lc_log(f"[create_calendar_event] {self.name} event={event.name} creation={event.creation} modified={event.modified}")
-
 			frappe.db.set_value(self.doctype, self.name, "event", event.name)
-
-			_lc_log(f"[create_calendar_event] {self.name} adding participants")
-			try:
-				self.add_event_participants(event, calendar)
-				_lc_log(f"[create_calendar_event] {self.name} add_event_participants OK")
-			except Exception:
-				_lc_log(f"[create_calendar_event] {self.name} add_event_participants RAISED")
-				frappe.log_error(title="LMS Live Class add_event_participants failed")
-				raise
-
-			_lc_log(f"[create_calendar_event] {self.name} calling sync_with_google_calendar")
-			try:
-				self.sync_with_google_calendar(event, calendar)
-				_lc_log(f"[create_calendar_event] {self.name} sync_with_google_calendar OK")
-			except Exception:
-				_lc_log(f"[create_calendar_event] {self.name} sync_with_google_calendar RAISED")
-				frappe.log_error(title="LMS Live Class sync_with_google_calendar failed")
-				raise
-
-			# stato dell'event subito dopo la sync
-			event.reload()
-			_lc_log(
-				f"[create_calendar_event] {self.name} after sync -> "
-				f"sync={event.sync_with_google_calendar} "
-				f"calendar={event.google_calendar} "
-				f"event_id={event.google_calendar_event_id} "
-				f"meet={event.google_meet_link} "
-				f"creation={event.creation} modified={event.modified}"
-			)
+			self.add_event_participants(event, calendar)
+			self.sync_with_google_calendar(event, calendar)
 
 			if self.conferencing_provider == "Google Meet":
-				_lc_log(f"[create_calendar_event] {self.name} calling add_video_conferencing_to_event")
-				try:
-					self.add_video_conferencing_to_event(event)
-					_lc_log(f"[create_calendar_event] {self.name} add_video_conferencing_to_event OK")
-				except Exception:
-					_lc_log(f"[create_calendar_event] {self.name} add_video_conferencing_to_event RAISED")
-					frappe.log_error(title="LMS Live Class add_video_conferencing_to_event failed")
-					raise
-
-				event.reload()
-				_lc_log(
-					f"[create_calendar_event] {self.name} final state -> "
-					f"event_id={event.google_calendar_event_id} "
-					f"meet={event.google_meet_link}"
-				)
+				self.add_video_conferencing_to_event(event)
 
 	def create_event(self):
 		start = f"{self.date} {self.time}"
@@ -179,8 +121,6 @@ class LMSLiveClass(Document):
 
 	def sync_with_google_calendar(self, event, calendar):
 		event.reload()
-		# OSLMS-CUSTOM: debug logging of the Google Calendar sync
-		_lc_log(f"[sync_with_google_calendar] event={event.name} BEFORE creation={event.creation} modified={event.modified} sync={event.sync_with_google_calendar} cal={event.google_calendar}")
 		update_data = {
 			"sync_with_google_calendar": 1,
 			"google_calendar": calendar,
@@ -188,22 +128,17 @@ class LMSLiveClass(Document):
 		}
 		event.update(update_data)
 		event.save()
-		_lc_log(f"[sync_with_google_calendar] event={event.name} AFTER SAVE creation={event.creation} modified={event.modified} sync={event.sync_with_google_calendar} cal={event.google_calendar} event_id={event.google_calendar_event_id} meet={event.google_meet_link}")
 
 	def add_video_conferencing_to_event(self, event):
 		event.reload()
-		# OSLMS-CUSTOM: debug logging of the Meet link creation
-		_lc_log(f"[add_video_conferencing_to_event] event={event.name} BEFORE creation={event.creation} modified={event.modified} add_vc={event.add_video_conferencing} sync={event.sync_with_google_calendar} cal={event.google_calendar} event_id={event.google_calendar_event_id}")
 		event.update(
 			{
 				"add_video_conferencing": 1,
 			}
 		)
 		event.save()
-		_lc_log(f"[add_video_conferencing_to_event] event={event.name} AFTER SAVE creation={event.creation} modified={event.modified} add_vc={event.add_video_conferencing} event_id={event.google_calendar_event_id} meet={event.google_meet_link}")
 		event.reload()
 		google_meet_link = event.google_meet_link
-		_lc_log(f"[add_video_conferencing_to_event] event={event.name} AFTER RELOAD meet={google_meet_link}")
 		if google_meet_link:
 			frappe.db.set_value(
 				self.doctype,
@@ -213,9 +148,6 @@ class LMSLiveClass(Document):
 					"join_url": google_meet_link,
 				},
 			)
-			_lc_log(f"[add_video_conferencing_to_event] {self.name} URLs persisted")
-		else:
-			_lc_log(f"[add_video_conferencing_to_event] {self.name} NO MEET LINK on event after reload")
 
 
 def send_live_class_reminder():

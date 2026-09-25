@@ -57,21 +57,6 @@
 						<span class="text-ink-gray-5 shrink-0">
 							{{ formatReviewDate(review.creation) }}
 						</span>
-						<!-- OSLMS-CUSTOM: legacy star/review block left over from an old merge (duplicates the upstream one below); only its theme tokens are ours -->
-						<div class="flex mt-2 gap-x-1">
-							<LucideStar
-								v-for="index in 5"
-								class="size-4 text-transparent rounded-sm"
-								:class="
-									index <= Math.ceil(review.rating)
-										? 'fill-ink-amber-2'
-										: 'fill-ink-gray-3'
-								"
-							/>
-						</div>
-						<div v-if="review.review" class="mt-4 leading-5 text-ink-gray-7">
-							{{ review.review }}
-						</div>
 					</div>
 					<div class="flex gap-1 mt-2">
 						<LucideStar

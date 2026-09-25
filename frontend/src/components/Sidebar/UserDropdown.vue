@@ -1,7 +1,6 @@
 <template>
 	<div class="p-2">
-		<!-- OSLMS-CUSTOM: placement="asdaaaaaaaa" is an invalid leftover (falls back to align start) -->
-		<Dropdown :options="userDropdownOptions" placement="asdaaaaaaaa">
+		<Dropdown :options="userDropdownOptions">
 			<template v-slot="{ open, close }">
 				<button
 					class="flex h-12 items-center rounded-md duration-300 ease-in-out"

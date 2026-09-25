@@ -1101,7 +1101,7 @@ Adeguamento post-merge v2.62.0 (2026-09-24): l'upstream ha ora un proprio routeF
 id = "command-palette-search-page-entry"
 title = "Voce «Cerca …» della palette verso la pagina /search"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 Mentre si digita, la palette mostra come prima voce «Search for "<testo>"», che apre la pagina
 /search con la query. L'upstream ha tolto questa voce e la pagina Search nel commit 46a356b08
@@ -1111,7 +1111,8 @@ della voce è quello upstream precedente alla rimozione, conservato nei merge. M
 dedotta: senza questa voce la pagina /search non è raggiungibile dalla palette. Il titolo del
 gruppo resta il letterale 'Jump to' perché CommandPaletteGroup lo traduce già in fase di
 rendering.
-Merge di v2.62.0 (2026-09-24, decisione del committente): la riga «Search for» non guida piu il gruppo Jump to ma e l'ULTIMA riga dell'elenco, in un gruppo proprio dopo tutti i risultati (i test upstream presuppongono che la prima riga sia una sezione o un risultato); durante l'aggiornamento dei risultati e marcata stale come le altre righe e non si apre con Invio. Restano incompatibili per natura con la riga 3 test upstream che si aspettano un elenco vuoto o un numero preciso di righe (riconciliazione finale dei test)."""
+Merge di v2.62.0 (2026-09-24, decisione del committente): la riga «Search for» non guida piu il gruppo Jump to ma e l'ULTIMA riga dell'elenco, in un gruppo proprio dopo tutti i risultati (i test upstream presuppongono che la prima riga sia una sezione o un risultato); durante l'aggiornamento dei risultati e marcata stale come le altre righe e non si apre con Invio. Restano incompatibili per natura con la riga 3 test upstream che si aspettano un elenco vuoto o un numero preciso di righe (riconciliazione finale dei test).
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/components/CommandPalette/CommandPalette.vue"
@@ -1127,12 +1128,13 @@ Merge di v2.62.0 (2026-09-24, decisione del committente): la riga «Search for»
 id = "command-palette-jobs-removed"
 title = "Voce «Jobs» rimossa dalla palette Cmd+K"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 L'elenco «Jump to» della palette mostra solo Corsi e Classi: la voce Jobs dell'upstream (e la
 relativa icona Briefcase) è stata tolta (commit 7142c05ba). Motivazione non scritta nel commit;
 presumibilmente la sezione offerte di lavoro non fa parte del prodotto usato dal cliente. Se un
-merge reintroduce la voce Jobs nell'elenco, toglierla di nuovo."""
+merge reintroduce la voce Jobs nell'elenco, toglierla di nuovo.
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/components/CommandPalette/CommandPalette.vue"
@@ -1291,13 +1293,14 @@ lo stesso."""
 id = "event-modal-status-placeholder"
 title = "Segnaposto tradotto sullo stato della valutazione"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 La select Stato della valutazione nel modale dell'evento ha un segnaposto «Select option»
 passato per __(). Introdotto in un commit generico di traduzioni (e577585ca): motivazione
 dedotta, mostrare un invito in italiano quando lo stato non è ancora scelto invece di una
 select vuota o di un testo inglese. ATTENZIONE al merge di v2.59.0: l'upstream passa il Dialog
-a bare con slot #default e cambia la classe del titolo, fuori da questa riga."""
+a bare con slot #default e cambia la classe del titolo, fuori da questa riga.
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/components/Modals/Event.vue"
@@ -1744,7 +1747,7 @@ cambia lo stesso elemento TabButtons (`:buttons` diventa `:options`); il v-if va
 id = "profile-tabs-certificates-only"
 title = "Profilo senza schede Informazioni, Disponibilità e Calendario"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 Il profilo ha tolto la scheda Informazioni (About) e parte dalla scheda Certificati (commit
 3f63fec00); le schede Disponibilità (Slots) e Calendario valutazioni (Schedule) per valutatori
@@ -1753,7 +1756,8 @@ Il motivo non è scritto nei commit: probabilmente il flusso upstream di prenota
 valutazioni con disponibilità del valutatore non è usato dal cliente, e le informazioni
 personali del profilo non servono. Le route ProfileAbout, ProfileEvaluator e
 ProfileEvaluationSchedule esistono ancora in router.js (e la route base redirige ancora a
-ProfileAbout)."""
+ProfileAbout).
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Profile.vue"
@@ -1774,13 +1778,14 @@ ProfileAbout)."""
 id = "profile-cover-image-removed"
 title = "Profilo senza immagine di copertina"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 Nella pagina profilo l'immagine di copertina e il pulsante per cambiarla sono stati tolti,
 resta solo lo spazio vuoto sopra l'avatar; l'intestazione ha uno sfondo grigio chiaro (commit
 20bee4c5f "fix profile styke"). Il motivo non è scritto: probabilmente una scelta grafica del
 cliente. Il componente EditCoverImage e la risorsa coverImage sono ancora importati ma non più
-usati nel template."""
+usati nel template.
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Profile.vue"
@@ -1885,7 +1890,7 @@ accepted-drift (2026-09-24, merge di v2.62.0, decisione del committente): Profil
 id = "profile-edit-reduced-fields"
 title = "Modifica profilo ridotta a una colonna"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 La finestra di modifica del profilo è a una sola colonna: sono commentati titolo (headline),
 LinkedIn, Twitter e l'intera colonna destra (disponibile per, lingua, bio) (commit 29f976c3b
@@ -1894,7 +1899,8 @@ LinkedIn, Twitter e l'intera colonna destra (disponibile per, lingua, bio) (comm
 cambiare la lingua dal profilo. ATTENZIONE al merge di v2.59.0: l'upstream modifica righe
 dentro i blocchi commentati (RichTextEditor per la bio), il che darà conflitti in zone
 commentate.
-Merge di v2.62.0 (2026-09-24): EditProfile.vue eliminata, il modulo vive in pages/Forms/ProfileEditForm.vue: colonna unica e campi nascosti riapplicati; ancora del contenitore aggiornata alla nuova griglia."""
+Merge di v2.62.0 (2026-09-24): EditProfile.vue eliminata, il modulo vive in pages/Forms/ProfileEditForm.vue: colonna unica e campi nascosti riapplicati; ancora del contenitore aggiornata alla nuova griglia.
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Forms/ProfileEditForm.vue"
@@ -1937,12 +1943,13 @@ aggiunge anche can_access_quiz: valutare se il valutatore debba leggere anche i 
 id = "sidebar-more-group-removed"
 title = "Gruppo \"Altro\" (pagine web) tolto dalla barra laterale"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 Il gruppo upstream "More" della barra laterale (pagine web personalizzate, con il pulsante + per
 aggiungerle riservato ai moderatori) è stato tolto (commit 032752e69 "Hide More group section in
 sidebar"). Il motivo non è scritto: probabilmente la funzione pagine web non è usata. Nello
-script restano toggleWebPages, openPageModal e PageModal."""
+script restano toggleWebPages, openPageModal e PageModal.
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/components/Sidebar/AppSidebar.vue"
@@ -1952,14 +1959,15 @@ script restano toggleWebPages, openPageModal e PageModal."""
 id = "sidebar-frappe-onboarding-removed"
 title = "Onboarding, aiuto e riferimenti a Frappe tolti dalla barra laterale"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 Dalla barra laterale sono stati tolti il riquadro "Completa il tuo profilo" per gli studenti
 (commit 5b09a2c99), il banner Getting Started con HelpModal e IntermediateStepModal (commit
 f3be3c1bc), e le icone di aiuto, di prenotazione della sessione di onboarding con il team Frappe
 e "Powered by Frappe Learning" (commit 1d3fa64ea). Deduzione: la piattaforma è presentata con il
 marchio del cliente e non deve rimandare a Frappe né al suo percorso di onboarding. Nello script
-restano import e variabili dell'onboarding (setUpOnboarding, showOnboarding, profileIsComplete)."""
+restano import e variabili dell'onboarding (setUpOnboarding, showOnboarding, profileIsComplete).
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/components/Sidebar/AppSidebar.vue"
@@ -2338,7 +2346,7 @@ che la nuova versione non reinvii i campi del server e reinnestare il filtro se 
 id = "lesson-form-style-tweaks"
 title = "Ritocchi di stile nell'editor della lezione"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 Su telefono l'editor perde il margine orizzontale e il padding di 20 unità (resta px-3),
 così non è schiacciato in una colonna stretta (commit a1437f5fa). Il titolo ha
@@ -2346,7 +2354,8 @@ così non è schiacciato in una colonna stretta (commit a1437f5fa). Il titolo ha
 le note dell'istruttore un mb-2. ATTENZIONE al merge di v2.59.0: l'upstream cambia la
 stessa riga di classi del titolo (text-3xl -> text-2xl): prendere la sua e riaggiungere
 !bg-transparent.
-Merge di v2.62.0 (2026-09-24): l'upstream toglie da se margine e padding su telefono (mx-0 px-4 sm:mx-10 sm:px-20): sito tolto (redesign mobile). Resta !bg-transparent sul titolo."""
+Merge di v2.62.0 (2026-09-24): l'upstream toglie da se margine e padding su telefono (mx-0 px-4 sm:mx-10 sm:px-20): sito tolto (redesign mobile). Resta !bg-transparent sul titolo.
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/pages/LessonForm.vue"
@@ -2490,11 +2499,12 @@ pdfBlockPrivateUrl.test.ts ha ricevuto PDFWorker (come quello upstream), asserzi
 id = "upload-toolbox-icon-theme"
 title = "Ritocco di stile: icona Upload dell'editor segue il tema"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 L'icona del tool Upload nel menu dei blocchi era nera fissa, invisibile nel tema scuro;
 con currentColor segue il colore del testo del menu. Commit «fix color» (75ded9ac6), il
-motivo è dedotto dal codice."""
+motivo è dedotto dal codice.
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/utils/upload.js"
@@ -2703,12 +2713,13 @@ Adeguamento al merge di v2.62.0 (2026-09-24): frappe-ui 1.0-beta usa reka-ui (su
 id = "prose-hr-table-colors"
 title = "Ritocchi di stile del testo ricco: separatori e bordi delle tabelle"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 Nei testi ricchi (descrizioni) il separatore <hr> prende il colore del testo circostante
 invece del grigio di prose, così resta visibile dove il testo è bianco (per esempio su un
 banner scuro); i bordi delle tabelle ProseMirror usano --ink-gray-9 per essere visibili.
-Commit «fix: style» e «fix color»: dove si vedeva il problema è dedotto dal commento."""
+Commit «fix: style» e «fix color»: dove si vedeva il problema è dedotto dal commento.
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/index.css"
@@ -2861,39 +2872,21 @@ gradientColor e tenere i nostri import."""
 id = "courses-card-footer-removed"
 title = "Piè di card del corso rimosso (istruttori, prezzo, certificazione)"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 Dalla card del corso è stata tolta la fascia inferiore dell'upstream: avatar e nomi degli
 istruttori, prezzo del corso a pagamento e icona "Get Certified". Tolta nel commit 84bde1890
 (che introduce la durata) senza motivazione scritta. Presumibilmente coerente con la scelta
 di non mostrare gli istruttori agli studenti (course-instructors-hidden-from-students) e con
 l'indicatore di certificazione spostato in alto; il prezzo sparisce anche per i corsi a
-pagamento. Il blocco non è commentato ma cancellato, per questo l'ancora è sul marcatore."""
+pagamento. Il blocco non è commentato ma cancellato, per questo l'ancora è sul marcatore.
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/components/CourseCard.vue"
   anchor = 'OSLMS-CUSTOM: upstream card footer (instructor avatars, price, "Get Certified" icon) removed'
 
 # --- Recensioni, outline, certificati ----------------------------------------
-
-[[entries]]
-id = "course-reviews-legacy-block-residue"
-title = "Residuo di merge in CourseReviews (stelle e testo duplicati)"
-layer = "spa-graft"
-confidence = "low"
-intent = """
-Non è una personalizzazione da conservare: è un residuo di un vecchio merge. Accanto al blocco
-upstream riprogettato (stelle + testo con "vedi altro") è rimasta la vecchia versione di
-stelle e testo della recensione, che quindi comparirebbero due volte; di nostro ci sono solo i
-token colore del tema (fill-ink-amber-2 / fill-ink-gray-3, commit bf14f80d1). Oggi è
-invisibile: CourseReviews non viene reso nella pagina corso (course-reviews-removed). Al
-merge di v2.59.0 (che tocca le classi di testo delle righe vicine) prendere la versione
-upstream intera ed eliminare il blocco residuo, poi togliere questa voce; da confermare col
-committente."""
-
-  [[entries.sites]]
-  file = "frontend/src/components/CourseReviews.vue"
-  anchor = "? 'fill-ink-amber-2'"
 
 [[entries]]
 id = "create-outline-button-import"
@@ -3304,13 +3297,14 @@ Merge di v2.62.0 (2026-09-24): l'import da ZIP è ora la pagina instradata Cours
 id = "courses-list-upcoming-students-unpublished"
 title = "Scheda In arrivo senza filtro pubblicati per lo studente"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 Aggiunta con il commit 7c44a7dc8 ("accesso ai corsi tramite i batch"): sulla scheda "In
 arrivo" lo studente non riceveva il filtro published=1, presumibilmente per vedere i corsi
 non pubblicati dei suoi batch. Da courses-list-students-enrolled-only (2026-07-20) lo
 studente non vede più la scheda "In arrivo", quindi il ramo oggi non si raggiunge.
-Chiedere al committente se toglierlo o conservarlo."""
+Chiedere al committente se toglierlo o conservarlo.
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Courses/Courses.vue"
@@ -3531,7 +3525,7 @@ Merge di v2.62.0 (2026-09-24): ProgramForm.vue spostato dall'upstream in pages/F
 id = "program-form-full-document"
 title = "Il modulo del programma lavora sul documento completo"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 Invece delle due list resource upstream sui doctype figli (LMS Program Course, LMS Program
 Member) il modulo carica l'intero LMS Program con frappe.client.get (righe ordinate per idx),
@@ -3541,7 +3535,8 @@ PUT su /api/resource. Il riordino di un programma già salvato scrive l'idx di o
 frappe.client.set_value. Dai commit risulta che le list resource lasciavano gli elenchi vuoti
 (commit 02e82b3bc "fix load program details", 3255d0a07); il motivo esatto della scelta del
 PUT al posto di setValue non è scritto.
-Merge di v2.62.0 (2026-09-24): ProgramForm.vue spostato dall'upstream in pages/Forms/ (pagina instradata), ancore invariate."""
+Merge di v2.62.0 (2026-09-24): ProgramForm.vue spostato dall'upstream in pages/Forms/ (pagina instradata), ancore invariate.
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Forms/ProgramForm.vue"
@@ -4645,14 +4640,15 @@ Esercizi."""
 id = "batch-list-certification-filter-hidden"
 title = "Casella Certificazione tolta dai filtri della lista classi"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 La casella "Certificazione" (solo classi che rilasciano un certificato) è tolta dai filtri
 della lista; la logica del filtro resta e si può ancora attivare con ?certification=1
 nell'URL. Il commit non dice perché: motivazione dedotta, il cliente non usa i certificati di
 classe come criterio di ricerca (le certificazioni passano da TrueSkill sui corsi). La
 personalizzazione consiste nella rimozione, quindi l'ancora è il commento.
-Merge di v2.61.0 (2026-09-23): la pagina passa al ListPage upstream; il filtro upstream è ora un ToggleFilter nello slot #toggles, lasciato fuori (ListPageHeader disegna la striscia solo se lo slot esiste). L'URL upstream legge certification === 'true': il filtro resta raggiungibile con ?certification=true (non più =1)."""
+Merge di v2.61.0 (2026-09-23): la pagina passa al ListPage upstream; il filtro upstream è ora un ToggleFilter nello slot #toggles, lasciato fuori (ListPageHeader disegna la striscia solo se lo slot esiste). L'URL upstream legge certification === 'true': il filtro resta raggiungibile con ?certification=true (non più =1).
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/Batches.vue"
@@ -4818,7 +4814,7 @@ si fa più."""
 id = "batch-feedback-removed"
 title = "Feedback della classe tolto dalle dashboard"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 La sezione Feedback della classe (BatchFeedback) non compare più: tolta dalla dashboard dello
 studente già a marzo 2026 insieme alle schede Annunci/Discussioni (poi reintrodotte), e
@@ -4826,7 +4822,8 @@ commentata nella dashboard del gestore quando è arrivato il pannello dei progre
 non dicono perché: motivazione dedotta, il cliente non raccoglie il feedback di classe da
 questa sezione. Le personalizzazioni consistono nella rimozione, quindi le ancore sono i
 commenti; il componente BatchFeedback resta nel codice (e ancora importato nella dashboard del
-gestore)."""
+gestore).
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
@@ -5334,13 +5331,14 @@ Verifica di fine percorso (2026-09-24, /upstream-check): la riscrittura upstream
 id = "course-card-price-hidden"
 title = "Prezzo del corso nascosto sulla card laterale"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 La card laterale del corso non mostra il prezzo (blocco priceLabel commentato, commit 8fafc219c
 «Fix merge course», senza motivazione scritta). Motivo dedotto: la piattaforma non vende corsi
 dalla SPA (il gruppo Pagamenti è tolto dalle impostazioni, settings-payment-group-removed).
 Emerso senza voce né marcatore durante il merge di v2.59.0, che ha aggiornato la classe del
-blocco commentato (text-3xl-semibold)."""
+blocco commentato (text-3xl-semibold).
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/components/CourseCardOverlay.vue"
@@ -5849,7 +5847,7 @@ mobile) e mantenere i due import."""
 id = "desktop-layout-elite-sidebar"
 title = "Contenitore della sidebar desktop senza bordo e sfondo upstream"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 Nel tema elite il contenitore della AppSidebar non porta le classi upstream border-e
 bg-surface-sidebar (commit e9b6577b7 «update theme colors»): colore e bordo della sidebar sono
@@ -5860,7 +5858,8 @@ dedotta; da confermare se il div vada tolto. ATTENZIONE al merge di v2.61.0: l'u
 inserisce il link «Skip to main content» subito prima del div della sidebar e trasforma il
 contenitore del contenuto in <main id="main-content">: conflitto sulle prime righe del template.
 Accettare skip link e <main>, tenere il contenitore sidebar come class="h-full" (e, se ancora
-voluto, il div overlay)."""
+voluto, il div overlay).
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/components/Layouts/DesktopLayout.vue"
@@ -5959,7 +5958,7 @@ accepted-drift (2026-09-24, merge di v2.62.0, decisione del committente): Progra
 id = "global-dts-runtime-core-augmentation"
 title = "__ dichiarato anche su @vue/runtime-core"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 Oltre all'aumento upstream di ComponentCustomProperties su 'vue', lo stesso __ è dichiarato
 sul modulo '@vue/runtime-core' (commit 6d6d2af78 di Gabriele Pagnotta, «fix merge problems on
@@ -5969,7 +5968,8 @@ dichiarazione __() nei template risultava non tipizzato. Nessun effetto a runtim
 al merge di v2.61.0: l'upstream re-indenta tutto il file con tabulazioni e aggiunge l'a capo
 finale, toccando la chiusura del blocco 'vue' a cui il nostro blocco è accodato: conflitto
 banale. Prendere la versione upstream e riaccodare il blocco '@vue/runtime-core' indentato
-con tabulazioni."""
+con tabulazioni.
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/global.d.ts"
@@ -5979,7 +5979,7 @@ con tabulazioni."""
 id = "router-lesson-edit-route"
 title = "Rotta diretta dell'editor di lezione /learn/<cap>-<lez>/edit"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 La rotta LessonForm (/courses/:courseName/learn/:chapterNumber-:lessonNumber/edit) apre
 l'editor di una lezione con un URL proprio. L'upstream l'ha eliminata spostando la modifica
@@ -5991,7 +5991,8 @@ riscrittura upstream «make student view a real route instead of an editor mode�
 tolta da CourseEditor, link «Editor view» nell'intestazione di Lesson.vue verso CourseDetail
 con editLesson) non tocca router.js, ma rende ancora più probabile che questa rotta sia un
 residuo; se tenuta, verificare che LessonForm funzioni ancora montata da sola.
-Merge di v2.62.0 (2026-09-24): l'upstream sposta le rotte da router.js al nuovo routes.js; rotta riaggiunta li con marcatore."""
+Merge di v2.62.0 (2026-09-24): l'upstream sposta le rotte da router.js al nuovo routes.js; rotta riaggiunta li con marcatore.
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/routes.js"
@@ -6555,7 +6556,7 @@ Merge di v2.62.0 (2026-09-24): file spostato dall'upstream in components/Courses
 id = "course-details-doc-guard"
 title = "Sezione Dettagli del corso resa solo a documento caricato"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 La sezione ha v-if="doc" sulla radice, così il template (v-model="doc.title", doc.category,
 doc.tags…) non viene valutato prima che resource.doc esista. Introdotto da Gabriele Pagnotta nel
@@ -6563,7 +6564,8 @@ commit «fix merge problems on course and lesson form» (6d6d2af78) insieme al t
 text-base font-semibold al posto di text-base-semibold (ritocco di classe, senza regola).
 Confidenza bassa: la motivazione (errore a doc non ancora caricato) è dedotta, non
 documentata. v2.61.0 non tocca queste righe.
-Merge di v2.62.0 (2026-09-24): file spostato dall'upstream in components/Courses/, ancore invariate."""
+Merge di v2.62.0 (2026-09-24): file spostato dall'upstream in components/Courses/, ancore invariate.
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/components/Courses/CourseDetailsSection.vue"
@@ -7250,7 +7252,7 @@ live Zoom. v2.62.0 non tocca la funzione."""
 id = "course-video-link-youtube-id"
 title = "Video di anteprima del corso: YouTube ridotto all'id, Vimeo intatto"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 Il vecchio codice upstream prendeva l'ultimo segmento del percorso del link e rovinava i link
 Vimeo vimeo.com/<id>/<hash>. Il nostro validate_video_link (commit f51e0a512, «add support for
@@ -7263,7 +7265,8 @@ tenuta nei merge precedenti, potrebbe essere superflua. Domanda al titolare: ten
 quella upstream?
 ATTENZIONE al merge di v2.62.0: l'upstream cambia la prima riga del suo commento (trattino
 lungo → due punti) proprio nel corpo della funzione che noi sostituiamo: conflitto sicuro.
-Senza decisione diversa del titolare, tenere il nostro corpo e scartare il commento upstream."""
+Senza decisione diversa del titolare, tenere il nostro corpo e scartare il commento upstream.
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "lms/lms/doctype/lms_course/lms_course.py"
@@ -7297,40 +7300,6 @@ tocca validate_certification."""
   symbol = "validate_certification"
 
 # --- Classe live (lms_live_class.py) --------------------------------------------
-
-[[entries]]
-id = "live-class-calendar-debug-logging"
-title = "Log di diagnosi della creazione di evento e link Meet delle classi live"
-layer = "spa-graft"
-confidence = "low"
-intent = """
-Strumentazione di diagnosi (commit ef01b9a21, «add log for google meet calender»), aggiunta per
-capire perché le classi live Google Meet non ricevevano il link: un logger dedicato
-(lms_live_class_debug) traccia ogni passo di create_calendar_event, sync_with_google_calendar e
-add_video_conferencing_to_event, e after_insert registra in Error Log ogni fallimento della
-creazione dell'evento e lo rilancia. Nessun effetto per l'utente, solo log.
-Confidence bassa: oggi CustomLMSLiveClass (apps/os_lms/os_lms/overrides/lms_live_class.py)
-riscrive create_calendar_event senza chiamare super() né sync_with_google_calendar o
-add_video_conferencing_to_event, quindi quei log nella classe base sono codice morto; resta
-attivo solo l'involucro di after_insert (log + frappe.log_error + raise). C'è anche un commento
-in italiano («stato dell'event subito dopo la sync»). Domanda al titolare: tenerla o tornare al
-file upstream? v2.62.0 aggiunge solo get_permission_query_conditions in fondo al file, lontano
-da queste righe."""
-
-  [[entries.sites]]
-  file = "lms/lms/doctype/lms_live_class/lms_live_class.py"
-  anchor = 'frappe.logger("lms_live_class_debug", allow_site=True).info(msg)'
-  symbol = "_lc_log"
-
-  [[entries.sites]]
-  file = "lms/lms/doctype/lms_live_class/lms_live_class.py"
-  anchor = 'frappe.log_error(title="LMS Live Class create_calendar_event failed")'
-  symbol = "after_insert"
-
-  [[entries.sites]]
-  file = "lms/lms/doctype/lms_live_class/lms_live_class.py"
-  anchor = 'frappe.log_error(title="LMS Live Class sync_with_google_calendar failed")'
-  symbol = "create_calendar_event"
 
 [[entries]]
 id = "live-class-valutatore-read"
@@ -7585,7 +7554,7 @@ Merge di v2.62.0 (2026-09-24): LiveClassModal.vue eliminata; tutto portato nel m
 id = "live-class-modal-time-24h-i18n"
 title = "Ora a 24 ore, etichetta Ora esplicita e traduzioni nel modale della lezione live"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 Ritocchi di interfaccia:
 - il selettore dell'ora è forzato a 24 ore (:use12Hour="false", commit 305c803b8), coerente
@@ -7603,7 +7572,8 @@ ATTENZIONE al merge di v2.62.0: file cancellato; in LiveClassForm.vue riportare 
 se ancora serve, l'etichetta; le opzioni di registrazione restano letterali inglesi anche
 lì. Domanda per il committente: l'etichetta doppia dell'ora serve ancora?
 Merge di v2.62.0 (2026-09-24): LiveClassModal.vue eliminata; tutto portato nel modulo instradato pages/Forms/LiveClassForm.vue, che ora fa anche la modifica (route EditLiveClass), per decisione del committente (un solo modulo).
-Merge di v2.62.0 (2026-09-24): LiveClassForm upstream ha una sola etichetta tradotta :label="__('Time')" sul campo ora: niente piu doppia etichetta, sito tolto (la domanda sull'etichetta doppia decade)."""
+Merge di v2.62.0 (2026-09-24): LiveClassForm upstream ha una sola etichetta tradotta :label="__('Time')" sul campo ora: niente piu doppia etichetta, sito tolto (la domanda sull'etichetta doppia decade).
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Forms/LiveClassForm.vue"
@@ -7703,7 +7673,7 @@ Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina in
 id = "course-enrollment-purchased-certificate-hidden"
 title = "Casella «Certificato acquistato» nascosta nell'iscrizione al corso"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 Nel modale «Iscrivi uno studente» della dashboard del corso la casella «Purchased
 Certificate» è commentata (commit 1d3fa64ea): purchasedCertificate resta false, quindi non
@@ -7721,7 +7691,8 @@ casella nel nuovo form; frontend/src/tests/courseEnrollmentForm.test.ts la usa e
 Il lato server (enforce_server_managed_fields) riporta comunque purchased_certificate a
 false per chi non ne ha diritto. Domanda per il committente: confermare che la casella va
 nascosta anche nel nuovo form.
-Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/CourseEnrollmentForm.vue; regola riapplicata li, ancore invariate."""
+Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/CourseEnrollmentForm.vue; regola riapplicata li, ancore invariate.
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Forms/CourseEnrollmentForm.vue"
@@ -7945,7 +7916,7 @@ righe: merge atteso pulito."""
 id = "tsconfig-allowjs-ignore-deprecations"
 title = "tsconfig: file .js inclusi nel controllo e deprecazioni di TypeScript 6 silenziate"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 Commit 6d6d2af78 (Gabriele Pagnotta, «fix merge problems on course and lesson form»):
 "allowJs": true e "src/**/*.js" in include fanno entrare nel progetto TypeScript i moduli .js
@@ -7959,7 +7930,8 @@ dedotta, confidence bassa. File JSON: nessun marcatore possibile.
 ATTENZIONE al merge di v2.62.0: l'upstream cambia "types": [] in "types": ["vite/client"],
 riga adiacente al nostro "ignoreDeprecations": conflitto. Risolvere con "types":
 ["vite/client"] (upstream) e tenere allowJs, l'include di src/**/*.js e, se il committente lo
-conferma, ignoreDeprecations."""
+conferma, ignoreDeprecations.
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/tsconfig.json"
@@ -8041,31 +8013,13 @@ se servono anche lì."""
   allow = ["Moderator", "Gestore"]
   deny = ["Student", "Valutatore", "Guest"]
 
-[[entries]]
-id = "user-dropdown-placement-leftover"
-title = "Valore placement non valido sul Dropdown del menu utente"
-layer = "spa-graft"
-confidence = "low"
-intent = """
-Il Dropdown del menu utente porta placement="asdaaaaaaaa" (commit 175b0a754 «Modify css and add
-translations», conservato nel merge f4b2fa37d). Con il frappe-ui installato un valore diverso da
-'right'/'center' ricade su align 'start', cioè lo stesso comportamento di nessun placement:
-sembra un residuo di prova senza effetto, ma non è certo che non servisse con la versione di
-frappe-ui di allora. placement è deprecato a favore di align. Nessun conflitto atteso in
-v2.62.0 (l'upstream cambia la classe del <button> tre righe sotto, non questa). Domanda al
-committente: si può togliere?"""
-
-  [[entries.sites]]
-  file = "frontend/src/components/Sidebar/UserDropdown.vue"
-  anchor = '<Dropdown :options="userDropdownOptions" placement="asdaaaaaaaa">'
-
 # --- LayoutHeader.vue ---------------------------------------------------------------
 
 [[entries]]
 id = "layout-header-gray-background"
 title = "Intestazione di pagina con sfondo grigio del tema"
 layer = "spa-graft"
-confidence = "low"
+confidence = "high"
 intent = """
 LayoutHeader usa bg-surface-gray-1 al posto dello sfondo di base (bg-surface-white, poi
 bg-surface-base nell'upstream) per l'intestazione sticky delle pagine elenco (commit 81e2c2db8
@@ -8079,7 +8033,8 @@ right-header), come ogni pagina upstream il cui conflitto venga risolto tenendo 
 versione: se si accetta la cancellazione, quelle pagine non compilano. Scelte possibili: tenere
 il file come nostro (diventa di fatto override-file) oppure portare le due pagine su PageHeader
 (slot actions, breadcrumbs). Se il grigio serve ancora, riesprimerlo nel CSS del tema su
-.header-frame invece di toccare PageHeader. Da decidere con il committente."""
+.header-frame invece di toccare PageHeader. Da decidere con il committente.
+Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/components/Layouts/LayoutHeader.vue"
