@@ -76,3 +76,6 @@ Select field,Seleziona un campo,
 "{0} row(s) imported successfully, {1} failed.","{0} riga/righe importate correttamente, {1} non riuscite.",
 Importing {0},Importazione di {0},
 Select a document type,Seleziona un tipo di documento,
+Add your fiscal code to your profile to get the certificate for this course.,Per ottenere il certificato di questo corso inserisci il codice fiscale nel tuo profilo.
+"{0} has no fiscal code: the TrueSkills certificate cannot be issued.","{0} non ha il codice fiscale: il certificato TrueSkill non può essere emesso."
+Fiscal code missing,Codice fiscale mancante

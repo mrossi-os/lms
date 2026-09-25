@@ -32,6 +32,9 @@ function delay(ms) {
 // Map stable TrueSkills error codes to learner-facing messages.
 function trueskillErrorMessage(code) {
 	const map = {
+		fiscal_id_required: __(
+			'Per ottenere il certificato inserisci il codice fiscale nel tuo profilo.',
+		),
 		missing_fiscal_id: __(
 			'Codice fiscale mancante nel profilo. Contatta l\'amministrazione per emettere il certificato.',
 		),
@@ -76,7 +79,12 @@ export function useCertificateViewer() {
 
 	function fail(win, err) {
 		if (win) win.close()
-		const code = err?.message
+		// The server refuses to create a TrueSkills certificate without a fiscal
+		// code (CustomLMSCertificate.validate_trueskills_fiscal_id).
+		const code =
+			err?.exc_type === 'MissingFiscalIdError'
+				? 'fiscal_id_required'
+				: err?.message
 		if (code === 'timeout') {
 			toast.error(
 				__(
