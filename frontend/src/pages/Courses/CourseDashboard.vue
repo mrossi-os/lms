@@ -96,6 +96,7 @@
 						:options="studentListOptions"
 						:sortColumn="sortColumn"
 						:sortOrder="sortOrder"
+						:bannerTo="studentsBannerDock"
 						@sort="toggleSort"
 					>
 						<template #cell="{ column, row, value }">
@@ -127,6 +128,32 @@
 							</span>
 							<span v-else>{{ value }}</span>
 						</template>
+						<!-- OSLMS-CUSTOM: remove selected students (Administrator + Gestore); administrators may also purge their course data -->
+						<template #selection-actions="{ unselectAll, selections }">
+							<div class="flex gap-2">
+								<Button
+									variant="ghost"
+									:label="__('Remove')"
+									@click="confirmRemoveStudents(selections, unselectAll, false)"
+								>
+									<template #prefix>
+										<span class="lucide-user-minus size-4" />
+									</template>
+								</Button>
+								<Button
+									v-if="canPurgeStudents"
+									variant="ghost"
+									theme="red"
+									:aria-label="__('Remove and delete data')"
+									:tooltip="__('Remove and delete data')"
+									@click="confirmRemoveStudents(selections, unselectAll, true)"
+								>
+									<template #icon>
+										<span class="lucide-trash-2 size-4" />
+									</template>
+								</Button>
+							</div>
+						</template>
 					</ResponsiveListView>
 					<div v-else class="min-h-[200px]">
 						<EmptyStateLayout
@@ -144,6 +171,11 @@
 							{{ __('Load More') }}
 						</Button>
 					</div>
+					<!-- OSLMS-CUSTOM: selection banner kept in sight while this box scrolls the rows -->
+					<div
+						ref="studentsBannerDock"
+						class="sticky bottom-0 z-20 [&>*]:!static [&>*]:pb-2 [&>*]:pt-2"
+					/>
 				</div>
 			</div>
 			<div class="min-w-0 space-y-5">
@@ -283,10 +315,12 @@
 import {
 	Avatar,
 	Button,
+	call,
 	createListResource,
 	createResource,
 	ECharts,
 	FormControl,
+	toast,
 	Tooltip,
 } from 'frappe-ui'
 import Select from '@/components/Controls/Select.vue'
@@ -299,6 +333,7 @@ import ProgressBar from '@/components/ProgressBar.vue'
 import ResponsiveListView from '@/components/ResponsiveListView.vue'
 import { useScreenSize } from '@/utils/composables'
 import StudentCourseProgress from '@/pages/Courses/StudentCourseProgress.vue'
+import { createDialog } from '@/utils/dialogs'
 
 import type {
 	CourseDetails,
@@ -474,13 +509,89 @@ const studentSortOptions = computed(() =>
 	}))
 )
 
-const studentListOptions: ListViewOptions = {
-	selectable: false,
+// OSLMS-CUSTOM: student removal. Administrator + Gestore remove the enrollment
+// only (data kept); administrators may also purge the student's course data.
+// The server enforces the same rules (os_lms course_students).
+const user = inject<any>('$user')
+const studentsBannerDock = ref<HTMLElement | null>(null)
+const canRemoveStudents = computed(() => {
+	const roles: string[] = user?.data?.roles || []
+	return roles.includes('System Manager') || roles.includes('Gestore')
+})
+const canPurgeStudents = computed(() =>
+	Boolean(user?.data?.roles?.includes('System Manager')),
+)
+
+const studentListOptions = computed<ListViewOptions>(() => ({
+	selectable: canRemoveStudents.value,
 	showTooltip: false,
 	onRowClick: (row: ListRow) => {
 		currentStudent.value = row
 		showProgressModal.value = true
 	},
+}))
+
+let removingStudents = false
+const confirmRemoveStudents = (
+	selections: Iterable<string>,
+	unselectAll: () => void,
+	purge: boolean,
+) => {
+	const enrollments = Array.from(selections)
+	if (!enrollments.length) return
+	const count = enrollments.length
+	createDialog({
+		title: purge
+			? __('Remove and delete all data?')
+			: __('Remove from this course?'),
+		message: purge
+			? count === 1
+				? __(
+						'The selected student will be removed and all their data in this course will be deleted: progress, quiz, assignment and exercise submissions, notes, reviews, AI assistant and simulation history, and certificates. A TrueSkills badge already issued stays valid on TrueSkills.',
+					)
+				: __(
+						'{0} students will be removed and all their data in this course will be deleted: progress, quiz, assignment and exercise submissions, notes, reviews, AI assistant and simulation history, and certificates. A TrueSkills badge already issued stays valid on TrueSkills.',
+					).format(count)
+			: count === 1
+				? __(
+						'The selected student will be removed from this course. Their progress, submissions and certificates are kept and come back if they are enrolled again.',
+					)
+				: __(
+						'{0} students will be removed from this course. Their progress, submissions and certificates are kept and come back if they are enrolled again.',
+					).format(count),
+		actions: [
+			{
+				label: purge ? __('Remove and delete data') : __('Remove'),
+				theme: 'red',
+				variant: 'solid',
+				async onClick({ close }: { close: () => void }) {
+					if (removingStudents) return
+					removingStudents = true
+					try {
+						await call('os_lms.os_lms.course_students.remove_course_students', {
+							course: props.course.data?.name,
+							enrollments,
+							purge,
+						})
+					} catch (err: any) {
+						toast.error(
+							err?.messages?.[0] || __('Could not remove the students.'),
+						)
+						return
+					} finally {
+						removingStudents = false
+					}
+					close()
+					unselectAll()
+					progressList.reload()
+					chartDetails.reload()
+					lessonProgress.reload()
+					props.course.reload()
+					toast.success(__('Students removed successfully'))
+				},
+			},
+		],
+	})
 }
 
 const lessonProgressSortingOptions = [

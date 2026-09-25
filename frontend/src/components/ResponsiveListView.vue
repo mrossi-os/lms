@@ -206,6 +206,13 @@ const props = withDefaults(
 		forceCards?: boolean
 		/** Drop the `·` between detail cells, for a list whose cells are already badges. */
 		noDetailSeparator?: boolean
+		/**
+		 * OSLMS-CUSTOM: desktop dock for the selection banner, supplied by a page
+		 * whose own box scrolls the rows. frappe-ui pins the banner to the bottom
+		 * of ListView's root, as tall as every row, so in such a box it sits out
+		 * of sight until the last row is scrolled into view.
+		 */
+		bannerTo?: HTMLElement | null
 	}>(),
 	{
 		options: undefined,
@@ -215,6 +222,7 @@ const props = withDefaults(
 		sortOrder: 'asc',
 		forceCards: false,
 		noDetailSeparator: false,
+		bannerTo: null,
 	}
 )
 
@@ -328,7 +336,12 @@ onMounted(() => (mounted.value = true))
  * render — empty, since frappe-ui hides it while nothing is selected.
  */
 const bannerTarget = computed(() =>
-	showCards.value && mounted.value ? bannerDock.value : null
+	showCards.value
+		? mounted.value
+			? bannerDock.value
+			: null
+		: // OSLMS-CUSTOM: desktop dock from the page (bannerTo), when given
+			props.bannerTo
 )
 
 // The banner is sized for a desk in frappe-ui; only the card layout's copy is

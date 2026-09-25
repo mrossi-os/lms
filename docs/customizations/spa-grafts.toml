@@ -4735,6 +4735,69 @@ Merge di v2.62.0 (2026-09-24): selezione ora ResponsiveListView; il sito removeS
   deny = ["Valutatore"]
 
 [[entries]]
+id = "course-dashboard-remove-students"
+title = "Rimozione di studenti dal corso, con pulizia completa per l'amministratore"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Nella dashboard del corso chi ha System Manager (Administrator) o Gestore seleziona uno o più
+studenti e li toglie dal corso: si cancella solo la LMS Enrollment, progressi/consegne/certificati
+restano e tornano se lo studente viene reiscritto. Il solo System Manager ha in più "Rimuovi e
+cancella i dati" (icona cestino rossa), che cancella tutti i dati dello studente in quel corso:
+consegne di quiz (+ violation log), elaborati, esercizi (dai blocchi "program" delle lezioni),
+tempi video, note, richieste/valutazioni di certificazione, recensione, interesse, domande
+all'assistente AI, simulazioni AI (turni, debrief, tracce), progressi, certificati + TrueSkills
+Issue Log (il badge su TrueSkill resta valido: l'API non ha revoca). Conferma con dialog prima di
+cancellare. Le regole sono applicate lato server in os_lms.os_lms.course_students.remove_course_students
+(endpoint unico, delete_doc → Deleted Document ripristinabile da Desk).
+Storia: la prima versione (9a2a1a38a, 2026-03-30, tutti i gestori) era stata persa il 2026-06-04
+in 6d6d2af78 ("fix merge problems on course and lesson form") senza che nessun controllo la
+segnalasse; ripristinata il 2026-09-25 con la regola decisa dal committente. Le classi restano
+con la loro regola (voce batch-dashboard-remove-students)."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDashboard.vue"
+  anchor = "selectable: canRemoveStudents.value,"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDashboard.vue"
+  anchor = "const confirmRemoveStudents = ("
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDashboard.vue"
+  anchor = "os_lms.os_lms.course_students.remove_course_students"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDashboard.vue"
+  anchor = ':bannerTo="studentsBannerDock"'
+
+  [entries.visibility]
+  subject = "selezione e rimozione studenti nella dashboard corso (pulizia completa: solo System Manager)"
+  allow = ["System Manager", "Gestore"]
+  deny = ["Moderator", "Docente", "Batch Evaluator", "Valutatore"]
+
+[[entries]]
+id = "responsive-list-desktop-banner-dock"
+title = "Barra di selezione di ResponsiveListView in un dock fornito dalla pagina (desktop)"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+frappe-ui ancora la barra di selezione (absolute bottom-6) al fondo della radice di ListView, alta
+quanto tutte le righe: in una pagina dove a scorrere è un riquadro esterno (dashboard del corso,
+max-h 63vh) la barra resta fuori vista finché non si scorre all'ultima riga. Innestata in
+ResponsiveListView (upstream) la prop opzionale bannerTo: su desktop la barra viene teleportata
+nell'elemento indicato dalla pagina (un dock sticky bottom-0), come il componente fa già da solo
+sulle schede mobile. Senza la prop il componente è identico all'upstream."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/ResponsiveListView.vue"
+  anchor = "bannerTo?: HTMLElement | null"
+
+  [[entries.sites]]
+  file = "frontend/src/components/ResponsiveListView.vue"
+  anchor = "// OSLMS-CUSTOM: desktop dock from the page (bannerTo), when given"
+
+[[entries]]
 id = "batch-dashboard-import-students"
 title = "Importazione degli studenti nella classe dalla dashboard"
 layer = "spa-graft"

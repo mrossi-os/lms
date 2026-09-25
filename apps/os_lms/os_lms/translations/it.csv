@@ -79,3 +79,6 @@ Select a document type,Seleziona un tipo di documento,
 Add your fiscal code to your profile to get the certificate for this course.,Per ottenere il certificato di questo corso inserisci il codice fiscale nel tuo profilo.
 "{0} has no fiscal code: the TrueSkills certificate cannot be issued.","{0} non ha il codice fiscale: il certificato TrueSkill non può essere emesso."
 Fiscal code missing,Codice fiscale mancante
+You are not allowed to remove students from this course.,Non hai i permessi per rimuovere studenti da questo corso.
+Only an administrator can delete a student's course data.,Solo un amministratore può cancellare i dati di uno studente nel corso.
+Some of the selected enrollments do not belong to this course.,Alcune delle iscrizioni selezionate non appartengono a questo corso.
