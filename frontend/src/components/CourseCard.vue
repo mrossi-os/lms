@@ -60,10 +60,7 @@
 				>
 					<Tooltip :text="__('Certification available')">
 						<span class="flex items-center">
-							<LucideStar
-								class="size-4 me-1 text-transparent fill-yellow-500"
-							/>
-							{{ formatRating(course.rating) }}
+							<span class="lucide-award size-4" />
 						</span>
 					</Tooltip>
 				</div>
@@ -102,10 +99,8 @@
 </template>
 
 <script setup>
-import { BookOpen, Clock, Award } from 'lucide-vue-next'
 import { sessionStore } from '@/stores/session'
 import { Tooltip } from 'frappe-ui'
-import { formatRating } from '@/utils'
 import { theme } from '@/utils/theme'
 import { computed } from 'vue'
 import ProgressBar from '@/components/ProgressBar.vue'

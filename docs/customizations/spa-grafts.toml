@@ -2830,11 +2830,10 @@ intent = """
 Al posto della valutazione media (le recensioni sono disattivate, vedi course-reviews-removed)
 la card indica se il corso rilascia un certificato, anche quando il certificato è solo
 TrueSkills (trueskills_certificate_enabled, esposto dall'override os_lms di get_courses):
-senza, i corsi che rilasciano solo il badge TrueSkills non mostravano l'icona. ATTENZIONE,
-deriva già presente: dentro il blocco oggi c'è di nuovo il contenuto upstream della
-valutazione (stella + formatRating(course.rating)) invece dell'icona Award del commit
-ae30b25cb, cioè la stessa deriva da merge già corretta per la durata; va chiesto al
-committente se ripristinare l'icona."""
+senza, i corsi che rilasciano solo il badge TrueSkills non mostravano l'icona.
+2026-09-25 (B6.5): un merge aveva rimesso dentro il badge la stella gialla con il voto medio
+upstream; su decisione del committente il badge mostra di nuovo solo l'icona Award (span
+lucide-award, come le altre icone della card)."""
 
   [[entries.sites]]
   file = "frontend/src/components/CourseCard.vue"
@@ -3150,7 +3149,9 @@ lo studente atterra sempre su "Iscritto" (anche con una scheda salvata in preced
 amministratore, quindi un utente che non è né studente né Moderator/istruttore/valutatore
 di certificati vede solo "Pubblicati" e "In arrivo". ATTENZIONE al merge di v2.59.0:
 l'upstream rinomina :buttons in :options proprio sul TabButtons che noi abbiamo spezzato su
-più righe con il v-if: tenere il v-if e usare :options."""
+più righe con il v-if: tenere il v-if e usare :options.
+2026-09-25 (B6.5): il committente conferma che anche l'effetto collaterale è voluto (niente
+scheda "Iscritto" per chi non è studente né amministratore)."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Courses/Courses.vue"
@@ -5851,23 +5852,17 @@ confidence = "high"
 intent = """
 Nel tema elite il contenitore della AppSidebar non porta le classi upstream border-e
 bg-surface-sidebar (commit e9b6577b7 «update theme colors»): colore e bordo della sidebar sono
-dati dal tema. Davanti c'è un <div class="bg-gradient-overlay">, aggancio di una sfumatura
-del tema il cui CSS (.bg-gradient-overlay e le variabili --gradient-overlay-*) è stato
-rimosso nel commit 2b3b61c7d: oggi il div è inerte (già annotato nel WORKLOG). Motivazione
-dedotta; da confermare se il div vada tolto. ATTENZIONE al merge di v2.61.0: l'upstream
+dati dal tema. Il div <div class="bg-gradient-overlay"> che stava davanti (sfumatura del tema,
+CSS rimosso nel commit 2b3b61c7d, nessun campo in Brand Customize) è stato tolto il 2026-09-25
+su decisione del committente (B6.3). ATTENZIONE al merge di v2.61.0: l'upstream
 inserisce il link «Skip to main content» subito prima del div della sidebar e trasforma il
 contenitore del contenuto in <main id="main-content">: conflitto sulle prime righe del template.
-Accettare skip link e <main>, tenere il contenitore sidebar come class="h-full" (e, se ancora
-voluto, il div overlay).
+Accettare skip link e <main>, tenere il contenitore sidebar come class="h-full".
 Confermata dal committente il 2026-09-25 (B6.4): la modifica è voluta."""
 
   [[entries.sites]]
   file = "frontend/src/components/Layouts/DesktopLayout.vue"
   anchor = '<div class="h-full">'
-
-  [[entries.sites]]
-  file = "frontend/src/components/Layouts/DesktopLayout.vue"
-  anchor = '<div class="bg-gradient-overlay"></div>'
 
 [[entries]]
 id = "mobile-layout-theme-labels"

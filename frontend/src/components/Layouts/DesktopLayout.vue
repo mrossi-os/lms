@@ -7,8 +7,6 @@
 		>
 			{{ __('Skip to main content') }}
 		</a>
-		<!-- OSLMS-CUSTOM: elite theme hook; its CSS is gone, so the overlay div is inert -->
-		<div class="bg-gradient-overlay"></div>
 		<!-- OSLMS-CUSTOM: sidebar wrapper without upstream border/background (elite theme) -->
 		<div class="h-full">
 			<AppSidebar />
