@@ -1803,7 +1803,12 @@ confidence = "high"
 intent = """
 Se la risorsa del profilo fallisce (profilo di altri senza ruolo LMS, username inesistente) la
 pagina mostra NoPermission invece di restare bianca (commit 97b62f6f9). È la metà frontend della
-voce profile-own-without-lms-role (lato api.py): le due vanno riapplicate insieme."""
+voce profile-own-without-lms-role (lato api.py): le due vanno riapplicate insieme.
+2026-09-25 (B7, decisione del committente): i due casi sono distinti. Username inesistente
+(DoesNotExistError da get_profile_details) → NotFound, come l'upstream; qualunque altro errore,
+in particolare il PermissionError di chi guarda il profilo altrui senza ruolo LMS → NoPermission.
+Il backend lancia il PermissionError prima del controllo di esistenza, quindi chi non ha un
+ruolo LMS non può usare la differenza per scoprire quali username esistono."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Profile.vue"
@@ -4338,6 +4343,31 @@ newLabel, quindi oggi la prop è inutilizzata ma innocua. v2.59.0 tocca solo il 
   [[entries.sites]]
   file = "frontend/src/components/Discussions.vue"
   anchor = ":title=\"newLabel || __('New {0}').format(title)\""
+
+[[entries]]
+id = "list-search-restarts-paging"
+title = "La ricerca negli elenchi Quiz ed Esercizi riparte dalla prima pagina"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Con la paginazione «Carica altri» di ListPage, reload() di createListResource (frappe-ui) con
+start > 0 ricarica da 0 le righe già caricate e poi RIPRISTINA il vecchio start. Dopo «Carica
+altri», una ricerca e il suo svuotamento, il «Carica altri» successivo chiedeva quindi righe da
+48 in poi su un elenco di 3: provato il 2026-09-25 con la listResource reale e 60 quiz finti,
+restavano Q01-Q03 + Q49-Q60 (45 quiz spariti). Il cambio di filtro passa ora anche start: 0,
+come fa già l'upstream in Questions.vue e QuizSubmissions.vue. Se l'upstream aggiunge da sé
+start: 0 a queste pagine, marcare accepted-drift. Stesso schema senza start: 0 anche in altre
+pagine con «Carica altri» (Assignments, AssignmentSubmissionList, CertifiedParticipants,
+JobApplications, CourseDashboard; start: 0 lì c'è solo sul cambio di pageLength): non toccate,
+fuori dal punto B7."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Quizzes.vue"
+  anchor = "// OSLMS-CUSTOM: restart paging on a new search; after \"Load more\" reload() would"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProgrammingExercises/ProgrammingExercises.vue"
+  anchor = "// OSLMS-CUSTOM: restart paging on a new search or type; after \"Load more\" reload()"
 
 [[entries]]
 id = "assignment-list-type-i18n"

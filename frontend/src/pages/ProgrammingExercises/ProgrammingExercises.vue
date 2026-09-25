@@ -100,7 +100,6 @@ import type { ListRow } from '@/types'
 // OSLMS-CUSTOM: dates from the app dayjs instance (Italian locale)
 import dayjs from '@/utils/dayjs'
 import { searchLikeFilter } from '@/utils'
-import { ClipboardList, Plus } from 'lucide-vue-next'
 
 import { sessionStore } from '@/stores/session'
 import { useRouter } from 'vue-router'
@@ -160,8 +159,11 @@ const listOptions = computed(() => ({
 
 const updateList = () => {
 	let filters = getFilters()
+	// OSLMS-CUSTOM: restart paging on a new search or type; after "Load more" reload()
+	// would restore the old start and the next page would skip rows
 	exercises.update({
 		filters: filters,
+		start: 0,
 	})
 	exercises.reload()
 	totalExercises.update({

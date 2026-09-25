@@ -105,8 +105,11 @@ watch(search, () => {
 	} else {
 		delete quizFilters.value['title']
 	}
+	// OSLMS-CUSTOM: restart paging on a new search; after "Load more" reload() would
+	// restore the old start and the next page would skip rows
 	quizzes.update({
 		filters: quizFilters.value,
+		start: 0,
 	})
 	quizzes.reload()
 })
