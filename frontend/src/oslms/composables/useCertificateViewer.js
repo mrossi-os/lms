@@ -100,7 +100,10 @@ export function useCertificateViewer() {
 		const buf = await res.arrayBuffer()
 		// Force image/png so the browser renders it inline instead of downloading.
 		const blobUrl = URL.createObjectURL(new Blob([buf], { type: 'image/png' }))
-		navigate(win, blobUrl)
+		// Not through navigate(): safeUrl rejects blob: URLs, and this one is
+		// minted here from our own download, so there is nothing to allowlist.
+		if (win) win.location.href = blobUrl
+		else window.open(blobUrl, '_blank', 'noopener')
 	}
 
 	async function pollUntilIssued(lmsCertificate) {
