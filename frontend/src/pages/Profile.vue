@@ -1,5 +1,5 @@
 <template>
-	<!-- OSLMS-CUSTOM: the chain ends with NoPermission when the profile fails to load (profile.error) instead of a blank page; upstream's NotFound fallback is kept for a fetch that succeeds with no data -->
+	<!-- OSLMS-CUSTOM: a profile that fails to load shows NotFound when the user does not exist (DoesNotExistError) and NoPermission for any other error, instead of upstream's NotFound for every error -->
 	<NoPermission v-if="!$user.data" />
 	<div v-else-if="profile.data">
 		<PageHeader :breadcrumbs="breadcrumbs">
@@ -119,6 +119,7 @@
 			<router-view :profile="profile" :key="profile.data?.name" />
 		</div>
 	</div>
+	<NotFound v-else-if="profile.error?.exc_type === 'DoesNotExistError'" />
 	<NoPermission v-else-if="profile.error" />
 	<NotFound v-else-if="profile.fetched && !profile.data" />
 </template>
