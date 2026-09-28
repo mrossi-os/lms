@@ -8,3 +8,4 @@ os_lms.patches.v0_0_5.backfill_lesson_dwell_time
 os_lms.patches.v0_0_6.copy_enforce_lesson_order
 os_lms.patches.v0_0_7.convert_lms_inline_color
 os_lms.patches.v0_0_8.restrict_student_quiz_submission_perms
+os_lms.patches.v0_0_9.publish_description_images
