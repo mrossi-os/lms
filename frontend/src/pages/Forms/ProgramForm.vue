@@ -38,7 +38,8 @@
 						/>
 					</div>
 				</div>
-				<!-- OSLMS-CUSTOM: rich program description editor (os_lms description field) -->
+				<!-- OSLMS-CUSTOM: rich program description editor (os_lms description field).
+				     Images upload public: a private file would be readable only by its uploader. -->
 				<div class="pb-5 col-span-2">
 					<div class="mb-1.5 text-sm text-ink-gray-5">
 						{{ __('Description') }}
@@ -53,6 +54,7 @@
 						"
 						:editable="true"
 						:fixedMenu="true"
+						:uploadArgs="{ private: false }"
 						editorClass="prose-sm max-w-none border-b border-x border-outline-elevation-2 bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]"
 					/>
 				</div>

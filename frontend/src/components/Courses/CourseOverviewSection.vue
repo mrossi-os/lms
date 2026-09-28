@@ -10,7 +10,8 @@
 				:label="__('Course Description')"
 				:required="true"
 			/>
-			<!-- OSLMS-CUSTOM: ProseMirror-wrapper hook for the elite theme editor background + focus ring -->
+			<!-- OSLMS-CUSTOM: ProseMirror-wrapper hook for the elite theme editor background + focus ring.
+			     Also uploadArgs: description images upload public, a private file is readable only by its uploader. -->
 			<div
 				class="ProseMirror-wrapper rounded-t-lg rounded-b-md outline-none transition-[box-shadow] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] focus-within:ring-2 ring-outline-gray-3"
 			>
@@ -25,6 +26,7 @@
 					"
 					:editable="true"
 					:fixedMenu="true"
+					:uploadArgs="{ private: false }"
 					editorClass="prose-sm max-w-none border-b border-x border-outline-gray-2 hover:border-outline-gray-3 hover:shadow-sm focus-within:border-outline-gray-4 focus-within:shadow-sm rounded-b-md py-1 px-2 min-h-[7rem] transition-colors"
 				/>
 			</div>

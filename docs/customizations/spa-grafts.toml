@@ -3471,6 +3471,37 @@ Merge di v2.62.0 (2026-09-24): ProgramForm.vue spostato dall'upstream in pages/F
   unit = "frontend/src/tests/sanitizeRichHTML.test.ts"
 
 [[entries]]
+id = "description-images-upload-public"
+title = "Le immagini nelle descrizioni di programmi e corsi si caricano pubbliche"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Gli editor ricchi (TextEditor di frappe-ui e il nostro RichTextEditor) caricano le immagini
+private per default, senza agganciarle al documento: Frappe aggancia in automatico solo i file
+dei campi Attach/Attach Image. Un File privato e orfano è leggibile solo da chi l'ha caricato e
+dall'Administrator, per cui studenti e membri vedevano l'immagine rotta (403; Elite, «PROGRAMMA 2»,
+2026-09-28). Le descrizioni di programmi e corsi sono fatte per essere lette da tutti: i tre editor
+passano uploadArgs { private: false }, come copertine e miniature dei corsi. Le immagini già
+caricate sono ripuntate dalla patch os_lms v0_0_9.publish_description_images (copia pubblica
+agganciata al documento, originale privato lasciato dov'è). CourseOverviewSection.vue e
+NewCourseForm.vue sono file upstream: dopo ogni merge controllare che la prop ci sia ancora."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Forms/ProgramForm.vue"
+  anchor = ":uploadArgs=\"{ private: false }\""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Courses/CourseOverviewSection.vue"
+  anchor = ":uploadArgs=\"{ private: false }\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Forms/NewCourseForm.vue"
+  anchor = ":uploadArgs=\"{ private: false }\""
+
+  [entries.checks]
+  unit = "apps/os_lms/os_lms/os_lms/tests/test_publish_description_images.py"
+
+[[entries]]
 id = "program-form-add-courses-multi"
 title = "Più corsi aggiunti insieme a un programma"
 layer = "spa-graft"
