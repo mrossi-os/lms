@@ -25,6 +25,10 @@ class EliteAPIForbidden(frappe.PermissionError):
 	http_status_code = 403
 
 
+class EliteAPINotFound(frappe.DoesNotExistError):
+	http_status_code = 404
+
+
 class EliteAPITooManyRequests(frappe.TooManyRequestsError):
 	http_status_code = 429
 
@@ -35,6 +39,13 @@ def api_error(exc_class: type[Exception], code: str, parameter: str | None = Non
 	if parameter:
 		frappe.local.response["parameter"] = parameter
 	raise exc_class(code)
+
+
+def require_param(name: str, value: str | None) -> str:
+	value = (value or "").strip()
+	if not value:
+		api_error(EliteAPIBadRequest, "invalid_parameter", name)
+	return value
 
 
 def parse_int_param(

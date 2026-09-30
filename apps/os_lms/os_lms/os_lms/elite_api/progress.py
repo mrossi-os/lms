@@ -109,3 +109,208 @@ def batch_summaries(batches: list[str]) -> dict[str, dict]:
 			"not_started": int(row.not_started or 0),
 		}
 	return summaries
+
+
+# -- Student lists (same rules as the summaries above) ------------------------
+
+COURSE_STATUSES = ("completed", "in_progress", "not_started")
+BATCH_STATUSES = ("completed_all", "partial", "not_started")
+
+# The status filter lives in the queries, so that totals and pages match it.
+# Each list query has a count twin with the same FROM/WHERE: keep them in sync.
+
+COURSE_STUDENTS_SQL = """
+	select u.first_name, u.last_name, u.codice_fiscale, u.email, p.enrolled_on, p.progress
+	from (
+		select e.member, max(ifnull(e.progress, 0)) as progress, min(e.creation) as enrolled_on
+		from `tabLMS Enrollment` e
+		where e.member_type = 'Student' and e.course = %(course)s
+		group by e.member
+	) p
+	inner join `tabUser` u on u.name = p.member and u.enabled = 1
+	where %(status)s is null
+		or (%(status)s = 'completed' and p.progress >= 100)
+		or (%(status)s = 'in_progress' and p.progress > 0 and p.progress < 100)
+		or (%(status)s = 'not_started' and p.progress <= 0)
+	order by u.last_name, u.first_name, u.email
+	limit %(limit)s offset %(offset)s
+"""
+
+COURSE_STUDENTS_COUNT_SQL = """
+	select count(*)
+	from (
+		select e.member, max(ifnull(e.progress, 0)) as progress
+		from `tabLMS Enrollment` e
+		where e.member_type = 'Student' and e.course = %(course)s
+		group by e.member
+	) p
+	inner join `tabUser` u on u.name = p.member and u.enabled = 1
+	where %(status)s is null
+		or (%(status)s = 'completed' and p.progress >= 100)
+		or (%(status)s = 'in_progress' and p.progress > 0 and p.progress < 100)
+		or (%(status)s = 'not_started' and p.progress <= 0)
+"""
+
+BATCH_STUDENTS_SQL = """
+	select u.name as member, u.first_name, u.last_name, u.codice_fiscale, u.email,
+		s.enrolled_on, s.courses_total, s.completed, s.started
+	from (
+		select be.member, be.creation as enrolled_on,
+			count(bc.course) as courses_total,
+			ifnull(sum(ifnull(p.progress, 0) >= 100), 0) as completed,
+			ifnull(sum(ifnull(p.progress, 0) > 0), 0) as started
+		from `tabLMS Batch Enrollment` be
+		left join (
+			select distinct course
+			from `tabBatch Course`
+			where parenttype = 'LMS Batch' and parent = %(batch)s
+		) bc on 1 = 1
+		left join (
+			select e.course, e.member, max(ifnull(e.progress, 0)) as progress
+			from `tabLMS Enrollment` e
+			where e.member_type = 'Student' and e.course in (
+				select course from `tabBatch Course`
+				where parenttype = 'LMS Batch' and parent = %(batch)s
+			)
+			group by e.course, e.member
+		) p on p.course = bc.course and p.member = be.member
+		where be.batch = %(batch)s
+		group by be.member, be.creation
+	) s
+	inner join `tabUser` u on u.name = s.member and u.enabled = 1
+	where %(status)s is null
+		or (%(status)s = 'completed_all' and s.courses_total > 0 and s.completed = s.courses_total)
+		or (%(status)s = 'partial' and s.started > 0 and not (s.courses_total > 0 and s.completed = s.courses_total))
+		or (%(status)s = 'not_started' and s.started = 0)
+	order by u.last_name, u.first_name, u.email
+	limit %(limit)s offset %(offset)s
+"""
+
+BATCH_STUDENTS_COUNT_SQL = """
+	select count(*)
+	from (
+		select be.member,
+			count(bc.course) as courses_total,
+			ifnull(sum(ifnull(p.progress, 0) >= 100), 0) as completed,
+			ifnull(sum(ifnull(p.progress, 0) > 0), 0) as started
+		from `tabLMS Batch Enrollment` be
+		left join (
+			select distinct course
+			from `tabBatch Course`
+			where parenttype = 'LMS Batch' and parent = %(batch)s
+		) bc on 1 = 1
+		left join (
+			select e.course, e.member, max(ifnull(e.progress, 0)) as progress
+			from `tabLMS Enrollment` e
+			where e.member_type = 'Student' and e.course in (
+				select course from `tabBatch Course`
+				where parenttype = 'LMS Batch' and parent = %(batch)s
+			)
+			group by e.course, e.member
+		) p on p.course = bc.course and p.member = be.member
+		where be.batch = %(batch)s
+		group by be.member
+	) s
+	inner join `tabUser` u on u.name = s.member and u.enabled = 1
+	where %(status)s is null
+		or (%(status)s = 'completed_all' and s.courses_total > 0 and s.completed = s.courses_total)
+		or (%(status)s = 'partial' and s.started > 0 and not (s.courses_total > 0 and s.completed = s.courses_total))
+		or (%(status)s = 'not_started' and s.started = 0)
+"""
+
+# Per-course progress of one page of batch students.
+BATCH_STUDENT_COURSES_SQL = """
+	select e.member, e.course, max(ifnull(e.progress, 0)) as progress
+	from `tabLMS Enrollment` e
+	where e.member_type = 'Student' and e.member in %(members)s and e.course in (
+		select course from `tabBatch Course`
+		where parenttype = 'LMS Batch' and parent = %(batch)s
+	)
+	group by e.member, e.course
+"""
+
+
+def course_status(progress: float) -> str:
+	if progress >= 100:
+		return "completed"
+	return "in_progress" if progress > 0 else "not_started"
+
+
+def batch_status(courses_total: int, completed: int, started: int) -> str:
+	if courses_total and completed == courses_total:
+		return "completed_all"
+	return "partial" if started else "not_started"
+
+
+def course_students(course: str, status: str | None, limit: int, offset: int) -> tuple[list[dict], int]:
+	"""Return ``(students, total)``; ``total`` counts every student matching ``status``."""
+	values = {"course": course, "status": status, "limit": limit, "offset": offset}
+	students = [
+		{
+			**_identity(row),
+			"enrolled_on": _iso(row.enrolled_on),
+			"progress": _progress(row.progress),
+			"status": course_status(_progress(row.progress)),
+		}
+		for row in frappe.db.sql(COURSE_STUDENTS_SQL, values, as_dict=True)
+	]
+	total = frappe.db.sql(COURSE_STUDENTS_COUNT_SQL, values)[0][0]
+	return students, int(total)
+
+
+def batch_students(
+	batch: str, courses: list[str], status: str | None, limit: int, offset: int
+) -> tuple[list[dict], int]:
+	"""Return ``(students, total)``; ``courses`` are the batch course names, in batch order."""
+	values = {"batch": batch, "status": status, "limit": limit, "offset": offset}
+	rows = frappe.db.sql(BATCH_STUDENTS_SQL, values, as_dict=True)
+	total = frappe.db.sql(BATCH_STUDENTS_COUNT_SQL, values)[0][0]
+
+	progress_by_member: dict[str, dict[str, float]] = {}
+	if rows and courses:
+		for row in frappe.db.sql(
+			BATCH_STUDENT_COURSES_SQL,
+			{"batch": batch, "members": tuple(row.member for row in rows)},
+			as_dict=True,
+		):
+			progress_by_member.setdefault(row.member, {})[row.course] = _progress(row.progress)
+
+	students = []
+	for row in rows:
+		progress = progress_by_member.get(row.member, {})
+		students.append(
+			{
+				**_identity(row),
+				"enrolled_on": _iso(row.enrolled_on),
+				"courses_completed": int(row.completed),
+				"courses_total": int(row.courses_total),
+				"status": batch_status(int(row.courses_total), int(row.completed), int(row.started)),
+				"courses": [
+					{
+						"id": course,
+						"progress": progress.get(course, 0.0),
+						"status": course_status(progress.get(course, 0.0)),
+					}
+					for course in courses
+				],
+			}
+		)
+	return students, int(total)
+
+
+def _identity(row) -> dict:
+	fiscal_code = "".join((row.codice_fiscale or "").split()).upper()
+	return {
+		"first_name": row.first_name or "",
+		"last_name": row.last_name or "",
+		"fiscal_code": fiscal_code or None,
+		"email": row.email,
+	}
+
+
+def _progress(value) -> float:
+	return round(float(value or 0), 2)
+
+
+def _iso(value) -> str | None:
+	return value.replace(microsecond=0).isoformat() if value else None

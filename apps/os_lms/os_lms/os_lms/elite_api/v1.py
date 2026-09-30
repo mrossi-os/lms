@@ -8,8 +8,21 @@ import frappe
 
 from os_lms.os_lms.elite_api import keys
 from os_lms.os_lms.elite_api.auth import elite_api_endpoint, get_current_key
-from os_lms.os_lms.elite_api.errors import parse_int_param
-from os_lms.os_lms.elite_api.progress import batch_summaries, course_summaries
+from os_lms.os_lms.elite_api.errors import (
+	EliteAPINotFound,
+	api_error,
+	parse_choice_param,
+	parse_int_param,
+	require_param,
+)
+from os_lms.os_lms.elite_api.progress import (
+	BATCH_STATUSES,
+	COURSE_STATUSES,
+	batch_students,
+	batch_summaries,
+	course_students,
+	course_summaries,
+)
 
 DEFAULT_PAGE_LENGTH = 100
 MAX_PAGE_LENGTH = 500
@@ -96,6 +109,64 @@ def list_batches(search: str | None = None, page: str | None = None, page_length
 			for batch in batches
 		],
 	)
+
+
+@frappe.whitelist(methods=["GET"])
+@elite_api_endpoint
+def get_course_students(
+	course: str | None = None,
+	status: str | None = None,
+	page: str | None = None,
+	page_length: str | None = None,
+) -> dict:
+	"""Name, fiscal code, email and progress of the students of a course."""
+	course = require_param("course", course)
+	status = parse_choice_param("status", status, COURSE_STATUSES)
+	page_no, length = _pagination(page, page_length)
+	title = _title_or_404("LMS Course", course, "course")
+
+	students, total = course_students(course, status, limit=length, offset=(page_no - 1) * length)
+	return {
+		"course": {"id": course, "title": title},
+		"summary": course_summaries([course])[course],
+		**_page(total=total, page_no=page_no, length=length, data=students),
+	}
+
+
+@frappe.whitelist(methods=["GET"])
+@elite_api_endpoint
+def get_batch_students(
+	batch: str | None = None,
+	status: str | None = None,
+	page: str | None = None,
+	page_length: str | None = None,
+) -> dict:
+	"""Name, fiscal code, email and per-course progress of the students of a batch."""
+	batch = require_param("batch", batch)
+	status = parse_choice_param("status", status, BATCH_STATUSES)
+	page_no, length = _pagination(page, page_length)
+	title = _title_or_404("LMS Batch", batch, "batch")
+	courses = _batch_courses([batch]).get(batch, [])
+
+	students, total = batch_students(
+		batch,
+		[course["id"] for course in courses],
+		status,
+		limit=length,
+		offset=(page_no - 1) * length,
+	)
+	return {
+		"batch": {"id": batch, "title": title, "courses": courses},
+		"summary": batch_summaries([batch])[batch],
+		**_page(total=total, page_no=page_no, length=length, data=students),
+	}
+
+
+def _title_or_404(doctype: str, name: str, parameter: str) -> str:
+	row = frappe.db.get_value(doctype, name, ["name", "title"], as_dict=True)
+	if not row:
+		api_error(EliteAPINotFound, "not_found", parameter)
+	return row.title
 
 
 def _pagination(page: str | None, page_length: str | None) -> tuple[int, int]:
