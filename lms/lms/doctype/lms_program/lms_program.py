@@ -6,6 +6,7 @@ from frappe import _
 from frappe.model.document import Document
 
 from lms.lms.doctype.lms_content_author.lms_content_author import AuthoredDocument
+from lms.lms.permissions import has_authored_content_permission  # noqa: F401
 from lms.lms.utils import guest_access_allowed
 
 # The roles this doctype has always treated as its authoring population. The role

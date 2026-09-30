@@ -310,9 +310,11 @@ def serve_resource(file_url: str):
 	# the last path segment of the URL, which here is this method's dotted name -- what
 	# mobile Chrome shows in its PDF placeholder, and what a save dialog would propose.
 	# Name it explicitly, still inline so it keeps rendering in the browser.
+	# Only a real Response carries headers; anything else is passed through untouched.
 	file_name = file_url.rstrip("/").split("/")[-1]
-	if file_name and "Content-Disposition" not in response.headers:
-		response.headers["Content-Disposition"] = f"inline; filename*=UTF-8''{quote(file_name)}"
+	headers = getattr(response, "headers", None)
+	if file_name and headers is not None and "Content-Disposition" not in headers:
+		headers["Content-Disposition"] = f"inline; filename*=UTF-8''{quote(file_name)}"
 
 	return response
 
