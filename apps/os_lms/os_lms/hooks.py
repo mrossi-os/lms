@@ -37,6 +37,7 @@ after_migrate = [
     "os_lms.setup.create_custom_fields",
     "os_lms.setup.setup_valutatore_role_and_permissions",
     "os_lms.setup.setup_gestore_role_permissions",
+    "os_lms.setup.setup_docente_role_permissions",
     "os_lms.setup.create_redis_index",
     "os_lms.setup.rebuild_search_index",
     # Migration must run BEFORE seed_prompt_templates so operator-customised

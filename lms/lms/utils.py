@@ -1036,7 +1036,9 @@ def can_list_unpublished(user: str = None) -> bool:
 	user = user or frappe.session.user
 	if user == "Guest":
 		return False
-	return bool(has_moderator_role(user)) or "System Manager" in frappe.get_roles(user)
+	# OSLMS-CUSTOM: a "Docente" (global instructor) lists every draft course and batch
+	roles = frappe.get_roles(user)
+	return bool(has_moderator_role(user)) or "System Manager" in roles or "Docente" in roles
 
 
 def is_self_scoped(filters: dict) -> bool:
@@ -1057,7 +1059,10 @@ def restrict_to_published(filters: dict, self_scoped: bool) -> None:
 	return every unpublished row to anyone who asked. The caller's value is
 	overwritten, not defaulted: it is the value being abused.
 	"""
-	if self_scoped or can_list_unpublished():
+	# OSLMS-CUSTOM: a Valutatore's list arrives already narrowed to "published OR assigned"
+	# The os_lms list overrides rewrite `name` to that set and raise this flag around the
+	# call; pinning published=1 on top would hide the drafts assigned to them.
+	if self_scoped or can_list_unpublished() or frappe.flags.get("oslms_valutatore_scoped_list"):
 		return
 	filters["published"] = 1
 
@@ -1211,7 +1216,11 @@ def get_course_categories(filters: dict = None) -> list:
 	# Reuse get_courses' translation so synthetic tab flags (enrolled, created)
 	# map to real course filters. or_filters is empty here because its only
 	# sources (title, certification) were stripped above.
+	self_scoped = is_self_scoped(filters)
 	filters, or_filters, _ = update_course_filters(filters)
+	# OSLMS-CUSTOM: the same draft gate as get_courses (upstream v2.64.0), or anyone
+	# passing {"published": 0} would list the categories of draft courses.
+	restrict_to_published(filters, self_scoped)
 	filters["category"] = ["is", "set"]
 
 	# Distinct category strings are inherently bounded (one per category, not per
@@ -1513,7 +1522,13 @@ def can_view_course(course: str) -> bool:
 		return True
 	if frappe.session.user == "Guest":
 		return False
-	return bool(can_modify_course(course) or get_membership(course))
+	# OSLMS-CUSTOM: Valutatore and program members read the outline of unpublished courses
+	return bool(
+		can_modify_course(course)
+		or get_membership(course)
+		or is_course_valutatore(course)
+		or is_course_in_member_program(course)
+	)
 
 
 def get_outline_chapter(course: str) -> list:

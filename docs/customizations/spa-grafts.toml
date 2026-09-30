@@ -570,7 +570,8 @@ lms/lms/utils.py accanto a is_course_valutatore); la terza è la guardia di redi
 CourseDetail.vue, che legge il flag in_member_program esposto dall'override os_lms di
 get_course_details. Se sparisce una delle guardie server, lo studente del programma non
 vede il corso o non può iscriversi; se sparisce quella della pagina, viene rimandato alla
-lista corsi. Decisione del cliente del 2026-09-23."""
+lista corsi. Decisione del cliente del 2026-09-23.
+Merge di v2.64.0 (2026-09-30): due guardie upstream nuove negavano ai membri i corsi del programma non pubblicati: can_view_course (outline vuoto in get_course_outline) e can_access_course (lettura di LMS Course e Course Chapter, quindi get_scorm_playback). La regola è riespressa in entrambe; il sito in can_access_course è condiviso con la voce permissions-valutatore-course-scope-v264."""
 
   [[entries.sites]]
   file = "lms/lms/utils.py"
@@ -594,6 +595,11 @@ lista corsi. Decisione del cliente del 2026-09-23."""
   [[entries.sites]]
   file = "frontend/src/types/api.ts"
   anchor = "in_member_program?: 0 | 1"
+
+  [[entries.sites]]
+  file = "lms/lms/utils.py"
+  anchor = "\t\tor is_course_in_member_program(course)"
+  symbol = "can_view_course"
 
   [entries.checks]
   backend = "apps/os_lms/os_lms/os_lms/tests/test_program_course_access.py"
@@ -8491,3 +8497,168 @@ Playwright."""
   [[entries.sites]]
   file = "package.json"
   anchor = '"packageManager": "yarn@1.22.22'
+
+# ---------------------------------------------------------------------------
+# Adeguamento 2026-09-30 — i nostri ruoli dentro i cancelli di permesso di v2.64.0
+# ---------------------------------------------------------------------------
+
+[[entries]]
+id = "permissions-docente-global-v264"
+title = "Il Docente resta docente globale nei cancelli di permesso di v2.64.0"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il Docente è un docente globale: gestisce ogni corso, classe e contenuto anche senza comparire
+fra gli istruttori (graft in can_modify_course). v2.64.0 aggiunge cancelli che riconoscono solo
+Moderator, System Manager, righe Course Instructor e autori, senza passare da can_modify_course:
+senza questi innesti il Docente non modifica i quiz, le domande, i compiti e gli esercizi creati
+da altri (403, has_authored_content_permission), non vede le bozze nelle liste e nei selettori
+(_course_read_condition, can_list_unpublished), vede vuoti progressi e statistiche video dei corsi
+dove non è istruttore (course_record_*, che si sbloccano quando _course_read_condition torna None),
+e i file che carica nelle lezioni danno 403 agli studenti (courses_authored_by in serve_resource).
+setup_docente_role_permissions dà al Docente il permlevel 1 di Course Chapter e LMS Assignment
+(campi SCORM, risposta modello), che la patch upstream reconcile_custom_docperm_permlevels concede
+solo ai ruoli standard: senza, un capitolo SCORM salvato da un Docente perde il pacchetto in
+silenzio. Il permlevel 1 rispecchia read/write di livello 0 e non viene mai dato su un doctype a
+cui il Docente non ha già accesso dal Desk. Decisione del committente al merge di v2.64.0
+(2026-09-30): «Docente globale ovunque»."""
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = 'if is_site_administrator(user) or "Moderator" in roles or "Docente" in roles:'
+  symbol = "_course_read_condition"
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = 'if is_site_administrator(user) or has_moderator_role(user) or "Docente" in frappe.get_roles(user):'
+  symbol = "has_authored_content_permission"
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = 'if user == "Administrator" or has_moderator_role(user) or "Docente" in frappe.get_roles(user):'
+  symbol = "courses_authored_by"
+
+  [[entries.sites]]
+  file = "lms/lms/utils.py"
+  anchor = 'return bool(has_moderator_role(user)) or "System Manager" in roles or "Docente" in roles'
+  symbol = "can_list_unpublished"
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/setup.py"
+  anchor = "def setup_docente_role_permissions():"
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/hooks.py"
+  anchor = '"os_lms.setup.setup_docente_role_permissions",'
+
+  [entries.checks]
+  unit = "apps/os_lms/os_lms/os_lms/tests/test_role_gates_v2_64.py"
+
+[[entries]]
+id = "permissions-valutatore-course-scope-v264"
+title = "Il Valutatore legge i corsi delle sue classi anche nei cancelli di v2.64.0"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il Valutatore di una classe legge, in sola lettura, i corsi di quella classe anche se non
+pubblicati: dashboard del corso con il drilldown dei progressi, bozze assegnate nelle liste di
+corsi e classi, outline e capitoli (anche SCORM). v2.64.0 aggiunge cancelli che non conoscono il
+Valutatore: la condizione di lista upstream sui progressi («member = utente OR corso di cui sei
+istruttore») messa in AND con la nostra (os_lms.valutatore.course_progress_query_conditions)
+dava sempre zero righe, e il has_permission upstream negava prima del nostro veto; can_access_course
+e can_view_course negavano capitoli e outline dei corsi in bozza; restrict_to_published aggiungeva
+published=1 sopra la lista già ristretta da os_lms a «pubblicati OPPURE assegnati», nascondendo le
+bozze assegnate. Gli innesti allargano la regola upstream ai corsi delle classi valutate
+(_valutatore_courses è il gemello di lista di is_course_valutatore); il restringimento per classe
+resta a os_lms.valutatore. La scrittura non si allarga mai (solo COURSE_READ_PTYPES). Il flag
+oslms_valutatore_scoped_list è alzato solo per un Valutatore «puro» e solo durante la chiamata.
+Lacuna nota, preesistente: get_course_count/get_batch_count non sono ristretti per il Valutatore
+(solo il totale mostrato, la paginazione usa hasNextPage). Decisione del committente al merge di
+v2.64.0 (2026-09-30): «deve mantenere le regole che abbiamo imposto noi»."""
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = "condition = condition | course.name.isin(_valutatore_courses(member))"
+  symbol = "_course_read_condition"
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = "def _valutatore_courses(member):"
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = "if ptype in COURSE_READ_PTYPES and course and not moved_to and is_course_valutatore(course, user):"
+  symbol = "course_record_has_permission"
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = "condition = condition | record.course.isin(_valutatore_courses(member))"
+  symbol = "course_record_query_conditions"
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = "if is_course_valutatore(course, user) or is_course_in_member_program(course, user):"
+  symbol = "can_access_course"
+
+  [[entries.sites]]
+  file = "lms/lms/utils.py"
+  anchor = "		or is_course_valutatore(course)"
+  symbol = "can_view_course"
+
+  [[entries.sites]]
+  file = "lms/lms/utils.py"
+  anchor = 'frappe.flags.get("oslms_valutatore_scoped_list")'
+  symbol = "restrict_to_published"
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/os_lms/override_utils.py"
+  anchor = "def _valutatore_scoped_list():"
+
+  [entries.checks]
+  unit = "apps/os_lms/os_lms/os_lms/tests/test_role_gates_v2_64.py"
+
+[[entries]]
+id = "program-authoring-pool"
+title = "Moderator, Course Creator e Docente modificano tutti i programmi"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+I programmi sono gestiti come un insieme condiviso: chiunque abbia un ruolo di authoring
+(Moderator/Gestore, Course Creator, Docente) crea e modifica ogni programma. v2.64.0 restringe la
+scrittura a chi è fra gli «authors» del programma (fallback: owner), con la tabella autori
+modificabile solo dal Desk, che Docenti e Gestori Website User non raggiungono; prima di v2.64.0
+Course Creator modificava tutti i programmi, mentre il Docente puro riceveva 403 pur vedendo nella
+SPA i pulsanti di authoring (is_instructor è forzato a True per il Docente). Con Docente fra i
+PROGRAM_AUTHORING_ROLES il Docente vede anche i programmi in bozza. La DocPerm di LMS Program per il
+Docente arriva da setup_docente_role_permissions (voce permissions-docente-global-v264). Decisione
+del committente al merge di v2.64.0 (2026-09-30)."""
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_program/lms_program.py"
+  anchor = 'PROGRAM_AUTHORING_ROLES = ("Moderator", "Course Creator", "Docente")'
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_program/lms_program.py"
+  anchor = "# OSLMS-CUSTOM: every authoring role edits every program, not only the ones naming them"
+  symbol = "has_program_authoring_permission"
+
+  [entries.checks]
+  unit = "apps/os_lms/os_lms/os_lms/tests/test_role_gates_v2_64.py"
+
+[[entries]]
+id = "course-categories-published-gate"
+title = "Le categorie dei corsi rispettano il filtro dei pubblicati"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La nostra get_course_categories accetta gli stessi filtri di scheda di get_courses per elencare
+solo le categorie presenti nella scheda. v2.64.0 chiude in get_courses/get_batches la fuga per cui
+chiunque, anche un Guest, passando {"published": 0} riceveva i corsi in bozza (restrict_to_published):
+la nostra funzione, che non è upstream, non riceveva quella correzione e lasciava elencare le
+categorie dei corsi in bozza. Stesso cancello, con la stessa eccezione per le schede ristrette
+all'utente (created/enrolled) e per il Valutatore (flag oslms_valutatore_scoped_list)."""
+
+  [[entries.sites]]
+  file = "lms/lms/utils.py"
+  anchor = "# OSLMS-CUSTOM: the same draft gate as get_courses (upstream v2.64.0), or anyone"
+  symbol = "get_course_categories"

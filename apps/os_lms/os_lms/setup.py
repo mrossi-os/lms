@@ -168,6 +168,62 @@ def setup_gestore_role_permissions():
     frappe.db.commit()
 
 
+DOCENTE_ROLE = "Docente"
+# The "Docente" is a global instructor (see can_modify_course). Its level-0 DocPerms
+# are managed from the desk; these are the grants the SPA relies on and that the
+# desk setup predates:
+# - LMS Program: the SPA shows program authoring to every Docente, and the program
+#   has_permission hook admits the role (client decision, v2.64.0 merge).
+DOCENTE_DOCPERMS = {
+    "LMS Program": {"read": 1, "create": 1, "write": 1, "delete": 1},
+}
+# Upstream v2.64.0 moved fields to permlevel 1 (the SCORM package of a chapter, the
+# model answer of an assignment) and granted that level to its own roles only. A
+# Docente without it saves an SCORM chapter that silently loses its package. Level 1
+# mirrors the level-0 read/write the Docente already holds on the doctype.
+DOCENTE_PERMLEVEL_DOCTYPES = ("Course Chapter", "LMS Assignment")
+
+
+def setup_docente_role_permissions():
+    """Top up the DocPerms of the "Docente" role. Idempotent; skips without the role."""
+    from frappe.permissions import add_permission, update_permission_property
+
+    if not frappe.db.exists("Role", DOCENTE_ROLE):
+        return
+
+    for doctype, perms in DOCENTE_DOCPERMS.items():
+        if not frappe.db.exists("DocType", doctype):
+            continue
+        add_permission(doctype, DOCENTE_ROLE, 0)
+        for ptype, value in perms.items():
+            update_permission_property(
+                doctype, DOCENTE_ROLE, 0, ptype, value, validate=False
+            )
+
+    for doctype in DOCENTE_PERMLEVEL_DOCTYPES:
+        level0 = _effective_level0_perms(doctype, DOCENTE_ROLE)
+        if not level0 or not level0.read:
+            # Never hand out a doctype the desk setup did not give the Docente.
+            continue
+        add_permission(doctype, DOCENTE_ROLE, 1)
+        update_permission_property(doctype, DOCENTE_ROLE, 1, "read", 1, validate=False)
+        update_permission_property(
+            doctype, DOCENTE_ROLE, 1, "write", 1 if level0.write else 0, validate=False
+        )
+    frappe.db.commit()
+
+
+def _effective_level0_perms(doctype: str, role: str):
+    """The level-0 row Frappe applies: Custom DocPerm when the doctype has any, else DocPerm."""
+    table = "Custom DocPerm" if frappe.db.exists("Custom DocPerm", {"parent": doctype}) else "DocPerm"
+    return frappe.db.get_value(
+        table,
+        {"parent": doctype, "role": role, "permlevel": 0, "if_owner": 0},
+        ["read", "write"],
+        as_dict=True,
+    )
+
+
 def create_custom_fields():
     for dt, fields in CUSTOM_FIELDS.items():
         for field_def in fields:

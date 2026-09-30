@@ -6,12 +6,12 @@ from frappe import _
 from frappe.model.document import Document
 
 from lms.lms.doctype.lms_content_author.lms_content_author import AuthoredDocument
-from lms.lms.permissions import has_authored_content_permission
 from lms.lms.utils import guest_access_allowed
 
 # The roles this doctype has always treated as its authoring population. The role
 # still admits them to the question; `authors` now decides the answer.
-PROGRAM_AUTHORING_ROLES = ("Moderator", "Course Creator")
+# OSLMS-CUSTOM: the "Docente" (global instructor) authors programs too
+PROGRAM_AUTHORING_ROLES = ("Moderator", "Course Creator", "Docente")
 
 # The types the published-or-enrolled rule answers. Everything else -- `email` and
 # `share` included -- is an authoring ask, exactly as before this change.
@@ -74,7 +74,10 @@ def has_program_authoring_permission(doc, ptype: str | None, user: str) -> bool:
 	"""
 	if not has_authoring_role(user):
 		return False
-	return has_authored_content_permission(doc, ptype, user)
+	# OSLMS-CUSTOM: every authoring role edits every program, not only the ones naming them
+	# Client decision at the v2.64.0 merge (2026-09-30): programs are managed as a
+	# shared pool by Moderator, Course Creator and Docente, as before v2.64.0.
+	return True
 
 
 def has_permission(doc, ptype="read", user=None):

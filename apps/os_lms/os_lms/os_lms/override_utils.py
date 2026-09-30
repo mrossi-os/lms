@@ -1,4 +1,5 @@
 import json
+from contextlib import contextmanager
 
 import frappe
 from frappe.rate_limiter import rate_limit
@@ -284,13 +285,32 @@ def _scope_filters_for_valutatore(filters: dict, doctype: str, get_own_names) ->
 	return filters
 
 
+@contextmanager
+def _valutatore_scoped_list():
+	"""Tell upstream restrict_to_published that this list is already narrowed.
+
+	_scope_filters_for_valutatore rewrites ``name`` to "published OR assigned"; since
+	v2.64.0 the upstream list endpoints then pin ``published=1`` for everyone who is not
+	a Moderator, which would hide the drafts assigned to the valutatore. The flag is
+	raised only for a scoped valutatore and only for the duration of the call.
+	"""
+	active = _only_scoped_valutatore(frappe.session.user)
+	previous = frappe.flags.get("oslms_valutatore_scoped_list")
+	frappe.flags.oslms_valutatore_scoped_list = active or previous
+	try:
+		yield
+	finally:
+		frappe.flags.oslms_valutatore_scoped_list = previous
+
+
 @frappe.whitelist(allow_guest=True)
 @rate_limit(limit=500, seconds=60 * 60)
 def get_courses(filters: dict = None, start: int = 0, limit_page_length: int | str = None) -> list:
 	filters = _scope_filters_for_valutatore(filters, "LMS Course", get_valutatore_course_names)
 	# limit_page_length is passed through: the list pages advance `start` by the page
 	# size they asked for (upstream v2.63.0), so dropping it repeated or skipped rows.
-	courses = _orginal_get_courses(filters, start, limit_page_length)
+	with _valutatore_scoped_list():
+		courses = _orginal_get_courses(filters, start, limit_page_length)
 
 	if courses:
 		course_names = [course.name for course in courses]
@@ -319,7 +339,8 @@ def get_course_categories(filters: dict = None) -> list:
 	# Keep the category dropdown consistent with the (valutatore-scoped) course
 	# list: a valutatore must only see categories of courses they can access.
 	filters = _scope_filters_for_valutatore(filters, "LMS Course", get_valutatore_course_names)
-	return _original_get_course_categories(filters)
+	with _valutatore_scoped_list():
+		return _original_get_course_categories(filters)
 
 
 @frappe.whitelist(allow_guest=True)
@@ -331,7 +352,8 @@ def get_batches(
 	limit_page_length: int | str = None,
 ) -> list:
 	filters = _scope_filters_for_valutatore(filters, "LMS Batch", get_valutatore_batches)
-	return _original_get_batches(filters, start, order_by, limit_page_length)
+	with _valutatore_scoped_list():
+		return _original_get_batches(filters, start, order_by, limit_page_length)
 
 
 @frappe.whitelist(allow_guest=True)

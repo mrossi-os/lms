@@ -22,6 +22,7 @@ from lms.lms.utils import (
 	has_moderator_role,
 	# OSLMS-CUSTOM: Valutatore reads the lessons and quizzes of the batches they evaluate
 	is_batch_valutatore,
+	is_course_in_member_program,
 	is_course_valutatore,
 )
 
@@ -73,7 +74,14 @@ def can_access_course(course: str, *, user: str | None = None) -> bool:
 		return True
 	if can_author_course(course, user=user):
 		return True
-	return bool(get_membership(course, user or frappe.session.user))
+	# OSLMS-CUSTOM: Valutatore and program members read unpublished courses
+	# A Valutatore reads the courses of the batches they evaluate, and a program member
+	# every course of their program, even unpublished and without an enrolment (read
+	# only: the authoring branches never reach this function).
+	user = user or frappe.session.user
+	if is_course_valutatore(course, user) or is_course_in_member_program(course, user):
+		return True
+	return bool(get_membership(course, user))
 
 
 def course_has_permission(doc, ptype="read", user=None) -> bool:
@@ -106,7 +114,10 @@ def course_query_conditions(user=None) -> str:
 
 def _course_read_condition(user=None):
 	user = user or frappe.session.user
-	if is_site_administrator(user) or "Moderator" in frappe.get_roles(user):
+	roles = frappe.get_roles(user)
+	# OSLMS-CUSTOM: a "Docente" is a global instructor, unscoped like a Moderator
+	# (the same rule as the Docente branch of can_modify_course).
+	if is_site_administrator(user) or "Moderator" in roles or "Docente" in roles:
 		return None
 
 	course = frappe.qb.DocType("LMS Course")
@@ -119,7 +130,30 @@ def _course_read_condition(user=None):
 		.where((instructor.instructor == member) & (instructor.parenttype == "LMS Course"))
 	)
 	enrolled = frappe.qb.from_(enrollment).select(enrollment.course).where(enrollment.member == member)
-	return Bracket((course.published == 1) | course.name.isin(taught) | course.name.isin(enrolled))
+	condition = (course.published == 1) | course.name.isin(taught) | course.name.isin(enrolled)
+	# OSLMS-CUSTOM: a Valutatore also reads the courses of the batches they evaluate
+	if "Valutatore" in roles:
+		condition = condition | course.name.isin(_valutatore_courses(member))
+	return Bracket(condition)
+
+
+# OSLMS-CUSTOM: courses held by the batches a Valutatore evaluates, as a subquery
+def _valutatore_courses(member):
+	"""The courses of every batch listing `member` among its valutatori (SQL subquery).
+
+	The list-side twin of is_course_valutatore, which answers for one course."""
+	batch_course = frappe.qb.DocType("Batch Course")
+	valutatore = frappe.qb.DocType("LMS Batch Valutatore")
+	batches = (
+		frappe.qb.from_(valutatore)
+		.select(valutatore.parent)
+		.where((valutatore.valutatore == member) & (valutatore.parenttype == "LMS Batch"))
+	)
+	return (
+		frappe.qb.from_(batch_course)
+		.select(batch_course.course)
+		.where((batch_course.parenttype == "LMS Batch") & batch_course.parent.isin(batches))
+	)
 
 
 def _render(condition) -> str:
@@ -199,6 +233,12 @@ def course_record_has_permission(doc, ptype="read", user=None) -> bool:
 	if course and all(can_author_course(c, user=user) for c in (course, moved_to) if c):
 		return True
 
+	# OSLMS-CUSTOM: a Valutatore reads (never writes) the learner records of their courses
+	# The course dashboard drilldown lists the progress of the students they evaluate;
+	# os_lms.os_lms.valutatore then narrows the rows to their own batches.
+	if ptype in COURSE_READ_PTYPES and course and not moved_to and is_course_valutatore(course, user):
+		return True
+
 	frappe.logger("lms.security").warning(
 		"Course record denied: user=%s doctype=%s name=%s course=%s ptype=%s",
 		user,
@@ -238,8 +278,11 @@ def course_record_query_conditions(user=None, doctype=None) -> str:
 		.select(instructor.parent)
 		.where((instructor.instructor == member) & (instructor.parenttype == "LMS Course"))
 	)
-	condition = Bracket((getattr(record, member_field) == member) | record.course.isin(taught))
-	return _render(condition)
+	condition = (getattr(record, member_field) == member) | record.course.isin(taught)
+	# OSLMS-CUSTOM: a Valutatore lists the learner records of the courses they evaluate
+	if "Valutatore" in frappe.get_roles(user):
+		condition = condition | record.course.isin(_valutatore_courses(member))
+	return _render(Bracket(condition))
 
 
 def resolve_lesson_access(lesson: str, *, user: str | None = None) -> tuple[bool, bool]:
@@ -312,7 +355,9 @@ def courses_authored_by(user: str, courses) -> set[str]:
 	if not courses or not user:
 		return set()
 
-	if user == "Administrator" or has_moderator_role(user):
+	# OSLMS-CUSTOM: a "Docente" is a global instructor and authors every course, so the
+	# lesson files they upload are served to the students of any course.
+	if user == "Administrator" or has_moderator_role(user) or "Docente" in frappe.get_roles(user):
 		return courses
 
 	return set(
@@ -591,7 +636,9 @@ def has_authored_content_permission(doc, ptype: str | None = None, user: str | N
 	if ptype not in NARROWED_PTYPES:
 		return True
 	user = user or frappe.session.user
-	if is_site_administrator(user) or has_moderator_role(user):
+	# OSLMS-CUSTOM: a "Docente" edits every quiz, question, assignment and exercise,
+	# not only the ones they authored (global instructor, like can_modify_course).
+	if is_site_administrator(user) or has_moderator_role(user) or "Docente" in frappe.get_roles(user):
 		return True
 	if doc is None or doc.get("__islocal") or not doc.get("name"):
 		return True
