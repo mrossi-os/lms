@@ -32,7 +32,9 @@ from os_lms.os_lms.elite_api.errors import (
 
 API_KEY_HEADER = "X-Elite-Api-Key"
 API_METHOD_PREFIX = "os_lms.os_lms.elite_api."
-API_PATH = re.compile(r"^/api/(?:v1/|v2/)?method/" + re.escape(API_METHOD_PREFIX))
+# Keys only open the versioned public API (elite_api.v1, v2...), never the
+# key-management endpoints in elite_api.admin used by the SPA.
+API_PATH = re.compile(r"^/api/(?:v1/|v2/)?method/" + re.escape(API_METHOD_PREFIX) + r"v\d+\.")
 
 # Failed attempts per IP before the IP is turned away (and no longer logged).
 FAILED_ATTEMPTS_LIMIT = 20

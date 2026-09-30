@@ -3,6 +3,7 @@ import { translate as __ } from '@/translation'
 import AISettings from '@/oslms/components/ai/Settings/AISettings.vue'
 import PromptSettings from '@/oslms/components/ai/Settings/PromptSettings.vue'
 import TrueSkillsSettings from '@/oslms/components/trueskills/TrueSkillsSettings.vue'
+import EliteApiSettings from '@/oslms/components/eliteApi/EliteApiSettings.vue'
 
 // AI provider options (module-specific; moved out of core Settings.vue).
 const aiProviders = [
@@ -90,6 +91,26 @@ export function buildOslmsSettingsTabs({
 							],
 						},
 					],
+				},
+			],
+		},
+		// Elite API — keys that let external systems (first: TrueSkill) read
+		// courses, batches and students. Same audience as TrueSkills API; the
+		// server enforces it again in os_lms.os_lms.elite_api.admin.
+		{
+			key: 'EliteApi',
+			hideLabel: true,
+			condition: canManageOsIntegrations,
+			items: [
+				{
+					key: 'Elite API',
+					label: __('Elite API'),
+					icon: 'Cable',
+					description: __(
+						'Create and revoke the keys that external systems, such as TrueSkill, use to read courses, batches and students',
+					),
+					condition: canManageOsIntegrations,
+					template: markRaw(EliteApiSettings),
 				},
 			],
 		},

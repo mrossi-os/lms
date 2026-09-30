@@ -9695,3 +9695,135 @@ msgstr "Il secret di una chiave API non può essere modificato. Crea una nuova c
 #: apps/os_lms/os_lms/os_lms/elite_api/keys.py
 msgid "The expiry date cannot be in the past."
 msgstr "La data di scadenza non può essere nel passato."
+
+#: frontend/src/oslms/utils/settings.js
+msgid "Elite API"
+msgstr "Elite API"
+
+#: frontend/src/oslms/utils/settings.js
+msgid "Create and revoke the keys that external systems, such as TrueSkill, use to read courses, batches and students"
+msgstr "Crea e revoca le chiavi con cui i sistemi esterni, come TrueSkill, leggono corsi, classi e studenti"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "New key"
+msgstr "Nuova chiave"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "No API keys yet. Create one to let an external system, such as TrueSkill, read courses, batches and students."
+msgstr "Non ci sono ancora chiavi API. Creane una per permettere a un sistema esterno, come TrueSkill, di leggere corsi, classi e studenti."
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "Key created on {0} by {1}"
+msgstr "Creata il {0} da {1}"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "Last used on {0} from {1}"
+msgstr "Ultimo utilizzo il {0} da {1}"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "This key has never been used"
+msgstr "Mai usata"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "Key expired on {0}"
+msgstr "Scaduta il {0}"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "Expires on {0}"
+msgstr "Scade il {0}"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "Key revoked on {0} by {1}"
+msgstr "Revocata il {0} da {1}"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "Revoke"
+msgstr "Revoca"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "New API key"
+msgstr "Nuova chiave API"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "Create key"
+msgstr "Crea chiave"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "e.g. TrueSkill production"
+msgstr "es. TrueSkill produzione"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "Expiry date (optional)"
+msgstr "Data di scadenza (facoltativa)"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "Leave empty for a key that never expires. An expired key cannot be extended: create a new one."
+msgstr "Lascia vuoto per una chiave che non scade. Una chiave scaduta non si può prorogare: creane una nuova."
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "Copy the API key now"
+msgstr "Copia ora la chiave API"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "I have copied the key"
+msgstr "Ho copiato la chiave"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "This is the only time the full key is shown. Store it safely and give it to the system that will call the Elite API."
+msgstr "È l'unica volta in cui la chiave completa viene mostrata. Conservala al sicuro e consegnala al sistema che chiamerà l'Elite API."
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "Copy"
+msgstr "Copia"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "Example request"
+msgstr "Esempio di chiamata"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "Revoke API key?"
+msgstr "Revocare la chiave API?"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "The key \"{0}\" stops working immediately and cannot be re-enabled. Systems still using it will be refused."
+msgstr "La chiave «{0}» smette subito di funzionare e non potrà essere riattivata. I sistemi che la usano ancora verranno rifiutati."
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "Active key"
+msgstr "Attiva"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "Expired key"
+msgstr "Scaduta"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "Revoked key"
+msgstr "Revocata"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "Something went wrong"
+msgstr "Qualcosa è andato storto"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "Key copied"
+msgstr "Chiave copiata"
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "Copy is not available here: the key is selected, copy it manually."
+msgstr "La copia automatica non è disponibile: la chiave è selezionata, copiala a mano."
+
+#: frontend/src/oslms/components/eliteApi/EliteApiSettings.vue
+msgid "API key revoked"
+msgstr "Chiave API revocata"
+
+#: apps/os_lms/os_lms/os_lms/elite_api/admin.py
+msgid "You are not authorized to manage Elite API keys."
+msgstr "Non sei autorizzato a gestire le chiavi dell'Elite API."
+
+#: apps/os_lms/os_lms/os_lms/elite_api/admin.py
+msgid "The API key name cannot be longer than {0} characters."
+msgstr "Il nome della chiave API non può superare {0} caratteri."
+
+#: apps/os_lms/os_lms/os_lms/elite_api/admin.py
+msgid "API key not found."
+msgstr "Chiave API non trovata."
