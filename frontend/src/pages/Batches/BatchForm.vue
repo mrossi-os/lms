@@ -29,6 +29,7 @@
 							:label="__('Batch Start Date')"
 							type="date"
 							:placeholder="__('Select date')"
+							:format="dateFormat"
 							:required="true"
 							variant="outline"
 						/>
@@ -37,6 +38,7 @@
 							:label="__('Batch End Date')"
 							type="date"
 							:placeholder="__('Select date')"
+							:format="dateFormat"
 							:required="true"
 							variant="outline"
 						/>
@@ -135,6 +137,7 @@
 								:label="__('Evaluation End Date')"
 								type="date"
 								:placeholder="__('Select date')"
+								:format="dateFormat"
 								variant="outline"
 							/>
 						</div>
@@ -342,6 +345,7 @@ import {
 	updateMetaInfo,
 } from '@/utils'
 import { validateBatch } from '@/utils/batchForm'
+import { getDateFormat } from '@/utils/format'
 import {
 	useKeyboardShortcuts,
 	saveShortcut,
@@ -383,6 +387,7 @@ const router = useRouter()
 const route = useRoute()
 const user = inject<SessionUser>('$user')!
 const instructors = ref<string[]>([])
+const dateFormat = getDateFormat()
 // OSLMS-CUSTOM: per-batch Valutatore list edited alongside instructors
 // Per-batch "Valutatore" evaluators (custom os_lms feature). Backed by a
 // Table MultiSelect custom field on LMS Batch (child: LMS Batch Valutatore);

@@ -31,7 +31,11 @@
 							>
 								<div class="">
 									<Button @click="openFileSelector" :loading="uploading">
-										{{ uploading ? `Uploading ${progress}%` : __('Upload Image') }}
+										{{
+											uploading
+												? __('Uploading {0}%').format(progress)
+												: __('Upload Image')
+										}}
 									</Button>
 								</div>
 							</template>
@@ -138,7 +142,7 @@ const saveImage = (file) => {
 const validateFile = (file) => {
 	let extension = file.name.split('.').pop().toLowerCase()
 	if (!['jpg', 'jpeg', 'png'].includes(extension)) {
-		return 'Only image file is allowed.'
+		return __('Only image file is allowed.')
 	}
 }
 </script>

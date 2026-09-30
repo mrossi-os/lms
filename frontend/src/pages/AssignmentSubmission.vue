@@ -5,6 +5,7 @@
 	<!-- OSLMS-CUSTOM: fixed-height frame only from md up, phones scroll the stacked panes -->
 	<div class="md:overflow-hidden md:h-[calc(100vh-3.2rem)]">
 		<Assignment
+			:key="`${assignmentID}-${submissionName}`"
 			:assignmentID="assignmentID"
 			:submissionName="submissionName"
 			:showTitle="!fromLesson"

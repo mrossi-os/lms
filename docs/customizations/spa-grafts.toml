@@ -4070,7 +4070,7 @@ v2.59.0 non tocca queste righe."""
 
   [[entries.sites]]
   file = "frontend/src/components/Assignment.vue"
-  anchor = '<div v-if="showUploader()" class="border rounded-lg p-3 card">'
+  anchor = 'class="border rounded-lg p-3 card"'
 
 [[entries]]
 id = "assignment-form-required-warnings"
@@ -5399,16 +5399,17 @@ studente e compilare solo voto e commenti, mai modificare la risposta. Fino a v2
 rendeva i campi risposta readonly; v2.59.0 ha tolto quel vincolo mentre il pulsante Salva resta
 visibile a chi corregge, e il backend lascia passare i ruoli privilegiati. Decisione del
 committente al merge di v2.59.0: sola lettura per chiunque non sia lo studente autore di una
-consegna esistente. Lo studente mantiene il comportamento upstream sulla propria consegna."""
+consegna esistente. Lo studente mantiene il comportamento upstream sulla propria consegna.
+Merge di v2.64.0 (2026-09-30, decisione del committente): l upstream introduce canModifyAssignment, che rende la risposta non modificabile a chiunque non sia lo studente autore di una consegna non ancora corretta, e a tutti fuori dalla finestra di pianificazione: copre la nostra regola e la estende (lo studente non modifica più la risposta dopo la correzione). Adottata la condizione upstream; la nostra condizione answerReadOnly è stata tolta. Restano nostri i dettagli di resa: campo URL :readonly (copiabile) invece di :disabled, e barra dell editor nascosta (fixedMenu legato a canModifyAssignment) quando la risposta non si può scrivere."""
 
   [[entries.sites]]
   file = "frontend/src/components/Assignment.vue"
-  anchor = "submissionResource.doc?.owner != user.data?.name"
+  anchor = ':readonly="!canModifyAssignment"'
   symbol = "answerReadOnly"
 
   [[entries.sites]]
   file = "frontend/src/components/Assignment.vue"
-  anchor = ':editable="!answerReadOnly"'
+  anchor = ':fixedMenu="canModifyAssignment"'
 
   [entries.visibility]
   subject = "modifica della risposta di una consegna esistente"

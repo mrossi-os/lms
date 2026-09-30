@@ -15,6 +15,10 @@ lms/www/lms.html
 lms/www/_lms.html
 /frappe-ui
 frappe-semgrep-rules
+test-results
+playwright-report
+blob-report
+playwright/.auth
 
 
 
