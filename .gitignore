@@ -19,7 +19,7 @@ frappe-semgrep-rules
 
 
 # ---------------
-#   OVERSIDE
+#   OVERSIDE  (OSLMS-CUSTOM: local-only files, never committed)
 .env
 docker/.env
 common_site_config.json

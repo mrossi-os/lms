@@ -8438,3 +8438,55 @@ openExternal, <base target="_blank"> dell'iframe degli annunci sostituito da tar
   [[entries.sites]]
   file = "frontend/src/oslms/utils/safeImageData.ts"
   anchor = "export const safeImageData = (value?: string | null): string | undefined => {"
+
+# ---------------------------------------------------------------------------
+# Censimento 2026-09-30 — file di repository toccati da v2.64.0
+# ---------------------------------------------------------------------------
+
+[[entries]]
+id = "repo-gitignore-local-files"
+title = "File locali di Overside esclusi da git"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il blocco «OVERSIDE» in coda al .gitignore tiene fuori dal repository i file che esistono solo
+sulle macchine di sviluppo e non devono mai essere pubblicati: le credenziali (.env, docker/.env,
+common_site_config.json, e soprattutto .private/, che contiene i profili di accesso ai DB remoti),
+le bozze dei documenti UAT per il cliente (UAT_*_semplificato.md, docs/uat/), gli export *.tsv, la
+cache di graphify, il print format del certificato del cliente e i file dell'IDE. «/frappe-ui» è
+ancorato alla root (upstream scrive «frappe-ui» senza barra, che ignorerebbe anche le cartelle
+frappe-ui annidate, per esempio gli override in frontend/src/overrides/frappe-ui). Se il merge
+prende il .gitignore dell'upstream, le credenziali tornano committabili per sbaglio e gli override
+frappe-ui spariscono dall'indice. Al merge di v2.64.0 l'upstream aggiunge in coda le cartelle
+di Playwright: vanno tenute insieme al nostro blocco."""
+
+  [[entries.sites]]
+  file = ".gitignore"
+  anchor = ".private/"
+
+  [[entries.sites]]
+  file = ".gitignore"
+  anchor = "docker/.env"
+
+  [[entries.sites]]
+  file = ".gitignore"
+  anchor = "/frappe-ui"
+
+[[entries]]
+id = "repo-root-package-manager-pin"
+title = "Yarn classic fissato nel package.json di root"
+layer = "spa-graft"
+confidence = "low"
+intent = """
+Il campo packageManager (yarn@1.22.22 con hash) nel package.json di root dice a corepack quale
+yarn usare. docker/init.sh abilita corepack quando yarn manca: senza il campo corepack potrebbe
+scegliere una yarn moderna (berry), che non legge i yarn.lock v1 del repository e cambia il
+comportamento di install e postinstall. Motivazione dedotta: il campo è entrato nel commit
+ab9548b47 («fix style») senza spiegazione, probabilmente scritto da corepack stesso a un yarn
+install locale. L'upstream non ha il campo: se il merge prende il package.json dell'upstream va
+riaggiunto. Al merge di v2.64.0 l'upstream reindenta il file a tab e sostituisce Cypress con
+Playwright."""
+
+  [[entries.sites]]
+  file = "package.json"
+  anchor = '"packageManager": "yarn@1.22.22'
