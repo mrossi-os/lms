@@ -159,6 +159,16 @@ Custom Vue 3 components and composables for the os_lms extension. Located in the
 
 Provider-agnostic speech-to-speech voice modality for AI simulations. **OpenAI Realtime** is the default provider (WebRTC transport); **Gemini Live** is available via the `realtime_provider` setting (WebSocket transport). Config lives in `LMSA Settings → Realtime / Voice` (enable/disable, provider, model, voice, turn detection, max session seconds). **Audio never passes through Frappe** — Frappe is the control plane only: it mints ephemeral tokens (`ai.realtime.api.create_voice_session`), persists transcript turns relayed by the client (`persist_transcript_turn`), records session duration, and enqueues the post-session debrief. The client streams audio directly to the provider using the ephemeral token. Provider logic lives in `ai/utils/realtime/` (ABC + registry + per-provider adapters); control-plane endpoints in `ai/realtime/api.py`; frontend in `frontend/src/oslms/` (`composables/realtime/`, `composables/useRealtimeSession.js`, `components/simulations/VoiceSession.vue`).
 
+## Elite API (`os_lms/elite_api/`)
+
+Read-only API that external systems (first: TrueSkill) call with a key to list courses/batches and fetch their students (name, codice fiscale, email, progress). Plan, per-phase reports and decisions: `docs/elite-api/PIANO.md`; client-facing guide (Italian): `docs/elite-api/guida-integrazione.md`.
+
+- **Keys** (`keys.py`, doctype `Elite API Key`): `elite_<prefix>_<secret>`; the doc name is the prefix, only a SHA-256 of the secret is stored. Revoked/expired keys are final.
+- **Auth** (`auth.py`): `before_request` hook verifies `X-Elite-Api-Key` only on `/api/(v1/|v2/)?method/os_lms.os_lms.elite_api.vN.*`, then runs the request as the disabled technical user `elite-api@elite-api.invalid` (role `Elite API Client`, desk access but no perms — see `setup.setup_elite_api_client`). It must stay a `before_request` hook: `lms.auth.authenticate` runs earlier than any os_lms `auth_hook`. It refuses (400 `invalid_request`) keys sent with a `cmd` parameter (Frappe runs `form_dict.cmd` BEFORE routing `/api/` paths, so it would execute any whitelisted method as the client user), an `Authorization` header or a logged-in session, and refuses keys when the client user carries roles beyond its own + Frappe's automatic ones. `after_request` writes `Elite API Access Log` and commits (Frappe rolls back GETs). Endpoints use `@frappe.whitelist(methods=["GET"])` + `@elite_api_endpoint`.
+- **Endpoints** (`v1.py`, `progress.py`): `ping`, `list_courses`, `list_batches`, `get_course_students`, `get_batch_students`. Progress SQL is literal (no f-strings); each list query has a COUNT twin kept aligned by `test_lists_agree_with_the_summaries`. Parameters are `str | None` parsed by `errors.parse_*` (400, not Frappe's 417).
+- **Key management** (`admin.py`) for the SPA tab `frontend/src/oslms/components/eliteApi/EliteApiSettings.vue`: System Manager + Gestore only.
+- **Tests**: `os_lms/tests/test_elite_api_*.py`; shared data in `tests/elite_api_fixture.py` (written with `db_insert`, deleted by exact name).
+
 ## Hooks
 
 - **After Migrate**: setup language, custom fields, Redis index

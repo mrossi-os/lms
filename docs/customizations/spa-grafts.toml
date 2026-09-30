@@ -708,3 +708,35 @@ come accepted-drift. Il test test_lms_quiz.py contiene i casi aggiunti con la co
   [entries.checks]
   backend = "lms/lms/doctype/lms_quiz/test_lms_quiz.py"
 
+
+# ---------------------------------------------------------------------------
+# Elite API (impostazioni SPA) — docs/elite-api/
+# ---------------------------------------------------------------------------
+
+[[entries]]
+id = "settings-elite-api-tab"
+title = "Tab «Elite API» nelle impostazioni: gestione delle chiavi API"
+layer = "override-file"
+confidence = "high"
+intent = """
+Amministratori e Gestore creano, vedono e revocano le chiavi con cui i sistemi esterni
+(primo: TrueSkill) leggono corsi, classi e studenti tramite l'Elite API, senza passare
+dal Desk (i Gestore sono in gran parte Website User). La chiave completa si vede una
+sola volta; una chiave revocata o scaduta non si riattiva. Il server ripete il controllo
+dei ruoli in os_lms.os_lms.elite_api.admin (System Manager + Gestore)."""
+
+  [[entries.sites]]
+  file = "frontend/src/oslms/utils/settings.js"
+  anchor = "template: markRaw(EliteApiSettings)"
+
+  [[entries.sites]]
+  file = "frontend/src/oslms/components/eliteApi/EliteApiSettings.vue"
+  anchor = "const ADMIN_API = 'os_lms.os_lms.elite_api.admin'"
+
+  [entries.visibility]
+  subject = "tab «Elite API» e endpoint di gestione delle chiavi"
+  allow = ["System Manager", "Gestore"]
+  deny = ["Moderator", "Docente", "Student", "Guest"]
+
+  [entries.checks]
+  backend = "apps/os_lms/os_lms/os_lms/tests/test_elite_api_admin.py"
