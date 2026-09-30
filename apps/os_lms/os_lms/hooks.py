@@ -24,7 +24,13 @@ app_include_css = [
 
 
 # activate debug if needed
-before_request = ["os_lms.debug.active_debug"]
+before_request = [
+    "os_lms.debug.active_debug",
+    # Must stay a before_request hook: it runs before Frappe's validate_auth and
+    # the lms.auth hook (see os_lms/os_lms/elite_api/auth.py).
+    "os_lms.os_lms.elite_api.auth.authenticate_request",
+]
+after_request = ["os_lms.os_lms.elite_api.auth.record_request"]
 
 # Background jobs start with lang = conf.lang (unset) -> "en", so every _()
 # evaluated in a worker returns English even though the site runs in Italian.
