@@ -301,6 +301,8 @@ async function copyKey() {
 
 function forgetCreatedKey() {
 	createdDialog.key = ''
+	// The resource keeps the last response (with the full key) until reset.
+	createResourceCall.reset()
 }
 
 function askRevoke(key) {

@@ -20,10 +20,12 @@ import time
 from functools import wraps
 
 import frappe
+from frappe.permissions import ALL_USER_ROLE, GUEST_ROLE, SYSTEM_USER_ROLE
 from frappe.utils import now_datetime
 
 from os_lms.os_lms.elite_api import keys
 from os_lms.os_lms.elite_api.errors import (
+	EliteAPIBadRequest,
 	EliteAPIForbidden,
 	EliteAPITooManyRequests,
 	EliteAPIUnauthorized,
@@ -36,7 +38,11 @@ API_METHOD_PREFIX = "os_lms.os_lms.elite_api."
 # key-management endpoints in elite_api.admin used by the SPA.
 API_PATH = re.compile(r"^/api/(?:v1/|v2/)?method/" + re.escape(API_METHOD_PREFIX) + r"v\d+\.")
 
-# Failed attempts per IP before the IP is turned away (and no longer logged).
+# The only roles the client user may carry: its own plus Frappe's automatic
+# ones (Administrator, also automatic, is deliberately not allowed).
+CLIENT_USER_ROLES = frozenset({keys.CLIENT_ROLE, GUEST_ROLE, ALL_USER_ROLE, SYSTEM_USER_ROLE})
+
+# Failed attempts per IP after which invalid keys are no longer logged.
 FAILED_ATTEMPTS_LIMIT = 20
 FAILED_ATTEMPTS_WINDOW_SECONDS = 10 * 60
 # last_used_on is written at most once per key in this window.
@@ -61,19 +67,41 @@ def authenticate_request():
 	# full tracebacks when System Settings allow them (the default).
 	frappe.local.flags.disable_traceback = True
 
-	if _failed_attempts(ip) >= FAILED_ATTEMPTS_LIMIT:
-		context.log = False
-		api_error(EliteAPITooManyRequests, "too_many_failed_attempts")
+	# Only a plain API call may carry a key:
+	# - `cmd`: Frappe runs form_dict.cmd BEFORE routing /api/ paths, so it would
+	#   execute any whitelisted method as the client user;
+	# - a logged-in session: set_user() would overwrite it in the session cache;
+	# - `Authorization`: Frappe would try it as its own credential.
+	# Logged with every refusal, so the log tells which key was misused.
+	parsed = keys.parse_key(raw_key)
+	if parsed and frappe.db.exists(keys.KEY_DOCTYPE, parsed[0]):
+		context.attempted_key = parsed[0]
+
+	if (
+		"cmd" in frappe.local.form_dict
+		or frappe.get_request_header("Authorization")
+		or frappe.session.user not in (None, "", "Guest")
+	):
+		api_error(EliteAPIBadRequest, "invalid_request")
 
 	key_name = keys.resolve_key(raw_key)
 	if not key_name:
+		# A valid key is never turned away by the counter: spoofing the client's
+		# IP (X-Forwarded-For) must not lock it out. Past the limit, invalid keys
+		# are refused without being logged, so the log cannot be flooded.
+		if _failed_attempts(ip) >= FAILED_ATTEMPTS_LIMIT:
+			context.log = False
+			api_error(EliteAPITooManyRequests, "too_many_failed_attempts")
 		_count_failed_attempt(ip)
-		parsed = keys.parse_key(raw_key)
-		if parsed and frappe.db.exists(keys.KEY_DOCTYPE, parsed[0]):
-			context.attempted_key = parsed[0]
 		api_error(EliteAPIUnauthorized, "invalid_api_key")
 
 	context.key = key_name
+	# Roles are forced back on every migrate; this also covers a role added by
+	# hand in between, which every key would otherwise inherit.
+	if not set(frappe.get_roles(keys.CLIENT_USER)) <= CLIENT_USER_ROLES:
+		frappe.log_error(title="Elite API client user has extra roles")
+		api_error(EliteAPIForbidden, "forbidden")
+
 	# set_user() wipes form_dict, i.e. the request parameters.
 	form_dict = frappe.local.form_dict
 	frappe.set_user(keys.CLIENT_USER)

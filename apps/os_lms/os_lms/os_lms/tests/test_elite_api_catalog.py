@@ -131,6 +131,7 @@ class TestCatalogEndpoints(FrappeAPITestCase):
 			({"page": "abc"}, "page"),
 			({"page_length": 501}, "page_length"),
 			({"page_length": 0}, "page_length"),
+			({"page": 100_001}, "page"),  # would overflow the SQL offset
 		):
 			response = self.call("list_courses", **params)
 			self.assertEqual(response.status_code, 400, params)

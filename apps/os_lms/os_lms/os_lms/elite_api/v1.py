@@ -26,6 +26,8 @@ from os_lms.os_lms.elite_api.progress import (
 
 DEFAULT_PAGE_LENGTH = 100
 MAX_PAGE_LENGTH = 500
+# Bounds the SQL offset: an unbounded page would overflow LIMIT and answer 500.
+MAX_PAGE = 100_000
 
 
 @frappe.whitelist(methods=["GET"])
@@ -171,7 +173,7 @@ def _title_or_404(doctype: str, name: str, parameter: str) -> str:
 
 def _pagination(page: str | None, page_length: str | None) -> tuple[int, int]:
 	return (
-		parse_int_param("page", page, default=1, minimum=1),
+		parse_int_param("page", page, default=1, minimum=1, maximum=MAX_PAGE),
 		parse_int_param(
 			"page_length", page_length, default=DEFAULT_PAGE_LENGTH, minimum=1, maximum=MAX_PAGE_LENGTH
 		),
