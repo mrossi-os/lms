@@ -48,7 +48,6 @@ class TestPublishDescriptionImages(BaseTestUtils):
 				"content": PNG + frappe.generate_hash().encode(),
 			}
 		).insert(ignore_permissions=True)
-		self.cleanup_items.append(("File", private_file.name))
 		self.private_file = private_file
 
 		self.description = (
@@ -62,7 +61,6 @@ class TestPublishDescriptionImages(BaseTestUtils):
 				"description": self.description,
 			}
 		).insert(ignore_permissions=True)
-		self.cleanup_items.append(("LMS Program", program.name))
 		self.program = program.name
 
 	def _public_copies(self):
@@ -75,8 +73,6 @@ class TestPublishDescriptionImages(BaseTestUtils):
 	def test_private_image_gets_a_public_copy(self):
 		patch.publish_document_images("LMS Program", self.program, "description")
 		copies = self._public_copies()
-		for copy in copies:
-			self.cleanup_items.append(("File", copy.name))
 
 		self.assertEqual(len(copies), 1)
 		self.assertEqual(copies[0].is_private, 0)
@@ -98,8 +94,6 @@ class TestPublishDescriptionImages(BaseTestUtils):
 		first = frappe.db.get_value("LMS Program", self.program, "description")
 		patch.publish_document_images("LMS Program", self.program, "description")
 		copies = self._public_copies()
-		for copy in copies:
-			self.cleanup_items.append(("File", copy.name))
 
 		self.assertEqual(frappe.db.get_value("LMS Program", self.program, "description"), first)
 		self.assertEqual(len(copies), 1)

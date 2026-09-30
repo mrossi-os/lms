@@ -38,7 +38,6 @@ class TestProgramCourseAccess(BaseTestUtils):
 			}
 		)
 		program.insert(ignore_permissions=True)
-		self.cleanup_items.append(("LMS Program", program.name))
 		self.program = program.name
 
 	def tearDown(self):
