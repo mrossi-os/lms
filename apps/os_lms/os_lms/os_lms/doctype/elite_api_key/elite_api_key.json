@@ -1,0 +1,128 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-09-30 12:00:00.000000",
+ "description": "Keys that external systems use to call the Elite API. Only a SHA-256 hash of the secret is stored. Keys are created and revoked from the LMS settings, never from the Desk: a revoked or expired key cannot be re-enabled, a new one must be created.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "key_name",
+  "enabled",
+  "expires_on",
+  "column_break_usage",
+  "last_used_on",
+  "last_used_ip",
+  "revocation_section",
+  "revoked_on",
+  "column_break_revocation",
+  "revoked_by",
+  "secret_section",
+  "secret_hash"
+ ],
+ "fields": [
+  {
+   "fieldname": "key_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Key Name",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Enabled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "expires_on",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Expires On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_usage",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "last_used_on",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Last Used On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_used_ip",
+   "fieldtype": "Data",
+   "label": "Last Used IP",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.revoked_on",
+   "fieldname": "revocation_section",
+   "fieldtype": "Section Break",
+   "label": "Revocation"
+  },
+  {
+   "fieldname": "revoked_on",
+   "fieldtype": "Datetime",
+   "label": "Revoked On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_revocation",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "revoked_by",
+   "fieldtype": "Link",
+   "label": "Revoked By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "secret_section",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "permlevel": 1
+  },
+  {
+   "fieldname": "secret_hash",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Secret Hash",
+   "length": 64,
+   "permlevel": 1,
+   "read_only": 1,
+   "reqd": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "in_create": 1,
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-09-30 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "OS LMS",
+ "name": "Elite API Key",
+ "naming_rule": "By script",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "export": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "key_name",
+ "track_changes": 1
+}

@@ -9611,3 +9611,87 @@ msgstr "Esporta statistiche"
 msgid "CSV (raw data)"
 msgstr "CSV (dati grezzi)"
 
+
+#: apps/os_lms/os_lms/os_lms/doctype/elite_api_key/elite_api_key.json
+msgid "Elite API Key"
+msgstr "Chiave Elite API"
+
+#: apps/os_lms/os_lms/os_lms/doctype/elite_api_access_log/elite_api_access_log.json
+msgid "Elite API Access Log"
+msgstr "Registro accessi Elite API"
+
+#: apps/os_lms/os_lms/os_lms/doctype/elite_api_key/elite_api_key.json
+msgid "Key Name"
+msgstr "Nome della chiave"
+
+#: apps/os_lms/os_lms/os_lms/doctype/elite_api_key/elite_api_key.json
+msgid "Last Used On"
+msgstr "Ultimo utilizzo"
+
+#: apps/os_lms/os_lms/os_lms/doctype/elite_api_key/elite_api_key.json
+msgid "Last Used IP"
+msgstr "IP dell'ultimo utilizzo"
+
+#: apps/os_lms/os_lms/os_lms/doctype/elite_api_key/elite_api_key.json
+msgid "Revocation"
+msgstr "Revoca"
+
+#: apps/os_lms/os_lms/os_lms/doctype/elite_api_key/elite_api_key.json
+msgid "Revoked On"
+msgstr "Revocata il"
+
+#: apps/os_lms/os_lms/os_lms/doctype/elite_api_key/elite_api_key.json
+msgid "Revoked By"
+msgstr "Revocata da"
+
+#: apps/os_lms/os_lms/os_lms/doctype/elite_api_key/elite_api_key.json
+msgid "Secret Hash"
+msgstr "Impronta del secret"
+
+#: apps/os_lms/os_lms/os_lms/doctype/elite_api_access_log/elite_api_access_log.json
+msgid "Status Code"
+msgstr "Codice di stato"
+
+#: apps/os_lms/os_lms/os_lms/doctype/elite_api_access_log/elite_api_access_log.json
+msgid "Rows Returned"
+msgstr "Righe restituite"
+
+#: apps/os_lms/os_lms/os_lms/doctype/elite_api_access_log/elite_api_access_log.json
+msgid "Duration (ms)"
+msgstr "Durata (ms)"
+
+#: apps/os_lms/os_lms/os_lms/doctype/elite_api_access_log/elite_api_access_log.json
+msgid "IP Address"
+msgstr "Indirizzo IP"
+
+#: apps/os_lms/os_lms/os_lms/doctype/elite_api_access_log/elite_api_access_log.json
+msgid "Request"
+msgstr "Richiesta"
+
+#: apps/os_lms/os_lms/os_lms/doctype/elite_api_access_log/elite_api_access_log.json
+msgid "Request Parameters"
+msgstr "Parametri della richiesta"
+
+#: apps/os_lms/os_lms/os_lms/doctype/elite_api_key/elite_api_key.py
+msgid "The API key name is required."
+msgstr "Il nome della chiave API è obbligatorio."
+
+#: apps/os_lms/os_lms/os_lms/doctype/elite_api_key/elite_api_key.py
+msgid "Invalid API key secret hash."
+msgstr "Impronta del secret della chiave API non valida."
+
+#: apps/os_lms/os_lms/os_lms/doctype/elite_api_key/elite_api_key.py
+msgid "A revoked API key cannot be re-enabled. Create a new key instead."
+msgstr "Una chiave API revocata non può essere riattivata. Crea una nuova chiave."
+
+#: apps/os_lms/os_lms/os_lms/doctype/elite_api_key/elite_api_key.py
+msgid "The expiry date of an API key cannot be changed. Create a new key instead."
+msgstr "La data di scadenza di una chiave API non può essere modificata. Crea una nuova chiave."
+
+#: apps/os_lms/os_lms/os_lms/doctype/elite_api_key/elite_api_key.py
+msgid "The secret of an API key cannot be changed. Create a new key instead."
+msgstr "Il secret di una chiave API non può essere modificato. Crea una nuova chiave."
+
+#: apps/os_lms/os_lms/os_lms/elite_api/keys.py
+msgid "The expiry date cannot be in the past."
+msgstr "La data di scadenza non può essere nel passato."

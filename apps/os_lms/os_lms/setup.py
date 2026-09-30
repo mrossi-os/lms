@@ -168,6 +168,63 @@ def setup_gestore_role_permissions():
     frappe.db.commit()
 
 
+ELITE_API_ACCESS_LOG = "Elite API Access Log"
+
+
+def setup_elite_api_client():
+    """Ensure the role and technical user that Elite API requests run as.
+
+    - The role has desk_access on purpose but NO DocPerms: Frappe only treats a
+      user as "System User" when one of its roles has desk_access, and a Website
+      User would be blocked by lms.auth.authenticate under `block_endpoints`.
+    - The user stays disabled with no password: it can never log in or reset a
+      password, it is only set as the request user after a key is verified.
+    - Its roles are forced back to the API role on every migrate, so nobody can
+      obtain a more powerful identity through an API key (lms also appends
+      "LMS Student" to every new user in before_insert).
+    """
+    from os_lms.os_lms.elite_api.keys import CLIENT_ROLE, CLIENT_USER
+
+    if not frappe.db.exists("Role", CLIENT_ROLE):
+        role = frappe.new_doc("Role")
+        role.update({"role_name": CLIENT_ROLE, "desk_access": 1, "home_page": ""})
+        role.insert(ignore_permissions=True)
+        print(f"Created Role: {CLIENT_ROLE}")
+
+    if not frappe.db.exists("User", CLIENT_USER):
+        frappe.get_doc(
+            {
+                "doctype": "User",
+                "email": CLIENT_USER,
+                "first_name": "Elite API",
+                "enabled": 0,
+                "send_welcome_email": 0,
+                "user_type": "System User",
+                "roles": [{"role": CLIENT_ROLE}],
+            }
+        ).insert(ignore_permissions=True)
+        print(f"Created User: {CLIENT_USER}")
+
+    user = frappe.get_doc("User", CLIENT_USER)
+    roles = [row.role for row in user.roles]
+    if roles != [CLIENT_ROLE] or user.enabled:
+        user.set("roles", [{"role": CLIENT_ROLE}])
+        user.enabled = 0
+        user.save(ignore_permissions=True)
+        print(f"Reset roles and status of User: {CLIENT_USER}")
+
+    # Log Settings only picks up `default_log_clearing_doctypes` when it is
+    # saved, so register the access log explicitly (existing entries, and a
+    # retention changed by an admin, are left alone).
+    log_settings = frappe.get_single("Log Settings")
+    if not any(row.ref_doctype == ELITE_API_ACCESS_LOG for row in log_settings.logs_to_clear):
+        retention = frappe.get_hooks("default_log_clearing_doctypes", {})[ELITE_API_ACCESS_LOG]
+        log_settings.register_doctype(ELITE_API_ACCESS_LOG, int(retention[-1]))
+        log_settings.save(ignore_permissions=True)
+        print(f"Registered {ELITE_API_ACCESS_LOG} in Log Settings")
+    frappe.db.commit()
+
+
 def create_custom_fields():
     for dt, fields in CUSTOM_FIELDS.items():
         for field_def in fields:

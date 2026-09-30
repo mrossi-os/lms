@@ -37,6 +37,7 @@ after_migrate = [
     "os_lms.setup.create_custom_fields",
     "os_lms.setup.setup_valutatore_role_and_permissions",
     "os_lms.setup.setup_gestore_role_permissions",
+    "os_lms.setup.setup_elite_api_client",
     "os_lms.setup.create_redis_index",
     "os_lms.setup.rebuild_search_index",
     # Migration must run BEFORE seed_prompt_templates so operator-customised
@@ -222,6 +223,12 @@ doc_events = {
 
 on_session_creation = ["os_lms.auth.on_session_creation"]
 
+
+# Retention (days) offered to Log Settings; os_lms.setup.setup_elite_api_client
+# registers it, since Log Settings only reads this hook when it is saved.
+default_log_clearing_doctypes = {
+    "Elite API Access Log": 90,
+}
 
 scheduler_events = {
     "hourly": [
