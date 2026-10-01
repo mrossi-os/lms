@@ -9891,3 +9891,19 @@ msgstr "Questo certificato non è più disponibile."
 #: frontend/src/oslms/composables/useCertificateViewer.js
 msgid "Unable to open the certificate. Please try again later."
 msgstr "Impossibile aprire il certificato. Riprova più tardi."
+
+#: frontend/src/oslms/components/trueskills/TrueSkillsSettings.vue
+msgid "Saved API key starts with"
+msgstr "La chiave API salvata inizia con"
+
+#: frontend/src/oslms/components/trueskills/TrueSkillsSettings.vue
+msgid "No API key saved"
+msgstr "Nessuna chiave API salvata"
+
+#: frontend/src/pages/ProfileCertificates.vue
+msgid "Elite certificates"
+msgstr "Certificati Elite"
+
+#: frontend/src/oslms/components/trueskills/ReceivedCertificates.vue
+msgid "TrueSkill certificates"
+msgstr "Certificati TrueSkill"

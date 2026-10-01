@@ -19,9 +19,15 @@
 				{{ __('Retry') }}
 			</button>
 		</div>
+		<h3
+			v-if="certificates.length"
+			class="mt-6 mb-2 text-base-semibold text-ink-gray-8"
+		>
+			{{ __('TrueSkill certificates') }}
+		</h3>
 		<div
 			v-if="certificates.length"
-			class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+			class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
 		>
 			<div
 				v-for="certificate in certificates"

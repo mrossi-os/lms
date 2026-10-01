@@ -132,6 +132,10 @@ tramite Issue Log)."""
 
   [[entries.sites]]
   file = "frontend/src/pages/ProfileCertificates.vue"
+  anchor = "{{ __('Elite certificates') }}"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProfileCertificates.vue"
   anchor = '<ReceivedCertificates :profile="profile" @state="received = $event" />'
 
   [entries.visibility]

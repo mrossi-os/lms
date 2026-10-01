@@ -3,6 +3,13 @@
 		<h2 class="mb-3 text-xl-semibold text-ink-gray-9">
 			{{ __('Certificates') }}
 		</h2>
+		<!-- OSLMS-CUSTOM: label the group, the TrueSkill one follows below -->
+		<h3
+			v-if="certificates.data?.length"
+			class="mb-2 text-base-semibold text-ink-gray-8"
+		>
+			{{ __('Elite certificates') }}
+		</h3>
 		<div
 			v-if="certificates.data?.length"
 			class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"

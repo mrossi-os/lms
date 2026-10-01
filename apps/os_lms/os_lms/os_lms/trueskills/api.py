@@ -6,6 +6,9 @@ from .certificate_image import build_certificate_png_data_uri
 from .client import TrueSkillsClientError, TrueSkillsError
 from .service import TrueSkillsService
 
+# Characters of the API key shown in the settings (e.g. "ts_ab12c"), never the whole key.
+API_KEY_PREFIX_LENGTH = 8
+
 
 def _require_admin() -> None:
 	roles = set(frappe.get_roles(frappe.session.user))
@@ -47,13 +50,18 @@ def _error_payload(exc: TrueSkillsError) -> dict:
 
 @frappe.whitelist()
 def get_status() -> dict:
-	"""Return whether the TrueSkills integration is configured and ready."""
+	"""Return whether the TrueSkills integration is configured and ready.
+
+	``api_key_prefix`` is the start of the stored key, so an admin can tell which
+	TrueSkills key (hence which organization) is configured without revealing it.
+	"""
 	_require_admin()
 	settings = TrueSkillsService().settings
 	return {
 		"enabled": settings.enabled,
 		"endpoint": settings.endpoint,
 		"has_api_key": bool(settings.api_key),
+		"api_key_prefix": settings.api_key[:API_KEY_PREFIX_LENGTH] if settings.api_key else None,
 		"ready": settings.is_ready(),
 	}
 
