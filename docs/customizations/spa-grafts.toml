@@ -113,6 +113,36 @@ pulsante si abilita anche con enable_certification spento."""
   anchor = "trueskills_certificate_enabled?: 0 | 1"
 
 [[entries]]
+id = "profile-trueskills-received-certificates"
+title = "Certificati emessi direttamente da TrueSkill nella tab Certificati del profilo"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+TrueSkill può emettere certificati in blocco alle email degli utenti Elite senza che Elite
+li richieda: non esiste un LMS Certificate né un Issue Log. La tab Certificati del profilo
+li cerca per email (lato server) e li mostra dopo quelli interni, con download PNG/JSON-LD
+inoltrato dal server. Il messaggio «nessun certificato» compare solo se non c'è nulla né
+di interno né di TrueSkill: per questo l'upstream deve conoscere lo stato riportato dal
+componente <ReceivedCertificates>. Quelli già emessi da Elite non si ripetono (esclusi
+tramite Issue Log)."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProfileCertificates.vue"
+  anchor = 'v-else-if="!received.count && !received.loading"'
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProfileCertificates.vue"
+  anchor = '<ReceivedCertificates :profile="profile" @state="received = $event" />'
+
+  [entries.visibility]
+  subject = "certificati TrueSkill di un profilo"
+  allow = ["profile-owner", "System Manager", "Gestore"]
+  deny = ["Moderator", "Docente", "Valutatore", "other-users", "Guest"]
+
+  [entries.checks]
+  backend = "apps/os_lms/os_lms/os_lms/tests/test_trueskills_received_certificates.py"
+
+[[entries]]
 id = "course-card-outline"
 title = "Programma del corso navigabile al posto delle statistiche"
 layer = "spa-graft"

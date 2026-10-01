@@ -9827,3 +9827,67 @@ msgstr "Il nome della chiave API non può superare {0} caratteri."
 #: apps/os_lms/os_lms/os_lms/elite_api/admin.py
 msgid "API key not found."
 msgstr "Chiave API non trovata."
+
+#: apps/os_lms/os_lms/os_lms/trueskills/received.py
+msgid "Username is required."
+msgstr "Il nome utente è obbligatorio."
+
+#: apps/os_lms/os_lms/os_lms/trueskills/received.py
+msgid "User {0} not found"
+msgstr "Utente {0} non trovato"
+
+#: apps/os_lms/os_lms/os_lms/trueskills/received.py
+msgid "You are not allowed to see the certificates of this user."
+msgstr "Non sei autorizzato a vedere i certificati di questo utente."
+
+#: apps/os_lms/os_lms/os_lms/trueskills/received.py
+msgid "Certificates are temporarily unavailable. Please try again later."
+msgstr "I certificati non sono al momento disponibili. Riprova più tardi."
+
+#: apps/os_lms/os_lms/os_lms/trueskills/received.py
+msgid "This file format is not available."
+msgstr "Questo formato di file non è disponibile."
+
+#: apps/os_lms/os_lms/os_lms/trueskills/received.py
+msgid "Certificate not found."
+msgstr "Certificato non trovato."
+
+#: apps/os_lms/os_lms/os_lms/trueskills/received.py
+msgid "This file cannot be generated right now."
+msgstr "Questo file non può essere generato al momento."
+
+#: frontend/src/oslms/components/trueskills/ReceivedCertificates.vue
+msgid "Loading TrueSkills certificates..."
+msgstr "Caricamento dei certificati TrueSkills..."
+
+#: frontend/src/oslms/components/trueskills/ReceivedCertificates.vue
+msgid "TrueSkills certificates are temporarily unavailable."
+msgstr "I certificati TrueSkills non sono al momento disponibili."
+
+#: frontend/src/oslms/components/trueskills/ReceivedCertificates.vue
+msgid "Issued by TrueSkills"
+msgstr "Emesso da TrueSkills"
+
+#: frontend/src/oslms/components/trueskills/ReceivedCertificates.vue
+msgid "Download Openbadge"
+msgstr "Scarica Openbadge"
+
+#: frontend/src/oslms/components/trueskills/ReceivedCertificates.vue
+msgid "JSON-LD"
+msgstr "JSON-LD"
+
+#: frontend/src/oslms/composables/useCertificateViewer.js
+msgid "The image is not available right now. Download the JSON-LD instead."
+msgstr "L'immagine non è al momento disponibile. Scarica invece il JSON-LD."
+
+#: frontend/src/oslms/composables/useCertificateViewer.js
+msgid "This file cannot be generated right now. Please try again later."
+msgstr "Questo file non può essere generato al momento. Riprova più tardi."
+
+#: frontend/src/oslms/composables/useCertificateViewer.js
+msgid "This certificate is no longer available."
+msgstr "Questo certificato non è più disponibile."
+
+#: frontend/src/oslms/composables/useCertificateViewer.js
+msgid "Unable to open the certificate. Please try again later."
+msgstr "Impossibile aprire il certificato. Riprova più tardi."

@@ -46,9 +46,15 @@
 				</div>
 			</div>
 		</div>
-		<div v-else class="text-sm italic text-ink-gray-5">
+		<!-- OSLMS-CUSTOM: also empty-state aware of the TrueSkills certificates below -->
+		<div
+			v-else-if="!received.count && !received.loading"
+			class="text-sm italic text-ink-gray-5"
+		>
 			{{ __('You have not received any certificates yet.') }}
 		</div>
+		<!-- OSLMS-CUSTOM: certificates TrueSkills issued straight to this user -->
+		<ReceivedCertificates :profile="profile" @state="received = $event" />
 	</div>
 </template>
 <script setup>
@@ -57,6 +63,7 @@ import { inject, onMounted, ref, watch } from 'vue'
 // OSLMS-CUSTOM: open the TrueSkills openbadge image for certificates issued
 // through TrueSkills; internal/batch certificates still open the PDF.
 import { useCertificateViewer } from '@/oslms/composables/useCertificateViewer'
+import ReceivedCertificates from '@/oslms/components/trueskills/ReceivedCertificates.vue'
 
 const dayjs = inject('$dayjs')
 const props = defineProps({
@@ -67,6 +74,8 @@ const props = defineProps({
 })
 
 const trueskillsStatus = ref({})
+// Reported by <ReceivedCertificates>; assume "still loading" until it reports.
+const received = ref({ count: 0, loading: true })
 
 onMounted(() => {
 	if (props.profile.data?.name) {
