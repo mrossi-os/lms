@@ -184,5 +184,112 @@ export function useCertificateViewer() {
 		}
 	}
 
-	return { opening, openCourseCertificate, openIssuedCertificate }
+	// ---- Certificates issued straight by TrueSkills ------------------------
+	// They have no LMS Certificate nor Issue Log: the server finds them by the
+	// profile owner's email and only serves ids that belong to that email.
+	// Both actions return the server's exception type on failure (null on
+	// success), so the list can refresh when a certificate was withdrawn.
+
+	const RECEIVED_FILES = {
+		image: { type: 'image/png', extension: 'png' },
+		jsonp: { type: 'application/ld+json', extension: 'jsonld' },
+	}
+
+	async function fetchReceivedFile({ username, id, format }) {
+		const params = new URLSearchParams({
+			username,
+			certificate_id: String(id),
+			file_format: format,
+		})
+		const res = await fetch(
+			`/api/method/os_lms.os_lms.trueskills.received.download_received_certificate?${params.toString()}`,
+		)
+		if (!res.ok) {
+			const body = await res.json().catch(() => ({}))
+			const err = new Error(body.exc_type || `http_${res.status}`)
+			err.excType = body.exc_type
+			throw err
+		}
+		return res.arrayBuffer()
+	}
+
+	function receivedErrorMessage(excType, { format, formats }) {
+		if (excType === 'ReceivedCertificateFileError') {
+			return format === 'image' && formats?.includes('jsonp')
+				? __(
+						'The image is not available right now. Download the JSON-LD instead.',
+					)
+				: __(
+						'This file cannot be generated right now. Please try again later.',
+					)
+		}
+		if (excType === 'DoesNotExistError') {
+			return __('This certificate is no longer available.')
+		}
+		return __('Unable to open the certificate. Please try again later.')
+	}
+
+	// Open the openbadge PNG inline in a new tab.
+	async function openReceivedBadge({ username, id, formats }) {
+		if (opening.value) return null
+		opening.value = true
+		const win = openLoadingTab()
+		try {
+			const buf = await fetchReceivedFile({
+				username,
+				id,
+				format: 'image',
+			})
+			// Straight to the blob: safeUrl-style allowlists reject `blob:`.
+			navigate(
+				win,
+				URL.createObjectURL(
+					new Blob([buf], { type: RECEIVED_FILES.image.type }),
+				),
+			)
+			return null
+		} catch (err) {
+			if (win) win.close()
+			toast.error(
+				receivedErrorMessage(err.excType, { format: 'image', formats }),
+			)
+			return err.excType || 'error'
+		} finally {
+			opening.value = false
+		}
+	}
+
+	// Save the PNG or the JSON-LD as a file.
+	async function downloadReceivedFile({ username, id, format, formats }) {
+		if (opening.value) return null
+		opening.value = true
+		try {
+			const buf = await fetchReceivedFile({ username, id, format })
+			const file = RECEIVED_FILES[format]
+			const url = URL.createObjectURL(
+				new Blob([buf], { type: file.type }),
+			)
+			const link = document.createElement('a')
+			link.href = url
+			link.download = `trueskill_${id}.${file.extension}`
+			document.body.appendChild(link)
+			link.click()
+			link.remove()
+			setTimeout(() => URL.revokeObjectURL(url), 10000)
+			return null
+		} catch (err) {
+			toast.error(receivedErrorMessage(err.excType, { format, formats }))
+			return err.excType || 'error'
+		} finally {
+			opening.value = false
+		}
+	}
+
+	return {
+		opening,
+		openCourseCertificate,
+		openIssuedCertificate,
+		openReceivedBadge,
+		downloadReceivedFile,
+	}
 }

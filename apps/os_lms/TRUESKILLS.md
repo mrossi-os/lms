@@ -290,6 +290,28 @@ Tutti sotto `os_lms.os_lms.trueskills.api`.
 
 ---
 
+## 10-bis. Certificati emessi direttamente da TrueSkill (profilo → Certificati)
+
+TrueSkill può emettere certificati **in blocco** alle email degli utenti Elite, senza che Elite li abbia richiesti: per questi non esistono né un `LMS Certificate` né un Issue Log. La tab **Certificati** del profilo li mostra comunque, dopo quelli interni, con la dicitura «Emesso da TrueSkills».
+
+Codice: `trueskills/received.py` (backend), `frontend/src/oslms/components/trueskills/ReceivedCertificates.vue` + azioni in `useCertificateViewer.js` (SPA), innesto in `ProfileCertificates.vue`.
+
+| Metodo Python | Metodi HTTP | Permessi | Cosa fa |
+|---|---|---|---|
+| `received.list_received_certificates(username)` | GET, POST | Proprietario del profilo, System Manager (Administrator), Gestore | Cerca su TrueSkill (`POST /search-by-email`) i certificati dell'email del profilo. Restituisce `{status, certificates}`: `status` = `ok`, `disabled` (integrazione spenta) o `unavailable` (TrueSkill in errore: la tab mostra un avviso non bloccante). |
+| `received.download_received_certificate(username, certificate_id, file_format)` | GET | come sopra | Inoltra il PNG (`image`) o il JSON-LD (`jsonp`). |
+
+Regole che il codice garantisce (e i test verificano):
+
+1. **L'email non esce dal server.** Si risolve da `username` lato server e viaggia solo nel corpo della richiesta a TrueSkill: mai in un URL, in un log o in una risposta al browser. La chiave API non lascia mai il server.
+2. **Controllo di appartenenza.** La chiave scarica *qualunque* certificato dell'organizzazione conoscendone l'`id`. Il download parte solo se l'`id` è tra quelli che la ricerca restituisce **in quel momento** per l'email del profilo (nessuna cache), altrimenti 404.
+3. **Niente doppioni.** Gli `id` già presenti in `TrueSkills Issue Log` (emessi da Elite) sono esclusi: li mostra la card interna.
+4. **Solo i formati dichiarati.** Si offrono solo i `formats` restituiti da TrueSkill; vuoto = certificato semplice, nessun pulsante. Se `image` fallisce (`unable_to_generate_file`) l'utente è invitato a scaricare il JSON-LD.
+5. **Tentativi limitati.** Chiamate interattive: timeout 8 s e 2 tentativi (5xx e timeout si ritentano, 401/400 no). Gli errori che solo uno sviluppatore può risolvere (chiave revocata, richiesta malformata, endpoint sbagliato) vanno nell'Error Log al massimo una volta ogni 10 minuti, con stato e codice ma senza email.
+6. **Paginazione.** Si leggono tutte le pagine (`page * pageSize >= total`) con un tetto di 10 pagine da 100.
+
+---
+
 ## 11. Limitazioni note
 
 1. **Solo Openbadge.** Il tipo `Certificate` (PDF/HTML attestation) di TrueSkill non è implementato in Fase 1. Tutte le UI assumono Openbadge.
@@ -373,6 +395,13 @@ Lo studente non ha il **Codice Fiscale** valorizzato. Vai su `User → <utente>`
 ### Il download del badge ritorna "Not permitted"
 
 Lo studente sta provando a scaricare un certificato che **non è suo**, oppure non c'è un Issue Log `issued` corrispondente al `trueskill_id` passato. Solo il proprietario (`LMS Certificate.member`) o un admin possono scaricare.
+
+### Nel profilo non compaiono i certificati emessi da TrueSkill
+
+1. Il confronto è sull'email del profilo (`User.email`): maiuscole e spazi sono ininfluenti, ma un alias o un altro indirizzo **non** trova nulla. Verifica con quale email TrueSkill ha emesso.
+2. Vengono esclusi quelli emessi da Elite (hanno un Issue Log): compaiono come card interne.
+3. Sono visibili solo al proprietario del profilo, a System Manager e a Gestore (Moderator no).
+4. Se compare «I certificati TrueSkill non sono al momento disponibili»: guarda l'Error Log («TrueSkills received certificates») e il log `trueskills`; un 401 significa chiave da sistemare nelle impostazioni.
 
 ---
 

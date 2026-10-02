@@ -118,6 +118,40 @@ Merge di v2.61.0 (2026-09-23): l'upstream trasforma la scheda certificato del pr
   anchor = "<!-- OSLMS-CUSTOM: a clickable div, not upstream's <a href> to the PDF"
 
 [[entries]]
+id = "profile-trueskills-received-certificates"
+title = "Certificati emessi direttamente da TrueSkill nella tab Certificati del profilo"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+TrueSkill può emettere certificati in blocco alle email degli utenti Elite senza che Elite
+li richieda: non esiste un LMS Certificate né un Issue Log. La tab Certificati del profilo
+li cerca per email (lato server) e li mostra dopo quelli interni, con download PNG/JSON-LD
+inoltrato dal server. Il messaggio «nessun certificato» compare solo se non c'è nulla né
+di interno né di TrueSkill: per questo l'upstream deve conoscere lo stato riportato dal
+componente <ReceivedCertificates>. Quelli già emessi da Elite non si ripetono (esclusi
+tramite Issue Log)."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProfileCertificates.vue"
+  anchor = 'v-else-if="!received.count && !received.loading"'
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProfileCertificates.vue"
+  anchor = "{{ __('Elite certificates') }}"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProfileCertificates.vue"
+  anchor = '<ReceivedCertificates :profile="profile" @state="received = $event" />'
+
+  [entries.visibility]
+  subject = "certificati TrueSkill di un profilo"
+  allow = ["profile-owner", "System Manager", "Gestore"]
+  deny = ["Moderator", "Docente", "Valutatore", "other-users", "Guest"]
+
+  [entries.checks]
+  backend = "apps/os_lms/os_lms/os_lms/tests/test_trueskills_received_certificates.py"
+
+[[entries]]
 id = "course-card-outline"
 title = "Programma del corso navigabile al posto delle statistiche"
 layer = "spa-graft"
@@ -8662,3 +8696,33 @@ all'utente (created/enrolled) e per il Valutatore (flag oslms_valutatore_scoped_
   file = "lms/lms/utils.py"
   anchor = "# OSLMS-CUSTOM: the same draft gate as get_courses (upstream v2.64.0), or anyone"
   symbol = "get_course_categories"
+# Elite API (impostazioni SPA) — docs/elite-api/
+# ---------------------------------------------------------------------------
+
+[[entries]]
+id = "settings-elite-api-tab"
+title = "Tab «Elite API» nelle impostazioni: gestione delle chiavi API"
+layer = "override-file"
+confidence = "high"
+intent = """
+Amministratori e Gestore creano, vedono e revocano le chiavi con cui i sistemi esterni
+(primo: TrueSkill) leggono corsi, classi e studenti tramite l'Elite API, senza passare
+dal Desk (i Gestore sono in gran parte Website User). La chiave completa si vede una
+sola volta; una chiave revocata o scaduta non si riattiva. Il server ripete il controllo
+dei ruoli in os_lms.os_lms.elite_api.admin (System Manager + Gestore)."""
+
+  [[entries.sites]]
+  file = "frontend/src/oslms/utils/settings.js"
+  anchor = "template: markRaw(EliteApiSettings)"
+
+  [[entries.sites]]
+  file = "frontend/src/oslms/components/eliteApi/EliteApiSettings.vue"
+  anchor = "const ADMIN_API = 'os_lms.os_lms.elite_api.admin'"
+
+  [entries.visibility]
+  subject = "tab «Elite API» e endpoint di gestione delle chiavi"
+  allow = ["System Manager", "Gestore"]
+  deny = ["Moderator", "Docente", "Student", "Guest"]
+
+  [entries.checks]
+  backend = "apps/os_lms/os_lms/os_lms/tests/test_elite_api_admin.py"

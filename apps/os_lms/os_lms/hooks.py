@@ -24,7 +24,13 @@ app_include_css = [
 
 
 # activate debug if needed
-before_request = ["os_lms.debug.active_debug"]
+before_request = [
+    "os_lms.debug.active_debug",
+    # Must stay a before_request hook: it runs before Frappe's validate_auth and
+    # the lms.auth hook (see os_lms/os_lms/elite_api/auth.py).
+    "os_lms.os_lms.elite_api.auth.authenticate_request",
+]
+after_request = ["os_lms.os_lms.elite_api.auth.record_request"]
 
 # Background jobs start with lang = conf.lang (unset) -> "en", so every _()
 # evaluated in a worker returns English even though the site runs in Italian.
@@ -38,6 +44,7 @@ after_migrate = [
     "os_lms.setup.setup_valutatore_role_and_permissions",
     "os_lms.setup.setup_gestore_role_permissions",
     "os_lms.setup.setup_docente_role_permissions",
+    "os_lms.setup.setup_elite_api_client",
     "os_lms.setup.create_redis_index",
     "os_lms.setup.rebuild_search_index",
     # Migration must run BEFORE seed_prompt_templates so operator-customised
@@ -238,6 +245,12 @@ doc_events = {
 
 on_session_creation = ["os_lms.auth.on_session_creation"]
 
+
+# Retention (days) offered to Log Settings; os_lms.setup.setup_elite_api_client
+# registers it, since Log Settings only reads this hook when it is saved.
+default_log_clearing_doctypes = {
+    "Elite API Access Log": 90,
+}
 
 scheduler_events = {
     "hourly": [

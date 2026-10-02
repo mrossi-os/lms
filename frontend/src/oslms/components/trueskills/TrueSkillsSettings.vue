@@ -40,6 +40,14 @@
 				:sections="sections"
 				:data="lmsData.doc"
 			/>
+			<!-- Start of the saved key, to tell which TrueSkills organization is in use -->
+			<div v-if="status.data" class="mt-2 text-sm text-ink-gray-6">
+				<template v-if="status.data.api_key_prefix">
+					{{ __('Saved API key starts with') }}:
+					<code class="text-ink-gray-8">{{ status.data.api_key_prefix }}…</code>
+				</template>
+				<template v-else>{{ __('No API key saved') }}</template>
+			</div>
 		</div>
 
 		<div
@@ -114,12 +122,18 @@ const lmsData = createDocumentResource({
 	auto: true,
 })
 
+const status = createResource({
+	url: 'os_lms.os_lms.trueskills.api.get_status',
+	auto: true,
+})
+
 const update = () => {
 	lmsData.save.submit(
 		{},
 		{
 			onSuccess() {
 				toast.success(__('Settings updated'))
+				status.reload()
 			},
 			onError(err) {
 				toast.error(err.messages?.[0] || err.message || err)
