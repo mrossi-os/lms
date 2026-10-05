@@ -464,8 +464,8 @@ const isInstructor = (): boolean => {
 	return user_is_instructor
 }
 
-// OSLMS-CUSTOM: a "Docente" is a global instructor: it manages every course, even
-// those it does not teach (mirrors can_modify_course on the backend).
+// OSLMS-CUSTOM: a "Docente" opens every course, even unpublished ones it does not
+// teach (mirrors can_access_course on the backend); managing it is canManageCourse.
 const isAdmin = computed<boolean>(() => {
 	return (
 		Boolean(user.data?.is_moderator) ||
