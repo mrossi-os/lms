@@ -248,6 +248,9 @@ def get_user_info():
         result["is_valutatore"] = is_valutatore
         if is_valutatore:
             result["is_student"] = False
+        # A "Gestore" (manager) may open the quiz submission detail read-only, with its
+        # proctoring log. Informational flag only: it does not change is_student.
+        result["is_gestore"] = "Gestore" in result.get("roles", [])
         # Gate for the student-statistics export page. Delegated to the single
         # source of truth in os_lms.os_lms.api so the SPA link and the endpoints
         # can never disagree (imported locally to avoid an import cycle).

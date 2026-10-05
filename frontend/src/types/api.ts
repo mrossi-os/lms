@@ -38,6 +38,8 @@ export interface SessionUser {
 		is_evaluator?: boolean
 		// OSLMS-CUSTOM: per-batch evaluator role flag (os_lms boot/session info)
 		is_valutatore?: boolean
+		// OSLMS-CUSTOM: manager role flag (os_lms get_user_info override)
+		is_gestore?: boolean
 		is_student?: boolean
 		is_system_manager?: boolean
 	}

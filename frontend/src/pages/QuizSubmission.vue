@@ -235,9 +235,10 @@
 			     The rule above it is the summary's `border-b` while stacked and its
 			     own `lg:border-t` beside it, so the two never double up — and a
 			     submission with no violations still gets one from the summary. -->
-			<!-- OSLMS-CUSTOM: the proctoring photo log is not shown to the per-batch Valutatore -->
+			<!-- OSLMS-CUSTOM: the Valutatore sees the proctoring photo log of their own batches
+			     (scoped server-side) -->
 			<aside
-				v-if="submissionDetails.doc.violation_count && canSeeProctoringLog"
+				v-if="submissionDetails.doc.violation_count"
 				class="order-2 border-b px-5 py-5 lg:order-none lg:col-start-2 lg:row-start-2 lg:border-b-0 lg:border-t"
 			>
 				<details
@@ -392,8 +393,9 @@ const canGrade = computed(
 )
 
 onMounted(() => {
-	// OSLMS-CUSTOM: admit the Valutatore instead of bouncing to Courses
-	if (!canGrade.value && !user.data?.is_valutatore)
+	// OSLMS-CUSTOM: admit the Valutatore and the Gestore (both read-only) instead of
+	// bouncing them to Courses
+	if (!canGrade.value && !user.data?.is_valutatore && !user.data?.is_gestore)
 		router.push({ name: 'Courses' })
 })
 
@@ -422,25 +424,16 @@ const submissionDetails = createDocumentResource({
 	auto: true,
 })
 
-// OSLMS-CUSTOM: the proctoring log (with webcam stills) stays with Moderators and
-// instructors; the os_lms override refuses it to the per-batch Valutatore, so
-// the page does not even ask for it.
-const canSeeProctoringLog = computed(
-	() =>
-		!user.data?.is_valutatore ||
-		Boolean(
-			user.data?.is_moderator ||
-				user.data?.is_instructor ||
-				user.data?.is_evaluator
-		)
-)
-
+// OSLMS-CUSTOM: the proctoring log (with webcam stills) is read by every role that can
+// open this page. The per-batch Valutatore only gets it for a submission of their own
+// batches: the os_lms override of the endpoint and the LMS Quiz Violation Log
+// permission hooks enforce that, so the page just asks.
 const violationLog = createResource({
 	url: 'lms.lms.doctype.lms_quiz.lms_quiz.get_quiz_violation_logs',
 	makeParams() {
 		return { submission: props.submission }
 	},
-	auto: canSeeProctoringLog.value,
+	auto: true,
 })
 
 const openEndedCheck = createResource({

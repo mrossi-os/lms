@@ -44,6 +44,7 @@ after_migrate = [
     "os_lms.setup.setup_valutatore_role_and_permissions",
     "os_lms.setup.setup_gestore_role_permissions",
     "os_lms.setup.setup_docente_role_permissions",
+    "os_lms.setup.setup_quiz_violation_log_permissions",
     "os_lms.setup.setup_elite_api_client",
     "os_lms.setup.create_redis_index",
     "os_lms.setup.rebuild_search_index",
@@ -82,6 +83,9 @@ permission_query_conditions = {
     "LMS Batch Enrollment": "os_lms.os_lms.valutatore.batch_enrollment_query_conditions",
     "LMS Live Class": "os_lms.os_lms.valutatore.live_class_query_conditions",
     "LMS Quiz Submission": "os_lms.os_lms.valutatore.quiz_submission_query_conditions",
+    # The proctoring log (and its camera stills, which inherit its audience) follows the
+    # quiz submission it belongs to.
+    "LMS Quiz Violation Log": "os_lms.os_lms.valutatore.violation_log_query_conditions",
     "LMS Assignment Submission": "os_lms.os_lms.valutatore.assignment_submission_query_conditions",
     # Scope the read-only course dashboard data to the valutatore's courses.
     "LMS Enrollment": "os_lms.os_lms.valutatore.enrollment_query_conditions",
@@ -101,7 +105,8 @@ has_permission = {
         "os_lms.os_lms.doctype.lmsa_simulation_debrief.lmsa_simulation_debrief.has_permission"
     ),
     # Veto by-name access to submissions outside the valutatore's batches.
-    "LMS Quiz Submission": "os_lms.os_lms.valutatore.submission_has_permission",
+    "LMS Quiz Submission": "os_lms.os_lms.valutatore.quiz_submission_has_permission",
+    "LMS Quiz Violation Log": "os_lms.os_lms.valutatore.violation_log_has_permission",
     "LMS Assignment Submission": "os_lms.os_lms.valutatore.submission_has_permission",
     # Veto by-name access to course-scoped rows outside the valutatore's courses.
     "LMS Enrollment": "os_lms.os_lms.valutatore.course_scoped_has_permission",

@@ -132,14 +132,46 @@ def live_class_query_conditions(user: str | None = None) -> str:
 	return f"`tabLMS Live Class`.batch_name IN ({_in_clause(batches)})"
 
 
+def _quiz_submission_scope_sql(batches: list[str]) -> str:
+	"""SQL predicate on `tabLMS Quiz Submission`: the student is enrolled in one of
+	``batches`` AND the quiz belongs to that same batch.
+
+	The pairing is per batch: a Valutatore of two batches does not see the students of
+	one batch on the quizzes of the other. A quiz belongs to a batch when it is
+	  - the ``course`` of the quiz, or the course of a lesson that embeds it
+	    (``Course Lesson.quiz_id``), one of the batch courses, or
+	  - listed in the batch assessments.
+	The quiz is resolved as it is linked *today*, not from the ``course`` copied onto
+	the submission: that copy is frozen at insert time, so a quiz linked to its course
+	later leaves older submissions with an empty course.
+	"""
+	batch_list = _in_clause(batches)
+	submission = "`tabLMS Quiz Submission`"
+	return (
+		"EXISTS (SELECT 1 FROM `tabLMS Batch Enrollment` os_be"
+		f" WHERE os_be.batch IN ({batch_list}) AND os_be.member = {submission}.member"
+		" AND ("
+		"EXISTS (SELECT 1 FROM `tabBatch Course` os_bc"
+		" WHERE os_bc.parent = os_be.batch AND os_bc.parenttype = 'LMS Batch'"
+		" AND (os_bc.course = (SELECT os_q.course FROM `tabLMS Quiz` os_q"
+		f" WHERE os_q.name = {submission}.quiz)"
+		" OR os_bc.course IN (SELECT os_cl.course FROM `tabCourse Lesson` os_cl"
+		f" WHERE os_cl.quiz_id = {submission}.quiz)))"
+		" OR EXISTS (SELECT 1 FROM `tabLMS Assessment` os_a"
+		" WHERE os_a.parent = os_be.batch AND os_a.parenttype = 'LMS Batch'"
+		f" AND os_a.assessment_type = 'LMS Quiz' AND os_a.assessment_name = {submission}.quiz)"
+		"))"
+	)
+
+
 def quiz_submission_query_conditions(user: str | None = None) -> str:
 	user = user or frappe.session.user
 	if not _only_scoped_valutatore(user):
 		return ""
-	members = get_valutatore_member_emails(user)
-	if not members:
+	batches = get_valutatore_batches(user)
+	if not batches:
 		return "1=0"
-	return f"`tabLMS Quiz Submission`.member IN ({_in_clause(members)})"
+	return _quiz_submission_scope_sql(batches)
 
 
 def assignment_submission_query_conditions(user: str | None = None) -> str:
@@ -181,18 +213,21 @@ def course_progress_query_conditions(user: str | None = None) -> str:
 # ---------------------------------------------------------------------------
 @frappe.whitelist()
 def get_quiz_violation_logs(submission: str):
-	"""Upstream ``get_quiz_violation_logs``, closed to the scoped Valutatore.
+	"""Upstream ``get_quiz_violation_logs``, narrowed for the scoped Valutatore.
 
 	The upstream endpoint returns the proctoring events of a quiz attempt, with a
-	webcam still for each violation, to anyone who can read the submission. The
-	scoped Valutatore can read the quiz submissions of their batch students, but
-	the client decided (2026-09-24) that the photo log stays with Moderators and
-	instructors: it is refused here, not only hidden in the SPA.
+	webcam still for each violation, to anyone who can read the submission. The scoped
+	Valutatore reads the log (photos included) only for a submission of their own
+	batches (student AND quiz of the same batch); decision of the client, 2026-10-05,
+	which reverses the 2026-09-24 one that kept the log from them altogether.
 	"""
 	from lms.lms.doctype.lms_quiz.lms_quiz import get_quiz_violation_logs as upstream
 
-	if _only_scoped_valutatore(frappe.session.user):
-		frappe.throw(frappe._("Insufficient Permission"), frappe.PermissionError)
+	user = frappe.session.user
+	if _only_scoped_valutatore(user):
+		batches = get_valutatore_batches(user)
+		if not (batches and _quiz_submission_in_scope(submission, batches)):
+			frappe.throw(frappe._("Insufficient Permission"), frappe.PermissionError)
 	return upstream(submission)
 
 
@@ -217,6 +252,70 @@ def submission_has_permission(doc, ptype: str = "read", user: str | None = None)
 	if member and member in get_valutatore_member_emails(user):
 		return True
 	return False
+
+
+def _quiz_submission_in_scope(name: str, batches: list[str]) -> bool:
+	"""Whether the quiz submission ``name`` is one the valutatore of ``batches`` may read:
+	the same rule as :func:`quiz_submission_query_conditions`, asked for a single row."""
+	return bool(
+		frappe.db.sql(
+			"SELECT 1 FROM `tabLMS Quiz Submission`"
+			f" WHERE name = %s AND {_quiz_submission_scope_sql(batches)}",
+			(name,),
+		)
+	)
+
+
+def quiz_submission_has_permission(doc, ptype: str = "read", user: str | None = None):
+	"""Veto by-name access to a quiz submission outside the valutatore's batches, with
+	the same rule as :func:`quiz_submission_query_conditions` (student AND quiz of the
+	same batch). Neutral case returns ``True``: see :func:`submission_has_permission`."""
+	user = user or frappe.session.user
+	if not _only_scoped_valutatore(user):
+		return True
+	batches = get_valutatore_batches(user)
+	if not batches:
+		return False
+	name = doc.get("name")
+	if name and not doc.is_new():
+		return _quiz_submission_in_scope(name, batches)
+	# A document that is not saved yet has nothing to resolve the quiz from: keep the
+	# plain membership rule.
+	member = doc.get("member")
+	return bool(member and member in get_valutatore_member_emails(user))
+
+
+def violation_log_query_conditions(user: str | None = None) -> str:
+	"""Scope the proctoring log rows to the quiz submissions the valutatore may read.
+
+	The camera stills hang off these rows as private Files and inherit their audience
+	(File.has_permission delegates to read on the attached document), so narrowing the
+	rows narrows the photos too."""
+	user = user or frappe.session.user
+	if not _only_scoped_valutatore(user):
+		return ""
+	batches = get_valutatore_batches(user)
+	if not batches:
+		return "1=0"
+	return (
+		"`tabLMS Quiz Violation Log`.quiz_submission IN ("
+		"SELECT `tabLMS Quiz Submission`.name FROM `tabLMS Quiz Submission`"
+		f" WHERE {_quiz_submission_scope_sql(batches)})"
+	)
+
+
+def violation_log_has_permission(doc, ptype: str = "read", user: str | None = None):
+	"""Veto by-name access (and so the camera stills) to a proctoring log row whose
+	quiz submission is outside the valutatore's batches. Neutral case returns ``True``:
+	see :func:`submission_has_permission`."""
+	user = user or frappe.session.user
+	if not _only_scoped_valutatore(user):
+		return True
+	submission = doc.get("quiz_submission")
+	batches = get_valutatore_batches(user)
+	if not (submission and batches):
+		return False
+	return _quiz_submission_in_scope(submission, batches)
 
 
 def course_scoped_has_permission(doc, ptype: str = "read", user: str | None = None):

@@ -213,6 +213,35 @@ def setup_docente_role_permissions():
     frappe.db.commit()
 
 
+# Proctoring log of a quiz attempt. Its camera stills are private Files attached to
+# the log rows, and File.has_permission delegates to read on the attached document,
+# so whoever may not read LMS Quiz Violation Log cannot open the photos either.
+# Upstream grants it to System Manager and "Instructor" only (a role nobody holds
+# here), so Moderators, Gestori and the like saw the log without its photos.
+# The Valutatore is narrowed to its own batches at runtime
+# (os_lms.os_lms.valutatore.violation_log_*), like its quiz submissions.
+VIOLATION_LOG_DOCTYPE = "LMS Quiz Violation Log"
+VIOLATION_LOG_READ_ROLES = ("Moderator", "Course Creator", "Docente", "Gestore", "Valutatore")
+
+
+def setup_quiz_violation_log_permissions():
+    """Let the roles that read quiz submissions read their proctoring log. Idempotent;
+    skips the roles that do not exist on the site yet."""
+    from frappe.permissions import add_permission, update_permission_property
+
+    if not frappe.db.exists("DocType", VIOLATION_LOG_DOCTYPE):
+        return
+
+    for role in VIOLATION_LOG_READ_ROLES:
+        if not frappe.db.exists("Role", role):
+            continue
+        # add_permission copies the doctype's standard rules into Custom DocPerm first,
+        # so System Manager keeps its access.
+        add_permission(VIOLATION_LOG_DOCTYPE, role, 0)
+        update_permission_property(VIOLATION_LOG_DOCTYPE, role, 0, "read", 1, validate=False)
+    frappe.db.commit()
+
+
 def _effective_level0_perms(doctype: str, role: str):
     """The level-0 row Frappe applies: Custom DocPerm when the doctype has any, else DocPerm."""
     table = "Custom DocPerm" if frappe.db.exists("Custom DocPerm", {"parent": doctype}) else "DocPerm"
