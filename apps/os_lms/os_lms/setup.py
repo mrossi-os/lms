@@ -140,8 +140,12 @@ GESTORE_ROLE = "Gestore"
 # os_lms.os_lms.api.can_export_student_stats, but downloading the generated
 # private file goes through Frappe's File permission check, which delegates to
 # read permission on the attached Student Stats Export.
+# Read on the quiz and assignment submissions too: the Gestore opens their lists and the
+# quiz submission detail with its proctoring log.
 GESTORE_DOCPERMS = {
     "Student Stats Export": {"read": 1, "create": 1, "write": 1, "delete": 1},
+    "LMS Quiz Submission": {"read": 1},
+    "LMS Assignment Submission": {"read": 1},
 }
 
 

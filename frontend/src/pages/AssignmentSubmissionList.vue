@@ -60,7 +60,9 @@ const user = inject('$user')
 // OSLMS-CUSTOM: a Valutatore-only viewer cannot open the parent list the phone back
 // button points at, so it goes back in history instead (fallback: the batches list)
 const valutatoreOnlyBack = computed(() =>
-	user.data?.is_valutatore && !user.data?.is_moderator && !user.data?.is_instructor
+	(user.data?.is_valutatore || user.data?.is_gestore) &&
+	!user.data?.is_moderator &&
+	!user.data?.is_instructor
 		? { name: 'Batches' }
 		: null
 )
@@ -72,12 +74,13 @@ const member = ref('')
 const status = ref('')
 const pageLength = ref(24)
 
-// OSLMS-CUSTOM: the per-batch Valutatore may open the assignment submissions list
+// OSLMS-CUSTOM: the per-batch Valutatore and the Gestore may open the assignment submissions list
 onMounted(() => {
 	if (
 		!user.data?.is_instructor &&
 		!user.data?.is_moderator &&
-		!user.data?.is_valutatore
+		!user.data?.is_valutatore &&
+		!user.data?.is_gestore
 	) {
 		router.push({ name: 'Courses' })
 	}

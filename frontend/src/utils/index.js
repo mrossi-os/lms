@@ -800,6 +800,26 @@ const getSidebarItems = (forMobile = false) => {
 						'AssignmentSubmission',
 					],
 				},
+				// OSLMS-CUSTOM: a Gestore without the admin flags has no Quizzes or Assignments
+				// pages, so it gets its way into the (read-only) submission lists directly
+				{
+					label: 'Quiz Submissions',
+					icon: 'FileCheck',
+					to: 'QuizSubmissions',
+					activeFor: ['QuizSubmissions', 'QuizSubmission'],
+					condition: () => {
+						return !forMobile && isGestoreOnlyViewer()
+					},
+				},
+				{
+					label: 'Assignment Submissions',
+					icon: 'Pencil',
+					to: 'AssignmentSubmissionList',
+					activeFor: ['AssignmentSubmissionList', 'AssignmentSubmission'],
+					condition: () => {
+						return !forMobile && isGestoreOnlyViewer()
+					},
+				},
 				{
 					label: 'Programming Exercises',
 					icon: 'Code',
@@ -826,6 +846,11 @@ const getSidebarItems = (forMobile = false) => {
 			],
 		},
 	]
+}
+
+const isGestoreOnlyViewer = () => {
+	const { userResource } = usersStore()
+	return Boolean(userResource?.data?.is_gestore) && !isAdmin()
 }
 
 const isAdmin = () => {

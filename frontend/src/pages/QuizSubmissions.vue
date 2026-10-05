@@ -107,11 +107,12 @@ const filters = ref<QuizSubmissionFilters>({ quiz: '', member: '', course: '' })
 // the unfiltered response could land last.
 setFiltersFromRoute()
 
-// OSLMS-CUSTOM: the per-batch Valutatore may open the quiz submissions list (read-only);
-// the per-batch filter is server-side (os_lms submission permission query conditions)
+// OSLMS-CUSTOM: the per-batch Valutatore and the Gestore may open the quiz submissions
+// list (read-only); the per-batch filter is server-side (os_lms submission permission
+// query conditions). Named after the first viewer it was written for.
 const isValutatoreOnly = computed(
 	() =>
-		Boolean(user.data?.is_valutatore) &&
+		Boolean(user.data?.is_valutatore || user.data?.is_gestore) &&
 		!user.data?.is_moderator &&
 		!user.data?.is_instructor
 )
@@ -126,7 +127,8 @@ onMounted(() => {
 	if (
 		!user.data?.is_instructor &&
 		!user.data?.is_moderator &&
-		!user.data?.is_valutatore
+		!user.data?.is_valutatore &&
+		!user.data?.is_gestore
 	) {
 		router.push({ name: 'Courses' })
 		return
