@@ -107,8 +107,12 @@ export class Color extends ToolButton {
 			event.preventDefault()
 		})
 
-		this.textInput = this.createInput(__('Text color'))
-		this.backgroundInput = this.createInput(__('Highlight'))
+		this.textInput = this.createInput(__('Text color'), __('Default'), 'color')
+		this.backgroundInput = this.createInput(
+			__('Highlight'),
+			__('No highlight'),
+			'background-color'
+		)
 
 		// Attached once, directly on the inputs: opening the OS colour dialog can
 		// close the inline toolbar before the dialog commits, and these listeners
@@ -220,13 +224,57 @@ export class Color extends ToolButton {
 		selection.addRange(next)
 	}
 
-	private createInput(label: string): HTMLInputElement {
+	private createInput(
+		label: string,
+		resetLabel: string,
+		property: 'color' | 'background-color'
+	): HTMLInputElement {
 		const field = document.createElement('label')
 		field.classList.add('lms-inline-color__field')
 		field.textContent = label
 		const input = document.createElement('input')
 		input.type = 'color'
-		field.append(input)
+		// A native colour input has no empty value, so without this a colour or
+		// highlight, once applied, could only be changed, never taken away.
+		const reset = document.createElement('button')
+		reset.type = 'button'
+		reset.classList.add('lms-inline-color__reset')
+		reset.textContent = resetLabel
+		reset.addEventListener('click', (event: MouseEvent): void => {
+			// Inside the <label>, a click would also open the colour dialog.
+			event.preventDefault()
+			this.clearStyle(property)
+		})
+		field.append(input, reset)
 		return input
+	}
+
+	/**
+	 * Take the text colour or the highlight off the active wrappers. A wrapper left
+	 * with no style at all is unwrapped, so no empty span stays in the saved lesson.
+	 */
+	private clearStyle(property: 'color' | 'background-color'): void {
+		this.activeNodes.forEach((node): void => {
+			node.style.removeProperty(property)
+		})
+		const empty = this.activeNodes.filter(
+			(node): boolean => !node.style.color && !node.style.backgroundColor
+		)
+		empty.forEach((node): void => {
+			node.replaceWith(...Array.from(node.childNodes))
+		})
+		this.activeNodes = this.activeNodes.filter(
+			(node): boolean => !empty.includes(node)
+		)
+		if (property === 'color' && this.textInput) {
+			this.textInput.value = '#000000'
+		}
+		if (property === 'background-color' && this.backgroundInput) {
+			this.backgroundInput.value = '#ffffff'
+		}
+		if (!this.activeNodes.length) {
+			this.state = false
+			this.hideActions()
+		}
 	}
 }

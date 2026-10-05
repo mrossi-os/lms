@@ -212,6 +212,21 @@ textarea {
 	color: var(--ink-gray-6);
 }
 
+.lms-inline-color__reset {
+	align-self: flex-start;
+	padding: 0;
+	border: 0;
+	background: none;
+	font-size: 11px;
+	color: var(--ink-gray-5);
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.lms-inline-color__reset:hover {
+	color: var(--ink-gray-8);
+}
+
 .lms-inline-color__field input[type='color'] {
 	width: 64px;
 	height: 24px;

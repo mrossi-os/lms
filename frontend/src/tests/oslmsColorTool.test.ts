@@ -133,4 +133,69 @@ describe('oslms colour tool', () => {
 			'hello'
 		)
 	})
+
+	function resetButton(panel: HTMLElement, index: number): HTMLButtonElement {
+		return panel.querySelectorAll<HTMLButtonElement>(
+			'button.lms-inline-color__reset'
+		)[index]
+	}
+
+	it('removes only the highlight and keeps the text colour', () => {
+		host.innerHTML =
+			'<span class="lms-inline-color" style="color: red; background-color: yellow">hello</span> world'
+		const tool = makeTool(root)
+		const panel = tool.renderActions()
+		const inner = (host.firstChild as HTMLElement).firstChild as Node
+		select(inner, 0, 5)
+		tool.checkState()
+		return new Promise<void>((resolve) =>
+			setTimeout(() => {
+				resetButton(panel, 1).click()
+				const wrapper = host.querySelector(
+					'span.lms-inline-color'
+				) as HTMLElement
+				expect(wrapper.style.color).toBe('red')
+				expect(wrapper.style.backgroundColor).toBe('')
+				resolve()
+			}, 0)
+		)
+	})
+
+	it('removes the text colour and keeps the highlight', () => {
+		host.innerHTML =
+			'<span class="lms-inline-color" style="color: red; background-color: yellow">hello</span> world'
+		const tool = makeTool(root)
+		const panel = tool.renderActions()
+		const inner = (host.firstChild as HTMLElement).firstChild as Node
+		select(inner, 0, 5)
+		tool.checkState()
+		return new Promise<void>((resolve) =>
+			setTimeout(() => {
+				resetButton(panel, 0).click()
+				const wrapper = host.querySelector(
+					'span.lms-inline-color'
+				) as HTMLElement
+				expect(wrapper.style.color).toBe('')
+				expect(wrapper.style.backgroundColor).toBe('yellow')
+				resolve()
+			}, 0)
+		)
+	})
+
+	it('unwraps the run when the last style is taken off', () => {
+		host.innerHTML =
+			'<span class="lms-inline-color" style="background-color: yellow">hello</span> world'
+		const tool = makeTool(root)
+		const panel = tool.renderActions()
+		const inner = (host.firstChild as HTMLElement).firstChild as Node
+		select(inner, 0, 5)
+		tool.checkState()
+		return new Promise<void>((resolve) =>
+			setTimeout(() => {
+				resetButton(panel, 1).click()
+				expect(host.innerHTML).toBe('hello world')
+				resolve()
+			}, 0)
+		)
+	})
 })

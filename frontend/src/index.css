@@ -1,5 +1,11 @@
 @import 'frappe-ui/style.css';
 @import 'frappe-ui/list-style.css';
+/* OSLMS-CUSTOM: the new editor (frappe-ui/editor, RichTextEditor) keeps its own
+   stylesheet, which defines the --prose-color-* / --prose-highlight-* variables behind
+   the text colors and highlights. The package's `import './style.css'` is dropped by the
+   build (sideEffects only lists css/vue files), so without this line colors and
+   highlights are saved but never painted. */
+@import 'frappe-ui/editor-style.css';
 @import './styles/blockEditor.css';
 /* OSLMS-CUSTOM: load the client's Elite theme on top of frappe-ui */
 @import './styles/theme/elite/main.css';
