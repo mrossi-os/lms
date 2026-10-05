@@ -412,7 +412,7 @@ const tabs = computed<DetailTab[]>(() => [
 		label: __('Settings'),
 		component: markRaw(CourseForm),
 		icon: 'lucide-settings-2',
-		when: isAdmin.value,
+		when: canEditSettings.value,
 		flow: true,
 	},
 	// OSLMS-CUSTOM: admin-only Simulations tab, when simulations are enabled
@@ -464,9 +464,22 @@ const isInstructor = (): boolean => {
 	return user_is_instructor
 }
 
+// OSLMS-CUSTOM: a "Docente" is a global instructor: it manages every course, even
+// those it does not teach (mirrors can_modify_course on the backend).
 const isAdmin = computed<boolean>(() => {
-	return Boolean(user.data?.is_moderator) || isInstructor()
+	return (
+		Boolean(user.data?.is_moderator) ||
+		Boolean(user.data?.is_docente) ||
+		isInstructor()
+	)
 })
+
+// The settings form stays reserved to moderators and the course instructors: a
+// Docente who does not teach the course is bounced out of it (CourseForm
+// checkPermission), so the tab is not offered to them.
+const canEditSettings = computed<boolean>(
+	() => Boolean(user.data?.is_moderator) || isInstructor(),
+)
 
 // OSLMS-CUSTOM: a valutatore of a batch containing this course gets a read-only tabbed view
 // (Overview + Dashboard), but not the admin editor/settings tabs.

@@ -1187,7 +1187,8 @@ const checkIfDiscussionsAllowed = () => {
 
 const isAdmin = computed(() => {
 	let isInstructor = lesson.data?.instructors?.includes(user.data?.name)
-	return user.data?.is_moderator || isInstructor
+	// OSLMS-CUSTOM: a "Docente" is a global instructor on every course
+	return user.data?.is_moderator || user.data?.is_docente || isInstructor
 })
 
 // Student view is a mode, not a destination: every hop that stays on a lesson
