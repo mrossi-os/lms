@@ -434,6 +434,7 @@ import { sessionStore } from '@/stores/session'
 import { useSidebar } from '@/stores/sidebar'
 import { useSettings } from '@/stores/settings'
 import { useAiContext } from '@/stores/aiContext'
+import { useMobileCta } from '@/stores/mobileCta'
 import { useScreenSize } from '@/utils/composables'
 import {
 	resolveDwellSeconds,
@@ -499,6 +500,12 @@ const settingsStore = useSettings()
 const aiContext = useAiContext()
 const { isMobile } = useScreenSize()
 const showChapters = ref(false)
+// OSLMS-CUSTOM: on a phone the "Chapters" pill floats at the bottom right, where the
+// floating AI buttons sit too. Publish it as a bottom bar so AiFixedButtons lifts
+// above it instead of covering it (same store as CourseOverview's "Continue" bar).
+const mobileCta = useMobileCta()
+watch(isMobile, (visible) => mobileCta.setBar(visible), { immediate: true })
+onBeforeUnmount(() => mobileCta.setBar(false))
 let timerInterval = null
 
 const tabs = ref([])
