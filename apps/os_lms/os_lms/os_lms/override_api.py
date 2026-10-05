@@ -32,7 +32,6 @@ def save_role(user: str, role: str, value: int):
 
 
 from lms.command_palette import (
-    can_access_course,
     can_access_batch,
     can_access_job,
     can_create_batch,
@@ -333,9 +332,15 @@ def get_grouped_results_custom(result):
         else set()
     )
 
+    # The index row says whether a course was published when it was last indexed;
+    # the courses themselves say whether it is now.
+    live_courses = get_live_course_flags(
+        [r["name"] for r in result["results"] if r["doctype"] == "LMS Course"]
+    )
+
     for r in result["results"]:
         doctype = r["doctype"]
-        if doctype == "LMS Course" and can_access_course(r, roles):
+        if doctype == "LMS Course" and can_find_course(r["name"], live_courses):
             r["author_info"] = get_instructor_info(doctype, r)
             groups.setdefault("Courses", []).append(r)
         elif doctype == "LMS Batch" and can_access_batch_custom(r, roles, own_batches):
@@ -358,6 +363,45 @@ def get_grouped_results_custom(result):
 
     add_lesson_positions(groups.get("Lessons"))
     return groups
+
+
+def get_live_course_flags(names):
+    """`published` of each course as it is now, keyed by name; a deleted course is absent.
+
+    The search index (learning.db) is only as current as its last write: it holds
+    courses that no longer exist and courses unpublished after they were indexed,
+    both still flagged `published`. Judging a result by the index row sent a learner
+    to a page that came back empty.
+    """
+    names = list(dict.fromkeys(name for name in names if name))
+    if not names:
+        return {}
+    rows = frappe.get_all(
+        "LMS Course",
+        filters={"name": ["in", names]},
+        fields=["name", "published"],
+        limit_page_length=0,
+    )
+    return {row.name: row.published for row in rows}
+
+
+def can_find_course(name, live_courses):
+    """Whether a course result leads to a page this user can actually open.
+
+    Published courses are open to everyone. A draft is offered only to whoever the
+    course page itself serves: its authors and instructors, the Valutatori of its
+    batches, the members of a program holding it and the learners enrolled in it
+    (``lms.lms.permissions.can_access_course``). Not upstream's "any Course Creator
+    sees every draft": the page refuses it since v2.64.0.
+    """
+    if name not in live_courses:
+        return False
+    if live_courses[name]:
+        return True
+
+    from lms.lms.permissions import can_access_course as can_read_course
+
+    return bool(can_read_course(name))
 
 
 def get_lesson_positions(names):
