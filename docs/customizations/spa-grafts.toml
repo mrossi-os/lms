@@ -32,6 +32,36 @@ Moderator e l'istruttore del corso. L'upstream conosce solo Moderator e istrutto
   deny = ["Student", "Valutatore", "Guest"]
 
 [[entries]]
+id = "course-detail-docente-admin-gate"
+title = "Pagina corso e lezione: il Docente è trattato da amministratore su ogni corso"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il Docente è un istruttore globale (come can_modify_course lato server): su un corso che
+non insegna deve vedere le schede Dashboard, Editor e Simulazioni, aprire i corsi non
+pubblicati e quelli in arrivo, e avere i controlli di gestione nella lezione. L'upstream
+conosce solo Moderator e istruttore del corso, quindi senza questo graft il Docente vede
+il corso come uno studente e il guard "non pubblicato -> redirect a Courses" lo butta fuori.
+Il graft era stato perso in un merge di giugno 2026 ed è tornato a collaudo v2.59-v2.64
+(prova 1.3). La scheda Impostazioni resta volutamente solo per Moderator e istruttori del
+corso (canEditSettings): CourseForm.checkPermission respinge il Docente non istruttore."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDetail.vue"
+  anchor = "Boolean(user.data?.is_docente)"
+  symbol = "isAdmin"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "user.data?.is_docente"
+  symbol = "isAdmin"
+
+  [entries.visibility]
+  subject = "schede di gestione e accesso ai corsi non pubblicati nella pagina corso"
+  allow = ["Moderator", "Docente", "course-instructor"]
+  deny = ["Student", "Valutatore", "Guest"]
+
+[[entries]]
 id = "course-card-valutatore-no-enroll"
 title = "Nessuna CTA di iscrizione per il Valutatore"
 layer = "spa-graft"
@@ -185,7 +215,13 @@ primaria; il pulsante nella card viene nascosto. La pagina aggiunge padding in f
 non coprire l'ultima sezione, e pubblica la presenza della barra nello store mobileCta
 così che i pulsanti AI flottanti si sollevino invece di sovrapporsi. Soglia 640 e non 768
 per restare dentro la shell telefono.
-Adeguamento post-merge v2.62.0 (2026-09-24): la nuova barra di navigazione mobile upstream è alta 62px (misurata, prima ~48) più l'area sicura del telefono, e la CTA fixed bottom-12 la copriva; la variante standalone:bottom-16 non è mai stata generata (variante non registrata). La CTA ora è sticky bottom-0 nel flusso della pagina: l'area di scorrimento termina esattamente sopra la barra, quindi resta sopra qualunque sia l'altezza, e occupa il proprio spazio (padding pb-36 non più necessario). I pulsanti AI flottanti usano offset calcolati su 62px + env(safe-area-inset-bottom) (5rem senza CTA, 9rem con CTA)."""
+Adeguamento post-merge v2.62.0 (2026-09-24): la nuova barra di navigazione mobile upstream è alta 62px (misurata, prima ~48) più l'area sicura del telefono, e la CTA fixed bottom-12 la copriva; la variante standalone:bottom-16 non è mai stata generata (variante non registrata). La CTA ora è sticky bottom-0 nel flusso della pagina: l'area di scorrimento termina esattamente sopra la barra, quindi resta sopra qualunque sia l'altezza, e occupa il proprio spazio (padding pb-36 non più necessario). I pulsanti AI flottanti usano offset calcolati su 62px + env(safe-area-inset-bottom) (5rem senza CTA, 9rem con CTA).
+Collaudo v2.64 (2026-10-05, prova 15.4): nella lezione su telefono la pillola «Capitoli» (sticky bottom-4, in basso a destra) finiva sotto il pulsante del tutor AI, alla stessa altezza. Lesson.vue ora pubblica la presenza della pillola nello stesso store (setBar(isMobile)), così i pulsanti AI si alzano sopra; verificato nel browser a 390 px: pillola tutta visibile, pulsante AI 22 px sopra."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "watch(isMobile, (visible) => mobileCta.setBar(visible), { immediate: true })"
+  symbol = "mobileCta"
 
   [[entries.sites]]
   file = "frontend/src/overrides/pages/Courses/CourseOverview.vue"
@@ -2556,6 +2592,29 @@ accepted-drift."""
   anchor = "OSLMS-CUSTOM: dead @timeupdate binding removed"
 
 [[entries]]
+id = "editor-style-css-import"
+title = "Foglio di stile del nuovo editor importato a mano (colori ed evidenziatori)"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il nuovo editor di frappe-ui (frappe-ui/editor, usato da RichTextEditor: descrizione di corsi e
+classi, discussioni, compiti, quiz) ha un proprio foglio di stile, che definisce le variabili
+--prose-color-* e --prose-highlight-* usate dai colori e dagli evidenziatori salvati come
+`color: var(--prose-color-red)` / `background-color: var(--prose-highlight-orange)`. Il pacchetto lo
+importa con `import './style.css'` dentro editor/index.ts, ma quel modulo non è nel sideEffects del
+pacchetto (solo css e vue) e il build lo scarta: il CSS non finiva in nessun file, quindi colore ed
+evidenziatore venivano salvati ma non dipinti (testo nero senza sfondo, con il peso del <mark> che
+sembrava un grassetto). Lo stesso schema di list-style.css, già importato a mano. Collaudo v2.64
+(2026-10-05, prova 10.1), verificato sul sito di collaudo: con le regole iniettate il testo diventa
+rosso e lo sfondo arancione. Le pagine che usano il vecchio TextEditor (descrizione dei programmi)
+funzionavano perché il suo chunk CSS definisce le stesse variabili. Dopo ogni bump di frappe-ui
+controllare che il CSS compaia nel build (grep di prose-highlight-orange in lms/public/frontend)."""
+
+  [[entries.sites]]
+  file = "frontend/src/index.css"
+  anchor = "@import 'frappe-ui/editor-style.css';"
+
+[[entries]]
 id = "editor-inline-color-persist"
 title = "Il colore del testo delle lezioni sopravvive al caricamento"
 layer = "spa-graft"
@@ -2571,7 +2630,8 @@ inline (utils/inline/Color.ts) e riscrive il salvataggio del contenuto; i conten
 salvati con <lms-inline-color> vanno comunque mostrati, decidere con il committente come.
 DECISIONE 2026-09-24 (v2.63.0): la nostra correzione su utils/inline/Color.ts (nodo attivo catturato all apertura del pannello, listener persistenti sugli input colore, mousedown che non fa perdere la selezione) cade con il file, eliminato upstream (cc66dc6e0). Al merge si prende la cancellazione; lo strumento colore viene riscritto subito dopo sul nuovo BaseInline/ToolButton, emettendo <span class="lms-inline-color" style>, e riporta le stesse tre protezioni. Una patch os_lms converte i 2 <lms-inline-color> della lezione di produzione 0790; i <span style=color> esistenti restano. Questa voce va ripuntata sul nuovo file dello strumento.
 Merge di v2.63.0 (2026-09-24): la metà server (EDITORJS_CUSTOM_TAGS in lms/lms/utils.py) ora è marcata e censita qui; <lms-align> tolto dall allowlist (l upstream emette <span class="lms-align">, 0 lezioni di produzione usavano il vecchio elemento, e il test upstream test_a_custom_element_is_unwrapped ne richiede lo scarto).
-Riscrittura (2026-09-24, dopo il merge di v2.63.0): lo strumento vive in frontend/src/oslms/utils/inline/Color.ts, su ToolButton (non BaseInline, che riconosce i wrapper dal solo nome del tag e scambierebbe gli span.lms-align per colori), registrato in utils/index.js (tools.color + INLINE_TOOLBAR_ORDER) e con lo stile del pannello in styles/theme/elite/main.css. Emette <span class="lms-inline-color" style>; riporta le tre protezioni della vecchia correzione (nodi catturati, listener fissi sugli input, mousedown che conserva la selezione). La patch os_lms v0_0_7.convert_lms_inline_color converte i vecchi elementi salvati. Test: frontend/src/tests/oslmsColorTool.test.ts, apps/os_lms/.../tests/test_convert_lms_inline_color.py."""
+Riscrittura (2026-09-24, dopo il merge di v2.63.0): lo strumento vive in frontend/src/oslms/utils/inline/Color.ts, su ToolButton (non BaseInline, che riconosce i wrapper dal solo nome del tag e scambierebbe gli span.lms-align per colori), registrato in utils/index.js (tools.color + INLINE_TOOLBAR_ORDER) e con lo stile del pannello in styles/theme/elite/main.css. Emette <span class="lms-inline-color" style>; riporta le tre protezioni della vecchia correzione (nodi catturati, listener fissi sugli input, mousedown che conserva la selezione). La patch os_lms v0_0_7.convert_lms_inline_color converte i vecchi elementi salvati. Test: frontend/src/tests/oslmsColorTool.test.ts, apps/os_lms/.../tests/test_convert_lms_inline_color.py.
+Collaudo v2.64 (2026-10-05, prova 10.1): il pannello ha un pulsante di ripristino per ciascun selettore («Predefinito» per il testo, «Nessun evidenziatore» per lo sfondo): un input colore nativo non ha un valore vuoto, quindi prima un colore o un evidenziatore applicato si poteva solo cambiare. Se non resta nessuno stile il wrapper viene tolto."""
 
 checks = { unit = "frontend/src/tests/oslmsColorTool.test.ts" }
 
@@ -3833,7 +3893,13 @@ committente del 2026-07-31, da non annullare. Le pagine di elenco e dettaglio lo
 invece di rimandarlo a Courses; la correzione dei quiz resta a istruttori e Moderator (il ruolo
 ha DocPerm di sola lettura su LMS Quiz Submission), quindi nel dettaglio Save, i campi Marks e
 la scorciatoia Mod+S sono disattivati per lui. Il flag is_valutatore apre solo l'ingresso: il
-filtro per batch è lato server (submission_has_permission e query conditions in os_lms).
+filtro per batch è lato server (quiz_submission_has_permission e quiz_submission_query_conditions in os_lms).
+Collaudo v2.64 (2026-10-05, prova 2.6, decisione del committente): una consegna è visibile solo se lo
+studente è iscritto a una classe del Valutatore E il quiz appartiene a quella stessa classe (corso del
+quiz, lezione che lo incorpora o valutazione della classe), così un Valutatore di due classi non vede
+gli studenti dell'una sui quiz dell'altra. Il quiz si risolve com'è collegato oggi, non dal campo
+course della consegna (copiato all'inserimento, resta vuoto se il quiz è stato collegato dopo).
+Test: os_lms/tests/test_valutatore_quiz_submission_scope.py.
 v2.59.0 tocca solo i titoli (non nostri). v2.63.0 ricostruisce le pagine dei quiz: riapplicare
 l'accesso in sola lettura sulle nuove pagine di consegna.
 Merge di v2.63.0 (2026-09-24): QuizSubmissionList.vue eliminata, sostituita da QuizSubmissions.vue (tutte le consegne, filtri per quiz/membro/corso). Decisione del committente: il Valutatore vi è ammesso in sola lettura, senza selezione né Elimina e senza il filtro per quiz; nel dettaglio il Salva resta nascosto e i voti delle domande aperte restano disattivati."""
@@ -3845,7 +3911,7 @@ Merge di v2.63.0 (2026-09-24): QuizSubmissionList.vue eliminata, sostituita da Q
 
   [[entries.sites]]
   file = "frontend/src/pages/QuizSubmission.vue"
-  anchor = "if (!canGrade.value && !user.data?.is_valutatore)"
+  anchor = "if (!canGrade.value && !user.data?.is_valutatore && !user.data?.is_gestore)"
 
   [[entries.sites]]
   file = "frontend/src/pages/QuizSubmission.vue"
@@ -6918,6 +6984,34 @@ visibility = { allow = ["Administrator", "System Manager"], deny = ["Moderator",
   anchor = "// OSLMS-CUSTOM: Raven is a platform-wide integration, administrators only"
 
 [[entries]]
+id = "search-course-live-visibility"
+title = "La ricerca Cmd+K offre solo corsi che esistono e che l'utente può aprire"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+L'override os_lms di search_sqlite (get_grouped_results_custom) giudicava un corso dal valore
+`published` dell'indice di ricerca (learning.db), che è fermo all'ultima scrittura: contiene corsi
+cancellati e corsi poi non pubblicati, ancora marcati pubblicati. Allo studente e al Valutatore
+la ricerca li offriva e il clic apriva una pagina vuota (collaudo v2.64, prova 11.2, 2026-10-05).
+Sul server di collaudo, su 25 corsi trovati dalla ricerca come studente 16 non esistevano più e 4 erano bozze a cui lo studente non ha accesso.
+Ora ogni risultato corso si controlla sui corsi veri: assente = scartato; pubblicato = visibile;
+bozza = solo a chi la pagina del corso serve (lms.lms.permissions.can_access_course: autori e
+istruttori, Docente, Valutatori delle sue classi, membri di un programma che lo contiene, iscritti).
+Non più la regola upstream «ogni Course Creator vede tutte le bozze», che la pagina rifiuta dalla
+v2.64. Restano da trattare allo stesso modo, non richiesto, classi e programmi, che usano ancora il
+valore dell'indice. Per togliere le righe orfane dall'indice basta cancellare learning.db del sito
+e lasciarlo ricostruire (una ricostruzione con l'indice presente non cancella nulla)."""
+checks = { unit = "apps/os_lms/os_lms/os_lms/tests/test_search_course_visibility.py" }
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/os_lms/override_api.py"
+  anchor = "def can_find_course(name, live_courses):"
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/os_lms/override_api.py"
+  anchor = "def get_live_course_flags(names):"
+
+[[entries]]
 id = "oslms-api-overrides-upstream-compat"
 title = "Gli override API di os_lms restano compatibili con gli originali upstream"
 layer = "spa-graft"
@@ -6963,32 +7057,49 @@ checks = { unit = "apps/os_lms/os_lms/os_lms/tests/test_override_signatures.py" 
 
 [[entries]]
 id = "proctoring-log-hidden-from-valutatore"
-title = "Il registro del proctoring con le foto non è visibile al Valutatore di classe"
+title = "Registro del proctoring con le foto: Gestore e Valutatore (solo la sua classe) lo vedono"
 layer = "spa-graft"
 confidence = "high"
 intent = """
 v2.63.0 introduce il proctoring dei quiz (13d2114da e seguenti): durante il tentativo la webcam
 riconosce il volto e a ogni violazione salva una foto (File privato su LMS Quiz Violation Log);
 nel dettaglio della consegna una colonna mostra il registro con le foto, servito da
-get_quiz_violation_logs a chiunque possa leggere la consegna. Il Valutatore di classe legge le
-consegne dei suoi studenti (quiz-submission-valutatore-readonly), quindi vedrebbe anche le foto.
-Decisione del committente (2026-09-24): funzione adottata (spenta di default su ogni quiz),
-registro con foto solo a Moderator e istruttori; informativa privacy a carico del committente.
-Doppio blocco: l'override os_lms di get_quiz_violation_logs (os_lms.os_lms.valutatore, in
-override_whitelisted_methods) rifiuta la chiamata al Valutatore senza ruoli pieni, e la pagina
-non la fa nemmeno e non mostra la colonna. Il numero di violazioni (campo della consegna) resta
-visibile."""
-visibility = { allow = ["Moderator", "Docente", "Course Creator", "Batch Evaluator"], deny = ["Valutatore"] }
+get_quiz_violation_logs a chiunque possa leggere la consegna.
+Decisione del committente 2026-09-24: registro con foto solo a Moderator e istruttori, escluso il
+Valutatore. RIBALTATA il 2026-10-05 (collaudo 4.7): lo vedono anche il Gestore e il Valutatore, il
+Valutatore solo per le consegne della sua classe (studente iscritto E quiz della stessa classe, la
+stessa regola di quiz-submission-valutatore-readonly). Il nome della voce resta quello storico.
+Le foto sono File privati agganciati alle righe di LMS Quiz Violation Log e ne ereditano il
+pubblico (File.has_permission delega alla lettura del documento collegato): upstream dà la lettura
+solo a System Manager e al ruolo Instructor (che nessun utente ha), quindi Moderator, Gestore,
+Docente e Course Creator vedevano il registro ma non le foto. os_lms.setup.
+setup_quiz_violation_log_permissions (after_migrate) aggiunge la lettura a Moderator, Course
+Creator, Docente, Gestore e Valutatore; per il Valutatore la restringono violation_log_query_
+conditions e violation_log_has_permission, e l'override di get_quiz_violation_logs rifiuta una
+consegna fuori classe. Il Gestore da solo (flag is_gestore di get_user_info) può aprire il dettaglio
+della consegna in sola lettura; l'elenco Invii resta com'era."""
+visibility = { allow = ["Moderator", "Docente", "Course Creator", "Batch Evaluator", "Gestore", "Valutatore"], deny = ["Student", "Guest"] }
 checks = { unit = "apps/os_lms/os_lms/os_lms/tests/test_violation_log_access.py" }
 
   [[entries.sites]]
   file = "frontend/src/pages/QuizSubmission.vue"
-  anchor = 'v-if="submissionDetails.doc.violation_count && canSeeProctoringLog"'
+  anchor = "OSLMS-CUSTOM: the Valutatore sees the proctoring photo log of their own batches"
 
   [[entries.sites]]
   file = "frontend/src/pages/QuizSubmission.vue"
-  anchor = "auto: canSeeProctoringLog.value,"
-  symbol = "violationLog"
+  anchor = "!user.data?.is_valutatore && !user.data?.is_gestore"
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/os_lms/valutatore.py"
+  anchor = "def violation_log_has_permission"
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/hooks.py"
+  anchor = '"LMS Quiz Violation Log": "os_lms.os_lms.valutatore.violation_log_has_permission"'
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/setup.py"
+  anchor = "def setup_quiz_violation_log_permissions"
 
 [[entries]]
 id = "raven-framework-ui-stub"
