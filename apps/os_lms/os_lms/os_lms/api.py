@@ -298,7 +298,8 @@ def search_non_student_users(txt: str = "", page_length: int = 20, names=None) -
 	back a frappe-ui MultiSelect (value/description/label/user_image). ``names``
 	is used to hydrate already-selected chips after a page reload.
 	"""
-	frappe.only_for(["Moderator", "Course Creator", "Batch Evaluator", "System Manager"])
+	# "Docente" is the global instructor: it assigns the valutatori of any batch.
+	frappe.only_for(["Moderator", "Course Creator", "Batch Evaluator", "Docente", "System Manager"])
 
 	if isinstance(names, str):
 		names = json.loads(names) if names.strip().startswith("[") else [names]

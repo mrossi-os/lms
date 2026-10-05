@@ -6,6 +6,7 @@ from lms.lms.api import get_sidebar_settings as _original_get_sidebar_settings
 from lms.lms.api import get_lms_settings as _original_get_lms_settings
 from lms.lms.api import get_user_info as _original_get_user_info
 from lms.lms.api import save_role as _original_save_role
+from lms.lms.api import search_users_by_role as _original_search_users_by_role
 
 
 EXTRA_LMS_ROLES = ["Gestore", "Docente", "Valutatore"]
@@ -205,6 +206,31 @@ def create_member(
         "full_name": user.full_name,
         "user_image": user.user_image,
     }
+
+
+@frappe.whitelist()
+def search_users_by_role(
+    txt: str = "",
+    roles: str | list | None = None,
+    page_length: int = 10,
+    names: str | list | None = None,
+):
+    """Same search as upstream, also open to the global "Docente".
+
+    Feeds the Instructors pickers of the course and batch forms. Upstream gates it on
+    Moderator / Course Creator / Batch Evaluator, so a Docente-only user got a 403 and
+    could not assign instructors. The lookup runs as Administrator for a Docente, who
+    is never among the results anyway, so upstream's filtering and result shape stay
+    the single source of truth."""
+    if "Docente" not in frappe.get_roles():
+        return _original_search_users_by_role(txt, roles, page_length, names)
+
+    session_user = frappe.session.user
+    frappe.set_user("Administrator")
+    try:
+        return _original_search_users_by_role(txt, roles, page_length, names)
+    finally:
+        frappe.set_user(session_user)
 
 
 @frappe.whitelist()

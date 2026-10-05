@@ -123,6 +123,7 @@ override_whitelisted_methods = {
     "lms.lms.api.get_notifications": "os_lms.os_lms.override_api.get_notifications",
     "lms.lms.api.get_user_info": "os_lms.os_lms.override_api.get_user_info",
     "lms.lms.api.get_all_users": "os_lms.os_lms.override_api.get_all_users",
+    "lms.lms.api.search_users_by_role": "os_lms.os_lms.override_api.search_users_by_role",
     "lms.lms.api.get_members": "os_lms.os_lms.override_api.get_members",
     "lms.lms.api.get_member": "os_lms.os_lms.override_api.get_member",
     "lms.lms.api.save_role": "os_lms.os_lms.override_api.save_role",
