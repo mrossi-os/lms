@@ -17,6 +17,17 @@ from os_lms.os_lms import override_api
 CAN_READ = "lms.lms.permissions.can_access_course"
 
 
+def _row(name, *, row_id=None, **values):
+	"""An index hit for course ``name``, as CustomLearningSearch returns it."""
+	return {
+		"id": row_id or f"LMS Course:{name}",
+		"doctype": "LMS Course",
+		"name": name,
+		"owner": "a@example.com",
+		**values,
+	}
+
+
 class TestSearchCourseVisibility(UnitTestCase):
 	def test_deleted_course_is_not_offered(self):
 		# Present in the index, absent from LMS Course.
@@ -50,9 +61,9 @@ class TestSearchCourseVisibility(UnitTestCase):
 	def test_grouped_results_drop_a_stale_index_row(self):
 		result = {
 			"results": [
-				{"doctype": "LMS Course", "name": "live", "published": 1, "owner": "a@example.com"},
-				{"doctype": "LMS Course", "name": "gone", "published": 1, "owner": "a@example.com"},
-				{"doctype": "LMS Course", "name": "draft", "published": 1, "owner": "a@example.com"},
+				_row("live", published=1),
+				_row("gone", published=1),
+				_row("draft", published=1),
 			]
 		}
 		live = {"live": 1, "draft": 0}
@@ -64,3 +75,21 @@ class TestSearchCourseVisibility(UnitTestCase):
 			groups = override_api.get_grouped_results_custom(result)
 
 		self.assertEqual([r["name"] for r in groups.get("Courses", [])], ["live"])
+
+	def test_stale_course_instructor_rows_are_dropped(self):
+		# Collaudo v2.64: course "corso-0011", renamed "Public Speaking", was still found
+		# and shown as "corso 0011" through a Course Instructor row of an old index.
+		result = {
+			"results": [
+				_row("corso-0011", row_id="Course Instructor:2m0kov73j6", title="corso 0011", published=0),
+				_row("corso-0011", title="Public Speaking", published=0),
+			]
+		}
+		with (
+			patch.object(override_api, "get_live_course_flags", return_value={"corso-0011": 0}),
+			patch(CAN_READ, return_value=True),
+			patch.object(override_api, "get_instructor_info", return_value=[]),
+		):
+			groups = override_api.get_grouped_results_custom(result)
+
+		self.assertEqual([r["title"] for r in groups["Courses"]], ["Public Speaking"])

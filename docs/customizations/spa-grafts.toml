@@ -7007,7 +7007,11 @@ istruttori, Docente, Valutatori delle sue classi, membri di un programma che lo 
 Non più la regola upstream «ogni Course Creator vede tutte le bozze», che la pagina rifiuta dalla
 v2.64. Restano da trattare allo stesso modo, non richiesto, classi e programmi, che usano ancora il
 valore dell'indice. Per togliere le righe orfane dall'indice basta cancellare learning.db del sito
-e lasciarlo ricostruire (una ricostruzione con l'indice presente non cancella nulla)."""
+e lasciarlo ricostruire (una ricostruzione con l'indice presente non cancella nulla).
+Inoltre si scartano, come fa upstream (describes_its_own_doc), le righe che indicano un altro
+documento: vecchie righe Course Instructor travestite da corso, con il titolo del corso al
+momento dell'indicizzazione, per cui un corso rinominato si trovava e si vedeva col nome vecchio
+(collaudo: "corso 0011" poi rinominato "Public Speaking")."""
 checks = { unit = "apps/os_lms/os_lms/os_lms/tests/test_search_course_visibility.py" }
 
   [[entries.sites]]
@@ -7017,6 +7021,10 @@ checks = { unit = "apps/os_lms/os_lms/os_lms/tests/test_search_course_visibility
   [[entries.sites]]
   file = "apps/os_lms/os_lms/os_lms/override_api.py"
   anchor = "def get_live_course_flags(names):"
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/os_lms/override_api.py"
+  anchor = 'rows = [r for r in result["results"] if describes_its_own_doc(r)]'
 
 [[entries]]
 id = "oslms-api-overrides-upstream-compat"

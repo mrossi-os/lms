@@ -391,20 +391,28 @@ def prepare_search_results_custom(result: dict):
 
 
 def get_grouped_results_custom(result):
+    from lms.command_palette import describes_its_own_doc
+
     roles = frappe.get_roles()
+    # Drop the index rows that stand for another document: indexes built before
+    # upstream stopped indexing Course Instructor still hold those child rows dressed
+    # up as their course, frozen with the course title of the day (a course renamed
+    # later was still found, and shown, under its old name). Upstream filters them
+    # the same way in lms.command_palette.get_grouped_results.
+    rows = [r for r in result["results"] if describes_its_own_doc(r)]
     groups = {}
     # Only learners need it, and only when a batch actually matched the query.
     own_batches = (
         get_own_batches()
         if not can_create_batch(roles)
-        and any(r["doctype"] == "LMS Batch" for r in result["results"])
+        and any(r["doctype"] == "LMS Batch" for r in rows)
         else set()
     )
     # A quiz result carries neither its course nor its lesson, so resolve both
     # before filtering: the course decides who may see it, the lesson where the
     # learner is sent.
     quiz_placements = get_quiz_placements(
-        [r["name"] for r in result["results"] if r["doctype"] == "LMS Quiz"]
+        [r["name"] for r in rows if r["doctype"] == "LMS Quiz"]
     )
     own_courses = (
         get_own_courses()
@@ -415,10 +423,10 @@ def get_grouped_results_custom(result):
     # The index row says whether a course was published when it was last indexed;
     # the courses themselves say whether it is now.
     live_courses = get_live_course_flags(
-        [r["name"] for r in result["results"] if r["doctype"] == "LMS Course"]
+        [r["name"] for r in rows if r["doctype"] == "LMS Course"]
     )
 
-    for r in result["results"]:
+    for r in rows:
         doctype = r["doctype"]
         if doctype == "LMS Course" and can_find_course(r["name"], live_courses):
             r["author_info"] = get_instructor_info(doctype, r)
