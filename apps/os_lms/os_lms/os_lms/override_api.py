@@ -1,12 +1,16 @@
+import json
+
 import frappe
+from frappe import _
 from frappe.utils import cint
+
+from lms.lms.utils import LMS_ROLES
 
 
 from lms.lms.api import get_sidebar_settings as _original_get_sidebar_settings
 from lms.lms.api import get_lms_settings as _original_get_lms_settings
 from lms.lms.api import get_user_info as _original_get_user_info
 from lms.lms.api import save_role as _original_save_role
-from lms.lms.api import search_users_by_role as _original_search_users_by_role
 
 
 EXTRA_LMS_ROLES = ["Gestore", "Docente", "Valutatore"]
@@ -215,22 +219,72 @@ def search_users_by_role(
     page_length: int = 10,
     names: str | list | None = None,
 ):
-    """Same search as upstream, also open to the global "Docente".
+    """Copy of lms.lms.api.search_users_by_role (v2.64.0) also open to the "Docente".
 
     Feeds the Instructors pickers of the course and batch forms. Upstream gates it on
     Moderator / Course Creator / Batch Evaluator, so a Docente-only user got a 403 and
-    could not assign instructors. The lookup runs as Administrator for a Docente, who
-    is never among the results anyway, so upstream's filtering and result shape stay
-    the single source of truth."""
-    if "Docente" not in frappe.get_roles():
-        return _original_search_users_by_role(txt, roles, page_length, names)
+    could not assign instructors. The gate sits inside the function, so it cannot be
+    widened by wrapping it: re-check the body against upstream after every merge.
+    Never switch the session user to get around it (frappe.set_user): that logs the
+    caller out."""
+    frappe.only_for(["Moderator", "Course Creator", "Batch Evaluator", "Docente"])
+    if not roles:
+        return []
 
-    session_user = frappe.session.user
-    frappe.set_user("Administrator")
-    try:
-        return _original_search_users_by_role(txt, roles, page_length, names)
-    finally:
-        frappe.set_user(session_user)
+    if isinstance(roles, str):
+        roles = json.loads(roles)
+
+    if isinstance(names, str):
+        names = json.loads(names)
+
+    invalid_roles = set(roles) - set(LMS_ROLES)
+    if invalid_roles:
+        frappe.throw(_("Cannot search for roles: {0}").format(", ".join(invalid_roles)))
+
+    users_with_roles = frappe.get_all(
+        "Has Role",
+        filters={"role": ["in", roles], "parenttype": "User"},
+        pluck="parent",
+        distinct=True,
+    )
+
+    if not users_with_roles:
+        return []
+
+    filters = [
+        ["name", "in", users_with_roles],
+        ["name", "not in", ["Administrator", "Guest"]],
+        ["enabled", "=", 1],
+    ]
+    or_filters = None
+    limit = cint(page_length)
+    if names:
+        filters.append(["name", "in", names])
+        limit = len(names)
+    else:
+        or_filters = [
+            ["full_name", "like", f"%{txt}%"],
+            ["name", "like", f"%{txt}%"],
+        ]
+
+    results = frappe.get_all(
+        "User",
+        filters=filters,
+        or_filters=or_filters,
+        fields=["name", "full_name", "user_image"],
+        limit_page_length=limit,
+        order_by="full_name asc",
+    )
+
+    return [
+        {
+            "value": r.name,
+            "description": r.full_name or r.name,
+            "label": r.full_name or r.name,
+            "user_image": r.user_image,
+        }
+        for r in results
+    ]
 
 
 @frappe.whitelist()
