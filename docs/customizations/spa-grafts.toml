@@ -8548,12 +8548,12 @@ Merge di v2.63.0 (2026-09-24): la lista consegne dei quiz è ora QuizSubmissions
 
   [[entries.sites]]
   file = "frontend/src/pages/AssignmentSubmissionList.vue"
-  anchor = "user.data?.is_valutatore && !user.data?.is_moderator && !user.data?.is_instructor"
+  anchor = "(user.data?.is_valutatore || user.data?.is_gestore) &&"
   symbol = "valutatoreOnlyBack"
 
   [entries.visibility]
   subject = "pulsante indietro con la cronologia su telefono"
-  allow = ["Valutatore"]
+  allow = ["Valutatore", "Gestore"]
   deny = ["Moderator", "Docente", "Course Creator"]
 
 [[entries]]
@@ -8857,9 +8857,11 @@ I campi Istruttori (corsi e classi) e Valutatori (classi) sono alimentati da tre
 che upstream apre solo a Moderator / Course Creator / Batch Evaluator: un utente con il solo
 ruolo Docente prendeva 403 e non poteva assegnare nessuno. Decisione del committente
 (2026-10-05): il Docente assegna istruttori e valutatori. search_users_by_role è sovrascritta
-(os_lms.os_lms.override_api) e per il Docente esegue la ricerca upstream come Administrator,
-che non compare mai fra i risultati, così filtri e forma della risposta restano quelli di
-upstream; search_non_student_users ammette il ruolo Docente nel suo only_for. Gli altri ruoli
+(os_lms.os_lms.override_api) con una copia del corpo upstream (v2.64.0) il cui only_for
+ammette anche il Docente: va riconfrontata con upstream a ogni merge (test_same_answer_as_upstream).
+Non cambiare mai l'utente di sessione con frappe.set_user per aggirare il controllo: la prima
+versione lo faceva e disconnetteva il chiamante dopo la prima ricerca. search_non_student_users
+ammette il ruolo Docente nel suo only_for. Gli altri ruoli
 mantengono i controlli di prima. Il Docente non istruttore di un corso continua a non vedere
 la scheda Impostazioni del corso (eccezione 2026-09-23)."""
 
@@ -8882,3 +8884,38 @@ la scheda Impostazioni del corso (eccezione 2026-09-23)."""
 
   [entries.checks]
   backend = "apps/os_lms/os_lms/os_lms/tests/test_docente_user_pickers.py"
+
+[[entries]]
+id = "gestore-submission-lists"
+title = "Il Gestore apre le liste degli invii di quiz e compiti (sola lettura)"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Un Gestore senza i flag di amministratore (nessun Moderator, istruttore o evaluator) non
+aveva Quiz né Elaborati nella barra laterale e le due liste lo rimandavano a Corsi, quindi
+non poteva arrivare al dettaglio dell'invio con il registro di sorveglianza e le istantanee
+(collaudo v2.64, prova 4.7). La barra laterale gli offre due voci dirette (Invii quiz, Invii
+compiti) e le pagine lo ammettono con is_gestore, in sola lettura come il Valutatore (niente
+caselle, Elimina, filtro per quiz). Sul server il Gestore riceve il permesso di lettura sulle
+due doctype da setup_gestore_role_permissions. Il dettaglio dell'invio di un compito non è
+aperto alla correzione per il Gestore."""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = "const isGestoreOnlyViewer = () => {"
+  symbol = "isGestoreOnlyViewer"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/QuizSubmissions.vue"
+  anchor = "Boolean(user.data?.is_valutatore || user.data?.is_gestore)"
+  symbol = "isValutatoreOnly"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/AssignmentSubmissionList.vue"
+  anchor = "!user.data?.is_gestore"
+  symbol = "onMounted"
+
+  [entries.visibility]
+  subject = "liste Invii quiz e Invii compiti"
+  allow = ["Moderator", "Course Creator", "Docente", "Valutatore", "Gestore"]
+  deny = ["Student", "Guest"]
