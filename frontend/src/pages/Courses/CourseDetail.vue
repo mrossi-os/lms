@@ -397,7 +397,7 @@ const tabs = computed<DetailTab[]>(() => [
 		label: __('Dashboard'),
 		component: markRaw(CourseDashboard),
 		icon: 'lucide-trending-up',
-		when: isAdmin.value,
+		when: canManageCourse.value,
 	},
 	{
 		key: 'editor',
@@ -405,14 +405,14 @@ const tabs = computed<DetailTab[]>(() => [
 		shortLabel: __('Editor'),
 		component: markRaw(CourseEditor),
 		icon: 'lucide-book-open',
-		when: isAdmin.value,
+		when: canManageCourse.value,
 	},
 	{
 		key: 'settings',
 		label: __('Settings'),
 		component: markRaw(CourseForm),
 		icon: 'lucide-settings-2',
-		when: canEditSettings.value,
+		when: canManageCourse.value,
 		flow: true,
 	},
 	// OSLMS-CUSTOM: admin-only Simulations tab, when simulations are enabled
@@ -423,7 +423,7 @@ const tabs = computed<DetailTab[]>(() => [
 		label: __('Simulations'),
 		component: markRaw(CourseSimulations),
 		icon: 'lucide-bot',
-		when: isAdmin.value && simulationsEnabledGlobal.value,
+		when: canManageCourse.value && simulationsEnabledGlobal.value,
 	},
 ])
 
@@ -474,10 +474,11 @@ const isAdmin = computed<boolean>(() => {
 	)
 })
 
-// The settings form stays reserved to moderators and the course instructors: a
-// Docente who does not teach the course is bounced out of it (CourseForm
-// checkPermission), so the tab is not offered to them.
-const canEditSettings = computed<boolean>(
+// Dashboard, Editor, Settings and Simulations stay reserved to moderators and the
+// course instructors: a Docente who does not teach the course may look at it (client
+// decision 2026-10-05) but gets none of those tabs, and CourseForm bounces them out of
+// the settings anyway.
+const canManageCourse = computed<boolean>(
 	() => Boolean(user.data?.is_moderator) || isInstructor(),
 )
 
