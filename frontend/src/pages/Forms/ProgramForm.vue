@@ -46,12 +46,8 @@
 					</div>
 					<TextEditor
 						:content="program.description"
-						@change="
-							(val: string) => {
-								program.description = val
-								dirty = true
-							}
-						"
+						@focus="descriptionTouched = true"
+						@change="onDescriptionChange"
 						:editable="true"
 						:fixedMenu="true"
 						:uploadArgs="{ private: false }"
@@ -393,6 +389,16 @@ const showFormDialog = ref(false)
 const selectedCourses = ref<string[]>([])
 const showProgressDialog = ref(false)
 const dirty = ref(false)
+// OSLMS-CUSTOM: only a change the user made arms "Not Saved". The editor also emits
+// change on its own: when it opens a description and normalises it (heading ids,
+// table wrappers…) and when saving hands it the sanitised HTML (tiptap v3 setContent
+// emits). Both happen before the user focuses the editor, so those just keep the
+// field in sync. Reset on every load and save.
+const descriptionTouched = ref(false)
+const onDescriptionChange = (val: string) => {
+	program.value.description = val
+	if (descriptionTouched.value) dirty.value = true
+}
 const showMemberDialog = ref(false)
 const showBatchDialog = ref(false)
 const selectedBatch = ref<string>('')
@@ -477,6 +483,7 @@ const programDoc = createResource({
 	onSuccess(data: any) {
 		program.value.name = data.name
 		program.value.title = data.title || data.name
+		descriptionTouched.value = false
 		program.value.description = data.description || ''
 		program.value.published = Boolean(data.published)
 		program.value.enforce_course_order = Boolean(data.enforce_course_order)
@@ -596,6 +603,7 @@ const saveProgram = () => {
 	// OSLMS-CUSTOM: keep the description's rich formatting
 	// Rich sanitizer: the allowlist one drops the span/mark/s tags and style
 	// attributes the editor uses for text color, highlight and strikethrough.
+	descriptionTouched.value = false
 	program.value.description = sanitizeRichHTML(program.value.description)
 	if (isNew.value) createNewProgram()
 	else updateProgram()

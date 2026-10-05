@@ -8927,3 +8927,26 @@ aperto alla correzione per il Gestore."""
   subject = "liste Invii quiz e Invii compiti"
   allow = ["Moderator", "Course Creator", "Docente", "Valutatore", "Gestore"]
   deny = ["Student", "Guest"]
+
+[[entries]]
+id = "program-form-description-dirty-guard"
+title = "Il modulo programma non si dichiara «Non salvato» per le modifiche fatte dall'editor"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+L'editor della descrizione (frappe-ui TextEditor su tiptap v3) emette change da solo: quando apre
+una descrizione e la normalizza (id dei titoli, contenitori delle tabelle…) e quando il
+salvataggio gli ripassa l'HTML ripulito (setContent di tiptap v3 emette l'aggiornamento). Ogni
+change segnava il modulo come modificato, quindi un programma con titoli o tabelle nella
+descrizione si apriva già «Non salvato» (collaudo 2026-10-05, segnalato dal Gestore, vale per
+tutti i ruoli). Ora un change conta solo dopo che l'utente ha messo il fuoco nell'editor; il
+segnale si azzera a ogni caricamento e salvataggio."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Forms/ProgramForm.vue"
+  anchor = "const onDescriptionChange = (val: string) => {"
+  symbol = "onDescriptionChange"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Forms/ProgramForm.vue"
+  anchor = "@focus=\"descriptionTouched = true\""
