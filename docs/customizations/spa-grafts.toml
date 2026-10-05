@@ -38,13 +38,15 @@ layer = "spa-graft"
 confidence = "high"
 intent = """
 Il Docente è un istruttore globale (come can_modify_course lato server): su un corso che
-non insegna deve vedere le schede Dashboard, Editor e Simulazioni, aprire i corsi non
-pubblicati e quelli in arrivo, e avere i controlli di gestione nella lezione. L'upstream
+non insegna deve aprire i corsi, anche non pubblicati o in arrivo, e avere i controlli di
+gestione nella lezione. L'upstream
 conosce solo Moderator e istruttore del corso, quindi senza questo graft il Docente vede
 il corso come uno studente e il guard "non pubblicato -> redirect a Courses" lo butta fuori.
 Il graft era stato perso in un merge di giugno 2026 ed è tornato a collaudo v2.59-v2.64
-(prova 1.3). La scheda Impostazioni resta volutamente solo per Moderator e istruttori del
-corso (canEditSettings): CourseForm.checkPermission respinge il Docente non istruttore."""
+(prova 1.3). Le schede Dashboard, Editor lezioni, Impostazioni e Simulazioni sono invece solo
+per Moderator e istruttori del corso (canManageCourse): decisione del committente (2026-10-05,
+matrice dei ruoli), il Docente non istruttore può solo visionare il corso;
+CourseForm.checkPermission respinge comunque il Docente non istruttore."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Courses/CourseDetail.vue"
@@ -55,6 +57,11 @@ corso (canEditSettings): CourseForm.checkPermission respinge il Docente non istr
   file = "frontend/src/pages/Lesson.vue"
   anchor = "user.data?.is_docente"
   symbol = "isAdmin"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDetail.vue"
+  anchor = "const canManageCourse = computed<boolean>"
+  symbol = "canManageCourse"
 
   [entries.visibility]
   subject = "schede di gestione e accesso ai corsi non pubblicati nella pagina corso"
@@ -8837,3 +8844,41 @@ dei ruoli in os_lms.os_lms.elite_api.admin (System Manager + Gestore)."""
 
   [entries.checks]
   backend = "apps/os_lms/os_lms/os_lms/tests/test_elite_api_admin.py"
+
+# --- Collaudo v2.64, prova 1.3 (2026-10-05): Docente e selettori di persone ---
+
+[[entries]]
+id = "docente-people-pickers-access"
+title = "Il Docente può cercare gli utenti per assegnare istruttori e valutatori"
+layer = "override-file"
+confidence = "high"
+intent = """
+I campi Istruttori (corsi e classi) e Valutatori (classi) sono alimentati da tre ricerche
+che upstream apre solo a Moderator / Course Creator / Batch Evaluator: un utente con il solo
+ruolo Docente prendeva 403 e non poteva assegnare nessuno. Decisione del committente
+(2026-10-05): il Docente assegna istruttori e valutatori. search_users_by_role è sovrascritta
+(os_lms.os_lms.override_api) e per il Docente esegue la ricerca upstream come Administrator,
+che non compare mai fra i risultati, così filtri e forma della risposta restano quelli di
+upstream; search_non_student_users ammette il ruolo Docente nel suo only_for. Gli altri ruoli
+mantengono i controlli di prima. Il Docente non istruttore di un corso continua a non vedere
+la scheda Impostazioni del corso (eccezione 2026-09-23)."""
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/os_lms/override_api.py"
+  anchor = "def search_users_by_role("
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/hooks.py"
+  anchor = "\"lms.lms.api.search_users_by_role\": \"os_lms.os_lms.override_api.search_users_by_role\""
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/os_lms/api.py"
+  anchor = "\"Docente\" is the global instructor: it assigns the valutatori of any batch."
+
+  [entries.visibility]
+  subject = "ricerca utenti dei campi Istruttori e Valutatori"
+  allow = ["Moderator", "Course Creator", "Batch Evaluator", "Docente", "System Manager"]
+  deny = ["Student", "Guest"]
+
+  [entries.checks]
+  backend = "apps/os_lms/os_lms/os_lms/tests/test_docente_user_pickers.py"
