@@ -22,6 +22,8 @@ from lms.lms.doctype.lms_enrollment.lms_enrollment import (
 from lms.lms.lesson_assessments import lesson_assessment_rows
 from lms.lms.permissions import (
 	INSTRUCTOR_FIELDS,
+	# OSLMS-CUSTOM: Moderator or Docente, in place of moderators_among
+	blanket_lesson_authors_among,
 	can_access_lesson,
 	courses_authored_by_each,
 	get_locked_lessons,
@@ -31,7 +33,6 @@ from lms.lms.utils import (
 	get_editorjs_blocks,
 	guest_access_allowed,
 	is_demo_course,
-	moderators_among,
 	recalculate_course_progress,
 	sanitize_editorjs,
 )
@@ -305,7 +306,8 @@ def _references_vouched_by_owner(references: list[_LessonReference]) -> list[tup
 	borrowed = {ref.owner for ref in references if ref.attached and not ref.canonical}
 	trusted = references
 	if borrowed:
-		moderators = moderators_among(borrowed)
+		# OSLMS-CUSTOM: the Docente (global instructor) holds blanket lesson authority too
+		moderators = blanket_lesson_authors_among(borrowed)
 		trusted = [ref for ref in references if ref.canonical or ref.owner in moderators]
 
 	authored = courses_authored_by_each({ref.owner for ref in trusted}, lesson_course.values())

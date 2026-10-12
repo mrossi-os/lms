@@ -413,7 +413,9 @@ const isFullAdmin = computed(
 	() =>
 		user?.data?.is_moderator ||
 		user?.data?.is_evaluator ||
-		user?.data?.is_docente,
+		user?.data?.is_docente ||
+		// This batch's own managers (upstream v2.65.0 can_manage: tagged Course Creators)
+		props.batch?.data?.can_manage,
 )
 const searchFilter = ref<string | null>(null)
 

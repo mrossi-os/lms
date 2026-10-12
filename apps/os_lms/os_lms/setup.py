@@ -185,7 +185,8 @@ DOCENTE_DOCPERMS = {
 # model answer of an assignment) and granted that level to its own roles only. A
 # Docente without it saves an SCORM chapter that silently loses its package. Level 1
 # mirrors the level-0 read/write the Docente already holds on the doctype.
-DOCENTE_PERMLEVEL_DOCTYPES = ("Course Chapter", "LMS Assignment")
+# v2.65.0 did the same with a question's explanations (LMS Question explanation_1..10).
+DOCENTE_PERMLEVEL_DOCTYPES = ("Course Chapter", "LMS Assignment", "LMS Question")
 
 
 def setup_docente_role_permissions():
@@ -214,6 +215,46 @@ def setup_docente_role_permissions():
         update_permission_property(
             doctype, DOCENTE_ROLE, 1, "write", 1 if level0.write else 0, validate=False
         )
+    frappe.db.commit()
+
+
+# Upstream v2.65.0 (#2845) lets a Course Creator manage the batches they are tagged on
+# (instructor or course evaluator), and ships the DocPerm rows for it in the doctype JSON.
+# A doctype with Custom DocPerm ignores its JSON rows, and this site customises all three,
+# so the rows are copied here. Created only when missing: a row the desk later edits stays
+# as edited. Scope is not the DocPerm's job: can_author_batch narrows it to tagged batches.
+# Creating a batch stays out (no "create" on LMS Batch upstream either).
+COURSE_CREATOR_BATCH_DOCPERMS = {
+    "LMS Batch": ("read", "write", "email", "export", "print", "report", "share"),
+    "LMS Live Class": (
+        "read", "write", "create", "delete", "email", "export", "import", "print", "report", "share",
+    ),
+    "LMS Batch Enrollment": (
+        "read", "write", "create", "delete", "email", "export", "import", "print", "report", "share",
+    ),
+}
+
+
+def setup_course_creator_batch_permissions():
+    """Mirror upstream's Course Creator batch DocPerm rows into Custom DocPerm. Idempotent."""
+    from frappe.permissions import add_permission, update_permission_property
+
+    role = "Course Creator"
+    if not frappe.db.exists("Role", role):
+        return
+    for doctype, ptypes in COURSE_CREATOR_BATCH_DOCPERMS.items():
+        if not frappe.db.exists("DocType", doctype):
+            continue
+        if not frappe.db.exists("Custom DocPerm", {"parent": doctype}):
+            # No customisation: the JSON rows apply as shipped.
+            continue
+        if frappe.db.exists(
+            "Custom DocPerm", {"parent": doctype, "role": role, "permlevel": 0, "if_owner": 0}
+        ):
+            continue
+        add_permission(doctype, role, 0)
+        for ptype in ptypes:
+            update_permission_property(doctype, role, 0, ptype, 1, validate=False)
     frappe.db.commit()
 
 

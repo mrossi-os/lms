@@ -514,7 +514,8 @@ def courses_authored_by_each(users, courses) -> dict[str, set[str]]:
 		return {}
 
 	# A moderator authors every course; so does Administrator (courses_authored_by).
-	authors_everything = moderators_among(users) | (users & {"Administrator"})
+	# OSLMS-CUSTOM: so does the Docente (global instructor, see blanket_lesson_authors_among)
+	authors_everything = blanket_lesson_authors_among(users) | (users & {"Administrator"})
 	authored = {user: set(courses) for user in authors_everything}
 
 	rest = users - authors_everything
@@ -533,6 +534,23 @@ def courses_authored_by_each(users, courses) -> dict[str, set[str]]:
 		authored.setdefault(row.instructor, set()).add(row.parent)
 
 	return authored
+
+
+# OSLMS-CUSTOM: blanket lesson authority -- the Moderator and the Docente (global instructor)
+def blanket_lesson_authors_among(members) -> set[str]:
+	"""moderators_among plus the Docente, in one query. The Docente authors every course
+	(can_modify_course), so the media they upload into any lesson are served to that
+	lesson's students, exactly like a Moderator's (serve_resource)."""
+	members = {member for member in members or [] if member}
+	if not members:
+		return set()
+	return set(
+		frappe.db.get_all(
+			"Has Role",
+			filters={"parent": ("in", list(members)), "role": ("in", ["Moderator", "Docente"])},
+			pluck="parent",
+		)
+	)
 
 
 def resolve_lesson_course(lesson: str) -> str | None:
@@ -888,6 +906,9 @@ def _assessment_answer(doctype: str, name: str, user: str | None, *, include_mem
 		frappe.session.user = user
 		if is_site_administrator(user) or has_moderator_role(user) or is_content_author(doctype, name, user):
 			return True
+		# OSLMS-CUSTOM: the Docente (global instructor) reads and administers every assessment
+		if "Docente" in frappe.get_roles(user):
+			return True
 		# OSLMS-CUSTOM: a Valutatore reads (never administers) the assessments of their batches
 		if include_members and _valutatore_reaches(doctype, name, user):
 			return True
@@ -1154,7 +1175,8 @@ def _administrable_assessment_query(doctype: str, user: str | None = None):
 
 def _is_unrestricted(user: str) -> bool:
 	"""Whoever the assessment rule never narrows: a site administrator or a Moderator."""
-	return is_site_administrator(user) or bool(has_moderator_role(user))
+	# OSLMS-CUSTOM: nor the Docente (global instructor): every assessment and submission
+	return is_site_administrator(user) or bool(has_moderator_role(user)) or "Docente" in frappe.get_roles(user)
 
 
 # doctype -> (the assessment doctype it answers, the field naming it).
@@ -1189,7 +1211,44 @@ def _assessment_submission_query_conditions(doctype: str, user: str | None = Non
 	member = LiteralValue(frappe.db.escape(user))
 	administrable = _administrable_assessment_query(assessment_doctype, user)
 	condition = Bracket((submission.member == member) | getattr(submission, field).isin(administrable))
+	# OSLMS-CUSTOM: a Valutatore reaches the submissions of their batches' students
+	if doctype in VALUTATORE_SUBMISSION_DOCTYPES and "Valutatore" in frappe.get_roles(user):
+		condition = Bracket(condition | submission.member.isin(_valutatore_students(member)))
 	return _render(condition)
+
+
+# OSLMS-CUSTOM: the submissions a Valutatore reads (and, for assignments, grades). Only the
+# member is checked here: os_lms.os_lms.valutatore narrows it further (same quiz and student
+# in the same batch) for a Valutatore with no broader role. Programming exercises are not
+# part of the Valutatore's job and keep the upstream rule.
+VALUTATORE_SUBMISSION_DOCTYPES = ("LMS Quiz Submission", "LMS Assignment Submission")
+
+
+def _valutatore_students(member):
+	"""Members enrolled in a batch that lists `member` among its valutatori (SQL subquery)."""
+	enrollment = frappe.qb.DocType("LMS Batch Enrollment")
+	valutatore = frappe.qb.DocType("LMS Batch Valutatore")
+	batches = (
+		frappe.qb.from_(valutatore)
+		.select(valutatore.parent)
+		.where((valutatore.valutatore == member) & (valutatore.parenttype == "LMS Batch"))
+	)
+	return frappe.qb.from_(enrollment).select(enrollment.member).where(enrollment.batch.isin(batches))
+
+
+def _is_valutatore_of_student(student: str | None, user: str) -> bool:
+	"""Single-row twin of :func:`_valutatore_students`."""
+	if not student or "Valutatore" not in frappe.get_roles(user):
+		return False
+	member = LiteralValue(frappe.db.escape(user))
+	enrollment = frappe.qb.DocType("LMS Batch Enrollment")
+	query = (
+		frappe.qb.from_(enrollment)
+		.select(enrollment.name)
+		.where((enrollment.member == student) & enrollment.member.isin(_valutatore_students(member)))
+		.limit(1)
+	)
+	return bool(query.run())
 
 
 def assessment_submission_has_permission(doc, ptype: str | None = None, user: str | None = None) -> bool:
@@ -1217,6 +1276,11 @@ def assessment_submission_has_permission(doc, ptype: str | None = None, user: st
 	if not stored:
 		return False
 	if stored.member == user and doc.get("member") == user:
+		return True
+	# OSLMS-CUSTOM: a Valutatore reaches the submissions of their batches' students (stored and submitted member alike)
+	if doc.doctype in VALUTATORE_SUBMISSION_DOCTYPES and all(
+		_is_valutatore_of_student(member, user) for member in {stored.member, doc.get("member")}
+	):
 		return True
 	name = stored.get(field)
 	moved_to = doc.get(field) if doc.get(field) != name else None

@@ -758,6 +758,7 @@ def get_announcements(batch: str, start: int = 0, page_length: int = 10):
     Restituisce {data, total} per supportare la paginazione lato client.
     """
     from frappe import _
+    from lms.lms.permissions import can_author_batch
     from lms.lms.utils import is_batch_valutatore
 
     roles = frappe.get_roles()
@@ -769,6 +770,8 @@ def get_announcements(batch: str, start: int = 0, page_length: int = 10):
     is_admin = (
         "Moderator" in roles
         or "Batch Evaluator" in roles
+        # The batch's authors (Docente, tagged instructors; lms can_author_batch, v2.65.0)
+        or can_author_batch(batch)
         or is_batch_valutatore(batch)
     )
 

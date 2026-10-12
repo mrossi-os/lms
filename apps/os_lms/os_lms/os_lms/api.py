@@ -221,8 +221,13 @@ def send_batch_announcement(
 	if not frappe.db.exists("LMS Batch", batch):
 		frappe.throw("Batch non trovata")
 
+	from lms.lms.permissions import can_author_batch
+
 	user_roles = frappe.get_roles(frappe.session.user)
-	if not any(role in user_roles for role in ["Moderator", "Batch Evaluator", "System Manager"]):
+	# can_author_batch (lms v2.65.0): Moderator, Docente and the users tagged on this batch
+	if not (
+		any(role in user_roles for role in ["Batch Evaluator", "System Manager"]) or can_author_batch(batch)
+	):
 		frappe.throw("Non hai i permessi per inviare annunci", frappe.PermissionError)
 
 	if isinstance(recipients, str):
@@ -1823,9 +1828,15 @@ LIVE_CLASS_SCHEDULE_FIELDS = ("date", "time", "duration", "timezone")
 MIN_REMINDER_MINUTES = 15
 
 
-def _ensure_live_class_admin():
-	# The Docente (global instructor) edits and deletes live classes too
-	frappe.only_for(["Moderator", "Batch Evaluator", "Docente"])
+def _ensure_live_class_admin(name: str) -> None:
+	"""Edit/delete gate: whoever authors the class's batch (lms can_author_batch, v2.65.0):
+	Moderator, the Docente (global instructor) and the users tagged on the batch. The
+	save/delete that follows re-checks the same rule through LMS Live Class has_permission."""
+	from lms.lms.permissions import can_author_batch
+
+	batch = frappe.db.get_value("LMS Live Class", name, "batch_name")
+	if not can_author_batch(batch):
+		frappe.throw(frappe._("You do not have permission to manage this live class."), frappe.PermissionError)
 
 
 def _ensure_can_start_live_class(doc) -> None:
@@ -1838,8 +1849,13 @@ def _ensure_can_start_live_class(doc) -> None:
 	"""
 	from os_lms.os_lms.valutatore import is_batch_valutatore
 
+	from lms.lms.permissions import can_author_batch
+
 	roles = frappe.get_roles(frappe.session.user)
 	if "Moderator" in roles or "Batch Evaluator" in roles:
+		return
+	# The batch's authors (Docente, tagged instructors) host its classes too
+	if can_author_batch(doc.batch_name):
 		return
 	if is_batch_valutatore(doc.batch_name, frappe.session.user):
 		return
@@ -1943,7 +1959,7 @@ def update_live_class(name: str, payload: dict) -> dict:
 	Rescheduling is handled by the doctype override on `on_update`: it reschedules
 	the Zoom meeting (the join link does not change) and emails the participants.
 	"""
-	_ensure_live_class_admin()
+	_ensure_live_class_admin(name)
 
 	if isinstance(payload, str):
 		payload = json.loads(payload)
@@ -2132,7 +2148,7 @@ def join_live_class(name: str) -> None:
 @frappe.whitelist()
 def delete_live_class(name: str, notify_students: int = 0) -> dict:
 	"""Delete a Live Class. Optionally notify enrolled students by email + Notification Log."""
-	_ensure_live_class_admin()
+	_ensure_live_class_admin(name)
 
 	doc = frappe.get_doc("LMS Live Class", name)
 	title = doc.title

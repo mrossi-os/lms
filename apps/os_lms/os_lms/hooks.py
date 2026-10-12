@@ -44,6 +44,7 @@ after_migrate = [
     "os_lms.setup.setup_valutatore_role_and_permissions",
     "os_lms.setup.setup_gestore_role_permissions",
     "os_lms.setup.setup_docente_role_permissions",
+    "os_lms.setup.setup_course_creator_batch_permissions",
     "os_lms.setup.setup_quiz_violation_log_permissions",
     "os_lms.setup.setup_elite_api_client",
     "os_lms.setup.create_redis_index",

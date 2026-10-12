@@ -8336,7 +8336,8 @@ e sostituisce il required nativo reso inerte da novalidate); (2) togliere il blo
 {% if user_category %}: il JS upstream salta validazione e invio della categoria se
 #user_category non esiste, quindi basta rimuovere il markup. Tradurre le nuove stringhe
 upstream (Full name is required., Please enter a valid email., Please accept the terms to
-continue., You are already registered. {0} instead., Success)."""
+continue., You are already registered. {0} instead., Success).
+Aggiornamento v2.65.0 (2026-10-12): l'upstream sostituisce il select della categoria con un componente frappe-ui costruito a parte (vite.signup-select.config.js, signup-select.js/.css) caricato da un blocco {% if user_category %} in fondo al template. Conflitto risolto tenendo la nostra versione senza categoria e togliendo quel blocco, che non avrebbe niente da montare; la build separata resta nel package.json upstream (yarn build la esegue)."""
 
   [[entries.sites]]
   file = "lms/templates/signup-form.html"
@@ -8379,7 +8380,8 @@ get_batch_details) con can_author_batch (Moderator o utente taggato sulla classe
 ora innestato lì, in un solo punto (lms/lms/permissions.py), invece che nei due only_for; in
 has_permission di LMS Live Class resta accanto al Moderator. Il Batch Evaluator non taggato perde
 la scrittura (regola upstream accettata). Verifica 2026-10-12 in prod: due Docenti NON hanno
-Moderator (c.trentuno+te, docente1)."""
+Moderator (c.trentuno+te, docente1).
+Il sito api.py di _ensure_live_class_admin è ora nella voce batch-course-creator-tagged-manage-v265 (gate su can_author_batch invece di only_for)."""
 
   [[entries.sites]]
   file = "lms/lms/doctype/lms_live_class/lms_live_class.py"
@@ -8395,11 +8397,6 @@ Moderator (c.trentuno+te, docente1)."""
   file = "lms/lms/permissions.py"
   anchor = "# OSLMS-CUSTOM: the Docente (global instructor) authors every batch and its live classes, like can_modify_batch"
   symbol = "can_author_batch"
-
-  [[entries.sites]]
-  file = "apps/os_lms/os_lms/os_lms/api.py"
-  anchor = 'frappe.only_for(["Moderator", "Batch Evaluator", "Docente"])'
-  symbol = "_ensure_live_class_admin"
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/LiveClass.vue"
@@ -8954,3 +8951,232 @@ segnale si azzera a ogni caricamento e salvataggio."""
   [[entries.sites]]
   file = "frontend/src/pages/Forms/ProgramForm.vue"
   anchor = "@focus=\"descriptionTouched = true\""
+
+# ---------------------------------------------------------------------------
+# Adeguamenti al merge di v2.65.0 (2026-10-12)
+# ---------------------------------------------------------------------------
+
+[[entries]]
+id = "permissions-docente-global-v265"
+title = "Il Docente resta docente globale nei cancelli di permesso di v2.65.0"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il Docente è un docente globale (decisione «Docente globale ovunque» del merge di v2.64.0,
+confermata dal committente al merge di v2.65.0 il 2026-10-12). v2.65.0 aggiunge cancelli che
+riconoscono solo amministratori, Moderator, istruttori/evaluator taggati, autori e iscritti:
+- quiz, compiti, esercizi e le loro consegne passano da un predicato «assessment» unico
+  (_assessment_answer, _is_unrestricted): senza innesto il Docente non apre, non modifica e non
+  corregge prove e consegne fuori dai corsi dove è istruttore;
+- serve_resource giudica i media delle lezioni con courses_authored_by_each e scarta le righe
+  File «prese in prestito» se il proprietario non è Moderator (_references_vouched_by_owner):
+  senza innesto gli studenti ricevono 403 sui file privati caricati da un Docente non istruttore.
+  blanket_lesson_authors_among = Moderator ∪ Docente, usato in entrambi i punti;
+- LMS Batch Enrollment ha un has_permission e una query nuovi (UNSCOPED_ROLES): il Docente
+  iscrive e legge in ogni classe (il can_author_batch del Docente è nella voce
+  live-class-docente-manage);
+- Batches.vue: l'upstream toglie is_instructor da canCreateBatch, il Docente non vedrebbe più
+  «Crea classe» (la matrice del cliente gli dà la creazione di classi);
+- LMS Question: v2.65.0 mette le spiegazioni delle risposte a permlevel 1; il Docente lo riceve
+  da setup_docente_role_permissions solo dove ha già il livello 0 (come Course Chapter e LMS
+  Assignment). Moderator e Course Creator lo ricevono dalla patch upstream reconcile.
+Verifica 2026-10-12 in prod: due Docenti senza Moderator (c.trentuno+te, docente1)."""
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = "# OSLMS-CUSTOM: the Docente (global instructor) reads and administers every assessment"
+  symbol = "_assessment_answer"
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = 'return is_site_administrator(user) or bool(has_moderator_role(user)) or "Docente" in frappe.get_roles(user)'
+  symbol = "_is_unrestricted"
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = "def blanket_lesson_authors_among(members) -> set[str]:"
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = 'authors_everything = blanket_lesson_authors_among(users) | (users & {"Administrator"})'
+  symbol = "courses_authored_by_each"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/course_lesson/course_lesson.py"
+  anchor = "moderators = blanket_lesson_authors_among(borrowed)"
+  symbol = "_references_vouched_by_owner"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.py"
+  anchor = 'UNSCOPED_ROLES = ("Moderator", "Batch Evaluator", "Docente")'
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/Batches.vue"
+  anchor = "return Boolean(user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente)"
+  symbol = "canCreateBatch"
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/setup.py"
+  anchor = 'DOCENTE_PERMLEVEL_DOCTYPES = ("Course Chapter", "LMS Assignment", "LMS Question")'
+
+  [entries.visibility]
+  subject = "prove, consegne, iscrizioni alle classi e media delle lezioni di ogni corso e classe"
+  allow = ["Moderator", "Docente"]
+  deny = ["Course Creator non taggato", "Student"]
+
+  [entries.checks]
+  unit = "apps/os_lms/os_lms/os_lms/tests/test_role_gates_v2_65.py"
+
+[[entries]]
+id = "permissions-valutatore-batch-scope-v265"
+title = "Il Valutatore legge prove, consegne e iscrizioni della sua classe nei cancelli di v2.65.0"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il Valutatore di una classe legge (mai modifica) le prove della classe e le consegne dei suoi
+studenti, corregge i compiti, vede la dashboard con la lista studenti (decisione del committente
+al merge di v2.65.0, 2026-10-12: confermate le regole di v2.64.0). v2.65.0 restringe:
+- le consegne di quiz e compiti a chi amministra la prova (_assessment_submission_query_conditions,
+  assessment_submission_has_permission): senza innesto liste consegne vuote e 403 su dettaglio
+  quiz, registro di sorveglianza e correzione. L'innesto aggiunge «studente iscritto a una classe
+  che valuto» (_valutatore_students / _is_valutatore_of_student, sia per il membro salvato sia per
+  quello inviato) solo per LMS Quiz Submission e LMS Assignment Submission; il filtro fine
+  (stesso quiz e studente nella stessa classe) resta in os_lms.os_lms.valutatore, in AND. Gli
+  esercizi di programmazione restano alla regola upstream;
+- le iscrizioni alla classe (LMS Batch Enrollment has_permission + query): senza innesto la
+  dashboard mostra 0 iscritti. Lettura sì, scrittura no.
+Le aperture al Valutatore in utils.py (get_batch_details con is_valutatore e lista studenti,
+get_batch_student_progress, get_batch_chart_data, can_access_topic) esistono dal 2026-06-09
+(commit f25d5ca3e) ma non erano censite: al merge di v2.65.0 tre di quei punti sono andati in
+conflitto con la riscrittura upstream verso can_author_batch e sono stati riespressi lì."""
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = 'VALUTATORE_SUBMISSION_DOCTYPES = ("LMS Quiz Submission", "LMS Assignment Submission")'
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = "def _is_valutatore_of_student(student: str | None, user: str) -> bool:"
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = "condition = Bracket(condition | submission.member.isin(_valutatore_students(member)))"
+  symbol = "_assessment_submission_query_conditions"
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = "_is_valutatore_of_student(member, user) for member in {stored.member, doc.get(\"member\")}"
+  symbol = "assessment_submission_has_permission"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.py"
+  anchor = 'if ptype in ("read", "select", "print") and is_batch_valutatore(stored.batch, user):'
+  symbol = "has_permission"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.py"
+  anchor = "condition = Bracket(condition | enrollment.batch.isin(evaluated))"
+  symbol = "get_permission_query_conditions"
+
+  [[entries.sites]]
+  file = "lms/lms/utils.py"
+  anchor = "if not (is_batch_published or can_manage or is_student_enrolled or is_valutatore_of_batch):"
+  symbol = "get_batch_details"
+
+  [[entries.sites]]
+  file = "lms/lms/utils.py"
+  anchor = "if can_manage or is_valutatore_of_batch:"
+  symbol = "get_batch_details"
+
+  [[entries.sites]]
+  file = "lms/lms/utils.py"
+  anchor = "# OSLMS-CUSTOM: a batch Valutatore reads its students' progress"
+  symbol = "get_batch_student_progress"
+
+  [[entries.sites]]
+  file = "lms/lms/utils.py"
+  anchor = "# OSLMS-CUSTOM: a batch Valutatore reads the batch chart"
+  symbol = "get_batch_chart_data"
+
+  [[entries.sites]]
+  file = "lms/lms/utils.py"
+  anchor = "# OSLMS-CUSTOM: a batch Valutatore takes part in the batch discussions"
+  symbol = "can_access_topic"
+
+  [entries.visibility]
+  subject = "prove, consegne e iscrizioni della propria classe, in sola lettura (correzione dei soli compiti)"
+  allow = ["Valutatore della classe"]
+  deny = ["Valutatore di altre classi", "Student"]
+
+  [entries.checks]
+  unit = "apps/os_lms/os_lms/os_lms/tests/test_role_gates_v2_65.py"
+
+[[entries]]
+id = "batch-course-creator-tagged-manage-v265"
+title = "Il Course Creator taggato su una classe la gestisce (adozione di #2845, v2.65.0)"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Decisione del committente al merge di v2.65.0 (2026-10-12): si adotta la regola upstream per cui
+un Course Creator taggato come istruttore di una classe (o evaluator di un suo corso) gestisce
+QUELLA classe: dashboard, lezioni live, annunci, iscrizioni. Coerente con la colonna «Istruttore
+della classe» della matrice del cliente. Perché funzioni qui servono tre cose che l'upstream non
+porta:
+- le righe DocPerm Course Creator su LMS Batch, LMS Live Class e LMS Batch Enrollment che
+  l'upstream mette nei JSON (c356d3e0b) sono oscurate dalle Custom DocPerm del sito:
+  setup_course_creator_batch_permissions (after_migrate) le copia, solo se mancano (niente
+  «create» su LMS Batch, come a monte: creare classi resta a Moderator/Batch Evaluator/Docente);
+- i nostri endpoint os_lms che l'upstream non conosce accettano chi è autore della classe
+  (can_author_batch): send_batch_announcement, get_announcements (override), modifica ed
+  eliminazione delle live (_ensure_live_class_admin, che ora prende il nome della live) e
+  avvio della live (_ensure_can_start_live_class). Il Batch Evaluator non taggato perde modifica
+  ed eliminazione delle live di altre classi (regola upstream accettata);
+- nella SPA i gate uniscono il nostro is_docente al can_manage upstream (risolti nel merge) e
+  isFullAdmin della dashboard (iscrivi, importa, rimuovi, esporta) include can_manage; il picker
+  istruttori del BatchForm cerca anche i Course Creator (967d7d66c) e ricarica i chip salvati con
+  gli stessi ruoli (instructorDetails)."""
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/setup.py"
+  anchor = "def setup_course_creator_batch_permissions():"
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/hooks.py"
+  anchor = '"os_lms.setup.setup_course_creator_batch_permissions",'
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/os_lms/api.py"
+  anchor = "# can_author_batch (lms v2.65.0): Moderator, Docente and the users tagged on this batch"
+  symbol = "send_batch_announcement"
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/os_lms/api.py"
+  anchor = "def _ensure_live_class_admin(name: str) -> None:"
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/os_lms/api.py"
+  anchor = "# The batch's authors (Docente, tagged instructors) host its classes too"
+  symbol = "_ensure_can_start_live_class"
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/os_lms/override_api.py"
+  anchor = "# The batch's authors (Docente, tagged instructors; lms can_author_batch, v2.65.0)"
+  symbol = "get_announcements"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+  anchor = "props.batch?.data?.can_manage,"
+  symbol = "isFullAdmin"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/BatchForm.vue"
+  anchor = "roles: JSON.stringify(['Batch Evaluator', 'Course Creator']),\n\t\tnames: JSON.stringify(instructors.value),"
+  symbol = "instructorDetails"
+
+  [entries.visibility]
+  subject = "gestione di una classe (dashboard, live, annunci, iscrizioni)"
+  allow = ["Moderator", "Docente", "Course Creator taggato sulla classe", "Batch Evaluator"]
+  deny = ["Course Creator non taggato", "Valutatore", "Student"]
+
+  [entries.checks]
+  unit = "apps/os_lms/os_lms/os_lms/tests/test_role_gates_v2_65.py"

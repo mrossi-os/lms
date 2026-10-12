@@ -404,7 +404,8 @@ const batchTabs = computed(() => {
 
 const canCreateBatch = () => {
 	if (readOnlyMode) return false
-	return Boolean(user.data?.is_moderator || user.data?.is_evaluator)
+	// OSLMS-CUSTOM: the Docente (global instructor) creates batches too (upstream v2.65.0 dropped is_instructor)
+	return Boolean(user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente)
 }
 
 const breadcrumbs = computed(() => [

@@ -12,10 +12,11 @@ from pypika.terms import LiteralValue
 
 from lms.lms.doctype.lms_enrollment.lms_enrollment import validate_identity_unchanged
 from lms.lms.permissions import authored_batch_condition, can_author_batch, is_site_administrator
-from lms.lms.utils import has_moderator_role
+from lms.lms.utils import has_moderator_role, is_batch_valutatore
 
 # Roles that keep today's blanket access: every row, every ptype.
-UNSCOPED_ROLES = ("Moderator", "Batch Evaluator")
+# OSLMS-CUSTOM: the Docente (global instructor) enrols into and reads every batch
+UNSCOPED_ROLES = ("Moderator", "Batch Evaluator", "Docente")
 
 
 class LMSBatchEnrollment(Document):
@@ -250,6 +251,10 @@ def has_permission(doc, ptype="read", user=None):
 	if ptype in ("read", "select", "print") and stored.member == user and doc.get("member") == user:
 		return True
 
+	# OSLMS-CUSTOM: a batch Valutatore reads (never writes) the enrolments of their batch
+	if ptype in ("read", "select", "print") and is_batch_valutatore(stored.batch, user):
+		return True
+
 	# Both the stored and the submitted batch, or a save could move the row out
 	# of its owner's reach by repointing it at a batch they don't author.
 	batches = {stored.batch, doc.get("batch")} - {None}
@@ -266,4 +271,13 @@ def get_permission_query_conditions(user=None):
 	enrollment = frappe.qb.DocType("LMS Batch Enrollment")
 	member = LiteralValue(frappe.db.escape(user))
 	condition = Bracket((enrollment.member == member) | authored_batch_condition(enrollment.batch, user))
+	# OSLMS-CUSTOM: a batch Valutatore lists the enrolments of their batch (narrowed again by os_lms.valutatore)
+	if "Valutatore" in roles:
+		valutatore = frappe.qb.DocType("LMS Batch Valutatore")
+		evaluated = (
+			frappe.qb.from_(valutatore)
+			.select(valutatore.parent)
+			.where((valutatore.valutatore == member) & (valutatore.parenttype == "LMS Batch"))
+		)
+		condition = Bracket(condition | enrollment.batch.isin(evaluated))
 	return condition.get_sql(with_namespace=True, quote_char="`" if frappe.db.db_type == "mariadb" else '"')
