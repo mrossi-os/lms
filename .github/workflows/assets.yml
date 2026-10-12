@@ -7,6 +7,8 @@ on:
 jobs:
   assets:
     name: Pre-build assets
+    # OSLMS-CUSTOM: Pilot prebuilt assets are frappe/lms's own release channel; never run on this fork
+    if: github.repository == 'frappe/lms'
     uses: frappe/pilot/.github/workflows/app-assets.yml@develop
     with:
       # main supports Frappe v15 and v16; Pilot benches run v16 or later.

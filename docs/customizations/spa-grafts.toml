@@ -9208,3 +9208,19 @@ I tentativi falliti non contano come badge emesso."""
   [entries.checks]
   unit = "apps/os_lms/os_lms/os_lms/tests/test_trueskills_badge_reuse.py"
 
+[[entries]]
+id = "ci-assets-workflow-fork-guard"
+title = "Il workflow Pilot degli asset non gira sul fork"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+v2.65.0 aggiunge .github/workflows/assets.yml (c4ea6591e): a ogni push su develop/main costruisce
+gli asset con il workflow riutilizzabile frappe/pilot@develop, con permesso di scrittura sul
+repo, e li pubblica come release assets-<branch> per i bench Pilot di Frappe. Non usiamo Pilot
+(deploy con Docker/bench e build nostra): decisione del committente (2026-10-12) di lasciare il
+file com'è a monte ma con la guardia `if: github.repository == 'frappe/lms'`, così non gira sul
+fork e i merge futuri restano facili."""
+
+  [[entries.sites]]
+  file = ".github/workflows/assets.yml"
+  anchor = "if: github.repository == 'frappe/lms'"
