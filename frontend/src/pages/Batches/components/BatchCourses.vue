@@ -112,7 +112,7 @@ const isAdmin = () => {
 	}
 	// A "Batch Evaluator" may open the batch settings but has no read access to
 	// LMS Course, so adding a course would open a dialog with an empty list.
-	// OSLMS-CUSTOM: only moderators add courses to a batch
-	return user.data?.is_moderator
+	// OSLMS-CUSTOM: only moderators and this batch's managers add courses to a batch
+	return user.data?.is_moderator || Boolean(props.batch.data?.can_manage)
 }
 </script>

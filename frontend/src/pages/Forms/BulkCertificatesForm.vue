@@ -114,7 +114,8 @@ const loadingBatch = computed(() => !batch.data && batch.loading)
 // OSLMS-CUSTOM: Docente manages batches like a moderator (same gate as BatchDetail's isAdmin)
 const isAdmin = computed(() =>
 	Boolean(
-		user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente
+		user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente ||
+			batch.data?.can_manage
 	)
 )
 

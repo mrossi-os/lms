@@ -56,39 +56,6 @@
 </form>
 
 <style>
-    .signup-form .select-input-wrapper {
-        position: relative;
-        width: 100%;
-    }
-
-    .signup-form select.form-control {
-        appearance: none;
-        height: 28px;
-        padding: 2px 8px;
-        padding-inline-end: 28px;
-        border: 1px solid var(--outline-gray-2);
-        border-radius: var(--radius);
-        background-color: var(--surface-base);
-        cursor: pointer;
-    }
-
-    .signup-form .form-group.invalid select.form-control {
-        border-color: var(--outline-red-3);
-    }
-
-    .signup-form .select-icon {
-        position: absolute;
-        top: 50%;
-        inset-inline-end: 8px;
-        transform: translateY(-50%);
-        pointer-events: none;
-        line-height: 0;
-    }
-
-    .signup-form .select-icon use {
-        stroke: var(--ink-gray-5);
-    }
-
     .signup-form input[type="checkbox"] {
         accent-color: var(--surface-gray-7);
     }
@@ -139,8 +106,7 @@
     frappe.ready(function () {
         signup_button_label = $(".signup-form .btn-signup").text().trim();
 
-        $("#user_category").on("change", (e) => {
-            style_category(e);
+        $("#user_category").on("change", () => {
             clear_field_error("user_category");
         });
 
@@ -159,11 +125,6 @@
         toggle_signup_button();
     });
 
-    const style_category = (e) => {
-        let category_color = $(e.currentTarget).val() ? "var(--text-color)" : "var(--text-muted)";
-        $("#user_category").css("color", category_color);
-    }
-
     const clear_field_error = (field) => {
         $("#" + field).closest(".form-group").removeClass("invalid").find(".field-error").text("");
     }
@@ -176,7 +137,11 @@
     const reset_signup_form = () => {
         const form = $(".signup-form");
         form.find("input:not([type='submit'])").val("").prop("checked", false);
-        form.find("#user_category").val("").css("color", "var(--text-muted)");
+        const userCategory = form.find("#user_category")[0];
+        if (userCategory) {
+            userCategory.value = "";
+            userCategory.dispatchEvent(new Event("change", { bubbles: true }));
+        }
         form.find(".form-group").removeClass("invalid").find(".field-error").text("");
         form.find(".page-card-body").removeClass("invalid");
         form.find(".login-error-banner, .login-success-banner").addClass("hidden");

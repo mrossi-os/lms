@@ -271,6 +271,7 @@ const evaluationDetails = createResource({
 			filters: {
 				member: props.event.member,
 				course: props.event.course,
+				batch_name: props.event.batch_name || ['is', 'not set'],
 			},
 		}
 	},
@@ -333,6 +334,7 @@ const certificateDetails = createResource({
 			filters: {
 				member: props.event.member,
 				course: props.event.course,
+				batch_name: props.event.batch_name || ['is', 'not set'],
 			},
 		}
 	},

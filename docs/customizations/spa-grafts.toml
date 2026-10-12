@@ -5542,7 +5542,8 @@ senza questo ramo il Valutatore riceverebbe «non autorizzato» sui quiz dentro 
 quiz assegnati come verifica alla classe. Decisione del committente al merge di v2.59.0: il
 Valutatore legge i quiz dei corsi delle classi che valuta e le verifiche quiz della propria
 classe. Non concede modifica.
-Verifica di fine percorso (2026-09-24, /upstream-check): la riscrittura upstream del gate sequenziale (3884be5ba) aveva messo «if not get_membership(course, user): continue» prima del nostro ramo, rendendolo irraggiungibile (il Valutatore non è iscritto) e il quiz dentro la lezione dava «non autorizzato». Ramo spostato prima del controllo di iscrizione; test os_lms test_valutatore_quiz_access.py."""
+Verifica di fine percorso (2026-09-24, /upstream-check): la riscrittura upstream del gate sequenziale (3884be5ba) aveva messo «if not get_membership(course, user): continue» prima del nostro ramo, rendendolo irraggiungibile (il Valutatore non è iscritto) e il quiz dentro la lezione dava «non autorizzato». Ramo spostato prima del controllo di iscrizione; test os_lms test_valutatore_quiz_access.py.
+Aggiornamento v2.65.0 (2026-10-12): can_access_quiz upstream delega ora al predicato assessment (can_access_assessment), che non conosce il Valutatore. La regola è riespressa in lms/lms/permissions.py: _valutatore_reaches dentro _assessment_answer (solo lettura, include_members=True: mai amministrazione) e _valutatore_assessment_conditions nella query di lista; vale per quiz, compiti ed esercizi posti in un corso di una classe valutata (placement, quiz_id, vecchio campo course) o assegnati dalla classe (LMS Assessment). Decisione del committente: confermate le regole di v2.64."""
 
   [[entries.sites]]
   file = "lms/lms/permissions.py"
@@ -5551,7 +5552,7 @@ Verifica di fine percorso (2026-09-24, /upstream-check): la riscrittura upstream
 
   [[entries.sites]]
   file = "lms/lms/permissions.py"
-  anchor = "or is_batch_valutatore(batch, user)"
+  anchor = "return any(batch and is_batch_valutatore(batch, user) for batch in _running_batches(doctype, name))"
   symbol = "can_access_quiz"
 
   [entries.visibility]
@@ -6661,16 +6662,17 @@ il dialogo si apriva con una lista vuota e nessun messaggio. Il comando è offer
 può completarlo: is_moderator (commit 8a1086854). Le due schede vanno tenute allineate. Al
 merge di v2.61.0 l'upstream aggiunge solo :key e label accessibili nelle liste: nessun
 conflitto atteso. Se l'upstream ripristina `is_moderator || is_evaluator` il bug torna.
-Merge di v2.62.0 (2026-09-24): i moduli instradati BatchCourseForm e AssessmentForm hanno un proprio gate (upstream: moderatore o istruttore); ristretto al solo moderatore come i pulsanti."""
+Merge di v2.62.0 (2026-09-24): i moduli instradati BatchCourseForm e AssessmentForm hanno un proprio gate (upstream: moderatore o istruttore); ristretto al solo moderatore come i pulsanti.
+Aggiornamento v2.65.0 (2026-10-12): oltre al Moderator aggiungono corsi e valutazioni i gestori di QUESTA classe (can_manage di get_batch_details = can_author_batch: Docente per innesto, Course Creator/Batch Evaluator taggati sulla classe, decisione del committente di adottare #2845). Il ruolo Batch Evaluator da solo resta escluso (selettore vuoto, regola originale)."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/BatchCourses.vue"
-  anchor = "return user.data?.is_moderator\n}"
+  anchor = "return user.data?.is_moderator || Boolean(props.batch.data?.can_manage)"
   symbol = "isAdmin"
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/Assessments.vue"
-  anchor = "return user.data?.is_moderator\n}"
+  anchor = "return user.data?.is_moderator || props.canManage"
   symbol = "canAddAssessments"
 
   [[entries.sites]]
@@ -8370,7 +8372,14 @@ _ensure_live_class_admin (modifica ed eliminazione) e i gate isAdmin della SPA (
 LiveClassForm.vue). Senza il Docente in tutti questi punti il pulsante comparirebbe ma il server
 rifiuterebbe, o viceversa. I permessi di ruolo (Custom DocPerm Docente su LMS Live Class, RWCD)
 sono configurati da desk in produzione, non nel codice. Oggi in produzione ogni Docente ha anche
-Moderator, quindi l'effetto pratico riguarda i Docenti senza Moderator."""
+Moderator, quindi l'effetto pratico riguarda i Docenti senza Moderator.
+Aggiornamento v2.65.0 (2026-10-12): l'upstream ha sostituito i controlli per ruolo di
+create_live_class / create_google_meet_live_class (e di LMS Batch, LMS Batch Enrollment,
+get_batch_details) con can_author_batch (Moderator o utente taggato sulla classe). Il Docente è
+ora innestato lì, in un solo punto (lms/lms/permissions.py), invece che nei due only_for; in
+has_permission di LMS Live Class resta accanto al Moderator. Il Batch Evaluator non taggato perde
+la scrittura (regola upstream accettata). Verifica 2026-10-12 in prod: due Docenti NON hanno
+Moderator (c.trentuno+te, docente1)."""
 
   [[entries.sites]]
   file = "lms/lms/doctype/lms_live_class/lms_live_class.py"
@@ -8383,14 +8392,9 @@ Moderator, quindi l'effetto pratico riguarda i Docenti senza Moderator."""
   symbol = "get_permission_query_conditions"
 
   [[entries.sites]]
-  file = "lms/lms/doctype/lms_batch/lms_batch.py"
-  anchor = 'if not any(role in roles for role in ["Moderator", "Batch Evaluator", "Docente"]):'
-  symbol = "create_live_class"
-
-  [[entries.sites]]
-  file = "lms/lms/doctype/lms_batch/lms_batch.py"
-  anchor = 'frappe.only_for(["Moderator", "Batch Evaluator", "Docente"])'
-  symbol = "create_google_meet_live_class"
+  file = "lms/lms/permissions.py"
+  anchor = "# OSLMS-CUSTOM: the Docente (global instructor) authors every batch and its live classes, like can_modify_batch"
+  symbol = "can_author_batch"
 
   [[entries.sites]]
   file = "apps/os_lms/os_lms/os_lms/api.py"

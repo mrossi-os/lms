@@ -66,6 +66,12 @@ const props = defineProps({
 		type: String,
 		required: true,
 	},
+	// Per-batch: a Course Creator only manages a batch they author, unlike the
+	// session-wide user.data.is_instructor.
+	canManage: {
+		type: Boolean,
+		default: false,
+	},
 	rows: {
 		type: Array,
 	},
@@ -171,9 +177,10 @@ const getRowRoute = (row) => {
 
 const canAddAssessments = () => {
 	if (readOnlyMode) return false
-	// Kept in sync with the Courses tab: an evaluator cannot add batch content.
-	// OSLMS-CUSTOM: only moderators add assessments (Batch Evaluator cannot use the picker)
-	return user.data?.is_moderator
+	// Kept in sync with the Courses tab: a session-wide evaluator cannot add batch
+	// content (no read on the picker's doctype); this batch's managers can.
+	// OSLMS-CUSTOM: only moderators and this batch's managers add assessments (Batch Evaluator role alone cannot use the picker)
+	return user.data?.is_moderator || props.canManage
 }
 
 const assessmentColumns = computed(() => {

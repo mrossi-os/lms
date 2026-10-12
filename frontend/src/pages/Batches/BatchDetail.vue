@@ -245,9 +245,12 @@ onUnmounted(() => {
 })
 
 const isAdmin = computed(() => {
+	// is_moderator/is_evaluator are session-wide roles; can_manage is this
+	// batch's own tag, since a Course Creator only manages batches they author.
 	return Boolean(
 		// OSLMS-CUSTOM: Docente manages batches like a moderator
-		user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente,
+		user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente ||
+			batch.data?.can_manage
 	)
 })
 

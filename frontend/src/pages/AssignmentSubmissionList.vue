@@ -83,6 +83,7 @@ onMounted(() => {
 		!user.data?.is_gestore
 	) {
 		router.push({ name: 'Courses' })
+		return
 	}
 	assignmentID.value = router.currentRoute.value.query.assignmentID
 	member.value = router.currentRoute.value.query.member

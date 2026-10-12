@@ -154,7 +154,9 @@
 							v-model="instructors"
 							doctype="User"
 							url="lms.lms.api.search_users_by_role"
-							:searchParams="{ roles: JSON.stringify(['Batch Evaluator']) }"
+							:searchParams="{
+								roles: JSON.stringify(['Batch Evaluator', 'Course Creator']),
+							}"
 							:extraOptions="instructorOptions"
 							:label="__('Instructors')"
 							:placeholder="__('Select instructors')"
@@ -304,7 +306,10 @@
 					<BatchCourses :batch="batch" />
 				</div>
 				<div class="p-4">
-					<Assessments :batch="batch.data?.name" />
+					<Assessments
+						:batch="batch.data?.name"
+						:can-manage="Boolean(batch.data?.can_manage)"
+					/>
 				</div>
 			</div>
 		</div>
@@ -437,7 +442,7 @@ const instructorDetails = createResource({
 	url: 'lms.lms.api.search_users_by_role',
 	method: 'POST',
 	makeParams: () => ({
-		roles: JSON.stringify(['Batch Evaluator']),
+		roles: JSON.stringify(['Batch Evaluator', 'Course Creator']),
 		names: JSON.stringify(instructors.value),
 	}),
 	onSuccess: rememberUsers,

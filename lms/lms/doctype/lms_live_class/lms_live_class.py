@@ -7,9 +7,12 @@ import frappe
 import requests
 from frappe import _
 from frappe.model.document import Document
+from frappe.query_builder import Bracket
 from frappe.utils import cint, format_date, format_time, get_datetime, nowdate
+from pypika.terms import LiteralValue
 
 from lms.lms.doctype.lms_batch.lms_batch import authenticate
+from lms.lms.permissions import authored_batch_condition, can_author_batch, is_site_administrator
 
 
 class LMSLiveClass(Document):
@@ -256,11 +259,20 @@ def has_permission(doc, ptype="read", user=None):
 	user = user or frappe.session.user
 	roles = frappe.get_roles(user)
 	# OSLMS-CUSTOM: the Docente (global instructor) creates and edits live classes too
-	if "Moderator" in roles or "Batch Evaluator" in roles or "Docente" in roles:
+	if "Moderator" in roles or "Docente" in roles:
 		return True
 
 	if ptype not in ("read", "select", "print"):
-		return False
+		if not can_author_batch(doc.batch_name, user=user):
+			return False
+		# Authorise the stored batch too, or a submitted batch_name moves the class.
+		stored = None if doc.is_new() else frappe.db.get_value("LMS Live Class", doc.name, "batch_name")
+		return not stored or can_author_batch(stored, user=user)
+
+	# "Batch Evaluator" keeps its existing blanket read; any other tagged
+	# instructor/evaluator (e.g. Course Creator) is scoped to their own batch.
+	if "Batch Evaluator" in roles or can_author_batch(doc.batch_name, user=user):
+		return True
 
 	# OSLMS-CUSTOM: batch Valutatore reads the live classes of their batch
 	# A custom "Valutatore" can read (only) the live classes of the batch they
@@ -283,7 +295,7 @@ def get_permission_query_conditions(user=None):
 	authenticated user.
 	"""
 	user = user or frappe.session.user
-	if user == "Administrator":
+	if is_site_administrator(user):
 		return ""
 
 	roles = frappe.get_roles(user)
@@ -291,11 +303,17 @@ def get_permission_query_conditions(user=None):
 	if "Moderator" in roles or "Batch Evaluator" in roles or "Docente" in roles:
 		return ""
 
-	escaped = frappe.db.escape(user)
+	live_class = frappe.qb.DocType("LMS Live Class")
+	enrollment = frappe.qb.DocType("LMS Batch Enrollment")
+	member = LiteralValue(frappe.db.escape(user))
+	enrolled = frappe.qb.from_(enrollment).select(enrollment.batch).where(enrollment.member == member)
+	condition = Bracket(
+		live_class.batch_name.isin(enrolled) | authored_batch_condition(live_class.batch_name, user)
+	)
+	sql = condition.get_sql(with_namespace=True, quote_char="`" if frappe.db.db_type == "mariadb" else '"')
 	# OSLMS-CUSTOM: a batch Valutatore also lists the live classes of the batches they evaluate
-	return f"""(`tabLMS Live Class`.batch_name in (
-		select batch from `tabLMS Batch Enrollment` where member = {escaped}
-	) or `tabLMS Live Class`.batch_name in (
+	escaped = frappe.db.escape(user)
+	return f"""({sql} or `tabLMS Live Class`.batch_name in (
 		select parent from `tabLMS Batch Valutatore`
 		where parenttype = 'LMS Batch' and valutatore = {escaped}
 	))"""

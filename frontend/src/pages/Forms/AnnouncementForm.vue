@@ -277,7 +277,8 @@ const isAdmin = computed(() =>
 		user.data?.is_moderator ||
 			user.data?.is_evaluator ||
 			// OSLMS-CUSTOM: Docente manages batches like a moderator
-			user.data?.is_docente
+			user.data?.is_docente ||
+			batch.data?.can_manage
 	)
 )
 

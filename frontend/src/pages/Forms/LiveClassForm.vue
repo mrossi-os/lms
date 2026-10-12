@@ -284,7 +284,8 @@ const conferencingProvider = computed(
 // Evaluator and Docente; a batch Valutatore sees the classes read-only.
 const isAdmin = computed(() =>
 	Boolean(
-		user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente
+		user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente ||
+			batch.data?.can_manage
 	)
 )
 
