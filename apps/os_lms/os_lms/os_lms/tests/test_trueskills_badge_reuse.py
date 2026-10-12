@@ -40,6 +40,8 @@ class TestTrueSkillsBadgeReuse(UnitTestCase):
 					"email": email,
 					"first_name": "Test",
 					"last_name": email.split("@")[0],
+					# db_insert skips User.validate, which is what fills full_name.
+					"full_name": f"Test {email.split('@')[0]}",
 					"codice_fiscale": fiscal_code,
 					"enabled": 1,
 				}
