@@ -3,28 +3,33 @@
 The Valutatore is never enrolled in the course. Upstream's rewrite of the
 sequential gate put `if not get_membership(...): continue` ahead of our branch,
 which made it unreachable: the quiz inside a lesson failed with "not authorized".
+Since lms v2.65.0 can_access_quiz delegates to the assessment predicate, where the
+rule lives in _valutatore_reaches; the mocks below follow that path.
 """
 
 from __future__ import annotations
 
 from unittest.mock import patch
 
-import frappe
 from frappe.tests import UnitTestCase
 
 from lms.lms import permissions
 
-QUIZ = frappe._dict(course="course-1", lesson="lesson-1", owner="author@example.com")
-
-
 class TestValutatoreQuizAccess(UnitTestCase):
 	def _can_access(self, is_valutatore: bool) -> bool:
+		# A quiz placed in lesson-1 of course-1; the user is neither its author, nor an
+		# instructor, nor enrolled. Only being a Valutatore of a batch holding course-1
+		# may open it.
+		roles = ["Valutatore"] if is_valutatore else ["LMS Student"]
 		with (
-			patch.object(permissions.frappe.db, "get_value", return_value=QUIZ),
-			patch.object(permissions.frappe, "get_all", return_value=[]),
+			patch.object(permissions.frappe.db, "exists", return_value=True),
+			patch.object(permissions.frappe, "get_roles", return_value=roles),
 			patch.object(permissions, "has_moderator_role", return_value=False),
-			patch.object(permissions, "can_modify_course", return_value=False),
-			patch.object(permissions, "get_membership", return_value=None),
+			patch.object(permissions, "is_content_author", return_value=False),
+			patch.object(permissions, "_course_placements", return_value={"course-1": {"lesson-1"}}),
+			patch.object(permissions, "_author_only_courses", return_value=set()),
+			patch.object(permissions, "_running_batches", return_value=[]),
+			patch.object(permissions, "_enrolled_in", return_value=set()),
 			patch.object(permissions, "is_course_valutatore", return_value=is_valutatore),
 		):
 			return permissions.can_access_quiz("quiz-1", user="valutatore@example.com")
