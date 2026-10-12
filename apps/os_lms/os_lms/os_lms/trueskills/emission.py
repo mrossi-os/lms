@@ -113,6 +113,16 @@ def issue_certificate(lms_certificate: str) -> None:
 		)
 		return
 
+	# One badge per learner, course and template. Since lms v2.65.0 a learner may hold
+	# several LMS Certificates for one course (one per batch, plus the course-level
+	# one); a second certificate with the same template points at the badge already
+	# issued instead of issuing it again. A different template is a renewed
+	# certification of a changed course, so it is issued anew.
+	previous = _issued_badge_for(cert.member, cert.course, template_id, exclude=cert.name)
+	if previous:
+		_create_reused_log(cert.name, template_id, previous)
+		return
+
 	user = (
 		frappe.db.get_value(
 			"User",
@@ -195,6 +205,64 @@ def issue_certificate(lms_certificate: str) -> None:
 	log.issued_at = now_datetime()
 	log.error_message = None
 	log.save(ignore_permissions=True)
+	frappe.db.commit()
+
+
+def _issued_badge_for(member: str, course: str, template_id: int, exclude: str) -> dict | None:
+	"""The latest ``issued`` log of another certificate of ``member`` for ``course``
+	issued with ``template_id``, or None."""
+	log = frappe.qb.DocType(ISSUE_LOG_DOCTYPE)
+	certificate = frappe.qb.DocType("LMS Certificate")
+	rows = (
+		frappe.qb.from_(log)
+		.join(certificate)
+		.on(certificate.name == log.lms_certificate)
+		.select(
+			log.name,
+			log.trueskill_id,
+			log.trueskill_uid,
+			log.issued_at,
+			log.recipient_email,
+			log.recipient_name,
+		)
+		.where(
+			(log.state == "issued")
+			& (log.template_id == template_id)
+			& (certificate.member == member)
+			& (certificate.course == course)
+			& (certificate.name != exclude)
+		)
+		.orderby(log.issued_at, order=frappe.qb.desc)
+		.limit(1)
+	).run(as_dict=True)
+	return rows[0] if rows else None
+
+
+def _create_reused_log(lms_certificate: str, template_id: int, previous: dict) -> None:
+	"""An ``issued`` log pointing at the badge ``previous`` already issued: the
+	learner opens that badge from this certificate too, and no API call is made."""
+	log = frappe.get_doc(
+		{
+			"doctype": ISSUE_LOG_DOCTYPE,
+			"lms_certificate": lms_certificate,
+			"template_id": template_id,
+			"recipient_email": previous.get("recipient_email"),
+			"recipient_name": previous.get("recipient_name"),
+			"state": "issued",
+			"requested_at": now_datetime(),
+			"issued_at": previous.get("issued_at"),
+			"trueskill_id": previous.get("trueskill_id"),
+			"trueskill_uid": previous.get("trueskill_uid"),
+			"attempts": _next_attempt_number(lms_certificate),
+		}
+	)
+	log.insert(ignore_permissions=True)
+	log.add_comment(
+		"Info",
+		frappe._("Badge already issued with the same template in log {0}: reused, not issued again.").format(
+			previous.get("name")
+		),
+	)
 	frappe.db.commit()
 
 
