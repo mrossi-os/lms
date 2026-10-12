@@ -372,9 +372,11 @@ def get_batch_certified_count(batch: str) -> dict:
 
 	from frappe.utils import flt
 
-	from lms.lms.utils import can_modify_batch, is_batch_valutatore
+	from lms.lms.permissions import can_author_batch
+	from lms.lms.utils import is_batch_valutatore
 
-	if not (can_modify_batch(batch) or is_batch_valutatore(batch)):
+	# can_author_batch (lms v2.65.0): Moderator, Docente, tagged instructors and evaluators
+	if not (can_author_batch(batch) or is_batch_valutatore(batch)):
 		frappe.throw(
 			frappe._("You are not authorized to view this batch."),
 			frappe.PermissionError,
@@ -424,9 +426,11 @@ def get_batch_progress_stats(batch: str, course: str | None = None) -> dict:
 
 	from frappe.utils import flt
 
-	from lms.lms.utils import can_modify_batch, is_batch_valutatore
+	from lms.lms.permissions import can_author_batch
+	from lms.lms.utils import is_batch_valutatore
 
-	if not (can_modify_batch(batch) or is_batch_valutatore(batch)):
+	# can_author_batch (lms v2.65.0): Moderator, Docente, tagged instructors and evaluators
+	if not (can_author_batch(batch) or is_batch_valutatore(batch)):
 		frappe.throw(
 			frappe._("You are not authorized to view this batch."),
 			frappe.PermissionError,
@@ -524,9 +528,11 @@ def get_batch_student_course_progress(batch: str, course: str, member: str) -> d
 	"""
 	from pypika import functions as fn
 
-	from lms.lms.utils import can_modify_batch, is_batch_valutatore
+	from lms.lms.permissions import can_author_batch
+	from lms.lms.utils import is_batch_valutatore
 
-	if not (can_modify_batch(batch) or is_batch_valutatore(batch)):
+	# can_author_batch (lms v2.65.0): Moderator, Docente, tagged instructors and evaluators
+	if not (can_author_batch(batch) or is_batch_valutatore(batch)):
 		frappe.throw(
 			frappe._("You are not authorized to view this batch."),
 			frappe.PermissionError,
@@ -593,9 +599,10 @@ def export_batch_progress(batch: str, file_format: str = "xlsx"):
 	"Valutatore" reads the batch dashboard but must not export it, which is why
 	the SPA hides the export button for them too.
 	"""
-	from lms.lms.utils import can_modify_batch
+	from lms.lms.permissions import can_author_batch
 
-	if not can_modify_batch(batch):
+	# can_author_batch (lms v2.65.0): Moderator, Docente, tagged instructors and evaluators
+	if not can_author_batch(batch):
 		frappe.throw(
 			frappe._("You are not authorized to view this batch."),
 			frappe.PermissionError,

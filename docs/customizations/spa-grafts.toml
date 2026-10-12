@@ -9134,7 +9134,8 @@ porta:
 - nella SPA i gate uniscono il nostro is_docente al can_manage upstream (risolti nel merge) e
   isFullAdmin della dashboard (iscrivi, importa, rimuovi, esporta) include can_manage; il picker
   istruttori del BatchForm cerca anche i Course Creator (967d7d66c) e ricarica i chip salvati con
-  gli stessi ruoli (instructorDetails)."""
+  gli stessi ruoli (instructorDetails).
+Aggiunta /upstream-check (2026-10-12): anche gli endpoint os_lms delle statistiche di classe (get_batch_certified_count, get_batch_progress_stats, get_batch_student_course_progress, export_batch_progress) passano da can_modify_batch (solo tag istruttore) a can_author_batch: un Course Creator taggato solo come evaluator di un corso della classe vede le azioni della dashboard (can_manage) e non deve ricevere 403."""
 
   [[entries.sites]]
   file = "apps/os_lms/os_lms/setup.py"
@@ -9173,6 +9174,11 @@ porta:
   anchor = "roles: JSON.stringify(['Batch Evaluator', 'Course Creator']),\n\t\tnames: JSON.stringify(instructors.value),"
   symbol = "instructorDetails"
 
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/os_lms/api.py"
+  anchor = "tagged instructors and evaluators\n\tif not can_author_batch(batch):"
+  symbol = "export_batch_progress"
+
   [entries.visibility]
   subject = "gestione di una classe (dashboard, live, annunci, iscrizioni)"
   allow = ["Moderator", "Docente", "Course Creator taggato sulla classe", "Batch Evaluator"]
@@ -9180,6 +9186,7 @@ porta:
 
   [entries.checks]
   unit = "apps/os_lms/os_lms/os_lms/tests/test_role_gates_v2_65.py"
+
 [[entries]]
 id = "trueskills-badge-reuse-same-template"
 title = "TrueSkills: un badge per studente, corso e template"

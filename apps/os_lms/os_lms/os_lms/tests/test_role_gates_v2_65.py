@@ -241,3 +241,28 @@ class TestCourseCreatorBatchDocPerms(UnitTestCase):
 		batch_ptypes = {c.args[3] for c in update.call_args_list if c.args[0] == "LMS Batch"}
 		self.assertNotIn("create", batch_ptypes)
 		self.assertIn("write", batch_ptypes)
+
+
+class TestBatchStatsEndpointsFollowCanAuthorBatch(UnitTestCase):
+	"""The os_lms batch statistics endpoints admit whoever authors the batch
+	(can_author_batch: a Course Creator tagged as a course evaluator included), and
+	the batch's Valutatore; nobody else."""
+
+	def _certified_count(self, author: bool, valutatore: bool):
+		from os_lms.os_lms import api
+
+		with (
+			patch("lms.lms.permissions.can_author_batch", return_value=author),
+			patch("lms.lms.utils.is_batch_valutatore", return_value=valutatore),
+		):
+			return api.get_batch_certified_count("no-such-batch")
+
+	def test_batch_author_passes_the_gate(self):
+		self.assertIn("certified_count", self._certified_count(author=True, valutatore=False))
+
+	def test_valutatore_passes_the_gate(self):
+		self.assertIn("certified_count", self._certified_count(author=False, valutatore=True))
+
+	def test_anyone_else_is_refused(self):
+		with self.assertRaises(frappe.PermissionError):
+			self._certified_count(author=False, valutatore=False)
