@@ -176,6 +176,16 @@
 					>
 						{{ trueskillTemplatesError }}
 					</div>
+					<div
+						v-if="trueskillTemplateRequiredData.length"
+						class="text-sm text-ink-red-5 bg-surface-red-1 rounded-md p-2"
+					>
+						{{
+							__(
+								'Questo template richiede dei dati che la piattaforma non raccoglie ({0}): nessun certificato potrebbe essere emesso. Scegli un altro template, altrimenti il corso non si salva.'
+							).format(trueskillTemplateRequiredData.join(', '))
+						}}
+					</div>
 					<button
 						type="button"
 						class="text-sm text-ink-gray-7 underline hover:text-ink-gray-9 self-start"
@@ -415,6 +425,35 @@ const trueskillsTemplateModel = computed<string>({
 		markDirty()
 	},
 })
+
+// OSLMS-CUSTOM: warn when the chosen TrueSkill template asks for data the emission never
+// sends (requiredData); the course save is refused server-side (validate_course_template)
+const trueskillTemplateResource = createResource({
+	url: 'os_lms.os_lms.trueskills.api.get_template',
+	auto: false,
+}) as Resource<{
+	ok: boolean
+	template?: { data?: { requiredData?: { label?: string; code?: string }[] } }
+} | null>
+
+const trueskillTemplateRequiredData = computed<string[]>(() => {
+	const data = trueskillTemplateResource.data
+	if (!data?.ok || !resource.doc?.trueskills_certificate_enabled) return []
+	const fields = data.template?.data?.requiredData || []
+	return fields.map((f) => f.label || f.code || '')
+})
+
+watch(
+	() =>
+		resource.doc?.trueskills_certificate_enabled
+			? resource.doc?.trueskills_template_id
+			: null,
+	(templateId) => {
+		if (templateId) trueskillTemplateResource.fetch({ template_id: templateId })
+		else trueskillTemplateResource.reset()
+	},
+	{ immediate: true }
+)
 
 watch(
 	() => resource.doc?.trueskills_certificate_enabled,

@@ -82,3 +82,5 @@ Fiscal code missing,Codice fiscale mancante
 You are not allowed to remove students from this course.,Non hai i permessi per rimuovere studenti da questo corso.
 Only an administrator can delete a student's course data.,Solo un amministratore può cancellare i dati di uno studente nel corso.
 Some of the selected enrollments do not belong to this course.,Alcune delle iscrizioni selezionate non appartengono a questo corso.
+"The TrueSkill template {0} asks for data the platform does not collect ({1}): no certificate could be issued with it. Choose another template.","Il template TrueSkill {0} richiede dei dati che la piattaforma non raccoglie ({1}): con questo template nessun certificato potrebbe essere emesso. Scegli un altro template."
+TrueSkill template not supported,Template TrueSkill non supportato

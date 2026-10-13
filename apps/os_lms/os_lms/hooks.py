@@ -234,6 +234,10 @@ doc_events = {
     "LMS Certificate": {
         "after_insert": "os_lms.os_lms.trueskills.emission.enqueue_issue",
     },
+    "LMS Course": {
+        # Refuse a TrueSkill template whose required data the emission never sends.
+        "validate": "os_lms.os_lms.trueskills.api.validate_course_template",
+    },
     "Notification Log": {
         # Upstream ships the quiz-score alert with an empty link, which makes the
         # notification a dead click. Fill the destination in before the log is

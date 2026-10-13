@@ -222,6 +222,45 @@ def _latest_issue_status(lms_certificate: str) -> dict:
 	}
 
 
+def template_required_data(template_id) -> tuple[str, list[str]]:
+	"""``(template name, labels)`` of the data a TrueSkill template asks the requestor to fill.
+
+	The emission sends no ``requiredData``, so TrueSkill refuses such a template with
+	``required_data_missing``. An unreachable service or an unknown template yields no
+	labels: the emission reports those itself.
+	"""
+	if not template_id:
+		return "", []
+	try:
+		template = TrueSkillsService().get_template(int(template_id)) or {}
+	except (TrueSkillsError, ValueError, TypeError):
+		return "", []
+	fields = (template.get("data") or {}).get("requiredData") or []
+	labels = [f.get("label") or f.get("code") or "" for f in fields if isinstance(f, dict)]
+	return template.get("name") or str(template_id), labels
+
+
+def validate_course_template(doc, method=None) -> None:
+	"""LMS Course validate: refuse a TrueSkill template that asks for data the platform never sends."""
+	if not doc.get("trueskills_certificate_enabled") or not doc.get("trueskills_template_id"):
+		return
+	if not (
+		doc.is_new()
+		or doc.has_value_changed("trueskills_template_id")
+		or doc.has_value_changed("trueskills_certificate_enabled")
+	):
+		return
+	name, labels = template_required_data(doc.trueskills_template_id)
+	if labels:
+		frappe.throw(
+			_(
+				"The TrueSkill template {0} asks for data the platform does not collect ({1}): "
+				"no certificate could be issued with it. Choose another template."
+			).format(frappe.bold(name), ", ".join(labels)),
+			title=_("TrueSkill template not supported"),
+		)
+
+
 def _ensure_trueskill_certificate(course: str) -> str:
 	"""Return the session user's ``LMS Certificate`` for a TrueSkills course, creating it.
 
@@ -317,6 +356,22 @@ def get_course_certificate(course: str) -> dict:
 			cert_name = cert.name
 			template = cert.template
 		return {"mode": "pdf", "lms_certificate": cert_name, "template": template}
+
+	# A template that asks for data the platform never sends cannot issue: say so before
+	# creating a certificate that would only ever show as a failed emission.
+	if template_required_data(flags.get("trueskills_template_id"))[1]:
+		from lms.lms.doctype.lms_certificate.lms_certificate import is_certified
+
+		return {
+			"mode": "trueskill",
+			"lms_certificate": is_certified(course) or None,
+			"template": None,
+			"state": "unavailable",
+			"issued": False,
+			"trueskill_id": None,
+			"trueskill_uid": None,
+			"error": "template_requires_data",
+		}
 
 	# TrueSkills is the issuer — create the backing certificate ourselves.
 	cert_name = _ensure_trueskill_certificate(course)

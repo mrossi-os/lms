@@ -47,6 +47,13 @@ function trueskillErrorMessage(code) {
 		service_unavailable: __(
 			'Il servizio certificati non è al momento disponibile. Riprova più tardi.',
 		),
+		// The course's TrueSkill template asks for data the platform never sends.
+		template_requires_data: __(
+			'Il certificato di questo corso non può essere emesso: il template TrueSkill richiede dati aggiuntivi. Contatta l\'amministrazione.',
+		),
+		required_data_missing: __(
+			'Il certificato di questo corso non può essere emesso: il template TrueSkill richiede dati aggiuntivi. Contatta l\'amministrazione.',
+		),
 	}
 	return map[code] || __('Impossibile aprire il certificato. Riprova più tardi.')
 }
