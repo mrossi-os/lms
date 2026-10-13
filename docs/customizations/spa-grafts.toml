@@ -6663,7 +6663,8 @@ può completarlo: is_moderator (commit 8a1086854). Le due schede vanno tenute al
 merge di v2.61.0 l'upstream aggiunge solo :key e label accessibili nelle liste: nessun
 conflitto atteso. Se l'upstream ripristina `is_moderator || is_evaluator` il bug torna.
 Merge di v2.62.0 (2026-09-24): i moduli instradati BatchCourseForm e AssessmentForm hanno un proprio gate (upstream: moderatore o istruttore); ristretto al solo moderatore come i pulsanti.
-Aggiornamento v2.65.0 (2026-10-12): oltre al Moderator aggiungono corsi e valutazioni i gestori di QUESTA classe (can_manage di get_batch_details = can_author_batch: Docente per innesto, Course Creator/Batch Evaluator taggati sulla classe, decisione del committente di adottare #2845). Il ruolo Batch Evaluator da solo resta escluso (selettore vuoto, regola originale)."""
+Aggiornamento v2.65.0 (2026-10-12): oltre al Moderator aggiungono corsi e valutazioni i gestori di QUESTA classe (can_manage di get_batch_details = can_author_batch: Docente per innesto, Course Creator/Batch Evaluator taggati sulla classe, decisione del committente di adottare #2845). Il ruolo Batch Evaluator da solo resta escluso (selettore vuoto, regola originale).
+Collaudo su elite (2026-10-13, prova 1): nel percorso v2.65 erano stati allargati solo i pulsanti; i moduli instradati BatchCourseForm e AssessmentForm ammettevano ancora il solo Moderator, quindi il Docente vedeva il pulsante e poi «Non hai i permessi per aggiungere corsi/valutazioni a questa classe». Ora anche i moduli leggono can_manage con useBatchDetails, come BatchStudentForm, AnnouncementForm e LiveClassForm."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/BatchCourses.vue"
@@ -6677,11 +6678,15 @@ Aggiornamento v2.65.0 (2026-10-12): oltre al Moderator aggiungono corsi e valuta
 
   [[entries.sites]]
   file = "frontend/src/pages/Forms/BatchCourseForm.vue"
-  anchor = "if (!user.data?.is_moderator) {"
+  anchor = "if (!user.data?.is_moderator && !batch.data?.can_manage) {"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Forms/AssessmentForm.vue"
+  anchor = "if (!user.data?.is_moderator && !batch.data?.can_manage) {"
 
   [entries.visibility]
   subject = "pulsante Aggiungi nelle schede Corsi e Valutazioni della classe"
-  allow = ["Moderator"]
+  allow = ["Moderator", "Docente"]
   deny = ["Batch Evaluator", "Student"]
 
 [[entries]]
@@ -6878,6 +6883,51 @@ Merge di v2.62.0 (2026-09-24): file spostato dall'upstream in components/Courses
   symbol = "resolvedSelected"
 
 # --- Modulo corso: pubblicazione e certificati (CoursePublishSettings.vue) --------
+
+[[entries]]
+id = "trueskills-template-required-data-refused"
+title = "Template TrueSkill con dati obbligatori: avviso nella scelta, blocco al salvataggio, messaggio allo studente"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+L'emissione TrueSkill non invia requiredData (i dati che un template chiede di compilare prima
+dell'emissione, es. «Performance 1/2» del template 10 «Certificato 1»): TrueSkill rifiuta con
+required_data_missing, lo studente vede un certificato che non si apre e il profilo lo mostra come
+certificato normale (collaudo v2.65 su elite, 2026-10-13, prova 9). Decisione del committente:
+avvisare sia nella scelta del template sia sul pulsante dello studente. Nelle impostazioni del
+corso, scegliendo un template con requiredData compare l'avviso con i campi richiesti; il
+salvataggio del corso è rifiutato lato server (validate_course_template, hook validate di LMS
+Course, solo quando template o interruttore cambiano; con TrueSkill irraggiungibile non blocca).
+Su «Ottieni certificato» get_course_certificate risponde template_requires_data senza creare
+l'LMS Certificate; useCertificateViewer traduce template_requires_data e required_data_missing
+in un messaggio chiaro. Il supporto vero ai requiredData (farli compilare allo studente) è una
+funzione da valutare a parte."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CoursePublishSettings.vue"
+  anchor = "v-if=\"trueskillTemplateRequiredData.length\""
+
+  [[entries.sites]]
+  file = "frontend/src/oslms/composables/useCertificateViewer.js"
+  anchor = "template_requires_data: __("
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/os_lms/trueskills/api.py"
+  anchor = "if template_required_data(flags.get(\"trueskills_template_id\"))[1]:"
+  symbol = "get_course_certificate"
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/hooks.py"
+  anchor = "\"validate\": \"os_lms.os_lms.trueskills.api.validate_course_template\","
+
+  [entries.visibility]
+  subject = "avviso sul template TrueSkill del corso e messaggio sul certificato"
+  allow = ["Gestore", "Moderator", "Course Creator", "System Manager", "Student"]
+  deny = []
+
+  [entries.checks]
+  backend = "apps/os_lms/os_lms/os_lms/tests/test_trueskills_template_required_data.py"
+
 
 [[entries]]
 id = "course-trueskills-publish-settings"
@@ -7581,6 +7631,42 @@ tocca validate_certification."""
   symbol = "validate_certification"
 
 # --- Classe live (lms_live_class.py) --------------------------------------------
+
+[[entries]]
+id = "live-class-delete-drops-event-unchecked"
+title = "Chi gestisce la classe elimina le classi live anche quando hanno un evento di calendario"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+L'upstream (LMSLiveClass.after_delete, commit 701814060 del 2026-03-04) dopo aver eliminato la
+classe live cancella l'Event di calendario collegato con i permessi dell'utente. Sul sito le
+Custom DocPerm di Event danno delete solo al ruolo Tutor: Docente, Moderator, Batch Evaluator e
+System Manager ricevevano un errore di permessi a ogni eliminazione di una classe con evento
+(collaudo v2.65 su elite, 2026-10-13, prova 2). Decisione del committente: il Docente elimina le
+classi live come le crea, modifica e avvia (dove can_author_batch lo ammette). CustomLMSLiveClass
+sostituisce after_delete e cancella l'Event con ignore_permissions: l'eliminazione della classe ha
+già superato i permessi di LMS Live Class e l'Event è un effetto collaterale, creato e aggiornato
+anch'esso con ignore_permissions. Se l'upstream aggiunge altro ad after_delete, l'override lo
+nasconde: riconfrontare a ogni merge che tocca la riga upstream."""
+
+  [[entries.sites]]
+  file = "apps/os_lms/os_lms/overrides/lms_live_class.py"
+  anchor = 'frappe.delete_doc("Event", self.event, force=True, ignore_permissions=True)'
+  symbol = "CustomLMSLiveClass.after_delete"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_live_class/lms_live_class.py"
+  anchor = 'frappe.delete_doc("Event", self.event, force=True)'
+  symbol = "LMSLiveClass.after_delete"
+
+  [entries.visibility]
+  subject = "eliminazione di una classe live con evento di calendario"
+  allow = ["Moderator", "Docente", "Batch Evaluator"]
+  deny = ["Valutatore", "Student"]
+
+  [entries.checks]
+  backend = "apps/os_lms/os_lms/os_lms/tests/test_live_class_delete_event.py"
+
 
 [[entries]]
 id = "live-class-valutatore-read"
