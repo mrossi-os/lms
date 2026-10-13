@@ -49,6 +49,17 @@ class CustomLMSLiveClass(LMSLiveClass):
 
 		event.save(ignore_permissions=True)
 
+	def after_delete(self):
+		"""Same as upstream, but drops the linked Event without re-checking Event permissions.
+
+		Deleting the class already passed LMS Live Class permissions; the Event is a side
+		effect, created and updated with ignore_permissions too. The Event Custom DocPerm
+		withholds delete from the batch managers (Docente, Moderator, Batch Evaluator), so
+		the upstream call refused every deletion of a class that has a calendar event.
+		"""
+		if self.event:
+			frappe.delete_doc("Event", self.event, force=True, ignore_permissions=True)
+
 	def _handle_class_update(self):
 		"""On a real change of the class details, reschedule Zoom and warn everyone.
 
