@@ -48,7 +48,7 @@ import { useRoute, useRouter } from 'vue-router'
 import Link from '@/components/Controls/Link.vue'
 import FormShell from '@/components/FormShell.vue'
 import HeaderButton from '@/components/HeaderButton.vue'
-import { batchRouteLocation } from '@/composables/useBatchForms'
+import { batchRouteLocation, useBatchDetails } from '@/composables/useBatchForms'
 import { useFormRoute } from '@/composables/useFormRoute'
 import { submitResource } from '@/utils/resource'
 
@@ -76,10 +76,11 @@ const { close, saveAndReplace } = useFormRoute(
 //
 // UX gate, not an authorization boundary — the server-side permission check on
 // LMS Assessment is.
-// OSLMS-CUSTOM: only moderators add assessments, same as canAddAssessments() in Assessments.vue (batch-content-add-moderator-only)
+// OSLMS-CUSTOM: moderators and whoever manages this batch add assessments, same as canAddAssessments() in Assessments.vue (batch-content-add-moderator-only)
+const batch = useBatchDetails(() => props.batchName)
 const refusal = computed(() => {
 	if (readOnlyMode) return __('This site is in read-only mode.')
-	if (!user.data?.is_moderator) {
+	if (!user.data?.is_moderator && !batch.data?.can_manage) {
 		return __('You do not have permission to add assessments to this batch.')
 	}
 	return ''

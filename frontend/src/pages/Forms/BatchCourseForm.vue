@@ -41,7 +41,7 @@ import { useRoute, useRouter } from 'vue-router'
 import Link from '@/components/Controls/Link.vue'
 import FormShell from '@/components/FormShell.vue'
 import HeaderButton from '@/components/HeaderButton.vue'
-import { batchRouteLocation } from '@/composables/useBatchForms'
+import { batchRouteLocation, useBatchDetails } from '@/composables/useBatchForms'
 import { useFormRoute } from '@/composables/useFormRoute'
 import { resourceErrorMessage, submitResource } from '@/utils/resource'
 
@@ -72,10 +72,11 @@ const { close, saveAndReplace } = useFormRoute(
 //
 // UX gate, not an authorization boundary — the server-side permission check on
 // Batch Course is.
-// OSLMS-CUSTOM: moderator-only, same as the Add button in BatchCourses.vue (batch-content-add-moderator-only)
+// OSLMS-CUSTOM: moderators and whoever manages this batch, same as the Add button in BatchCourses.vue (batch-content-add-moderator-only)
+const batch = useBatchDetails(() => props.batchName)
 const refusal = computed(() => {
 	if (readOnlyMode) return __('This site is in read-only mode.')
-	if (!user.data?.is_moderator) {
+	if (!user.data?.is_moderator && !batch.data?.can_manage) {
 		return __('You do not have permission to add courses to this batch.')
 	}
 	return ''
