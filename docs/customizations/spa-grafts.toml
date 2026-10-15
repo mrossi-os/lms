@@ -8467,7 +8467,11 @@ ora innestato lì, in un solo punto (lms/lms/permissions.py), invece che nei due
 has_permission di LMS Live Class resta accanto al Moderator. Il Batch Evaluator non taggato perde
 la scrittura (regola upstream accettata). Verifica 2026-10-12 in prod: due Docenti NON hanno
 Moderator (c.trentuno+te, docente1).
-Il sito api.py di _ensure_live_class_admin è ora nella voce batch-course-creator-tagged-manage-v265 (gate su can_author_batch invece di only_for)."""
+Il sito api.py di _ensure_live_class_admin è ora nella voce batch-course-creator-tagged-manage-v265 (gate su can_author_batch invece di only_for).
+Merge di v2.66.0 (2026-10-15): l'upstream toglie il Batch Evaluator (ruolo) dal gate del modulo
+LiveClassForm e dal pulsante di creazione in LiveClass.vue (canCreateClass): conta solo chi la classe
+tagga (can_manage). Nel modulo il Docente resta accanto al Moderator; can_manage lo include già
+tramite can_author_batch. isAdmin di LiveClass.vue tiene ancora is_evaluator (incoerenza preesistente)."""
 
   [[entries.sites]]
   file = "lms/lms/doctype/lms_live_class/lms_live_class.py"
@@ -8491,7 +8495,7 @@ Il sito api.py di _ensure_live_class_admin è ora nella voce batch-course-creato
 
   [[entries.sites]]
   file = "frontend/src/pages/Forms/LiveClassForm.vue"
-  anchor = "user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_docente"
+  anchor = "user.data?.is_moderator || user.data?.is_docente || batch.data?.can_manage"
   symbol = "isAdmin"
 
   [entries.visibility]

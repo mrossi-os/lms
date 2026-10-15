@@ -22,16 +22,25 @@ class LMSEnrollment(Document):
 		self.enforce_server_managed_fields()
 
 	def enforce_server_managed_fields(self):
-		"""Revert progress / purchased_certificate to their server-set values for non-staff."""
-		from lms.lms.utils import PRIVILEGED_ROLES
-
-		if PRIVILEGED_ROLES & set(frappe.get_roles()):
+		"""Revert progress / purchased_certificate to their server-set values for
+		anyone who does not manage this enrolment."""
+		if self.managed_by_caller():
 			return
 
 		previous = None if self.is_new() else self.get_doc_before_save()
 		defaults = {"progress": 0, "purchased_certificate": 0}
 		for field, default in defaults.items():
 			setattr(self, field, previous.get(field) if previous else default)
+
+	def managed_by_caller(self) -> bool:
+		"""A Moderator, a site administrator or an author of this course. A site-wide
+		role alone (Course Creator, Batch Evaluator) does not make someone staff of
+		every course, and neither does naming a batch: anyone may create one."""
+		from lms.lms.permissions import can_author_course
+
+		if self.flags.managed_by_caller is None:
+			self.flags.managed_by_caller = can_author_course(self.course, user=frappe.session.user)
+		return self.flags.managed_by_caller
 
 	def validate_owner(self):
 		"""Makes the member as the owner of the document so that users can update their progress"""
@@ -75,24 +84,22 @@ class LMSEnrollment(Document):
 			as_dict=True,
 		)
 
-		# A member of the batch is entitled to every course of that batch, so the
-		# batch check comes first: the restrictions below (self-learning, unpublished,
-		# paid) only govern enrolling in a course on one's own. Checking them first
-		# made the enrollment fail whenever it was created in the student's own
-		# session -- joining a batch, or opening a batch whose courses were added
-		# after the student enrolled.
+		# A batch's learners take its courses through the batch, so its own checks
+		# (seats, payment) stand in for these, self-learning included.
 		if self.enrollment_from_batch:
 			if not frappe.db.exists(
 				"Batch Course", {"parent": self.enrollment_from_batch, "course": self.course}
 			):
 				frappe.throw(_("This batch is not associated with this course."))
 
-			if frappe.db.exists(
+			# Created while that batch enrolment is saved, before its row exists.
+			if self.flags.via_batch_enrollment or frappe.db.exists(
 				"LMS Batch Enrollment", {"batch": self.enrollment_from_batch, "member": self.member}
 			):
 				return
 
-		if course_details.disable_self_learning and not is_admin():
+		managed = self.managed_by_caller()
+		if course_details.disable_self_learning and not managed:
 			frappe.throw(
 				_(
 					"You cannot enroll in this course as self-learning is disabled. Please contact the Administrator."
@@ -107,12 +114,12 @@ class LMSEnrollment(Document):
 		# even when a course is not published on its own.
 		if (
 			not course_details.published
-			and not is_admin()
+			and not managed
 			and not is_course_in_member_program(self.course, self.member)
 		):
 			frappe.throw(_("You cannot enroll in an unpublished course."))
 
-		if course_details.paid_course and not is_admin():
+		if course_details.paid_course and not managed:
 			payment = frappe.db.exists(
 				"LMS Payment",
 				{
@@ -149,15 +156,6 @@ def _throw_identity_field_locked(row: str, field_label: str, stored_value, attem
 		),
 		frappe.CannotChangeConstantError,
 	)
-
-
-def is_admin():
-	roles = frappe.get_roles(frappe.session.user)
-	admin_roles = ["Moderator", "Course Creator", "Batch Evaluator"]
-	for role in admin_roles:
-		if role in roles:
-			return True
-	return False
 
 
 def update_program_progress(member):

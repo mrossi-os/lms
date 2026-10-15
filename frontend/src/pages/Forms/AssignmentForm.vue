@@ -4,8 +4,20 @@
 			<div v-if="!canManageAssignments" class="p-4 text-base text-ink-gray-6">
 				{{ __('You are not permitted to manage assignments.') }}
 			</div>
-			<div v-else data-testid="assignment-fields" class="space-y-4 text-base">
+			<fieldset
+				v-else
+				:disabled="!canEdit"
+				data-testid="assignment-fields"
+				class="m-0 min-w-0 space-y-4 border-0 p-0 text-base"
+			>
 				<!-- OSLMS-CUSTOM: translated placeholders on the assignment form fields -->
+				<p
+					v-if="canWrite === false"
+					data-testid="assignment-read-only-note"
+					class="text-ink-gray-6"
+				>
+					{{ __('Only the authors of this assignment can edit it.') }}
+				</p>
 				<FormControl
 					v-model="assignment.title"
 					:label="__('Title')"
@@ -72,12 +84,12 @@
 					<RichTextEditor
 						:content="assignment.question"
 						@change="(val: string) => (assignment.question = val)"
-						:editable="true"
+						:editable="canEdit"
 						:fixedMenu="true"
 						editorClass="prose-sm max-w-none border-b border-x border-outline-elevation-2 bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[10rem] max-h-[18rem] overflow-y-auto"
 					/>
 				</div>
-			</div>
+			</fieldset>
 		</template>
 		<template #actions>
 			<div
@@ -97,6 +109,7 @@
 					/>
 				</router-link>
 				<HeaderButton
+					v-if="canEdit"
 					data-testid="assignment-save"
 					:label="__('Save')"
 					variant="solid"
@@ -125,6 +138,7 @@ import RichTextEditor from '@/components/RichTextEditor.vue'
 import { InputLabel } from '@/components/Form/labeling'
 import { submitResource } from '@/utils/resource'
 import { toDatetimeLocal, fromDatetimeLocal } from '@/utils/schedule'
+import { useCanWrite } from '@/composables/useCanWrite'
 
 const questionLabelId = useId()
 
@@ -141,6 +155,12 @@ const user = inject<any>('$user')
 const { close, saveAndReplace } = useFormRoute({ name: 'Assignments' })
 
 const isNew = computed(() => props.assignmentID === 'new')
+
+// Placing an assignment grants use only, so a non-author opens it read-only.
+const canWrite = useCanWrite('LMS Assignment', () =>
+	isNew.value ? undefined : props.assignmentID
+)
+const canEdit = computed(() => canWrite.value === true)
 
 const formTitle = computed(() =>
 	isNew.value ? __('Create an Assignment') : __('Edit Assignment')
@@ -295,7 +315,7 @@ const updateAssignment = (): void => {
 }
 
 const saveAssignment = (): void => {
-	if (!canManageAssignments.value) return
+	if (!canManageAssignments.value || !canEdit.value) return
 	if (!validateFields()) return
 	// OSLMS-CUSTOM: warn on missing required fields instead of failing silently on save
 	if (!assignment.title) {

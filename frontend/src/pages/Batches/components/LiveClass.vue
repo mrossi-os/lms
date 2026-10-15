@@ -388,7 +388,8 @@ const hasProviderAccount = () => {
 const canCreateClass = () => {
 	if (readOnlyMode) return false
 	if (!hasProviderAccount()) return false
-	return isAdmin()
+	// create_live_class accepts only an evaluator the batch tags.
+	return Boolean(user.data?.is_moderator || props.batch.data?.can_manage)
 }
 
 // OSLMS-CUSTOM: the Docente (global instructor) manages live classes too

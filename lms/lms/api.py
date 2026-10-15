@@ -3047,8 +3047,12 @@ def get_lesson_completion_stats(course: str):
 
 @frappe.whitelist()
 def get_course_assessment_progress(course: str, member: str):
-	# A valutatore of a batch containing this course may read its dashboard data.
-	if not can_modify_course(course) and not is_course_valutatore(course):
+	# OSLMS-CUSTOM: a valutatore of a batch containing this course may read its dashboard data.
+	# The member must be this course's student: the course's assessments may be
+	# placed in other courses too, and their students' work is not this course's.
+	if not (can_modify_course(course) or is_course_valutatore(course)) or not frappe.db.exists(
+		"LMS Enrollment", {"course": course, "member": member}
+	):
 		frappe.throw(
 			_("You do not have permission to access this course's assessment data."), frappe.PermissionError
 		)

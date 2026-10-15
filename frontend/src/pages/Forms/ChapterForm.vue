@@ -101,7 +101,7 @@ import { computed, inject, onMounted, reactive, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getFileSize } from '@/utils/'
 import { resourceErrorMessage, submitResource } from '@/utils/resource'
-import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
+import { useOnboarding } from 'frappe-ui/frappe'
 import FormShell from '@/components/FormShell.vue'
 import HeaderButton from '@/components/HeaderButton.vue'
 import { useFormRoute } from '@/composables/useFormRoute'
@@ -138,7 +138,6 @@ const props = defineProps<{
 
 const route = useRoute()
 const user = inject<SessionUser>('$user')!
-const { capture } = useTelemetry()
 const { updateOnboardingStep } = useOnboarding('learning')
 
 // House style for a route that serves both create and edit
@@ -283,7 +282,6 @@ const saveChapter = () => {
 				if (!isEdit.value) {
 					if (user.data?.is_system_manager)
 						updateOnboardingStep('create_first_chapter')
-					capture('chapter_created')
 				}
 				// Stands in for the modal's `created`/`updated` emits: a route
 				// component has no parent listening, so refresh the outline the

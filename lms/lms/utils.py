@@ -35,6 +35,7 @@ from frappe.utils import (
 from pypika import Case
 from pypika import functions as fn
 
+from lms.lms import telemetry
 from lms.lms.doctype.lms_enrollment.lms_enrollment import (
 	update_enrollment,
 	update_program_progress,
@@ -2514,6 +2515,9 @@ def get_batch_student_progress(member: str, batch: str) -> dict:
 		and not is_batch_valutatore(batch)
 	):
 		frappe.throw(_("You are not authorized to view the students of this batch."))
+	# The batch's assessments may run elsewhere too; only this batch's students count.
+	if not frappe.db.exists("LMS Batch Enrollment", {"batch": batch, "member": member}):
+		frappe.throw(_("This student is not enrolled in this batch."), frappe.PermissionError)
 
 	details = get_batch_student_details(member)
 	calculate_student_progress(batch, details)
@@ -2989,9 +2993,9 @@ def calculate_discount_amount(base_amount: float, coupon: dict) -> float:
 	if coupon.discount_type == "Percentage":
 		discount_amount = (base_amount * coupon.percentage_discount) / 100
 	elif coupon.discount_type == "Fixed Amount":
-		discount_amount = base_amount - coupon.fixed_amount_discount
+		discount_amount = coupon.fixed_amount_discount
 
-	return discount_amount
+	return max(min(flt(discount_amount), flt(base_amount)), 0)
 
 
 @frappe.whitelist()
@@ -3185,6 +3189,7 @@ def update_payment_details(data: dict):
 			"order_id": data.get("order_id"),
 		},
 	)
+	telemetry.payment_received(data.payment)
 
 
 def get_payment_id(data: dict) -> str:

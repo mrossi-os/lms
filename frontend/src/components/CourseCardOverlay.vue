@@ -188,7 +188,6 @@ import CourseOutline from '@/components/CourseOutline.vue'
 import VideoPreview from '@/components/VideoPreview.vue'
 // OSLMS-CUSTOM: route certificate opening through TrueSkills when enabled.
 import { useCertificateViewer } from '@/oslms/composables/useCertificateViewer'
-import { useTelemetry } from 'frappe-ui/frappe'
 import type {
 	CertificationInfo,
 	CourseDetails,
@@ -201,7 +200,6 @@ const router = useRouter()
 const user = inject<SessionUser>('$user')!
 const readOnlyMode = (window as Window & { read_only_mode?: boolean })
 	.read_only_mode
-const { capture } = useTelemetry()
 
 const props = withDefaults(
 	defineProps<{
@@ -236,7 +234,6 @@ function enrollStudent() {
 		},
 	})
 		.then(() => {
-			capture('enrolled_in_course', { course: courseName })
 			toast.success(__('You have been enrolled in this course'))
 			setTimeout(() => {
 				router.push({
