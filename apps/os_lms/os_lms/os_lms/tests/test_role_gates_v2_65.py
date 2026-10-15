@@ -176,7 +176,8 @@ class TestValutatoreOnSubmissions(UnitTestCase):
 			no_moderator(),
 			patch.object(permissions.frappe.db, "get_value", return_value=stored),
 			patch.object(permissions, "_is_valutatore_of_student", return_value=of_student),
-			patch.object(permissions, "can_administer_assessment", return_value=False),
+			# v2.66.0: the reviewer rule upstream applies once the Valutatore branch declines.
+			patch.object(permissions, "can_review_submission", return_value=False),
 		):
 			return permissions.assessment_submission_has_permission(doc, "write", "valutatore@example.com")
 
