@@ -36,26 +36,110 @@ function trueskillErrorMessage(code) {
 			'Per ottenere il certificato inserisci il codice fiscale nel tuo profilo.',
 		),
 		missing_fiscal_id: __(
-			'Codice fiscale mancante nel profilo. Contatta l\'amministrazione per emettere il certificato.',
+			"Codice fiscale mancante nel profilo. Contatta l'amministrazione per emettere il certificato.",
 		),
 		invalid_recipient: __(
-			'Dati del destinatario incompleti. Contatta l\'amministrazione.',
+			"Dati del destinatario incompleti. Contatta l'amministrazione.",
 		),
 		invalid_template_id: __(
-			'Template del certificato non valido. Contatta l\'amministrazione.',
+			"Template del certificato non valido. Contatta l'amministrazione.",
 		),
 		service_unavailable: __(
 			'Il servizio certificati non è al momento disponibile. Riprova più tardi.',
 		),
 		// The course's TrueSkill template asks for data the platform never sends.
 		template_requires_data: __(
-			'Il certificato di questo corso non può essere emesso: il template TrueSkill richiede dati aggiuntivi. Contatta l\'amministrazione.',
+			"Il certificato di questo corso non può essere emesso: il template TrueSkill richiede dati aggiuntivi. Contatta l'amministrazione.",
 		),
 		required_data_missing: __(
-			'Il certificato di questo corso non può essere emesso: il template TrueSkill richiede dati aggiuntivi. Contatta l\'amministrazione.',
+			"Il certificato di questo corso non può essere emesso: il template TrueSkill richiede dati aggiuntivi. Contatta l'amministrazione.",
+		),
+		// Codes TrueSkills returns (brief §4) or that the download endpoint derives.
+		badge_balance_insufficient: __(
+			'The certificate cannot be issued right now: the TrueSkill account has run out of badge credits. Contact the administration.',
+		),
+		certificate_not_found: __(
+			'This certificate no longer exists on TrueSkill: it may have been withdrawn. Contact the administration.',
+		),
+		unable_to_generate_file: __(
+			'TrueSkill cannot generate this certificate file right now. Please try again later.',
+		),
+		template_not_found: __(
+			'The TrueSkill template of this course no longer exists. Contact the administration.',
+		),
+		template_not_enabled: __(
+			'The TrueSkill template of this course is not enabled. Contact the administration.',
+		),
+		invalid_template_data: __(
+			'The TrueSkill template of this course is incomplete. Contact the administration.',
+		),
+		organization_not_found: __(
+			'The TrueSkill account set up on the platform no longer exists. Contact the administration.',
+		),
+		invalid_fiscal_id_hash: __(
+			'TrueSkill did not accept the fiscal code in your profile. Check it and try again.',
+		),
+		unauthorized: __(
+			'The platform cannot connect to TrueSkill: the API key is not valid. Contact the administration.',
+		),
+		internal_error: __(
+			'TrueSkill ran into an internal error. Please try again later.',
+		),
+		not_permitted: __('You are not allowed to open this certificate.'),
+		download_failed: __(
+			'Impossibile aprire il certificato. Riprova più tardi.',
 		),
 	}
-	return map[code] || __('Impossibile aprire il certificato. Riprova più tardi.')
+	if (map[code]) return map[code]
+	// An unknown code still reaches the learner, so the administration can trace it.
+	// Only a real code (snake_case) is shown, never an exception's prose.
+	return /^[a-z_]+$/.test(code || '') && code !== 'failed'
+		? __(
+				'Unable to open the certificate (TrueSkill error: {0}). Please try again later.',
+				[code],
+			)
+		: __('Impossibile aprire il certificato. Riprova più tardi.')
+}
+
+// The Issue Log keeps TrueSkill's code, but a failure without one is stored as the
+// client's summary ("TrueSkills POST /issue → 401"): bring it back to a code.
+function normalizeCode(raw) {
+	if (!raw || /^[a-z_]+$/.test(raw)) return raw
+	const named = raw.match(/\(([a-z_]+)\)\s*$/)
+	if (named) return named[1]
+	if (/→ 401\b/.test(raw)) return 'unauthorized'
+	if (/→ 5\d\d\b/.test(raw)) return 'internal_error'
+	if (/request failed/i.test(raw)) return 'service_unavailable'
+	return raw
+}
+
+// Read the error code out of a failed download of an issued badge: the endpoint
+// throws TrueSkillsDownloadError with the code as its message.
+async function downloadErrorCode(res) {
+	const body = await res.json().catch(() => ({}))
+	if (body.exc_type === 'PermissionError') return 'not_permitted'
+	if (body.exc_type === 'TrueSkillsDownloadError') {
+		try {
+			const [first] = JSON.parse(body._server_messages || '[]')
+			const message = JSON.parse(first || '{}').message
+			if (message) return message
+		} catch {
+			// Fall through to the generic code.
+		}
+	}
+	return 'download_failed'
+}
+
+async function fetchIssuedBadge(trueskillId, format) {
+	const params = new URLSearchParams({
+		certificate_id: String(trueskillId),
+		file_format: format,
+	})
+	const res = await fetch(
+		`/api/method/os_lms.os_lms.trueskills.api.download?${params.toString()}`,
+	)
+	if (!res.ok) throw new Error(await downloadErrorCode(res))
+	return res.arrayBuffer()
 }
 
 export function useCertificateViewer() {
@@ -91,7 +175,7 @@ export function useCertificateViewer() {
 		const code =
 			err?.exc_type === 'MissingFiscalIdError'
 				? 'fiscal_id_required'
-				: err?.message
+				: normalizeCode(err?.message)
 		if (code === 'timeout') {
 			toast.error(
 				__(
@@ -104,17 +188,11 @@ export function useCertificateViewer() {
 	}
 
 	async function openBadgeImage(win, trueskillId) {
-		const params = new URLSearchParams({
-			certificate_id: String(trueskillId),
-			file_format: 'image',
-		})
-		const res = await fetch(
-			`/api/method/os_lms.os_lms.trueskills.api.download?${params.toString()}`,
-		)
-		if (!res.ok) throw new Error('download_failed')
-		const buf = await res.arrayBuffer()
+		const buf = await fetchIssuedBadge(trueskillId, 'image')
 		// Force image/png so the browser renders it inline instead of downloading.
-		const blobUrl = URL.createObjectURL(new Blob([buf], { type: 'image/png' }))
+		const blobUrl = URL.createObjectURL(
+			new Blob([buf], { type: 'image/png' }),
+		)
 		// Not through navigate(): safeUrl rejects blob: URLs, and this one is
 		// minted here from our own download, so there is nothing to allowlist.
 		if (win) win.location.href = blobUrl
@@ -292,10 +370,36 @@ export function useCertificateViewer() {
 		}
 	}
 
+	// "Download Openbadge" / "JSON-LD" on a certificate the platform issued: saved
+	// as a file, and a TrueSkill refusal becomes a toast instead of a raw error page.
+	async function downloadIssuedFile({ trueskillId, format }) {
+		if (opening.value || !trueskillId) return
+		opening.value = true
+		try {
+			const buf = await fetchIssuedBadge(trueskillId, format)
+			const file = RECEIVED_FILES[format]
+			const url = URL.createObjectURL(
+				new Blob([buf], { type: file.type }),
+			)
+			const link = document.createElement('a')
+			link.href = url
+			link.download = `trueskill_${trueskillId}.${file.extension}`
+			document.body.appendChild(link)
+			link.click()
+			link.remove()
+			setTimeout(() => URL.revokeObjectURL(url), 10000)
+		} catch (err) {
+			toast.error(trueskillErrorMessage(normalizeCode(err?.message)))
+		} finally {
+			opening.value = false
+		}
+	}
+
 	return {
 		opening,
 		openCourseCertificate,
 		openIssuedCertificate,
+		downloadIssuedFile,
 		openReceivedBadge,
 		downloadReceivedFile,
 	}

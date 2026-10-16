@@ -66,7 +66,6 @@
 	</div>
 </template>
 <script setup>
-import { openExternal } from '@/utils/openExternal'
 import { createListResource, createResource } from 'frappe-ui'
 import { inject, onMounted, ref, watch } from 'vue'
 // OSLMS-CUSTOM: open the TrueSkills openbadge image for certificates issued
@@ -134,7 +133,7 @@ watch(
 	{ immediate: true },
 )
 
-const { openIssuedCertificate } = useCertificateViewer()
+const { openIssuedCertificate, downloadIssuedFile } = useCertificateViewer()
 const openingName = ref(null)
 
 const openCertificate = async (certificate) => {
@@ -151,15 +150,11 @@ const openCertificate = async (certificate) => {
 	}
 }
 
+// OSLMS-CUSTOM: fetched and saved by useCertificateViewer, so a TrueSkill refusal
+// shows a readable toast instead of the endpoint's raw error page in a new tab.
 const downloadOpenbadge = (certificateName, fileFormat) => {
 	const status = trueskillsStatus.value[certificateName]
 	if (!status?.trueskill_id) return
-	const params = new URLSearchParams({
-		certificate_id: status.trueskill_id,
-		file_format: fileFormat,
-	})
-	openExternal(
-		`/api/method/os_lms.os_lms.trueskills.api.download?${params.toString()}`,
-	)
+	downloadIssuedFile({ trueskillId: status.trueskill_id, format: fileFormat })
 }
 </script>

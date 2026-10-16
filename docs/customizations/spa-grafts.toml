@@ -32,6 +32,21 @@ Moderator e l'istruttore del corso. L'upstream conosce solo Moderator e istrutto
   deny = ["Student", "Valutatore", "Guest"]
 
 [[entries]]
+id = "course-card-self-enrol-badge-wraps"
+title = "Il messaggio «Contatta l'amministratore per iscriverti» va a capo nella card corso"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Sui corsi con iscrizione autonoma disattivata la card mostra il messaggio in un Badge di
+frappe-ui, che è una riga sola (whitespace-nowrap) ad altezza fissa (h-6): il testo
+italiano è più lungo della card e ne usciva (collaudo v2.66.0, prova 7, 2026-10-16).
+Le classi !h-auto !whitespace-normal !rounded-lg lo fanno andare a capo."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/CourseCardOverlay.vue"
+  anchor = "class=\"mb-4 !h-auto !whitespace-normal !rounded-lg py-1.5 text-center\""
+
+[[entries]]
 id = "course-detail-docente-admin-gate"
 title = "Pagina corso e lezione: il Docente è trattato da amministratore su ogni corso"
 layer = "spa-graft"
@@ -130,7 +145,8 @@ openbadge TrueSkills (aperta in linea), non il PDF del Print Format interno. Val
 card corso e nella pagina certificati del profilo; i certificati interni o di batch
 continuano ad aprire il PDF. TrueSkills è alternativo al certificato interno, quindi il
 pulsante si abilita anche con enable_certification spento.
-Merge di v2.61.0 (2026-09-23): l'upstream trasforma la scheda certificato del profilo in <a :href=PDF>; tenuta la nostra div cliccabile (il clic passa da useCertificateViewer e la scheda contiene i pulsanti openbadge, che non possono stare dentro un link). Accessibilità da tastiera (role=button, tabindex) da valutare a parte."""
+Merge di v2.61.0 (2026-09-23): l'upstream trasforma la scheda certificato del profilo in <a :href=PDF>; tenuta la nostra div cliccabile (il clic passa da useCertificateViewer e la scheda contiene i pulsanti openbadge, che non possono stare dentro un link). Accessibilità da tastiera (role=button, tabindex) da valutare a parte.
+2026-10-16: i pulsanti «Scarica Openbadge» / «JSON-LD» scaricano con downloadIssuedFile (fetch + file) invece di aprire l'endpoint in una scheda; un rifiuto di TrueSkill (codice restituito da TrueSkillsDownloadError) diventa un messaggio leggibile."""
 
   [[entries.sites]]
   file = "frontend/src/components/CourseCardOverlay.vue"
@@ -144,7 +160,7 @@ Merge di v2.61.0 (2026-09-23): l'upstream trasforma la scheda certificato del pr
 
   [[entries.sites]]
   file = "frontend/src/pages/ProfileCertificates.vue"
-  anchor = "const { openIssuedCertificate } = useCertificateViewer()"
+  anchor = "const { openIssuedCertificate, downloadIssuedFile } = useCertificateViewer()"
 
   [[entries.sites]]
   file = "frontend/src/types/lms/LMSCourse.ts"

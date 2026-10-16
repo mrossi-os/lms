@@ -72,11 +72,13 @@
 						</span>
 					</Button>
 				</router-link>
+				<!-- OSLMS-CUSTOM: Badge is a single nowrap line of fixed height; the Italian
+				text is longer than the card, so it wraps here and grows with its lines. -->
 				<Badge
 					v-else-if="course.data?.disable_self_learning && canEnroll"
 					theme="blue"
 					size="lg"
-					class="mb-4"
+					class="mb-4 !h-auto !whitespace-normal !rounded-lg py-1.5 text-center"
 				>
 					{{ __('Contact the Administrator to enroll for this course') }}
 				</Badge>

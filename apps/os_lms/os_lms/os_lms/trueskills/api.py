@@ -3,7 +3,11 @@ from frappe import _
 from frappe.utils import nowdate
 
 from .certificate_image import build_certificate_png_data_uri
-from .client import TrueSkillsClientError, TrueSkillsError
+from .client import (
+	TrueSkillsError,
+	TrueSkillsNetworkError,
+	TrueSkillsServerError,
+)
 from .service import TrueSkillsService
 
 # Characters of the API key shown in the settings (e.g. "ts_ab12c"), never the whole key.
@@ -486,6 +490,28 @@ def retry_emission(issue_log: str) -> dict:
 	return {"ok": True}
 
 
+class TrueSkillsDownloadError(frappe.ValidationError):
+	"""A badge file TrueSkills would not serve; the message is a stable error code."""
+
+
+def trueskills_error_code(exc: TrueSkillsError) -> str:
+	"""Reduce a TrueSkills failure to the stable code the SPA maps to a message.
+
+	TrueSkills names most errors in the body's ``message``; a 401 comes with an
+	empty body, and network or server failures carry no code at all.
+	"""
+	code = getattr(exc, "message_code", None)
+	if code:
+		return code
+	if getattr(exc, "status", None) == 401:
+		return "unauthorized"
+	if isinstance(exc, TrueSkillsNetworkError):
+		return "service_unavailable"
+	if isinstance(exc, TrueSkillsServerError):
+		return "internal_error"
+	return "download_failed"
+
+
 @frappe.whitelist()
 def download(certificate_id: int, file_format: str) -> None:
 	"""Stream the binary download for an issued certificate.
@@ -501,10 +527,9 @@ def download(certificate_id: int, file_format: str) -> None:
 	_require_certificate_owner_or_admin(int(certificate_id))
 	try:
 		_, content = TrueSkillsService().download(int(certificate_id), file_format)
-	except TrueSkillsClientError as exc:
-		frappe.throw(str(exc), frappe.ValidationError)
 	except TrueSkillsError as exc:
-		frappe.throw(str(exc))
+		# The SPA turns the code into a message the learner can understand.
+		frappe.throw(trueskills_error_code(exc), TrueSkillsDownloadError)
 
 	extension = "png" if file_format == "image" else "jsonld"
 	frappe.local.response.filename = f"trueskill_{int(certificate_id)}.{extension}"
