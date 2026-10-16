@@ -5408,11 +5408,20 @@ modal di creazione (carica il documento completo) e la elimina con conferma; l'e
 passa da os_lms.os_lms.api.delete_live_class e può avvisare gli studenti della classe via email
 e notifica in piattaforma (casella attiva di default). Una modifica di titolo, data, ora, durata
 o fuso riprogramma la riunione Zoom e avvisa gli studenti (lato backend).
-Merge di v2.62.0 (2026-09-24): la modifica non apre piu una modale: route EditLiveClass verso il modulo instradato LiveClassForm (decisione v2.62.0: un solo modulo)."""
+Merge di v2.62.0 (2026-09-24): la modifica non apre piu una modale: route EditLiveClass verso il modulo instradato LiveClassForm (decisione v2.62.0: un solo modulo).
+2026-10-16 (collaudo v2.65, prova 2): confirmDelete restituisce una promise, quindi il pulsante Elimina
+gira e non si preme finché il server non risponde, e Annulla non chiude durante l'eliminazione; un
+doppio clic mandava due eliminazioni (doppia email agli studenti, poi «in fase di modifica»). Lato
+server delete_live_class rifiuta una classe già eliminata o bloccata da un'altra richiesta prima delle email."""
 
   [[entries.sites]]
   file = "frontend/src/routes.js"
   anchor = "name: 'EditLiveClass',"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/LiveClass.vue"
+  anchor = "if (deleteLiveClass.loading) return"
+  symbol = "confirmDelete"
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/LiveClass.vue"

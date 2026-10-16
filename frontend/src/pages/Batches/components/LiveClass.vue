@@ -142,7 +142,10 @@
 			actions: [
 				{
 					label: __('Cancel'),
-					onClick: ({ close }) => close(),
+					// OSLMS-CUSTOM: the dialog stays open until a running delete answers.
+					onClick: ({ close }) => {
+						if (!deleteLiveClass.loading) close()
+					},
 				},
 				{
 					label: __('Delete'),
@@ -353,25 +356,33 @@ const openDeleteModal = (cls) => {
 	showDeleteDialog.value = true
 }
 
-// OSLMS-CUSTOM: delete with notify_students flag
+// OSLMS-CUSTOM: delete with notify_students flag. The delete is slow (student emails,
+// Zoom cleanup), so it returns a promise: the dialog keeps the Delete button spinning
+// and unclickable until the server answers, and a second click cannot send a second
+// delete (which used to fail with "being modified by another user").
 const confirmDelete = (close) => {
-	deleteLiveClass.submit(
-		{
-			name: deletingClass.value.name,
-			notify_students: notifyStudentsOnDelete.value ? 1 : 0,
-		},
-		{
-			onSuccess() {
-				toast.success(__('Lezione eliminata'))
-				resetToFirstPage()
-				deletingClass.value = null
-				close()
+	if (deleteLiveClass.loading) return
+	return new Promise((resolve) => {
+		deleteLiveClass.submit(
+			{
+				name: deletingClass.value.name,
+				notify_students: notifyStudentsOnDelete.value ? 1 : 0,
 			},
-			onError(err) {
-				toast.error(err.messages?.[0] || err)
+			{
+				onSuccess() {
+					toast.success(__('Lezione eliminata'))
+					resetToFirstPage()
+					deletingClass.value = null
+					close()
+					resolve()
+				},
+				onError(err) {
+					toast.error(err.messages?.[0] || err)
+					resolve()
+				},
 			},
-		},
-	)
+		)
+	})
 }
 
 const hasProviderAccount = () => {

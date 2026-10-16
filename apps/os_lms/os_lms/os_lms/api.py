@@ -2152,10 +2152,28 @@ def join_live_class(name: str) -> None:
 	frappe.local.response["location"] = target
 
 
+def _lock_live_class_for_delete(name: str) -> None:
+	"""Hold the class row until this delete commits; refuse while another request holds it.
+
+	NOWAIT, so the second request fails at once instead of queueing and sending the
+	students a second cancellation. MariaDB reports the lost race either as a lock
+	timeout or as "record has changed since last read" (seen on elite 2026-10-16).
+	"""
+	try:
+		frappe.db.get_value("LMS Live Class", name, "name", for_update=True, wait=False)
+	except (frappe.QueryTimeoutError, frappe.QueryDeadlockError):
+		frappe.throw(frappe._("This live class is already being deleted. Please wait a moment."))
+
+
 @frappe.whitelist()
 def delete_live_class(name: str, notify_students: int = 0) -> dict:
 	"""Delete a Live Class. Optionally notify enrolled students by email + Notification Log."""
+	# A second request for the same class (double click, two tabs) must stop here, before
+	# the cancellation emails: the row lock of delete_doc comes after them.
+	if not frappe.db.exists("LMS Live Class", name):
+		frappe.throw(frappe._("This live class has already been deleted."), frappe.DoesNotExistError)
 	_ensure_live_class_admin(name)
+	_lock_live_class_for_delete(name)
 
 	doc = frappe.get_doc("LMS Live Class", name)
 	title = doc.title
