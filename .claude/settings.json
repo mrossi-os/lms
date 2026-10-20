@@ -9,7 +9,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 scripts/inventory_guard.py",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/inventory_guard.py\"",
             "timeout": 15,
             "statusMessage": "Controllo inventario personalizzazioni"
           }
