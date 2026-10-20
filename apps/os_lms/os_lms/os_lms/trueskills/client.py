@@ -13,6 +13,9 @@ CERTIFICATES_BASE_PATH = "/api/v1/service/certificates"
 RETRY_BACKOFF_SECONDS = (1.0, 2.0, 4.0)
 RETRY_JITTER_RATIO = 0.2  # ±20%
 
+# POST endpoints that only read data, so repeating them is safe.
+RETRYABLE_POST_PATHS = ("verify", "search-by-email")
+
 
 class TrueSkillsError(Exception):
 	"""Base exception for TrueSkills client failures."""
@@ -48,9 +51,11 @@ class TrueSkillsClient:
 	path ``/api/v1/service/certificates`` is appended automatically to
 	``settings.endpoint`` (which stores host only).
 
-	Retry policy (per brief §4): ``GET *`` and ``POST /verify`` may retry on
-	5xx/network errors with exponential backoff + jitter (max 3 attempts).
-	All other POST requests are non-idempotent and never retried automatically.
+	Retry policy (per brief §4): ``GET *``, ``POST /verify`` and
+	``POST /search-by-email`` may retry on 5xx/network errors with exponential
+	backoff + jitter (max 3 attempts, or fewer when the caller passes
+	``max_attempts``). All other POST requests are non-idempotent and never
+	retried automatically.
 	"""
 
 	DEFAULT_TIMEOUT = 15
@@ -106,8 +111,9 @@ class TrueSkillsClient:
 		method = method.upper()
 		if method == "GET":
 			return True
-		# POST /verify is the only retryable POST (idempotent by design).
-		return method == "POST" and path.lstrip("/").startswith("verify")
+		# The only retryable POSTs are read-only by design: /verify and
+		# /search-by-email (a POST only to keep the email out of URLs and logs).
+		return method == "POST" and path.lstrip("/").startswith(RETRYABLE_POST_PATHS)
 
 	@staticmethod
 	def _sleep_with_jitter(base: float) -> None:
@@ -124,6 +130,7 @@ class TrueSkillsClient:
 		json: dict | None = None,
 		params: dict | None = None,
 		accept: str | None = None,
+		max_attempts: int | None = None,
 	) -> requests.Response:
 		url = self._build_url(path)
 		headers: dict[str, str] = {}
@@ -134,6 +141,8 @@ class TrueSkillsClient:
 
 		retryable = self._is_retryable(method, path)
 		attempts = len(RETRY_BACKOFF_SECONDS) if retryable else 1
+		if retryable and max_attempts:
+			attempts = max(1, min(attempts, max_attempts))
 
 		for attempt in range(attempts):
 			try:
@@ -203,17 +212,19 @@ class TrueSkillsClient:
 		self._raise_for_status(response, "GET", path)
 		return self._json_or_empty(response)
 
-	def post(self, path: str, json: dict | None = None) -> Any:
-		response = self._do_request("POST", path, json=json)
+	def post(self, path: str, json: dict | None = None, max_attempts: int | None = None) -> Any:
+		response = self._do_request("POST", path, json=json, max_attempts=max_attempts)
 		self._raise_for_status(response, "POST", path)
 		return self._json_or_empty(response)
 
-	def download(self, path: str, accept: str | None = None) -> tuple[str, bytes]:
+	def download(
+		self, path: str, accept: str | None = None, max_attempts: int | None = None
+	) -> tuple[str, bytes]:
 		"""GET a binary endpoint (e.g. ``/download/{id}/{format}``).
 
 		Returns ``(content_type, raw_bytes)``. Does not parse JSON on success.
 		"""
-		response = self._do_request("GET", path, accept=accept)
+		response = self._do_request("GET", path, accept=accept, max_attempts=max_attempts)
 		self._raise_for_status(response, "GET", path)
 		content_type = response.headers.get("Content-Type", "application/octet-stream")
 		return content_type, response.content

@@ -71,7 +71,7 @@
 							</div>
 						</template>
 					</Tooltip>
-					<span id="versionApp" class="text-xs text-ink-gray-5"> 1.12.5 </span>
+					<span id="versionApp" class="text-xs text-ink-gray-5"> 1.12.6 </span>
 				</div>
 
 				<Tooltip

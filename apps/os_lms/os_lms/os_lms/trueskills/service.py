@@ -5,6 +5,10 @@ from .client import TrueSkillsClient, TrueSkillsClientError, TrueSkillsError
 from .safelog import get_logger
 from .settings import TrueSkillsSettings
 
+# search-by-email accepts at most 100 rows per page; the cap bounds a runaway loop.
+SEARCH_PAGE_SIZE = 100
+SEARCH_MAX_PAGES = 10
+
 
 class TrueSkillsService:
 	"""High-level operations performed against the TrueSkills API.
@@ -17,7 +21,9 @@ class TrueSkillsService:
 	_client: TrueSkillsClient | None = None
 	_logger = None
 
-	def __init__(self) -> None:
+	def __init__(self, timeout: int | None = None) -> None:
+		# Per-request timeout (seconds) for the HTTP client; ``None`` keeps its default.
+		self._timeout = timeout
 		self._template_cache: dict[int, dict] = {}
 		self._template_cache_lock = threading.Lock()
 		self._organization_id: int | None = None
@@ -31,7 +37,7 @@ class TrueSkillsService:
 	@property
 	def client(self) -> TrueSkillsClient:
 		if self._client is None:
-			self._client = TrueSkillsClient(self.settings)
+			self._client = TrueSkillsClient(self.settings, timeout=self._timeout)
 		return self._client
 
 	@property
@@ -116,7 +122,44 @@ class TrueSkillsService:
 			payload["fiscalId"] = fiscal_id
 		return self.client.post("/verify", json=payload)
 
-	def download(self, certificate_id: int, file_format: str) -> tuple[str, bytes]:
+	def search_certificates_by_email(self, email: str, *, max_attempts: int | None = None) -> list[dict]:
+		"""``POST /search-by-email`` — every certificate issued to ``email``, newest first.
+
+		Walks all result pages (a page is the last one when ``page * pageSize >=
+		total``). The email only travels in the request body: it is never put in a
+		URL or written to a log. No certificate (or an email never used) is a
+		normal ``200`` with an empty list, not an error.
+
+		Raises ``TrueSkillsError`` when the answer does not have the documented
+		shape (some misconfigurations are answered with a ``200`` HTML page).
+		"""
+		certificates: list[dict] = []
+		page_size = SEARCH_PAGE_SIZE
+		for page in range(1, SEARCH_MAX_PAGES + 1):
+			response = self.client.post(
+				"/search-by-email",
+				json={"email": email, "page": page, "pageSize": page_size},
+				max_attempts=max_attempts,
+			)
+			rows = response.get("certificates") if isinstance(response, dict) else None
+			total = response.get("total") if isinstance(response, dict) else None
+			if not isinstance(rows, list) or not isinstance(total, int):
+				raise TrueSkillsError("TrueSkills search-by-email returned an unexpected response.")
+			certificates.extend(row for row in rows if isinstance(row, dict))
+			# ``pageSize`` is the size really applied by the server.
+			applied = response.get("pageSize")
+			page_size = applied if isinstance(applied, int) and applied > 0 else page_size
+			if not rows or page * page_size >= total:
+				return certificates
+		self.logger.warning(
+			f"TrueSkills search-by-email: stopped after {SEARCH_MAX_PAGES} pages "
+			f"(total={total}); the list is truncated."
+		)
+		return certificates
+
+	def download(
+		self, certificate_id: int, file_format: str, *, max_attempts: int | None = None
+	) -> tuple[str, bytes]:
 		"""``GET /download/{id}/{format}`` — returns (content_type, bytes).
 
 		``file_format`` must be ``"image"`` (PNG) or ``"jsonp"`` (JSON-LD).
@@ -125,7 +168,9 @@ class TrueSkillsService:
 			raise TrueSkillsError(f"Unsupported download format: {file_format!r}")
 		accept = "image/png" if file_format == "image" else "application/ld+json"
 		return self.client.download(
-			f"/download/{int(certificate_id)}/{file_format}", accept=accept
+			f"/download/{int(certificate_id)}/{file_format}",
+			accept=accept,
+			max_attempts=max_attempts,
 		)
 
 	# ---- Write -------------------------------------------------------
