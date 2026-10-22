@@ -213,6 +213,9 @@ doc_events = {
         "after_rename": "os_lms.events.lesson.reindex_after_rename",
     },
     "User": {
+        # A Gestore cannot write the permlevel-1 roles of a user it imports:
+        # give those users the "LMS Student" role Frappe strips from them.
+        "validate": "os_lms.events.user.grant_student_role_on_gestore_import",
         "after_insert": "os_lms.auth.mark_first_login",
         "on_trash": "os_lms.events.user.delete_lms_user_links",
     },

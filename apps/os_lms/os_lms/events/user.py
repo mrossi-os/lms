@@ -127,3 +127,27 @@ def _collect_user_link_fields() -> list[tuple[str, str]]:
 	for row in (*standard, *custom):
 		seen.add((row["doctype"], row["fieldname"]))
 	return sorted(seen)
+
+
+def grant_student_role_on_gestore_import(doc, method=None):
+	"""validate hook on User: a user imported by a Gestore becomes an LMS Student.
+
+	The `roles` table of User sits at permlevel 1, which only System Manager may
+	write. Data Import respects permissions, so when a Gestore imports users
+	Frappe's validate_higher_perm_levels wipes their roles before validation, the
+	"LMS Student" appended by lms' before_insert hook included. The users came
+	out with no role at all and could not open any quiz (get_quiz_with_questions
+	refuses users without an LMS role). That strip runs before `validate`, so
+	appending the role here lets it be saved with the user.
+
+	Only users left with no role at all are touched: an import run by someone who
+	may assign roles keeps whatever the file asked for.
+	"""
+	if not (doc.is_new() and frappe.flags.in_import):
+		return
+	if doc.get("roles"):
+		return
+	if "Gestore" not in frappe.get_roles():
+		return
+
+	doc.append_roles("LMS Student")
