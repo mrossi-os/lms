@@ -48,6 +48,11 @@
 			</div>
 
 			<SettingsRowList :groups="groups" @action="activate" />
+			<!-- OSLMS-CUSTOM: self-service account deletion (ESG) -->
+			<DeleteAccountDialog
+				v-if="showDeleteAccount"
+				v-model="showDeleteAccount"
+			/>
 		</template>
 
 		<BottomSheet
@@ -89,6 +94,13 @@ import {
 	toggleContrast,
 	withContrastRow,
 } from '@/oslms/utils/contrast'
+// OSLMS-CUSTOM: self-service account deletion row (ESG), before Log out
+import {
+	DELETE_ACCOUNT_ACTION,
+	canDeleteOwnAccount,
+	withDeleteAccountRow,
+} from '@/oslms/utils/accountDeletion'
+import DeleteAccountDialog from '@/oslms/components/DeleteAccountDialog.vue'
 import type { ThemePreference } from '@/utils/theme'
 import {
 	ensureMobileNavLinks,
@@ -175,19 +187,24 @@ const primaryLabels = computed(() =>
 // `hasRoute` separates a destination that is a route from one that is a URL an
 // admin typed; not every sidebar link points into the SPA.
 const groups = computed(() =>
-	// OSLMS-CUSTOM: high-contrast row (ESG)
-	withContrastRow(
-		buildYouRows({
-			sidebarLinks: sidebarLinks.value,
-			otherLinks: otherLinks.value,
-			primaryLabels: primaryLabels.value,
-			themePreference: themePreference.value,
-			unreadCount: unreadCount.value,
-			hasRoute: (name: string) => router.hasRoute(name),
-		}),
-		highContrast.value
+	// OSLMS-CUSTOM: high-contrast and delete-account rows (ESG)
+	withDeleteAccountRow(
+		withContrastRow(
+			buildYouRows({
+				sidebarLinks: sidebarLinks.value,
+				otherLinks: otherLinks.value,
+				primaryLabels: primaryLabels.value,
+				themePreference: themePreference.value,
+				unreadCount: unreadCount.value,
+				hasRoute: (name: string) => router.hasRoute(name),
+			}),
+			highContrast.value
+		),
+		canDeleteOwnAccount(user.value)
 	)
 )
+
+const showDeleteAccount = ref(false)
 
 // Asked for here, not only by MobileLayout, so a cold deep link with no bar
 // mounted above still fills the Pages group. Keyed on the viewer, so arriving
@@ -254,6 +271,8 @@ const activate = (action: string): void => {
 	else if (action === COLOUR_MODE_ACTION) showColourMode.value = true
 	// OSLMS-CUSTOM: high-contrast row toggles in place (ESG)
 	else if (action === CONTRAST_ACTION) toggleContrast()
+	// OSLMS-CUSTOM: delete-account row opens its dialog (ESG)
+	else if (action === DELETE_ACCOUNT_ACTION) showDeleteAccount.value = true
 	else if (action === 'logout') logout.submit()
 }
 

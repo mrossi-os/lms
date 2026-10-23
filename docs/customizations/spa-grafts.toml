@@ -8216,6 +8216,51 @@ smette di agire in silenzio; highContrast.test.ts lo segnala. Se l'upstream camb
   anchor = "else if (action === CONTRAST_ACTION) toggleContrast()"
   symbol = "activate"
 
+[[entries]]
+id = "self-service-account-deletion"
+title = "Pulsante «Elimina account» nel profilo e riga nella pagina «Tu» del telefono"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Requisito ESG (2026-10-23, branch feature/esg, punto 3): ogni utente tranne Administrator può
+cancellare da solo il proprio account, in modo completo (non anonimizzazione: l'anonimizzazione
+di Frappe è una pseudonimizzazione e l'EDPB la considera una cancellazione non riuscita).
+Logica in file nostri: backend os_lms/os_lms/account_deletion.py (start_account_deletion dice se
+si conferma con la password o con un codice via email per gli account senza password;
+delete_my_account verifica, disattiva, chiude le sessioni e accoda erase_user, che cancella tutto
+e lascia nessuna traccia dell'email: find_traces lo verifica nei test) ed events/user.py
+(cascata on_trash che distingue i dati della persona dai record altrui in cui ha solo un ruolo);
+frontend src/oslms/components/DeleteAccountDialog.vue e src/oslms/utils/accountDeletion.ts.
+Innesti nei file upstream: (1) Profile.vue, pulsante rosso «Delete account» dopo «Edit Profile»
+(solo sul proprio profilo, non in read-only, non per Administrator) + DeleteAccountDialog, import
+e ref showDeleteAccount; (2) MobileYou.vue, il computed groups passa anche da
+withDeleteAccountRow (riga prima di «Log out»), activate() gestisce DELETE_ACCOUNT_ACTION, il
+dialog è montato sotto la lista solo mentre è aperto (v-if).
+ATTENZIONE ai merge: se l'upstream cambia la chiave 'Log out' della riga di uscita,
+withDeleteAccountRow non inserisce più la riga."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Profile.vue"
+  anchor = "canDeleteOwnAccount($user.data)"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Profile.vue"
+  anchor = "import DeleteAccountDialog from '@/oslms/components/DeleteAccountDialog.vue'"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/MobileYou.vue"
+  anchor = "withDeleteAccountRow("
+  symbol = "groups"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/MobileYou.vue"
+  anchor = "else if (action === DELETE_ACCOUNT_ACTION) showDeleteAccount.value = true"
+  symbol = "activate"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/MobileYou.vue"
+  anchor = "v-if=\"showDeleteAccount\""
+
 # --- Contesto del tutor AI ------------------------------------------------------
 
 [[entries]]

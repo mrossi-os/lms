@@ -101,6 +101,21 @@
 					</template>
 					{{ __('Edit Profile') }}
 				</Button>
+				<!-- OSLMS-CUSTOM: self-service account deletion (ESG) -->
+				<Button
+					v-if="
+						isSessionUser() && !readOnlyMode && canDeleteOwnAccount($user.data)
+					"
+					class="mt-3 sm:ms-2 sm:mt-0"
+					theme="red"
+					@click="showDeleteAccount = true"
+				>
+					<template #prefix>
+						<span class="lucide-trash-2 size-4" />
+					</template>
+					{{ __('Delete account') }}
+				</Button>
+				<DeleteAccountDialog v-if="showDeleteAccount" v-model="showDeleteAccount" />
 			</div>
 
 			<div class="mb-4 mt-10">
@@ -147,8 +162,12 @@ import NotFound from '@/pages/NotFound.vue'
 import EditCoverImage from '@/components/Modals/EditCoverImage.vue'
 import { openFormRoute } from '@/composables/useFormRoute'
 import { safeUrl } from '@/utils/safeUrl'
+// OSLMS-CUSTOM: self-service account deletion (ESG)
+import DeleteAccountDialog from '@/oslms/components/DeleteAccountDialog.vue'
+import { canDeleteOwnAccount } from '@/oslms/utils/accountDeletion'
 
 const { user, brand } = sessionStore()
+const showDeleteAccount = ref(false)
 const $user = inject('$user')
 const route = useRoute()
 const router = useRouter()

@@ -13,17 +13,44 @@ CHILD_TABLE_LINKS = (
 	("LMS Program Member", "member"),
 )
 
+# Link-to-User fields where the user only acted on someone else's record:
+# graded it, hosted it, wrote the scenario a student plays. Deleting those
+# records would delete other people's data (a teacher's deletion used to take
+# every assignment they had graded with it), so the reference is reassigned:
+# to Administrator where the field is mandatory, emptied otherwise.
+ROLE_LINK_FIELDS = (
+	("LMS Assignment Submission", "evaluator"),
+	("LMS Certificate Evaluation", "evaluator"),
+	("LMS Certificate Request", "evaluator"),
+	("LMS Live Class", "host"),
+	("LMSA Quality Evaluation", "triggered_by"),
+	("LMSA Simulation Debrief", "instructor_reviewed_by"),
+	("LMSA Simulation Scenario", "created_by_instructor"),
+	("Elite API Key", "revoked_by"),
+)
+
+# The user's own records that other people's records point to: a course or a
+# certificate names its Course Evaluator, a batch or a live class its Zoom or
+# Google Meet account. The pointers are emptied before the records go.
+SHARED_PERSONAL_DOCTYPES = ("Course Evaluator", "LMS Zoom Settings", "LMS Google Meet Settings")
+
 
 def delete_lms_user_links(doc, method=None):
-	"""on_trash hook on User: removes every LMS/os_lms record that references
-	the user, so the User deletion is not blocked by LinkExistsError. Runs
-	before Frappe's check_if_doc_is_linked / check_if_doc_is_dynamically_linked
-	validation.
+	"""on_trash hook on User: removes every LMS/os_lms record that belongs to
+	the user and detaches the user from the records of others, so the User
+	deletion is not blocked by LinkExistsError. Runs before Frappe's
+	check_if_doc_is_linked / check_if_doc_is_dynamically_linked validation.
 	"""
 	user = doc.name
 
+	# 0. Records of other people that only name the user: keep them.
+	_reassign_role_links(user)
+	_detach_shared_personal_records(user)
+
 	# 1. Direct Link fields (User → LMS-scoped doctypes).
 	for doctype, fieldname in _collect_user_link_fields():
+		if (doctype, fieldname) in ROLE_LINK_FIELDS:
+			continue
 		record_names = frappe.get_all(
 			doctype,
 			filters={fieldname: user},
@@ -48,6 +75,64 @@ def delete_lms_user_links(doc, method=None):
 	# These are global by design — Frappe's own delete validation scans every
 	# dynamic link to User, so the cascade has to match the same scope.
 	_clear_dynamic_links_to_user(user)
+
+
+def _reassign_role_links(user: str) -> None:
+	for doctype, fieldname in ROLE_LINK_FIELDS:
+		if not frappe.db.exists("DocType", doctype):
+			continue
+		field = frappe.get_meta(doctype).get_field(fieldname)
+		replacement = "Administrator" if field and field.reqd else None
+		_set_link_and_fetched(doctype, fieldname, user, replacement)
+
+
+def _detach_shared_personal_records(user: str) -> None:
+	for target in SHARED_PERSONAL_DOCTYPES:
+		if not frappe.db.exists("DocType", target):
+			continue
+		owner_field = "evaluator" if target == "Course Evaluator" else "member"
+		names = frappe.get_all(target, filters={owner_field: user}, pluck="name")
+		if not names:
+			continue
+		for doctype, fieldname in _collect_link_fields_to(target):
+			for name in names:
+				_set_link_and_fetched(doctype, fieldname, name, None)
+
+
+def _set_link_and_fetched(doctype: str, fieldname: str, value: str, replacement: str | None) -> None:
+	"""Point `fieldname` from `value` to `replacement`, and empty the fields
+	fetched through it (e.g. `evaluator_name` from `evaluator.full_name`), which
+	would otherwise keep the user's name next to the new value."""
+	meta = frappe.get_meta(doctype)
+	fetched = [df.fieldname for df in meta.fields if (df.fetch_from or "").startswith(f"{fieldname}.")]
+	updates = {fieldname: replacement, **dict.fromkeys(fetched)}
+	frappe.db.set_value(doctype, {fieldname: value}, updates, update_modified=False)
+
+
+def _collect_link_fields_to(target: str) -> list[tuple[str, str]]:
+	"""(doctype, fieldname) for every non-single Link field pointing at `target`,
+	child tables included, Custom Fields included."""
+	standard = frappe.db.sql(
+		"""
+		SELECT df.parent AS doctype, df.fieldname AS fieldname
+		FROM `tabDocField` df
+		INNER JOIN `tabDocType` dt ON dt.name = df.parent
+		WHERE df.fieldtype = 'Link' AND df.options = %s AND dt.issingle = 0
+		""",
+		target,
+		as_dict=True,
+	)
+	custom = frappe.db.sql(
+		"""
+		SELECT cf.dt AS doctype, cf.fieldname AS fieldname
+		FROM `tabCustom Field` cf
+		INNER JOIN `tabDocType` dt ON dt.name = cf.dt
+		WHERE cf.fieldtype = 'Link' AND cf.options = %s AND dt.issingle = 0
+		""",
+		target,
+		as_dict=True,
+	)
+	return sorted({(row["doctype"], row["fieldname"]) for row in (*standard, *custom)})
 
 
 def _clear_dynamic_links_to_user(user: str) -> None:
