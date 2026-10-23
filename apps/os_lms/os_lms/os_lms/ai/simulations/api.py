@@ -39,12 +39,22 @@ def _instructor_courses(user: str | None = None) -> list[str]:
     )
 
 
+def _is_course_instructor(course: str) -> bool:
+    """Whether the current user is a moderator or an instructor of the course.
+
+    Asked directly, not by catching _ensure_instructor_of_course: frappe.throw
+    queues its message on the response even when the exception is caught, so a
+    student used to see "You are not an instructor of this course" next to an
+    answer that had nothing to do with it."""
+    if has_moderator_role():
+        return True
+    return bool(has_course_instructor_role() and is_instructor(course))
+
+
 def _ensure_instructor_of_course(course: str) -> None:
     """Raise PermissionError if the current user is neither moderator nor an
     instructor of the given course."""
-    if has_moderator_role():
-        return
-    if not has_course_instructor_role() or not is_instructor(course):
+    if not _is_course_instructor(course):
         frappe.throw(
             _("You are not an instructor of this course"), frappe.PermissionError
         )
@@ -319,7 +329,7 @@ def generate_debrief(session_id: str) -> dict:
     # to redraw their score until they liked it, each draw a paid LLM call.
     if session.status in ("In Progress", "Ready"):
         frappe.throw(_("The debrief is generated when the session ends."))
-    if not (has_moderator_role() or _is_course_instructor(session.course)):
+    if not _is_course_instructor(session.course):
         if session.student != frappe.session.user:
             frappe.throw(_("Not permitted"), frappe.PermissionError)
         existing = frappe.db.get_value("LMSA Simulation Debrief", {"session": session.name}, "status")
@@ -330,14 +340,6 @@ def generate_debrief(session_id: str) -> dict:
     debrief = frappe.get_doc("LMSA Simulation Debrief", name)
     return _serialize_debrief(debrief, include_scores=_viewer_can_see_scores(session))
 
-
-
-def _is_course_instructor(course: str) -> bool:
-    try:
-        _ensure_instructor_of_course(course)
-        return True
-    except frappe.PermissionError:
-        return False
 
 
 def _viewer_can_see_scores(session) -> bool:

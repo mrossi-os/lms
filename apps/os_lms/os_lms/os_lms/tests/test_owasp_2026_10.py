@@ -390,6 +390,20 @@ class TestM5VoiceTurnsAndDebrief(UnitTestCase):
 		self._generate(existing="Ready", staff=True).assert_called_once()
 
 
+	def test_asking_whether_a_student_is_an_instructor_leaves_no_message(self):
+		# frappe.throw queues its message even when the caller catches it: the
+		# student saw "You are not an instructor of this course" on their debrief.
+		from os_lms.os_lms.ai.simulations import api
+
+		before = list(frappe.local.message_log)
+		with (
+			patch.object(api, "has_moderator_role", return_value=False),
+			patch.object(api, "has_course_instructor_role", return_value=False),
+		):
+			self.assertFalse(api._is_course_instructor("C"))
+		self.assertEqual(frappe.local.message_log, before)
+
+
 class TestM7SpeechLimits(UnitTestCase):
 	def test_text_to_speech_is_bounded(self):
 		from os_lms.os_lms.ai.audio import api

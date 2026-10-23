@@ -196,8 +196,8 @@ class TestGetDebriefEndpoint(_DebriefMockBase):
         # Force the non-privileged path so the test doesn't depend on how the
         # ambient test user's roles happen to be configured.
         with patch(
-            "os_lms.os_lms.ai.simulations.api._ensure_instructor_of_course",
-            side_effect=frappe.PermissionError,
+            "os_lms.os_lms.ai.simulations.api._is_course_instructor",
+            return_value=False,
         ):
             payload = get_debrief(session_id=start.session)
         self.assertEqual(payload["status"], "ready")

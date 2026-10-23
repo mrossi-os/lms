@@ -84,3 +84,16 @@ Only an administrator can delete a student's course data.,Solo un amministratore
 Some of the selected enrollments do not belong to this course.,Alcune delle iscrizioni selezionate non appartengono a questo corso.
 "The TrueSkill template {0} asks for data the platform does not collect ({1}): no certificate could be issued with it. Choose another template.","Il template TrueSkill {0} richiede dei dati che la piattaforma non raccoglie ({1}): con questo template nessun certificato potrebbe essere emesso. Scegli un altro template."
 TrueSkill template not supported,Template TrueSkill non supportato
+Complete the previous lesson before continuing.,Completa la lezione precedente prima di continuare.
+Only a System Manager or a Gestore can change the TrueSkills connection.,Solo un System Manager o un Gestore può modificare la connessione a TrueSkills.
+"The TrueSkills endpoint cannot contain credentials, a query or a fragment.","L'indirizzo di TrueSkills non può contenere credenziali, parametri (?) o frammenti (#)."
+The TrueSkills endpoint must be a public host: {0},L'indirizzo di TrueSkills deve essere un host pubblico: {0}
+The TrueSkills endpoint must be an https:// address.,L'indirizzo di TrueSkills deve essere un indirizzo https://.
+The debrief for this session has already been generated.,Il debrief di questa sessione è già stato generato.
+The debrief is generated when the session ends.,Il debrief viene generato alla fine della sessione.
+The question is too long.,La domanda è troppo lunga.
+The text is too long to read aloud.,Il testo è troppo lungo per essere letto ad alta voce.
+These recipients are not students of this batch: {0},Questi destinatari non sono studenti della classe: {0}
+This session is not an active voice session.,Questa sessione non è una sessione vocale attiva.
+Transcript turn too long,Battuta della trascrizione troppo lunga
+You do not have access to this live class.,Non hai accesso a questa lezione live.
