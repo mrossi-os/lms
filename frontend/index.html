@@ -39,6 +39,20 @@
 			} catch (error) {
 				/* Private-mode localStorage throws; the light default still applies. */
 			}
+			/* OSLMS-CUSTOM: high contrast, same rules as src/oslms/utils/contrast.ts —
+			   an explicit choice wins, otherwise follow the OS "increase contrast". */
+			try {
+				var contrast = localStorage.getItem('contrastPreference')
+				if (
+					contrast === 'more' ||
+					(contrast !== 'normal' &&
+						window.matchMedia('(prefers-contrast: more)').matches)
+				) {
+					document.documentElement.setAttribute('data-contrast', 'more')
+				}
+			} catch (error) {
+				/* Private-mode localStorage throws; normal contrast still applies. */
+			}
 		</script>
 		<link rel="icon" href="{{ favicon }}" />
 		<link rel="manifest" href="/api/method/lms.lms.api.get_pwa_manifest" />

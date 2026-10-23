@@ -1,0 +1,72 @@
+/* High contrast (ESG requirement): <html data-contrast="more">, set by
+   src/oslms/utils/contrast.ts and the index.html bootstrap.
+
+   Only frappe-ui tokens are remapped, so every component follows without being
+   touched. The base is the stock LMS palette: Brand Customize colors do not
+   apply under data-contrast (os_lms branding.py). Each token points at a
+   darker (light theme) or lighter (dark theme) stock shade measured against
+   the reading surfaces (base, gray-1, gray-2, elevation-1..3):
+   text >= 7:1 (WCAG AAA), borders >= 3:1. tests/highContrast.test.ts
+   recomputes those ratios from frappe-ui's token data.
+   A token is only ever pointed at a shade this file does not redefine, so no
+   var() chain can loop. */
+
+/* Status and link colors: shade 10 clears 7:1 in both themes. */
+:root[data-contrast='more'] {
+	--ink-blue-link: var(--ink-blue-10);
+	--ink-blue-5: var(--ink-blue-10);
+	--ink-blue-6: var(--ink-blue-10);
+	--ink-blue-7: var(--ink-blue-10);
+	--ink-blue-8: var(--ink-blue-10);
+	--ink-blue-9: var(--ink-blue-10);
+	--ink-red-5: var(--ink-red-10);
+	--ink-red-6: var(--ink-red-10);
+	--ink-red-7: var(--ink-red-10);
+	--ink-red-8: var(--ink-red-10);
+	--ink-red-9: var(--ink-red-10);
+	--ink-green-5: var(--ink-green-10);
+	--ink-green-6: var(--ink-green-10);
+	--ink-green-7: var(--ink-green-10);
+	--ink-green-8: var(--ink-green-10);
+	--ink-green-9: var(--ink-green-10);
+	--ink-amber-5: var(--ink-amber-10);
+	--ink-amber-6: var(--ink-amber-10);
+	--ink-amber-7: var(--ink-amber-10);
+	--ink-amber-8: var(--ink-amber-10);
+	--ink-amber-9: var(--ink-amber-10);
+}
+
+:root[data-contrast='more']:not([data-theme='dark']) {
+	--ink-gray-4: var(--ink-gray-7);
+	--ink-gray-5: var(--ink-gray-7);
+	--ink-gray-6: var(--ink-gray-7);
+	--outline-gray-1: var(--outline-gray-5);
+	--outline-gray-2: var(--outline-gray-5);
+	--outline-gray-3: var(--outline-gray-5);
+	--outline-gray-4: var(--outline-gray-5);
+}
+
+:root[data-contrast='more'][data-theme='dark'] {
+	--ink-gray-4: var(--ink-gray-8);
+	--ink-gray-5: var(--ink-gray-8);
+	--ink-gray-6: var(--ink-gray-8);
+	--ink-gray-7: var(--ink-gray-8);
+	--outline-gray-1: var(--outline-gray-6);
+	--outline-gray-2: var(--outline-gray-6);
+	--outline-gray-3: var(--outline-gray-6);
+	--outline-gray-4: var(--outline-gray-6);
+	--outline-gray-5: var(--outline-gray-6);
+}
+
+/* frappe-ui mostly draws focus with a faint ring (or none); keyboard users
+   need a visible one. */
+:root[data-contrast='more'] :focus-visible {
+	outline: 2px solid var(--ink-gray-9) !important;
+	outline-offset: 2px !important;
+}
+
+/* Color alone must not mark a link inside written content. */
+:root[data-contrast='more'] .ProseMirror a,
+:root[data-contrast='more'] .prose a {
+	text-decoration: underline;
+}

@@ -8169,6 +8169,53 @@ aggiunto in lms/translations/it.csv (Light/Dark erano già tradotti)."""
   anchor = "value: __(COLOUR_MODE_LABELS[themePreference] || 'System'),"
   symbol = "colourModeRow"
 
+[[entries]]
+id = "high-contrast-switch"
+title = "Interruttore «Alto contrasto» nel menu utente e nella pagina «Tu» del telefono"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Requisito ESG (2026-10-23, branch feature/esg, punto 2): l'utente può attivare un tema ad alto
+contrasto, indipendente da chiaro/scuro. La logica sta in file nostri:
+src/oslms/utils/contrast.ts (preferenza per dispositivo in localStorage «contrastPreference»:
+'more' | 'normal'; senza scelta segue prefers-contrast: more del sistema; scrive
+<html data-contrast="more">) e src/styles/theme/elite/high-contrast.css (importato da
+elite/main.css: rimappa solo i token frappe-ui ink/outline a ≥7:1 testo e ≥3:1 bordi sulle
+superfici di lettura, focus visibile, link sottolineati nei contenuti). I colori di Brand
+Customize non valgono in alto contrasto: branding.BRANDED_THEME_SELECTOR e os_lms.css escludono
+[data-contrast="more"]. tests/highContrast.test.ts ricalcola i rapporti dai token frappe-ui e
+confronta bootstrap e contrast.ts.
+Innesti nei file upstream: (1) index.html, secondo blocco try nello script di bootstrap del tema,
+applica data-contrast prima del primo paint (stesse regole di contrast.ts); (2) UserDropdown.vue,
+voce «Attiva/Disattiva alto contrasto» subito dopo «Toggle Theme»; (3) MobileYou.vue, il computed
+groups passa da withContrastRow (riga «High contrast» dopo «Colour mode», valore Active/Inactive)
+e activate() gestisce CONTRAST_ACTION con toggleContrast().
+ATTENZIONE ai merge: se l'upstream rinomina i token ink/outline di frappe-ui, high-contrast.css
+smette di agire in silenzio; highContrast.test.ts lo segnala. Se l'upstream cambia la chiave
+'colour-mode' della riga tema, withContrastRow non inserisce più la riga."""
+
+  [[entries.sites]]
+  file = "frontend/index.html"
+  anchor = "document.documentElement.setAttribute('data-contrast', 'more')"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Sidebar/UserDropdown.vue"
+  anchor = "import { highContrast, toggleContrast } from '@/oslms/utils/contrast'"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Sidebar/UserDropdown.vue"
+  anchor = "? __('Disable high contrast')"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/MobileYou.vue"
+  anchor = "withContrastRow("
+  symbol = "groups"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/MobileYou.vue"
+  anchor = "else if (action === CONTRAST_ACTION) toggleContrast()"
+  symbol = "activate"
+
 # --- Contesto del tutor AI ------------------------------------------------------
 
 [[entries]]

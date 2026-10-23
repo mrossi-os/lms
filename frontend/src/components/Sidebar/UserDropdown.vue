@@ -70,6 +70,8 @@ import { call, createResource, Dropdown, toast } from 'frappe-ui'
 import { useRouter } from 'vue-router'
 import { convertToTitleCase } from '@/utils'
 import { toggleTheme, theme } from '@/utils/theme'
+// OSLMS-CUSTOM: high-contrast switch (ESG), next to Toggle Theme
+import { highContrast, toggleContrast } from '@/oslms/utils/contrast'
 import { usersStore } from '@/stores/user'
 import { useSettings } from '@/stores/settings'
 import { h, watch, ref, computed } from 'vue'
@@ -79,6 +81,7 @@ import LMSLogo from '@/components/Icons/LMSLogo.vue'
 import SettingsModal from '@/components/Settings/Settings.vue'
 // OSLMS-CUSTOM: lucide components as menu icons instead of 'lucide-*' strings
 import {
+	Contrast,
 	LogIn,
 	LogOut,
 	Moon,
@@ -182,6 +185,16 @@ const userDropdownOptions = computed(() => {
 					label: __('Toggle Theme'),
 					onClick: () => {
 						toggleTheme()
+					},
+				},
+				{
+					// OSLMS-CUSTOM: high-contrast switch (ESG)
+					icon: Contrast,
+					label: highContrast.value
+						? __('Disable high contrast')
+						: __('Enable high contrast'),
+					onClick: () => {
+						toggleContrast()
 					},
 				},
 				{

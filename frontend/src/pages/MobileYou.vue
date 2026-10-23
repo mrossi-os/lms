@@ -82,6 +82,13 @@ import { sessionStore } from '@/stores/session'
 import { usersStore } from '@/stores/user'
 import { safeUrl } from '@/utils/safeUrl'
 import { setThemePreference, themePreference } from '@/utils/theme'
+// OSLMS-CUSTOM: high-contrast row (ESG), inserted after Colour mode
+import {
+	CONTRAST_ACTION,
+	highContrast,
+	toggleContrast,
+	withContrastRow,
+} from '@/oslms/utils/contrast'
 import type { ThemePreference } from '@/utils/theme'
 import {
 	ensureMobileNavLinks,
@@ -168,14 +175,18 @@ const primaryLabels = computed(() =>
 // `hasRoute` separates a destination that is a route from one that is a URL an
 // admin typed; not every sidebar link points into the SPA.
 const groups = computed(() =>
-	buildYouRows({
-		sidebarLinks: sidebarLinks.value,
-		otherLinks: otherLinks.value,
-		primaryLabels: primaryLabels.value,
-		themePreference: themePreference.value,
-		unreadCount: unreadCount.value,
-		hasRoute: (name: string) => router.hasRoute(name),
-	})
+	// OSLMS-CUSTOM: high-contrast row (ESG)
+	withContrastRow(
+		buildYouRows({
+			sidebarLinks: sidebarLinks.value,
+			otherLinks: otherLinks.value,
+			primaryLabels: primaryLabels.value,
+			themePreference: themePreference.value,
+			unreadCount: unreadCount.value,
+			hasRoute: (name: string) => router.hasRoute(name),
+		}),
+		highContrast.value
+	)
 )
 
 // Asked for here, not only by MobileLayout, so a cold deep link with no bar
@@ -241,6 +252,8 @@ const chooseColourMode = (mode: string): void => {
 const activate = (action: string): void => {
 	if (action === 'notifications') toggleNotifications()
 	else if (action === COLOUR_MODE_ACTION) showColourMode.value = true
+	// OSLMS-CUSTOM: high-contrast row toggles in place (ESG)
+	else if (action === CONTRAST_ACTION) toggleContrast()
 	else if (action === 'logout') logout.submit()
 }
 

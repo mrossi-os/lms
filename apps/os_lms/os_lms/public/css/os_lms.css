@@ -4,13 +4,14 @@
    therefore reads a --login-* property and falls back to Frappe's own default,
    so an instance that has not been branded yet renders a stock Frappe page.
    The company palette below only applies to the light theme, like the Brand
-   Customize colors: under [data-theme="dark"] the stock dark tokens stay. */
+   Customize colors: under [data-theme="dark"] or [data-contrast="more"] (high
+   contrast) the stock tokens stay. */
 :root {
 	--color-white: #ffffff;
 	--color-black: #000000;
 }
 
-:root:not([data-theme="dark"]) {
+:root:not([data-theme="dark"]):not([data-contrast="more"]) {
 	--color-company-primary: #111d2e;
 	--color-company-secondary: #123456;
 	--bg-light-gray: var(--color-company-primary);

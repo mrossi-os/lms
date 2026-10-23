@@ -1,6 +1,6 @@
-"""Brand Customize colors only brand the light theme.
+"""Brand Customize colors only brand the default light theme.
 
-A user who switches to dark must get the stock LMS dark palette. frappe-ui puts its
+A user who switches to dark or to high contrast must get the stock LMS palette. frappe-ui puts its
 dark tokens in [data-theme="dark"], which has the same specificity as :root, so the
 brand stylesheet (loaded last) would override them if it still wrote to :root.
 The login colors stay theme-independent: the login pages have no theme switch.
@@ -29,15 +29,19 @@ def _block(css: str, selector: str) -> str:
 class TestBrandingLightOnly(UnitTestCase):
 	def test_theme_tokens_are_scoped_to_the_light_theme(self):
 		css = _css(surface_base="#fafafa", ink_gray_9="#111111")
-		light = _block(css, branding.LIGHT_THEME_SELECTOR)
+		light = _block(css, branding.BRANDED_THEME_SELECTOR)
 		self.assertIn("--surface-base: #fafafa;", light)
 		self.assertIn("--ink-gray-9: #111111;", light)
 		self.assertNotIn("--surface-base", _block(css, ":root"))
 
+	def test_selector_skips_dark_and_high_contrast(self):
+		self.assertIn(':not([data-theme="dark"])', branding.BRANDED_THEME_SELECTOR)
+		self.assertIn(':not([data-contrast="more"])', branding.BRANDED_THEME_SELECTOR)
+
 	def test_login_colors_apply_in_every_theme(self):
 		css = _css(login_bg_from="#000000", surface_base="#fafafa")
 		self.assertIn("--login-bg-from: #000000;", _block(css, ":root"))
-		self.assertNotIn("--login-bg-from", _block(css, branding.LIGHT_THEME_SELECTOR))
+		self.assertNotIn("--login-bg-from", _block(css, branding.BRANDED_THEME_SELECTOR))
 
 	def test_unbranded_instance_emits_no_values(self):
 		css = _css()
