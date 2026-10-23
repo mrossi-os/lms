@@ -104,7 +104,7 @@ def _resolve_published_scenario(scenario_id: str):
 # ----- Endpoints -----
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def start_session(scenario_id: str, modality: str = "chat") -> dict:
     """Create a Session for the current user and return the first role-player turn."""
     if modality not in ("chat", "voice"):
@@ -122,7 +122,7 @@ def start_session(scenario_id: str, modality: str = "chat") -> dict:
     return dict(result)
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def prepare_session(scenario_id: str, modality: str = "chat") -> dict:
     """Phase 1: generate the variant and create a Ready session with a brief."""
     if modality not in ("chat", "voice"):
@@ -141,7 +141,7 @@ def prepare_session(scenario_id: str, modality: str = "chat") -> dict:
     return {"session_id": result.session, "brief": result.brief, "modality": result.modality}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def begin_session(session_id: str) -> dict:
     """Phase 2 (chat): persist the first role-player turn for a prepared session."""
     session = load_session(session_id)
@@ -150,7 +150,7 @@ def begin_session(session_id: str) -> dict:
     return dict(_service().begin_chat_session(session_id=session.name))
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def clone_session(session_id: str) -> dict:
     """Restart a session: create a new Ready session reusing the same variant."""
     session = load_session(session_id)
@@ -160,7 +160,7 @@ def clone_session(session_id: str) -> dict:
     return {"session_id": result.session, "brief": result.brief, "modality": result.modality}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def send_message(session_id: str, text: str) -> dict:
     """Append a user turn and return the assistant's reply."""
     if not text or not text.strip():
@@ -181,7 +181,7 @@ def send_message(session_id: str, text: str) -> dict:
     return dict(result)
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def send_message_audio(
     session_id: str,
     text: str | None = None,
@@ -219,7 +219,7 @@ def send_message_audio(
     return {**result, **holder}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def end_session(session_id: str, reason: str = "completed") -> dict:
     """Mark a session as completed or abandoned."""
     if reason not in ("completed", "abandoned"):
@@ -301,7 +301,7 @@ def get_debrief(session_id: str) -> dict:
     return _serialize_debrief(debrief, include_scores=_viewer_can_see_scores(session))
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def generate_debrief(session_id: str) -> dict:
     """Run Prompt 3 for `session_id` synchronously and return the debrief payload.
 
@@ -313,14 +313,31 @@ def generate_debrief(session_id: str) -> dict:
         frappe.throw(_("session_id is required"))
 
     session = load_session(session_id)
-    # Only the owner, course instructors and moderators can trigger a regen.
-    if session.student != frappe.session.user and not has_moderator_role():
-        _ensure_instructor_of_course(session.course)
+    # The debrief is the grade the instructor sees, so it is written once, for a
+    # finished session (end_session enqueues it). Regenerating an existing one is
+    # for course instructors and moderators: a student calling this in a loop used
+    # to redraw their score until they liked it, each draw a paid LLM call.
+    if session.status in ("In Progress", "Ready"):
+        frappe.throw(_("The debrief is generated when the session ends."))
+    if not (has_moderator_role() or _is_course_instructor(session.course)):
+        if session.student != frappe.session.user:
+            frappe.throw(_("Not permitted"), frappe.PermissionError)
+        existing = frappe.db.get_value("LMSA Simulation Debrief", {"session": session.name}, "status")
+        if existing and existing != "Failed":
+            frappe.throw(_("The debrief for this session has already been generated."))
 
     name = _run_generate_debrief(session.name)
     debrief = frappe.get_doc("LMSA Simulation Debrief", name)
     return _serialize_debrief(debrief, include_scores=_viewer_can_see_scores(session))
 
+
+
+def _is_course_instructor(course: str) -> bool:
+    try:
+        _ensure_instructor_of_course(course)
+        return True
+    except frappe.PermissionError:
+        return False
 
 
 def _viewer_can_see_scores(session) -> bool:
@@ -332,11 +349,7 @@ def _viewer_can_see_scores(session) -> bool:
     canonical instructor gate so score visibility can't diverge from who is
     treated as an instructor elsewhere.
     """
-    try:
-        _ensure_instructor_of_course(session.course)
-        return True
-    except frappe.PermissionError:
-        return False
+    return _is_course_instructor(session.course)
 
 
 def _serialize_debrief(debrief, include_scores: bool = True) -> dict:
@@ -526,7 +539,7 @@ def list_my_sessions(course: str | None = None, scenario: str | None = None) -> 
 # ============================================================================
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def instructor_review_debrief(session_id: str, review: str) -> dict:
     """Persist the instructor's review note on the debrief of `session_id`."""
     if not review or not review.strip():
@@ -802,7 +815,7 @@ def get_scenario(name: str) -> dict:
     }
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def save_scenario(payload: dict) -> dict:
     """Create or update a scenario. The payload mirrors `get_scenario`'s shape.
 
@@ -870,7 +883,7 @@ def save_scenario(payload: dict) -> dict:
     return {"name": doc.name, "updated": True}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def delete_scenario(name: str) -> dict:
     if not frappe.db.exists("LMSA Simulation Scenario", name):
         frappe.throw(_("Scenario not found"), frappe.DoesNotExistError)
@@ -896,7 +909,7 @@ def _set_scenario_status(name: str, status: str) -> dict:
     return {"name": name, "status": status}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def archive_scenario(name: str) -> dict:
     """Move a scenario to the Archived state. Unlike delete, this is safe on
     scenarios that already have sessions — the history stays intact, the
@@ -904,7 +917,7 @@ def archive_scenario(name: str) -> dict:
     return _set_scenario_status(name, "Archived")
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def publish_scenario(name: str) -> dict:
     """Bring an archived scenario back to the Published state so learners can
     start it again."""
@@ -939,7 +952,7 @@ def get_evaluation_schema(name: str) -> dict:
     }
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def save_evaluation_schema(payload: dict) -> dict:
     """Create or update an evaluation schema. Server enforces weight-sum=1.0 via doctype validate()."""
     if not isinstance(payload, dict):
@@ -1005,7 +1018,7 @@ def save_evaluation_schema(payload: dict) -> dict:
     return {"name": doc.name, "updated": True}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def delete_evaluation_schema(name: str) -> dict:
     if not frappe.db.exists("LMSA Evaluation Schema", name):
         frappe.throw(_("Evaluation schema not found"), frappe.DoesNotExistError)
@@ -1025,7 +1038,7 @@ def delete_evaluation_schema(name: str) -> dict:
 # ---------- AI authoring helpers ----------
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def ai_generate_scenario(
     course: str, lesson: str | None = None, hint: str = ""
 ) -> dict:
@@ -1047,7 +1060,7 @@ def ai_generate_scenario(
     return {"payload": payload}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def ai_generate_student_brief(payload: dict) -> dict:
     """Generate the student_brief ("compito") from the current editor state.
 
@@ -1099,7 +1112,7 @@ def ai_generate_student_brief(payload: dict) -> dict:
     return {"student_brief": brief}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def ai_generate_evaluation_schema(
     hint: str = "", course: str | None = None, lesson: str | None = None
 ) -> dict:

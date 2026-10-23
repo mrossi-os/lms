@@ -7,7 +7,6 @@ description = "ELITE OS LMS - Extension for Frappe LMS"
 requires-python = ">=3.10"
 dynamic = ["version"]
 dependencies = [
-    "debugpy",
     "redisvl",
     "numpy>=1.24.0",
     "redis>=7.0.0,<8.0.0",
@@ -28,6 +27,8 @@ dependencies = [
 # extras to work. Install an extra only when an adapter is upgraded to use the
 # official SDK for advanced features (file API, streaming optimizations, ...).
 [project.optional-dependencies]
+# Remote debugging for the Docker dev setup (os_lms/debug.py); never in production.
+dev = ["debugpy"]
 provider-openai = ["openai>=1.50"]
 provider-anthropic = ["anthropic>=0.40"]
 provider-gemini = ["google-genai>=0.3"]

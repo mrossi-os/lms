@@ -54,6 +54,8 @@ after_migrate = [
     # take precedence over the freshly-seeded defaults.
     "os_lms.setup.migrate_judge_prompts_to_template",
     "os_lms.setup.seed_prompt_templates",
+    # The OpenAI/Vimeo keys became Password fields: encrypt a value still in clear.
+    "os_lms.os_lms.ai.utils.api_keys.encrypt_plaintext_api_keys",
 ]
 
 # fix error email check content MAX SIZE
@@ -236,6 +238,11 @@ doc_events = {
     },
     "LMS Certificate": {
         "after_insert": "os_lms.os_lms.trueskills.emission.enqueue_issue",
+    },
+    "LMS Settings": {
+        # Only a System Manager or a Gestore may repoint the TrueSkills connection,
+        # and only to a public https host.
+        "validate": "os_lms.os_lms.trueskills.settings.validate_lms_settings",
     },
     "LMS Course": {
         # Refuse a TrueSkill template whose required data the emission never sends.

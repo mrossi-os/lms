@@ -12,9 +12,12 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import frappe
 from frappe import _
 from frappe.utils import cint, get_datetime
-from frappe.utils.verified_command import get_signed_params, verify_request
 
-from os_lms.os_lms.live_class_join import get_join_gate_url
+from os_lms.os_lms.live_class_join import (
+	authorize_live_class_request,
+	get_join_gate_url,
+	signed_live_class_params,
+)
 
 
 def _escape(text: str | None) -> str:
@@ -63,8 +66,10 @@ def _to_utc(local_dt: datetime, tz_name: str | None) -> datetime:
 	return local_dt.replace(tzinfo=tz).astimezone(timezone.utc)
 
 
-def build_ics(doc) -> str:
-	"""Return an iCalendar VCALENDAR string for the given LMS Live Class doc."""
+def build_ics(doc, user: str) -> str:
+	"""Return an iCalendar VCALENDAR string for the given LMS Live Class doc.
+
+	`user` is who the event is for: its join link is signed for them."""
 	local_dt = get_datetime(f"{doc.date} {doc.time}")
 	start_utc = _to_utc(local_dt, doc.get("timezone"))
 	duration_minutes = cint(doc.get("duration")) or 60
@@ -76,7 +81,7 @@ def build_ics(doc) -> str:
 
 	# Point at the join gate, not the raw meeting link, so a student can't enter
 	# the Zoom/Meet call before the host has started it.
-	join_link = get_join_gate_url(doc.name) if doc.get("join_url") else None
+	join_link = get_join_gate_url(doc, user) if doc.get("join_url") else None
 
 	description_parts = []
 	if doc.get("description"):
@@ -120,7 +125,7 @@ def build_ics(doc) -> str:
 	return "\r\n".join(_fold_line(line) for line in lines) + "\r\n"
 
 
-def get_ics_url(name: str) -> str:
+def get_ics_url(doc, user: str) -> str:
 	"""Return a signed, guest-accessible URL to download the live class `.ics`.
 
 	The signature lets the `download` endpoint authorize the request without a
@@ -128,13 +133,17 @@ def get_ics_url(name: str) -> str:
 	email (any calendar app), even for recipients who are not logged into the LMS.
 	Pass the result into email `args` as `ics_url` so any template — including the
 	per-client desk-managed Email Templates — can render `{{ ics_url }}`.
+	The link names `user` and expires after the class (see live_class_join).
 	"""
-	signed = get_signed_params({"name": name})
-	return frappe.utils.get_url() + "/api/method/os_lms.os_lms.live_class_ics.download?" + signed
+	return (
+		frappe.utils.get_url()
+		+ "/api/method/os_lms.os_lms.live_class_ics.download?"
+		+ signed_live_class_params(doc, user)
+	)
 
 
-def get_calendar_links(doc) -> dict:
-	"""Return "add to calendar" URLs for the given LMS Live Class doc.
+def get_calendar_links(doc, user: str) -> dict:
+	"""Return "add to calendar" URLs of the given LMS Live Class doc for `user`.
 
 	  - ``google_url`` / ``outlook_url``: prefilled web "add event" deep links for
 	    Google Calendar and Outlook.com.
@@ -154,7 +163,7 @@ def get_calendar_links(doc) -> dict:
 	title = doc.get("title") or _("Lezione dal vivo")
 	# Point at the join gate, not the raw meeting link, so a student can't enter
 	# the Zoom/Meet call before the host has started it.
-	join_link = get_join_gate_url(doc.name) if doc.get("join_url") else ""
+	join_link = get_join_gate_url(doc, user) if doc.get("join_url") else ""
 	location = join_link
 	details_parts = []
 	if doc.get("description"):
@@ -188,33 +197,11 @@ def get_calendar_links(doc) -> dict:
 	return {
 		"google_url": google_url,
 		"outlook_url": outlook_url,
-		"ics_url": get_ics_url(doc.name),
+		"ics_url": get_ics_url(doc, user),
 	}
 
 
-def _user_can_access(doc) -> bool:
-	user = frappe.session.user
-	if user in ("Administrator",):
-		return True
-	roles = set(frappe.get_roles(user))
-	if {"System Manager", "Moderator", "Course Creator", "Batch Evaluator"} & roles:
-		return True
-	if doc.get("batch_name"):
-		if frappe.db.exists(
-			"LMS Batch Enrollment",
-			{"batch": doc.batch_name, "member": user},
-		):
-			return True
-		# Instructors of the batch are also allowed.
-		if frappe.db.exists(
-			"Course Instructor",
-			{"parenttype": "LMS Batch", "parent": doc.batch_name, "instructor": user},
-		):
-			return True
-	return False
-
-
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=True, methods=["GET"])
 def download(name: str) -> None:
 	"""Serve the live class as an `.ics` attachment.
 
@@ -224,18 +211,15 @@ def download(name: str) -> None:
 	  2. A valid signed link (see `get_ics_url`) — this lets the "Add to calendar"
 	     button work from the email without requiring the recipient to log in.
 	"""
-	if not name:
+	if not name or not frappe.db.exists("LMS Live Class", name):
 		frappe.throw(_("Live class non specificata."), frappe.PermissionError)
 
 	doc = frappe.get_doc("LMS Live Class", name)
-
-	if frappe.session.user != "Guest" and _user_can_access(doc):
-		pass
-	elif not verify_request():
-		# `verify_request` has already rendered an "Invalid Link" web page.
+	user = authorize_live_class_request(doc)
+	if not user:
 		return
 
-	ics = build_ics(doc)
+	ics = build_ics(doc, user)
 	frappe.local.response.update(
 		{
 			# Frappe maps the "download" response type to `as_raw`, which streams

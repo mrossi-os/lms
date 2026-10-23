@@ -12,8 +12,9 @@ class VimeoTranscriber:
     @property
     def _apiKey(self) -> str:
         if self.__apiKey is None:
-            settings = frappe.get_single("LMSA Settings")
-            self.__apiKey = settings.vimeo_api_key
+            from os_lms.os_lms.ai.utils.api_keys import get_api_key
+
+            self.__apiKey = get_api_key("vimeo_api_key")
         return self.__apiKey
 
     def transcript(self, id: str) -> str:

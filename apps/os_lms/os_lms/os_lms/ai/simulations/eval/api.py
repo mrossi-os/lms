@@ -27,7 +27,7 @@ from os_lms.os_lms.ai.simulations.eval.authoring_runner import (  # noqa: E402
 )
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def run_simulation_test(
 	scenario: str,
 	student_profile: str,
@@ -77,7 +77,7 @@ def run_simulation_test(
 	return {"eval_id": doc.name}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def run_production_evaluation(session_id: str) -> dict:
 	require_session_access(session_id)
 	scenario = frappe.db.get_value("LMSA Simulation Session", session_id, "scenario")

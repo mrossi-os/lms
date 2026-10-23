@@ -14,15 +14,32 @@ from .service import TrueSkillsService
 API_KEY_PREFIX_LENGTH = 8
 
 
+# The TrueSkills account is the client's whole organization: issued certificates
+# (names, emails, fiscal id hashes, also those issued outside Elite), the connection
+# and retries belong to whoever administers the integration, as in the SPA
+# (canManageOsIntegrations). Moderator and Course Creator used to pass here too.
+INTEGRATION_ADMIN_ROLES = {"System Manager", "Gestore"}
+# Picking or creating the badge template is part of a course's settings, so the
+# roles that author courses keep it.
+TEMPLATE_AUTHOR_ROLES = INTEGRATION_ADMIN_ROLES | {"Moderator", "Course Creator", "Docente"}
+
+
 def _require_admin() -> None:
-	roles = set(frappe.get_roles(frappe.session.user))
-	if not roles & {"System Manager", "Moderator", "Course Creator"}:
+	if not _is_admin():
 		frappe.throw("Not permitted", frappe.PermissionError)
 
 
 def _is_admin() -> bool:
-	roles = set(frappe.get_roles(frappe.session.user))
-	return bool(roles & {"System Manager", "Moderator", "Course Creator"})
+	if frappe.session.user == "Administrator":
+		return True
+	return bool(set(frappe.get_roles(frappe.session.user)) & INTEGRATION_ADMIN_ROLES)
+
+
+def _require_template_author() -> None:
+	if _is_admin():
+		return
+	if not set(frappe.get_roles(frappe.session.user)) & TEMPLATE_AUTHOR_ROLES:
+		frappe.throw("Not permitted", frappe.PermissionError)
 
 
 def _require_certificate_owner_or_admin(trueskill_id: int) -> None:
@@ -78,7 +95,15 @@ def health() -> dict:
 		response = TrueSkillsService().health()
 	except TrueSkillsError as exc:
 		return _error_payload(exc)
-	return {"ok": True, "response": response}
+	return {"ok": True, "response": _health_fields(response)}
+
+
+def _health_fields(response) -> dict:
+	# Only what /health is documented to return: echoing the whole body would turn
+	# a repointed endpoint into a reader of whatever answers there.
+	if not isinstance(response, dict):
+		return {}
+	return {key: response.get(key) for key in ("status", "organizationId") if key in response}
 
 
 @frappe.whitelist()
@@ -88,7 +113,9 @@ def test_connection() -> dict:
 	service = TrueSkillsService()
 	url = (service.settings.endpoint or "").rstrip("/") or None
 	try:
-		return service.test_connection()
+		result = service.test_connection()
+		result["response"] = _health_fields(result.get("response"))
+		return result
 	except TrueSkillsError as exc:
 		payload = _error_payload(exc)
 		payload["url"] = url
@@ -98,7 +125,7 @@ def test_connection() -> dict:
 @frappe.whitelist()
 def list_templates() -> dict:
 	"""Return the list of certificate templates available on TrueSkills."""
-	_require_admin()
+	_require_template_author()
 	try:
 		templates = TrueSkillsService().list_templates()
 	except TrueSkillsError as exc:
@@ -111,7 +138,7 @@ def list_templates() -> dict:
 @frappe.whitelist()
 def get_template(template_id: int) -> dict:
 	"""Fetch a single TrueSkills template by id (with in-process cache)."""
-	_require_admin()
+	_require_template_author()
 	try:
 		template = TrueSkillsService().get_template(int(template_id))
 	except TrueSkillsError as exc:
@@ -127,9 +154,12 @@ def render_certificate_image(course: str) -> dict:
 	Returns ``{ok, image_base64, filename}`` where ``image_base64`` is a
 	``data:image/png;base64,...`` string.
 	"""
-	_require_admin()
 	if not course:
 		return {"ok": False, "error": "Course is required."}
+	from lms.lms.utils import can_modify_course
+
+	if not (_is_admin() or can_modify_course(course)):
+		frappe.throw("Not permitted", frappe.PermissionError)
 	try:
 		data_uri = build_certificate_png_data_uri(course)
 	except TrueSkillsError as exc:
@@ -137,10 +167,10 @@ def render_certificate_image(course: str) -> dict:
 	return {"ok": True, "image_base64": data_uri, "filename": "certificate.png"}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def create_template(payload: dict) -> dict:
 	"""Create a new certificate template via the TrueSkills API."""
-	_require_admin()
+	_require_template_author()
 	if not isinstance(payload, dict):
 		try:
 			payload = frappe.parse_json(payload)
@@ -451,7 +481,7 @@ def get_issue_status(lms_certificates: list[str] | str) -> dict:
 	return result
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def retry_emission(issue_log: str) -> dict:
 	"""Manually retry the emission of a ``failed``/``needs_retry`` Issue Log.
 

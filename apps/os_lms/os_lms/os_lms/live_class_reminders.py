@@ -52,7 +52,8 @@ def _process_class_reminders(live_class, now: datetime, logger) -> None:
 		return
 
 	any_sent = False
-	cal_links = _build_calendar_links(doc, logger)
+	# Per student: the signed calendar links name who they were sent to.
+	cal_links = {student.member: _build_calendar_links(doc, student.member, logger) for student in students}
 	for row in reminders:
 		if row.sent_at:
 			continue
@@ -62,7 +63,7 @@ def _process_class_reminders(live_class, now: datetime, logger) -> None:
 			continue
 
 		for student in students:
-			_send_reminder_mail(doc, student, cal_links)
+			_send_reminder_mail(doc, student, cal_links[student.member])
 		row.sent_at = now
 		any_sent = True
 		logger.info(
@@ -74,10 +75,10 @@ def _process_class_reminders(live_class, now: datetime, logger) -> None:
 		frappe.db.commit()
 
 
-def _build_calendar_links(live_class, logger) -> dict:
-	"""Build "add to calendar" links (Google, Outlook, ICS); empty dict on failure."""
+def _build_calendar_links(live_class, user, logger) -> dict:
+	"""Build `user`'s "add to calendar" links (Google, Outlook, ICS); empty dict on failure."""
 	try:
-		return get_calendar_links(live_class)
+		return get_calendar_links(live_class, user)
 	except Exception:
 		logger.exception(f"Error building calendar links for {live_class.name}")
 		return {}

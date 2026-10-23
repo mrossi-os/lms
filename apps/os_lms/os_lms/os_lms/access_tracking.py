@@ -80,7 +80,7 @@ def _record_failure(user: str):
 	doc.save(ignore_permissions=True)
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def backfill_from_activity_log():
 	"""Best-effort seed of ``LMSA User Access`` from the Activity Log records
 	still present (Frappe clears them after ~90 days, so history older than that

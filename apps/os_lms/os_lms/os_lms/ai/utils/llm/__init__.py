@@ -143,6 +143,7 @@ def _load_settings():
     """
     import frappe
     from frappe.utils.password import get_decrypted_password
+    from os_lms.os_lms.ai.utils.api_keys import get_api_key
     from os_lms.os_lms.ai.utils.oslms_settings import OsLmsSettings
 
     doc = frappe.get_single("LMSA Settings")
@@ -166,9 +167,9 @@ def _load_settings():
         chunk_overlap=getattr(doc, "chunk_overlap", 0) or 200,
         top_k=getattr(doc, "top_k", 0) or 6,
         llm_model=getattr(doc, "llm_model", "") or "gpt-4o-mini",
-        # openai_key remains a Data field for backward compatibility with the
-        # legacy RAG tutor — see SET-1.1 note in PROGRESS.md.
-        openai_key=getattr(doc, "openai_key", "") or "",
+        # A Password field since 2026-10 (it was Data); get_api_key also reads a
+        # value not yet moved by encrypt_plaintext_api_keys.
+        openai_key=get_api_key("openai_key"),
         # simulation-era fields (added in SET-1.1)
         simulations_enabled=bool(getattr(doc, "simulations_enabled", 0)),
         simulation_chat_provider=getattr(doc, "simulation_chat_provider", "") or "auto",

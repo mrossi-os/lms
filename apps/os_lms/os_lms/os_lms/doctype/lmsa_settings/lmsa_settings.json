@@ -103,7 +103,7 @@
 		},
 		{
 			"fieldname": "openai_key",
-			"fieldtype": "Data",
+			"fieldtype": "Password",
 			"label": "OpenAI API Key"
 		},
 		{
@@ -137,7 +137,7 @@
 		},
 		{
 			"fieldname": "vimeo_api_key",
-			"fieldtype": "Data",
+			"fieldtype": "Password",
 			"label": "Vimeo API Key"
 		},
 		{
@@ -327,7 +327,7 @@
 	"index_web_pages_for_search": 1,
 	"issingle": 1,
 	"links": [],
-	"modified": "2026-06-23 15:00:00.000000",
+	"modified": "2026-10-23 18:00:00.000000",
 	"modified_by": "Administrator",
 	"module": "OS LMS",
 	"name": "LMSA Settings",

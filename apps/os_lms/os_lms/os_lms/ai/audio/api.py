@@ -27,13 +27,20 @@ from os_lms.os_lms.ai.utils.audio import (
     AudioUnsupported,
     resolve_audio_provider,
 )
+from os_lms.os_lms.access_guards import per_user_rate_limit
 from os_lms.os_lms.ai.utils.llm import load_settings
 
 # OpenAI's per-file limit is 25 MB; guard the decoded payload against it.
 MAX_AUDIO_BYTES = 25 * 1024 * 1024
+# Both endpoints bill the speech provider per call and are open to any logged-in
+# user, so each user gets a budget, and a reply to read aloud a sane length
+# (a tutor answer is well under this; OpenAI's own TTS cap is 4096 characters).
+AUDIO_CALLS_PER_HOUR = 120
+MAX_SYNTHESIZE_CHARS = 5000
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
+@per_user_rate_limit(limit=AUDIO_CALLS_PER_HOUR, seconds=60 * 60)
 def transcribe(audio: str, mime: str = "audio/webm", language: str = "it") -> dict:
     """Transcribe a base64-encoded audio clip to text (speech-to-text)."""
     settings = load_settings()
@@ -63,7 +70,8 @@ def transcribe(audio: str, mime: str = "audio/webm", language: str = "it") -> di
         )
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
+@per_user_rate_limit(limit=AUDIO_CALLS_PER_HOUR, seconds=60 * 60)
 def synthesize(text: str, voice: str | None = None) -> dict:
     """Synthesize speech from text (text-to-speech). Returns base64 audio."""
     settings = load_settings()
@@ -73,6 +81,8 @@ def synthesize(text: str, voice: str | None = None) -> dict:
     clean = (text or "").strip()
     if not clean:
         frappe.throw(_("Nothing to read aloud."))
+    if len(clean) > MAX_SYNTHESIZE_CHARS:
+        frappe.throw(_("The text is too long to read aloud."))
 
     try:
         provider = resolve_audio_provider("tts")

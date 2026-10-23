@@ -14,9 +14,16 @@ The gate URL is signed and guest-accessible (same pattern as the `.ics`
 download), so the button works straight from the email/calendar without login.
 The freshness check runs server-side at click time, so the URL stored in a
 calendar entry stays valid and correct regardless of the class state.
+
+A signed link names its recipient and expires a day after the class. Before
+2026-10 it named only the class and never expired, so a forwarded email, or a
+student removed from the batch, kept guest access to the meeting URL. An expired
+or older link sends a guest to log in, and then their own access decides.
 """
 
+import hmac
 from datetime import timedelta
+from urllib.parse import parse_qsl, quote
 
 import frappe
 from frappe import _
@@ -28,52 +35,127 @@ from frappe.utils import (
 	get_datetime,
 	now_datetime,
 )
-from frappe.utils.verified_command import get_signed_params, verify_request
+from frappe.utils.verified_command import _sign_message, get_signed_params
+
+# How long after the end of the class a signed link keeps working.
+SIGNED_LINK_GRACE = timedelta(days=1)
+# Roles that see every live class.
+LIVE_CLASS_STAFF_ROLES = {"System Manager", "Moderator", "Course Creator", "Batch Evaluator"}
 
 
-def get_join_gate_url(name: str) -> str:
+def class_end(doc):
+	start = get_datetime(f"{doc.date} {doc.time}")
+	return start + timedelta(minutes=cint(doc.get("duration")) or 60)
+
+
+def signed_live_class_params(doc, user: str) -> str:
+	"""Signed query string that lets `user` open `doc` without logging in, until
+	SIGNED_LINK_GRACE after the class."""
+	expires = (class_end(doc) + SIGNED_LINK_GRACE).strftime("%Y-%m-%dT%H:%M")
+	return get_signed_params({"name": doc.name, "user": user, "exp": expires})
+
+
+def get_join_gate_url(doc, user: str) -> str:
 	"""Return a signed, guest-accessible URL to the join gate for a live class.
 
 	The signature lets the `join` endpoint authorize the request without a
 	logged-in session, so the button works from the email/calendar even for
 	recipients who are not logged into the LMS. Pass the result wherever the raw
 	`join_url` would otherwise be exposed to students (invitation email, `.ics`,
-	"add to calendar" links).
+	"add to calendar" links). One per recipient: the link names them.
 	"""
-	signed = get_signed_params({"name": name})
-	return frappe.utils.get_url() + "/api/method/os_lms.os_lms.live_class_join.join?" + signed
+	return (
+		frappe.utils.get_url()
+		+ "/api/method/os_lms.os_lms.live_class_join.join?"
+		+ signed_live_class_params(doc, user)
+	)
 
 
-def _can_access(doc) -> bool:
-	# Reuse the batch-access check from the `.ics` download. Imported lazily to
-	# avoid a circular import (live_class_ics imports get_join_gate_url).
-	from os_lms.os_lms.live_class_ics import _user_can_access
+def user_can_access(doc, user: str) -> bool:
+	"""Whether `user` may see this live class: staff, its host, or a student,
+	instructor or Valutatore of its batch."""
+	if not user or user == "Guest":
+		return False
+	if user == "Administrator" or user == doc.get("host"):
+		return True
+	if LIVE_CLASS_STAFF_ROLES & set(frappe.get_roles(user)):
+		return True
+	batch = doc.get("batch_name")
+	if not batch:
+		return False
+	from lms.lms.utils import is_batch_valutatore
 
-	return _user_can_access(doc)
+	return bool(
+		frappe.db.exists("LMS Batch Enrollment", {"batch": batch, "member": user})
+		or frappe.db.exists(
+			"Course Instructor", {"parenttype": "LMS Batch", "parent": batch, "instructor": user}
+		)
+		or is_batch_valutatore(batch, user)
+	)
 
 
-@frappe.whitelist(allow_guest=True)
+def authorize_live_class_request(doc) -> str | None:
+	"""Return the user this request acts for, or None once it has been answered.
+
+	A logged-in user with access acts for themselves. Otherwise an unexpired link
+	signed for `doc`, whose recipient still has access, acts for that recipient.
+	A guest without one is sent to log in; a logged-in user without access gets a
+	permission error.
+	"""
+	user = frappe.session.user
+	if user != "Guest" and user_can_access(doc, user):
+		return user
+	holder = _signed_link_holder(doc)
+	if holder and user_can_access(doc, holder):
+		return holder
+	if user != "Guest":
+		frappe.throw(_("You do not have access to this live class."), frappe.PermissionError)
+	frappe.local.response["type"] = "redirect"
+	frappe.local.response["location"] = "/login?redirect-to=" + quote(
+		frappe.request.full_path.rstrip("?"), safe=""
+	)
+	return None
+
+
+def _signed_link_holder(doc) -> str | None:
+	"""The recipient named by a valid, unexpired link signed for `doc`, else None.
+
+	The values come from the signed part of the query string itself, never from
+	form_dict, and only on a GET without a body, as in Frappe's verify_request.
+	"""
+	if frappe.request.method != "GET" or frappe.request.form or frappe.request.data:
+		return None
+	query = frappe.safe_decode(frappe.request.query_string)
+	params, found, signature = query.partition("&_signature=")
+	if not found or not hmac.compare_digest(signature, _sign_message(params)):
+		return None
+	values = dict(parse_qsl(params))
+	if values.get("name") != doc.name or not values.get("user") or not values.get("exp"):
+		return None
+	try:
+		expires = get_datetime(values["exp"])
+	except Exception:
+		return None
+	if now_datetime() > expires:
+		return None
+	return values["user"]
+
+
+@frappe.whitelist(allow_guest=True, methods=["GET"])
 def join(name: str) -> None:
 	"""Redirect to the meeting if the host has started, otherwise show a page.
 
 	Authorized either by a logged-in user with access to the batch, or by a
 	valid signed link (see `get_join_gate_url`).
 	"""
-	if not name:
+	if not name or not frappe.db.exists("LMS Live Class", name):
 		frappe.throw(_("Live class non specificata."), frappe.PermissionError)
 
 	doc = frappe.get_doc("LMS Live Class", name)
-
-	if frappe.session.user != "Guest" and _can_access(doc):
-		pass
-	elif not verify_request():
-		# verify_request has already rendered an "Invalid Link" web page.
+	if not authorize_live_class_request(doc):
 		return
 
-	start_dt = get_datetime(f"{doc.date} {doc.time}")
-	end_dt = start_dt + timedelta(minutes=cint(doc.get("duration")) or 60)
-
-	if now_datetime() > end_dt:
+	if now_datetime() > class_end(doc):
 		_render_gate_page(doc, "ended")
 		return
 

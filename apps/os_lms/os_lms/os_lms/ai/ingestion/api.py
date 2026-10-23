@@ -23,7 +23,7 @@ def start_lesson_ingestion(lesson_id):
 	return {"success": True}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def start_course_feature_ingestion(course_name):
 	"""
 	Start ingestion of a course's feature sections. Teacher-only endpoint.

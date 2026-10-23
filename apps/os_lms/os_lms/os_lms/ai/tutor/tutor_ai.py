@@ -79,7 +79,7 @@ class TutorAi:
 			completed = set(
 				frappe.get_all(
 					"LMS Course Progress",
-					filters={"course": course, "member": self.user, "status": "Complete"},
+					filters={"course": self.course, "member": self.user, "status": "Complete"},
 					pluck="lesson",
 				)
 			)

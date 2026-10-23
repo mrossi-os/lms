@@ -65,9 +65,9 @@ def has_permission(doc, ptype: str = "read", user: str | None = None) -> bool:
 	- Sysadmin / Moderator / LMS Manager: full access.
 	- Course Creator / LMS Instructor of the session's course: read-only access
 	  to any session of that course; never write (sessions are owned by students).
-	- LMS Student: only their own sessions, and only while not in a terminal state
-	  for writes (orchestrator drives transitions through `frappe.set_user` /
-	  `ignore_permissions` server-side).
+	- LMS Student: only their own sessions, read-only: the DocPerm grants no
+	  create/write, and the orchestrator writes server-side with
+	  `ignore_permissions` after the endpoint has checked the owner.
 	"""
 	user = user or frappe.session.user
 	if user == "Administrator":

@@ -36,6 +36,10 @@ class TestAskAudio(UnitTestCase):
         self._orig_load = pipeline.load_settings
         self._orig_resolve = pipeline.resolve_audio_provider
         pipeline.resolve_audio_provider = _mock_provider
+        # These tests cover the audio pipeline; access is test_owasp_2026_10's.
+        authorize = patch.object(tutor_api, "_authorize")
+        authorize.start()
+        self.addCleanup(authorize.stop)
 
     def tearDown(self):
         pipeline.load_settings = self._orig_load

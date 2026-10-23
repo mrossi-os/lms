@@ -242,4 +242,9 @@ class TrueSkillsClient:
 		try:
 			return response.json()
 		except ValueError:
-			return {"raw": response.text}
+			# Never hand the body back: it reached the browser through health/
+			# test_connection, which made a repointed endpoint an internal URL reader.
+			# Not a 5xx to retry: a 2xx that is not JSON means a wrong endpoint.
+			raise TrueSkillsError(
+				f"TrueSkills returned a response that is not JSON (HTTP {response.status_code})"
+			) from None

@@ -83,6 +83,8 @@ _CLOSING_DIRECTIVE = (
 # answer+farewell); afterwards the student's input is locked and they can only
 # press "Termina". The session is never auto-ended.
 MAX_CLOSING_REPLIES = 1
+# One spoken turn, transcribed. Bounds what a client can relay in a single call.
+MAX_VOICE_TURN_CHARS = 4000
 
 
 class QuotaExceededError(Exception):
@@ -164,8 +166,11 @@ class SessionOrchestrator:
 			student_brief = variant.student_brief
 
 		session = frappe.new_doc("LMSA Simulation Session")
-		# Set student BEFORE insert(): the permission gate runs before
-		# before_insert(), so has_permission needs `doc.student` already set.
+		# Set student BEFORE insert(): the before_insert quota hook counts this
+		# student's sessions. Sessions are written with ignore_permissions because
+		# students hold no write permission on the doctype (REST could otherwise
+		# reopen a finished session or plant a persona); every endpoint that gets
+		# here has already checked the scenario or the session owner.
 		session.student = frappe.session.user
 		session.scenario = scenario.name
 		session.modality = modality
@@ -179,7 +184,7 @@ class SessionOrchestrator:
 		)
 		session.chat_provider_used = provider.name
 		session.chat_model_used = _model_from_provider(provider)
-		session.insert()
+		session.insert(ignore_permissions=True)
 		frappe.db.commit()
 
 		self.logger.info(
@@ -235,7 +240,7 @@ class SessionOrchestrator:
 		session.status = STATUS_IN_PROGRESS
 		session.modality = "chat"
 		session.turn_count = 1
-		session.save()
+		session.save(ignore_permissions=True)
 		frappe.db.commit()
 
 		self.logger.info("simulation begin: session=%s", session.name)
@@ -333,12 +338,12 @@ class SessionOrchestrator:
 		except LLMError as e:
 			self._publish(EVENT_ERROR, session, {"layer": "llm", "code": type(e).__name__, "message": str(e)})
 			session.status = STATUS_ERROR
-			session.save()
+			session.save(ignore_permissions=True)
 			frappe.db.commit()
 			raise
 
 		session.turn_count = (session.turn_count or 0) + 2  # user + assistant
-		session.save()
+		session.save(ignore_permissions=True)
 		frappe.db.commit()
 
 		self._publish(
@@ -392,7 +397,7 @@ class SessionOrchestrator:
 		status = self._resolve_end_status(session, reason)
 		session.status = status
 		session.ended_at = frappe.utils.now_datetime()
-		session.save()
+		session.save(ignore_permissions=True)
 		# Submit to make the session immutable (audit / debrief input).
 		if session.docstatus == 0:
 			session.submit()
@@ -442,7 +447,7 @@ class SessionOrchestrator:
 		clone.student_brief = src.student_brief
 		clone.chat_provider_used = src.chat_provider_used
 		clone.chat_model_used = src.chat_model_used
-		clone.insert()
+		clone.insert(ignore_permissions=True)
 		frappe.db.commit()
 		self.logger.info("simulation clone: src=%s new=%s", src.name, clone.name)
 		return frappe._dict(
@@ -469,7 +474,7 @@ class SessionOrchestrator:
 		session.modality = "voice"
 		if session.status != STATUS_IN_PROGRESS:
 			session.status = STATUS_IN_PROGRESS
-		session.save()
+		session.save(ignore_permissions=True)
 		frappe.db.commit()
 
 		return frappe._dict(
@@ -487,10 +492,18 @@ class SessionOrchestrator:
 		if not clean:
 			frappe.throw(_("Empty transcript turn"))
 
+		if len(clean) > MAX_VOICE_TURN_CHARS:
+			frappe.throw(_("Transcript turn too long"))
+
 		session = frappe.get_doc("LMSA Simulation Session", session_id)
 		self._enforce_max_duration(session)
 		if session.status in TERMINAL_STATUSES:
 			raise SessionTerminatedError(f"Session {session_id} is in terminal state {session.status!r}")
+		# Only a voice session that start_voice_session has opened: a chat session,
+		# or one never started, has no client-side transcript to relay, so turns
+		# posted there could only be made up to steer the debrief.
+		if session.modality != "voice" or session.status != STATUS_IN_PROGRESS:
+			frappe.throw(_("This session is not an active voice session."))
 
 		attack = detect_injection(clean) if role == "user" else False
 		turn = self._persist_turn(
@@ -502,7 +515,7 @@ class SessionOrchestrator:
 			injection_attempt=attack,
 		)
 		session.turn_count = (session.turn_count or 0) + 1
-		session.save()
+		session.save(ignore_permissions=True)
 		frappe.db.commit()
 		self._publish(
 			EVENT_TURN_COMPLETE,
@@ -669,7 +682,7 @@ def validate_quota(doc, method=None) -> None:
 		"LMSA Simulation Session",
 		filters=[["student", "=", student], ["started_at", ">=", today_start]],
 	)
-	if count >= 200 * quota:
+	if count >= quota:
 		raise QuotaExceededError(_("Daily simulation quota of {0} reached for {1}.").format(quota, student))
 
 

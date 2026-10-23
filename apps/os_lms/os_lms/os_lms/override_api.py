@@ -16,12 +16,31 @@ from lms.lms.api import save_role as _original_save_role
 EXTRA_LMS_ROLES = ["Gestore", "Docente", "Valutatore"]
 
 
-@frappe.whitelist()
+def assert_can_assign_role(role: str) -> None:
+    """Who may grant or revoke the custom roles (client rule, 2026-10-23).
+
+    Gestore unlocks exports, student removal and the Elite API keys, so only the
+    Administrator account assigns it; Docente and Valutatore are assigned by a
+    Gestore (or the Administrator). A plain Moderator assigns neither: before this
+    any Moderator could make themselves Gestore. Upstream roles keep upstream's gate.
+    """
+    user = frappe.session.user
+    if user == "Administrator":
+        return
+    if role != "Gestore" and "Gestore" in frappe.get_roles(user):
+        return
+    frappe.throw(
+        _("You do not have permission to grant this role: {0}").format(role),
+        frappe.PermissionError,
+    )
+
+
+@frappe.whitelist(methods=["POST"])
 def save_role(user: str, role: str, value: int):
     if role not in EXTRA_LMS_ROLES:
         return _original_save_role(user, role, value)
 
-    frappe.only_for("Moderator")
+    assert_can_assign_role(role)
     if cint(value):
         if not frappe.db.exists("Has Role", {"parent": user, "role": role}):
             doc = frappe.new_doc("Has Role")
@@ -155,7 +174,7 @@ MANAGEABLE_ROLES = [
 ] + EXTRA_LMS_ROLES
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def create_member(
     email: str,
     roles: list[str],
@@ -187,6 +206,9 @@ def create_member(
             ),
             frappe.PermissionError,
         )
+    for role in roles:
+        if role in EXTRA_LMS_ROLES:
+            assert_can_assign_role(role)
 
     user = frappe.get_doc(
         {
@@ -201,6 +223,10 @@ def create_member(
     # role appended by the before_insert hook. save_role() is reused so the
     # "Batch Evaluator" keeps its Course Evaluator record in sync.
     for role in MANAGEABLE_ROLES:
+        # An unselected custom role is not on a brand-new user: skipping it keeps a
+        # Moderator who may not assign Gestore able to add a plain member.
+        if role in EXTRA_LMS_ROLES and role not in roles:
+            continue
         save_role(user.name, role, 1 if role in roles else 0)
 
     return {

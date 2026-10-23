@@ -318,8 +318,8 @@ class CustomLMSLiveClass(LMSLiveClass):
 		# calendar. No .ics *attachment*: an attached calendar file makes Gmail/Outlook
 		# render their own native card that adds the event to one calendar automatically
 		# without letting the user choose. Exposed in `args` so any template (file-based
-		# or per-client desk Email Template) can render the buttons.
-		cal_links = get_calendar_links(self)
+		# or per-client desk Email Template) can render the buttons. Built per
+		# recipient below: the signed links name who they were sent to.
 		# Values the templates cannot compute on their own: the end of the class,
 		# the host's display name and the batch title (`batch_name` is the slug).
 		start_dt = get_datetime(f"{self.date} {self.time}")
@@ -337,6 +337,7 @@ class CustomLMSLiveClass(LMSLiveClass):
 		for participant in participants:
 			try:
 				member_name = frappe.db.get_value("User", participant, "first_name") or participant
+				cal_links = get_calendar_links(self, participant)
 				_lc_log(
 					f"[{log_tag}] {self.name} -> {participant} "
 					f"(name={member_name}) attempting sendmail"

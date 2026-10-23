@@ -46,7 +46,7 @@ def _service() -> SessionOrchestrator:
 	return SessionOrchestrator()
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def create_voice_session(session_id: str) -> dict:
 	"""Activate a prepared voice Session, mint an ephemeral provider token, and
 	return the descriptor the client needs to open the direct realtime stream."""
@@ -142,7 +142,7 @@ def create_voice_session(session_id: str) -> dict:
 	}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def persist_transcript_turn(session_id: str, role: str, text: str) -> dict:
 	"""Persist a final transcript turn relayed by the client."""
 	session = load_session(session_id)
@@ -155,7 +155,7 @@ def persist_transcript_turn(session_id: str, role: str, text: str) -> dict:
 	return dict(result)
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def end_voice_session(session_id: str, reason: str = "completed", seconds: int = 0) -> dict:
 	"""Mark the voice session terminal, record duration, enqueue the debrief."""
 	if reason not in ("completed", "abandoned"):

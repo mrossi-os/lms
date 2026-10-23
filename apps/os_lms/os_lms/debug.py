@@ -9,7 +9,11 @@ def active_debug():
     global _debug_initialized
     if _debug_initialized:
         return
-    if os.environ.get("DEBUG_MODE") == "1":
+    # An unauthenticated remote debugger runs any code it is sent: only on a
+    # developer-mode site (the Docker dev setup), never on a production bench,
+    # whatever the environment says. debugpy is not a runtime dependency either:
+    # docker/init.sh installs it for development.
+    if os.environ.get("DEBUG_MODE") == "1" and frappe.conf.developer_mode:
         try:
             import debugpy
             if not debugpy.is_client_connected():

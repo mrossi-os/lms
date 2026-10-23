@@ -1,0 +1,70 @@
+name: Dependency Scan
+
+# Software composition analysis (OWASP A03 Software Supply Chain Failures):
+# osv-scanner checks every lockfile in the repository against the OSV database
+# (GitHub advisories, PyPA, npm and more) and publishes what it finds in the job
+# summary and as an artifact.
+#
+# Report-only for now: known vulnerabilities in build tooling (vite, esbuild) are
+# still open and would fail every run. Once they are fixed, turn the warning
+# below into `exit 1` so a finding fails the job.
+#
+# The Python dependencies of apps/os_lms are not pinned (no lockfile), so the
+# scanner can only match the few that are; the production image's exact versions
+# come from the elite-deploy build.
+
+on:
+  pull_request:
+  push:
+    branches: [develop, master, feature/oslms, feature/esg]
+  schedule:
+    # Mondays 06:00 UTC: new advisories appear without any change to the code.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  OSV_SCANNER_VERSION: v2.6.0
+  OSV_SCANNER_SHA256: ca69b3d3cd08f889a49dc0a383122f71cc528b83803671df5fd874d97485b108
+
+jobs:
+  osv-scanner:
+    name: osv-scanner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install osv-scanner
+        run: |
+          curl -fsSL -o osv-scanner \
+            "https://github.com/google/osv-scanner/releases/download/${OSV_SCANNER_VERSION}/osv-scanner_linux_amd64"
+          echo "${OSV_SCANNER_SHA256}  osv-scanner" | sha256sum --check
+          chmod +x osv-scanner
+
+      - name: Scan lockfiles
+        run: |
+          status=0
+          ./osv-scanner scan source --recursive --format json --output osv-results.json . || status=$?
+          ./osv-scanner scan source --recursive --format markdown . > osv-results.md || true
+          {
+            echo "## osv-scanner (${OSV_SCANNER_VERSION})"
+            echo
+            cat osv-results.md
+          } >> "$GITHUB_STEP_SUMMARY"
+          # 0 = nothing found, 1 = vulnerabilities found, anything else = the scan itself failed.
+          if [ "$status" -gt 1 ]; then
+            echo "osv-scanner failed with exit code $status"
+            exit "$status"
+          fi
+          if [ "$status" -eq 1 ]; then
+            echo "::warning title=Dependency Scan::Known vulnerabilities found, see the job summary"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: osv-scanner-results
+          path: osv-results.*
+          if-no-files-found: ignore

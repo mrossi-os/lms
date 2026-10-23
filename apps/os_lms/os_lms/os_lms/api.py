@@ -23,7 +23,7 @@ VIMEO_PLAYER_IN_PAGE_RE = re.compile(r"player\.vimeo\.com\\?/video\\?/(\d+)\?h=(
 VIMEO_CANONICAL_IN_PAGE_RE = re.compile(r"(?<![\w.])vimeo\.com\\?/(\d+)\\?/([a-zA-Z0-9]+)")
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def set_lesson_as_current(course: str, lesson: str):
 	"""Update the current_lesson on the user's enrollment for the given course."""
 	if not course or not lesson:
@@ -203,7 +203,20 @@ def check_quiz_access(course, lesson=None):
 	return evaluate_quiz_access(course, lesson)
 
 
-@frappe.whitelist()
+# The placeholders the announcement Email Templates use. Subject and content come
+# from the request, so they never go through Jinja: frappe.render_template hands
+# the template frappe.db, frappe.get_all, frappe.make_get_request and the rest of
+# the safe globals, which let any Docente read or rewrite the database. Anything
+# else between braces is left as typed.
+ANNOUNCEMENT_PLACEHOLDER_RE = re.compile(r"\{\{\s*(message|announcement_url|subject|frappe\.utils\.get_url\(\))\s*\}\}")
+
+
+def fill_announcement_placeholders(text: str, values: dict) -> str:
+	# One pass, so a value that itself contains "{{ message }}" is not expanded again.
+	return ANNOUNCEMENT_PLACEHOLDER_RE.sub(lambda m: values[m.group(1)], text or "")
+
+
+@frappe.whitelist(methods=["POST"])
 def send_batch_announcement(
 	batch: str,
 	recipients,
@@ -213,8 +226,8 @@ def send_batch_announcement(
 	send_email: bool | int | str = True,
 ) -> dict:
 	"""
-	Invia un annuncio a una LMS Batch con rendering Jinja dell'HTML.
-	Il parametro `message` viene iniettato nel context come {{ message }}
+	Invia un annuncio a una LMS Batch.
+	Il parametro `message` sostituisce il segnaposto {{ message }}
 	per permettere all'utente di scrivere il testo senza toccare l'HTML.
 	Se `send_email` è falso viene creata solo la notifica in-app.
 	"""
@@ -231,16 +244,33 @@ def send_batch_announcement(
 		frappe.throw("Non hai i permessi per inviare annunci", frappe.PermissionError)
 
 	if isinstance(recipients, str):
-		recipients = [r.strip() for r in recipients.split(",") if r.strip()]
+		recipients = frappe.parse_json(recipients) if recipients.lstrip().startswith("[") else recipients.split(",")
+	recipients = list(dict.fromkeys(str(r).strip() for r in recipients or [] if str(r).strip()))
 	if not recipients:
 		frappe.throw("Nessun destinatario specificato")
+
+	# Only the batch's own students: the list comes from the request, so without
+	# this the platform's mail server would send the author's HTML to any address.
+	enrolled = set(frappe.get_all("LMS Batch Enrollment", {"batch": batch}, pluck="member"))
+	outsiders = [r for r in recipients if r not in enrolled]
+	if outsiders:
+		frappe.throw(
+			frappe._("These recipients are not students of this batch: {0}").format(", ".join(outsiders)),
+			frappe.PermissionError,
+		)
 
 	send_email_flag = str(send_email).lower() not in ("0", "false", "no", "")
 
 	announcement_url = f"{frappe.utils.get_url()}/lms/batches/details/{batch}#announcements"
-	context = {"message": message or "", "announcement_url": announcement_url}
-	rendered_content = frappe.render_template(content, context)
-	rendered_subject = frappe.render_template(subject, context)
+	placeholders = {
+		"message": message or "",
+		"announcement_url": announcement_url,
+		"frappe.utils.get_url()": frappe.utils.get_url(),
+		"subject": "",
+	}
+	rendered_subject = fill_announcement_placeholders(subject, placeholders)
+	placeholders["subject"] = frappe.utils.escape_html(rendered_subject)
+	rendered_content = fill_announcement_placeholders(content, placeholders)
 
 	from frappe.core.doctype.communication.email import make
 
@@ -1550,7 +1580,7 @@ def _build_export_bytes(report_type: str, columns, file_format: str, parsed_filt
 	return f"{safe_label}.xlsx", content_type, xlsx_file.getvalue(), len(rows)
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def start_student_stats_export(
 	report_type: str, columns: str, file_format: str = "csv", filters: str | None = None
 ):
@@ -1657,7 +1687,7 @@ def list_student_stats_exports():
 	)
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def delete_student_stats_export(name: str):
 	"""Delete an export record and its generated file. Any user who can export may
 	delete any export (shared management), so gate on the export capability only."""
@@ -1708,7 +1738,7 @@ def get_welcome_video_config() -> dict:
 	}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def mark_welcome_video_seen() -> dict:
 	"""Mark the welcome video as seen for the current user."""
 	if frappe.session.user == "Guest":
@@ -1756,7 +1786,7 @@ def _token_hash(token: str) -> str:
 	return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def register_push_token(token: str, platform: str = None, device_id: str = None) -> dict:
 	"""Register (or refresh) the calling user's FCM device token.
 
@@ -1812,7 +1842,7 @@ def register_push_token(token: str, platform: str = None, device_id: str = None)
 	return {"ok": True}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def unregister_push_token(token: str) -> dict:
 	"""Remove a device token (e.g. on logout). Idempotent."""
 	if not token:
@@ -1959,7 +1989,7 @@ def _apply_reminders(doc, rows) -> None:
 		)
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def update_live_class(name: str, payload: dict) -> dict:
 	"""Update editable fields and the reminders child table on a Live Class.
 
@@ -1987,7 +2017,7 @@ def update_live_class(name: str, payload: dict) -> dict:
 	return {"name": doc.name}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def start_live_class(name: str) -> dict:
 	"""Mark a Live Class as started by the host so enrolled students can join."""
 	doc = frappe.get_doc("LMS Live Class", name)
@@ -2165,7 +2195,7 @@ def _lock_live_class_for_delete(name: str) -> None:
 		frappe.throw(frappe._("This live class is already being deleted. Please wait a moment."))
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def delete_live_class(name: str, notify_students: int = 0) -> dict:
 	"""Delete a Live Class. Optionally notify enrolled students by email + Notification Log."""
 	# A second request for the same class (double click, two tabs) must stop here, before
@@ -2425,6 +2455,12 @@ def get_lesson_audio_stream(lesson_name: str, force_refresh: bool = False) -> di
 	API is re-queried; used by the mobile app when the previously
 	resolved HLS URL expires mid-playback (~6h signed-URL lifetime).
 	"""
+	from os_lms.os_lms.access_guards import assert_lesson_readable, check_user_rate_limit
+
+	# The signed HLS link is the whole lesson video: only who may open the lesson
+	# now (enrolled, author, Valutatore, preview; sequential unlock included).
+	assert_lesson_readable(lesson_name)
+
 	settings = frappe.get_single("Vimeo Settings")
 
 	if not settings.enabled:
@@ -2477,6 +2513,9 @@ def get_lesson_audio_stream(lesson_name: str, force_refresh: bool = False) -> di
 		if cached:
 			return cached
 	else:
+		# Each refresh is a call to the Vimeo API, whose rate limit the whole site
+		# shares: the app needs one every few hours, not one per request.
+		check_user_rate_limit("vimeo_stream_refresh", limit=20, seconds=60 * 60)
 		# Drop the stale entry so the new URL replaces it.
 		frappe.cache().delete_value(cache_key)
 
@@ -2493,8 +2532,10 @@ def get_lesson_audio_stream(lesson_name: str, force_refresh: bool = False) -> di
 		)
 	except requests.exceptions.Timeout:
 		frappe.throw("Vimeo API timeout, riprova piu' tardi")
-	except requests.exceptions.RequestException as e:
-		frappe.throw(f"Errore comunicazione Vimeo: {str(e)}")
+	except requests.exceptions.RequestException:
+		# The exception text carries Vimeo URLs and internals: log it, don't return it.
+		frappe.log_error(title="Vimeo audio stream request failed")
+		frappe.throw("Errore di comunicazione con Vimeo, riprova piu' tardi")
 
 	if response.status_code == 401:
 		get_vimeo_token(force_refresh=True)
@@ -2721,7 +2762,7 @@ def get_member_courses(member: str) -> list[dict]:
 	return out
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def reset_course_progress(member: str, course: str, dry_run: bool | int | str = False) -> dict:
 	"""Wipe a student's progress for a course so it can be retaken from scratch.
 
