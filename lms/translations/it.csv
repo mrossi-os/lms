@@ -1273,6 +1273,7 @@ Es. http://hostname/api/method/frappe.integrations.oauth2_logins.login_via_faceb
 "Desk theme","Tema desktop"
 "Light","Chiaro"
 "Dark","Scuro"
+"System","Sistema"
 "Automatic","Automatico"
 "Nome del college","Nome dell'istituto"
 "Code editor type","Tipo di editor di codice"

@@ -27,7 +27,9 @@ const storedPreference = (): ThemePreference => {
 	// to, so an existing user's choice survives the upgrade rather than snapping
 	// to system on first load after deploy.
 	const legacy = localStorage.getItem(RESOLVED_KEY)
-	return legacy === 'dark' || legacy === 'light' ? legacy : 'system'
+	// OSLMS-CUSTOM: a visitor who never chose gets light (the client-branded
+	// theme), not 'system'. Mirrored in the index.html bootstrap.
+	return legacy === 'dark' || legacy === 'light' ? legacy : 'light'
 }
 
 const resolve = (preference: ThemePreference): Theme =>
@@ -48,19 +50,10 @@ const setThemePreference = (preference: ThemePreference): void => {
 	paint(resolve(preference))
 }
 
-// OSLMS-CUSTOM: users cannot switch theme; it is fixed by the admin
-// The theme comes from Brand Customize (served as settings.data.theme by the
-// os_lms get_lms_settings override), so no UI control may change it.
+// Toggling from 'system' commits to the opposite of whatever system currently
+// resolves to, which is what a user flipping a switch means by it.
 const toggleTheme = (): void => {
-	// no-op: theme is fixed by the sysadmin via LMSA Settings.
-}
-
-// OSLMS-CUSTOM: applyTheme stays exported for the admin-theme watcher in App.vue
-// Goes through setThemePreference so both localStorage keys hold the admin's
-// value: the index.html bootstrap then paints it on the next cold load instead
-// of resolving 'system' first.
-const applyTheme = (value: Theme): void => {
-	setThemePreference(value)
+	setThemePreference(theme.value === 'dark' ? 'light' : 'dark')
 }
 
 // Paint at module init rather than from a component's onMounted. The previous
@@ -91,5 +84,4 @@ if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
 		})
 }
 
-export { applyTheme, toggleTheme, theme }
-export { setThemePreference, themePreference }
+export { setThemePreference, theme, themePreference, toggleTheme }

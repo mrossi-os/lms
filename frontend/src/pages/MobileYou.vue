@@ -167,7 +167,6 @@ const primaryLabels = computed(() =>
 
 // `hasRoute` separates a destination that is a route from one that is a URL an
 // admin typed; not every sidebar link points into the SPA.
-// OSLMS-CUSTOM: no Colour mode row, the theme is fixed by the admin (admin-forced-theme)
 const groups = computed(() =>
 	buildYouRows({
 		sidebarLinks: sidebarLinks.value,
@@ -176,10 +175,7 @@ const groups = computed(() =>
 		themePreference: themePreference.value,
 		unreadCount: unreadCount.value,
 		hasRoute: (name: string) => router.hasRoute(name),
-	}).map((group) => ({
-		...group,
-		rows: group.rows.filter((row) => row.action !== COLOUR_MODE_ACTION),
-	}))
+	})
 )
 
 // Asked for here, not only by MobileLayout, so a cold deep link with no bar

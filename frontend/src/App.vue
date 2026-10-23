@@ -11,13 +11,11 @@
 <script setup>
 import { FrappeUIProvider } from 'frappe-ui'
 import { Dialogs } from '@/utils/dialogs'
-import { computed, watch } from 'vue'
+import { computed } from 'vue'
 import { useScreenSize } from './utils/composables'
 // OSLMS-CUSTOM: AI tutor course context store (os_lms)
 import { useAiContext } from '@/stores/aiContext'
 import { useSettings } from '@/stores/settings'
-// OSLMS-CUSTOM: theme is forced by the admin (Brand Customize), see watcher below
-import { applyTheme } from '@/utils/theme'
 import { useRouter, useRoute } from 'vue-router'
 import DesktopLayout from './components/Layouts/DesktopLayout.vue'
 import MobileLayout from './components/Layouts/MobileLayout.vue'
@@ -30,18 +28,6 @@ const router = useRouter()
 const route = useRoute()
 const aiContext = useAiContext()
 const { settings } = useSettings()
-
-// Backend-driven theme: LMSA Settings → theme overrides any local preference.
-// OSLMS-CUSTOM: apply the admin-chosen theme from get_lms_settings on every load
-watch(
-	() => settings.data?.theme,
-	(value) => {
-		if (value === 'light' || value === 'dark') {
-			applyTheme(value)
-		}
-	},
-	{ immediate: true },
-)
 
 // Derive the layout from the current route, not a navigation guard. Flipping it
 // in beforeEach swaps the layout the instant a navigation starts (before a lazy

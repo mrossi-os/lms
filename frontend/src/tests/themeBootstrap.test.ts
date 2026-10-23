@@ -135,11 +135,13 @@ describe('the theme applied before first paint', () => {
 		expect(paintedDocument(null)).toBe('#ffffff')
 	})
 
-	it('paints the canvas dark for a dark visitor with no stored preference', () => {
+	// OSLMS-CUSTOM: with no stored preference the default is light (the
+	// client-branded theme), even on a dark system.
+	it('paints the canvas light for a dark visitor with no stored preference', () => {
 		const theme = runBootstrap({ stored: {}, systemDark: true })
 
-		expect(theme).toBe('dark')
-		expect(paintedDocument(theme)).toBe('#171717')
+		expect(theme).toBe('light')
+		expect(paintedDocument(theme)).toBe('#ffffff')
 	})
 
 	it('honours an explicit dark choice made on a light system', () => {

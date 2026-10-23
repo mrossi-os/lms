@@ -2,11 +2,15 @@
    the Brand Customize doctype, which serves them as :root custom properties
    loaded after this stylesheet (see os_lms/branding.py). Every rule below
    therefore reads a --login-* property and falls back to Frappe's own default,
-   so an instance that has not been branded yet renders a stock Frappe page. */
-:root,
-[data-theme="light"] {
+   so an instance that has not been branded yet renders a stock Frappe page.
+   The company palette below only applies to the light theme, like the Brand
+   Customize colors: under [data-theme="dark"] the stock dark tokens stay. */
+:root {
 	--color-white: #ffffff;
 	--color-black: #000000;
+}
+
+:root:not([data-theme="dark"]) {
 	--color-company-primary: #111d2e;
 	--color-company-secondary: #123456;
 	--bg-light-gray: var(--color-company-primary);

@@ -98,7 +98,8 @@ export const colourModeRow = (themePreference: ThemePreference): MobileRow => ({
 	key: 'colour-mode',
 	label: 'Colour mode',
 	icon: 'lucide-sun-moon',
-	value: COLOUR_MODE_LABELS[themePreference] || 'System',
+	// OSLMS-CUSTOM: SettingsRowList translates labels but prints values as given
+	value: __(COLOUR_MODE_LABELS[themePreference] || 'System'),
 	action: COLOUR_MODE_ACTION,
 })
 

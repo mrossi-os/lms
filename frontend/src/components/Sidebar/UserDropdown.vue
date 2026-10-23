@@ -69,8 +69,7 @@ import { sessionStore } from '@/stores/session'
 import { call, createResource, Dropdown, toast } from 'frappe-ui'
 import { useRouter } from 'vue-router'
 import { convertToTitleCase } from '@/utils'
-// OSLMS-CUSTOM: no theme import, users cannot switch theme (fixed by the admin)
-// App.vue applies the admin-forced theme; this menu has no Toggle Theme item.
+import { toggleTheme, theme } from '@/utils/theme'
 import { usersStore } from '@/stores/user'
 import { useSettings } from '@/stores/settings'
 import { h, watch, ref, computed } from 'vue'
@@ -79,7 +78,16 @@ import FrappeCloudIcon from '@/components/Icons/FrappeCloudIcon.vue'
 import LMSLogo from '@/components/Icons/LMSLogo.vue'
 import SettingsModal from '@/components/Settings/Settings.vue'
 // OSLMS-CUSTOM: lucide components as menu icons instead of 'lucide-*' strings
-import { LogIn, LogOut, Upload, User, Settings, Trash2 } from 'lucide-vue-next'
+import {
+	LogIn,
+	LogOut,
+	Moon,
+	Sun,
+	Upload,
+	User,
+	Settings,
+	Trash2,
+} from 'lucide-vue-next'
 import { safeUrl } from '@/utils/safeUrl'
 import { openExternal } from '@/utils/openExternal'
 
@@ -169,7 +177,13 @@ const userDropdownOptions = computed(() => {
 						return isLoggedIn
 					},
 				},
-				// OSLMS-CUSTOM: "Toggle Theme" item removed here (theme fixed by the admin)
+				{
+					icon: theme.value === 'light' ? Moon : Sun,
+					label: __('Toggle Theme'),
+					onClick: () => {
+						toggleTheme()
+					},
+				},
 				{
 					icon: 'lucide-layout-grid',
 					label: __('Apps'),

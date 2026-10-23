@@ -55,13 +55,15 @@
 		{
 			"fieldname": "section_theme",
 			"fieldtype": "Section Break",
+			"hidden": 1,
 			"label": "Theme"
 		},
 		{
 			"default": "light",
-			"description": "Forces the UI theme (light/dark) for every user. The frontend honors this value over any local preference.",
+			"description": "Not used anymore: the default theme is light and every user can switch to the stock dark theme. Kept hidden so existing values are not lost.",
 			"fieldname": "theme",
 			"fieldtype": "Select",
+			"hidden": 1,
 			"label": "Theme",
 			"options": "light\ndark"
 		},
@@ -314,7 +316,7 @@
 	"index_web_pages_for_search": 1,
 	"issingle": 1,
 	"links": [],
-	"modified": "2026-09-11 12:16:35.276163",
+	"modified": "2026-10-23 12:00:00.000000",
 	"modified_by": "Administrator",
 	"module": "OS LMS",
 	"name": "Brand Customize",

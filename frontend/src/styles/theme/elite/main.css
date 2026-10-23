@@ -37,15 +37,16 @@ blockquote {
 	border-bottom-left-radius: 0;
 	border-bottom-right-radius: 0;
 }
-/* List rows */
+/* List rows. The company color is light-theme only (os_lms.css, Brand
+   Customize): under dark the rows keep the stock surface. */
 .os-list-view > div:nth-of-type(2) {
-	background-color: var(--color-company-primary);
+	background-color: var(--color-company-primary, transparent);
 	border-bottom-left-radius: 0.5rem !important;
 	border-bottom-right-radius: 0.5rem !important;
 }
 
 .os-table-view tbody {
-	background-color: var(--color-company-primary);
+	background-color: var(--color-company-primary, transparent);
 }
 .os-table-view tbody tr {
 	color: var(--ink-gray-9);

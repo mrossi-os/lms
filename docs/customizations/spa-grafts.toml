@@ -8120,75 +8120,54 @@ Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina in
 # Base P = v2.61.0, obiettivo T = v2.62.0.
 # ---------------------------------------------------------------------------
 
-# --- Tema fissato dall'amministratore ----------------------------------------
+# --- Tema: default chiaro, scuro stock scelto dall'utente --------------------
 
 [[entries]]
-id = "admin-forced-theme"
-title = "Tema chiaro/scuro deciso dall'amministratore, non dall'utente"
+id = "default-light-theme"
+title = "Tema chiaro di default con colori cliente; l'utente può passare allo scuro stock"
 layer = "spa-graft"
 confidence = "high"
 intent = """
-Il tema (chiaro o scuro) è una scelta di piattaforma, non dell'utente: lo imposta
-l'amministratore nel campo theme del doctype os_lms «Brand Customize», che
-override_api.get_lms_settings aggiunge alla risposta come settings.data.theme (i commenti nel
-codice dicono ancora «LMSA Settings», ma la fonte reale è Brand Customize). App.vue osserva
-settings.data?.theme con immediate e chiama applyTheme, che scrive data-theme e la cache
-localStorage 'theme' (serve solo a evitare il lampo del tema sbagliato al primo paint).
-Di conseguenza l'utente non può cambiarlo: toggleTheme in utils/theme.ts è un no-op e la voce
-«Toggle Theme» del menu utente (UserDropdown) è stata tolta (commit a6a81a7f2, poi
-2b3b61c7d «refactoring simulations page» per il watcher e il no-op), per tutti i ruoli.
-UserDropdown non importa più toggleTheme ma conserva l'onMounted upstream applyTheme(theme.value).
-ATTENZIONE al merge di v2.62.0, conflitto su tre file:
-(1) utils/theme.ts è riscritto dall'upstream (ThemePreference 'light'|'dark'|'system', chiavi
-localStorage themePreference + theme, paint() a livello di modulo, ascolto di
-prefers-color-scheme, setThemePreference/themePreference esportati, applyTheme NON più
-esportato, toggleTheme reale). Prendere il file upstream e riapplicare: toggleTheme no-op
-(o comunque nessun punto dell'interfaccia che lo chiami) e un'esportazione che App.vue possa
-usare per forzare il valore dell'amministratore (es. riesportare paint come applyTheme, oppure
-chiamare setThemePreference(value) dal watcher, che scrive anche themePreference). Con il
-default upstream 'system' un utente con il sistema operativo scuro vedrebbe il tema scuro
-finché get_lms_settings non risponde: il watcher di App.vue lo corregge subito dopo.
-(2) App.vue: la riga import { applyTheme } non compila più contro il nuovo theme.ts:
-adeguarla alla funzione scelta al punto (1).
-(3) UserDropdown.vue: l'upstream tiene la voce «Toggle Theme» e cambia l'import in
-{ toggleTheme, theme } e toglie l'onMounted con applyTheme: prendere la rimozione
-dell'onMounted, NON reintrodurre la voce Toggle Theme, importare solo ciò che serve.
-Inoltre v2.62.0 porta sul telefono la pagina «You» (pages/MobileYou.vue +
-components/Settings/youRows.ts, mobileSettings.ts) con una riga «Colour mode»
-(colourModeRow → setThemePreference): va nascosta anche lì, altrimenti lo studente torna a
-poter cambiare tema dal telefono (file di altri gruppi, da riapplicare nel merge).
-Merge di v2.62.0 (2026-09-24): theme.ts riscritto dall'upstream (preferenza light/dark/system): applyTheme riespresso su setThemePreference, toggleTheme resta no-op; nel menu utente la regola e l'assenza della voce Toggle Theme, quindi l'ancora e il commento che la documenta.
-Adeguamento post-merge v2.62.0 (2026-09-24): la nuova pagina «You» del telefono (MobileYou.vue) offre una riga «Colour mode» che apre un selettore light/dark/system: filtrata via nella pagina (youRows.ts upstream intatto). 4 test upstream di mobileYou.test.ts verificano quella riga: riconciliazione finale dei test. Nota: con Brand Customize vuoto il backend os_lms risponde comunque «light»; al primo accesso su un telefono in modalità scura può comparire un breve lampo scuro prima che le impostazioni arrivino (bootstrap di index.html sulla preferenza system)."""
-
-  [[entries.sites]]
-  file = "frontend/src/App.vue"
-  anchor = "() => settings.data?.theme,"
-
-  [[entries.sites]]
-  file = "frontend/src/App.vue"
-  anchor = "import { applyTheme } from '@/utils/theme'"
+Requisito ESG (2026-10-23, branch feature/esg, punto 1): l'utente deve poter cambiare tema,
+quindi la voce «Toggle Theme» del menu utente (UserDropdown) e la riga «Colour mode» della
+pagina «You» del telefono (MobileYou.vue) sono tornate come in upstream, e App.vue non
+impone più il tema dell'amministratore. Sostituisce la vecchia voce admin-forced-theme
+(tema deciso dall'amministratore in Brand Customize, toggleTheme no-op): il campo theme di
+Brand Customize è ora nascosto e get_lms_settings non lo restituisce più.
+Unica differenza dall'upstream rimasta: chi non ha mai scelto parte in CHIARO, non in
+'system' (il tema chiaro è quello con i colori del cliente). La regola è scritta due volte e
+le due copie devono coincidere: storedPreference() in utils/theme.ts e lo script di
+bootstrap in index.html; themeBootstrap.test.ts verifica il caso «nessuna preferenza su
+sistema scuro → light».
+Lato colori (non marcato nella SPA, è codice os_lms): branding._build_css scrive i colori di
+Brand Customize sotto :root:not([data-theme="dark"]) e os_lms.css fa lo stesso per la
+palette aziendale, così in scuro restano i token scuri stock di frappe-ui; le variabili
+--login-* restano in :root. styles/theme/elite/main.css usa
+var(--color-company-primary, transparent) per le righe di liste/tabelle.
+ATTENZIONE ai merge: se l'upstream cambia il fallback 'system' in theme.ts o nel bootstrap
+di index.html, riapplicare 'light' in entrambi i punti.
+Con la riga «Colour mode» di nuovo visibile sul telefono, il suo valore (System/Light/Dark)
+usciva in inglese: SettingsRowList traduce le etichette ma stampa il valore così com'è.
+colourModeRow in mobileSettings.ts passa quindi il valore da __(); «System» → «Sistema»
+aggiunto in lms/translations/it.csv (Light/Dark erano già tradotti)."""
 
   [[entries.sites]]
   file = "frontend/src/utils/theme.ts"
-  anchor = "// no-op: theme is fixed by the sysadmin via LMSA Settings."
-  symbol = "toggleTheme"
+  anchor = "return legacy === 'dark' || legacy === 'light' ? legacy : 'light'"
+  symbol = "storedPreference"
 
   [[entries.sites]]
-  file = "frontend/src/utils/theme.ts"
-  anchor = "export { applyTheme, toggleTheme, theme }"
+  file = "frontend/index.html"
+  anchor = "legacy === 'dark' || legacy === 'light' ? legacy : 'light'"
 
   [[entries.sites]]
-  file = "frontend/src/components/Sidebar/UserDropdown.vue"
-  anchor = "// OSLMS-CUSTOM: \"Toggle Theme\" item removed here (theme fixed by the admin)"
+  file = "frontend/src/tests/themeBootstrap.test.ts"
+  anchor = "it('paints the canvas light for a dark visitor with no stored preference', () => {"
 
   [[entries.sites]]
-  file = "frontend/src/pages/MobileYou.vue"
-  anchor = "rows: group.rows.filter((row) => row.action !== COLOUR_MODE_ACTION),"
-
-  [entries.visibility]
-  subject = "commutatore di tema (voce «Toggle Theme» del menu utente, riga «Colour mode» su telefono)"
-  allow = []
-  deny = ["Student", "Docente", "Moderator", "Gestore", "Valutatore", "System Manager", "Guest"]
+  file = "frontend/src/components/Settings/mobileSettings.ts"
+  anchor = "value: __(COLOUR_MODE_LABELS[themePreference] || 'System'),"
+  symbol = "colourModeRow"
 
 # --- Contesto del tutor AI ------------------------------------------------------
 

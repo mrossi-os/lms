@@ -23,8 +23,10 @@
 					preference !== 'system'
 				) {
 					var legacy = localStorage.getItem('theme')
+					/* OSLMS-CUSTOM: no choice yet means light (the client-branded
+					   theme), not 'system' — same rule as src/utils/theme.ts. */
 					preference =
-						legacy === 'dark' || legacy === 'light' ? legacy : 'system'
+						legacy === 'dark' || legacy === 'light' ? legacy : 'light'
 				}
 				document.documentElement.setAttribute(
 					'data-theme',

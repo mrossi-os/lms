@@ -51,15 +51,26 @@ FIELD_TO_CSS_VAR = {
 
 CACHE_KEY = "brand_customize_css"
 
+# Client colors only brand the light theme: a user who picks dark gets the stock
+# dark palette. frappe-ui puts its light tokens in :root and its dark ones in
+# [data-theme="dark"] (same specificity, so the last loaded wins); this selector
+# outranks the light defaults and never matches under dark.
+LIGHT_THEME_SELECTOR = ':root:not([data-theme="dark"])'
+
+# The login pages have no theme switch, so their colors apply in every theme.
+THEME_INDEPENDENT_PREFIX = "--login-"
+
 
 def _build_css() -> str:
 	doc = frappe.get_cached_doc("Brand Customize")
-	lines = [":root {"]
+	themed, independent = [], []
 	for fieldname, css_var in FIELD_TO_CSS_VAR.items():
 		value = (doc.get(fieldname) or "").strip()
 		if value:
-			lines.append(f"\t{css_var}: {value};")
-	lines.append("}")
+			target = independent if css_var.startswith(THEME_INDEPENDENT_PREFIX) else themed
+			target.append(f"\t{css_var}: {value};")
+
+	lines = [f"{LIGHT_THEME_SELECTOR} {{", *themed, "}", ":root {", *independent, "}"]
 	return "\n".join(lines) + "\n"
 
 

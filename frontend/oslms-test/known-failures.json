@@ -352,26 +352,6 @@
 			"entry": "ai-fixed-buttons-layouts",
 			"why": "MobileLayout mounts AiFixedButtons, whose mobileCta store needs defineStore, missing from the pinia mock"
 		},
-		"mobileYou.test.ts > a cold deep link to /you stands up before the nav links have arrived": {
-			"kind": "rule",
-			"entry": "admin-forced-theme",
-			"why": "the Colour mode row is removed: the theme is set by the admin"
-		},
-		"mobileYou.test.ts > picking a row opens the colour-mode sheet rather than navigating away for it": {
-			"kind": "rule",
-			"entry": "admin-forced-theme",
-			"why": "the Colour mode row is removed: the theme is set by the admin"
-		},
-		"mobileYou.test.ts > picking a row sets the preference from the sheet and closes it": {
-			"kind": "rule",
-			"entry": "admin-forced-theme",
-			"why": "the Colour mode row is removed: the theme is set by the admin"
-		},
-		"mobileYou.test.ts > what the page shows offers no way into settings, not even to a moderator": {
-			"kind": "rule",
-			"entry": "admin-forced-theme",
-			"why": "the Colour mode row is removed: the theme is set by the admin"
-		},
 		"newBatchForm.test.ts > NewBatchForm as a route ignores Ctrl+S for a user who cannot create batches": {
 			"kind": "rule",
 			"entry": "batch-new-modal-required-warnings",
