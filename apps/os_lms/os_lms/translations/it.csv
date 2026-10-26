@@ -100,3 +100,10 @@ You do not have access to this live class.,Non hai accesso a questa lezione live
 This course is not part of the batch.,Questo corso non fa parte della classe.
 This student is not enrolled in the batch.,Questo studente non è iscritto alla classe.
 You are not authorized to view this batch.,Non sei autorizzato a visualizzare questa classe.
+"Login link sent to your email","Se l'indirizzo è registrato, ti abbiamo inviato il link di accesso"
+Security alert: {0} failed logins in the last {1} minutes,Allarme sicurezza: {0} login falliti negli ultimi {1} minuti
+Security alert: {0} Elite API keys refused in the last {1} minutes,Allarme sicurezza: {0} chiavi Elite API rifiutate negli ultimi {1} minuti
+Top IP addresses,Indirizzi IP con più tentativi
+Most targeted accounts,Account più presi di mira
+Details: Desk → Activity Log.,Dettagli: Desk → Activity Log.
+Details: Desk → Elite API Access Log.,Dettagli: Desk → Elite API Access Log.

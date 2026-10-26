@@ -141,6 +141,11 @@ def send_login_link(email: str):
 	if not frappe.get_system_settings("login_with_email_link"):
 		return
 
+	# Same answer whether or not the address has an account: an error here let
+	# anyone probe which emails are registered.
+	if not isinstance(email, str) or not frappe.db.get_value("User", {"name": email, "enabled": 1}):
+		return
+
 	expiry = frappe.get_system_settings("login_with_email_link_expiry") or 10
 	link = _generate_temporary_login_link(email, expiry)
 

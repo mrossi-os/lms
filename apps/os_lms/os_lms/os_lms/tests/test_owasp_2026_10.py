@@ -683,3 +683,73 @@ class TestI1I3RemovedEndpoints(UnitTestCase):
 
 		self.assertFalse(hasattr(api, "try_import"))
 		self.assertFalse(hasattr(api, "get_course_duration"))
+
+
+class TestL10LoginLinkEnumeration(UnitTestCase):
+	def _send(self, user_row):
+		from os_lms.www import login
+
+		settings = {"login_with_email_link": 1, "login_with_email_link_expiry": 10}
+		get_value = frappe.db.get_value
+
+		def user_lookup(doctype, *args, **kwargs):
+			return user_row if doctype == "User" else get_value(doctype, *args, **kwargs)
+
+		with (
+			patch.object(frappe, "get_system_settings", side_effect=lambda key: settings.get(key)),
+			patch.object(frappe.db, "get_value", side_effect=user_lookup),
+			patch.object(login, "_generate_temporary_login_link", return_value="https://x/login") as link,
+			patch.object(login, "send_templated_email") as send,
+		):
+			result = login.send_login_link("someone@example.com")
+		return result, link, send
+
+	def test_the_login_page_reaches_the_os_lms_method(self):
+		from os_lms import hooks
+
+		self.assertEqual(
+			hooks.override_whitelisted_methods["frappe.www.login.send_login_link"],
+			"os_lms.www.login.send_login_link",
+		)
+
+	def test_unknown_or_disabled_address_gets_the_same_silent_answer(self):
+		result, link, send = self._send(None)
+		self.assertIsNone(result)
+		link.assert_not_called()
+		send.assert_not_called()
+
+	def test_registered_address_gets_the_os_lms_email(self):
+		result, link, send = self._send("someone@example.com")
+		self.assertIsNone(result)
+		link.assert_called_once()
+		self.assertEqual(send.call_args.kwargs["template_key"], "login_with_email_link")
+
+
+class TestL11TrueSkillsIssueLogPermissions(UnitTestCase):
+	def test_only_system_manager_writes_and_course_creator_does_not_read(self):
+		import json
+		import os
+
+		from os_lms.os_lms.doctype import trueskills_issue_log
+
+		path = os.path.join(os.path.dirname(trueskills_issue_log.__file__), "trueskills_issue_log.json")
+		with open(path) as f:
+			perms = {p["role"]: p for p in json.load(f)["permissions"]}
+
+		self.assertEqual(set(perms), {"System Manager", "Moderator"})
+		self.assertTrue(perms["System Manager"].get("write"))
+		moderator = perms["Moderator"]
+		self.assertTrue(moderator.get("read"))
+		for ptype in ("write", "create", "delete", "share"):
+			self.assertFalse(moderator.get(ptype), ptype)
+
+
+class TestL12CrowdinScript(UnitTestCase):
+	def test_base_template_loads_no_crowdin_script(self):
+		import os
+
+		import os_lms
+
+		path = os.path.join(os.path.dirname(os_lms.__file__), "templates", "base.html")
+		with open(path) as f:
+			self.assertNotIn("crowdin", f.read().lower())

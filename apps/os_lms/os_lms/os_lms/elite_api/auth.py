@@ -23,6 +23,7 @@ import frappe
 from frappe.permissions import ALL_USER_ROLE, GUEST_ROLE, SYSTEM_USER_ROLE
 from frappe.utils import now_datetime
 
+from os_lms.os_lms import security_alerts
 from os_lms.os_lms.elite_api import keys
 from os_lms.os_lms.elite_api.errors import (
 	EliteAPIBadRequest,
@@ -88,9 +89,11 @@ def authenticate_request():
 	if not key_name:
 		# A valid key is never turned away by the counter: spoofing the client's
 		# IP (X-Forwarded-For) must not lock it out. Past the limit, invalid keys
-		# are refused without being logged, so the log cannot be flooded.
+		# are refused without a log row each, so the log cannot be flooded; they
+		# are counted and written back as one row per IP by security_alerts.
 		if _failed_attempts(ip) >= FAILED_ATTEMPTS_LIMIT:
 			context.log = False
+			security_alerts.count_suppressed_attempt(ip)
 			api_error(EliteAPITooManyRequests, "too_many_failed_attempts")
 		_count_failed_attempt(ip)
 		api_error(EliteAPIUnauthorized, "invalid_api_key")

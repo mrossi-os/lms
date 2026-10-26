@@ -15,6 +15,7 @@ import frappe
 from frappe.tests.test_api import FrappeAPITestCase
 from frappe.utils import add_days, get_test_client, get_url, today
 
+from os_lms.os_lms import security_alerts
 from os_lms.os_lms.elite_api import auth, errors, keys
 
 PING = "os_lms.os_lms.elite_api.v1.ping"
@@ -57,6 +58,8 @@ class TestEliteAPIAuth(FrappeAPITestCase):
 			frappe.cache.delete_value(f"elite_api:last_used:{name}")
 		for ip in TEST_IPS:
 			frappe.cache.delete(auth._failed_attempts_cache_key(ip))
+			frappe.cache.delete(security_alerts._suppressed_counter_key(ip))
+			frappe.cache.srem(security_alerts.SUPPRESSED_IPS_SET, ip)
 		frappe.db.commit()
 		super().tearDownClass()
 
@@ -197,11 +200,13 @@ class TestEliteAPIAuth(FrappeAPITestCase):
 		self.assertEqual(frappe.parse_json(rows[0].request_params), {"page": "2"})
 		self.assertIsNotNone(rows[1].api_key)
 
-	def test_invalid_keys_past_the_limit_are_not_logged(self):
+	def test_invalid_keys_past_the_limit_are_counted_not_logged(self):
 		ip = TEST_IPS[12]
 		frappe.cache.setex(auth._failed_attempts_cache_key(ip), 60, auth.FAILED_ATTEMPTS_LIMIT)
 		self.assertEqual(self.call(raw_key="garbage", ip=ip).status_code, 429)
 		self.assertFalse(frappe.db.exists("Elite API Access Log", {"ip_address": ip}))
+		# security_alerts writes them back later as one aggregated row per IP.
+		self.assertEqual(int(frappe.cache.get(security_alerts._suppressed_counter_key(ip)) or 0), 1)
 
 	def test_last_use_is_recorded(self):
 		ip = TEST_IPS[13]

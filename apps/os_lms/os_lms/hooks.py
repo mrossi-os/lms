@@ -149,6 +149,9 @@ override_whitelisted_methods = {
     # Hand out a template matching the columns our import expanders expect; the
     # stock one lists the doctype fields and would skip user creation.
     "frappe.core.doctype.data_import.data_import.download_template": "os_lms.data_import.template.download_template",
+    # The login page calls Frappe's method: ours sends the os_lms email template and
+    # does not reveal whether the address has an account.
+    "frappe.www.login.send_login_link": "os_lms.www.login.send_login_link",
     # Redirect the Google Calendar OAuth callback to the LMS SPA instead of the desk.
     "frappe.integrations.doctype.google_calendar.google_calendar.google_callback": "os_lms.os_lms.google_calendar.google_callback",
 }
@@ -281,6 +284,10 @@ scheduler_events = {
         "os_lms.os_lms.ai.ingestion.scheduler.reindex_lesson_content",
     ],
     "cron": {
+        # Email the Administrator user and the Gestori past the attack thresholds.
+        "*/5 * * * *": [
+            "os_lms.os_lms.security_alerts.check_attack_thresholds",
+        ],
         "*/15 * * * *": [
             "os_lms.os_lms.live_class_reminders.send_live_class_reminders",
         ],
