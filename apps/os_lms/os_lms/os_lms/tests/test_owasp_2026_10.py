@@ -848,3 +848,69 @@ class TestI4LiveClassEmailEscaping(UnitTestCase):
 		header_text = send.call_args.kwargs["header"][0]
 		self.assertNotIn("<a ", header_text)
 		self.assertIn("&lt;a ", header_text)
+
+	def _sent_args(self):
+		"""Template args of the invitation/update, reminder and cancellation senders."""
+		from os_lms.os_lms import api, live_class_reminders
+		from os_lms.overrides import lms_live_class
+
+		live_class = SimpleNamespace(
+			name="LC-1",
+			title=self.INJECTED,
+			description=self.INJECTED,
+			date="2026-10-27",
+			time="10:00:00",
+			duration=60,
+			host=None,
+			batch_name="batch-1",
+			join_url="https://meet.example/j",
+			start_url="https://meet.example/s",
+			get_participants=lambda: [STUDENT],
+		)
+		student = frappe._dict(member=STUDENT, member_name="Studente")
+		cal_links = {"google_url": "g", "outlook_url": "o", "ics_url": "i"}
+
+		def get_value(doctype, *args, **kwargs):
+			return self.INJECTED if doctype == "LMS Batch" else "Studente"
+
+		sent = {}
+		with (
+			patch.object(lms_live_class, "send_templated_email") as participants_mail,
+			patch.object(lms_live_class, "get_calendar_links", return_value=cal_links),
+			patch.object(api, "get_live_class_join_url", return_value="https://elite.example/join"),
+			patch.object(frappe.db, "get_value", side_effect=get_value),
+		):
+			lms_live_class.CustomLMSLiveClass._mail_participants(
+				live_class, template_key="live_class_updated", subject="s", header=None, log_tag="test"
+			)
+		sent["updated"] = participants_mail.call_args.kwargs["args"]
+
+		with patch.object(live_class_reminders, "send_templated_email") as reminder_mail:
+			live_class_reminders._send_reminder_mail(live_class, student, cal_links)
+		sent["reminder"] = reminder_mail.call_args.kwargs["args"]
+
+		with (
+			patch.object(api, "send_templated_email") as cancelled_mail,
+			patch.object(frappe, "get_all", return_value=[student]),
+			patch("frappe.desk.doctype.notification_log.notification_log.make_notification_logs"),
+		):
+			api._notify_students_class_cancelled(live_class)
+		sent["cancelled"] = cancelled_mail.call_args.kwargs["args"]
+		return sent
+
+	def test_desk_templates_print_title_and_description_as_text(self):
+		# A desk Email Template prints `{{ title }}` with no filter.
+		desk_template = "{{ title }}|{{ description }}|{{ batch_title }}"
+		for sender, args in self._sent_args().items():
+			with self.subTest(sender):
+				html = frappe.render_template(desk_template, dict(args))
+				self.assertNotIn('href="https://evil.example"', html)
+				self.assertIn("&lt;a href=", html)
+
+	def test_file_templates_do_not_escape_twice(self):
+		args = self._sent_args()["updated"]
+		from frappe.utils.jinja import get_email_from_template
+
+		html, _text = get_email_from_template("live_class_updated", dict(args))
+		self.assertIn("&lt;a href=", html)
+		self.assertNotIn("&amp;lt;", html)

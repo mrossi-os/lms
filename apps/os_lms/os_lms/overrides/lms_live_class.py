@@ -8,7 +8,7 @@ from frappe.utils import cint, format_date, format_time, get_datetime, now_datet
 from lms.lms.doctype.lms_live_class.lms_live_class import LMSLiveClass
 from lms.lms.utils import get_lms_route
 
-from os_lms.os_lms.email_utils import send_templated_email
+from os_lms.os_lms.email_utils import as_email_text, send_templated_email
 from os_lms.os_lms.live_class_ics import get_calendar_links
 from os_lms.os_lms.live_class_join import get_join_gate_url
 
@@ -348,15 +348,15 @@ class CustomLMSLiveClass(LMSLiveClass):
 					subject=subject,
 					args={
 						"student_name": member_name,
-						"title": self.title,
+						"title": as_email_text(self.title),
 						"date": self.date,
 						"time": self.time,
 						"duration": self.duration,
 						"end_time": end_time,
 						"host_name": host_name,
-						"batch_title": batch_title,
+						"batch_title": as_email_text(batch_title),
 						"join_url": join_url,
-						"description": self.description,
+						"description": as_email_text(self.description),
 						"batch_name": self.batch_name,
 						"live_class_name": self.name,
 						"google_url": cal_links["google_url"],

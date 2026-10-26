@@ -9,7 +9,7 @@ from frappe.utils import escape_html, get_datetime, now_datetime
 from os_lms.os_lms.doctype.lms_live_class_reminder.lms_live_class_reminder import (
 	offset_to_minutes,
 )
-from os_lms.os_lms.email_utils import send_templated_email
+from os_lms.os_lms.email_utils import as_email_text, send_templated_email
 from os_lms.os_lms.live_class_ics import get_calendar_links
 
 
@@ -99,7 +99,7 @@ def _send_reminder_mail(live_class, student, cal_links=None) -> None:
 		subject=subject,
 		args={
 			"student_name": student.member_name,
-			"title": live_class.title,
+			"title": as_email_text(live_class.title),
 			"date": live_class.date,
 			"time": live_class.time,
 			"batch_name": live_class.batch_name,

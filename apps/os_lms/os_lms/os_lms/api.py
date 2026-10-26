@@ -7,7 +7,7 @@ from urllib.parse import quote
 import frappe
 import requests
 
-from os_lms.os_lms.email_utils import send_templated_email
+from os_lms.os_lms.email_utils import as_email_text, send_templated_email
 
 VIMEO_URL_RE = re.compile(r"vimeo\.com/(\d+)(?:/([a-zA-Z0-9]+))?")
 
@@ -2269,7 +2269,7 @@ def _notify_students_class_cancelled(live_class) -> None:
 				subject=frappe._("Lezione annullata: {0}").format(live_class.title),
 				args={
 					"student_name": student.member_name,
-					"title": live_class.title,
+					"title": as_email_text(live_class.title),
 					"date": live_class.date,
 					"time": live_class.time,
 					"batch_name": live_class.batch_name,

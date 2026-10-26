@@ -7,6 +7,17 @@ Each `template_key` corresponds to:
 """
 
 import frappe
+from markupsafe import escape
+
+
+def as_email_text(value):
+	"""Escape a user-typed value for any email template, desk-managed ones included.
+
+	Frappe's Jinja does not autoescape, and a desk Email Template prints
+	`{{ title }}` as HTML. The escaped value is Markup, so a template that also
+	applies `| e` does not escape it twice. Not for subjects: they are plain text.
+	"""
+	return escape(value) if value else value
 
 
 def _get_custom_template_name(template_key: str) -> str | None:
