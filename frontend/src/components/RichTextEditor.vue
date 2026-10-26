@@ -113,18 +113,22 @@ const visibleToolbar = computed(() =>
 	toolbar.filter((item) => !props.excludeItems.includes(item))
 )
 
-const extensions = computed(() => [
+// OSLMS-CUSTOM: Editor reads extensions once at setup, so the mention items are
+// a getter: a list that loads after the editor (the discussion user list) still
+// reaches the @ menu. Same fix as upstream 7fc531540 (not released yet).
+const extensions = [
 	RichTextKit.configure({
 		mention: props.mentions
 			? {
-					items: props.mentions.map((m) => ({
-						id: m.value,
-						label: m.label,
-					})),
+					items: () =>
+						(props.mentions ?? []).map((m) => ({
+							id: m.value,
+							label: m.label,
+						})),
 			  }
 			: false,
 	}),
-])
+]
 
 // Uploads default to private so editor images are not served from the
 // unauthenticated /files/ path, the default the old TextEditor applied.
