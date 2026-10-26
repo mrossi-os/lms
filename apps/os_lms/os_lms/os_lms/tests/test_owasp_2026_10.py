@@ -753,3 +753,41 @@ class TestL12CrowdinScript(UnitTestCase):
 		path = os.path.join(os.path.dirname(os_lms.__file__), "templates", "base.html")
 		with open(path) as f:
 			self.assertNotIn("crowdin", f.read().lower())
+
+
+class TestL10TemplatedEmailForGuests(UnitTestCase):
+	def test_a_desk_template_is_sent_even_when_the_sender_cannot_read_it(self):
+		# Newer Frappe (v16.50) checks Email Template read access inside
+		# get_email_template: a guest asking for a login link must still get it.
+		from frappe.email.doctype.email_template import email_template as frappe_email_template
+
+		from os_lms.os_lms import email_utils
+
+		template = frappe.new_doc("Email Template")
+		template.update({"subject": "Login {{ app_name }}", "response_html": "<a>{{ link }}</a>", "use_html": 1})
+		get_doc = frappe.get_doc
+
+		def fake_get_doc(*args, **kwargs):
+			return template if args[:1] == ("Email Template",) else get_doc(*args, **kwargs)
+
+		denied = frappe.PermissionError("no Email Template access")
+		with (
+			_session("Guest"),
+			patch.object(email_utils, "_get_custom_template_name", return_value="Login link"),
+			patch.object(frappe, "get_doc", side_effect=fake_get_doc),
+			patch.object(type(template), "check_permission", side_effect=denied),
+			patch.object(frappe_email_template, "get_email_template", side_effect=denied),
+			# Also an imported reference, as email_utils used to hold.
+			patch.object(email_utils, "get_email_template", side_effect=denied, create=True),
+			patch.object(frappe, "sendmail") as sendmail,
+		):
+			email_utils.send_templated_email(
+				template_key="login_with_email_link",
+				recipients="someone@example.com",
+				subject="fallback",
+				args={"link": "https://x/key", "app_name": "Elite"},
+			)
+
+		kwargs = sendmail.call_args.kwargs
+		self.assertEqual(kwargs["subject"], "Login Elite")
+		self.assertIn("https://x/key", kwargs["content"])

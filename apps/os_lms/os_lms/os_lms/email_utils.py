@@ -7,7 +7,6 @@ Each `template_key` corresponds to:
 """
 
 import frappe
-from frappe.email.doctype.email_template.email_template import get_email_template
 
 
 def _get_custom_template_name(template_key: str) -> str | None:
@@ -33,7 +32,13 @@ def send_templated_email(
 	custom_template_name = _get_custom_template_name(template_key)
 
 	if custom_template_name:
-		email_template = get_email_template(custom_template_name, args)
+		# Not through Frappe's get_email_template: newer releases check that the
+		# sender may read Email Template (Desk User, System Manager), which a guest
+		# asking for a login link, or a Gestore without desk, may not. The template
+		# is picked by an admin in the settings, never by the sender.
+		email_template = frappe.get_doc("Email Template", custom_template_name).get_formatted_email(
+			dict(args)
+		)
 		frappe.sendmail(
 			recipients=recipients,
 			subject=email_template.get("subject") or subject,
