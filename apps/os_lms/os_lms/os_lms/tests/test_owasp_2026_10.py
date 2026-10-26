@@ -547,3 +547,139 @@ class TestM11Debugpy(UnitTestCase):
 		):
 			debug.active_debug()
 		fake_debugpy.listen.assert_not_called()
+
+
+# Low findings (pacchetto A, docs/security/owasp-piano-residuo-2026-10-26.md).
+# L-6 (assignment submissions of a Valutatore) needs real rows and lives in
+# test_valutatore_assignment_submission_scope.py.
+
+
+class TestL1BatchDashboardScope(UnitTestCase):
+	BATCH = "owasp-batch"
+
+	def _gate_open(self, batch_course=True, enrolled=True):
+		def exists(doctype, filters=None, *args, **kwargs):
+			if doctype == "Batch Course":
+				return batch_course
+			if doctype == "LMS Batch Enrollment":
+				return enrolled
+			return None
+
+		return (
+			patch("lms.lms.permissions.can_author_batch", return_value=True),
+			patch("lms.lms.utils.is_batch_valutatore", return_value=False),
+			patch.object(frappe.db, "exists", side_effect=exists),
+		)
+
+	def test_stats_refuse_a_course_outside_the_batch(self):
+		from os_lms.os_lms.api import get_batch_progress_stats
+
+		author, valutatore, exists = self._gate_open(batch_course=False)
+		with author, valutatore, exists, self.assertRaises(frappe.PermissionError):
+			get_batch_progress_stats(self.BATCH, course="unpublished-course")
+
+	def test_drill_down_refuses_a_course_outside_the_batch(self):
+		from os_lms.os_lms.api import get_batch_student_course_progress
+
+		author, valutatore, exists = self._gate_open(batch_course=False)
+		with author, valutatore, exists, self.assertRaises(frappe.PermissionError):
+			get_batch_student_course_progress(self.BATCH, "unpublished-course", STUDENT)
+
+	def test_drill_down_refuses_a_member_outside_the_batch(self):
+		from os_lms.os_lms.api import get_batch_student_course_progress
+
+		author, valutatore, exists = self._gate_open(enrolled=False)
+		with author, valutatore, exists, self.assertRaises(frappe.PermissionError):
+			get_batch_student_course_progress(self.BATCH, "batch-course", "someone-else@example.com")
+
+
+class TestL2AnnouncementRecipients(UnitTestCase):
+	BATCH = "owasp-batch"
+
+	def _communications(self):
+		return [
+			frappe._dict(subject="to a", recipients="a@x.it, c@x.it", cc=None, bcc=None, sender="s@x.it"),
+			frappe._dict(subject="to ba", recipients="ba@x.it", cc=None, bcc=None, sender="s@x.it"),
+			frappe._dict(subject="cc a", recipients="c@x.it", cc="A@X.it", bcc=None, sender="s@x.it"),
+		]
+
+	def _announcements(self, user, roles=(), student=True):
+		from os_lms.os_lms.override_api import get_announcements
+
+		with (
+			_session(user),
+			_roles(*roles),
+			patch.object(frappe.db, "exists", return_value=student),
+			patch.object(frappe.db, "get_value", return_value=user),
+			patch.object(frappe, "get_cached_value", return_value=None),
+			patch.object(frappe, "get_all", return_value=self._communications()),
+			patch("lms.lms.permissions.can_author_batch", return_value=False),
+			patch("lms.lms.utils.is_batch_valutatore", return_value=False),
+		):
+			return get_announcements(self.BATCH)["data"]
+
+	def test_student_matches_their_own_address_exactly(self):
+		subjects = [comm.subject for comm in self._announcements("a@x.it")]
+		self.assertEqual(subjects, ["to a", "cc a"])
+
+	def test_student_does_not_receive_the_classmates_addresses(self):
+		for comm in self._announcements("a@x.it"):
+			self.assertFalse({"recipients", "cc", "bcc"} & set(comm))
+
+	def test_staff_keeps_the_recipients(self):
+		data = self._announcements("mod@x.it", roles=("Moderator",), student=False)
+		self.assertEqual(len(data), 3)
+		self.assertEqual(data[0].recipients, "a@x.it, c@x.it")
+
+
+class TestL3UserListForValutatore(UnitTestCase):
+	def _users(self, scoped, people=()):
+		from os_lms.os_lms import valutatore
+		from os_lms.os_lms.override_api import get_all_users
+
+		get_all = MagicMock(return_value=[frappe._dict(name="p@x.it", full_name="P", user_image=None)])
+		with (
+			patch.object(frappe, "only_for"),
+			patch.object(valutatore, "_only_scoped_valutatore", return_value=scoped),
+			patch.object(valutatore, "get_valutatore_batch_people", return_value=set(people)),
+			patch.object(frappe, "get_all", get_all),
+		):
+			return get_all_users(), get_all
+
+	def test_scoped_valutatore_gets_only_the_people_of_their_batches(self):
+		_users, get_all = self._users(scoped=True, people={"p@x.it"})
+		filters = get_all.call_args.args[1]
+		self.assertEqual(filters["name"], ["in", ["p@x.it"]])
+
+	def test_scoped_valutatore_without_batches_gets_nobody(self):
+		users, get_all = self._users(scoped=True)
+		self.assertEqual(users, {})
+		get_all.assert_not_called()
+
+	def test_broader_roles_keep_the_full_list(self):
+		_users, get_all = self._users(scoped=False)
+		self.assertEqual(get_all.call_args.args[1], {"enabled": 1})
+
+	def test_batch_people_are_students_instructors_and_valutatori(self):
+		from os_lms.os_lms import valutatore
+
+		def get_all(doctype, *args, **kwargs):
+			return {"Course Instructor": ["teacher@x.it"], "LMS Batch Valutatore": ["val@x.it"]}[doctype]
+
+		with (
+			patch.object(valutatore, "get_valutatore_batches", return_value=["b"]),
+			patch.object(valutatore, "get_valutatore_member_emails", return_value=["student@x.it"]),
+			patch.object(frappe, "get_all", side_effect=get_all),
+		):
+			self.assertEqual(
+				valutatore.get_valutatore_batch_people("val@x.it"),
+				{"student@x.it", "teacher@x.it", "val@x.it"},
+			)
+
+
+class TestI1I3RemovedEndpoints(UnitTestCase):
+	def test_debug_import_and_guest_course_duration_are_gone(self):
+		from os_lms.os_lms import api
+
+		self.assertFalse(hasattr(api, "try_import"))
+		self.assertFalse(hasattr(api, "get_course_duration"))

@@ -8,7 +8,8 @@ that batch**:
 
 - view the batch admin dashboard, live classes and announcements;
 - view the quiz answers of the students enrolled in that batch;
-- view, grade and send the evaluation of the assignments of those students.
+- view, grade and send the evaluation of the assignments of those students, on
+  the batch's courses only.
 
 Access is enforced with two complementary mechanisms (Frappe permission model is
 veto-only at the controller level, so the baseline read/write comes from the
@@ -98,6 +99,30 @@ def get_valutatore_course_names(user: str | None = None) -> list[str]:
 	)
 
 
+def get_valutatore_batch_people(user: str | None = None) -> set[str]:
+	"""Everyone in the batches the user evaluates: students, instructors and the
+	other valutatori. Used to scope the @mention user list."""
+	batches = get_valutatore_batches(user)
+	if not batches:
+		return set()
+	people = set(get_valutatore_member_emails(user))
+	people.update(
+		frappe.get_all(
+			"Course Instructor",
+			filters={"parent": ["in", batches], "parenttype": "LMS Batch"},
+			pluck="instructor",
+		)
+	)
+	people.update(
+		frappe.get_all(
+			"LMS Batch Valutatore",
+			filters={"parent": ["in", batches], "parenttype": "LMS Batch"},
+			pluck="valutatore",
+		)
+	)
+	return people
+
+
 def _only_scoped_valutatore(user: str) -> bool:
 	"""True when the user is a valutatore and has no broader access role."""
 	roles = set(frappe.get_roles(user))
@@ -174,14 +199,50 @@ def quiz_submission_query_conditions(user: str | None = None) -> str:
 	return _quiz_submission_scope_sql(batches)
 
 
+def _assignment_submission_scope_sql(batches: list[str]) -> str:
+	"""SQL predicate on `tabLMS Assignment Submission`: the student is enrolled in one
+	of ``batches`` AND the assignment belongs to that same batch, as for quizzes
+	(see :func:`_quiz_submission_scope_sql`).
+
+	An assignment belongs to a batch when one of the batch courses is
+	  - the ``course`` of the assignment,
+	  - the course of the lesson the submission was made from, or of a lesson that
+	    places the assignment (``LMS Lesson Assessment``),
+	or when the assignment is listed in the batch assessments. Lessons are resolved
+	as they are linked *today*: the ``course`` copied onto the submission is frozen
+	at insert time.
+	"""
+	batch_list = _in_clause(batches)
+	submission = "`tabLMS Assignment Submission`"
+	return (
+		"EXISTS (SELECT 1 FROM `tabLMS Batch Enrollment` os_be"
+		f" WHERE os_be.batch IN ({batch_list}) AND os_be.member = {submission}.member"
+		" AND ("
+		"EXISTS (SELECT 1 FROM `tabBatch Course` os_bc"
+		" WHERE os_bc.parent = os_be.batch AND os_bc.parenttype = 'LMS Batch'"
+		" AND (os_bc.course = (SELECT os_as.course FROM `tabLMS Assignment` os_as"
+		f" WHERE os_as.name = {submission}.assignment)"
+		" OR os_bc.course = (SELECT os_cl.course FROM `tabCourse Lesson` os_cl"
+		f" WHERE os_cl.name = {submission}.lesson)"
+		" OR os_bc.course IN (SELECT os_pl.course FROM `tabCourse Lesson` os_pl"
+		" JOIN `tabLMS Lesson Assessment` os_la ON os_la.parent = os_pl.name"
+		" AND os_la.parenttype = 'Course Lesson'"
+		f" WHERE os_la.assessment_type = 'LMS Assignment' AND os_la.assessment_name = {submission}.assignment)))"
+		" OR EXISTS (SELECT 1 FROM `tabLMS Assessment` os_a"
+		" WHERE os_a.parent = os_be.batch AND os_a.parenttype = 'LMS Batch'"
+		f" AND os_a.assessment_type = 'LMS Assignment' AND os_a.assessment_name = {submission}.assignment)"
+		"))"
+	)
+
+
 def assignment_submission_query_conditions(user: str | None = None) -> str:
 	user = user or frappe.session.user
 	if not _only_scoped_valutatore(user):
 		return ""
-	members = get_valutatore_member_emails(user)
-	if not members:
+	batches = get_valutatore_batches(user)
+	if not batches:
 		return "1=0"
-	return f"`tabLMS Assignment Submission`.member IN ({_in_clause(members)})"
+	return _assignment_submission_scope_sql(batches)
 
 
 def enrollment_query_conditions(user: str | None = None) -> str:
@@ -248,10 +309,24 @@ def submission_has_permission(doc, ptype: str = "read", user: str | None = None)
 	user = user or frappe.session.user
 	if not _only_scoped_valutatore(user):
 		return True
+	batches = get_valutatore_batches(user)
+	if not batches:
+		return False
+	name = doc.get("name")
+	if name and not doc.is_new():
+		# Same rule as the list: student AND assignment of the same batch, so the
+		# student's assignments in courses outside the batch stay out of reach.
+		return bool(
+			frappe.db.sql(
+				"SELECT 1 FROM `tabLMS Assignment Submission`"
+				f" WHERE name = %s AND {_assignment_submission_scope_sql(batches)}",
+				(name,),
+			)
+		)
+	# A document that is not saved yet has nothing to resolve the assignment from:
+	# keep the plain membership rule.
 	member = doc.get("member")
-	if member and member in get_valutatore_member_emails(user):
-		return True
-	return False
+	return bool(member and member in get_valutatore_member_emails(user))
 
 
 def _quiz_submission_in_scope(name: str, batches: list[str]) -> bool:

@@ -321,9 +321,19 @@ def get_all_users():
     frappe.only_for(
         ["Moderator", "Course Creator", "Batch Evaluator", "Docente", "Valutatore"]
     )
+    from os_lms.os_lms.valutatore import _only_scoped_valutatore, get_valutatore_batch_people
+
+    filters = {"enabled": 1}
+    # A Valutatore is scoped to their own batches, so they only get the people of
+    # those batches instead of the whole platform's directory.
+    if _only_scoped_valutatore(frappe.session.user):
+        people = get_valutatore_batch_people()
+        if not people:
+            return {}
+        filters["name"] = ["in", list(people)]
     users = frappe.get_all(
         "User",
-        {"enabled": 1},
+        filters,
         ["name", "full_name", "user_image"],
     )
     return {user.name: user for user in users}
@@ -825,15 +835,23 @@ def get_announcements(batch: str, start: int = 0, page_length: int = 10):
     )
 
     if not is_admin:
-        user_email = frappe.session.user
-        filtered = []
+        # Exact address match: a substring test made a@x.it a recipient of the
+        # announcements sent to ba@x.it.
+        user = frappe.session.user
+        own_addresses = {
+            a.lower() for a in (user, frappe.db.get_value("User", user, "email")) if a
+        }
+        communications = [
+            comm
+            for comm in communications
+            if own_addresses & _announcement_addresses(comm)
+        ]
+        # One Communication carries every recipient of the announcement, so the
+        # lists would hand each student the addresses of their classmates. The
+        # SPA shows none of them and the mobile app only shows them to staff.
         for comm in communications:
-            fields_combined = " ".join(
-                filter(None, [comm.get("recipients"), comm.get("cc"), comm.get("bcc")])
-            )
-            if user_email in fields_combined:
-                filtered.append(comm)
-        communications = filtered
+            for field in ("recipients", "cc", "bcc"):
+                comm.pop(field, None)
 
     total = len(communications)
     paginated = communications[start : start + page_length]
@@ -844,4 +862,17 @@ def get_announcements(batch: str, start: int = 0, page_length: int = 10):
         )
 
     return {"data": paginated, "total": total}
+
+
+def _announcement_addresses(comm) -> set[str]:
+    """Lower-cased email addresses in a Communication's recipients, cc and bcc."""
+    from frappe.utils import parse_addr
+
+    addresses = set()
+    for field in ("recipients", "cc", "bcc"):
+        for entry in (comm.get(field) or "").split(","):
+            email = parse_addr(entry.strip())[1]
+            if email:
+                addresses.add(email.lower())
+    return addresses
 

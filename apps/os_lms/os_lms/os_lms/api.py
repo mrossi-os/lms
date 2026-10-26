@@ -78,42 +78,6 @@ def get_lesson_position(lesson_name):
 	}
 
 
-@frappe.whitelist(allow_guest=True)
-def get_course_duration(course: str):
-	"""
-	Somma il campo duration (minuti) di tutte le lezioni del corso.
-	Restituisce il totale in minuti.
-	"""
-	result = frappe.db.sql(
-		"""
-        SELECT COALESCE(SUM(cl.duration), 0) as total_minutes
-        FROM `tabLesson Reference` lr
-        JOIN `tabChapter Reference` cr ON lr.parent = cr.chapter
-        JOIN `tabCourse Lesson` cl ON lr.lesson = cl.name
-        WHERE cr.parent = %s
-    """,
-		course,
-		as_dict=True,
-	)
-
-	return result[0].total_minutes if result else 0
-
-
-@frappe.whitelist()
-def try_import():
-	data_import = frappe.get_doc(
-		{
-			"doctype": "Data Import",
-			"reference_doctype": "LMS Batch Enrollment",
-			"import_type": "Insert New Records",  # o "Update Existing Records"
-			"import_file": "/files/LMS Batch Enrollment_full.csv",  # path relativo a site
-		}
-	)
-	data_import.insert()
-	data_import.start_import()
-	frappe.db.commit()
-
-
 def evaluate_lesson_access(course: str, lesson: str) -> dict:
 	"""Whether the current user may open the lesson, per upstream's sequential gate.
 
@@ -466,6 +430,9 @@ def get_batch_progress_stats(batch: str, course: str | None = None) -> dict:
 			frappe.PermissionError,
 		)
 
+	if course:
+		_assert_batch_course(batch, course)
+
 	students_count = frappe.db.count("LMS Batch Enrollment", {"batch": batch})
 
 	if not course:
@@ -544,6 +511,22 @@ def get_batch_progress_stats(batch: str, course: str | None = None) -> dict:
 	return {"students_count": students_count, "lessons": lessons}
 
 
+def _assert_batch_course(batch: str, course: str) -> None:
+	"""Refuse a course that is not one of the batch's courses.
+
+	The dashboard only asks for its own courses; any other course used to expose
+	its lesson titles, unpublished courses included, through the batch gate.
+	"""
+	if not frappe.db.exists("Batch Course", {"parent": batch, "parenttype": "LMS Batch", "course": course}):
+		frappe.throw(frappe._("This course is not part of the batch."), frappe.PermissionError)
+
+
+def _assert_batch_member(batch: str, member: str) -> None:
+	"""Refuse a member who is not a student of the batch."""
+	if not frappe.db.exists("LMS Batch Enrollment", {"batch": batch, "member": member}):
+		frappe.throw(frappe._("This student is not enrolled in the batch."), frappe.PermissionError)
+
+
 @frappe.whitelist()
 def get_batch_student_course_progress(batch: str, course: str, member: str) -> dict:
 	"""Per-lesson progress of a single batch student in one course.
@@ -567,6 +550,8 @@ def get_batch_student_course_progress(batch: str, course: str, member: str) -> d
 			frappe._("You are not authorized to view this batch."),
 			frappe.PermissionError,
 		)
+	_assert_batch_course(batch, course)
+	_assert_batch_member(batch, member)
 
 	CourseProgress = frappe.qb.DocType("LMS Course Progress")
 	LessonReference = frappe.qb.DocType("Lesson Reference")
