@@ -8,14 +8,14 @@
         Ciao {{ student_name }},
       </p>
       <p style="font-size:14px;line-height:1.7;color:#444;margin:0 0 12px;">
-        sei stato invitato alla lezione dal vivo <strong>{{ title }}</strong>.
+        sei stato invitato alla lezione dal vivo <strong>{{ title | e }}</strong>.
       </p>
       <p style="font-size:14px;line-height:1.7;color:#444;margin:0 0 12px;">
         La lezione è programmata per il <strong>{{ frappe.utils.format_date(date, "dd-MM-yyyy") }}</strong> alle ore <strong>{{ frappe.utils.format_time(time, "HH:mm") }}</strong>.
       </p>
       {% if description %}
       <p style="font-size:14px;line-height:1.7;color:#444;margin:0 0 12px;">
-        {{ description }}
+        {{ description | e }}
       </p>
       {% endif %}
       <p style="font-size:14px;line-height:1.7;color:#444;margin:0 0 24px;">

@@ -791,3 +791,60 @@ class TestL10TemplatedEmailForGuests(UnitTestCase):
 		kwargs = sendmail.call_args.kwargs
 		self.assertEqual(kwargs["subject"], "Login Elite")
 		self.assertIn("https://x/key", kwargs["content"])
+
+
+class TestI4LiveClassEmailEscaping(UnitTestCase):
+	# Title and description are typed by whoever schedules the class and land in
+	# the email sent to every student of the batch.
+	INJECTED = '<a href="https://evil.example">Conferma la presenza</a>'
+
+	def _render(self, template_key):
+		from frappe.utils.jinja import get_email_from_template
+
+		html, _text = get_email_from_template(
+			template_key,
+			{
+				"student_name": "Studente",
+				"title": self.INJECTED,
+				"description": self.INJECTED,
+				"date": "2026-10-27",
+				"time": "10:00:00",
+				"duration": 60,
+				"end_time": "11:00",
+				"host_name": "Docente",
+				"batch_title": None,
+				"batch_name": "batch-1",
+				"join_url": "https://elite.example/join",
+				"live_class_name": "LC-1",
+				"google_url": "https://calendar.example/google",
+				"outlook_url": "https://calendar.example/outlook",
+				"ics_url": "https://calendar.example/ics",
+			},
+		)
+		return html
+
+	def test_title_and_description_are_text_in_every_live_class_email(self):
+		for template_key in (
+			"live_class_invitation",
+			"live_class_updated",
+			"live_class_reminder",
+			"live_class_cancelled",
+		):
+			with self.subTest(template_key):
+				html = self._render(template_key)
+				self.assertNotIn('href="https://evil.example"', html)
+				self.assertIn("&lt;a href=", html)
+
+	def test_the_reminder_header_escapes_the_title(self):
+		from os_lms.os_lms import live_class_reminders
+
+		live_class = SimpleNamespace(
+			title=self.INJECTED, date="2026-10-27", time="10:00:00", batch_name="B", name="LC-1"
+		)
+		student = SimpleNamespace(member=STUDENT, member_name="Studente")
+		with patch.object(live_class_reminders, "send_templated_email") as send:
+			live_class_reminders._send_reminder_mail(live_class, student)
+
+		header_text = send.call_args.kwargs["header"][0]
+		self.assertNotIn("<a ", header_text)
+		self.assertIn("&lt;a ", header_text)

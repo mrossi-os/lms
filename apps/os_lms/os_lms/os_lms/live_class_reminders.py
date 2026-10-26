@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 import frappe
 from frappe import _
-from frappe.utils import get_datetime, now_datetime
+from frappe.utils import escape_html, get_datetime, now_datetime
 
 from os_lms.os_lms.doctype.lms_live_class_reminder.lms_live_class_reminder import (
 	offset_to_minutes,
@@ -89,7 +89,8 @@ def _send_reminder_mail(live_class, student, cal_links=None) -> None:
 
 	formatted_date = format_date(live_class.date, "medium")
 	subject = f"Promemoria lezione: {live_class.title} del {formatted_date}"
-	header_text = f"Promemoria lezione: {live_class.title}"
+	# Frappe renders the header as HTML: the title is typed by whoever schedules the class.
+	header_text = f"Promemoria lezione: {escape_html(live_class.title)}"
 
 	cal_links = cal_links or {}
 	send_templated_email(

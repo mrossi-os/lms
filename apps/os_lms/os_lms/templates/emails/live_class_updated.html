@@ -11,7 +11,7 @@
               Lezione aggiornata
             </h1>
             {% if batch_title %}
-            <p style="margin:6px 0 0 0;font-size:14px;color:#a8c4e0">{{ batch_title }}</p>
+            <p style="margin:6px 0 0 0;font-size:14px;color:#a8c4e0">{{ batch_title | e }}</p>
             {% endif %}
           </td>
         </tr>
@@ -22,7 +22,7 @@
             <p style="margin:0 0 18px 0">Ciao {{ student_name }},</p>
 
             <p style="margin:0 0 28px 0">
-              la lezione dal vivo <strong>{{ title }}</strong> è stata
+              la lezione dal vivo <strong>{{ title | e }}</strong> è stata
               <strong style="color:#256ab0">modificata</strong>. Qui sotto trovi i dettagli aggiornati:
               controlla che il nuovo orario sia segnato nel tuo calendario.
             </p>
@@ -45,7 +45,7 @@
                       <td width="28" valign="top" style="padding-top:1px"><span style="font-size:16px">&#128203;</span></td>
                       <td style="font-size:14px;color:#333333;line-height:1.5;">
                         <span style="color:#777777;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Lezione</span><br />
-                        <strong>{{ title }}</strong>
+                        <strong>{{ title | e }}</strong>
                       </td>
                     </tr>
                   </table>
@@ -105,7 +105,7 @@
             </table>
 
             {% if description %}
-            <p style="margin:0 0 28px 0">{{ description }}</p>
+            <p style="margin:0 0 28px 0">{{ description | e }}</p>
             {% endif %}
 
             <!-- CTA -->
@@ -177,7 +177,7 @@
           <td style="padding:20px 40px;background-color:#f9f9f9;text-align:center;color:#999999;font-size:12px;line-height:1.6;border-radius:0 0 6px 6px;">
             <p style="margin:0 0 4px 0">
               Hai ricevuto questa email perché sei iscritto/a a
-              <strong style="color:#666666">{{ batch_title or title }}</strong>
+              <strong style="color:#666666">{{ (batch_title or title) | e }}</strong>
               su <a href="{{ frappe.utils.get_url() }}/lms" style="color:#256ab0;text-decoration:none">Salescience Academy</a>.
             </p>
             <p style="margin:0">&copy; {{ frappe.utils.nowdate()[:4] }} Salescience &mdash; Tutti i diritti riservati.</p>

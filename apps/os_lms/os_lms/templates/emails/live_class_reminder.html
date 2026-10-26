@@ -8,7 +8,7 @@
         Ciao {{ student_name }},
       </p>
       <p style="font-size:14px;line-height:1.7;color:#444;margin:0 0 12px;">
-        ti ricordiamo che il <strong>{{ frappe.utils.format_date(date, "dd-MM-yyyy") }}</strong> alle ore <strong>{{ frappe.utils.format_time(time, "HH:mm") }}</strong> hai in programma la lezione live <strong>{{ title }}</strong>.
+        ti ricordiamo che il <strong>{{ frappe.utils.format_date(date, "dd-MM-yyyy") }}</strong> alle ore <strong>{{ frappe.utils.format_time(time, "HH:mm") }}</strong> hai in programma la lezione live <strong>{{ title | e }}</strong>.
       </p>
       <p style="font-size:14px;line-height:1.7;color:#444;margin:0 0 12px;">
         Ti invitiamo a prepararti al meglio ed essere puntuale per l'inizio della sessione.
