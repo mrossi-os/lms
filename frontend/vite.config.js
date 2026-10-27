@@ -6,6 +6,7 @@ import { readFileSync, existsSync } from 'fs'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 // OSLMS-CUSTOM: build-time translation of frappe-ui strings
 import { osTranslateFrappeUi } from './oslms-vite/translate-frappe-ui.js'
+import { osInertPasteHtml } from './oslms-vite/inert-paste-html.js'
 
 export default defineConfig(async ({ mode }) => {
 	const isDev = mode === 'development'
@@ -26,6 +27,8 @@ export default defineConfig(async ({ mode }) => {
 			osTranslateTocFallback(),
 			// OSLMS-CUSTOM: translate hardcoded English strings inside frappe-ui (new editor)
 			osTranslateFrappeUi(),
+			// OSLMS-CUSTOM: frappe-ui paste handlers read clipboard HTML in an inert document
+			osInertPasteHtml(),
 			frappeui({
 				frappeProxy: true,
 				lucideIcons: true,

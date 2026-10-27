@@ -3,6 +3,7 @@ import vue from '@vitejs/plugin-vue'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { lucideIcons } from 'frappe-ui/vite'
+import { osInertPasteHtml } from './oslms-vite/inert-paste-html.js'
 
 export default defineConfig({
 	// `import { X } from 'frappe-ui'` resolves the entire barrel (src/index.ts,
@@ -27,7 +28,8 @@ export default defineConfig({
 	// `frontend/auto-imports.d.ts` / `frontend/components.d.ts` on every test run
 	// (same scan frappeuiPlugin runs in prod, so currently a no-op diff, but note
 	// it: `vitest run` now performs filesystem writes to version-controlled files).
-	plugins: [vue(), ...lucideIcons()],
+	// osInertPasteHtml: tests run frappe-ui's paste handlers as the build ships them.
+	plugins: [vue(), ...lucideIcons(), osInertPasteHtml()],
 	test: {
 		environment: 'jsdom',
 		globals: true,
