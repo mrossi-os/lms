@@ -5,9 +5,10 @@ name: Dependency Scan
 # (GitHub advisories, PyPA, npm and more) and publishes what it finds in the job
 # summary and as an artifact.
 #
-# Report-only for now: known vulnerabilities in build tooling (vite, esbuild) are
-# still open and would fail every run. Once they are fixed, turn the warning
-# below into `exit 1` so a finding fails the job.
+# A finding with CVSS 7.0 or more (high, critical) fails the job, and so does one
+# without a score (for example a malicious-package report). Lower ones only warn.
+# Accepted exceptions live in osv-scanner.toml, each with a reason and a review
+# date after which it is reported again.
 #
 # The Python dependencies of apps/os_lms are not pinned (no lockfile), so the
 # scanner can only match the few that are; the production image's exact versions
@@ -46,8 +47,8 @@ jobs:
       - name: Scan lockfiles
         run: |
           status=0
-          ./osv-scanner scan source --recursive --format json --output osv-results.json . || status=$?
-          ./osv-scanner scan source --recursive --format markdown . > osv-results.md || true
+          ./osv-scanner scan source --config osv-scanner.toml --recursive --format json --output osv-results.json . || status=$?
+          ./osv-scanner scan source --config osv-scanner.toml --recursive --format markdown . > osv-results.md || true
           {
             echo "## osv-scanner (${OSV_SCANNER_VERSION})"
             echo
@@ -59,7 +60,28 @@ jobs:
             exit "$status"
           fi
           if [ "$status" -eq 1 ]; then
-            echo "::warning title=Dependency Scan::Known vulnerabilities found, see the job summary"
+            # A missing score counts as blocking: it is how malicious packages are reported.
+            blocking=$(jq -r '
+              .results[]?.packages[]? as $p
+              | $p.groups[]?
+              | select(((.max_severity | tonumber?) // 10) >= 7)
+              | "\($p.package.name)@\($p.package.version): \(.ids | join(", ")) (CVSS \(if (.max_severity // "") == "" then "n/a" else .max_severity end))"
+            ' osv-results.json)
+            if [ -n "$blocking" ]; then
+              {
+                echo
+                echo "### Blocking findings (CVSS >= 7.0 or unscored)"
+                echo
+                echo "$blocking" | sed 's/^/- /'
+                echo
+                echo "Update the dependency, or add a reasoned exception with a review date to osv-scanner.toml."
+              } >> "$GITHUB_STEP_SUMMARY"
+              echo "$blocking" | while read -r line; do
+                echo "::error title=Dependency Scan::$line"
+              done
+              exit 1
+            fi
+            echo "::warning title=Dependency Scan::Lower-severity vulnerabilities found, see the job summary"
           fi
 
       - uses: actions/upload-artifact@v4

@@ -1,0 +1,93 @@
+# Accepted exceptions for the Dependency Scan workflow (OWASP A03).
+#
+# Every entry says why the vulnerability does not reach users or cannot be fixed
+# within the same major version yet. `ignoreUntil` brings it back into the scan
+# on that date, so each exception gets reviewed instead of staying forever.
+# Reviewed on 2026-10-27, see docs/security/owasp-piano-residuo-2026-10-26.md (A17).
+
+# --- face-api.js (webcam proctoring): accepted risk -------------------------
+# face-api.js is unmaintained since 2020 and pins node-fetch 2.1.2. In the
+# browser bundle it uses window.fetch; node-fetch only runs under Node.
+
+[[IgnoredVulns]]
+id = "GHSA-r683-j2x4-v87g"
+ignoreUntil = 2027-10-27
+reason = "node-fetch 2.1.2 via face-api.js: Node-only code path, not used in the browser; face-api.js kept as an accepted risk."
+
+[[IgnoredVulns]]
+id = "GHSA-w7rc-rwvf-8q5r"
+ignoreUntil = 2027-10-27
+reason = "node-fetch 2.1.2 via face-api.js: Node-only code path, not used in the browser; face-api.js kept as an accepted risk."
+
+# --- vite 5 dev server: fixed only in vite 6+ -------------------------------
+# These affect `vite dev` (local development, mostly on Windows), never the built
+# assets served by staging and production. Leaving vite 5 is a separate upgrade.
+
+[[IgnoredVulns]]
+id = "GHSA-fx2h-pf6j-xcff"
+ignoreUntil = 2027-04-27
+reason = "vite 5 dev server on Windows only; production serves built assets. Fixed in vite 6.4+."
+
+[[IgnoredVulns]]
+id = "GHSA-587h-7wmj-h5pm"
+ignoreUntil = 2027-04-27
+reason = "launch-editor in the vite 5 dev server, Windows only; not in the built assets. Fixed in vite 6.4+."
+
+[[IgnoredVulns]]
+id = "GHSA-4w7w-66w2-5vf9"
+ignoreUntil = 2027-04-27
+reason = "vite 5 dev server only (optimized deps .map handling); not in the built assets. Fixed in vite 6.4+."
+
+[[IgnoredVulns]]
+id = "GHSA-v6wh-96g9-6wx3"
+ignoreUntil = 2027-04-27
+reason = "launch-editor in the vite 5 dev server, Windows only; not in the built assets. Fixed in vite 6.4+."
+
+[[IgnoredVulns]]
+id = "GHSA-698v-4r3x-3vcv"
+ignoreUntil = 2027-04-27
+reason = "launch-editor in the vite 5 dev server, Windows only; not in the built assets. Fixed in vite 6.4+."
+
+[[IgnoredVulns]]
+id = "GHSA-r825-w8mm-5pxw"
+ignoreUntil = 2027-04-27
+reason = "launch-editor in the vite 5 dev server; not in the built assets. Fixed in vite 6.4+."
+
+[[IgnoredVulns]]
+id = "GHSA-rq7h-c2jc-7f22"
+ignoreUntil = 2027-04-27
+reason = "vite 5 dev server only (server.fs.allow); not in the built assets. Fixed in vite 6.4+."
+
+[[IgnoredVulns]]
+id = "GHSA-9jrq-w75r-8gcw"
+ignoreUntil = 2027-04-27
+reason = "vite 5 dev server custom middleware only; not in the built assets. Fixed in vite 6.4+."
+
+[[IgnoredVulns]]
+id = "GHSA-67mh-4wv8-2f99"
+ignoreUntil = 2027-04-27
+reason = "esbuild 0.21 dev server, pinned by vite 5; not in the built assets. Goes away with vite 6+."
+
+[[IgnoredVulns]]
+id = "GHSA-pp7p-q8fx-2968"
+ignoreUntil = 2027-04-27
+reason = "vite-plugin-static-copy 1.x, dev server only; the build copies the files. Fixed in 2.x, which needs vite 6+."
+
+# --- Pinned by a dependency ---------------------------------------------------
+
+[[IgnoredVulns]]
+id = "GHSA-rj75-hqrm-r3gf"
+ignoreUntil = 2027-04-27
+reason = "postcss-selector-parser 6.0.10 pinned exactly by @tailwindcss/typography (via frappe-ui), up to its latest 0.5.20; build time only, it parses our own CSS."
+
+[[IgnoredVulns]]
+id = "GHSA-fgmj-fm8m-jvvx"
+ignoreUntil = 2027-04-27
+reason = "echarts 5 via frappe-ui (charts need ^5); fixed in echarts 6. Chart labels come from staff-entered names on staff-only dashboards. Review with the next frappe-ui upgrade."
+
+# --- Waiting for the 7-day cooldown -------------------------------------------
+
+[[IgnoredVulns]]
+id = "GHSA-m5mm-p8h7-m29v"
+ignoreUntil = 2026-11-10
+reason = "serialize-javascript 7.1.2 via vite-plugin-pwa (build time); the fixed 7.1.3+ were published less than 7 days before the review. Dependabot updates it."

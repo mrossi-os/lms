@@ -1,0 +1,20 @@
+# Dependabot security updates only (OWASP A03).
+#
+# open-pull-requests-limit: 0 turns routine version updates off, so pull requests
+# come only for published advisories. They need "Dependabot alerts" and
+# "Dependabot security updates" enabled in the repository settings
+# (Settings → Code security). Before merging one, check that the new version was
+# published at least 7 days earlier, the same rule used for the 2026-10 update.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
