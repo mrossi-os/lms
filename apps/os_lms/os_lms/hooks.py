@@ -286,6 +286,7 @@ on_session_creation = ["os_lms.auth.on_session_creation"]
 # registers it, since Log Settings only reads this hook when it is saved.
 default_log_clearing_doctypes = {
     "Elite API Access Log": 90,
+    "OS CSP Violation": 90,
 }
 
 scheduler_events = {

@@ -1,0 +1,96 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-10-27 16:00:00.000000",
+ "description": "One row per kind of Content Security Policy violation reported by the browsers (directive, blocked source, page). Counts only: no user, IP, query string or code sample. Old rows are removed by Log Settings.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "directive",
+  "blocked_source",
+  "page",
+  "disposition",
+  "column_break_counts",
+  "hits",
+  "first_seen",
+  "last_seen"
+ ],
+ "fields": [
+  {
+   "fieldname": "directive",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Directive",
+   "read_only": 1
+  },
+  {
+   "fieldname": "blocked_source",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Blocked Source",
+   "read_only": 1
+  },
+  {
+   "fieldname": "page",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Page",
+   "read_only": 1
+  },
+  {
+   "fieldname": "disposition",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Disposition",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_counts",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "hits",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Hits",
+   "read_only": 1
+  },
+  {
+   "fieldname": "first_seen",
+   "fieldtype": "Datetime",
+   "label": "First Seen",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_seen",
+   "fieldtype": "Datetime",
+   "label": "Last Seen",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "in_create": 1,
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-27 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "OS LMS",
+ "name": "OS CSP Violation",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "delete": 1,
+   "export": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

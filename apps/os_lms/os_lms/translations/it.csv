@@ -114,3 +114,11 @@ Forgot your password? Reset it here,Password dimenticata? Reimpostala qui
 "If it was not you, you can safely ignore this email: nothing has changed on your account.","Se non sei stato tu, puoi ignorare questa email: sul tuo account non è cambiato nulla."
 This Google authorization is not valid or has expired. Start the authorization again.,Questa autorizzazione Google non è valida o è scaduta. Avvia di nuovo l'autorizzazione.
 Google did not grant access to the calendar. Start the authorization again.,Google non ha concesso l'accesso al calendario. Avvia di nuovo l'autorizzazione.
+OS CSP Violation,Violazione CSP
+Directive,Direttiva
+Blocked Source,Origine bloccata
+Page,Pagina
+Disposition,Modalità
+Hits,Occorrenze
+First Seen,Prima rilevazione
+Last Seen,Ultima rilevazione
