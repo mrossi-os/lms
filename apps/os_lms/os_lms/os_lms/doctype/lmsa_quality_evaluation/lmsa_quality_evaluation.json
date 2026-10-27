@@ -121,15 +121,13 @@
 			"label": "Traces"
 		}
 	],
-	"modified": "2026-06-08 12:00:00.000000",
+	"modified": "2026-10-27 12:00:00.000000",
 	"modified_by": "Administrator",
 	"module": "OS LMS",
 	"name": "LMSA Quality Evaluation",
 	"owner": "Administrator",
 	"permissions": [
-		{"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1},
-		{"role": "Docente", "read": 1, "write": 1, "create": 1, "delete": 1},
-		{"role": "Course Creator", "read": 1, "write": 1, "create": 1, "delete": 1}
+		{"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1}
 	],
 	"sort_field": "triggered_at",
 	"sort_order": "DESC",

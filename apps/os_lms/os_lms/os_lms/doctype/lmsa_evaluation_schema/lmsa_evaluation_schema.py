@@ -22,3 +22,26 @@ class LMSAEvaluationSchema(Document):
 			frappe.throw(
 				_("Criterion weights must sum to 1.0 (current sum: {0}).").format(round(total, 4))
 			)
+
+
+# The same rules as the simulation editor endpoints (get/save/delete_evaluation_schema),
+# applied to Desk and /api/resource too.
+ROLES_WITH_FULL_ACCESS = {"System Manager", "Moderator"}
+
+
+def get_permission_query_conditions(user: str | None = None) -> str:
+	user = user or frappe.session.user
+	if user == "Administrator" or ROLES_WITH_FULL_ACCESS & set(frappe.get_roles(user)):
+		return ""
+	owner = frappe.db.escape(user, percent=False)
+	return f"(`tabLMSA Evaluation Schema`.owner = {owner} OR `tabLMSA Evaluation Schema`.is_shared = 1)"
+
+
+def has_permission(doc, ptype: str = "read", user: str | None = None) -> bool:
+	user = user or frappe.session.user
+	if user == "Administrator" or ROLES_WITH_FULL_ACCESS & set(frappe.get_roles(user)):
+		return True
+	if ptype == "create" or doc.owner == user:
+		return True
+	# Others read shared schemas but never change them.
+	return ptype in {"read", "print"} and bool(doc.is_shared)

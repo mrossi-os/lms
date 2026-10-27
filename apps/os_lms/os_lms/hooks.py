@@ -82,6 +82,9 @@ permission_query_conditions = {
     "LMSA Simulation Debrief": (
         "os_lms.os_lms.doctype.lmsa_simulation_debrief.lmsa_simulation_debrief.get_permission_query_conditions"
     ),
+    "LMSA Evaluation Schema": (
+        "os_lms.os_lms.doctype.lmsa_evaluation_schema.lmsa_evaluation_schema.get_permission_query_conditions"
+    ),
     # Scope list views to the batches a "Valutatore" is assigned to.
     "LMS Batch Enrollment": "os_lms.os_lms.valutatore.batch_enrollment_query_conditions",
     "LMS Live Class": "os_lms.os_lms.valutatore.live_class_query_conditions",
@@ -106,6 +109,9 @@ has_permission = {
     ),
     "LMSA Simulation Debrief": (
         "os_lms.os_lms.doctype.lmsa_simulation_debrief.lmsa_simulation_debrief.has_permission"
+    ),
+    "LMSA Evaluation Schema": (
+        "os_lms.os_lms.doctype.lmsa_evaluation_schema.lmsa_evaluation_schema.has_permission"
     ),
     # Veto by-name access to submissions outside the valutatore's batches.
     "LMS Quiz Submission": "os_lms.os_lms.valutatore.quiz_submission_has_permission",

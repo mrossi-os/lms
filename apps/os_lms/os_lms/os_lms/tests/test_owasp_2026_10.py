@@ -1030,3 +1030,74 @@ class TestL9SignUpLimitsAndEnumeration(UnitTestCase):
 
 		self.assertEqual(frappe.local.message_log, [])
 		self.assertEqual(sendmail.call_args.kwargs["template"], "signup_already_registered")
+
+
+class TestL4SimulationDataPermissions(UnitTestCase):
+	OWNER = "owasp-schema-owner@example.com"
+	OTHER = "owasp-schema-other@example.com"
+
+	def _roles_of(self, doctype):
+		import importlib
+		import json
+		import os
+
+		module_name = frappe.scrub(doctype)
+		module = importlib.import_module(f"os_lms.os_lms.doctype.{module_name}")
+		path = os.path.join(os.path.dirname(module.__file__), f"{module_name}.json")
+		with open(path) as f:
+			return {p["role"] for p in json.load(f)["permissions"]}
+
+	def test_students_have_no_direct_access_to_debriefs_or_schemas(self):
+		for doctype in ("LMSA Simulation Debrief", "LMSA Evaluation Schema"):
+			with self.subTest(doctype):
+				self.assertNotIn("LMS Student", self._roles_of(doctype))
+
+	def test_quality_evaluations_and_transcript_cache_are_system_manager_only(self):
+		for doctype in ("LMSA Quality Evaluation", "LMSA Transcript Cache"):
+			with self.subTest(doctype):
+				self.assertEqual(self._roles_of(doctype), {"System Manager"})
+
+	def test_a_student_role_gets_no_debrief_rows(self):
+		from os_lms.os_lms.doctype.lmsa_simulation_debrief import lmsa_simulation_debrief as debrief
+
+		doc = frappe._dict(student=STUDENT, course="c")
+		with _roles("LMS Student"):
+			self.assertEqual(debrief.get_permission_query_conditions(STUDENT), "1=0")
+			self.assertFalse(debrief.has_permission(doc, "read", STUDENT))
+
+	def _schema_permission(self, user, roles, ptype, is_shared=0):
+		from os_lms.os_lms.doctype.lmsa_evaluation_schema import lmsa_evaluation_schema as schema
+
+		doc = frappe._dict(owner=self.OWNER, is_shared=is_shared)
+		with _roles(*roles):
+			return schema.has_permission(doc, ptype, user)
+
+	def test_only_the_owner_or_a_moderator_changes_a_schema(self):
+		for ptype in ("write", "delete", "share"):
+			with self.subTest(ptype):
+				self.assertTrue(self._schema_permission(self.OWNER, ["Course Creator"], ptype))
+				self.assertTrue(self._schema_permission(self.OTHER, ["Moderator"], ptype))
+				self.assertFalse(self._schema_permission(self.OTHER, ["Course Creator"], ptype, is_shared=1))
+
+	def test_other_instructors_read_only_shared_schemas(self):
+		self.assertTrue(self._schema_permission(self.OTHER, ["Course Creator"], "read", is_shared=1))
+		self.assertFalse(self._schema_permission(self.OTHER, ["Course Creator"], "read", is_shared=0))
+
+	def test_schema_lists_show_own_and_shared_ones(self):
+		from os_lms.os_lms.doctype.lmsa_evaluation_schema import lmsa_evaluation_schema as schema
+
+		with _roles("Course Creator"):
+			condition = schema.get_permission_query_conditions(self.OTHER)
+		self.assertIn(f"owner = '{self.OTHER}'", condition)
+		self.assertIn("is_shared = 1", condition)
+		with _roles("Moderator"):
+			self.assertEqual(schema.get_permission_query_conditions(self.OTHER), "")
+
+	def test_the_transcript_cache_is_still_written_for_any_user(self):
+		from os_lms.os_lms.ai.utils import video_transcriber
+
+		transcriber = video_transcriber.VideoTranscriber.__new__(video_transcriber.VideoTranscriber)
+		cache_doc = MagicMock()
+		with patch.object(frappe, "get_doc", return_value=cache_doc):
+			transcriber._save_cache("youtube", "abc", "text")
+		cache_doc.insert.assert_called_once_with(ignore_permissions=True)

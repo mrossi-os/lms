@@ -52,7 +52,10 @@ class VideoTranscriber:
 				"name_key": generate_uid(provider, id),
 			}
 		)
-		doc.insert()
+		# Only System Manager may touch the cache directly: a forged transcript
+		# would feed the tutor's answers. The system still writes it for whoever
+		# triggers the lesson indexing.
+		doc.insert(ignore_permissions=True)
 
 	def _from_youtube(self, id: str) -> str:
 		transcriber = YoutubeTranscriber()
