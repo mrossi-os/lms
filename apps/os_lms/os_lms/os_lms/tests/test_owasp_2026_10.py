@@ -1018,3 +1018,15 @@ class TestL9SignUpLimitsAndEnumeration(UnitTestCase):
 		)
 		self.assertIn('href="https://x/login"', html)
 		self.assertIn('href="https://x/login#forgot"', html)
+
+	def test_the_already_registered_email_leaves_no_message_for_the_page(self):
+		# OS LMS Email Settings has no field for this email: a message queued while
+		# looking for one reached only registered addresses and told them apart.
+		from os_lms.os_lms import signup
+
+		frappe.local.message_log = []
+		with patch.object(frappe, "sendmail") as sendmail:
+			signup._send_already_registered_email(self.EMAIL)
+
+		self.assertEqual(frappe.local.message_log, [])
+		self.assertEqual(sendmail.call_args.kwargs["template"], "signup_already_registered")

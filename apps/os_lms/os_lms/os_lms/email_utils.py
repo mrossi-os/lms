@@ -22,6 +22,10 @@ def as_email_text(value):
 
 def _get_custom_template_name(template_key: str) -> str | None:
 	fieldname = f"{template_key}_template"
+	# Not every email has a settings field. Reading a missing one makes Frappe
+	# queue an error message for the page even when the exception is caught.
+	if not frappe.get_meta("OS LMS Email Settings").has_field(fieldname):
+		return None
 	try:
 		return frappe.db.get_single_value("OS LMS Email Settings", fieldname)
 	except Exception:
