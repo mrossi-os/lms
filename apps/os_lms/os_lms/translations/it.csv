@@ -112,3 +112,5 @@ You already have an account on {0},Hai già un account su {0}
 "Someone, maybe you, tried to sign up on {0} with this email address, but it already has an account.","Qualcuno, forse tu, ha provato a registrarsi su {0} con questo indirizzo email, che però ha già un account."
 Forgot your password? Reset it here,Password dimenticata? Reimpostala qui
 "If it was not you, you can safely ignore this email: nothing has changed on your account.","Se non sei stato tu, puoi ignorare questa email: sul tuo account non è cambiato nulla."
+This Google authorization is not valid or has expired. Start the authorization again.,Questa autorizzazione Google non è valida o è scaduta. Avvia di nuovo l'autorizzazione.
+Google did not grant access to the calendar. Start the authorization again.,Google non ha concesso l'accesso al calendario. Avvia di nuovo l'autorizzazione.

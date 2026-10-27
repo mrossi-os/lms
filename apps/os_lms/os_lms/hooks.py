@@ -56,6 +56,8 @@ after_migrate = [
     "os_lms.setup.seed_prompt_templates",
     # The OpenAI/Vimeo keys became Password fields: encrypt a value still in clear.
     "os_lms.os_lms.ai.utils.api_keys.encrypt_plaintext_api_keys",
+    # The old Google Calendar callback wrote the OAuth tokens in clear.
+    "os_lms.os_lms.google_calendar.encrypt_plaintext_tokens",
 ]
 
 # fix error email check content MAX SIZE
@@ -160,7 +162,9 @@ override_whitelisted_methods = {
     # The login page calls Frappe's method: ours sends the os_lms email template and
     # does not reveal whether the address has an account.
     "frappe.www.login.send_login_link": "os_lms.www.login.send_login_link",
-    # Redirect the Google Calendar OAuth callback to the LMS SPA instead of the desk.
+    # Google Calendar OAuth: a one-time state bound to whoever started the consent,
+    # and the callback lands in the LMS SPA instead of the desk.
+    "frappe.integrations.doctype.google_calendar.google_calendar.authorize_access": "os_lms.os_lms.google_calendar.authorize_access",
     "frappe.integrations.doctype.google_calendar.google_calendar.google_callback": "os_lms.os_lms.google_calendar.google_callback",
 }
 

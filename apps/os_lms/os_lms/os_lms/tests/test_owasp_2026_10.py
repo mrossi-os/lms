@@ -1101,3 +1101,175 @@ class TestL4SimulationDataPermissions(UnitTestCase):
 		with patch.object(frappe, "get_doc", return_value=cache_doc):
 			transcriber._save_cache("youtube", "abc", "text")
 		cache_doc.insert.assert_called_once_with(ignore_permissions=True)
+
+
+class TestL5GoogleCalendarOAuth(UnitTestCase):
+	"""A1 of the residual plan: the consent belongs to whoever started it, tokens encrypted."""
+
+	OWNER = "owasp-calendar-owner@example.com"
+	OTHER = "owasp-calendar-other@example.com"
+	CALENDAR = "OWASP Test Calendar"
+
+	def setUp(self):
+		from os_lms.os_lms import google_calendar
+
+		self.gc = google_calendar
+		self.calendar = MagicMock()
+		self.calendar.name = self.CALENDAR
+		self.state_keys = []
+
+	def tearDown(self):
+		for key in self.state_keys:
+			frappe.cache.delete_value(key)
+
+	def _lookups(self):
+		settings = SimpleNamespace(client_id="client-id", get_password=lambda **kw: "client-secret")
+		return (
+			patch.object(frappe, "get_doc", return_value=self.calendar),
+			patch.object(frappe, "get_cached_doc", return_value=settings),
+			patch.object(self.gc, "get_request_site_address", return_value="https://site.test"),
+		)
+
+	def _start(self, user):
+		from urllib.parse import parse_qs, urlparse
+
+		get_doc, get_cached_doc, site = self._lookups()
+		with get_doc, get_cached_doc, site, _session(user):
+			auth = self.gc.authorize_access(self.CALENDAR, reauthorize=True)
+		state = parse_qs(urlparse(auth["url"]).query)["state"][0]
+		self.state_keys.append(self.gc._state_key(state))
+		return auth, state
+
+	def _callback(self, user, state, code="the-code", token_response=None):
+		response = MagicMock()
+		response.json.return_value = token_response if token_response is not None else {"refresh_token": "rt-new"}
+		get_doc, get_cached_doc, site = self._lookups()
+		with (
+			get_doc,
+			get_cached_doc,
+			site,
+			_session(user),
+			patch.object(self.gc.requests, "post", return_value=response) as post,
+			patch.object(self.gc, "_store_token") as store,
+			patch.object(self.gc, "_render_popup_close"),
+			patch.object(frappe.db, "commit"),
+		):
+			self.gc.google_callback(code=code, state=state)
+		return post, store
+
+	def test_each_start_gets_a_one_time_state_for_user_and_calendar(self):
+		auth, state = self._start(self.OWNER)
+		_, other_state = self._start(self.OWNER)
+
+		self.calendar.check_permission.assert_called_with("write")
+		self.assertNotEqual(state, other_state)
+		self.assertIn(f"cmd={self.gc.CALLBACK_METHOD}", auth["url"])
+		key = self.gc._state_key(state)
+		self.assertEqual(frappe.cache.get_value(key), {"user": self.OWNER, "calendar": self.CALENDAR})
+		self.assertTrue(0 < frappe.cache.ttl(frappe.cache.make_key(key)) <= 600)
+
+	def test_a_start_needs_write_permission(self):
+		self.calendar.check_permission.side_effect = frappe.PermissionError
+		get_doc, get_cached_doc, site = self._lookups()
+		with get_doc, get_cached_doc, site, _session(self.OTHER), patch.object(frappe.cache, "set_value") as set_value:
+			with self.assertRaises(frappe.PermissionError):
+				self.gc.authorize_access(self.CALENDAR)
+		set_value.assert_not_called()
+
+	def test_a_return_without_a_known_state_is_refused(self):
+		for state in (None, "", "never-issued"):
+			with self.subTest(state=state), self.assertRaises(frappe.PermissionError):
+				self._callback(self.OWNER, state)
+
+	def test_a_return_opened_by_another_user_is_refused(self):
+		_, state = self._start(self.OWNER)
+		with self.assertRaises(frappe.PermissionError):
+			self._callback(self.OTHER, state)
+		# The state is spent: not even its owner can use it afterwards.
+		with self.assertRaises(frappe.PermissionError):
+			self._callback(self.OWNER, state)
+
+	def test_a_state_works_once(self):
+		_, state = self._start(self.OWNER)
+		self._callback(self.OWNER, state)
+		with self.assertRaises(frappe.PermissionError):
+			self._callback(self.OWNER, state)
+
+	def test_the_return_rechecks_write_permission(self):
+		_, state = self._start(self.OWNER)
+		self.calendar.check_permission.side_effect = frappe.PermissionError
+		with patch.object(self.gc, "_store_token") as store, self.assertRaises(frappe.PermissionError):
+			self._callback(self.OWNER, state)
+		store.assert_not_called()
+
+	def test_a_refused_consent_stores_nothing(self):
+		_, state = self._start(self.OWNER)
+		with patch.object(self.gc, "_store_token") as store, self.assertRaises(frappe.ValidationError):
+			self._callback(self.OWNER, state, code=None)
+		store.assert_not_called()
+
+	def test_the_tokens_of_the_started_calendar_are_stored(self):
+		_, state = self._start(self.OWNER)
+		post, store = self._callback(self.OWNER, state)
+
+		sent = post.call_args.kwargs["data"]
+		self.assertEqual(sent["code"], "the-code")
+		self.assertEqual(sent["redirect_uri"], f"https://site.test?cmd={self.gc.CALLBACK_METHOD}")
+		self.assertEqual(
+			[c.args for c in store.call_args_list],
+			[(self.CALENDAR, "authorization_code", "the-code"), (self.CALENDAR, "refresh_token", "rt-new")],
+		)
+
+	def test_a_token_is_stored_encrypted_with_a_mask_in_the_table(self):
+		with (
+			patch.object(self.gc, "set_encrypted_password") as encrypt,
+			patch.object(frappe.db, "set_value") as set_value,
+		):
+			self.gc._store_token(self.CALENDAR, "refresh_token", "rt-secret")
+		encrypt.assert_called_once_with("Google Calendar", self.CALENDAR, "rt-secret", "refresh_token")
+		self.assertEqual(set_value.call_args.args, ("Google Calendar", self.CALENDAR, "refresh_token", "*********"))
+
+	def test_tokens_left_in_clear_get_encrypted(self):
+		rows = [
+			frappe._dict(name="A", authorization_code="code-a", refresh_token="*****"),
+			frappe._dict(name="B", authorization_code=None, refresh_token="rt-b"),
+		]
+		with (
+			patch.object(frappe.db, "get_values", return_value=rows),
+			patch.object(self.gc, "_store_token") as store,
+			patch.object(self.gc, "_scrub_version_history", return_value=0),
+			patch.object(frappe.db, "commit"),
+		):
+			self.gc.encrypt_plaintext_tokens()
+		self.assertEqual(
+			[c.args for c in store.call_args_list],
+			[("A", "authorization_code", "code-a"), ("B", "refresh_token", "rt-b")],
+		)
+
+	def test_the_history_is_scrubbed(self):
+		row = frappe._dict(
+			name="V",
+			data=frappe.as_json(
+				{"changed": [["refresh_token", "rt-old", "*****"], ["authorization_code", "c", "*"], ["enable", 0, 1]]}
+			),
+		)
+		with (
+			patch.object(frappe, "get_all", return_value=[row]),
+			patch.object(frappe.db, "set_value") as set_value,
+		):
+			self.assertEqual(self.gc._scrub_version_history(), 1)
+		data = frappe.parse_json(set_value.call_args.args[3])
+		self.assertEqual(
+			data["changed"],
+			[["refresh_token", "*****", "*****"], ["authorization_code", "*****", "*"], ["enable", 0, 1]],
+		)
+
+	def test_the_hooks_route_both_steps_and_encrypt_after_migrate(self):
+		from os_lms import hooks
+
+		prefix = "frappe.integrations.doctype.google_calendar.google_calendar."
+		for method in ("authorize_access", "google_callback"):
+			self.assertEqual(
+				hooks.override_whitelisted_methods[prefix + method], f"os_lms.os_lms.google_calendar.{method}"
+			)
+		self.assertIn("os_lms.os_lms.google_calendar.encrypt_plaintext_tokens", hooks.after_migrate)
