@@ -914,3 +914,107 @@ class TestI4LiveClassEmailEscaping(UnitTestCase):
 		html, _text = get_email_from_template("live_class_updated", dict(args))
 		self.assertIn("&lt;a href=", html)
 		self.assertNotIn("&amp;lt;", html)
+
+
+class TestL9SignUpLimitsAndEnumeration(UnitTestCase):
+	IP = "198.51.100.43"  # TEST-NET-2: never a real client
+	EMAIL = "owasp-signup-test@example.com"
+
+	def setUp(self):
+		self._ip = getattr(frappe.local, "request_ip", None)
+		frappe.local.request_ip = self.IP
+		self._clear()
+
+	def tearDown(self):
+		self._clear()
+		frappe.local.request_ip = self._ip
+
+	def _clear(self):
+		frappe.cache.delete(frappe.cache.make_key(f"os_lms:signup:ip:{self.IP}"))
+		frappe.cache.delete_value(f"os_lms:signup:already_registered:{self.EMAIL}")
+
+	def _sign_up(self, user_row=None, created_last_hour=0, lms_answer=(1, "created")):
+		from os_lms.os_lms import signup
+
+		get_value = frappe.db.get_value
+
+		def user_lookup(doctype, *args, **kwargs):
+			return user_row if doctype == "User" else get_value(doctype, *args, **kwargs)
+
+		with (
+			patch.object(signup, "is_signup_disabled", return_value=False),
+			patch.object(frappe.db, "get_creation_count", return_value=created_last_hour),
+			patch.object(frappe.db, "get_value", side_effect=user_lookup),
+			patch.object(signup, "lms_sign_up", return_value=lms_answer) as lms_sign_up,
+			patch.object(signup, "send_templated_email") as send,
+		):
+			result = signup.sign_up(self.EMAIL, "Prova", True, "")
+		return result, lms_sign_up, send
+
+	def _generic(self):
+		from os_lms.os_lms import signup
+
+		return signup._check_your_email()
+
+	def test_the_signup_page_reaches_the_os_lms_method(self):
+		from os_lms import hooks
+
+		self.assertEqual(
+			hooks.override_whitelisted_methods["lms.lms.user.sign_up"], "os_lms.os_lms.signup.sign_up"
+		)
+
+	def test_a_new_address_is_signed_up_by_lms(self):
+		result, lms_sign_up, send = self._sign_up()
+		self.assertEqual(result, (1, "created"))
+		lms_sign_up.assert_called_once()
+		send.assert_not_called()
+
+	def test_a_registered_address_gets_the_generic_answer_and_one_email(self):
+		user = frappe._dict(name=self.EMAIL, enabled=1)
+		result, lms_sign_up, send = self._sign_up(user)
+		self.assertEqual(result, self._generic())
+		lms_sign_up.assert_not_called()
+		self.assertEqual(send.call_args.kwargs["template_key"], "signup_already_registered")
+		self.assertEqual(send.call_args.kwargs["recipients"], self.EMAIL)
+
+		# A second attempt within the hour answers the same and sends nothing.
+		result, _lms_sign_up, send = self._sign_up(user)
+		self.assertEqual(result, self._generic())
+		send.assert_not_called()
+
+	def test_a_disabled_address_gets_the_generic_answer_and_no_email(self):
+		result, lms_sign_up, send = self._sign_up(frappe._dict(name=self.EMAIL, enabled=0))
+		self.assertEqual(result, self._generic())
+		lms_sign_up.assert_not_called()
+		send.assert_not_called()
+
+	def test_a_concurrent_signup_of_the_same_address_gets_the_generic_answer(self):
+		result, _lms_sign_up, _send = self._sign_up(lms_answer=(0, "Already Registered"))
+		self.assertEqual(result, self._generic())
+
+	def test_past_the_site_limit_nobody_is_signed_up(self):
+		result, lms_sign_up, _send = self._sign_up(created_last_hour=300)
+		self.assertEqual(result[0], 0)
+		lms_sign_up.assert_not_called()
+
+	def test_past_the_ip_limit_the_page_says_when_to_retry(self):
+		from os_lms.os_lms import signup
+
+		for _attempt in range(signup.SIGNUPS_PER_IP_PER_HOUR):
+			result, _lms_sign_up, _send = self._sign_up()
+			self.assertEqual(result, (1, "created"))
+
+		result, lms_sign_up, _send = self._sign_up()
+		self.assertEqual(result[0], 0)
+		self.assertIn("60", result[1])
+		lms_sign_up.assert_not_called()
+
+	def test_the_email_links_to_login_and_password_reset(self):
+		from frappe.utils.jinja import get_email_from_template
+
+		html, _text = get_email_from_template(
+			"signup_already_registered",
+			{"app_name": "Elite", "login_url": "https://x/login", "reset_url": "https://x/login#forgot"},
+		)
+		self.assertIn('href="https://x/login"', html)
+		self.assertIn('href="https://x/login#forgot"', html)

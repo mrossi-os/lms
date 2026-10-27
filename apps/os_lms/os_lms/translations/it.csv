@@ -107,3 +107,8 @@ Top IP addresses,Indirizzi IP con più tentativi
 Most targeted accounts,Account più presi di mira
 Details: Desk → Activity Log.,Dettagli: Desk → Activity Log.
 Details: Desk → Elite API Access Log.,Dettagli: Desk → Elite API Access Log.
+Too many sign-up attempts from your network. Please try again in {0} minutes.,Troppi tentativi di registrazione dalla tua rete. Riprova fra {0} minuti.
+You already have an account on {0},Hai già un account su {0}
+"Someone, maybe you, tried to sign up on {0} with this email address, but it already has an account.","Qualcuno, forse tu, ha provato a registrarsi su {0} con questo indirizzo email, che però ha già un account."
+Forgot your password? Reset it here,Password dimenticata? Reimpostala qui
+"If it was not you, you can safely ignore this email: nothing has changed on your account.","Se non sei stato tu, puoi ignorare questa email: sul tuo account non è cambiato nulla."
