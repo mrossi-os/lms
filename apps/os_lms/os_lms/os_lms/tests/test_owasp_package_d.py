@@ -135,6 +135,69 @@ class TestD2ScormDetailsOnlyOnScormLessons(UnitTestCase):
 		)
 
 
+class TestD4TutorConversationsScopedToTheirCourses(UnitTestCase):
+	CREATOR = "owasp-d4-creator@example.com"
+
+	def _roles(self, *roles):
+		return patch.object(frappe, "get_roles", return_value=list(roles))
+
+	def _instructor_of(self, *courses):
+		def exists(doctype, filters=None, *args, **kwargs):
+			return doctype == "Course Instructor" and filters.get("parent") in courses
+
+		return patch.object(frappe.db, "exists", side_effect=exists)
+
+	def test_moderator_and_system_manager_read_every_course(self):
+		from os_lms.os_lms.doctype.lmsa_query_log import lmsa_query_log as log
+
+		for role in ("Moderator", "System Manager"):
+			with self.subTest(role=role), self._roles(role, "Course Creator"):
+				self.assertEqual(log.get_permission_query_conditions(self.CREATOR), "")
+				self.assertTrue(log.has_permission(frappe._dict(course="any"), "write", self.CREATOR))
+		self.assertEqual(log.get_permission_query_conditions("Administrator"), "")
+
+	def test_a_course_creator_lists_only_the_courses_it_teaches(self):
+		from os_lms.os_lms.doctype.lmsa_query_log import lmsa_query_log as log
+
+		with self._roles("Course Creator", "Docente"):
+			condition = log.get_permission_query_conditions("o'brien@example.com")
+		self.assertIn("`tabCourse Instructor`", condition)
+		self.assertIn("parenttype = 'LMS Course'", condition)
+		self.assertIn(frappe.db.escape("o'brien@example.com", percent=False), condition)
+		# The condition is valid SQL against the real table.
+		frappe.db.sql(f"select count(*) from `tabLMSA Query Log` where {condition}")
+
+	def test_a_course_creator_reads_but_never_changes_its_courses_logs(self):
+		from os_lms.os_lms.doctype.lmsa_query_log import lmsa_query_log as log
+
+		own, other = frappe._dict(course="own-course"), frappe._dict(course="other-course")
+		with self._roles("Course Creator"), self._instructor_of("own-course"):
+			self.assertTrue(log.has_permission(own, "read", self.CREATOR))
+			self.assertFalse(log.has_permission(other, "read", self.CREATOR))
+			self.assertFalse(log.has_permission(frappe._dict(course=None), "read", self.CREATOR))
+			for ptype in ("write", "delete", "create", "share"):
+				with self.subTest(ptype=ptype):
+					self.assertFalse(log.has_permission(own, ptype, self.CREATOR))
+
+	def test_the_course_creator_permission_is_read_only(self):
+		meta = frappe.get_meta("LMSA Query Log")
+		creator = [p for p in meta.permissions if p.role == "Course Creator"]
+		self.assertEqual(len(creator), 1)
+		self.assertTrue(creator[0].read)
+		for right in ("write", "create", "delete", "share", "email"):
+			with self.subTest(right=right):
+				self.assertFalse(creator[0].get(right))
+
+	def test_the_hooks_are_registered(self):
+		from os_lms import hooks
+
+		module = "os_lms.os_lms.doctype.lmsa_query_log.lmsa_query_log"
+		self.assertEqual(
+			hooks.permission_query_conditions["LMSA Query Log"], f"{module}.get_permission_query_conditions"
+		)
+		self.assertEqual(hooks.has_permission["LMSA Query Log"], f"{module}.has_permission")
+
+
 class TestD6PasswordResetGivesOneAnswer(UnitTestCase):
 	def _reset(self, user, enabled_name):
 		from os_lms.www import login
