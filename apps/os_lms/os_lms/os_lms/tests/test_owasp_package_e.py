@@ -120,9 +120,50 @@ class TestE3ExportPacksOnlyDownloadableFiles(UnitTestCase):
 			"/private/files/someone-else.pdf",
 			"/private/../site_config.json",
 		]
-		with patch.object(course_export, "find_file_by_url", side_effect=find):
+		with (
+			patch.object(course_export, "find_file_by_url", side_effect=find),
+			patch.object(course_export, "_references_vouched_by_owner", return_value=[]),
+		):
 			kept = course_export.downloadable_assets(assets, "course-1")
 		self.assertEqual(kept, ["/files/cover.png", "/private/files/mine.pdf"])
+
+	def _can_export(self, file_url="/private/files/lesson.pdf", downloadable=False, vouched=(), courses=()):
+		"""vouched: lessons serve_resource accepts for the file; courses: those lessons' courses."""
+		from os_lms.os_lms import course_export
+
+		def exists(doctype, filters=None, *args, **kwargs):
+			return doctype == "Course Lesson" and "course-1" in courses
+
+		with (
+			patch.object(course_export, "find_file_by_url", return_value=downloadable or None),
+			patch.object(course_export, "_resolve_lesson_references", return_value=["ref"]),
+			patch.object(
+				course_export,
+				"_references_vouched_by_owner",
+				return_value=[(lesson, False) for lesson in vouched],
+			),
+			patch.object(frappe.db, "exists", side_effect=exists),
+		):
+			return course_export.can_export_private_file(file_url, "course-1")
+
+	def test_a_lesson_upload_of_another_author_goes_in_when_the_lesson_serves_it(self):
+		"""The staging case: unattached lesson files uploaded by a Gestore, exported by a Docente."""
+		self.assertTrue(self._can_export(vouched=["lesson-1"], courses=["course-1"]))
+
+	def test_a_file_served_only_by_another_course_stays_out(self):
+		self.assertFalse(self._can_export(vouched=["lesson-9"], courses=["course-9"]))
+
+	def test_a_file_no_lesson_vouches_for_stays_out(self):
+		"""A student's file pasted into a lesson: serve_resource refuses it, so does the export."""
+		self.assertFalse(self._can_export(vouched=[]))
+
+	def test_a_file_the_exporter_can_download_goes_in(self):
+		self.assertTrue(self._can_export(downloadable=frappe._dict(name="f")))
+
+	def test_a_path_with_dot_dot_never_goes_in(self):
+		self.assertFalse(
+			self._can_export("/private/files/../../site_config.json", downloadable=frappe._dict(name="f"))
+		)
 
 	def test_the_export_writes_only_the_filtered_assets(self):
 		from os_lms.os_lms import course_export

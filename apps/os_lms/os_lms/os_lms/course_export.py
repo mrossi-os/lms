@@ -1,4 +1,4 @@
-"""Course export that packs only the private files the exporter could download.
+"""Course export that packs only the private files the course may hand out.
 
 Upload blocks hold any file_url the author types, and upstream write_assets reads
 every one of them with frappe.get_doc("File"), which checks no permission: a lesson
@@ -11,6 +11,10 @@ import frappe
 from frappe import _
 from frappe.core.doctype.file.utils import find_file_by_url
 from lms.lms import course_import_export as course_zip
+from lms.lms.doctype.course_lesson.course_lesson import (
+	_references_vouched_by_owner,
+	_resolve_lesson_references,
+)
 from lms.lms.utils import can_modify_course
 
 
@@ -50,14 +54,14 @@ def export_course_zip(course_name):
 
 
 def downloadable_assets(assets, course_name):
-	"""Drop the private files the exporter could not download directly.
-
-	find_file_by_url is the check Frappe runs on /private/files downloads: owner,
-	share, or read permission on the document the file is attached to.
-	"""
+	"""Drop the private files the course may not hand out: see can_export_private_file."""
 	kept = []
 	for asset in assets:
-		if isinstance(asset, str) and asset.startswith("/private/") and not find_file_by_url(asset):
+		if (
+			isinstance(asset, str)
+			and asset.startswith("/private/")
+			and not can_export_private_file(asset, course_name)
+		):
 			frappe.logger("lms.security").warning(
 				"Course export skipped a private file: user=%s course=%s file=%s",
 				frappe.session.user,
@@ -67,3 +71,23 @@ def downloadable_assets(assets, course_name):
 			continue
 		kept.append(asset)
 	return kept
+
+
+def can_export_private_file(file_url: str, course_name: str) -> bool:
+	"""A private file goes into the course ZIP when either:
+
+	- the exporter could download it (find_file_by_url, Frappe's check on
+	  /private/files: owner, share, or read on the document it is attached to); or
+	- serve_resource hands it to the learners of a lesson of this course: the
+	  uploader authors the course or put it in that lesson. Lesson uploads are
+	  mostly not attached to the lesson and come from another author, so the
+	  first rule alone dropped them from a Docente's export.
+	"""
+	if ".." in file_url:
+		return False
+	if find_file_by_url(file_url):
+		return True
+	lessons = [lesson for lesson, _ in _references_vouched_by_owner(_resolve_lesson_references(file_url))]
+	return bool(lessons) and bool(
+		frappe.db.exists("Course Lesson", {"name": ["in", lessons], "course": course_name})
+	)
