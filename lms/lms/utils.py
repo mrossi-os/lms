@@ -2814,7 +2814,9 @@ def get_discussion_topics(doctype: str, docname: str, single_thread: bool = Fals
 		for row in frappe.get_all(
 			"Discussion Reply",
 			filters={"topic": ["in", [topic.name for topic in topics]]},
-			fields=["topic", "count(name) as count"],
+			# OSLMS-CUSTOM: Frappe refuses SQL functions written as strings in fields (417
+			# on every list of a batch's topics); the dict syntax is the supported spelling.
+			fields=["topic", {"COUNT": "name", "as": "count"}],
 			group_by="topic",
 		):
 			reply_counts[row.topic] = row.count
