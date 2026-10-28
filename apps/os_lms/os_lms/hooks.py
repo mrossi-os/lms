@@ -160,6 +160,8 @@ override_whitelisted_methods = {
     "lms.lms.user.sign_up": "os_lms.os_lms.signup.sign_up",
     # SCORM details complete a lesson only on a SCORM chapter, not any lesson.
     "lms.lms.doctype.course_lesson.course_lesson.save_progress": "os_lms.os_lms.lesson_progress.save_progress",
+    # The course ZIP packs only the private files the exporter could download.
+    "lms.lms.api.export_course_as_zip": "os_lms.os_lms.course_export.export_course_as_zip",
 
     
     "lms.command_palette.search_sqlite": "os_lms.os_lms.override_api.search_sqlite",
@@ -227,6 +229,13 @@ fixtures = [
     }
 ]
 
+# Upstream's orphaned invite page echoed ?invite_code= unescaped (reflected XSS);
+# its backend is gone, so the route goes to the login page. Frappe also serves the
+# page as /new-sign-up.html, which a plain "/new-sign-up" source does not match.
+website_redirects = [
+    {"source": r"/new-sign-up(\.html)?", "target": "/login"},
+]
+
 
 doc_events = {
     "Badge": {
@@ -250,6 +259,10 @@ doc_events = {
     },
     "LMS Live Class": {
         "before_save": "os_lms.os_lms.live_class_reminders.reset_sent_at",
+    },
+    "LMS Quiz Submission": {
+        # One row per question and at most 100%: a repeated question inflated the score.
+        "validate": "os_lms.events.quiz_submission.validate_quiz_rows",
     },
     "LMS Batch": {
         # Grant the "Valutatore" role to the users listed in the batch
