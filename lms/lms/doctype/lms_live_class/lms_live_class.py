@@ -218,7 +218,9 @@ def get_attendance(live_class):
 
 	encoded_uuid = requests.utils.quote(live_class.uuid, safe="")
 	response = requests.get(
-		f"https://api.zoom.us/v2/past_meetings/{encoded_uuid}/participants", headers=headers
+		f"https://api.zoom.us/v2/past_meetings/{encoded_uuid}/participants",
+		headers=headers,
+		timeout=15,  # OSLMS-CUSTOM: bounded wait
 	)
 
 	if response.status_code != 200:

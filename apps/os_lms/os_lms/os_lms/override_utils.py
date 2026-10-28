@@ -14,9 +14,15 @@ from lms.lms.utils import get_courses as _orginal_get_courses
 from lms.lms.utils import get_lesson as _original_get_lesson
 from lms.lms.utils import get_lesson_details as _original_get_lesson_details
 from lms.lms.utils import get_program_details as _original_get_program_details
+from lms.lms.utils import get_reviews as _original_get_reviews
+from lms.lms.utils import get_discussion_replies as _original_get_discussion_replies
+from lms.lms.utils import get_discussion_topics as _original_get_discussion_topics
 from lms.lms.utils import (
+	can_modify_course,
 	get_lesson_icon,
+	get_membership,
 	get_progress,
+	guest_access_allowed,
 	is_course_in_member_program,
 	is_course_valutatore,
 )
@@ -417,3 +423,52 @@ def get_program_details(program_name: str) -> dict:
 	program = _original_get_program_details(program_name)
 	program.description = frappe.db.get_value("LMS Program", program_name, "description") or ""
 	return program
+
+
+@frappe.whitelist(allow_guest=True)
+def get_reviews(course: str):
+	"""Upstream answers for any course, published or not, and puts each author's
+	email (owner) in the reply; the page only shows owner_details. Same visibility
+	as get_course_details, without the email. The original keeps its rate limit."""
+	if not guest_access_allowed() or not _course_visible(course):
+		return []
+	reviews = _original_get_reviews(course)
+	for review in reviews:
+		review.pop("owner", None)
+	return reviews
+
+
+def _course_visible(course: str) -> bool:
+	return bool(
+		frappe.db.get_value("LMS Course", course, "published")
+		or get_membership(course)
+		or can_modify_course(course)
+		or is_course_valutatore(course)
+		or is_course_in_member_program(course)
+	)
+
+
+# The doctypes can_access_topic knows how to check. It compares the name in Python,
+# answers True for anything else, while the database matches case-insensitively:
+# "course lesson" skipped the check and still found the lessons' topics.
+DISCUSSION_DOCTYPES = ("Course Lesson", "LMS Batch")
+
+
+@frappe.whitelist()
+def get_discussion_topics(doctype: str, docname: str, single_thread: bool = False):
+	_assert_discussion_doctype(doctype)
+	return _original_get_discussion_topics(doctype, docname, single_thread)
+
+
+@frappe.whitelist()
+def get_discussion_replies(topic: str):
+	_assert_discussion_doctype(frappe.db.get_value("Discussion Topic", topic, "reference_doctype"))
+	return _original_get_discussion_replies(topic)
+
+
+def _assert_discussion_doctype(doctype) -> None:
+	if doctype not in DISCUSSION_DOCTYPES:
+		frappe.throw(
+			frappe._("You are not authorized to view the discussion topics for this item."),
+			frappe.PermissionError,
+		)

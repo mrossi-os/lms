@@ -412,7 +412,10 @@ def create_live_class(
 		"content-type": "application/json",
 	}
 	response = requests.post(
-		"https://api.zoom.us/v2/users/me/meetings", headers=headers, data=json.dumps(payload)
+		"https://api.zoom.us/v2/users/me/meetings",
+		headers=headers,
+		data=json.dumps(payload),
+		timeout=15,  # OSLMS-CUSTOM: bounded wait
 	)
 
 	if response.status_code == 201:
@@ -509,7 +512,7 @@ def authenticate(zoom_account):
 			)
 		).decode()
 	}
-	response = requests.request("POST", authenticate_url, headers=headers)
+	response = requests.request("POST", authenticate_url, headers=headers, timeout=15)  # OSLMS-CUSTOM
 
 	# OSLMS-CUSTOM: readable error when Zoom OAuth returns no access token
 	try:

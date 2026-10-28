@@ -1140,7 +1140,7 @@ def apply_gst(amount: float, country: str = None) -> tuple:
 def get_current_exchange_rate(source: str, target: str = "USD") -> float:
 	url = f"https://api.frankfurter.app/latest?from={source}&to={target}"
 
-	response = requests.request("GET", url)
+	response = requests.request("GET", url, timeout=10)  # OSLMS-CUSTOM: bounded wait
 	details = response.json()
 	return details["rates"][target]
 
@@ -2166,9 +2166,10 @@ def categorize_batches(batches: list) -> dict:
 
 def get_country_code():
 	ip = frappe.local.request_ip
-	res = requests.get(f"http://ip-api.com/json/{ip}")
-
+	# OSLMS-CUSTOM: sign-up waits on this call; a slow ip-api.com held the request
+	# open with no limit, and a connection error outside the try failed the sign-up.
 	try:
+		res = requests.get(f"http://ip-api.com/json/{ip}", timeout=3)
 		data = res.json()
 		if data.get("status") != "fail":
 			return frappe.db.get_value("Country", {"code": data.get("countryCode")}, "name")

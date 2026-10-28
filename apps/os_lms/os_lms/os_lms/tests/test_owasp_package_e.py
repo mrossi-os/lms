@@ -227,3 +227,450 @@ def _called_names(function) -> set[str]:
 		for node in ast.walk(tree)
 		if isinstance(node, ast.Call)
 	}
+
+
+class CertificateDoc(frappe._dict):
+	def is_new(self):
+		return not self.get("name")
+
+
+class TestE4CertificatesOnlyForTaughtCourses(UnitTestCase):
+	def _allowed(self, doc, ptype="create", taught=(), stored=None, evaluator=False, staff=True):
+		from os_lms.os_lms import certificate_permissions as perms
+
+		def teaches(course, batch_name, user):
+			return (course or batch_name) in taught
+
+		with (
+			patch.object(perms, "_is_scoped_staff", return_value=staff),
+			patch.object(perms, "_teaches", side_effect=teaches),
+			patch.object(perms.frappe.db, "get_value", return_value=stored),
+			patch.object(perms, "is_assigned_evaluator", return_value=evaluator),
+			patch.object(perms, "evaluates_certificate", return_value=evaluator),
+		):
+			return perms.has_permission(doc, ptype, "docente@example.com")
+
+	def test_a_certificate_of_a_course_taught_is_allowed(self):
+		self.assertTrue(self._allowed(CertificateDoc(course="c1", member="s@example.com"), taught=["c1"]))
+
+	def test_a_certificate_of_another_course_is_refused(self):
+		self.assertFalse(self._allowed(CertificateDoc(course="c2", member="s@example.com"), taught=["c1"]))
+
+	def test_a_certificate_with_no_course_nor_batch_is_refused(self):
+		self.assertFalse(self._allowed(CertificateDoc(member="s@example.com"), taught=["c1"]))
+
+	def test_a_certificate_cannot_be_moved_from_another_course(self):
+		stored = frappe._dict(course="c2", batch_name=None, member="s@example.com", published=0)
+		doc = CertificateDoc(name="cert-1", course="c1", member="s@example.com", published=0)
+		self.assertFalse(self._allowed(doc, "write", taught=["c1"], stored=stored))
+
+	def test_the_assigned_evaluator_keeps_upstream_rights(self):
+		self.assertTrue(self._allowed(CertificateDoc(course="c2", member="s@example.com"), evaluator=True))
+
+	def test_published_certificates_stay_readable(self):
+		stored = frappe._dict(course="c2", batch_name=None, member="s@example.com", published=1)
+		doc = CertificateDoc(name="cert-1", course="c2", member="s@example.com", published=1)
+		self.assertTrue(self._allowed(doc, "read", stored=stored))
+
+	def test_moderator_and_learners_are_not_narrowed(self):
+		self.assertTrue(self._allowed(CertificateDoc(member="s@example.com"), staff=False))
+
+	def test_who_is_narrowed(self):
+		from os_lms.os_lms import certificate_permissions as perms
+
+		cases = (
+			(["Course Creator", "Docente", "Batch Evaluator"], True),
+			(["Batch Evaluator"], True),
+			(["Moderator", "Course Creator"], False),
+			(["System Manager", "Course Creator"], False),
+			(["LMS Student"], False),
+		)
+		for user_roles, narrowed in cases:
+			with self.subTest(roles=user_roles), patch.object(frappe, "get_roles", return_value=user_roles):
+				self.assertEqual(perms._is_scoped_staff("someone@example.com"), narrowed)
+
+	def test_teaches_means_listed_instructor(self):
+		from os_lms.os_lms import certificate_permissions as perms
+
+		with patch.object(perms.frappe.db, "exists", return_value="row") as exists:
+			self.assertTrue(perms._teaches("c1", None, "d@example.com"))
+			self.assertEqual(exists.call_args.args[1]["parenttype"], "LMS Course")
+			self.assertTrue(perms._teaches(None, "b1", "d@example.com"))
+			self.assertEqual(exists.call_args.args[1]["parenttype"], "LMS Batch")
+		self.assertFalse(perms._teaches(None, None, "d@example.com"))
+
+	def test_the_list_condition_is_valid_sql(self):
+		from os_lms.os_lms import certificate_permissions as perms
+
+		with patch.object(perms, "_is_scoped_staff", return_value=True):
+			condition = perms.get_permission_query_conditions("nobody-e4@example.invalid")
+		frappe.db.sql(f"select count(*) from `tabLMS Certificate` where {condition}")
+		with patch.object(perms, "_is_scoped_staff", return_value=False):
+			self.assertIsNone(perms.get_permission_query_conditions("admin@example.com"))
+
+	def test_the_hooks_are_registered(self):
+		from os_lms import hooks
+
+		module = "os_lms.os_lms.certificate_permissions"
+		self.assertEqual(hooks.has_permission["LMS Certificate"], f"{module}.has_permission")
+		self.assertEqual(
+			hooks.permission_query_conditions["LMS Certificate"], f"{module}.get_permission_query_conditions"
+		)
+
+
+class TestE5FrappeSignUpGoesThroughOurs(UnitTestCase):
+	def test_frappe_sign_up_uses_the_os_lms_guard(self):
+		from os_lms.os_lms import signup
+
+		with patch.object(signup, "sign_up", return_value=(1, "ok")) as ours:
+			self.assertEqual(signup.frappe_sign_up("a@example.com", "A", "/lms"), (1, "ok"))
+		ours.assert_called_once_with("a@example.com", "A", verify_terms=False, user_category="")
+
+	def test_the_override_is_registered(self):
+		from os_lms import hooks
+
+		self.assertEqual(
+			hooks.override_whitelisted_methods["frappe.core.doctype.user.user.sign_up"],
+			"os_lms.os_lms.signup.frappe_sign_up",
+		)
+
+
+class TestE6HomeLiveClassesHaveNoHostLink(UnitTestCase):
+	def test_the_host_link_is_dropped_and_the_join_link_is_gated(self):
+		from os_lms.os_lms import override_api
+
+		classes = [
+			frappe._dict(name="lc-1", start_url="https://zoom.us/s/host", join_url="https://zoom.us/j/1"),
+			frappe._dict(name="lc-2", start_url=None, join_url=None),
+		]
+		with patch.object(override_api, "_original_get_my_live_classes", return_value=classes):
+			result = override_api.get_my_live_classes()
+		self.assertNotIn("start_url", result[0])
+		self.assertIn("os_lms.os_lms.api.join_live_class?name=lc-1", result[0].join_url)
+		self.assertNotIn("zoom.us", frappe.as_json(result))
+		self.assertFalse(result[1].join_url)
+
+
+class BatchDoc(frappe._dict):
+	def get_doc_before_save(self):
+		return self.get("before")
+
+
+class TestE7StudentsAreNotBatchEvaluators(UnitTestCase):
+	def _validate(self, now, before=None, students=()):
+		from os_lms.os_lms import valutatore
+
+		rows = lambda users: [frappe._dict(valutatore=user) for user in users]  # noqa: E731
+		doc = BatchDoc(
+			valutatori=rows(now), before=BatchDoc(valutatori=rows(before)) if before is not None else None
+		)
+
+		def get_all(doctype, filters=None, pluck=None, **kwargs):
+			return [user for user in filters["parent"][1] if user in students]
+
+		with patch.object(valutatore.frappe, "get_all", side_effect=get_all):
+			valutatore.validate_batch_valutatori(doc)
+
+	def test_a_student_added_is_refused(self):
+		with self.assertRaises(frappe.ValidationError):
+			self._validate(["staff@example.com", "student@example.com"], students=["student@example.com"])
+
+	def test_a_student_already_listed_is_left_alone(self):
+		self._validate(["student@example.com"], before=["student@example.com"], students=["student@example.com"])
+
+	def test_staff_added_passes(self):
+		self._validate(["staff@example.com"], before=[], students=["student@example.com"])
+
+	def test_the_hook_is_registered(self):
+		from os_lms import hooks
+
+		self.assertEqual(
+			hooks.doc_events["LMS Batch"]["validate"], "os_lms.os_lms.valutatore.validate_batch_valutatori"
+		)
+
+
+class TestE8ValutatoreSeesOnlyTheirBatchStudents(UnitTestCase):
+	def test_the_os_lms_list_conditions_are_valid_sql_on_student_and_course(self):
+		from os_lms.os_lms import valutatore
+
+		for doctype, function in (
+			("LMS Enrollment", valutatore.enrollment_query_conditions),
+			("LMS Course Progress", valutatore.course_progress_query_conditions),
+		):
+			with (
+				self.subTest(doctype=doctype),
+				patch.object(valutatore, "_only_scoped_valutatore", return_value=True),
+				patch.object(valutatore, "get_valutatore_batches", return_value=["batch-e8"]),
+			):
+				condition = function("valutatore@example.com")
+				self.assertIn(f"`tab{doctype}`.member", condition)
+				frappe.db.sql(f"select count(*) from `tab{doctype}` where {condition}")
+
+	def test_by_name_read_needs_the_student_in_the_batch(self):
+		from os_lms.os_lms import valutatore
+
+		doc = frappe._dict(course="c1", member="student@example.com")
+		for in_batch in (True, False):
+			with (
+				self.subTest(in_batch=in_batch),
+				patch.object(valutatore, "_only_scoped_valutatore", return_value=True),
+				patch.object(valutatore, "get_valutatore_batches", return_value=["batch-e8"]),
+				patch.object(valutatore, "_batch_reaches_learner", return_value=in_batch) as reaches,
+			):
+				self.assertEqual(valutatore.course_scoped_has_permission(doc, "read"), in_batch)
+				reaches.assert_called_once_with("c1", "student@example.com", ["batch-e8"])
+
+	def test_the_upstream_graft_condition_is_valid_sql(self):
+		from lms.lms import permissions
+
+		with patch.object(frappe, "get_roles", return_value=["Valutatore", "LMS Student"]):
+			condition = permissions.course_record_query_conditions(
+				"valutatore-e8@example.invalid", "LMS Course Progress"
+			)
+		self.assertIn("LMS Batch Enrollment", condition)
+		frappe.db.sql(f"select count(*) from `tabLMS Course Progress` where {condition}")
+
+	def test_the_upstream_graft_single_row_check_runs(self):
+		from lms.lms import permissions
+
+		with patch.object(frappe, "get_roles", return_value=["Valutatore"]):
+			self.assertFalse(
+				permissions._valutatore_reaches_learner("no-course", "nobody@example.invalid", "v@example.invalid")
+			)
+		self.assertFalse(permissions._valutatore_reaches_learner("c1", None, "v@example.invalid"))
+
+
+class TestE9ProgrammingExerciseDeletion(UnitTestCase):
+	def _delete(self, author):
+		from os_lms.os_lms import override_api
+
+		with (
+			patch.object(frappe, "only_for"),
+			patch("lms.lms.permissions.can_author_assessment", return_value=author),
+			patch.object(frappe, "get_all", return_value=["sub-1", "sub-2"]),
+			patch.object(frappe, "delete_doc") as delete_doc,
+		):
+			override_api.delete_programming_exercise("ex-1")
+		return delete_doc
+
+	def test_someone_else_cannot_delete_it(self):
+		with self.assertRaises(frappe.PermissionError):
+			self._delete(author=False)
+
+	def test_the_author_deletes_it_leaving_a_trace(self):
+		delete_doc = self._delete(author=True)
+		self.assertEqual(
+			[call.args for call in delete_doc.call_args_list],
+			[
+				("LMS Programming Exercise Submission", "sub-1"),
+				("LMS Programming Exercise Submission", "sub-2"),
+				("LMS Programming Exercise", "ex-1"),
+			],
+		)
+
+	def test_post_only_and_registered(self):
+		from os_lms import hooks
+		from os_lms.os_lms import override_api
+
+		self.assertEqual(
+			frappe.allowed_http_methods_for_whitelisted_func[override_api.delete_programming_exercise], ["POST"]
+		)
+		self.assertEqual(
+			hooks.override_whitelisted_methods["lms.lms.api.delete_programming_exercise"],
+			"os_lms.os_lms.override_api.delete_programming_exercise",
+		)
+
+
+class TestE10ProtectedAccountsDeletion(UnitTestCase):
+	def _delete(self, caller_roles, target_roles):
+		from os_lms.os_lms import override_api
+
+		def get_roles(user=None):
+			return target_roles if user else caller_roles
+
+		with (
+			patch.object(frappe, "only_for"),
+			patch.object(frappe, "get_roles", side_effect=get_roles),
+			patch.object(override_api, "_original_delete_member", return_value=True) as original,
+		):
+			override_api.delete_member("target@example.com")
+		return original
+
+	def test_a_gestore_cannot_delete_a_system_manager_or_a_gestore(self):
+		for target in (["System Manager"], ["Gestore", "Moderator"]):
+			with self.subTest(target=target), self.assertRaises(frappe.PermissionError):
+				self._delete(["Gestore", "Moderator"], target)
+
+	def test_a_system_manager_can(self):
+		self._delete(["System Manager", "Moderator"], ["Gestore"]).assert_called_once()
+
+	def test_a_plain_account_is_left_to_upstream(self):
+		self._delete(["Gestore", "Moderator"], ["LMS Student"]).assert_called_once()
+
+
+class TestE11ReviewsWithoutEmails(UnitTestCase):
+	def _reviews(self, visible):
+		from os_lms.os_lms import override_utils
+
+		reviews = [frappe._dict(review="ok", rating=5, owner="s@example.com", owner_details={})]
+		with (
+			patch.object(override_utils, "guest_access_allowed", return_value=True),
+			patch.object(override_utils, "_course_visible", return_value=visible),
+			patch.object(override_utils, "_original_get_reviews", return_value=reviews),
+		):
+			return override_utils.get_reviews("c1")
+
+	def test_no_email_in_the_reply(self):
+		result = self._reviews(visible=True)
+		self.assertEqual(len(result), 1)
+		self.assertNotIn("owner", result[0])
+
+	def test_a_course_the_caller_cannot_see_has_no_reviews(self):
+		self.assertEqual(self._reviews(visible=False), [])
+
+
+class TestE12DiscussionDoctypesSpelledExactly(UnitTestCase):
+	def test_another_spelling_is_refused(self):
+		from os_lms.os_lms import override_utils
+
+		with patch.object(override_utils, "_original_get_discussion_topics") as original:
+			for doctype in ("course lesson", "COURSE LESSON", "LMS Course"):
+				with self.subTest(doctype=doctype), self.assertRaises(frappe.PermissionError):
+					override_utils.get_discussion_topics(doctype, "lesson-1")
+			original.assert_not_called()
+
+	def test_the_exact_doctypes_go_through(self):
+		from os_lms.os_lms import override_utils
+
+		with patch.object(override_utils, "_original_get_discussion_topics", return_value=[]) as original:
+			override_utils.get_discussion_topics("LMS Batch", "batch-1")
+		original.assert_called_once_with("LMS Batch", "batch-1", False)
+
+	def test_replies_follow_the_stored_doctype(self):
+		from os_lms.os_lms import override_utils
+
+		for stored, allowed in (("course lesson", False), ("Course Lesson", True), (None, False)):
+			with (
+				self.subTest(stored=stored),
+				patch.object(override_utils.frappe.db, "get_value", return_value=stored),
+				patch.object(override_utils, "_original_get_discussion_replies", return_value=[]),
+			):
+				if allowed:
+					override_utils.get_discussion_replies("topic-1")
+				else:
+					with self.assertRaises(frappe.PermissionError):
+						override_utils.get_discussion_replies("topic-1")
+
+
+class TestE13IngestionOnlyForCourseEditors(UnitTestCase):
+	def test_an_enrolled_student_cannot_start_it(self):
+		from os_lms.os_lms.ai.ingestion import api
+
+		with (
+			patch.object(api.frappe.db, "get_value", return_value="c1"),
+			patch.object(api, "can_modify_course", return_value=False),
+			self.assertRaises(frappe.PermissionError),
+		):
+			api._load_lesson("lesson-1")
+
+	def test_a_course_editor_can(self):
+		from os_lms.os_lms.ai.ingestion import api
+
+		with (
+			patch.object(api.frappe.db, "get_value", return_value="c1"),
+			patch.object(api, "can_modify_course", return_value=True),
+			patch.object(api.frappe, "get_doc", return_value="lesson") as get_doc,
+		):
+			self.assertEqual(api._load_lesson("lesson-1"), "lesson")
+		get_doc.assert_called_once_with("Course Lesson", "lesson-1")
+
+	def test_post_only(self):
+		from os_lms.os_lms.ai.ingestion import api
+
+		self.assertEqual(frappe.allowed_http_methods_for_whitelisted_func[api.start_lesson_ingestion], ["POST"])
+
+
+class TestE17ExternalCallsHaveATimeout(UnitTestCase):
+	FILES = (
+		"os_lms/os_lms/google_calendar.py",
+		"os_lms/os_lms/ai/utils/transcriber/vimeo.py",
+		"lms/lms/utils.py",
+		"lms/unsplash.py",
+		"lms/lms/doctype/lms_batch/lms_batch.py",
+		"lms/lms/doctype/lms_live_class/lms_live_class.py",
+	)
+
+	def test_every_requests_call_has_a_timeout(self):
+		import ast
+
+		missing = []
+		for relative in self.FILES:
+			app = "os_lms" if relative.startswith("os_lms/") else "lms"
+			path = frappe.get_app_path(app, "..", relative)
+			for node in ast.walk(ast.parse(open(path).read())):
+				if (
+					isinstance(node, ast.Call)
+					and isinstance(node.func, ast.Attribute)
+					and isinstance(node.func.value, ast.Name)
+					and node.func.value.id == "requests"
+					and node.func.attr in ("get", "post", "put", "patch", "delete", "request")
+					and not any(keyword.arg == "timeout" for keyword in node.keywords)
+				):
+					missing.append(f"{relative}:{node.lineno}")
+		self.assertEqual(missing, [])
+
+	def test_the_country_lookup_never_fails_the_sign_up(self):
+		import requests
+		from lms.lms import utils
+
+		with patch.object(utils.requests, "get", side_effect=requests.ConnectionError) as get:
+			self.assertIsNone(utils.get_country_code())
+		self.assertEqual(get.call_args.kwargs["timeout"], 3)
+
+
+class TestE20RoleChangesLeaveATrace(UnitTestCase):
+	def _save_role(self, value, has_role):
+		from os_lms.os_lms import override_api
+
+		with (
+			patch.object(override_api, "assert_can_assign_role"),
+			patch.object(override_api.frappe.db, "exists", return_value=has_role),
+			patch.object(override_api.frappe, "new_doc"),
+			patch.object(override_api.frappe.db, "delete"),
+			patch.object(override_api.frappe, "clear_cache"),
+			patch.object(override_api, "log_role_change") as log,
+		):
+			override_api.save_role("user@example.com", "Docente", value)
+		return log
+
+	def test_grant_and_revoke_are_logged(self):
+		self._save_role(1, has_role=False).assert_called_once_with("user@example.com", "Docente", granted=True)
+		self._save_role(0, has_role=True).assert_called_once_with("user@example.com", "Docente", granted=False)
+
+	def test_no_change_no_row(self):
+		self._save_role(1, has_role=True).assert_not_called()
+		self._save_role(0, has_role=False).assert_not_called()
+
+	def test_the_batch_sync_is_logged(self):
+		from os_lms.os_lms import valutatore
+
+		with (
+			patch.object(valutatore.frappe.db, "exists", return_value=False),
+			patch.object(valutatore.frappe, "new_doc"),
+			patch.object(valutatore.frappe, "clear_cache"),
+			patch.object(valutatore, "log_role_change") as log,
+		):
+			valutatore._ensure_role("user@example.com", "Valutatore")
+		log.assert_called_once_with("user@example.com", "Valutatore", granted=True)
+
+	def test_the_row_says_who_whom_and_which_role(self):
+		from os_lms.os_lms import role_audit
+
+		with patch.object(role_audit.frappe, "get_doc") as get_doc:
+			role_audit.log_role_change("user@example.com", "Gestore", granted=True)
+		row = get_doc.call_args.args[0]
+		self.assertEqual(row["doctype"], "Activity Log")
+		self.assertEqual(row["user"], frappe.session.user)
+		self.assertEqual((row["reference_doctype"], row["reference_name"]), ("User", "user@example.com"))
+		self.assertIn("Gestore", row["subject"])
+		get_doc.return_value.insert.assert_called_once_with(ignore_permissions=True)

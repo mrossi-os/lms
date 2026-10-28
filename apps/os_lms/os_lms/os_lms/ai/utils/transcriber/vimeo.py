@@ -26,6 +26,7 @@ class VimeoTranscriber:
         resp = requests.get(
             f"https://api.vimeo.com/videos/{id}/texttracks",
             headers={"Authorization": f"Bearer {api_key}"},
+            timeout=15,
         )
         tracks = resp.json()
 
@@ -36,7 +37,7 @@ class VimeoTranscriber:
     
         for track in data:
             vtt_url = track["link"]
-            vtt = requests.get(vtt_url).text
+            vtt = requests.get(vtt_url, timeout=30).text
             content += self._extract_text_from_vtt(vtt) + "\n "
         return content
 

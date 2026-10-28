@@ -126,3 +126,12 @@ A file in the lesson points outside the uploaded files.,Un file della lezione pu
 "If the address belongs to an active account, we have sent it the instructions to reset the password.","Se l'indirizzo appartiene a un account attivo, gli abbiamo inviato le istruzioni per reimpostare la password."
 Each question of the quiz can be answered only once.,Ogni domanda del quiz può avere una sola risposta.
 The quiz has more answers than questions.,Il quiz ha più risposte che domande.
+This user cannot be deleted.,Questo utente non può essere eliminato.
+You are not authorized to view the discussion topics for this item.,Non hai i permessi per vedere le discussioni di questo elemento.
+"A student cannot be an evaluator of the batch: {0}","Uno studente non può essere valutatore della classe: {0}"
+You do not have permission to delete this exercise.,Non hai i permessi per eliminare questo esercizio.
+Role {0} granted to {1},Ruolo {0} assegnato a {1}
+Role {0} revoked from {1},Ruolo {0} tolto a {1}
+Lesson not found,Lezione non trovata
+You don't have permission to access this lesson,Non hai i permessi per accedere a questa lezione
+Too many requests. Please try again later.,Troppe richieste. Riprova più tardi.

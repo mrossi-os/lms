@@ -27,6 +27,8 @@ automatically — removing the batch assignment only removes the scope.
 
 import frappe
 
+from os_lms.os_lms.role_audit import log_role_change
+
 ROLE = "Valutatore"
 
 # Roles that already have broad access and must never be narrowed by the
@@ -246,27 +248,45 @@ def assignment_submission_query_conditions(user: str | None = None) -> str:
 
 
 def enrollment_query_conditions(user: str | None = None) -> str:
-	"""Scope the course-enrolment list (read-only dashboard) to the valutatore's
-	courses."""
-	user = user or frappe.session.user
-	if not _only_scoped_valutatore(user):
-		return ""
-	courses = get_valutatore_course_names(user)
-	if not courses:
-		return "1=0"
-	return f"`tabLMS Enrollment`.course IN ({_in_clause(courses)})"
+	"""Scope the course-enrolment list (read-only dashboard) to the students of the
+	valutatore's batches, for the courses of those batches."""
+	return _learner_query_conditions("LMS Enrollment", user)
 
 
 def course_progress_query_conditions(user: str | None = None) -> str:
-	"""Scope the per-lesson progress list (student drilldown) to the valutatore's
-	courses."""
+	"""Scope the per-lesson progress list (student drilldown) to the students of the
+	valutatore's batches, for the courses of those batches."""
+	return _learner_query_conditions("LMS Course Progress", user)
+
+
+def _learner_query_conditions(doctype: str, user: str | None) -> str:
+	# By course alone, a valutatore read the whole course: every student of every
+	# other batch running it, and the learners enrolled outside any batch.
 	user = user or frappe.session.user
 	if not _only_scoped_valutatore(user):
 		return ""
-	courses = get_valutatore_course_names(user)
-	if not courses:
+	batches = get_valutatore_batches(user)
+	if not batches:
 		return "1=0"
-	return f"`tabLMS Course Progress`.course IN ({_in_clause(courses)})"
+	return f"""exists (select 1 from `tabLMS Batch Enrollment` be
+		join `tabBatch Course` bc on bc.parent = be.batch and bc.parenttype = 'LMS Batch'
+		where be.batch in ({_in_clause(batches)})
+		and be.member = `tab{doctype}`.member and bc.course = `tab{doctype}`.course)"""
+
+
+def _batch_reaches_learner(course: str | None, member: str | None, batches: list[str]) -> bool:
+	"""Single-row twin of _learner_query_conditions."""
+	if not (course and member and batches):
+		return False
+	return bool(
+		frappe.db.sql(
+			"""select 1 from `tabLMS Batch Enrollment` be
+			join `tabBatch Course` bc on bc.parent = be.batch and bc.parenttype = 'LMS Batch'
+			where be.batch in %(batches)s and be.member = %(member)s and bc.course = %(course)s
+			limit 1""",
+			{"batches": batches, "member": member, "course": course},
+		)
+	)
 
 
 # ---------------------------------------------------------------------------
@@ -395,7 +415,7 @@ def violation_log_has_permission(doc, ptype: str = "read", user: str | None = No
 
 def course_scoped_has_permission(doc, ptype: str = "read", user: str | None = None):
 	"""Veto by-name access to a course-scoped row (LMS Enrollment / LMS Course
-	Progress) outside the valutatore's courses. The list views are already
+	Progress) outside the students of the valutatore's batches. The list views are already
 	narrowed by the query-conditions; this guards direct (by-name) reads.
 
 	This narrows *visibility* only and must never block create/write/delete:
@@ -413,10 +433,7 @@ def course_scoped_has_permission(doc, ptype: str = "read", user: str | None = No
 		return True
 	if not _only_scoped_valutatore(user):
 		return True
-	course = doc.get("course")
-	if course and course in get_valutatore_course_names(user):
-		return True
-	return False
+	return _batch_reaches_learner(doc.get("course"), doc.get("member"), get_valutatore_batches(user))
 
 
 # ---------------------------------------------------------------------------
@@ -430,11 +447,35 @@ def _ensure_role(user: str, role: str) -> None:
 		entry.parentfield = "roles"
 		entry.role = role
 		entry.save(ignore_permissions=True)
+		log_role_change(user, role, granted=True)
 		frappe.clear_cache(user=user)
 
 
 def _row_members(rows) -> set[str]:
 	return {row.valutatore for row in (rows or []) if getattr(row, "valutatore", None)}
+
+
+def validate_batch_valutatori(doc, method: str | None = None) -> None:
+	"""LMS Batch validate: refuse a student added to the batch valutatori.
+
+	The picker (search_non_student_users) offers only non-students, but saving the
+	batch through the API took any user, and on_update then granted the role: a
+	student could become the evaluator of classmates. People already listed are
+	left alone, so an old batch still saves.
+	"""
+	before = doc.get_doc_before_save()
+	added = _row_members(doc.get("valutatori")) - _row_members(before.get("valutatori") if before else None)
+	if not added:
+		return
+	students = frappe.get_all(
+		"Has Role",
+		filters={"parent": ["in", list(added)], "parenttype": "User", "role": "LMS Student"},
+		pluck="parent",
+	)
+	if students:
+		frappe.throw(
+			frappe._("A student cannot be an evaluator of the batch: {0}").format(", ".join(sorted(students)))
+		)
 
 
 def sync_batch_valutatore_roles(doc, method: str | None = None) -> None:

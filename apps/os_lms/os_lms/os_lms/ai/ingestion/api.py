@@ -1,12 +1,18 @@
 import frappe
 from frappe import _
 
-from lms.lms.utils import has_course_instructor_role, has_moderator_role, is_instructor
+from lms.lms.utils import can_modify_course, has_course_instructor_role, has_moderator_role, is_instructor
+
+from os_lms.os_lms.access_guards import per_user_rate_limit
 
 from .service import IngestionService
 
+# Each run deletes and recomputes the lesson's embeddings (a paid OpenAI call).
+INGESTIONS_PER_HOUR = 30
 
-@frappe.whitelist()
+
+@frappe.whitelist(methods=["POST"])
+@per_user_rate_limit(limit=INGESTIONS_PER_HOUR, seconds=60 * 60)
 def start_lesson_ingestion(lesson_id):
 	"""
 	Start ingestion for a lesson. Teacher-only endpoint.
@@ -73,17 +79,13 @@ def get_lesson_ingestion_status(lesson_id):
 
 
 def _load_lesson(lesson_id):
-	lesson = frappe.get_doc("Course Lesson", lesson_id)
-	if not lesson:
+	# Only who may edit the course re-indexes it: an enrolled student could start
+	# the paid ingestion of any lesson of the course, as often as they liked.
+	course = frappe.db.get_value("Course Lesson", lesson_id, "course") if lesson_id else None
+	if not course:
 		frappe.throw(_("Lesson not found"), frappe.DoesNotExistError)
-	if has_moderator_role():
-		return lesson
-
-	if has_course_instructor_role() and is_instructor(lesson.course):
-		return lesson
-
-	if frappe.db.exists("LMS Enrollment", {"member": frappe.session.user, "course": lesson.course}):
-		return lesson
+	if can_modify_course(course):
+		return frappe.get_doc("Course Lesson", lesson_id)
 
 	frappe.throw(_("You don't have permission to access this lesson"), frappe.PermissionError)
 

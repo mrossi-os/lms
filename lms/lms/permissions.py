@@ -160,6 +160,34 @@ def _valutatore_courses(member):
 	)
 
 
+# OSLMS-CUSTOM: the students of the batches a Valutatore evaluates, per course
+def _valutatore_learners(member, course):
+	"""Subquery of the students enrolled in a batch listing `member` among its
+	valutatori, when `course` is one of that batch's courses."""
+	enrollment = frappe.qb.DocType("LMS Batch Enrollment")
+	batch_course = frappe.qb.DocType("Batch Course")
+	valutatore = frappe.qb.DocType("LMS Batch Valutatore")
+	return (
+		frappe.qb.from_(enrollment)
+		.join(batch_course)
+		.on((batch_course.parent == enrollment.batch) & (batch_course.parenttype == "LMS Batch"))
+		.join(valutatore)
+		.on((valutatore.parent == enrollment.batch) & (valutatore.parenttype == "LMS Batch"))
+		.select(enrollment.member)
+		.where((valutatore.valutatore == member) & (batch_course.course == course))
+	)
+
+
+def _valutatore_reaches_learner(course: str, learner: str | None, user: str) -> bool:
+	"""Single-row twin of the list condition: `learner` is enrolled in a batch `user`
+	evaluates, and `course` is one of that batch's courses."""
+	if not learner or "Valutatore" not in frappe.get_roles(user):
+		return False
+	learners = _valutatore_learners(user, course)
+	enrollment = frappe.qb.DocType("LMS Batch Enrollment")
+	return bool(learners.where(enrollment.member == learner).limit(1).run())
+
+
 def _render(condition) -> str:
 	return condition.get_sql(with_namespace=True, quote_char="`" if frappe.db.db_type == "mariadb" else '"')
 
@@ -262,10 +290,16 @@ def course_record_has_permission(doc, ptype="read", user=None) -> bool:
 	if course and all(can_author_course(c, user=user) for c in (course, moved_to) if c):
 		return True
 
-	# OSLMS-CUSTOM: a Valutatore reads (never writes) the learner records of their courses
-	# The course dashboard drilldown lists the progress of the students they evaluate;
-	# os_lms.os_lms.valutatore then narrows the rows to their own batches.
-	if ptype in COURSE_READ_PTYPES and course and not moved_to and is_course_valutatore(course, user):
+	# OSLMS-CUSTOM: a Valutatore reads (never writes) the learner records of their batches
+	# The course dashboard drilldown lists the progress of the students they evaluate:
+	# only students enrolled in a batch the Valutatore evaluates, for a course of it.
+	if (
+		ptype in COURSE_READ_PTYPES
+		and course
+		and not moved_to
+		and member_field
+		and _valutatore_reaches_learner(course, source.get(member_field), user)
+	):
 		return True
 
 	frappe.logger("lms.security").warning(
@@ -308,9 +342,11 @@ def course_record_query_conditions(user=None, doctype=None) -> str:
 		.where((instructor.instructor == member) & (instructor.parenttype == "LMS Course"))
 	)
 	condition = (getattr(record, member_field) == member) | record.course.isin(taught)
-	# OSLMS-CUSTOM: a Valutatore lists the learner records of the courses they evaluate
+	# OSLMS-CUSTOM: a Valutatore lists the learner records of the students they evaluate
 	if "Valutatore" in frappe.get_roles(user):
-		condition = condition | record.course.isin(_valutatore_courses(member))
+		condition = condition | getattr(record, member_field).isin(
+			_valutatore_learners(member, record.course)
+		)
 	return _render(Bracket(condition))
 
 

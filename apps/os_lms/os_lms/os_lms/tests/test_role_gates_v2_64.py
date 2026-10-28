@@ -92,19 +92,26 @@ class TestValutatoreReadsTheirCourses(UnitTestCase):
 	def test_outsider_does_not(self):
 		self.assertFalse(self._can_access())
 
-	def _record_permission(self, ptype):
+	def _record_permission(self, ptype, in_batch=True):
 		doc = FakeDoc(doctype="LMS Course Progress", name="prog-1", member="student@example.com", course="c1")
 		stored = frappe._dict(member="student@example.com", course="c1")
 		with (
 			patch.object(permissions, "_course_read_condition", return_value="narrowed"),
 			patch.object(permissions.frappe.db, "get_value", return_value=stored),
 			patch.object(permissions, "can_author_course", return_value=False),
-			patch.object(permissions, "is_course_valutatore", return_value=True),
+			patch.object(permissions, "_valutatore_reaches_learner", return_value=in_batch) as reaches,
 		):
-			return permissions.course_record_has_permission(doc, ptype, "valutatore@example.com")
+			allowed = permissions.course_record_has_permission(doc, ptype, "valutatore@example.com")
+		if ptype == "read":
+			reaches.assert_called_with("c1", "student@example.com", "valutatore@example.com")
+		return allowed
 
 	def test_valutatore_reads_learner_progress(self):
 		self.assertTrue(self._record_permission("read"))
+
+	def test_valutatore_does_not_read_a_student_of_another_batch(self):
+		"""Package E8: the course alone is not enough, the student must be in their batch."""
+		self.assertFalse(self._record_permission("read", in_batch=False))
 
 	def test_valutatore_never_writes_learner_progress(self):
 		self.assertFalse(self._record_permission("write"))

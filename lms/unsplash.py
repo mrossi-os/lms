@@ -34,6 +34,7 @@ def make_unsplash_request(path):
 	url = f"{base_url}{path}"
 	res = requests.get(
 		url,
+		timeout=10,  # OSLMS-CUSTOM: bounded wait
 		headers={
 			"Accept-Version": "v1",
 			"Authorization": f"Client-ID {unsplash_access_key}",

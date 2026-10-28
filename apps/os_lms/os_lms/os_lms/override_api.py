@@ -6,11 +6,15 @@ from frappe.utils import cint
 
 from lms.lms.utils import LMS_ROLES
 
+from os_lms.os_lms.role_audit import log_role_change
+
 
 from lms.lms.api import get_sidebar_settings as _original_get_sidebar_settings
 from lms.lms.api import get_lms_settings as _original_get_lms_settings
 from lms.lms.api import get_user_info as _original_get_user_info
 from lms.lms.api import save_role as _original_save_role
+from lms.lms.api import delete_member as _original_delete_member
+from lms.lms.api import get_my_live_classes as _original_get_my_live_classes
 
 
 EXTRA_LMS_ROLES = ["Gestore", "Docente", "Valutatore"]
@@ -49,11 +53,65 @@ def save_role(user: str, role: str, value: int):
             doc.parentfield = "roles"
             doc.role = role
             doc.save(ignore_permissions=True)
-    else:
+            log_role_change(user, role, granted=True)
+    elif frappe.db.exists("Has Role", {"parent": user, "role": role}):
         frappe.db.delete("Has Role", {"parent": user, "role": role})
+        log_role_change(user, role, granted=False)
     frappe.clear_cache(user=user)
     return True
 
+
+PROTECTED_ACCOUNT_ROLES = {"System Manager", "Gestore"}
+
+
+@frappe.whitelist()
+def delete_member(user: str):
+    """Upstream lets any Moderator, so every Gestore, delete a System Manager or
+    another Gestore. Like the Gestore role itself (assert_can_assign_role), those
+    accounts are left to the Administrator or a System Manager."""
+    frappe.only_for("Moderator")
+    if (
+        isinstance(user, str)
+        and PROTECTED_ACCOUNT_ROLES & set(frappe.get_roles(user))
+        and "System Manager" not in frappe.get_roles()
+    ):
+        frappe.throw(_("This user cannot be deleted."), frappe.PermissionError)
+    return _original_delete_member(user)
+
+
+
+@frappe.whitelist()
+def get_my_live_classes():
+    """Upstream hands every enrolled student the Zoom host link (start_url), which
+    starts the meeting as organizer, and the raw join link outside the join window.
+    The card only tests join_url, so it gets the internal gated link instead."""
+    from os_lms.os_lms.api import get_live_class_join_url
+
+    live_classes = _original_get_my_live_classes()
+    for live_class in live_classes:
+        live_class.pop("start_url", None)
+        if live_class.get("join_url"):
+            live_class.join_url = get_live_class_join_url(live_class.name)
+    return live_classes
+
+
+@frappe.whitelist(methods=["POST"])
+def delete_programming_exercise(exercise: str):
+    """Upstream checks only the role, so any Course Creator or Batch Evaluator wiped
+    another course's exercise with all its submissions, through frappe.db.delete
+    (no Deleted Document), even on a GET. Only who may author the exercise deletes
+    it now, through delete_doc."""
+    from lms.lms.permissions import can_author_assessment
+
+    frappe.only_for(["Moderator", "Course Creator", "Batch Evaluator"])
+    if not can_author_assessment("LMS Programming Exercise", exercise):
+        frappe.throw(_("You do not have permission to delete this exercise."), frappe.PermissionError)
+    submissions = frappe.get_all(
+        "LMS Programming Exercise Submission", {"exercise": exercise}, pluck="name"
+    )
+    for submission in submissions:
+        frappe.delete_doc("LMS Programming Exercise Submission", submission, ignore_permissions=True)
+    frappe.delete_doc("LMS Programming Exercise", exercise)
 
 from lms.command_palette import (
     can_access_batch,

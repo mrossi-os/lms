@@ -101,7 +101,7 @@ def google_callback(code: str | None = None, state: str | None = None):
 	}
 
 	try:
-		r = requests.post(GoogleOAuth.OAUTH_URL, data=data).json()
+		r = requests.post(GoogleOAuth.OAUTH_URL, data=data, timeout=15).json()
 	except Exception as exc:
 		frappe.log_error(title="Google Calendar token exchange failed")
 		frappe.throw(_("Errore nello scambio del token con Google: {0}").format(exc))

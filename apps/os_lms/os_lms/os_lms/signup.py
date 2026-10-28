@@ -43,6 +43,14 @@ def sign_up(email: str, full_name: str, verify_terms: bool, user_category: str):
 	return code, message
 
 
+@frappe.whitelist(allow_guest=True)  # nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
+def frappe_sign_up(email: str, full_name: str, redirect_to: str | None = None):
+	"""Frappe's own sign-up, which no page of ours calls, routed through the guard
+	above: it answered "Already Registered" and created users past the per-IP limit.
+	redirect_to is dropped: the confirmation email leads to the LMS anyway."""
+	return sign_up(email, full_name, verify_terms=False, user_category="")
+
+
 def _check_your_email():
 	return 1, _("Signup successful. Please check your email for verification.")
 

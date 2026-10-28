@@ -102,6 +102,8 @@ permission_query_conditions = {
     # Scope the read-only course dashboard data to the valutatore's courses.
     "LMS Enrollment": "os_lms.os_lms.valutatore.enrollment_query_conditions",
     "LMS Course Progress": "os_lms.os_lms.valutatore.course_progress_query_conditions",
+    # Staff other than Moderator list the certificates of the courses they teach.
+    "LMS Certificate": "os_lms.os_lms.certificate_permissions.get_permission_query_conditions",
 }
 has_permission = {
     "LMSA Simulation Scenario": (
@@ -120,6 +122,8 @@ has_permission = {
         "os_lms.os_lms.doctype.lmsa_evaluation_schema.lmsa_evaluation_schema.has_permission"
     ),
     "LMSA Query Log": "os_lms.os_lms.doctype.lmsa_query_log.lmsa_query_log.has_permission",
+    # Course Creator and Docente issue certificates only for the courses they teach.
+    "LMS Certificate": "os_lms.os_lms.certificate_permissions.has_permission",
     # Veto by-name access to submissions outside the valutatore's batches.
     "LMS Quiz Submission": "os_lms.os_lms.valutatore.quiz_submission_has_permission",
     "LMS Quiz Violation Log": "os_lms.os_lms.valutatore.violation_log_has_permission",
@@ -143,6 +147,12 @@ override_whitelisted_methods = {
     "lms.lms.api.get_members": "os_lms.os_lms.override_api.get_members",
     "lms.lms.api.get_member": "os_lms.os_lms.override_api.get_member",
     "lms.lms.api.save_role": "os_lms.os_lms.override_api.save_role",
+    # Accounts holding System Manager or Gestore are deleted only by a System Manager.
+    "lms.lms.api.delete_member": "os_lms.os_lms.override_api.delete_member",
+    # The home live classes carry the gated join link, never the Zoom host link.
+    "lms.lms.api.get_my_live_classes": "os_lms.os_lms.override_api.get_my_live_classes",
+    # Only the exercise's authors delete it, leaving a Deleted Document.
+    "lms.lms.api.delete_programming_exercise": "os_lms.os_lms.override_api.delete_programming_exercise",
 
     "lms.lms.utils.get_course_details": "os_lms.os_lms.override_utils.get_course_details",
     "lms.lms.utils.get_course_outline": "os_lms.os_lms.override_utils.get_course_outline",
@@ -154,10 +164,16 @@ override_whitelisted_methods = {
     "lms.lms.utils.get_batch_details": "os_lms.os_lms.override_utils.get_batch_details",
     "lms.lms.utils.get_roles": "os_lms.os_lms.override_utils.get_roles",
     "lms.lms.utils.get_program_details": "os_lms.os_lms.override_utils.get_program_details",
+    # Reviews only of a course the caller may see, and without the authors' emails.
+    "lms.lms.utils.get_reviews": "os_lms.os_lms.override_utils.get_reviews",
+    # Discussions only of the doctypes the access check knows, spelled exactly.
+    "lms.lms.utils.get_discussion_topics": "os_lms.os_lms.override_utils.get_discussion_topics",
+    "lms.lms.utils.get_discussion_replies": "os_lms.os_lms.override_utils.get_discussion_replies",
     # The proctoring photo log is not shown to the per-batch Valutatore (v2.63.0).
     "lms.lms.doctype.lms_quiz.lms_quiz.get_quiz_violation_logs": "os_lms.os_lms.valutatore.get_quiz_violation_logs",
     # Sign-up limits that really block, and the same answer for registered emails.
     "lms.lms.user.sign_up": "os_lms.os_lms.signup.sign_up",
+    "frappe.core.doctype.user.user.sign_up": "os_lms.os_lms.signup.frappe_sign_up",
     # SCORM details complete a lesson only on a SCORM chapter, not any lesson.
     "lms.lms.doctype.course_lesson.course_lesson.save_progress": "os_lms.os_lms.lesson_progress.save_progress",
     # The course ZIP packs only the private files the exporter could download.
@@ -269,6 +285,8 @@ doc_events = {
         # `valutatori` field. Grant-only: the role is never revoked automatically
         # (see os_lms.os_lms.valutatore.sync_batch_valutatore_roles).
         "on_update": "os_lms.os_lms.valutatore.sync_batch_valutatore_roles",
+        # The picker offers only non-students; saving checks it too.
+        "validate": "os_lms.os_lms.valutatore.validate_batch_valutatori",
     },
     "Brand Customize": {
         "on_update": "os_lms.os_lms.branding.clear_brand_cache",
