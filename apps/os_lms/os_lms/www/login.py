@@ -16,7 +16,7 @@ from frappe.utils.data import escape_html
 from frappe.utils.html_utils import get_icon_html
 from frappe.utils.jinja import guess_is_path
 from frappe.utils.oauth import get_oauth2_authorize_url, get_oauth_keys, redirect_post_login
-from frappe.utils.password import get_decrypted_password
+from frappe.utils.password import get_decrypted_password, get_password_reset_limit
 from frappe.website.utils import get_home_page
 
 from os_lms.os_lms.email_utils import send_templated_email
@@ -161,6 +161,30 @@ def send_login_link(email: str):
 		subject=subject,
 		args={"link": link, "minutes": expiry, "app_name": app_name},
 		now=True,
+	)
+
+
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+@rate_limit(limit=get_password_reset_limit, seconds=60 * 60)
+def reset_password(user: str):
+	# Frappe answers "not found" (404), "disabled" or "not allowed", or names the
+	# account holder in the confirmation: anyone could probe which emails are
+	# registered, and whose they are. Same answer for every address instead.
+	name = (
+		isinstance(user, str)
+		and user != "Administrator"
+		and frappe.db.get_value("User", {"name": user, "enabled": 1})
+	)
+	if name:
+		user_doc = frappe.get_doc("User", name)
+		user_doc.validate_reset_password()
+		user_doc.reset_password(send_email=True)
+
+	frappe.msgprint(
+		msg=_(
+			"If the address belongs to an active account, we have sent it the instructions to reset the password."
+		),
+		title=_("Password Email Sent"),
 	)
 
 

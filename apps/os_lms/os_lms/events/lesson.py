@@ -1,4 +1,8 @@
 import frappe
+from frappe import _
+from lms.lms.utils import get_editorjs_blocks
+
+from os_lms.os_lms.ai.utils.file_transcriber import resolve_site_file
 
 # Records owned by a lesson — bulk-deleted when the lesson is removed. These
 # are leaf doctypes (no child tables that need their own cascade).
@@ -28,6 +32,28 @@ LESSON_REFERENCING_DOCTYPES = (
     ("LMS Enrollment", "current_lesson"),  # learner's bookmark
     ("LMS Assignment Submission", "lesson"),  # belongs to the assignment
 )
+
+
+def validate_upload_blocks(doc, method=None):
+	"""validate hook on Course Lesson: an "upload" block must point to an uploaded
+	file or to an external link.
+
+	Indexing for the AI tutor reads the block's file_url from disk, and the content
+	can be written by hand through the API: "/private/../site_config.json" would be
+	read and indexed. The reader refuses it too; this stops it at the source.
+	"""
+	for field in ("content", "instructor_content"):
+		for block in get_editorjs_blocks(doc.get(field)):
+			if block.get("type") != "upload":
+				continue
+			file_url = block.get("data", {}).get("file_url")
+			if not file_url:
+				continue
+			if isinstance(file_url, str) and (
+				file_url.startswith(("http://", "https://")) or resolve_site_file(file_url)
+			):
+				continue
+			frappe.throw(_("A file in the lesson points outside the uploaded files."))
 
 
 def reset_index_status_on_content_change(doc, method):

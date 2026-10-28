@@ -1,6 +1,29 @@
 import frappe
 from pathlib import Path
 
+# The URL prefix of each folder a lesson attachment can live in, and that folder
+# relative to the site.
+SITE_FILE_FOLDERS = (
+	("/private/files/", ("private", "files")),
+	("/files/", ("public", "files")),
+)
+
+
+def resolve_site_file(file_url: str) -> Path | None:
+	"""Return the path of a /files or /private/files URL, or None for any other URL
+	or one that resolves outside its folder (e.g. "/private/../site_config.json").
+
+	The URL comes from the lesson content, which an author can write by hand.
+	"""
+	if not isinstance(file_url, str):
+		return None
+	for prefix, folder in SITE_FILE_FOLDERS:
+		if file_url.startswith(prefix):
+			root = Path(frappe.get_site_path(*folder)).resolve()
+			path = (root / file_url[len(prefix) :]).resolve()
+			return path if path.is_relative_to(root) and path != root else None
+	return None
+
 
 class FileTranscriber:
 
@@ -12,7 +35,7 @@ class FileTranscriber:
 		Extract text content from a file.
 
 		Args:
-			file_path: Path to the file (absolute or relative to Frappe site).
+			file_path: URL of an uploaded file (/files/... or /private/files/...).
 			file_type: File type/extension (e.g. "pdf", "docx", "txt").
 
 		Returns:
@@ -32,12 +55,12 @@ class FileTranscriber:
 			self.logger.warning(f"Unsupported file type: {file_type}")
 			return ""
 
-		if file_path.startswith("/private/"):
-			resolved_path = Path(frappe.get_site_path(file_path.lstrip("/"))).resolve()
-		else:
-			resolved_path = Path(frappe.get_site_path("public", file_path.lstrip("/"))).resolve()
-		
-		if not resolved_path.exists():
+		resolved_path = resolve_site_file(file_path)
+		if resolved_path is None:
+			self.logger.warning(f"Refused file outside the site files: {file_path}")
+			return ""
+
+		if not resolved_path.is_file():
 			self.logger.warning(f"File not found: {resolved_path}")
 			return ""
 

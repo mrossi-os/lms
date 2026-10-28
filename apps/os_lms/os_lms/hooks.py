@@ -153,6 +153,8 @@ override_whitelisted_methods = {
     "lms.lms.doctype.lms_quiz.lms_quiz.get_quiz_violation_logs": "os_lms.os_lms.valutatore.get_quiz_violation_logs",
     # Sign-up limits that really block, and the same answer for registered emails.
     "lms.lms.user.sign_up": "os_lms.os_lms.signup.sign_up",
+    # SCORM details complete a lesson only on a SCORM chapter, not any lesson.
+    "lms.lms.doctype.course_lesson.course_lesson.save_progress": "os_lms.os_lms.lesson_progress.save_progress",
 
     
     "lms.command_palette.search_sqlite": "os_lms.os_lms.override_api.search_sqlite",
@@ -162,6 +164,9 @@ override_whitelisted_methods = {
     # The login page calls Frappe's method: ours sends the os_lms email template and
     # does not reveal whether the address has an account.
     "frappe.www.login.send_login_link": "os_lms.www.login.send_login_link",
+    # "Forgot password" gives the same answer whether or not the address has an
+    # account, and never names the account holder.
+    "frappe.core.doctype.user.user.reset_password": "os_lms.www.login.reset_password",
     # Google Calendar OAuth: a one-time state bound to whoever started the consent,
     # and the callback lands in the LMS SPA instead of the desk.
     "frappe.integrations.doctype.google_calendar.google_calendar.authorize_access": "os_lms.os_lms.google_calendar.authorize_access",
@@ -224,6 +229,8 @@ doc_events = {
         "after_insert": "os_lms.badge_utils.clear_cache_on_badge_create"
     },
     "Course Lesson": {
+        # An "upload" block may only point to an uploaded file or an external link.
+        "validate": "os_lms.events.lesson.validate_upload_blocks",
         "before_save": "os_lms.events.lesson.reset_index_status_on_content_change",
         "on_trash": "os_lms.events.lesson.cleanup_lesson_links",
         # OSLMS-CUSTOM: re-index the AI tutor vectors when a lesson is renamed
