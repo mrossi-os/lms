@@ -171,6 +171,9 @@ override_whitelisted_methods = {
     # Discussions only of the doctypes the access check knows, spelled exactly.
     "lms.lms.utils.get_discussion_topics": "os_lms.os_lms.override_utils.get_discussion_topics",
     "lms.lms.utils.get_discussion_replies": "os_lms.os_lms.override_utils.get_discussion_replies",
+    # Frappe's website method saved replies with ignore_permissions: anybody rewrote
+    # anybody's reply by name (OWASP M-06).
+    "frappe.website.doctype.discussion_topic.discussion_topic.submit_discussion": "os_lms.os_lms.override_utils.submit_discussion",
     # The proctoring photo log is not shown to the per-batch Valutatore (v2.63.0).
     "lms.lms.doctype.lms_quiz.lms_quiz.get_quiz_violation_logs": "os_lms.os_lms.valutatore.get_quiz_violation_logs",
     # Sign-up limits that really block, and the same answer for registered emails.
@@ -285,6 +288,10 @@ doc_events = {
     "LMS Quiz Submission": {
         # One row per question and at most 100%: a repeated question inflated the score.
         "validate": "os_lms.events.quiz_submission.validate_quiz_rows",
+    },
+    "LMS Assignment Submission": {
+        # Once graded, a student can no longer change the answer the grade refers to.
+        "validate": "os_lms.events.assignment_submission.freeze_graded_submission",
     },
     "LMS Batch": {
         # Grant the "Valutatore" role to the users listed in the batch

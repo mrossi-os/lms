@@ -18,6 +18,7 @@ from lms.lms.utils import get_reviews as _original_get_reviews
 from lms.lms.utils import get_discussion_replies as _original_get_discussion_replies
 from lms.lms.utils import get_discussion_topics as _original_get_discussion_topics
 from lms.lms.utils import (
+	can_access_topic,
 	can_modify_course,
 	get_lesson_icon,
 	get_membership,
@@ -467,6 +468,49 @@ def get_discussion_topics(doctype: str, docname: str, single_thread: bool = Fals
 def get_discussion_replies(topic: str):
 	_assert_discussion_doctype(frappe.db.get_value("Discussion Topic", topic, "reference_doctype"))
 	return _original_get_discussion_replies(topic)
+
+
+@frappe.whitelist(methods=["POST"])
+def submit_discussion(
+	doctype: str,
+	docname: str,
+	reply: str,
+	title: str,
+	topic_name: str | None = None,
+	reply_name: str | None = None,
+):
+	"""Frappe's method saves with ignore_permissions, so any logged-in user rewrote
+	anybody's reply through reply_name and opened topics on any document (OWASP M-06).
+	Replies and topics are now saved with the caller's own permissions, which are
+	if_owner for everyone but the Moderator, and only on the discussion doctypes."""
+	if reply_name:
+		doc = frappe.get_doc("Discussion Reply", reply_name)
+		doc.reply = reply
+		doc.save()
+		return
+
+	if topic_name:
+		_assert_discussion_doctype(frappe.db.get_value("Discussion Topic", topic_name, "reference_doctype"))
+		_insert_discussion_reply(reply, topic_name)
+		return topic_name
+
+	_assert_discussion_doctype(doctype)
+	if not can_access_topic(doctype, docname):
+		frappe.throw(frappe._("You do not have access to this discussion."), frappe.PermissionError)
+	topic = frappe.get_doc(
+		{
+			"doctype": "Discussion Topic",
+			"title": title,
+			"reference_doctype": doctype,
+			"reference_docname": docname,
+		}
+	).insert()
+	_insert_discussion_reply(reply, topic.name)
+	return topic.name
+
+
+def _insert_discussion_reply(reply: str, topic: str) -> None:
+	frappe.get_doc({"doctype": "Discussion Reply", "reply": reply, "topic": topic}).insert()
 
 
 def _assert_discussion_doctype(doctype) -> None:
