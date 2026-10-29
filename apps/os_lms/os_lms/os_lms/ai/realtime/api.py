@@ -15,11 +15,14 @@ import frappe
 from frappe import _
 
 from lms.lms.utils import has_moderator_role
+from os_lms.os_lms.access_guards import check_user_rate_limit
 from os_lms.os_lms.ai.simulations.api import load_session
+from os_lms.os_lms.ai.simulations.limits import VOICE_TOKEN_ACTION, load_limits
 from os_lms.os_lms.ai.simulations.orchestrator import (
 	QuotaExceededError,
 	SessionOrchestrator,
 	SessionTerminatedError,
+	VoiceTokenLimitError,
 )
 from os_lms.os_lms.ai.simulations.prompts.role_play import build_role_play_system_prompt
 from os_lms.os_lms.ai.utils.llm import load_settings
@@ -62,10 +65,17 @@ def create_voice_session(session_id: str) -> dict:
 	if scenario.modality not in ("voice", "both"):
 		frappe.throw(_("Scenario {0} is not voice-enabled.").format(scenario.name))
 
+	# Every call mints a provider token billed to the organisation (OWASP H-4).
+	check_user_rate_limit(VOICE_TOKEN_ACTION, load_limits().voice_tokens_per_hour, 3600)
 	try:
 		started = _service().start_voice_session(session_id=session.name)
 	except SessionTerminatedError:
 		frappe.throw(_("This session is no longer accepting turns."), frappe.ValidationError)
+	except VoiceTokenLimitError:
+		frappe.throw(
+			_("This voice session cannot reconnect again. Start a new simulation."),
+			frappe.ValidationError,
+		)
 	except QuotaExceededError as e:
 		frappe.throw(str(e), frappe.ValidationError)
 

@@ -42,6 +42,8 @@ after_migrate = [
     "os_lms.setup.remove_deprecated_custom_fields",
     "os_lms.setup.create_custom_fields",
     "os_lms.setup.setup_valutatore_role_and_permissions",
+    # Before the Gestore grants: they include the LMSA Simulation Limits single.
+    "os_lms.os_lms.ai.simulations.limits.ensure_simulation_limits",
     "os_lms.setup.setup_gestore_role_permissions",
     "os_lms.setup.setup_docente_role_permissions",
     "os_lms.setup.setup_course_creator_batch_permissions",

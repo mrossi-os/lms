@@ -1,0 +1,138 @@
+{
+	"actions": [],
+	"creation": "2026-10-29 12:00:00.000000",
+	"description": "Limits on what one student may spend on AI simulations (OWASP A06: H-3, H-4). Editable by System Manager and Gestore.",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"section_chat",
+		"chat_messages_per_minute",
+		"max_message_chars",
+		"max_messages_per_session",
+		"column_break_chat",
+		"session_starts_per_hour",
+		"daily_sessions_per_user",
+		"section_voice",
+		"voice_tokens_per_session",
+		"voice_tokens_per_hour",
+		"column_break_voice",
+		"voice_max_session_seconds"
+	],
+	"fields": [
+		{
+			"fieldname": "section_chat",
+			"fieldtype": "Section Break",
+			"label": "Chat"
+		},
+		{
+			"default": "20",
+			"description": "Chat messages (typed or spoken) one student may send per minute.",
+			"fieldname": "chat_messages_per_minute",
+			"fieldtype": "Int",
+			"label": "Messages per Minute",
+			"non_negative": 1,
+			"reqd": 1
+		},
+		{
+			"default": "4000",
+			"description": "Longest message a student may send, in characters.",
+			"fieldname": "max_message_chars",
+			"fieldtype": "Int",
+			"label": "Max Characters per Message",
+			"non_negative": 1,
+			"reqd": 1
+		},
+		{
+			"default": "60",
+			"description": "Student messages per chat session. The last one gets a closing reply, then the input is locked.",
+			"fieldname": "max_messages_per_session",
+			"fieldtype": "Int",
+			"label": "Max Messages per Session",
+			"non_negative": 1,
+			"reqd": 1
+		},
+		{
+			"fieldname": "column_break_chat",
+			"fieldtype": "Column Break"
+		},
+		{
+			"default": "30",
+			"description": "Simulations one student may prepare, begin or restart per hour.",
+			"fieldname": "session_starts_per_hour",
+			"fieldtype": "Int",
+			"label": "Session Starts per Hour",
+			"non_negative": 1,
+			"reqd": 1
+		},
+		{
+			"default": "100",
+			"description": "Simulation sessions one student may open per day.",
+			"fieldname": "daily_sessions_per_user",
+			"fieldtype": "Int",
+			"label": "Sessions per Day",
+			"non_negative": 1,
+			"reqd": 1
+		},
+		{
+			"fieldname": "section_voice",
+			"fieldtype": "Section Break",
+			"label": "Voice"
+		},
+		{
+			"default": "3",
+			"description": "Realtime voice tokens one session may obtain: the first connection plus reconnections.",
+			"fieldname": "voice_tokens_per_session",
+			"fieldtype": "Int",
+			"label": "Voice Tokens per Session",
+			"non_negative": 1,
+			"reqd": 1
+		},
+		{
+			"default": "10",
+			"description": "Realtime voice tokens one student may obtain per hour.",
+			"fieldname": "voice_tokens_per_hour",
+			"fieldtype": "Int",
+			"label": "Voice Tokens per Hour",
+			"non_negative": 1,
+			"reqd": 1
+		},
+		{
+			"fieldname": "column_break_voice",
+			"fieldtype": "Column Break"
+		},
+		{
+			"default": "300",
+			"description": "Longest a voice session may last. Gemini closes the call itself when it runs out; with OpenAI the token only bounds when the call may start.",
+			"fieldname": "voice_max_session_seconds",
+			"fieldtype": "Int",
+			"label": "Max Voice Session Seconds",
+			"non_negative": 1,
+			"reqd": 1
+		}
+	],
+	"grid_page_length": 50,
+	"index_web_pages_for_search": 1,
+	"issingle": 1,
+	"links": [],
+	"modified": "2026-10-29 12:00:00.000000",
+	"modified_by": "Administrator",
+	"module": "OS LMS",
+	"name": "LMSA Simulation Limits",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"print": 1,
+			"read": 1,
+			"role": "System Manager",
+			"share": 1,
+			"write": 1
+		}
+	],
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": [],
+	"track_changes": 1
+}

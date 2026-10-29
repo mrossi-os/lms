@@ -2,6 +2,7 @@ import { markRaw } from 'vue'
 import { translate as __ } from '@/translation'
 import AISettings from '@/oslms/components/ai/Settings/AISettings.vue'
 import PromptSettings from '@/oslms/components/ai/Settings/PromptSettings.vue'
+import SimulationLimitsSettings from '@/oslms/components/ai/Settings/SimulationLimitsSettings.vue'
 import TrueSkillsSettings from '@/oslms/components/trueskills/TrueSkillsSettings.vue'
 import EliteApiSettings from '@/oslms/components/eliteApi/EliteApiSettings.vue'
 
@@ -364,14 +365,7 @@ export function buildOslmsSettingsTabs({
 											type: 'select',
 											options: turnDetectionOptions,
 										},
-										{
-											label: __('Sessione massima in secondi'),
-											name: 'realtime_max_session_seconds',
-											type: 'number',
-											description: __(
-												'Secondi massimi che una sessione può durare.',
-											),
-										},
+										// The max session length moved to the "Limiti simulazioni AI" tab.
 									]
 								}
 							],
@@ -466,6 +460,25 @@ export function buildOslmsSettingsTabs({
 					),
 					condition: canManageOsIntegrations,
 					template: markRaw(PromptSettings),
+				},
+			],
+		},
+		// Per-student limits on AI simulation spend (OWASP H-3/H-4): administrators
+		// and the "Gestore" role, like the prompts above.
+		{
+			key: 'Limiti simulazioni AI',
+			hideLabel: true,
+			condition: canManageOsIntegrations,
+			items: [
+				{
+					key: 'Limiti simulazioni AI',
+					label: __('Limiti simulazioni AI'),
+					icon: 'Gauge',
+					description: __(
+						'Quanto ogni studente può usare le simulazioni AI: messaggi, avvii e collegamenti vocali.',
+					),
+					condition: canManageOsIntegrations,
+					template: markRaw(SimulationLimitsSettings),
 				},
 			],
 		},

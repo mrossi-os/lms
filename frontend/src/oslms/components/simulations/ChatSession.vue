@@ -86,7 +86,7 @@
 		<!-- Input -->
 		<div v-if="!readOnly && !isTerminal" class="border-t p-3">
 			<div v-if="inputLocked" class="mb-2 text-xs text-ink-orange-6">
-				{{ __('Tempo scaduto. Premi «Termina» per concludere la simulazione.') }}
+				{{ __('Conversazione conclusa. Premi «Termina» per concludere la simulazione.') }}
 			</div>
 			<div class="flex items-end gap-2">
 				<textarea
@@ -95,7 +95,7 @@
 					rows="2"
 					:placeholder="
 						inputLocked
-							? __('Tempo scaduto')
+							? __('Conversazione conclusa')
 							: __('Scrivi al personaggio… (Cmd/Ctrl+Enter per inviare)')
 					"
 					class="flex-1 resize-none rounded-md border border-outline-gray-2 px-3 py-2 text-sm focus:border-outline-gray-3 focus:outline-none text-white disabled:opacity-60 disabled:cursor-not-allowed"

@@ -144,6 +144,7 @@ def _load_settings():
     import frappe
     from frappe.utils.password import get_decrypted_password
     from os_lms.os_lms.ai.utils.api_keys import get_api_key
+    from os_lms.os_lms.ai.simulations.limits import load_limits
     from os_lms.os_lms.ai.utils.oslms_settings import OsLmsSettings
 
     doc = frappe.get_single("LMSA Settings")
@@ -198,7 +199,8 @@ def _load_settings():
         realtime_model=getattr(doc, "realtime_model", "") or "",
         realtime_voice=getattr(doc, "realtime_voice", "") or "",
         turn_detection=getattr(doc, "turn_detection", "") or "server_vad",
-        realtime_max_session_seconds=int(getattr(doc, "realtime_max_session_seconds", 0) or 300),
+        # Moved to LMSA Simulation Limits (editable by the Gestore too, OWASP H-4).
+        realtime_max_session_seconds=load_limits().voice_max_session_seconds,
     )
 
 

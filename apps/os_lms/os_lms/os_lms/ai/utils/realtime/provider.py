@@ -47,6 +47,9 @@ class RealtimeSessionConfig:
 	input_language: str = "it"
 	max_session_seconds: int = 300
 	session_label: str = ""
+	# How long the minted token may be used to OPEN the call (OWASP H-4): a token
+	# collected and kept aside expires quickly.
+	start_window_seconds: int = 60
 
 
 @dataclass

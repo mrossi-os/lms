@@ -14,7 +14,15 @@ from frappe import _
 
 from lms.lms.utils import has_course_instructor_role, has_moderator_role, is_instructor
 
+from os_lms.os_lms.access_guards import check_user_rate_limit
 from os_lms.os_lms.ai.audio.pipeline import run_audio_turn
+
+from .limits import (
+    CHAT_MESSAGE_ACTION,
+    SESSION_START_ACTION,
+    check_message_length,
+    load_limits,
+)
 
 from .orchestrator import (
     QuotaExceededError,
@@ -84,6 +92,16 @@ def load_session(session_id: str):
     )
 
 
+def _count_session_start() -> None:
+    """Cap the simulations one student may open per hour (OWASP H-3)."""
+    check_user_rate_limit(SESSION_START_ACTION, load_limits().session_starts_per_hour, 3600)
+
+
+def _count_chat_message() -> None:
+    """Cap the role-player turns one student may trigger per minute (OWASP H-3)."""
+    check_user_rate_limit(CHAT_MESSAGE_ACTION, load_limits().chat_messages_per_minute, 60)
+
+
 def _resolve_published_scenario(scenario_id: str):
     """Load a Published scenario and gate by enrollment / instructor role."""
     if not scenario_id or not frappe.db.exists("LMSA Simulation Scenario", scenario_id):
@@ -121,6 +139,7 @@ def start_session(scenario_id: str, modality: str = "chat") -> dict:
         frappe.throw(_("Unsupported modality: {0}").format(modality))
 
     scenario = _resolve_published_scenario(scenario_id)
+    _count_session_start()
     # Pass the already-authorized document (not its name) so the orchestrator
     # skips its redundant "is Published" re-check: `_resolve_published_scenario`
     # has already gated access, allowing instructors/moderators to launch a
@@ -144,6 +163,7 @@ def prepare_session(scenario_id: str, modality: str = "chat") -> dict:
     if modality == "voice" and scenario.modality not in ("voice", "both"):
         frappe.throw(_("Scenario {0} is not voice-enabled.").format(scenario.name))
 
+    _count_session_start()
     try:
         result = _service().prepare_session(scenario_id=scenario.name, modality=modality)
     except QuotaExceededError as e:
@@ -157,6 +177,7 @@ def begin_session(session_id: str) -> dict:
     session = load_session(session_id)
     if session.student != frappe.session.user:
         frappe.throw(_("Only the session owner can begin the session"), frappe.PermissionError)
+    _count_chat_message()
     return dict(_service().begin_chat_session(session_id=session.name))
 
 
@@ -166,7 +187,14 @@ def clone_session(session_id: str) -> dict:
     session = load_session(session_id)
     if session.student != frappe.session.user:
         frappe.throw(_("Only the session owner can restart it"), frappe.PermissionError)
-    result = _service().clone_session(session_id=session.name)
+    # The restart must pass the same gates as a new session (OWASP L-18): a student
+    # no longer enrolled, or a scenario no longer published, cannot keep playing.
+    _resolve_published_scenario(session.scenario)
+    _count_session_start()
+    try:
+        result = _service().clone_session(session_id=session.name)
+    except QuotaExceededError as e:
+        frappe.throw(str(e), frappe.ValidationError)
     return {"session_id": result.session, "brief": result.brief, "modality": result.modality}
 
 
@@ -181,6 +209,8 @@ def send_message(session_id: str, text: str) -> dict:
         frappe.throw(
             _("Only the session owner can send messages"), frappe.PermissionError
         )
+    check_message_length(text)
+    _count_chat_message()
 
     try:
         result = _service().send_message(session_id=session.name, user_text=text)
@@ -209,10 +239,14 @@ def send_message_audio(
     session = load_session(session_id)
     if session.student != frappe.session.user:
         frappe.throw(_("Only the session owner can send messages"), frappe.PermissionError)
+    check_message_length(text)
+    # Counted before the transcription: STT and TTS are billed too.
+    _count_chat_message()
 
     holder: dict = {}
 
     def _produce(q: str) -> str:
+        check_message_length(q)
         r = _service().send_message(session_id=session.name, user_text=q)
         holder["user_turn"] = r.user_turn.name
         holder["assistant_turn"] = r.assistant_turn.name

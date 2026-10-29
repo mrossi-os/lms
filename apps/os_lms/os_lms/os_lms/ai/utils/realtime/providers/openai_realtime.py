@@ -103,6 +103,9 @@ def _session_body(cfg: RealtimeSessionConfig, config: RealtimeProviderConfig) ->
 	"""
 	model = cfg.model or config.default_model or OpenAIRealtimeProvider.DEFAULT_MODEL
 	return {
+		# Bounds only when the secret may open a call (10-7200 s), not how long the
+		# call lasts: OpenAI offers no per-token duration cap (OWASP H-4 residual).
+		"expires_after": {"anchor": "created_at", "seconds": max(10, int(cfg.start_window_seconds))},
 		"session": {
 			"type": "realtime",
 			"model": model,

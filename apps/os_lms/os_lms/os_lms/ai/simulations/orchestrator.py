@@ -33,6 +33,8 @@ from os_lms.os_lms.ai.utils.llm import (
 )
 from os_lms.os_lms.ai.utils.oslms_settings import OsLmsSettings
 
+from .limits import load_limits
+
 # Status constants live next to the doctype that owns them
 from os_lms.os_lms.doctype.lmsa_simulation_session.lmsa_simulation_session import (
 	STATUS_ABANDONED,
@@ -57,12 +59,10 @@ EVENT_TURN_START = "simulation:turn_start"
 EVENT_TURN_COMPLETE = "simulation:turn_complete"
 EVENT_ERROR = "simulation:error"
 
-# Default daily quota when LMSA Settings does not declare one yet.
-DEFAULT_DAILY_QUOTA = 100
-
 # ---- Time-based natural close ----
-# Chat sessions are bounded by the scenario's time_limit_minutes only (0 = no
-# cap; turns are NOT enforced in chat). Once past the cap the student's next
+# Chat sessions are bounded by the scenario's time_limit_minutes (0 = no cap) and
+# by LMSA Simulation Limits.max_messages_per_session (OWASP H-3: the turn cap is
+# what bounds the provider spend). Once past either cap the student's next
 # message gets a single reply that both answers them AND closes the conversation;
 # then their input is locked. The session is NOT auto-ended — the STUDENT ends it
 # via "Termina" (see send_message + _closing_directive_text + closing_input_locked).
@@ -93,6 +93,10 @@ class QuotaExceededError(Exception):
 
 class SessionTerminatedError(Exception):
 	"""Raised when a turn is sent to a session already in a terminal state."""
+
+
+class VoiceTokenLimitError(Exception):
+	"""Raised by start_voice_session once a session has used its voice tokens."""
 
 
 class SessionOrchestrator:
@@ -273,9 +277,22 @@ class SessionOrchestrator:
 		if not user_text or not user_text.strip():
 			frappe.throw(_("User message cannot be empty."))
 
+		# Re-checked on every turn: switching simulations off also stops the
+		# sessions already open (OWASP H-3).
+		if not self.settings.simulations_enabled:
+			frappe.throw(_("AI Simulations are not enabled in LMSA Settings."))
+
 		session = frappe.get_doc("LMSA Simulation Session", session_id)
 		if session.status in TERMINAL_STATUSES:
 			raise SessionTerminatedError(f"Session {session_id} is in terminal state {session.status!r}")
+
+		# Turn cap: the last allowed message gets the closing reply, as with time.
+		max_messages = load_limits().max_messages_per_session
+		sent = _user_turn_count(session.name)
+		if sent >= max_messages:
+			raise SessionTerminatedError(
+				f"Session {session_id} reached its {max_messages} messages; not accepting further messages"
+			)
 
 		# Time-based natural close: once past the scenario time cap, the student's
 		# next message gets a single reply that both answers them AND closes the
@@ -290,6 +307,8 @@ class SessionOrchestrator:
 				f"Session {session_id} closing reply already delivered; not accepting further messages"
 			)
 		closing_directive = _closing_directive_text(remaining)
+		if sent + 1 >= max_messages:
+			closing_directive = _CLOSING_DIRECTIVE
 
 		# 1) Persist the user turn (and flag injection attempts).
 		attack = detect_injection(user_text)
@@ -434,6 +453,9 @@ class SessionOrchestrator:
 
 		Returns keys: session (name), brief, modality.
 		"""
+		if not self.settings.simulations_enabled:
+			frappe.throw(_("AI Simulations are not enabled in LMSA Settings."))
+
 		src = frappe.get_doc("LMSA Simulation Session", session_id)
 		clone = frappe.new_doc("LMSA Simulation Session")
 		clone.student = frappe.session.user
@@ -466,11 +488,21 @@ class SessionOrchestrator:
 		if not self.settings.simulations_enabled:
 			frappe.throw(_("AI Simulations are not enabled in LMSA Settings."))
 
+		# Row lock: two parallel calls must not both read the same token count.
+		frappe.db.get_value("LMSA Simulation Session", session_id, "name", for_update=True)
 		session = frappe.get_doc("LMSA Simulation Session", session_id)
 		if session.status in TERMINAL_STATUSES:
 			raise SessionTerminatedError(
 				f"Session {session_id} is in terminal state {session.status!r}"
 			)
+		# Each call mints a provider token billed to the organisation (OWASP H-4):
+		# one session gets its first connection plus a few reconnections.
+		max_tokens = load_limits().voice_tokens_per_session
+		if (session.realtime_tokens_issued or 0) >= max_tokens:
+			raise VoiceTokenLimitError(
+				f"Session {session_id} already used its {max_tokens} voice tokens"
+			)
+		session.realtime_tokens_issued = (session.realtime_tokens_issued or 0) + 1
 		session.modality = "voice"
 		if session.status != STATUS_IN_PROGRESS:
 			session.status = STATUS_IN_PROGRESS
@@ -664,19 +696,15 @@ def validate_quota(doc, method=None) -> None:
 	"""Hook: before_insert on LMSA Simulation Session.
 
 	Counts sessions started today by this student and blocks if the daily
-	quota is exhausted. Quota=0 means unlimited. Lives at module level so
-	Frappe's hook resolver can address it as a dotted path.
+	quota (LMSA Simulation Limits.daily_sessions_per_user, at least 1) is
+	exhausted. Lives at module level so Frappe's hook resolver can address it
+	as a dotted path.
 	"""
-	from os_lms.os_lms.ai.utils.llm import _load_settings
-
-	settings = _load_settings()
-	quota = getattr(settings, "simulation_daily_quota_per_user", None)
-	if quota is None:
-		quota = DEFAULT_DAILY_QUOTA
-	if not quota:  # 0 = unlimited
-		return
-
+	quota = load_limits().daily_sessions_per_user
 	student = doc.student or frappe.session.user
+	# Serialise the count per student (OWASP L-63): parallel inserts would all read
+	# the same count and pass. The User row lock lasts until the request commits.
+	frappe.db.get_value("User", student, "name", for_update=True)
 	today_start = frappe.utils.now_datetime().replace(hour=0, minute=0, second=0, microsecond=0)
 	count = frappe.db.count(
 		"LMSA Simulation Session",
@@ -819,7 +847,14 @@ def closing_input_locked(session, time_limit_minutes: int) -> bool:
 	the student can no longer send messages and can only press "Termina". The
 	session stays In Progress until they do."""
 	_remaining, over_budget = _time_budget_state(session, time_limit_minutes)
-	return over_budget >= MAX_CLOSING_REPLIES
+	if over_budget >= MAX_CLOSING_REPLIES:
+		return True
+	return _user_turn_count(session.name) >= load_limits().max_messages_per_session
+
+
+def _user_turn_count(session_name: str) -> int:
+	"""Messages the student has sent in the session (the turn cap of OWASP H-3)."""
+	return frappe.db.count("LMSA Simulation Turn", {"session": session_name, "role": "user"})
 
 
 def _scenario_provider_override(scenario_name: str) -> str | None:

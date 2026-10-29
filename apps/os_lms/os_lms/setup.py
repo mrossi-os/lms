@@ -146,6 +146,8 @@ GESTORE_DOCPERMS = {
     "Student Stats Export": {"read": 1, "create": 1, "write": 1, "delete": 1},
     "LMS Quiz Submission": {"read": 1},
     "LMS Assignment Submission": {"read": 1},
+    # The Gestore sets the AI simulation limits from the SPA settings (OWASP H-3/H-4).
+    "LMSA Simulation Limits": {"read": 1, "write": 1},
 }
 
 

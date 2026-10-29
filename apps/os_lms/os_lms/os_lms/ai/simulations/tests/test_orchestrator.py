@@ -255,29 +255,19 @@ class TestQuota(UnitTestCase):
         super().tearDownClass()
 
     @staticmethod
-    def _fake_settings(quota: int):
-        from os_lms.os_lms.ai.utils.oslms_settings import OsLmsSettings
+    def _fake_limits(quota: int):
+        from dataclasses import replace
 
-        s = OsLmsSettings(
-            enabled=False, embedding_model="", chunk_size=0, chunk_overlap=0,
-            top_k=0, llm_model="", openai_key="",
-        )
-        s.simulation_daily_quota_per_user = quota  # type: ignore[attr-defined]
-        return s
+        from os_lms.os_lms.ai.simulations.limits import LIMIT_DEFAULTS, SimulationLimits
 
-    def test_unlimited_quota_does_not_block(self):
-        doc = type("S", (), {"student": "test@elite.com"})()
-        with patch(
-            "os_lms.os_lms.ai.utils.llm._load_settings",
-            return_value=self._fake_settings(quota=0),
-        ):
-            validate_quota(doc)  # must not raise
+        return replace(SimulationLimits(**LIMIT_DEFAULTS), daily_sessions_per_user=quota)
 
     def test_quota_raises_when_exceeded(self):
+        # The quota comes from LMSA Simulation Limits and is never "0 = unlimited".
         doc = type("S", (), {"student": "quota-test@elite.com"})()
         with patch(
-            "os_lms.os_lms.ai.utils.llm._load_settings",
-            return_value=self._fake_settings(quota=1),
+            "os_lms.os_lms.ai.simulations.orchestrator.load_limits",
+            return_value=self._fake_limits(quota=1),
         ):
             with patch.object(frappe.db, "count", return_value=0):
                 validate_quota(doc)

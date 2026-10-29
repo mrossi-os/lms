@@ -318,8 +318,10 @@
 		{
 			"default": "300",
 			"depends_on": "realtime_enabled",
+			"description": "Deprecated: moved to LMSA Simulation Limits (Max Voice Session Seconds).",
 			"fieldname": "realtime_max_session_seconds",
 			"fieldtype": "Int",
+			"hidden": 1,
 			"label": "Max Session Seconds"
 		}
 	],
@@ -327,7 +329,7 @@
 	"index_web_pages_for_search": 1,
 	"issingle": 1,
 	"links": [],
-	"modified": "2026-10-23 18:00:00.000000",
+	"modified": "2026-10-29 12:00:00.000000",
 	"modified_by": "Administrator",
 	"module": "OS LMS",
 	"name": "LMSA Settings",

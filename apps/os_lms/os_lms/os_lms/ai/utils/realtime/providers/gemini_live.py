@@ -11,6 +11,8 @@ SDK-free, same encapsulation rule as the audio adapters.
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
 import requests
 
 from ..config import RealtimeProviderConfig
@@ -126,8 +128,15 @@ def _token_request(cfg: RealtimeSessionConfig, config: RealtimeProviderConfig) -
 	"""
 	model = cfg.model or config.default_model or GeminiLiveProvider.DEFAULT_MODEL
 	voice = cfg.voice or config.voice or "Puck"
+	# OWASP H-4: the token opens one session within the start window, and every
+	# message stops being accepted once the session's max duration has passed,
+	# so Google itself closes a call run from a client of the student's own.
+	now = datetime.now(timezone.utc)
+	start_window = timedelta(seconds=int(cfg.start_window_seconds))
 	return {
 		"uses": 1,
+		"newSessionExpireTime": _rfc3339(now + start_window),
+		"expireTime": _rfc3339(now + start_window + timedelta(seconds=int(cfg.max_session_seconds))),
 		"bidiGenerateContentSetup": {
 			"model": f"models/{model}",
 			"systemInstruction": {"parts": [{"text": cfg.instructions}]},
@@ -141,6 +150,10 @@ def _token_request(cfg: RealtimeSessionConfig, config: RealtimeProviderConfig) -
 			"outputAudioTranscription": {},
 		},
 	}
+
+
+def _rfc3339(moment: datetime) -> str:
+	return moment.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _parse_event(event: dict) -> TranscriptEvent | None:
