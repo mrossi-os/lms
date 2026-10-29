@@ -9626,7 +9626,10 @@ Lesson.vue manda i tempi di visione prima di chiedere il completamento e fissa l
 momento in cui la completa (prima le due chiamate partivano insieme). Correzione minima scelta
 il 29/10: ferma chi chiama l'API senza aprire la lezione, non chi apre la lezione e salta il
 video. Se l'upstream riscrive markProgress o trackVideoWatchDuration, rimettere l'ordine:
-tempi di visione, poi save_progress con la lezione fissata."""
+tempi di visione, poi save_progress con la lezione fissata. Seguito (29/10, prova S6 sullo
+staging): a fine video Plyr manda sia `ended` sia `statechange` con codice 0 e ognuno scriveva il
+tempo di visione (2 righe identiche già nell'upstream, 3 con H-1). onVideoEnded ora non scrive se
+è in corso un completamento, che lo manda già, e altrimenti fa una sola richiesta alla volta."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Lesson.vue"
@@ -9642,6 +9645,11 @@ tempi di visione, poi save_progress con la lezione fissata."""
   file = "frontend/src/pages/Lesson.vue"
   anchor = "if (!videoDetails.length) return Promise.resolve()"
   symbol = "trackVideoWatchDuration"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "if (markProgress() || endedTracking) return"
+  symbol = "attachVideoEndedListeners"
 
   [entries.checks]
   unit = "apps/os_lms/os_lms/os_lms/tests/test_owasp_lesson_completion.py"

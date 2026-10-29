@@ -612,6 +612,47 @@ describe('Lesson.vue sends the watch time before completing (audit H-1)', () => 
 		}
 	})
 
+	it('writes the watch time once when a video end fires twice', async () => {
+		// Plyr reports an end through both `ended` and `statechange` (code 0).
+		const { call } = await import('frappe-ui')
+		wrapper = await mountLesson()
+		const progress = findResource(
+			'lms.lms.doctype.course_lesson.course_lesson.save_progress'
+		)
+		const lessonResource = findResource('lms.lms.utils.get_lesson')
+		lessonResource.data = { ...baseLesson, membership: { progress: 0 } }
+		await flushPromises()
+		const video = document.createElement('video')
+		video.src = 'https://example.com/lesson.mp4'
+		document.body.appendChild(video)
+		const watchCalls = () =>
+			vi
+				.mocked(call)
+				.mock.calls.filter(
+					([method]) => method === 'lms.lms.api.track_video_watch_duration'
+				).length
+		try {
+			;(wrapper.vm as any).attachVideoEndedListeners()
+			vi.mocked(call).mockClear()
+			video.dispatchEvent(new Event('ended'))
+			video.dispatchEvent(new Event('ended'))
+			await flushPromises()
+			expect(watchCalls()).toBe(1)
+			expect(progress.submit).toHaveBeenCalledTimes(1)
+
+			// Rewatching a completed lesson: no completion, still one write.
+			lessonResource.data = { ...baseLesson, membership: { progress: 0 }, progress: 1 }
+			await flushPromises()
+			vi.mocked(call).mockClear()
+			video.dispatchEvent(new Event('ended'))
+			video.dispatchEvent(new Event('ended'))
+			await flushPromises()
+			expect(watchCalls()).toBe(1)
+		} finally {
+			video.remove()
+		}
+	})
+
 	it('completes a lesson without videos straight away', async () => {
 		const { call } = await import('frappe-ui')
 		wrapper = await mountLesson()

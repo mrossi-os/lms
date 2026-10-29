@@ -678,8 +678,9 @@ const renderEditor = (holder, content) => {
 // again. Without an in-flight guard the two save_progress requests race
 // and the second one fails with TimestampMismatchError on LMS Enrollment.
 let progressSubmitting = false
+// OSLMS-CUSTOM: true when a completion, which sends the watch times first, is under way (audit H-1)
 const markProgress = () => {
-	if (progressSubmitting) return
+	if (progressSubmitting) return true
 	// Only enrolled students record progress; a moderator previewing has no
 	// membership row so save_progress would no-op server-side but still
 	// flip the in-memory `completedLesson` and show a green tick that
@@ -690,7 +691,7 @@ const markProgress = () => {
 		!lesson.data.membership ||
 		lesson.data.progress
 	)
-		return
+		return false
 	progressSubmitting = true
 	// OSLMS-CUSTOM: the server completes a video lesson only once it holds a watch time (audit H-1)
 	// The watch times go first, and the lesson is pinned now: a deferred submit
@@ -712,6 +713,7 @@ const markProgress = () => {
 				},
 			),
 		)
+	return true
 }
 
 const progress = createResource({
@@ -1080,10 +1082,19 @@ const updateVideoWatchDuration = () => {
 	attachVideoEndedListeners()
 }
 
+// OSLMS-CUSTOM: one watch-time write per video end (audit H-1 follow-up)
+// A Plyr video end fires both `ended` and `statechange` (code 0), and each
+// sent its own request: concurrent inserts left duplicate watch rows. A
+// completion already sends the watch times; otherwise one request at a time.
+let endedTracking = null
 const attachVideoEndedListeners = () => {
 	const onVideoEnded = () => {
-		markProgress()
-		trackVideoWatchDuration()
+		if (markProgress() || endedTracking) return
+		endedTracking = trackVideoWatchDuration()
+			.catch(() => {})
+			.finally(() => {
+				endedTracking = null
+			})
 	}
 
 	document.querySelectorAll('video').forEach((video) => {
