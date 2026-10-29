@@ -8169,6 +8169,9 @@ aggiunto in lms/translations/it.csv (Light/Dark erano già tradotti)."""
   anchor = "value: __(COLOUR_MODE_LABELS[themePreference] || 'System'),"
   symbol = "colourModeRow"
 
+  [entries.checks]
+  unit = "frontend/src/tests/themeBootstrap.test.ts"
+
 [[entries]]
 id = "high-contrast-switch"
 title = "Interruttore «Alto contrasto» nel menu utente e nella pagina «Tu» del telefono"
@@ -8216,6 +8219,9 @@ smette di agire in silenzio; highContrast.test.ts lo segnala. Se l'upstream camb
   anchor = "else if (action === CONTRAST_ACTION) toggleContrast()"
   symbol = "activate"
 
+  [entries.checks]
+  unit = "frontend/src/tests/highContrast.test.ts"
+
 [[entries]]
 id = "self-service-account-deletion"
 title = "Pulsante «Elimina account» nel profilo e riga nella pagina «Tu» del telefono"
@@ -8260,6 +8266,10 @@ withDeleteAccountRow non inserisce più la riga."""
   [[entries.sites]]
   file = "frontend/src/pages/MobileYou.vue"
   anchor = "v-if=\"showDeleteAccount\""
+
+  [entries.checks]
+  unit = "frontend/src/tests/accountDeletion.test.ts"
+  backend = "apps/os_lms/os_lms/os_lms/tests/test_account_deletion.py"
 
 # --- Contesto del tutor AI ------------------------------------------------------
 
@@ -8921,7 +8931,10 @@ resta a os_lms.valutatore. La scrittura non si allarga mai (solo COURSE_READ_PTY
 oslms_valutatore_scoped_list è alzato solo per un Valutatore «puro» e solo durante la chiamata.
 Lacuna nota, preesistente: get_course_count/get_batch_count non sono ristretti per il Valutatore
 (solo il totale mostrato, la paginazione usa hasNextPage). Decisione del committente al merge di
-v2.64.0 (2026-09-30): «deve mantenere le regole che abbiamo imposto noi»."""
+v2.64.0 (2026-09-30): «deve mantenere le regole che abbiamo imposto noi».
+Dal 28/10 (OWASP E8) i rami di course_record_has_permission e course_record_query_conditions
+non guardano più il corso ma gli studenti della classe: sono censiti nella voce
+permissions-valutatore-batch-learners."""
 
   [[entries.sites]]
   file = "lms/lms/permissions.py"
@@ -8931,16 +8944,6 @@ v2.64.0 (2026-09-30): «deve mantenere le regole che abbiamo imposto noi»."""
   [[entries.sites]]
   file = "lms/lms/permissions.py"
   anchor = "def _valutatore_courses(member):"
-
-  [[entries.sites]]
-  file = "lms/lms/permissions.py"
-  anchor = "if ptype in COURSE_READ_PTYPES and course and not moved_to and is_course_valutatore(course, user):"
-  symbol = "course_record_has_permission"
-
-  [[entries.sites]]
-  file = "lms/lms/permissions.py"
-  anchor = "condition = condition | record.course.isin(_valutatore_courses(member))"
-  symbol = "course_record_query_conditions"
 
   [[entries.sites]]
   file = "lms/lms/permissions.py"
@@ -9417,3 +9420,193 @@ fork e i merge futuri restano facili."""
   [[entries.sites]]
   file = ".github/workflows/assets.yml"
   anchor = "if: github.repository == 'frappe/lms'"
+
+# ── Pacchetto OWASP E (28/10) ──────────────────────────────────────────────
+
+[[entries]]
+id = "external-calls-timeout"
+title = "Tempo massimo sulle chiamate esterne dell'upstream (OWASP E17)"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le chiamate requests dell'upstream verso ip-api.com, frankfurter, Unsplash e Zoom non avevano
+timeout: un servizio lento teneva la richiesta aperta senza limite. La geolocalizzazione della
+registrazione (get_country_code) è anche spostata tutta dentro il try, così un errore di rete
+lascia l'utente senza paese invece di far fallire la registrazione. ip-api.com resta in HTTP:
+la versione gratuita non ha HTTPS. Pacchetto E del piano OWASP, punto E17 (28/10)."""
+
+  [[entries.sites]]
+  file = "lms/lms/utils.py"
+  anchor = 'res = requests.get(f"http://ip-api.com/json/{ip}", timeout=3)'
+  symbol = "get_country_code"
+
+  [[entries.sites]]
+  file = "lms/lms/utils.py"
+  anchor = 'response = requests.request("GET", url, timeout=10)'
+  symbol = "get_current_exchange_rate"
+
+  [[entries.sites]]
+  file = "lms/unsplash.py"
+  anchor = "timeout=10,  # OSLMS-CUSTOM: bounded wait"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_batch/lms_batch.py"
+  anchor = "timeout=15,  # OSLMS-CUSTOM: bounded wait"
+  symbol = "create_live_class"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_batch/lms_batch.py"
+  anchor = 'response = requests.request("POST", authenticate_url, headers=headers, timeout=15)'
+  symbol = "authenticate"
+
+  [[entries.sites]]
+  file = "lms/lms/doctype/lms_live_class/lms_live_class.py"
+  anchor = "timeout=15,  # OSLMS-CUSTOM: bounded wait"
+
+  [entries.checks]
+  unit = "apps/os_lms/os_lms/os_lms/tests/test_owasp_package_e.py"
+
+[[entries]]
+id = "permissions-valutatore-batch-learners"
+title = "Il Valutatore legge i dati degli studenti delle sue classi, non di tutto il corso (OWASP E8)"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Iscrizioni, avanzamento, tempo di visione e recensioni (course_record_has_permission e
+course_record_query_conditions) erano aperti al Valutatore per tutti gli studenti dei corsi
+delle sue classi. Ora solo per gli studenti iscritti a una classe che valuta, e per i corsi di
+quella classe (_valutatore_learners, _valutatore_reaches_learner). Stessa regola nel livello di
+os_lms (valutatore._learner_query_conditions), che Frappe combina in AND. Pacchetto E del piano
+OWASP, punto E8 (28/10)."""
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = "def _valutatore_learners(member, course):"
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = "and _valutatore_reaches_learner(course, source.get(member_field), user)"
+  symbol = "course_record_has_permission"
+
+  [[entries.sites]]
+  file = "lms/lms/permissions.py"
+  anchor = "condition = condition | getattr(record, member_field).isin("
+  symbol = "course_record_query_conditions"
+
+  [entries.visibility]
+  subject = "Iscrizioni, avanzamento, tempo di visione e recensioni degli studenti"
+  allow = ["Valutatore, per gli studenti delle sue classi"]
+  deny = ["Valutatore, per gli studenti di altre classi dello stesso corso"]
+
+  [entries.checks]
+  unit = "apps/os_lms/os_lms/os_lms/tests/test_role_gates_v2_64.py"
+
+[[entries]]
+id = "discussion-reply-count-dict-syntax"
+title = "Conteggio delle risposte delle discussioni con la sintassi a dizionario"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il commit upstream 6f299d0d2 (11/06/2026, «show reply counts») conta le risposte di ogni
+discussione con fields=["topic", "count(name) as count"]. La nostra versione di Frappe rifiuta
+le funzioni SQL scritte come stringhe: get_discussion_topics in modalità elenco rispondeva 417
+su ogni classe con discussioni. La pagina della classe usa la modalità a filo unico, che
+risponde prima del conteggio, quindi a schermo non si vedeva. Trovato durante le prove OWASP
+E12 sullo staging (28/10). Se una merge upstream riporta la forma a stringa, il test se ne
+accorge."""
+
+  [[entries.sites]]
+  file = "lms/lms/utils.py"
+  anchor = 'fields=["topic", {"COUNT": "name", "as": "count"}],'
+  symbol = "get_discussion_topics"
+
+  [entries.checks]
+  unit = "apps/os_lms/os_lms/os_lms/tests/test_discussion_reply_count.py"
+
+# ── Conformità: protezioni trasversali (OWASP ed ESG, 29/10) ────────────────
+
+[[entries]]
+id = "inert-paste-html-plugin"
+title = "L'HTML incollato negli editor frappe-ui si legge in un documento inerte (OWASP, XSS)"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+I due editor di frappe-ui (TextEditor classico e frappe-ui/editor) mettevano l'HTML degli
+appunti in un <div> della pagina viva prima del filtro di ProseMirror: un
+<img src=x onerror=...> incollato eseguiva il suo codice. Il plugin Vite os-inert-paste-html
+(frontend/oslms-vite/inert-paste-html.js, file nostro) riscrive quei quattro <div> mentre
+frappe-ui compila, in elementi di un documento inerte (commit 9dbce3a1a, 27/10, piano OWASP).
+Va registrato in DUE configurazioni: vite.config.js (la build che arriva agli utenti) e
+vitest.config.ts (i test). ATTENZIONE ai merge: se la riga sparisce solo da vite.config.js i
+test restano verdi ma il sito pubblicato torna vulnerabile. Se frappe-ui cambia i file dei
+gestori di incolla, il plugin fa fallire la build di proposito: ricontrollare i gestori e
+aggiornare RULES, mai togliere il plugin."""
+
+  [[entries.sites]]
+  file = "frontend/vite.config.js"
+  anchor = "osInertPasteHtml(),"
+
+  [[entries.sites]]
+  file = "frontend/vitest.config.ts"
+  anchor = "osInertPasteHtml()]"
+
+  [[entries.sites]]
+  file = "frontend/oslms-vite/inert-paste-html.js"
+  anchor = "const INERT_DIV = \"document.implementation.createHTMLDocument('').createElement('div')\""
+
+  [entries.checks]
+  unit = "frontend/src/tests/inertPasteHtml.test.ts"
+
+[[entries]]
+id = "security-dependency-floors"
+title = "Versioni minime di sicurezza delle dipendenze del frontend (OWASP A03)"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il commit 29b287f31 (27/10, piano OWASP A03) ha alzato oltre gli avvisi di sicurezza
+pubblicati: DOMPurify 3.4.17, markdown-it 14.3.3, socket.io-client 4.8.4, vue 3.5.44,
+vite 5.4.21, postcss 8.5.30, prosemirror-model 1.25.12, prosemirror-view 1.42.6,
+prosemirror-transform 1.12.2, tiptap 3.32.0, vitest 4.1.12. Un conflitto su
+frontend/package.json risolto prendendo il lato upstream riporterebbe le versioni vulnerabili,
+e l'unico altro controllo (Dependency Scan, osv-scanner) gira solo su GitHub.
+scripts/tests/test_dependency_floors.py legge le versioni risolte in frontend/yarn.lock e
+fallisce se una copia scende sotto la soglia. Le ancore stanno sui nomi, non sulle versioni,
+così un aggiornamento legittimo non dà C1: è il test a sorvegliare le versioni. Le soglie si
+alzano, non si abbassano mai. Le eccezioni accettate sono in osv-scanner.toml, ciascuna con
+motivo e data di revisione."""
+
+  [[entries.sites]]
+  file = "frontend/package.json"
+  anchor = '"dompurify":'
+
+  [[entries.sites]]
+  file = "frontend/package.json"
+  anchor = '"markdown-it":'
+
+  [[entries.sites]]
+  file = "frontend/package.json"
+  anchor = '"socket.io-client":'
+
+  [entries.checks]
+  unit = "scripts/tests/test_dependency_floors.py"
+
+[[entries]]
+id = "rich-text-mention-items-getter"
+title = "Menu @ delle discussioni pieno anche quando l'elenco utenti arriva dopo l'editor"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il compositore delle discussioni apre l'editor con un elenco di menzioni vuoto e lo riempie
+quando risponde get_all_users. RichTextEditor passava a frappe-ui una copia presa all'avvio e
+l'Editor legge le estensioni una volta sola: il menu @ restava vuoto per tutti i ruoli. Gli
+elementi sono ora una funzione letta a ogni tasto (commit 20e17ba9b, 26/10). È la stessa
+correzione dell'upstream 7fc531540, non ancora in una release: quando arriva, è un caso F5
+(adottare la versione upstream e segnare questa voce accepted-drift, dopo l'ok)."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/RichTextEditor.vue"
+  anchor = "items: () =>"
+  symbol = "extensions"
+
+  [entries.checks]
+  unit = "frontend/src/tests/RichTextEditorMentions.test.ts"

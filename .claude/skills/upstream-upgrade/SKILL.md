@@ -21,6 +21,24 @@ Porta il branch di lavoro da una release di `frappe/lms` a una più recente, **u
 6. **Le note di release non misurano niente.** L'ampiezza viene solo dal diff fra tag (`scripts/upstream_plan.py`); le note, e i messaggi dei commit, servono solo a capire l'intento.
 7. **Niente stringhe di shell costruite attorno ai tag.** In zsh `$t:path` è un modificatore e le variabili non si spezzano in parole: passa i tag letterali, uno per argomento, o usa Python con `subprocess`.
 8. Registra l'attività in `docs/WORKLOG.md` secondo le convenzioni del file (il worklog non si committa).
+9. **Le correzioni di conformità non si perdono e non si indeboliscono.** Vale per le correzioni di sicurezza OWASP e per i requisiti ESG (sezione sotto). Nel dubbio fra la versione upstream e la nostra, tieni la nostra e chiedi.
+
+## Conformità (OWASP ed ESG)
+
+Le correzioni del piano di sicurezza (`docs/security/owasp-piano-residuo-2026-10-26.md`) e i requisiti ESG (tema chiaro e scuro, alto contrasto, cancellazione del proprio account) stanno in tre posti, ciascuno con la sua rete:
+
+| Dove | Cosa le protegge |
+| --- | --- |
+| `apps/os_lms/`, cioè la maggior parte: override delle API upstream, hook `has_permission` e `permission_query_conditions`, `doc_events` | Il merge non tocca os_lms. `test_override_signatures` segnala un'API upstream rinominata o con parametri nuovi; le suite qui sotto al Passo 7; **F8** per le API nuove che potrebbero aggirarle |
+| File upstream (`lms/`, `frontend/`) | Voci di inventario con ancora: rilevatore C1/C2 |
+| Dipendenze del frontend | `scripts/tests/test_dependency_floors.py`: versioni minime risolte in `frontend/yarn.lock` (voce `security-dependency-floors`) |
+
+Suite di conformità:
+- **backend** (in `apps/os_lms/os_lms/os_lms/tests/`): `test_owasp_2026_10`, `test_owasp_package_d`, `test_owasp_package_e`, `test_csp_report`, `test_security_alerts`, `test_account_deletion`, `test_discussion_reply_count`, `test_valutatore_assignment_submission_scope`, `test_role_gates_v2_64`, `test_role_gates_v2_65`, `test_override_signatures`;
+- **frontend** (in `frontend/src/tests/`): `inertPasteHtml`, `themeBootstrap`, `highContrast`, `accountDeletion`;
+- **script**: `test_dependency_floors`.
+
+Quando una correzione di conformità nuova viene committata, aggiungi qui la sua suite.
 
 ## Stato del percorso
 
@@ -97,6 +115,7 @@ Presentalo al committente come tabella compatta (release, data, commit, file, fr
 
 - Se la partenza scelta non è il branch corrente, rilancia `python3 scripts/upstream_plan.py --head <partenza>`: la base potrebbe essere diversa. Se lo è, mostralo e riconferma la Domanda 1.
 - Se il branch di destinazione esiste già (`git rev-parse --verify --quiet <nome>`), fermati e chiedi: riprenderlo, sceglierne un altro nome, o altro. Non cancellarlo mai.
+- **Conformità sulla partenza.** `git ls-tree --name-only -r <partenza> -- apps/os_lms/os_lms/os_lms/tests/test_owasp_package_e.py frontend/src/tests/highContrast.test.ts` deve stampare tutti e due i file. Se ne manca uno, la partenza non contiene le correzioni OWASP o ESG: fermati, spiegalo e chiedi. Al 29/10/2026 stanno solo su `feature/esg`, che va prima unita nella partenza oppure usata come partenza. Non avviare un percorso che le lascerebbe fuori.
 
 ## Passo 5 — Branch
 
@@ -144,6 +163,12 @@ Scrivila nel rapporto e chiedi. Non proseguire da solo.
 - voci di inventario il cui `intent` annuncia già una sovrapposizione con questa release (cerca `T` e «ATTENZIONE» negli intent delle voci toccate).
 Per ciascuno: analisi comparativa — cosa fa la novità, cosa fa la nostra personalizzazione, dove si sovrappongono, cosa si perde adottando l'una o l'altra, quanto costa ciascuna strada — e una raccomandazione motivata. Opzioni tipiche: adottare l'upstream (la voce diventa `accepted-drift`, dopo l'ok), mantenere la nostra, tenerle entrambe. Se nulla si sovrappone davvero, dillo in una riga e prosegui.
 
+**F8 — superficie nuova da controllare per la conformità.** Una release può aggiungere un'API che fa ciò che una nostra correzione ha chiuso, per esempio un secondo modo di cancellare un utente o di leggere i certificati. Il rilevatore non la vede, perché non tocca nessuna ancora. **Decide il committente** quando raggiunge un'area protetta; altrimenti basta una riga nel rapporto.
+- Funzioni pubbliche nuove o cambiate: `git diff P T -- lms | grep -nE '^\+.*@frappe\.whitelist'` (con `P` e `T` letterali), poi leggi ogni funzione in `git show T:<file>`. Guarda anche `git diff P T -- lms/hooks.py` per i permessi e `git diff --stat P T -- 'lms/lms/doctype/*/*.json'` per i doctype con permessi cambiati.
+- Per ognuna stabilisci: chi può chiamarla (ruoli, `allow_guest`), cosa legge o scrive, e se raggiunge un'area già corretta. Le aree sono: certificati (E4), membri e ruoli (E10, E20), lezioni dal vivo (E6), discussioni (E12), recensioni (E11), esercizi (E9), dati degli studenti visti dal Valutatore (E8), quiz (E1), file ed export dei corsi (E3, D1), registrazione (E5), indicizzazione AI (E13).
+- I nostri hook di permesso valgono solo per gli accessi con controllo: `frappe.get_doc`/`get_list` sì; `frappe.get_all`, `frappe.db.*` e `ignore_permissions=True` no. Una funzione nuova che usa i secondi su un doctype protetto è quasi sempre un aggiramento.
+- Se raggiunge un'area protetta: spiega il rischio, proponi override o innesto con voce di inventario e test, e chiedi.
+
 Quando una fermata è aperta, scrivila in `stop` **prima** di porre la domanda, e azzerala solo quando la risposta è stata applicata.
 
 ### 6.2 Merge
@@ -163,7 +188,7 @@ Per ogni file in `git diff --name-only --diff-filter=U`:
 3. risolvi **preservando l'intento, non la riga**: se l'upstream ha riscritto il codice attorno, riesprimi la regola nel codice nuovo e aggiorna l'`anchor` della voce se cambia; se l'upstream ora fa da sé ciò che faceva la nostra modifica, **non** scartarla da solo: è un caso F5, chiedi;
 4. se nessuna voce copre il file, il conflitto è fra codice upstream e codice upstream (tipicamente residuo del vecchio merge di `upstream/develop`): di norma vince `T`, ma controlla che non sia una nostra modifica non censita — in quel caso chiedi;
 5. **traduzioni** (`lms/locale/*.po`): prendi la versione upstream e riapplica le nostre voci; il `it.po` upstream ha stringhe rotte note (memoria `it-translations-workflow`);
-6. `yarn.lock`: non risolverlo a mano; risolvi `package.json` e rigenera il lock con `yarn install --ignore-engines` dentro `frontend/`.
+6. `yarn.lock`: non risolverlo a mano; risolvi `package.json` e rigenera il lock con `yarn install --ignore-engines` dentro `frontend/`. In `package.json` nessuna versione scende sotto le soglie di `scripts/tests/test_dependency_floors.py`: se l'upstream ne porta una più bassa, tieni la nostra. Dopo il lock, `python3 -m unittest scripts.tests.test_dependency_floors` deve passare.
 
 Nel rapporto: una riga per file, con la voce di inventario applicata e come.
 
@@ -217,11 +242,15 @@ Dopo l'ultima release:
    - `python3 -m unittest discover -s scripts/tests -t .`
    - `cd frontend && yarn test` (Vitest)
    - **test backend `os_lms`** nel container Docker. Controlla con `docker compose -f docker/docker-compose.yml ps`; se il container `frappe` non è attivo, **chiedi** se avviarlo. Il container monta il repository, quindi vede il branch di merge, ma il suo DB ha lo schema vecchio: serve un `migrate`. **Chiedi prima di lanciarlo**: aggiorna il DB di sviluppo alla nuova release e non torna indietro cambiando branch. Se il CLI `bench` è rotto nel container, usa il Python dell'ambiente (memoria `stale-doctype-meta-in-running-container`: `SiteMigration().run("lms.localhost")` e `unittest` con `frappe.init`/`frappe.connect`; bench in `/home/frappe/bench-data/frappe-bench`, sito `lms.localhost`).
+   - **suite di conformità** (sezione «Conformità»): riporta l'esito di ciascuna per nome, anche se sono già comprese nei comandi sopra.
+   - **scansione delle dipendenze**: `osv-scanner scan source -r .` se è installato. Altrimenti scrivi nel rapporto che la scansione girerà su GitHub (workflow Dependency Scan, bloccante) e va guardata prima di unire il branch.
    - Un test rosso: regola 2. Ripara il codice o chiedi.
 2. Esegui la skill **`/upstream-check`** passando come riferimento di partenza `start_commit` (non `HEAD^1`: il percorso ha più merge).
 3. Completa il rapporto di percorso: cosa è stato adottato, cosa è stato rifiutato consapevolmente e perché, quali personalizzazioni sono state riespresse, cosa resta aperto (riconciliazioni rimandate, voci `confidence = "low"` nuove).
 4. **Lista puntuale di cosa provare nell'app** (`http://lms.localhost:8000/lms`), ricavata dalle voci toccate da conflitti, ripristini e adeguamenti. Per ciascuna: cosa fare, cosa deve succedere, **con quale ruolo** (da `visibility.allow`/`deny` della voce, altrimenti dall'`intent`; se il ruolo non è ricavabile dillo), e perché è in lista. Esempio:
    > Apri un quiz come **Studente**, lascia una domanda senza risposta e consegna: la consegna deve riuscire e la domanda saltata vale 0. *(Conflitto risolto su `lms/lms/doctype/lms_quiz/lms_quiz.py`, voce `quiz-submit-unanswered`.)*
+
+   Per ogni voce o area di conformità toccata (conflitti, ripristini, F8), aggiungi la prova sullo staging corrispondente del piano OWASP: le tabelle «Test su staging» del documento dicono chi, quali passi e quale risultato.
 5. Committa i rapporti sul branch del percorso: `docs(upstream): report the walk to <target>`.
 6. Chiedi al committente cosa fare del branch: unirlo nel branch di partenza, lasciarlo per revisione, pubblicarlo. **Nulla di questo senza il suo ok esplicito.**
 7. Archivia lo stato: rinomina il file in `oslms-upstream-walk.<target>.done.json` (stessa cartella), così un avvio futuro non propone di riprenderlo.
