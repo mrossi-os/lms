@@ -9610,3 +9610,38 @@ correzione dell'upstream 7fc531540, non ancora in una release: quando arriva, è
 
   [entries.checks]
   unit = "frontend/src/tests/RichTextEditorMentions.test.ts"
+
+[[entries]]
+id = "lesson-completion-after-open-and-watch"
+title = "La lezione si completa solo dopo averla aperta e, con l'obbligo video, dopo un tempo di visione (OWASP H-1)"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il server completa una lezione solo se l'ha consegnata allo stesso utente (get_lesson o il
+player SCORM registrano l'apertura in cache per 7 giorni) e, con enforce_video_completion
+attivo, solo se la pagina ha registrato un tempo di visione per quella lezione
+(os_lms/lesson_progress.py, override di save_progress, mark_lesson_progress e
+get_scorm_playback). Perché lo studente che guarda davvero il video non venga rifiutato,
+Lesson.vue manda i tempi di visione prima di chiedere il completamento e fissa la lezione nel
+momento in cui la completa (prima le due chiamate partivano insieme). Correzione minima scelta
+il 29/10: ferma chi chiama l'API senza aprire la lezione, non chi apre la lezione e salta il
+video. Se l'upstream riscrive markProgress o trackVideoWatchDuration, rimettere l'ordine:
+tempi di visione, poi save_progress con la lezione fissata."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "the server completes a video lesson only once it holds a watch time (audit H-1)"
+  symbol = "markProgress"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "lesson: values?.lesson || lesson.data.name,"
+  symbol = "progress"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "if (!videoDetails.length) return Promise.resolve()"
+  symbol = "trackVideoWatchDuration"
+
+  [entries.checks]
+  unit = "apps/os_lms/os_lms/os_lms/tests/test_owasp_lesson_completion.py"

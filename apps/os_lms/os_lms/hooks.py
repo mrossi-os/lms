@@ -178,6 +178,10 @@ override_whitelisted_methods = {
     "frappe.core.doctype.user.user.sign_up": "os_lms.os_lms.signup.frappe_sign_up",
     # SCORM details complete a lesson only on a SCORM chapter, not any lesson.
     "lms.lms.doctype.course_lesson.course_lesson.save_progress": "os_lms.os_lms.lesson_progress.save_progress",
+    # A lesson is completed only once the server handed it out (audit H-1): the quiz
+    # and assignment path and the SCORM player go through the same guard.
+    "lms.lms.api.mark_lesson_progress": "os_lms.os_lms.lesson_progress.mark_lesson_progress",
+    "lms.lms.doctype.course_chapter.course_chapter.get_scorm_playback": "os_lms.os_lms.lesson_progress.get_scorm_playback",
     # The course ZIP packs only the private files the exporter could download.
     "lms.lms.api.export_course_as_zip": "os_lms.os_lms.course_export.export_course_as_zip",
 

@@ -568,3 +568,72 @@ describe('Lesson.vue Next survives an outline that never resolves', () => {
 		expect(pushMock).not.toHaveBeenCalled()
 	})
 })
+
+describe('Lesson.vue sends the watch time before completing (audit H-1)', () => {
+	// The server completes a video lesson only once it holds a watch time, so
+	// the two requests the page used to fire together now run in order.
+	it('records the video first, then completes the lesson it was on', async () => {
+		const { call } = await import('frappe-ui')
+		wrapper = await mountLesson()
+		const progress = findResource(
+			'lms.lms.doctype.course_lesson.course_lesson.save_progress'
+		)
+		findResource('lms.lms.utils.get_lesson').data = {
+			...baseLesson,
+			membership: { progress: 0 },
+		}
+		await flushPromises()
+		const video = document.createElement('video')
+		video.src = 'https://example.com/lesson.mp4'
+		document.body.appendChild(video)
+		let release: (value?: unknown) => void = () => {}
+		vi.mocked(call).mockClear()
+		vi.mocked(call).mockImplementationOnce(
+			() => new Promise((resolve) => (release = resolve)) as any
+		)
+		try {
+			;(wrapper.vm as any).markProgress()
+			expect(call).toHaveBeenCalledWith(
+				'lms.lms.api.track_video_watch_duration',
+				expect.objectContaining({ lesson: 'L1' })
+			)
+			await flushPromises()
+			expect(progress.submit).not.toHaveBeenCalled()
+
+			release()
+			await flushPromises()
+			expect(progress.submit).toHaveBeenCalledWith(
+				{ lesson: 'L1' },
+				expect.anything()
+			)
+			expect(progress._config.makeParams({ lesson: 'L1' }).lesson).toBe('L1')
+		} finally {
+			video.remove()
+		}
+	})
+
+	it('completes a lesson without videos straight away', async () => {
+		const { call } = await import('frappe-ui')
+		wrapper = await mountLesson()
+		const progress = findResource(
+			'lms.lms.doctype.course_lesson.course_lesson.save_progress'
+		)
+		findResource('lms.lms.utils.get_lesson').data = {
+			...baseLesson,
+			membership: { progress: 0 },
+		}
+		await flushPromises()
+		vi.mocked(call).mockClear()
+		;(wrapper.vm as any).markProgress()
+		await flushPromises()
+
+		expect(call).not.toHaveBeenCalledWith(
+			'lms.lms.api.track_video_watch_duration',
+			expect.anything()
+		)
+		expect(progress.submit).toHaveBeenCalledWith(
+			{ lesson: 'L1' },
+			expect.anything()
+		)
+	})
+})

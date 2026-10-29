@@ -692,25 +692,34 @@ const markProgress = () => {
 	)
 		return
 	progressSubmitting = true
-	progress.submit(
-		{},
-		{
-			onSuccess() {
-				progressSubmitting = false
-			},
-			onError(err) {
-				progressSubmitting = false
-				console.error(err)
-			},
-		},
-	)
+	// OSLMS-CUSTOM: the server completes a video lesson only once it holds a watch time (audit H-1)
+	// The watch times go first, and the lesson is pinned now: a deferred submit
+	// that read lesson.data would mark the lesson being switched to instead.
+	const lessonName = lesson.data.name
+	trackVideoWatchDuration()
+		.catch(() => {})
+		.then(() =>
+			progress.submit(
+				{ lesson: lessonName },
+				{
+					onSuccess() {
+						progressSubmitting = false
+					},
+					onError(err) {
+						progressSubmitting = false
+						console.error(err)
+					},
+				},
+			),
+		)
 }
 
 const progress = createResource({
 	url: 'lms.lms.doctype.course_lesson.course_lesson.save_progress',
-	makeParams() {
+	makeParams(values) {
 		return {
-			lesson: lesson.data.name,
+			// OSLMS-CUSTOM: lesson pinned by markProgress (audit H-1)
+			lesson: values?.lesson || lesson.data.name,
 			course: props.courseName,
 		}
 	},
@@ -896,11 +905,13 @@ const resetLessonState = (newChapterNumber, newLessonNumber) => {
 	timer.value = 0
 }
 
+// OSLMS-CUSTOM: returns the request so markProgress can wait for it (audit H-1)
 const trackVideoWatchDuration = () => {
-	if (!lesson.data?.membership) return
+	if (!lesson.data?.membership) return Promise.resolve()
 	let videoDetails = getVideoDetails()
 	videoDetails = videoDetails.concat(getPlyrSourceDetails())
-	call('lms.lms.api.track_video_watch_duration', {
+	if (!videoDetails.length) return Promise.resolve()
+	return call('lms.lms.api.track_video_watch_duration', {
 		lesson: lesson.data.name,
 		videos: videoDetails,
 	})
