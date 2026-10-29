@@ -158,6 +158,15 @@ class TestLimitsSettings(SimulationLimitsCase):
 		with self.assertRaises(frappe.ValidationError):
 			doc.validate()
 
+	def test_values_sent_as_strings_by_the_spa_are_checked(self):
+		# The settings form posts numbers as strings through frappe.client.set_value.
+		doc = frappe.get_single(LIMITS_DOCTYPE)
+		doc.chat_messages_per_minute = "2"
+		doc.validate()
+		doc.chat_messages_per_minute = "0"
+		with self.assertRaises(frappe.ValidationError):
+			doc.validate()
+
 	def test_missing_values_fall_back_to_the_defaults(self):
 		with patch.object(frappe.db, "get_single_value", return_value=None):
 			self.assertEqual(load_limits(), _limits())
