@@ -5,6 +5,8 @@ import PromptSettings from '@/oslms/components/ai/Settings/PromptSettings.vue'
 import SimulationLimitsSettings from '@/oslms/components/ai/Settings/SimulationLimitsSettings.vue'
 import TrueSkillsSettings from '@/oslms/components/trueskills/TrueSkillsSettings.vue'
 import EliteApiSettings from '@/oslms/components/eliteApi/EliteApiSettings.vue'
+import AccountDeletionRequestsSettings from '@/oslms/components/AccountDeletionRequestsSettings.vue'
+import { usersStore } from '@/stores/user'
 
 // AI provider options (module-specific; moved out of core Settings.vue).
 const aiProviders = [
@@ -40,6 +42,10 @@ export function buildOslmsSettingsTabs({
 	isAdministrator,
 	canManageOsIntegrations = isAdministrator,
 } = {}) {
+	// Gestore and System Manager, while the review is on or requests still wait.
+	const canReviewAccountDeletions = () =>
+		Boolean(usersStore().userResource?.data?.show_account_deletion_requests)
+
 	return [
 		// TrueSkills API — previously an item inside the core "Configuration"
 		// group; wrapped in a hideLabel group to keep it rendering as a bare tab.
@@ -112,6 +118,25 @@ export function buildOslmsSettingsTabs({
 					),
 					condition: canManageOsIntegrations,
 					template: markRaw(EliteApiSettings),
+				},
+			],
+		},
+		// Review of the account deletion requests (os_lms
+		// account_deletion_requests.py); the server checks the role again.
+		{
+			key: 'AccountDeletionRequests',
+			hideLabel: true,
+			condition: canReviewAccountDeletions,
+			items: [
+				{
+					key: 'Account deletion requests',
+					label: __('Deletion requests'),
+					icon: 'UserX',
+					description: __(
+						'Approve or reject the requests of users who want their account deleted',
+					),
+					condition: canReviewAccountDeletions,
+					template: markRaw(AccountDeletionRequestsSettings),
 				},
 			],
 		},

@@ -8292,15 +8292,17 @@ privacy_consent.py, account_deletion.py (modalità "request"), events/user.py (R
 la richiesta resta senza utente dopo la cancellazione), override_api.py (delete_member, flag
 can_delete_users / show_account_deletion_requests / privacy_consent_required in get_user_info),
 hooks.py (signup_form_template, scheduler daily send_reminders); frontend DeleteAccountDialog.vue,
-oslms/pages/AccountDeletionRequests.vue, oslms/components/PrivacyConsentDialog.vue, scheda Privacy
-in oslms/utils/settings.js; registrazione: quando l'upstream sceglierebbe il modulo di Frappe
+oslms/components/PrivacyConsentDialog.vue, scheda Privacy e scheda «Richieste di eliminazione
+account» (oslms/components/AccountDeletionRequestsSettings.vue, visibile con
+show_account_deletion_requests) in oslms/utils/settings.js: per scelta del cliente (2026-10-30) la
+revisione sta nelle Impostazioni, senza pagina né voce di menu proprie; registrazione: quando l'upstream sceglierebbe il modulo di Frappe
 (nessun custom_signup_content né user_category) privacy_consent.signup_form_template serve la
 copia os_lms/templates/signup-privacy.html (markup di Frappe + casella, invio a
 lms.lms.user.sign_up), perché lms/templates/signup-form.html sulla pagina di login di os_lms
 esce senza stile (classi es-*/utility assenti dal login.bundle.css di Frappe 16.12). Il dialog
 privacy legge l'utente da usersStore(), non da inject('$user'): main.js fa provide dopo
 app.mount. Innesti nei file upstream: App.vue monta PrivacyConsentDialog;
-routes.js rotta AccountDeletionRequests; utils/index.js voce di menu; Members.vue «Delete user»
+Members.vue «Delete user»
 solo con can_delete_users; lms/templates/signup-form.html checkbox privacy, controllo e parametro
 accept_privacy. ATTENZIONE ai merge: se l'upstream cambia la chiamata a lms.lms.user.sign_up o il
 modo in cui login.py sceglie signup_form_template (oggi l'ultimo hook vince), la checkbox sparisce."""
@@ -8308,14 +8310,6 @@ modo in cui login.py sceglie signup_form_template (oggi l'ultimo hook vince), la
   [[entries.sites]]
   file = "frontend/src/App.vue"
   anchor = "<PrivacyConsentDialog />"
-
-  [[entries.sites]]
-  file = "frontend/src/routes.js"
-  anchor = "name: 'AccountDeletionRequests',"
-
-  [[entries.sites]]
-  file = "frontend/src/utils/index.js"
-  anchor = "label: 'Account deletion requests',"
 
   [[entries.sites]]
   file = "frontend/src/components/Settings/Members.vue"
@@ -8331,7 +8325,7 @@ modo in cui login.py sceglie signup_form_template (oggi l'ultimo hook vince), la
   anchor = "accept_privacy: $(\"#signup-privacy\").prop(\"checked\") ? 1 : 0,"
 
   [entries.visibility]
-  subject = "pagina di revisione delle richieste ed eliminazione diretta degli utenti"
+  subject = "scheda Impostazioni di revisione delle richieste ed eliminazione diretta degli utenti"
   allow = ["Gestore", "System Manager", "Administrator"]
   deny = ["Moderator", "Docente", "Valutatore", "Student"]
 

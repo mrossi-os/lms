@@ -24,7 +24,8 @@ REMIND_EVERY_DAYS = 7
 # Who deletes directly even with the review on, and who reviews the requests.
 MANAGER_ROLES = {"Gestore", "System Manager"}
 DOCTYPE = "OS Account Deletion Request"
-REVIEW_PAGE = "/lms/account-deletion-requests"
+# The review is a tab of the SPA Settings dialog, which has no URL of its own.
+REVIEW_PAGE = "/lms"
 MAX_REASON_LENGTH = 1000
 
 
@@ -253,6 +254,6 @@ def _notify_managers(subject: str, requests: list) -> None:
 		subject=subject,
 		message=_(
 			"Some users asked to delete their account. Approve or reject each request within {0} days "
-			"of the request:<ul>{1}</ul>Review them here: {2}"
+			"of the request:<ul>{1}</ul>Review them in Settings, under Account deletion requests: {2}"
 		).format(REVIEW_DAYS, "".join(rows), f'<a href="{link}">{link}</a>'),
 	)

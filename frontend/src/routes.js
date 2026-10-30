@@ -493,12 +493,6 @@ export const routes = [
 		name: 'StudentStatsExport',
 		component: () => import('@/oslms/pages/StudentStatsExport.vue'),
 	},
-	// OSLMS-CUSTOM: review of the account deletion requests (Gestore and administrators)
-	{
-		path: '/account-deletion-requests',
-		name: 'AccountDeletionRequests',
-		component: () => import('@/oslms/pages/AccountDeletionRequests.vue'),
-	},
 	{
 		path: '/:pathMatch(.*)*',
 		name: 'NotFound',

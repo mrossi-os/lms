@@ -1,11 +1,5 @@
 <template>
-	<div>
-		<header
-			class="sticky top-0 z-10 bg-surface-gray-1 flex items-center justify-between border-b bg-surface-base px-3 py-2.5 sm:px-5"
-		>
-			<Breadcrumbs class="h-7" :items="breadcrumbs" />
-		</header>
-
+	<SettingsLayout :title="label" :description="description">
 		<div
 			v-if="requests.loading && !requests.data"
 			class="flex flex-1 items-center justify-center p-10"
@@ -17,7 +11,7 @@
 			{{ __('You are not authorized to review account deletion requests.') }}
 		</div>
 
-		<div v-else-if="requests.data" class="mx-auto max-w-4xl space-y-8 p-5">
+		<div v-else-if="requests.data" class="space-y-8">
 			<section class="space-y-3">
 				<div class="space-y-1">
 					<h2 class="text-base font-semibold text-ink-gray-9">
@@ -168,18 +162,17 @@
 				</p>
 			</div>
 		</Dialog>
-	</div>
+	</SettingsLayout>
 </template>
 
 <script setup lang="ts">
 // Review of the account deletion requests (ESG, os_lms
-// account_deletion_requests.py): Gestore and administrators only, which the
-// server checks on every call; the menu entry follows
+// account_deletion_requests.py), a Settings tab: Gestore and administrators
+// only, which the server checks on every call; the tab follows
 // show_account_deletion_requests from get_user_info.
 import { computed, ref } from 'vue'
 import {
 	Badge,
-	Breadcrumbs,
 	Button,
 	Dialog,
 	FormControl,
@@ -187,7 +180,10 @@ import {
 	createResource,
 	toast,
 } from 'frappe-ui'
+import SettingsLayout from '@/components/Layouts/SettingsLayout.vue'
 import dayjs from '@/utils/dayjs'
+
+defineProps<{ label: string; description?: string }>()
 
 type Request = {
 	name: string
@@ -201,13 +197,6 @@ type Request = {
 	decided_by_name?: string | null
 	rejection_reason: string | null
 }
-
-const breadcrumbs = computed(() => [
-	{
-		label: __('Account deletion requests'),
-		route: { name: 'AccountDeletionRequests' },
-	},
-])
 
 const requests = createResource({
 	url: 'os_lms.os_lms.account_deletion_requests.get_requests',

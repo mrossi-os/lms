@@ -843,18 +843,6 @@ const getSidebarItems = (forMobile = false) => {
 						return !forMobile && userResource?.data?.can_export_stats
 					},
 				},
-				{
-					// OSLMS-CUSTOM: account deletion requests to review (show_account_deletion_requests)
-					label: 'Account deletion requests',
-					icon: 'UserX',
-					to: 'AccountDeletionRequests',
-					activeFor: ['AccountDeletionRequests'],
-					condition: () => {
-						return (
-							!forMobile && userResource?.data?.show_account_deletion_requests
-						)
-					},
-				},
 			],
 		},
 	]
