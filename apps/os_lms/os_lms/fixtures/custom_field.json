@@ -387,5 +387,74 @@
   "depends_on": "eval:doc.enable_negative_marking",
   "description": "Unanswered questions lose the same marks as wrong answers. Off: they score 0.",
   "insert_after": "marks_to_cut"
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "LMS Settings-privacy_account_section",
+  "dt": "LMS Settings",
+  "label": "Privacy and Account Deletion",
+  "fieldname": "privacy_account_section",
+  "fieldtype": "Section Break",
+  "insert_after": "enable_live_classes",
+  "collapsible": 1
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "LMS Settings-privacy_policy_url",
+  "dt": "LMS Settings",
+  "label": "Privacy Policy URL",
+  "fieldname": "privacy_policy_url",
+  "fieldtype": "Data",
+  "options": "URL",
+  "insert_after": "privacy_account_section",
+  "description": "Public page of the privacy policy. When set, sign-up asks to accept it and users who have not accepted it yet are asked after login."
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "LMS Settings-account_deletion_requires_review",
+  "dt": "LMS Settings",
+  "label": "Account Deletion Requires Review",
+  "fieldname": "account_deletion_requires_review",
+  "fieldtype": "Check",
+  "default": "0",
+  "insert_after": "privacy_policy_url",
+  "description": "Users other than Gestori and administrators send a deletion request instead of deleting their account; a Gestore reviews it within 60 days."
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "User-privacy_accepted_on",
+  "dt": "User",
+  "label": "Privacy Policy Accepted On",
+  "fieldname": "privacy_accepted_on",
+  "fieldtype": "Datetime",
+  "insert_after": "welcome_video_seen",
+  "hidden": 1,
+  "no_copy": 1,
+  "read_only": 1
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "User-privacy_accepted_url",
+  "dt": "User",
+  "label": "Privacy Policy Accepted URL",
+  "fieldname": "privacy_accepted_url",
+  "fieldtype": "Data",
+  "insert_after": "privacy_accepted_on",
+  "hidden": 1,
+  "no_copy": 1,
+  "read_only": 1
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "User-privacy_accepted_via",
+  "dt": "User",
+  "label": "Privacy Policy Accepted Via",
+  "fieldname": "privacy_accepted_via",
+  "fieldtype": "Select",
+  "options": "\nSignup\nLogin",
+  "insert_after": "privacy_accepted_url",
+  "hidden": 1,
+  "no_copy": 1,
+  "read_only": 1
  }
 ]

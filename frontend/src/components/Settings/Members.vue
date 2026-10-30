@@ -107,7 +107,7 @@ import {
 	toast,
 } from 'frappe-ui'
 import { useRouter } from 'vue-router'
-import { ref, watch } from 'vue'
+import { inject, ref, watch } from 'vue'
 import type { SettingsListColumn } from '@/types'
 import { SETTINGS_PAGE_LENGTH } from '@/composables/useSettingsListResource'
 import { openFormRoute } from '@/composables/useFormRoute'
@@ -124,6 +124,7 @@ type Member = {
 }
 
 const router = useRouter()
+const $user = inject<any>('$user')
 const show = defineModel('show')
 const search = ref('')
 const currentRole = ref('All')
@@ -278,11 +279,16 @@ const columns: SettingsListColumn[] = [
 				label: __('Edit member'),
 				onClick: () => openEditMember(row as Member),
 			},
-			{
-				label: __('Delete user'),
-				theme: 'red',
-				onClick: () => openDeleteDialog(row as Member),
-			},
+			// OSLMS-CUSTOM: only a Gestore or an administrator deletes users directly (os_lms delete_member)
+			...($user?.data?.can_delete_users
+				? [
+						{
+							label: __('Delete user'),
+							theme: 'red',
+							onClick: () => openDeleteDialog(row as Member),
+						},
+					]
+				: []),
 		],
 	},
 ]

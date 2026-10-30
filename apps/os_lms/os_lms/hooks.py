@@ -261,6 +261,9 @@ website_redirects = [
     {"source": r"/new-sign-up(\.html)?", "target": "/login"},
 ]
 
+# lms's sign-up form (with the privacy policy box) whenever a policy URL is set.
+signup_form_template = "os_lms.os_lms.privacy_consent.signup_form_template"
+
 
 doc_events = {
     "Badge": {
@@ -351,6 +354,8 @@ scheduler_events = {
     ],
     "daily": [
         "os_lms.os_lms.ai.ingestion.scheduler.reindex_lesson_content",
+        # Remind the Gestori of account deletion requests close to or past their date.
+        "os_lms.os_lms.account_deletion_requests.send_reminders",
     ],
     "cron": {
         # Email the Administrator user and the Gestori past the attack thresholds.

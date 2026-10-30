@@ -16,7 +16,7 @@ import frappe
 from frappe.tests import UnitTestCase
 from frappe.utils.password import update_password
 
-from os_lms.os_lms import account_deletion
+from os_lms.os_lms import account_deletion, account_deletion_requests
 from os_lms.os_lms.account_deletion import erase_user, find_traces
 
 P = "acct-del-test-"
@@ -83,6 +83,11 @@ class AccountDeletionCase(UnitTestCase):
 		commit = patch.object(frappe.db, "commit")
 		commit.start()
 		self.addCleanup(commit.stop)
+		# Direct deletion whatever the site's LMS Settings say; the review has its
+		# own tests (test_account_deletion_requests).
+		review = patch.object(account_deletion_requests, "review_enabled", return_value=False)
+		review.start()
+		self.addCleanup(review.stop)
 
 		make_user(STUDENT, "Student")
 		make_user(BYSTANDER, "Bystander")
@@ -320,7 +325,7 @@ class TestDeleteMyAccount(AccountDeletionCase):
 	def test_account_without_password_confirms_with_an_emailed_code(self):
 		frappe.set_user(TEACHER)
 		with patch.object(account_deletion.frappe, "sendmail") as sendmail:
-			self.assertEqual(account_deletion.start_account_deletion(), {"method": "code"})
+			self.assertEqual(account_deletion.start_account_deletion(), {"method": "code", "mode": "direct"})
 		code = next(word for word in sendmail.call_args.kwargs["message"].replace("<b>", " ").replace("</b>", " ").split() if word.isdigit())
 
 		with self.assertRaises(frappe.ValidationError):

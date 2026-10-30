@@ -27,6 +27,10 @@ ROLE_LINK_FIELDS = (
 	("LMSA Simulation Debrief", "instructor_reviewed_by"),
 	("LMSA Simulation Scenario", "created_by_instructor"),
 	("Elite API Key", "revoked_by"),
+	# The request stays as the record of the decision, without whom it was about
+	# or who took it (user is not mandatory, so it is emptied).
+	("OS Account Deletion Request", "user"),
+	("OS Account Deletion Request", "decided_by"),
 )
 
 # The user's own records that other people's records point to: a course or a

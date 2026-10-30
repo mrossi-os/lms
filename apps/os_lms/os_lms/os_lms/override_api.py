@@ -66,10 +66,12 @@ PROTECTED_ACCOUNT_ROLES = {"System Manager", "Gestore"}
 
 @frappe.whitelist()
 def delete_member(user: str):
-    """Upstream lets any Moderator, so every Gestore, delete a System Manager or
-    another Gestore. Like the Gestore role itself (assert_can_assign_role), those
-    accounts are left to the Administrator or a System Manager."""
-    frappe.only_for("Moderator")
+    """Upstream lets any Moderator delete any user. Only a Gestore or an
+    administrator deletes users directly (client rule 2026-10-30; everyone else
+    files a request, see account_deletion_requests), and a System Manager or
+    another Gestore only by a System Manager, like the Gestore role itself
+    (assert_can_assign_role)."""
+    frappe.only_for(["Gestore", "System Manager"])
     if (
         isinstance(user, str)
         and PROTECTED_ACCOUNT_ROLES & set(frappe.get_roles(user))
@@ -428,6 +430,16 @@ def get_user_info():
         from os_lms.os_lms.api import can_export_student_stats
 
         result["can_export_stats"] = can_export_student_stats()
+        # Account deletion requests (review page, direct deletion of members) and
+        # the privacy policy dialog shown until the user accepts it.
+        from os_lms.os_lms.account_deletion_requests import has_requests_to_review, is_manager
+        from os_lms.os_lms.privacy_consent import get_privacy_policy_url, is_consent_required
+
+        result["can_delete_users"] = is_manager()
+        result["show_account_deletion_requests"] = result["can_delete_users"] and has_requests_to_review()
+        result["privacy_consent_required"] = is_consent_required(frappe.session.user)
+        if result["privacy_consent_required"]:
+            result["privacy_policy_url"] = get_privacy_policy_url()
         # Course counters shown on the mobile profile page:
         # "Corsi attivi" = enrollments still in progress, "Completati" = enrollments
         # with full progress. progress is a Float (0-100) on LMS Enrollment.

@@ -6,6 +6,8 @@
 		<NotificationPanel />
 		<InstallPrompt v-if="isMobile && !settings.data?.disable_pwa" />
 		<Dialogs />
+		<!-- OSLMS-CUSTOM: privacy policy acceptance after login (os_lms privacy_consent) -->
+		<PrivacyConsentDialog />
 	</FrappeUIProvider>
 </template>
 <script setup>
@@ -22,6 +24,8 @@ import MobileLayout from './components/Layouts/MobileLayout.vue'
 import NoSidebarLayout from './components/Layouts/NoSidebarLayout.vue'
 import InstallPrompt from './components/InstallPrompt.vue'
 import NotificationPanel from '@/components/Notifications/NotificationPanel.vue'
+// OSLMS-CUSTOM: privacy policy acceptance dialog (os_lms)
+import PrivacyConsentDialog from '@/oslms/components/PrivacyConsentDialog.vue'
 
 const { isMobile } = useScreenSize()
 const router = useRouter()

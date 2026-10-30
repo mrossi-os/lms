@@ -8271,6 +8271,73 @@ withDeleteAccountRow non inserisce più la riga."""
   unit = "frontend/src/tests/accountDeletion.test.ts"
   backend = "apps/os_lms/os_lms/os_lms/tests/test_account_deletion.py"
 
+[[entries]]
+id = "account-deletion-review-and-privacy-consent"
+title = "Eliminazione account su richiesta con revisione del Gestore e accettazione della privacy"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Estensione del punto 3 ESG (2026-10-30, branch feature/esg), regole del cliente: (a) con
+LMS Settings.account_deletion_requires_review attivo, chi non è Gestore, System Manager o
+Administrator non elimina l'account ma invia una richiesta (doctype OS Account Deletion Request,
+scadenza a 60 giorni); l'account resta attivo e la richiesta si ritira; un Gestore approva (stessa
+cancellazione di erase_user) o rifiuta con un motivo mandato all'utente; alla scadenza NIENTE di
+automatico, solo promemoria ai Gestori (7 giorni prima, il giorno, poi ogni settimana; le email non
+nominano l'utente). Solo Gestore e admin eliminano utenti direttamente: delete_member non è più
+aperto al semplice Moderator. (b) con LMS Settings.privacy_policy_url impostato la registrazione
+chiede di accettare l'informativa (controllo anche lato server in signup.sign_up) e chiunque non
+abbia un'accettazione registrata (User.privacy_accepted_on/url/via) vede dopo il login una
+finestra non chiudibile con checkbox e link. Logica in file nostri: account_deletion_requests.py,
+privacy_consent.py, account_deletion.py (modalità "request"), events/user.py (ROLE_LINK_FIELDS:
+la richiesta resta senza utente dopo la cancellazione), override_api.py (delete_member, flag
+can_delete_users / show_account_deletion_requests / privacy_consent_required in get_user_info),
+hooks.py (signup_form_template, scheduler daily send_reminders); frontend DeleteAccountDialog.vue,
+oslms/pages/AccountDeletionRequests.vue, oslms/components/PrivacyConsentDialog.vue, scheda Privacy
+in oslms/utils/settings.js; registrazione: quando l'upstream sceglierebbe il modulo di Frappe
+(nessun custom_signup_content né user_category) privacy_consent.signup_form_template serve la
+copia os_lms/templates/signup-privacy.html (markup di Frappe + casella, invio a
+lms.lms.user.sign_up), perché lms/templates/signup-form.html sulla pagina di login di os_lms
+esce senza stile (classi es-*/utility assenti dal login.bundle.css di Frappe 16.12). Il dialog
+privacy legge l'utente da usersStore(), non da inject('$user'): main.js fa provide dopo
+app.mount. Innesti nei file upstream: App.vue monta PrivacyConsentDialog;
+routes.js rotta AccountDeletionRequests; utils/index.js voce di menu; Members.vue «Delete user»
+solo con can_delete_users; lms/templates/signup-form.html checkbox privacy, controllo e parametro
+accept_privacy. ATTENZIONE ai merge: se l'upstream cambia la chiamata a lms.lms.user.sign_up o il
+modo in cui login.py sceglie signup_form_template (oggi l'ultimo hook vince), la checkbox sparisce."""
+
+  [[entries.sites]]
+  file = "frontend/src/App.vue"
+  anchor = "<PrivacyConsentDialog />"
+
+  [[entries.sites]]
+  file = "frontend/src/routes.js"
+  anchor = "name: 'AccountDeletionRequests',"
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = "label: 'Account deletion requests',"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Members.vue"
+  anchor = "...($user?.data?.can_delete_users"
+  symbol = "columns"
+
+  [[entries.sites]]
+  file = "lms/templates/signup-form.html"
+  anchor = "id=\"signup-privacy\""
+
+  [[entries.sites]]
+  file = "lms/templates/signup-form.html"
+  anchor = "accept_privacy: $(\"#signup-privacy\").prop(\"checked\") ? 1 : 0,"
+
+  [entries.visibility]
+  subject = "pagina di revisione delle richieste ed eliminazione diretta degli utenti"
+  allow = ["Gestore", "System Manager", "Administrator"]
+  deny = ["Moderator", "Docente", "Valutatore", "Student"]
+
+  [entries.checks]
+  backend = "apps/os_lms/os_lms/os_lms/tests/test_account_deletion_requests.py"
+
 # --- Contesto del tutor AI ------------------------------------------------------
 
 [[entries]]

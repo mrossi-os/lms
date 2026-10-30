@@ -13,7 +13,9 @@ their password, or a code by email for accounts without one), then calls
 once; ``erase_user`` runs in a background job and sends a last email when done.
 
 Any user may delete their own account, staff included; only Administrator
-cannot. A teacher's courses, lessons and live classes belong to the client and
+cannot. With the review on in LMS Settings, everyone but a Gestore or a System
+Manager files a request instead, decided by a Gestore
+(``account_deletion_requests``). A teacher's courses, lessons and live classes belong to the client and
 stay: ``os_lms.events.user.delete_lms_user_links`` (on_trash of User) deletes
 the user's own LMS records and detaches them from everyone else's.
 """
@@ -27,6 +29,8 @@ import frappe
 from frappe import _
 from frappe.rate_limiter import rate_limit
 from frappe.utils import parse_addr, split_emails
+
+from os_lms.os_lms.account_deletion_requests import file_request, get_pending, needs_review
 
 CODE_TTL_SECONDS = 15 * 60
 FORBIDDEN_USERS = ("Administrator", "Guest")
@@ -91,8 +95,12 @@ def start_account_deletion() -> dict:
 	"""Tell the dialog how the user confirms. Accounts without a password
 	(social login) get a one-time code by email instead."""
 	user = _session_user()
+	mode = "request" if needs_review(user) else "direct"
+	if mode == "request" and (pending := get_pending(user)):
+		# Nothing to confirm: the dialog shows the request and lets it be withdrawn.
+		return {"mode": mode, "pending": pending}
 	if _has_password(user):
-		return {"method": "password"}
+		return {"method": "password", "mode": mode}
 
 	code = f"{secrets.randbelow(10**6):06d}"
 	frappe.cache.set_value(_code_key(user), _hash(code), expires_in_sec=CODE_TTL_SECONDS)
@@ -105,13 +113,14 @@ def start_account_deletion() -> dict:
 		).format(code, CODE_TTL_SECONDS // 60),
 		now=True,
 	)
-	return {"method": "code"}
+	return {"method": "code", "mode": mode}
 
 
 @frappe.whitelist(methods=["POST"])
 @rate_limit(limit=5, seconds=60 * 60)
 def delete_my_account(secret: str) -> dict:
-	"""Disable the account, close its sessions and queue the erasure."""
+	"""Disable the account, close its sessions and queue the erasure; with the
+	review on, file a request for a Gestore instead."""
 	user = _session_user()
 	if not secret:
 		frappe.throw(_("Enter your password to confirm."))
@@ -131,10 +140,21 @@ def delete_my_account(secret: str) -> dict:
 			frappe.throw(_("The code is not correct or has expired."))
 		frappe.cache.delete_value(_code_key(user))
 
-	frappe.db.set_value("User", user, "enabled", 0, update_modified=False)
+	if needs_review(user):
+		# The account stays as it is until a Gestore approves.
+		return {"requested": True, "pending": file_request(user)}
+
 	frappe.local.login_manager.logout(user=user)
+	queue_erasure(user)
+	return {"queued": True}
+
+
+def queue_erasure(user: str) -> None:
+	"""Disable the account, close its sessions and queue erase_user. Used by
+	delete_my_account and by a Gestore approving a request."""
 	from frappe.sessions import clear_sessions
 
+	frappe.db.set_value("User", user, "enabled", 0, update_modified=False)
 	clear_sessions(user=user, force=True)
 	# Queued last: logging out commits on its way, and a job queued before it
 	# ran ahead of the "Force Logged out" Activity Log and left it behind.
@@ -145,7 +165,6 @@ def delete_my_account(secret: str) -> dict:
 		enqueue_after_commit=True,
 		user=user,
 	)
-	return {"queued": True}
 
 
 def erase_user(user: str, notify: bool = True) -> None:

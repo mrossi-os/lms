@@ -16,6 +16,7 @@ from frappe.website.utils import is_signup_disabled
 from lms.lms.user import sign_up as lms_sign_up
 
 from os_lms.os_lms.email_utils import send_templated_email
+from os_lms.os_lms.privacy_consent import get_privacy_policy_url, record_consent
 
 SIGNUPS_PER_IP_PER_HOUR = 10
 WINDOW_SECONDS = 60 * 60
@@ -23,9 +24,16 @@ ALREADY_REGISTERED_EMAIL_COOLDOWN_SECONDS = 60 * 60
 
 
 @frappe.whitelist(allow_guest=True)  # nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
-def sign_up(email: str, full_name: str, verify_terms: bool, user_category: str):
+def sign_up(
+	email: str, full_name: str, verify_terms: bool, user_category: str, accept_privacy: bool = False
+):
 	if is_signup_disabled():
 		frappe.throw(_("Sign Up is disabled"), _("Not Allowed"))
+
+	# The form already requires the box; this stops a direct call skipping it.
+	privacy_url = get_privacy_policy_url()
+	if privacy_url and not cint(accept_privacy):
+		return 0, _("Please accept the privacy policy to continue.")
 
 	if limited := _limit_message():
 		return 0, limited
@@ -40,6 +48,8 @@ def sign_up(email: str, full_name: str, verify_terms: bool, user_category: str):
 	if cint(code) == 0:
 		# A concurrent sign-up for the same address won the race.
 		return _check_your_email()
+	if privacy_url:
+		record_consent(frappe.db.get_value("User", {"email": email}, "name"), "Signup")
 	return code, message
 
 

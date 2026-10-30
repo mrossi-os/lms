@@ -155,6 +155,42 @@ export function buildOslmsSettingsTabs({
 						},
 					],
 				},
+				// Privacy policy acceptance and account deletion on request
+				// (os_lms privacy_consent.py and account_deletion_requests.py).
+				{
+					key: 'Privacy',
+					label: __('Privacy'),
+					icon: 'ShieldCheck',
+					description: __('Privacy policy and deletion of accounts'),
+					condition: isAdministrator,
+					sections: [
+						{
+							label: __('Privacy'),
+							columns: [
+								{
+									fields: [
+										{
+											label: __('Privacy Policy URL'),
+											name: 'privacy_policy_url',
+											type: 'text',
+											description: __(
+												'Public page of the privacy policy. When set, sign-up asks to accept it and users who have not accepted it yet are asked after login.',
+											),
+										},
+										{
+											label: __('Account deletion on request'),
+											name: 'account_deletion_requires_review',
+											type: 'checkbox',
+											description: __(
+												'Users other than Gestori and administrators send a deletion request instead of deleting their account; a Gestore reviews it within 60 days.',
+											),
+										},
+									],
+								},
+							],
+						},
+					],
+				},
 			],
 		},
 		{

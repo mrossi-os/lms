@@ -44,6 +44,18 @@
             <p class="field-error text-base text-ink-red-8 mb-0"></p>
         </div>
         {% endif %}
+
+        <!-- OSLMS-CUSTOM: privacy policy box, required whenever LMS Settings has a policy URL (os_lms privacy_consent) -->
+        {% set privacy_policy_url = (frappe.db.get_single_value("LMS Settings", "privacy_policy_url") or "").strip() %}
+        {% if privacy_policy_url %}
+        <div class="form-group privacy-policy flex flex-col items-start gap-1.5 mb-0">
+            <label class="terms-and-conditions-check flex items-start gap-2 text-p-sm text-ink-gray-7 mb-0" for="signup-privacy">
+                <input type="checkbox" id="signup-privacy" class="shrink-0 mt-1" autocomplete="off" required>
+                <span>{{ _("I have read and accept the {0}").format('<a href="' ~ (privacy_policy_url | e) ~ '" target="_blank" rel="noopener noreferrer">' ~ _("privacy policy") ~ '</a>') }}</span>
+            </label>
+            <p class="field-error text-base text-ink-red-8 mb-0"></p>
+        </div>
+        {% endif %}
     </div>
     <div class="page-card-actions flex flex-col gap-3">
         <button class="es-button w-full btn-signup" data-variant="solid"
@@ -91,6 +103,13 @@
 
     .signup-form .terms-and-conditions-check {
         cursor: pointer;
+    }
+
+    /* OSLMS-CUSTOM: privacy policy link inside the box label */
+    .signup-form .privacy-policy a {
+        color: inherit;
+        font-weight: 600;
+        text-decoration: underline;
     }
 
     .signup-form .login-error-banner a {
@@ -175,6 +194,12 @@
             return false;
         }
 
+        // OSLMS-CUSTOM: the privacy policy box is required too (the server checks it again)
+        if ($("#signup-privacy").length && !$("#signup-privacy").prop("checked")) {
+            login.show_field_error("signup-privacy", {{ _("Please accept the privacy policy to continue.") | tojson }});
+            return false;
+        }
+
         frappe.call({
             method: "lms.lms.user.sign_up",
             args: {
@@ -183,6 +208,8 @@
                 "verify_terms": $("#signup-terms").prop("checked") ? 1 : 0,
                 // OSLMS-CUSTOM: user category select removed, always send an empty value
                 user_category: "",
+                // OSLMS-CUSTOM: privacy policy acceptance, recorded on the new user
+                accept_privacy: $("#signup-privacy").prop("checked") ? 1 : 0,
             },
             statusCode: signup_handlers()
         })

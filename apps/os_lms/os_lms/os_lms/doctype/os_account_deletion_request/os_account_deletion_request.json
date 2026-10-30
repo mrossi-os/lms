@@ -1,0 +1,125 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-10-30 12:00:00.000000",
+ "description": "A user's request to delete their account, when LMS Settings asks for a review. A Gestore approves (the account is erased) or rejects it with a reason. Once the account is erased the row stays as a record of the decision, without the user.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "user",
+  "full_name",
+  "status",
+  "column_break_dates",
+  "requested_on",
+  "due_on",
+  "last_reminder_on",
+  "section_decision",
+  "decided_by",
+  "decided_on",
+  "rejection_reason"
+ ],
+ "fields": [
+  {
+   "description": "Emptied when the account is erased.",
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "user.full_name",
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "label": "Full Name",
+   "read_only": 1
+  },
+  {
+   "default": "Pending",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Pending\nApproved\nRejected\nWithdrawn",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_dates",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "requested_on",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Requested On",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "description": "Date by which a Gestore should decide. Nothing happens on its own when it passes: the Gestori keep getting reminders.",
+   "fieldname": "due_on",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Due On",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "last_reminder_on",
+   "fieldtype": "Date",
+   "label": "Last Reminder On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_decision",
+   "fieldtype": "Section Break",
+   "label": "Decision"
+  },
+  {
+   "fieldname": "decided_by",
+   "fieldtype": "Link",
+   "label": "Decided By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "decided_on",
+   "fieldtype": "Datetime",
+   "label": "Decided On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "rejection_reason",
+   "fieldtype": "Small Text",
+   "label": "Rejection Reason",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "in_create": 1,
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-30 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "OS LMS",
+ "name": "OS Account Deletion Request",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "export": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "full_name"
+}
