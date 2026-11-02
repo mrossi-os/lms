@@ -1,0 +1,74 @@
+{
+ "source": "elite.overside.it (staging), read 2026-11-02",
+ "name": "SCN-0144",
+ "scenario_name": "Sales Transformation Role-Playyy",
+ "difficulty": "medium",
+ "max_turns": 15,
+ "roleplay_persona": "Sei un responsabile vendite in un'azienda di tecnologia che sta cercando di implementare nuove strategie di vendita. Sei scettico riguardo all'efficacia della Sales Tech e preferisci metodi tradizionali. Il tuo atteggiamento è critico, ma sei aperto a nuove idee se ben motivate.",
+ "situation_template": "In questo incontro, {client_name}, responsabile vendite di un'azienda tecnologica, sta discutendo con lo studente riguardo all'implementazione della Sales Tech nella sua squadra. Il cliente è scettico e chiede chiarimenti sulle reali applicazioni e benefici della tecnologia nelle vendite.",
+ "lms_course": "corso-sales-transformation",
+ "learning_objectives": [
+  "Dimostrare la capacità di spiegare i benefici della Sales Tech in modo chiaro e convincente.",
+  "Utilizzare tecniche di ascolto attivo per comprendere le preoccupazioni del cliente.",
+  "Applicare strategie di persuasione per affrontare scetticismi e obiezioni.",
+  "Fornire esempi concreti di come la tecnologia ha migliorato le vendite in contesti simili.",
+  "Mostrare la capacità di adattarsi al cambiamento del contesto di vendita."
+ ],
+ "seed_variations": {
+  "initial_mood": [
+   "scettico",
+   "curioso",
+   "aperto",
+   "critico"
+  ],
+  "client_name": [
+   "Marco",
+   "Giulia",
+   "Luca",
+   "Sara"
+  ],
+  "company_industry": [
+   "tecnologia",
+   "consulenza",
+   "retail",
+   "servizi finanziari"
+  ]
+ },
+ "evaluation_schema": {
+  "name": "Schema 1",
+  "scoring_scale": "0-10",
+  "passing_threshold": 70.0,
+  "criteria": [
+   {
+    "name": "Inquadramento AI (generalista / verticale / agente)",
+    "weight": 0.2,
+    "description": "Lo studente sa distinguere i tre stadi di adozione e li applica al contesto del cliente.",
+    "observable_behaviors": "Cita ChatGPT/Cloud/Gemini come generalisti, Apollo/Clay/Morena come verticali, e l'agente come delega di un flusso intero. Non confonde i livelli."
+   },
+   {
+    "name": "Gestione obiezione privacy",
+    "weight": 0.2,
+    "description": "Affronta la preoccupazione sui dati con accorgimenti concreti (piano business, opt-out training, chat temporanea, anonimizzazione).",
+    "observable_behaviors": "Nomina almeno 2 di: piano business, disattivazione training, chat temporanea, anonimizzazione. Cita DPA / vincoli normativi se rilevanti."
+   },
+   {
+    "name": "Sales Tech Infusion (processo + persone + tecnologia)",
+    "weight": 0.2,
+    "description": "Posiziona l'AI come integrazione nel flusso, non come tool isolato. Indaga il processo del cliente prima di proporre.",
+    "observable_behaviors": "Fa almeno 2 domande aperte sul processo commerciale attuale. Spiega che il tool senza integrazione resta una demo. Evita pitch a senso unico."
+   },
+   {
+    "name": "Quantificazione del valore",
+    "weight": 0.2,
+    "description": "Articola il ROI con casi concreti: tempo recuperato con Deep Research, qualità dei lead con prospecting AI, riduzione manuale del lavoro ripetitivo.",
+    "observable_behaviors": "Almeno un esempio numerico/temporale (es. 'da 4 ore a 20 minuti per preparare un account'). Non promette miracoli generici."
+   },
+   {
+    "name": "Closing e prossimo passo",
+    "weight": 0.2,
+    "description": "Chiude la call con un commitment misurabile, mai con un 'le mando un'email'.",
+    "observable_behaviors": "Propone una seconda call con stakeholder specifico, un pilot di N settimane su un segmento, o una demo guidata su un caso reale del cliente. Data e ora concrete."
+   }
+  ]
+ }
+}
