@@ -61,8 +61,29 @@ services:
       - 1025:1025 
       - 8025:8025  
 
+  # Arize Phoenix: LLM trace store for the AI bias tests (ESG point 5).
+  # Opt-in only: `docker compose --profile ai-eval up -d phoenix`.
+  # Bound to localhost, auth on, telemetry off, synthetic test data only.
+  phoenix:
+    image: arizephoenix/phoenix:version-20.21.4
+    profiles: ["ai-eval"]
+    environment:
+      - PHOENIX_WORKING_DIR=/mnt/data
+      - PHOENIX_ENABLE_AUTH=true
+      - PHOENIX_SECRET=${PHOENIX_SECRET}
+      - PHOENIX_ADMIN_SECRET=${PHOENIX_ADMIN_SECRET}
+      - PHOENIX_DEFAULT_ADMIN_INITIAL_PASSWORD=${PHOENIX_ADMIN_PASSWORD}
+      - PHOENIX_DEFAULT_RETENTION_POLICY_DAYS=90
+      - PHOENIX_TELEMETRY_ENABLED=false
+    volumes:
+      - phoenix-data:/mnt/data
+    ports:
+      - "127.0.0.1:6006:6006"
+
 volumes:
   mariadb-data:
     name: dev-elite-db-data
   frappe-bench:
     name: dev-elite-site-data
+  phoenix-data:
+    name: dev-elite-phoenix-data

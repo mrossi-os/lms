@@ -27,6 +27,7 @@ docker/
 | **mariadb**| `mariadb:10.8`                     | `3306`                                           | UTF-8 mb4, data persisted in `dev-elite-db-data` volume  |
 | **redis**  | `redis/redis-stack-server:latest`  | —                                                | Used for cache, queue, and socket.io                     |
 | **mailer** | `axllent/mailpit:latest`           | `1025` (SMTP), `8025` (Web UI)                   | Auth: `user:password`, max message 10 MB                 |
+| **phoenix**| `arizephoenix/phoenix:version-20.21.4` | `127.0.0.1:6006` (Web UI + OTLP `/v1/traces`) | Opt-in (`ai-eval` profile), see [Phoenix](#phoenix-ai-bias-tests) |
 
 ## Environment Variables (`.env`)
 
@@ -40,6 +41,9 @@ docker/
 | `FRAPPE_PORT`          | no       | Host port for Frappe (default `8000`)            |
 | `API_API_PORT`         | no       | Host port for API (default `9000`)               |
 | `DOCKER_PLATFORM`      | no       | Container platform (default `linux/amd64`)       |
+| `PHOENIX_SECRET`       | phoenix  | Signs Phoenix sessions (32+ chars, letters and digits) |
+| `PHOENIX_ADMIN_SECRET` | phoenix  | Bearer token for scripts (32+ chars, different from `PHOENIX_SECRET`) |
+| `PHOENIX_ADMIN_PASSWORD` | phoenix | Initial password of `admin@localhost` in the Phoenix UI |
 
 ## Init Script (`init.sh`)
 
@@ -53,10 +57,26 @@ The entrypoint script runs on every container start and handles:
 
 The workspace (`/workspace`) is a bind mount of the repo root — code changes on the host are immediately visible inside the container.
 
+## Phoenix (AI bias tests)
+
+[Arize Phoenix](https://arize.com/docs/phoenix) stores the LLM calls made by the AI bias tests (ESG point 5). It is not part of the default stack:
+
+```bash
+# generate the three PHOENIX_* values in .env first, e.g. with: openssl rand -hex 32
+docker compose --profile ai-eval up -d phoenix
+# UI: http://localhost:6006  (admin@localhost / <PHOENIX_ADMIN_PASSWORD>)
+```
+
+- Reachable only from this machine (`127.0.0.1`); the `frappe` container sends traces to `http://phoenix:6006/v1/traces`.
+- Authentication is on and anonymous telemetry is off; traces older than 90 days are deleted.
+- Use synthetic test data only: no real students' conversations.
+- Server license is Elastic License 2.0: internal use only, never give clients access to the UI.
+
 ## Volumes
 
 - `dev-elite-db-data` — MariaDB data (persistent across restarts)
 - `dev-elite-site-data` — Frappe bench directory (`/home/frappe/bench-data`), contains site files, node modules, Python venv
+- `dev-elite-phoenix-data` — Phoenix SQLite database (only with the `ai-eval` profile)
 
 ## Useful Commands
 
