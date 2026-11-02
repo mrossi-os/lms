@@ -4,6 +4,8 @@ A record is one evaluation of one variant of one case:
     {"case_id", "variant", "repeat", "overall_score": float | None,
      "criteria": {criterion name: score}}
 ``overall_score`` is None when the call failed; such records are ignored.
+The paired comparisons take a ``key`` to compare another numeric field of
+the records (e.g. a judge's rating) the same way.
 
 Every variant is compared with the control variant case by case (paired
 design): the gap of a case is the mean score of the variant minus the mean
@@ -33,21 +35,23 @@ _BOOTSTRAPS = 5000
 _SEED = 42
 
 
-def valid(records: list[dict]) -> list[dict]:
-	return [r for r in records if r.get("overall_score") is not None]
+def valid(records: list[dict], key: str = "overall_score") -> list[dict]:
+	return [r for r in records if r.get(key) is not None]
 
 
 def cell_means(records: list[dict], key: str = "overall_score") -> dict[tuple[str, str], float]:
 	"""Mean over the repeats, per (case_id, variant)."""
 	cells = defaultdict(list)
-	for r in valid(records):
+	for r in valid(records, key):
 		cells[(r["case_id"], r["variant"])].append(r[key])
 	return {cell: statistics.fmean(scores) for cell, scores in cells.items()}
 
 
-def case_gaps(records: list[dict], variant: str, control: str) -> dict[str, float]:
+def case_gaps(
+	records: list[dict], variant: str, control: str, key: str = "overall_score"
+) -> dict[str, float]:
 	"""Gap (variant - control) per case, for the cases both have scores for."""
-	means = cell_means(records)
+	means = cell_means(records, key)
 	cases = sorted({case for case, _ in means})
 	return {
 		case: means[(case, variant)] - means[(case, control)]
@@ -56,8 +60,13 @@ def case_gaps(records: list[dict], variant: str, control: str) -> dict[str, floa
 	}
 
 
-def variant_gap(records: list[dict], variant: str, control: str) -> dict:
-	gaps = case_gaps(records, variant, control)
+def variant_gap(records: list[dict], variant: str, control: str, key: str = "overall_score") -> dict:
+	return summarise_gaps(case_gaps(records, variant, control, key))
+
+
+def summarise_gaps(gaps: dict[str, float]) -> dict:
+	"""Mean, interval, worst case and p-value of per-case gaps (also for
+	values that are already relative, like a pairwise tone judgement)."""
 	values = list(gaps.values())
 	if not values:
 		return {"cases": 0}
