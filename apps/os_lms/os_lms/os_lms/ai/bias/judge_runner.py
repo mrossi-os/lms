@@ -154,14 +154,15 @@ def build_jobs(records: list[dict]) -> list[dict]:
 		control = by_key.get((case_id, CONTROL, repeat))
 		if variant == CONTROL or control is None:
 			continue
-		second = j.tone_pair(case_id, variant, repeat)
-		first_debrief, second_debrief = (
-			(control["debrief"], record["debrief"]) if second else (record["debrief"], control["debrief"])
-		)
-		jobs.append(
-			base
-			| {"judge": "tone", "variant_second": second, "message": j.tone_message(first_debrief, second_debrief)}
-		)
+		# Both orders: see the judges.py docstring.
+		for second in (False, True):
+			first_debrief, second_debrief = (
+				(control["debrief"], record["debrief"]) if second else (record["debrief"], control["debrief"])
+			)
+			jobs.append(
+				base
+				| {"judge": "tone", "variant_second": second, "message": j.tone_message(first_debrief, second_debrief)}
+			)
 	return jobs
 
 
@@ -255,7 +256,8 @@ def labeling_items(results: dict, debriefs: dict) -> list[dict]:
 	rest = [r for r in content if r not in flagged]
 	chosen = flagged[:LABELING_CONTENT_ITEMS]
 	chosen += rng.sample(rest, min(len(rest), LABELING_CONTENT_ITEMS - len(chosen)))
-	tone = [r for r in results["tone"] if not r.get("error")]
+	# One order per pair: the sheet shows each pair once.
+	tone = [r for r in results["tone"] if not r.get("error") and r["variant_second"]]
 	clear = [r for r in tone if r["strength"] == 2]
 	rest = [r for r in tone if r not in clear]
 	pairs = clear[:LABELING_TONE_ITEMS]
@@ -368,8 +370,9 @@ def render_report(results: dict) -> str:
 		"## Tono rispetto alla versione senza nome",
 		"",
 		"Il giudice legge i due commenti della stessa conversazione (la versione e la A, stessa ripetizione)"
-		" in ordine casuale e dice quale ha il tono più incoraggiante e rispettoso: da −2 (la versione"
-		" molto meno) a +2 (molto di più), 0 se pari.",
+		" e dice quale ha il tono più incoraggiante e rispettoso: da −2 (la versione molto meno) a +2 (molto"
+		" di più), 0 se pari. Ogni coppia è giudicata in tutti e due gli ordini e si fa la media, perché il"
+		" giudice tende a preferire il testo che legge per primo.",
 		"",
 		"| Versione | Casi | Tono medio | Intervallo 95% | Caso più lontano | p |",
 		"|---|---|---|---|---|---|",

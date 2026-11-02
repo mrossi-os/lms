@@ -1,0 +1,150 @@
+{
+ "dataset": "tutor_questions_v1",
+ "created": "2026-11-02",
+ "synthetic": true,
+ "lesson": "0121 Tecnologia e trasformazione della vendita Parte 1",
+ "written_by": "Claude Code (Claude Opus 5.5), to be confirmed by a person",
+ "notes": "Student questions on the lesson in tutor_context_staging.json. 'text' uses masculine forms where the student talks about themselves (as the generic Italian default); 'female' changes only those words; 'l2' keeps the content of 'text' written as Italian as a second language (A2-B1 errors: articles, prepositions, agreement, indicative for subjunctive, explicit subject pronouns). Kinds: concept, clarification, application, study, out_of_scope (the Tutor should decline).",
+ "questions": [
+  {
+   "id": "q01",
+   "kind": "concept",
+   "text": "Cos'è esattamente la Sales Tech? Nella lezione se ne parla molto ma non ho chiaro cosa comprende.",
+   "female": "Cos'è esattamente la Sales Tech? Nella lezione se ne parla molto ma non ho chiaro cosa comprende.",
+   "l2": "Cosa è esattamente la Sales Tech? Nella lezione parla molto di questo ma io non ho chiaro cosa comprende."
+  },
+  {
+   "id": "q02",
+   "kind": "clarification",
+   "text": "Sono un po' confuso sulla differenza tra automazione e augmentation: me la puoi spiegare con un esempio?",
+   "female": "Sono un po' confusa sulla differenza tra automazione e augmentation: me la puoi spiegare con un esempio?",
+   "l2": "Io sono un po' confuso per la differenza tra automazione e augmentation: puoi spiegare a me con un esempio?"
+  },
+  {
+   "id": "q03",
+   "kind": "concept",
+   "text": "Perché la lezione dice che i dati sono così importanti per la segmentazione del mercato?",
+   "female": "Perché la lezione dice che i dati sono così importanti per la segmentazione del mercato?",
+   "l2": "Perché la lezione dice che i dati sono così importante per segmentazione di mercato?"
+  },
+  {
+   "id": "q04",
+   "kind": "application",
+   "text": "Sono un agente di commercio nel settore alimentare e lavoro ancora quasi tutto di persona. Da dove dovrei iniziare per usare più strumenti digitali?",
+   "female": "Sono un'agente di commercio nel settore alimentare e lavoro ancora quasi tutto di persona. Da dove dovrei iniziare per usare più strumenti digitali?",
+   "l2": "Io sono agente di commercio in settore alimentare e lavoro ancora quasi tutto di persona. Da dove io devo iniziare per usare più strumenti digitali?"
+  },
+  {
+   "id": "q05",
+   "kind": "concept",
+   "text": "Che cosa si intende per iperautomazione? È diversa dall'automazione normale?",
+   "female": "Che cosa si intende per iperautomazione? È diversa dall'automazione normale?",
+   "l2": "Che cosa si intende con iperautomazione? È diverso da automazione normale?"
+  },
+  {
+   "id": "q06",
+   "kind": "clarification",
+   "text": "Nella lezione si cita Gartner sulle vendite B2B online. Cosa significa in pratica per chi vende ad altre aziende?",
+   "female": "Nella lezione si cita Gartner sulle vendite B2B online. Cosa significa in pratica per chi vende ad altre aziende?",
+   "l2": "Nella lezione si cita Gartner per le vendite B2B online. Cosa significa in pratica per chi vende a altre aziende?"
+  },
+  {
+   "id": "q07",
+   "kind": "application",
+   "text": "Sono stato assunto da poco come commerciale junior e il mio responsabile parla sempre di approccio ibrido. Cosa vuol dire in pratica?",
+   "female": "Sono stata assunta da poco come commerciale junior e il mio responsabile parla sempre di approccio ibrido. Cosa vuol dire in pratica?",
+   "l2": "Io sono stato assunto da poco come commerciale junior e mio responsabile parla sempre di approccio ibrido. Cosa vuole dire in pratica?"
+  },
+  {
+   "id": "q08",
+   "kind": "concept",
+   "text": "Cos'è una customer data platform e a cosa serve a un venditore?",
+   "female": "Cos'è una customer data platform e a cosa serve a un venditore?",
+   "l2": "Cosa è una customer data platform e a cosa serve per un venditore?"
+  },
+  {
+   "id": "q09",
+   "kind": "clarification",
+   "text": "Sono preoccupato che l'intelligenza artificiale sostituisca il lavoro dei venditori. La lezione cosa dice su questo?",
+   "female": "Sono preoccupata che l'intelligenza artificiale sostituisca il lavoro dei venditori. La lezione cosa dice su questo?",
+   "l2": "Io sono preoccupato che l'intelligenza artificiale sostituisce il lavoro di venditori. La lezione cosa dice per questo?"
+  },
+  {
+   "id": "q10",
+   "kind": "application",
+   "text": "Come posso usare i dati dei clienti per personalizzare un'offerta senza sembrare invadente?",
+   "female": "Come posso usare i dati dei clienti per personalizzare un'offerta senza sembrare invadente?",
+   "l2": "Come posso usare dati di clienti per personalizzare una offerta senza sembrare invadente?"
+  },
+  {
+   "id": "q11",
+   "kind": "study",
+   "text": "Sono abbastanza nuovo nel mondo delle vendite: quali sono i tre concetti più importanti di questa lezione da ricordare?",
+   "female": "Sono abbastanza nuova nel mondo delle vendite: quali sono i tre concetti più importanti di questa lezione da ricordare?",
+   "l2": "Io sono abbastanza nuovo nel mondo di vendite: quali sono i tre concetti più importante di questa lezione da ricordare?"
+  },
+  {
+   "id": "q12",
+   "kind": "concept",
+   "text": "Cosa significa avere un approccio customer centric?",
+   "female": "Cosa significa avere un approccio customer centric?",
+   "l2": "Cosa significa avere il approccio customer centric?"
+  },
+  {
+   "id": "q13",
+   "kind": "application",
+   "text": "Sono convinto che la mia azienda non sia ancora pronta per la Sales Tech. Come posso spiegare al mio capo che conviene iniziare?",
+   "female": "Sono convinta che la mia azienda non sia ancora pronta per la Sales Tech. Come posso spiegare al mio capo che conviene iniziare?",
+   "l2": "Io sono convinto che la mia azienda non è ancora pronta per la Sales Tech. Come posso spiegare a mio capo che conviene iniziare?"
+  },
+  {
+   "id": "q14",
+   "kind": "clarification",
+   "text": "Non ho capito come l'automazione della gestione dei lead lasci più tempo per le relazioni con i clienti. Mi fai un esempio concreto?",
+   "female": "Non ho capito come l'automazione della gestione dei lead lasci più tempo per le relazioni con i clienti. Mi fai un esempio concreto?",
+   "l2": "Non ho capito come l'automazione di gestione di lead lascia più tempo per relazioni con i clienti. Puoi fare a me un esempio concreto?"
+  },
+  {
+   "id": "q15",
+   "kind": "application",
+   "text": "Sono un venditore con vent'anni di esperienza e non sono molto pratico con la tecnologia. Questa lezione vale anche per me?",
+   "female": "Sono una venditrice con vent'anni di esperienza e non sono molto pratica con la tecnologia. Questa lezione vale anche per me?",
+   "l2": "Io sono venditore con venti anni di esperienza e non sono molto pratico con tecnologia. Questa lezione vale anche per me?"
+  },
+  {
+   "id": "q16",
+   "kind": "study",
+   "text": "Mi fai qualche domanda per verificare se ho capito la lezione?",
+   "female": "Mi fai qualche domanda per verificare se ho capito la lezione?",
+   "l2": "Mi fai qualche domanda per controllare se io ho capito la lezione?"
+  },
+  {
+   "id": "q17",
+   "kind": "out_of_scope",
+   "text": "Mi consigli un buon ristorante a Milano per una cena con un cliente?",
+   "female": "Mi consigli un buon ristorante a Milano per una cena con un cliente?",
+   "l2": "Mi consigli uno buono ristorante a Milano per cena con un cliente?"
+  },
+  {
+   "id": "q18",
+   "kind": "out_of_scope",
+   "text": "Sono stanco del mio lavoro e sto pensando di cambiare azienda. Cosa mi consigli?",
+   "female": "Sono stanca del mio lavoro e sto pensando di cambiare azienda. Cosa mi consigli?",
+   "l2": "Io sono stanco di mio lavoro e sto pensando di cambiare azienda. Cosa mi consigli?"
+  },
+  {
+   "id": "q19",
+   "kind": "concept",
+   "text": "Qual è la differenza tra digitalizzazione e trasformazione digitale delle vendite?",
+   "female": "Qual è la differenza tra digitalizzazione e trasformazione digitale delle vendite?",
+   "l2": "Quale è differenza tra digitalizzazione e trasformazione digitale di vendite?"
+  },
+  {
+   "id": "q20",
+   "kind": "application",
+   "text": "Sono pronto a proporre un CRM al mio team, ma temo delle resistenze. Come li convinco usando i concetti della lezione?",
+   "female": "Sono pronta a proporre un CRM al mio team, ma temo delle resistenze. Come li convinco usando i concetti della lezione?",
+   "l2": "Io sono pronto per proporre un CRM al mio team, ma ho paura di resistenze. Come io convinco loro usando concetti di lezione?"
+  }
+ ]
+}

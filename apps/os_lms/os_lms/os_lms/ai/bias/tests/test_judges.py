@@ -81,12 +81,6 @@ class TestJudges(UnitTestCase):
         slight = json.dumps({"warmer": "1", "strength": 0, "note": "n"})
         self.assertEqual(j.parse_tone(slight, variant_second=False)["tone"], 1)
 
-    def test_tone_order_is_deterministic_and_balanced(self):
-        orders = [j.tone_pair(f"c{c:02d}", var, rep) for c in range(1, 21) for var in "BCDE" for rep in (1, 2, 3)]
-        self.assertEqual(orders, [j.tone_pair(f"c{c:02d}", var, rep) for c in range(1, 21) for var in "BCDE"
-                                  for rep in (1, 2, 3)])
-        self.assertTrue(0.35 < sum(orders) / len(orders) < 0.65)
-
     def test_gender_needs_words_from_the_coach_text(self):
         judged = j.parse_content(CONTENT_OK)
         self.assertEqual(j.checked_gender(judged, DEBRIEF), "neutro")
@@ -120,8 +114,11 @@ class TestJudgeRunner(UnitTestCase):
         jobs = judge_runner.build_jobs(_coach_records())
         content = [job for job in jobs if job["judge"] == "content"]
         tone = [job for job in jobs if job["judge"] == "tone"]
-        self.assertEqual((len(content), len(tone)), (16, 12))
+        self.assertEqual((len(content), len(tone)), (16, 24))
         self.assertNotIn("A", {job["variant"] for job in tone})
+        # Every pair in both orders.
+        orders = {(job["case_id"], job["variant"], job["repeat"], job["variant_second"]) for job in tone}
+        self.assertEqual(len(orders), 24)
 
     def test_judge_retries_an_invalid_reply_once(self):
         provider = _ScriptedProvider("not json", CONTENT_OK)
