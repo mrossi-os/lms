@@ -29,6 +29,9 @@ dependencies = [
 [project.optional-dependencies]
 # Remote debugging for the Docker dev setup (os_lms/debug.py); never in production.
 dev = ["debugpy"]
+# Arize Phoenix tracing for the AI bias tests (ai/utils/llm/tracing.py); dev and
+# staging only. Keep in step with the Phoenix server in docker/docker-compose.yml.
+tracing = ["arize-phoenix-otel>=0.17.2,<0.18"]
 provider-openai = ["openai>=1.50"]
 provider-anthropic = ["anthropic>=0.40"]
 provider-gemini = ["google-genai>=0.3"]

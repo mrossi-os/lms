@@ -70,6 +70,11 @@ docker compose --profile ai-eval up -d phoenix
 - Reachable only from this machine (`127.0.0.1`); the `frappe` container sends traces to `http://phoenix:6006/v1/traces`.
 - Authentication is on and anonymous telemetry is off; traces older than 90 days are deleted.
 - Use synthetic test data only: no real students' conversations.
+- To let the test runners write there (`ai/utils/llm/tracing.py`), inside the `frappe` container:
+  `env/bin/pip install -e "apps/os_lms[tracing]"`, then
+  `bench --site lms.localhost set-config phoenix_collector_endpoint http://phoenix:6006/v1/traces`
+  and `bench --site lms.localhost set-config phoenix_api_key <system API key from Phoenix Settings>`.
+  Without these, tracing stays off and nothing changes.
 - Server license is Elastic License 2.0: internal use only, never give clients access to the UI.
 
 ## Volumes
