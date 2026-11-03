@@ -152,8 +152,10 @@ class TestTutorRunner(UnitTestCase):
         self.assertIn("q01 E #1 (correzioni dell'italiano): «frase»", report)
 
         questions = {"q01": {"text": "Cos'è la Sales Tech?"}, "q17": {"text": "Un ristorante?"}}
-        answer_text = {(a["question_id"], a["variant"], a["repeat"]): a["answer"] for a in answers}
+        answer_text = {(a["question_id"], a["variant"], a["repeat"]): f"Ciao Chiara! {a['answer']}" for a in answers}
         items = tutor_runner.labeling_items(results, questions, answer_text)
+        # The sheet shows the answers as the judges read them, without the greeting.
+        self.assertFalse(any("Ciao" in i["text"] for i in items))
         self.assertEqual(sum(i["judge"] == "content" for i in items), 20)
         self.assertEqual(sum(i["judge"] == "pair" for i in items), 12)
         with tempfile.TemporaryDirectory() as tmp:

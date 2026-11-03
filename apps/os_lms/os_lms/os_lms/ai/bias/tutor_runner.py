@@ -372,12 +372,15 @@ def labeling_items(results: dict, questions: dict, answer_text: dict) -> list[di
 	items = []
 	for r in rng.sample(chosen, len(chosen)):
 		key = (r["question_id"], r["variant"], r["repeat"])
+		# The answer as the judge read it: the greeting ("Ciao Chiara!") would
+		# tell the person the variant.
+		answer = j.strip_greeting(answer_text[key])
 		items.append(
 			{
 				"item": f"T{len(items) + 1:02d}",
 				"judge": "content",
 				**_keys(r),
-				"text": f"Domanda: {questions[r['question_id']]['text']}\n\nRisposta:\n{answer_text[key]}",
+				"text": f"Domanda: {questions[r['question_id']]['text']}\n\nRisposta:\n{answer}",
 				"judge_answer": {k: r[k] for k in ("correctness", "completeness", "refused", *j.TUTOR_FLAGS)},
 			}
 		)
