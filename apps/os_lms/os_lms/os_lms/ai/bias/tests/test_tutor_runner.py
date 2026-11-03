@@ -5,6 +5,7 @@ import csv
 import json
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 from frappe.tests import UnitTestCase
 
@@ -170,3 +171,49 @@ class TestTutorRunner(UnitTestCase):
             rows = list(csv.reader(path.open(encoding="utf-8-sig"), delimiter=";"))
         self.assertEqual(len(rows), 1 + 32)
         self.assertEqual(rows[1][3:], [""] * 12)
+        # A re-judge that keeps the pairs puts only answers on the sheet.
+        items = tutor_runner.labeling_items(results, questions, answer_text, with_pairs=False)
+        self.assertEqual({i["judge"] for i in items}, {"content"})
+
+        results |= {"rejudged_from": "old.json", "judge_date": "2026-11-04 10:00", "reasoning_effort": "none",
+                    "pairs_from": {"run": "old.json", "judges_version": "bias-judges.v4", "kept": 28, "judged_again": 4}}
+        report = tutor_runner.render_report(results)
+        self.assertIn("ragionamento spento", report)
+        self.assertIn("28 ripresi da `old.json` (istruzioni bias-judges.v4, ragionamento attivo), 4 falliti", report)
+
+    def test_kept_pairs_are_not_judged_again(self):
+        jobs = [{"judge": "content", "question_id": "q01", "variant": "B", "repeat": 1},
+                {"judge": "pair", "question_id": "q01", "variant": "B", "repeat": 1, "variant_second": False},
+                {"judge": "pair", "question_id": "q01", "variant": "B", "repeat": 1, "variant_second": True}]
+        kept = [{"question_id": "q01", "variant": "B", "repeat": 1, "variant_second": True}]
+        left = tutor_runner.skip_kept_pairs(jobs, kept)
+        self.assertEqual([(job["judge"], job.get("variant_second")) for job in left],
+                         [("content", None), ("pair", False)])
+
+    def test_rejudge_writes_new_files_only(self):
+        previous = {key: f"{key}-value" for key in tutor_runner.RUN_KEYS} | {
+            "run_id": "20261102-164526_official", "judges_version": "bias-judges.v4", "content": [],
+            "pairs": [{"question_id": "q01", "variant": "B", "repeat": 1, "variant_second": True, "error": None},
+                      {"question_id": "q01", "variant": "B", "repeat": 2, "variant_second": True, "error": "boom"}],
+            "labeling": [],
+        }
+        with tempfile.TemporaryDirectory() as tmp, patch.object(tutor_runner, "RESULTS_DIR", Path(tmp)):
+            (Path(tmp) / "run.json").write_text(json.dumps(previous))
+            with self.assertRaises(ValueError):
+                tutor_runner.run_tutor_judges("run.json", "V5 new")
+            with self.assertRaises(ValueError):
+                tutor_runner.run_tutor_judges("run.json", "v5", only="pairs")
+            with patch.object(tutor_runner, "judge_and_report", return_value="report") as judge_and_report:
+                tutor_runner.run_tutor_judges("run.json", "v5", only="content")
+            results, base = judge_and_report.call_args.args
+            self.assertEqual(base, Path(tmp) / "run_v5")
+            self.assertEqual(results["run_id"], "20261102-164526_official_v5")
+            self.assertEqual(results["rejudged_from"], "run.json")
+            # The earlier judgements are not carried over: only what the Tutor said.
+            self.assertNotIn("content", results)
+            self.assertEqual(results["pairs_from"]["kept"], 1)
+            self.assertEqual(len(judge_and_report.call_args.kwargs["keep_pairs"]), 1)
+            # An earlier re-judge with the same label is never overwritten.
+            (Path(tmp) / "run_v5_labeling.csv").write_text("filled by hand")
+            with self.assertRaises(FileExistsError):
+                tutor_runner.run_tutor_judges("run.json", "v5", only="content")

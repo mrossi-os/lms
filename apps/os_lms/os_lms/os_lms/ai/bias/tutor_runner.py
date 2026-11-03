@@ -26,6 +26,7 @@ from __future__ import annotations
 import csv
 import json
 import random
+import re
 import statistics
 import time
 from collections import Counter, defaultdict
@@ -54,6 +55,11 @@ MEASURES = {
 LABELING_CONTENT_ITEMS = 24
 LABELING_PAIR_ITEMS = 12
 _SEED = 42
+# What a run asked and got from the Tutor: kept when only the judges run again.
+RUN_KEYS = (
+	"run_id", "date", "dataset", "synthetic", "course", "lesson", "provider", "model",
+	"prompt", "repeats", "ask_seconds", "answers",
+)
 
 
 def question_variants(question: dict) -> dict[str, str]:
@@ -149,17 +155,47 @@ def run_tutor_bias_test(
 	return judge_and_report(results, RESULTS_DIR / f"{dataset['dataset']}_{run_id}", workers=workers)
 
 
-def run_tutor_judges(tutor_results: str, workers: int = 4) -> str:
+def run_tutor_judges(tutor_results: str, label: str, *, only: str | None = None, workers: int = 4) -> str:
 	"""Judge again the answers of an existing run (a file name in results/),
 	without asking the Tutor again: e.g. after a change to the judges.
-	Overwrites the run's judgements, report and labeling sheet."""
+	Writes <run>_<label>.json/.md/_labeling.csv and refuses to overwrite:
+	the earlier run's sheet may be filled by hand and is checked against
+	its JSON. With only="content" the pair judgements are copied from the
+	earlier run, the failed ones are judged again, and the sheet holds
+	answers only. Returns the report path."""
+	if only not in (None, "content"):
+		raise ValueError(f"only must be None or 'content', not {only!r}")
+	if not re.fullmatch(r"[a-z0-9-]+", label):
+		raise ValueError(f"label must be lowercase letters, digits and dashes, not {label!r}")
 	path = RESULTS_DIR / tutor_results
-	return judge_and_report(json.loads(path.read_text()), path.with_suffix(""), workers=workers)
+	previous = json.loads(path.read_text())
+	base = path.parent / f"{path.stem}_{label}"
+	existing = [p.name for p in output_paths(base) if p.exists()]
+	if existing:
+		raise FileExistsError(f"Would overwrite {', '.join(existing)}: pick another label")
+	results = {key: previous[key] for key in RUN_KEYS}
+	results["run_id"] = f"{previous['run_id']}_{label}"
+	results["rejudged_from"] = tutor_results
+	keep_pairs = None
+	if only == "content":
+		keep_pairs = [p for p in previous["pairs"] if not p.get("error")]
+		results["pairs_from"] = {
+			"run": tutor_results,
+			"judges_version": previous["judges_version"],
+			"reasoning_effort": previous.get("reasoning_effort"),
+			"kept": len(keep_pairs),
+		}
+	return judge_and_report(results, base, workers=workers, keep_pairs=keep_pairs)
 
 
-def judge_and_report(results: dict, base, *, workers: int) -> str:
+def output_paths(base) -> list:
+	return [base.with_suffix(".json"), base.with_suffix(".md"), base.parent / f"{base.name}_labeling.csv"]
+
+
+def judge_and_report(results: dict, base, *, workers: int, keep_pairs: list[dict] | None = None) -> str:
 	"""Judge the answers in ``results``, analyse and write
-	<base>.json, <base>.md and <base>_labeling.csv. Returns the report path."""
+	<base>.json, <base>.md and <base>_labeling.csv. Returns the report path.
+	``keep_pairs``: pair judgements to reuse; only the missing pairs are judged."""
 	from os_lms.os_lms.ai.utils.llm import resolve_provider
 	from os_lms.os_lms.ai.utils.llm.tracing import flush_traces, wrap_for_tracing
 
@@ -167,8 +203,10 @@ def judge_and_report(results: dict, base, *, workers: int) -> str:
 	context = json.loads(CONTEXT_FILE.read_text())
 	by_id = {q["id"]: q for q in dataset["questions"]}
 	answers = results["answers"]
-	judge_provider = resolve_provider("chat", override=j.JUDGE_PROVIDER)
+	judge_provider = j.without_thinking(resolve_provider("chat", override=j.JUDGE_PROVIDER))
 	judge_jobs = build_judge_jobs(answers, by_id, context["current_lesson_content"])
+	if keep_pairs is not None:
+		judge_jobs = skip_kept_pairs(judge_jobs, keep_pairs)
 	for job in judge_jobs:
 		# Wrapped here: wrap_for_tracing reads frappe.conf, bound to this thread.
 		job["provider"] = wrap_for_tracing(
@@ -183,7 +221,7 @@ def judge_and_report(results: dict, base, *, workers: int) -> str:
 	flush_traces()
 
 	answer_text = {(a["question_id"], a["variant"], a["repeat"]): a["answer"] for a in answers}
-	content, pairs = [], []
+	content, pairs = [], list(keep_pairs or [])
 	for job, outcome in zip(judge_jobs, outcomes):
 		if job["judge"] == "content":
 			metrics = j.tutor_text_metrics(answer_text[(job["question_id"], job["variant"], job["repeat"])])
@@ -195,12 +233,17 @@ def judge_and_report(results: dict, base, *, workers: int) -> str:
 		"judges_version": j.JUDGES_VERSION,
 		"judge_provider": judge_provider.name,
 		"judge_model": j.JUDGE_MODEL,
+		"reasoning_effort": j.JUDGE_REASONING_EFFORT,
+		"judge_date": f"{datetime.now():%Y-%m-%d %H:%M}",
 		"judge_seconds": round(judge_seconds),
 		"content": content,
 		"pairs": pairs,
 	}
+	if keep_pairs is not None:
+		results["pairs_from"]["judged_again"] = len(pairs) - len(keep_pairs)
 	results["analysis"] = analyse(results)
-	results["labeling"] = labeling_items(results, by_id, answer_text)
+	# Pairs copied from an earlier run were checked on that run's sheet.
+	results["labeling"] = labeling_items(results, by_id, answer_text, with_pairs=keep_pairs is None)
 	base.with_suffix(".json").write_text(json.dumps(results, ensure_ascii=False, indent=1) + "\n")
 	write_labeling_sheet(base.parent / f"{base.name}_labeling.csv", results["labeling"])
 	report = base.with_suffix(".md")
@@ -244,6 +287,16 @@ def build_judge_jobs(answers: list[dict], questions: dict, lesson: str) -> list[
 				}
 			)
 	return jobs
+
+
+def skip_kept_pairs(jobs: list[dict], kept: list[dict]) -> list[dict]:
+	"""Drop the pair jobs whose judgement (same pair, same order) is kept."""
+	done = {(*_keys(p).values(), p["variant_second"]) for p in kept}
+	return [
+		job
+		for job in jobs
+		if job["judge"] == "content" or (*_keys(job).values(), job["variant_second"]) not in done
+	]
 
 
 def judge(job: dict) -> dict:
@@ -354,7 +407,7 @@ def _keys(job: dict) -> dict:
 	return {key: job[key] for key in ("question_id", "variant", "repeat")}
 
 
-def labeling_items(results: dict, questions: dict, answer_text: dict) -> list[dict]:
+def labeling_items(results: dict, questions: dict, answer_text: dict, *, with_pairs: bool = True) -> list[dict]:
 	"""Items for the hand check, like judge_runner.labeling_items: every
 	flagged or refused answer first, then a random fill; pairs with a clear
 	difference first. The variant stays hidden from the person."""
@@ -364,7 +417,7 @@ def labeling_items(results: dict, questions: dict, answer_text: dict) -> list[di
 	rest = [r for r in content if r not in first]
 	chosen = first + rng.sample(rest, min(len(rest), LABELING_CONTENT_ITEMS - len(first)))
 	# One order per pair: the sheet shows each pair once.
-	pairs = [r for r in results["pairs"] if not r.get("error") and r["variant_second"]]
+	pairs = [r for r in results["pairs"] if with_pairs and not r.get("error") and r["variant_second"]]
 	clear = [r for r in pairs if 2 in (r["warmer_strength"], r["helpful_strength"])][:LABELING_PAIR_ITEMS]
 	rest = [r for r in pairs if r not in clear]
 	chosen_pairs = clear + rng.sample(rest, min(len(rest), LABELING_PAIR_ITEMS - len(clear)))
@@ -450,7 +503,9 @@ def render_report(results: dict) -> str:
 		f" (temperatura 0,7), {results['repeats']} ripetizioni per domanda",
 		f"- Prompt del Tutor: {results['prompt']['version']}, SHA-256"
 		f" `{results['prompt']['system_template_sha256'][:16]}…`",
-		f"- Giudice: {results['judge_provider']} / {results['judge_model']}, istruzioni {results['judges_version']}",
+		f"- Giudice: {results['judge_provider']} / {results['judge_model']}, istruzioni {results['judges_version']},"
+		f" {j.reasoning_label(results)}",
+		*_rejudge_lines(results),
 		f"- Risposte: {a['answers']}, fallite {a['answers_failed']}, token {a['tokens']}; giudizi"
 		f" {a['judgements']}, falliti {a['judgements_failed']}; durata {_seconds(results.get('ask_seconds'))} le"
 		f" risposte, {_seconds(results.get('judge_seconds'))} i giudizi",
@@ -544,6 +599,19 @@ def render_report(results: dict) -> str:
 		lines += ["", "## Chiamate fallite", ""]
 		lines += [f"- {r['question_id']} {r['variant']} #{r['repeat']}: {r['error']}" for r in failed]
 	return "\n".join(lines) + "\n"
+
+
+def _rejudge_lines(results: dict) -> list[str]:
+	if "rejudged_from" not in results:
+		return []
+	lines = [f"- Giudizi rifatti il {results['judge_date']} sulle risposte di `{results['rejudged_from']}`"]
+	kept = results.get("pairs_from")
+	if kept:
+		lines.append(
+			f"- Confronti a coppie: {kept['kept']} ripresi da `{kept['run']}` (istruzioni"
+			f" {kept['judges_version']}, {j.reasoning_label(kept)}), {kept['judged_again']} falliti là e rifatti qui"
+		)
+	return lines
 
 
 def _seconds(value: int | None) -> str:

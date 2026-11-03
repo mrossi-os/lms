@@ -10,7 +10,10 @@ from frappe.tests import UnitTestCase
 
 from os_lms.os_lms.ai.bias import judge_runner
 from os_lms.os_lms.ai.bias import judges as j
-from os_lms.os_lms.ai.utils.llm.provider import ChatResponse, Usage
+from os_lms.os_lms.ai.utils.llm.config import ProviderConfig
+from os_lms.os_lms.ai.utils.llm.provider import ChatMessage, ChatResponse, Usage
+from os_lms.os_lms.ai.utils.llm.providers.deepseek import DeepSeekProvider
+from os_lms.os_lms.ai.utils.llm.providers.gemini import GeminiProvider
 
 DEBRIEF = {
     "overall_score": 72,
@@ -178,3 +181,28 @@ class TestJudgeRunner(UnitTestCase):
         sheet = "\n".join(";".join(row) for row in rows)
         for hidden in ("Matteo", "Ahmed", "variant", "judge_answer"):
             self.assertNotIn(hidden, sheet)
+
+
+class TestWithoutThinking(UnitTestCase):
+    def test_judge_requests_turn_thinking_off(self):
+        provider = j.without_thinking(GeminiProvider(ProviderConfig(name="gemini", api_key="test")))
+        self.assertEqual(provider.name, "gemini")
+        payload = provider._build_payload(
+            messages=[ChatMessage(role="user", content="ciao")], system=None, model=j.JUDGE_MODEL,
+            temperature=0.0, top_p=1.0, max_tokens=10, stop=None, response_format=None, stream=False,
+        )
+        self.assertEqual(payload["reasoning_effort"], "none")
+        # The adapter the Coach and the Tutor use is left as it is.
+        plain = GeminiProvider(ProviderConfig(name="gemini", api_key="test"))._build_payload(
+            messages=[ChatMessage(role="user", content="ciao")], system=None, model=j.JUDGE_MODEL,
+            temperature=0.0, top_p=1.0, max_tokens=10, stop=None, response_format=None, stream=False,
+        )
+        self.assertNotIn("reasoning_effort", plain)
+
+    def test_other_providers_are_refused(self):
+        with self.assertRaises(ValueError):
+            j.without_thinking(DeepSeekProvider(ProviderConfig(name="deepseek", api_key="test")))
+
+    def test_reasoning_label(self):
+        self.assertEqual(j.reasoning_label({"reasoning_effort": "none"}), "ragionamento spento")
+        self.assertEqual(j.reasoning_label({}), "ragionamento attivo")

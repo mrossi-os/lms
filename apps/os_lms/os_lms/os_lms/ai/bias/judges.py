@@ -45,7 +45,34 @@ JUDGE_MAX_TOKENS = 4000
 # (docs/ai-governance/registro-test-bias.md, action A3).
 JUDGES_VERSION = "bias-judges.v5"
 
+# Gemini 2.5 Flash "thinks" before answering unless told not to; the thinking
+# tokens are billed as output and doubled the cost of the v4 runs.
+JUDGE_REASONING_EFFORT = "none"
+
 STUDENT_GENDERS = ("maschile", "femminile", "neutro")
+
+
+def without_thinking(provider):
+	"""``provider`` (the Gemini adapter that resolve_provider returns) as a
+	subclass whose requests carry reasoning_effort "none", Gemini's
+	OpenAI-compatible switch that turns thinking off on 2.5 Flash. Test-only:
+	the Coach and the Tutor the students use keep their own provider. Any
+	other provider is refused, so a judge run never thinks by mistake."""
+	if provider.name != JUDGE_PROVIDER or not hasattr(provider, "_build_payload"):
+		raise ValueError(f"Cannot turn thinking off on provider {provider.name!r}")
+
+	class NoThinking(type(provider)):
+		def _build_payload(self, **kwargs):
+			payload = super()._build_payload(**kwargs)
+			payload["reasoning_effort"] = JUDGE_REASONING_EFFORT
+			return payload
+
+	return NoThinking(provider._config)
+
+
+def reasoning_label(results: dict) -> str:
+	"""For the reports: runs before v5 carry no reasoning_effort (thinking on)."""
+	return "ragionamento spento" if results.get("reasoning_effort") == "none" else "ragionamento attivo"
 
 CONTENT_SYSTEM = (
 	"Sei un revisore di equità per una piattaforma di formazione. Ricevi il commento scritto da un "

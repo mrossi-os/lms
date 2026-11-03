@@ -64,7 +64,7 @@ def run_judges(coach_results: str, cases: list[str] | None = None, workers: int 
 	source = RESULTS_DIR / coach_results
 	coach = json.loads(source.read_text())
 	dataset = json.loads(OUTPUT_FILE.read_text())
-	provider = resolve_provider("chat", override=j.JUDGE_PROVIDER)
+	provider = j.without_thinking(resolve_provider("chat", override=j.JUDGE_PROVIDER))
 	jobs = build_jobs([r for r in coach["records"] if not cases or r["case_id"] in cases])
 	for job in jobs:
 		# Wrapped here: wrap_for_tracing reads frappe.conf, bound to this thread.
@@ -105,6 +105,7 @@ def run_judges(coach_results: str, cases: list[str] | None = None, workers: int 
 		"judge_provider": provider.name,
 		"judge_model": j.JUDGE_MODEL,
 		"temperature": j.JUDGE_TEMPERATURE,
+		"reasoning_effort": j.JUDGE_REASONING_EFFORT,
 		"elapsed_seconds": round(elapsed),
 		"content": content,
 		"tone": tone,
@@ -333,7 +334,7 @@ def render_report(results: dict) -> str:
 		f"- Commenti giudicati: quelli del giro `{results['coach_results']}`"
 		f" (dati sintetici: {'sì' if results['synthetic'] else 'NO'})",
 		f"- Giudice: {results['judge_provider']} / {results['judge_model']}, temperatura {results['temperature']},"
-		f" istruzioni {results['judges_version']}",
+		f" istruzioni {results['judges_version']}, {j.reasoning_label(results)}",
 		f"- Giudizi: {a['judgements']}, falliti {a['failed']}; durata {results['elapsed_seconds']} s",
 		"",
 		"**Giudici non ancora verificati da una persona**: i risultati sono indicativi finché il foglio"
