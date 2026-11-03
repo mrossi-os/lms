@@ -133,9 +133,9 @@ Lo stesso `ChatSession` viene riusato dentro `TranscriptDrawer` per mostrare con
 
 Il frontend polla via `get_debrief(session_id)` e mostra i risultati in `SimulationDebrief.vue`.
 
-### 5. Review docente (opzionale)
+### 5. Versione del docente ed esito
 
-`instructor_review_debrief(session_id, review)` permette al docente di aggiungere una nota sopra il debrief AI (campo `instructor_review` su `LMSA Simulation Debrief`).
+Il debrief dell'AI non si modifica. Il docente crea la sua versione con `instructor_start_review(session_id)` (copia in bozza dei contenuti dell'AI), la modifica con `instructor_save_review(session_id, review, publish)` e la pubblica allo studente; una bozza si elimina con `instructor_discard_review(session_id)`. Nelle simulazioni con la casella "Simulazione con esito" (`has_human_outcome` sullo scenario) decide anche superata / non superata, con motivazione obbligatoria se non superata, e senza esito non può pubblicare. Logica e campi in `simulations/teacher_review.py`; piano in `docs/ai-simulator/PIANO-esito-e-punteggio-coach.md`.
 
 ## Flusso B — Docente che crea/testa scenari
 
@@ -293,7 +293,7 @@ Vedi `runner.py` per il loop di alternanza studente/personaggio, `role_player.py
 - `end_session(session_id, reason)`
 - `get_session(session_id)`
 - `get_debrief(session_id)` / `generate_debrief(session_id)` (manuale)
-- `instructor_review_debrief(session_id, review)`
+- `instructor_start_review(session_id)` / `instructor_save_review(session_id, review, publish)` / `instructor_discard_review(session_id)`
 - `list_my_scenarios(course?)` / `list_scenarios(course?)`
 - `get_scenario(name)` / `save_scenario(payload)` / `delete_scenario(name)`
 - `list_my_evaluation_schemas()` / `get_evaluation_schema(name)` / `save_evaluation_schema(payload)` / `delete_evaluation_schema(name)`

@@ -13,12 +13,6 @@
   "status",
   "overall_score",
   "passed",
-  "section_score_override",
-  "ai_overall_score",
-  "score_override_reason",
-  "column_break_score_override",
-  "score_overridden_by",
-  "score_overridden_at",
   "section_scores",
   "criterion_scores",
   "section_qualitative",
@@ -28,13 +22,29 @@
   "behavioral_analysis",
   "section_recommendations",
   "recommended_content",
+  "section_teacher_version",
+  "review_status",
+  "review_overall_score",
+  "column_break_teacher_version",
+  "review_published_by",
+  "review_published_at",
+  "instructor_reviewed_by",
+  "instructor_reviewed_at",
+  "section_teacher_content",
+  "instructor_review",
+  "review_criterion_scores",
+  "review_strengths",
+  "review_improvements",
+  "section_outcome",
+  "outcome",
+  "outcome_reason",
+  "column_break_outcome",
+  "outcome_decided_by",
+  "outcome_decided_at",
   "section_audit",
   "debrief_provider_used",
   "debrief_model_used",
   "prompt_version",
-  "instructor_review",
-  "instructor_reviewed_by",
-  "instructor_reviewed_at",
   "section_raw",
   "raw_llm_response"
  ],
@@ -97,7 +107,7 @@
    "fieldname": "overall_score",
    "fieldtype": "Float",
    "in_list_view": 1,
-   "label": "Overall Score (0-100)",
+   "label": "AI Score (0-100)",
    "precision": "1",
    "read_only": 1
   },
@@ -107,44 +117,8 @@
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Passed",
-   "read_only": 1
-  },
-  {
-   "fieldname": "section_score_override",
-   "fieldtype": "Section Break",
-   "label": "Instructor Score Correction",
-   "collapsible": 1
-  },
-  {
-   "description": "Score the AI gave, kept unchanged when an instructor corrects the overall score.",
-   "fieldname": "ai_overall_score",
-   "fieldtype": "Float",
-   "label": "AI Score (0-100)",
-   "precision": "1",
-   "read_only": 1
-  },
-  {
-   "fieldname": "score_override_reason",
-   "fieldtype": "Small Text",
-   "label": "Correction Reason",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_score_override",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "score_overridden_by",
-   "fieldtype": "Link",
-   "label": "Corrected By",
-   "options": "User",
-   "read_only": 1
-  },
-  {
-   "fieldname": "score_overridden_at",
-   "fieldtype": "Datetime",
-   "label": "Corrected At",
-   "read_only": 1
+   "read_only": 1,
+   "description": "Set from the outcome a person decided, once the teacher version is published. Never derived from the AI score."
   },
   {
    "fieldname": "section_scores",
@@ -201,6 +175,123 @@
    "read_only": 1
   },
   {
+   "fieldname": "section_teacher_version",
+   "fieldtype": "Section Break",
+   "label": "Teacher Version"
+  },
+  {
+   "fieldname": "review_status",
+   "fieldtype": "Select",
+   "label": "Teacher Version Status",
+   "options": "\nDraft\nPublished",
+   "read_only": 1,
+   "description": "Students see the teacher version only once it is published."
+  },
+  {
+   "fieldname": "review_overall_score",
+   "fieldtype": "Float",
+   "label": "Teacher Score (0-100)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_teacher_version",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "review_published_by",
+   "fieldtype": "Link",
+   "label": "Published By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "review_published_at",
+   "fieldtype": "Datetime",
+   "label": "Published At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "instructor_reviewed_by",
+   "fieldtype": "Link",
+   "label": "Last Edited By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "instructor_reviewed_at",
+   "fieldtype": "Datetime",
+   "label": "Last Edited At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_teacher_content",
+   "fieldtype": "Section Break",
+   "label": "Teacher Version Content"
+  },
+  {
+   "fieldname": "instructor_review",
+   "fieldtype": "Long Text",
+   "label": "Teacher Comment",
+   "read_only": 1
+  },
+  {
+   "fieldname": "review_criterion_scores",
+   "fieldtype": "Table",
+   "label": "Teacher Criterion Scores",
+   "options": "LMSA Criterion Score",
+   "read_only": 1
+  },
+  {
+   "fieldname": "review_strengths",
+   "fieldtype": "Table",
+   "label": "Teacher Strengths",
+   "options": "LMSA Debrief Strength",
+   "read_only": 1
+  },
+  {
+   "fieldname": "review_improvements",
+   "fieldtype": "Table",
+   "label": "Teacher Improvements",
+   "options": "LMSA Debrief Improvement",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_outcome",
+   "fieldtype": "Section Break",
+   "label": "Outcome"
+  },
+  {
+   "fieldname": "outcome",
+   "fieldtype": "Select",
+   "label": "Outcome",
+   "options": "\nPassed\nNot Passed",
+   "read_only": 1,
+   "description": "Decided by a person, only on simulations with an outcome. The AI never decides it."
+  },
+  {
+   "fieldname": "outcome_reason",
+   "fieldtype": "Small Text",
+   "label": "Outcome Reason",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_outcome",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "outcome_decided_by",
+   "fieldtype": "Link",
+   "label": "Outcome Decided By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "outcome_decided_at",
+   "fieldtype": "Datetime",
+   "label": "Outcome Decided At",
+   "read_only": 1
+  },
+  {
    "fieldname": "section_audit",
    "fieldtype": "Section Break",
    "label": "Audit",
@@ -225,24 +316,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "instructor_review",
-   "fieldtype": "Long Text",
-   "label": "Instructor Review"
-  },
-  {
-   "fieldname": "instructor_reviewed_by",
-   "fieldtype": "Link",
-   "label": "Reviewed By",
-   "options": "User",
-   "read_only": 1
-  },
-  {
-   "fieldname": "instructor_reviewed_at",
-   "fieldtype": "Datetime",
-   "label": "Reviewed At",
-   "read_only": 1
-  },
-  {
    "fieldname": "section_raw",
    "fieldtype": "Section Break",
    "label": "Raw LLM Response",
@@ -260,7 +333,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-11-03 12:00:00.000000",
+ "modified": "2026-11-03 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "OS LMS",
  "name": "LMSA Simulation Debrief",

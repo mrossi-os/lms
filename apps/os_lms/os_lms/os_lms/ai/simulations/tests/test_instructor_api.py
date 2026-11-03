@@ -13,10 +13,11 @@ from os_lms.os_lms.ai.simulations.api import (
     get_evaluation_schema,
     get_scenario,
     get_transcript,
-    instructor_override_score,
+    _serialize_debrief,
+    instructor_discard_review,
     instructor_report,
-    instructor_reset_score,
-    instructor_review_debrief,
+    instructor_save_review,
+    instructor_start_review,
     list_my_evaluation_schemas,
     list_my_scenarios,
     save_evaluation_schema,
@@ -153,36 +154,6 @@ class TestInstructorReview(_MockBase):
         self._variant_patch.stop()
         super().tearDown()
 
-    def test_persists_review_with_author_and_timestamp(self):
-        svc = SessionOrchestrator()
-        start = svc.start_session(scenario_id=self.scenario.name)
-        svc.end_session(session_id=start.session, reason="completed")
-        generate_debrief(start.session)
-
-        result = instructor_review_debrief(
-            session_id=start.session,
-            review="Bell'ascolto attivo, lavora sul closing diretto.",
-        )
-        self.assertIn("name", result)
-        debrief = frappe.get_doc("LMSA Simulation Debrief", result["name"])
-        self.assertEqual(debrief.instructor_reviewed_by, "Administrator")
-        self.assertIsNotNone(debrief.instructor_reviewed_at)
-        self.assertIn("ascolto", debrief.instructor_review)
-
-    def test_empty_review_rejected(self):
-        svc = SessionOrchestrator()
-        start = svc.start_session(scenario_id=self.scenario.name)
-        svc.end_session(session_id=start.session, reason="completed")
-        generate_debrief(start.session)
-        with self.assertRaises(frappe.exceptions.ValidationError):
-            instructor_review_debrief(session_id=start.session, review="   ")
-
-
-class TestInstructorScoreOverride(TestInstructorReview):
-    """Human oversight: the instructor corrects the AI's overall score.
-
-    The fixture schema passes at 70 and the mocked AI scores 75."""
-
     def _debrief_session(self) -> str:
         svc = SessionOrchestrator()
         start = svc.start_session(scenario_id=self.scenario.name)
@@ -196,109 +167,211 @@ class TestInstructorScoreOverride(TestInstructorReview):
         )
         return frappe.get_doc("LMSA Simulation Debrief", name)
 
-    def test_ai_score_is_kept_in_its_own_field(self):
-        debrief = self._debrief(self._debrief_session())
-        self.assertEqual(debrief.ai_overall_score, 75)
-        self.assertEqual(debrief.overall_score, 75)
-        self.assertFalse(debrief.passed)
-
-    def test_override_keeps_ai_score_and_records_author(self):
-        session_id = self._debrief_session()
-        result = instructor_override_score(
-            session_id=session_id, score=60, reason="  Closing mai tentato.  "
+    def _set_outcome_flag(self, value: int):
+        frappe.db.set_value("LMSA Simulation Scenario", self.scenario.name, "has_human_outcome", value)
+        self.addCleanup(
+            frappe.db.set_value, "LMSA Simulation Scenario", self.scenario.name, "has_human_outcome", 0
         )
-        self.assertEqual(result["overall_score"], 60)
-        self.assertNotIn("passed", result)
-        self.assertTrue(result["score_overridden"])
-        self.assertEqual(result["ai_overall_score"], 75)
+
+    @staticmethod
+    def _edits(**overrides) -> dict:
+        review = {
+            "overall_score": 62,
+            "criterion_scores": [
+                {"criterion_name": "Listening", "score": 8, "note": "Buone domande"},
+                {"criterion_name": "Closing", "score": 4.5, "note": "Mai chiesto l'impegno"},
+            ],
+            "strengths": [{"title": "Empatia", "detail": "Riconosce il problema"}],
+            "improvements": [
+                {"title": "Closing", "detail": "Chiudi", "suggestion": "Proponi una data"},
+                {"title": "   ", "detail": "row without a title is dropped"},
+            ],
+            "comment": "  Buon lavoro, manca la chiusura.  ",
+            "outcome": "",
+            "outcome_reason": "",
+        }
+        review.update(overrides)
+        return review
+
+
+class TestTeacherVersion(TestInstructorReview):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        # Names come back as full names, which differ between sites
+        cls.admin_name = frappe.db.get_value("User", "Administrator", "full_name") or "Administrator"
+
+    """The teacher version of the debrief (ai/simulations/teacher_review.py)."""
+
+    def test_start_copies_the_ai_version_as_a_draft(self):
+        session_id = self._debrief_session()
+        payload = instructor_start_review(session_id=session_id)
+        version = payload["teacher_version"]
+        self.assertEqual(version["status"], "draft")
+        self.assertEqual(version["overall_score"], 75)
+        self.assertEqual(
+            [(c["criterion_name"], c["score"]) for c in version["criterion_scores"]],
+            [("Listening", 8), ("Closing", 7)],
+        )
+        self.assertEqual([s["title"] for s in version["strengths"]], ["Empatia"])
+        self.assertEqual(version["improvements"][0]["suggestion"], "Proponi un check-call")
+        self.assertFalse(payload["outcome_required"])
+
+        # Starting again keeps the teacher's edits
+        instructor_save_review(session_id=session_id, review=self._edits())
+        again = instructor_start_review(session_id=session_id)["teacher_version"]
+        self.assertEqual(again["overall_score"], 62)
+
+    def test_saving_changes_only_the_teacher_version(self):
+        session_id = self._debrief_session()
+        instructor_start_review(session_id=session_id)
+        version = instructor_save_review(session_id=session_id, review=self._edits())["teacher_version"]
+        self.assertEqual(version["overall_score"], 62)
+        self.assertEqual(version["criterion_scores"][1]["score"], 4.5)
+        self.assertEqual(version["criterion_scores"][1]["max_score"], 10)
+        self.assertEqual([i["title"] for i in version["improvements"]], ["Closing"])
+        self.assertEqual(version["comment"], "Buon lavoro, manca la chiusura.")
+        self.assertEqual(version["edited_by_name"], self.admin_name)
 
         debrief = self._debrief(session_id)
-        self.assertEqual(debrief.overall_score, 60)
-        self.assertEqual(debrief.ai_overall_score, 75)
+        self.assertEqual(debrief.overall_score, 75)
+        self.assertEqual([c.score for c in debrief.criterion_scores], [8, 7])
+        self.assertEqual(debrief.improvements[0].title, "Closing diretto")
+        self.assertEqual(debrief.review_status, "Draft")
         self.assertFalse(debrief.passed)
-        self.assertEqual(debrief.score_override_reason, "Closing mai tentato.")
-        self.assertEqual(debrief.score_overridden_by, "Administrator")
-        self.assertIsNotNone(debrief.score_overridden_at)
 
-    def test_override_of_debrief_older_than_ai_score_field_keeps_ai_score(self):
-        # Debriefs written before ai_overall_score existed carry 0 there, not
-        # NULL: Frappe creates Float columns as NOT NULL DEFAULT 0.
+    def test_regenerated_debrief_keeps_the_teacher_version(self):
         session_id = self._debrief_session()
-        name = self._debrief(session_id).name
-        frappe.db.set_value("LMSA Simulation Debrief", name, "ai_overall_score", 0)
-        frappe.db.commit()
-        self.assertEqual(get_transcript(session_id=session_id)["debrief"]["ai_overall_score"], 75)
-
-        result = instructor_override_score(session_id=session_id, score=60, reason="Rivisto")
-        self.assertEqual(result["ai_overall_score"], 75)
-        self.assertEqual(self._debrief(session_id).ai_overall_score, 75)
-        self.assertEqual(instructor_reset_score(session_id=session_id)["overall_score"], 75)
-
-    def test_second_override_does_not_touch_ai_score(self):
-        session_id = self._debrief_session()
-        instructor_override_score(session_id=session_id, score=60, reason="Primo")
-        instructor_override_score(session_id=session_id, score=82, reason="Secondo")
-        debrief = self._debrief(session_id)
-        self.assertEqual(debrief.overall_score, 82)
-        self.assertFalse(debrief.passed)
-        self.assertEqual(debrief.ai_overall_score, 75)
-        self.assertEqual(debrief.score_override_reason, "Secondo")
-
-    def test_reason_is_required(self):
-        session_id = self._debrief_session()
-        with self.assertRaises(frappe.exceptions.ValidationError):
-            instructor_override_score(session_id=session_id, score=60, reason="   ")
-        self.assertEqual(self._debrief(session_id).overall_score, 75)
-
-    def test_score_out_of_range_or_not_a_number_rejected(self):
-        session_id = self._debrief_session()
-        for bad in (-1, 100.5, "abc", float("nan")):
-            with self.assertRaises(frappe.exceptions.ValidationError, msg=bad):
-                instructor_override_score(session_id=session_id, score=bad, reason="x")
-        self.assertEqual(self._debrief(session_id).overall_score, 75)
-
-    def test_reset_goes_back_to_ai_score(self):
-        session_id = self._debrief_session()
-        instructor_override_score(session_id=session_id, score=60, reason="Troppo alto")
-        result = instructor_reset_score(session_id=session_id)
-        self.assertEqual(result["overall_score"], 75)
-        self.assertNotIn("passed", result)
-        self.assertFalse(result["score_overridden"])
-        debrief = self._debrief(session_id)
-        self.assertFalse(debrief.score_overridden_by)
-        self.assertFalse(debrief.score_override_reason)
-
-    def test_reset_without_override_rejected(self):
-        session_id = self._debrief_session()
-        with self.assertRaises(frappe.exceptions.ValidationError):
-            instructor_reset_score(session_id=session_id)
-
-    def test_regenerated_debrief_keeps_instructor_score(self):
-        session_id = self._debrief_session()
-        instructor_override_score(session_id=session_id, score=60, reason="Rivisto")
+        instructor_start_review(session_id=session_id)
+        instructor_save_review(session_id=session_id, review=self._edits())
         generate_debrief(session_id)
         debrief = self._debrief(session_id)
-        self.assertEqual(debrief.overall_score, 60)
-        self.assertEqual(debrief.ai_overall_score, 75)
-        self.assertFalse(debrief.passed)
+        self.assertEqual(debrief.overall_score, 75)
+        self.assertEqual(debrief.review_overall_score, 62)
 
-    def test_transcript_shows_correction_to_instructor(self):
+    def test_invalid_edits_are_rejected(self):
         session_id = self._debrief_session()
-        instructor_override_score(session_id=session_id, score=60, reason="Rivisto")
-        debrief = get_transcript(session_id=session_id)["debrief"]
-        self.assertEqual(debrief["overall_score"], 60)
-        self.assertEqual(debrief["ai_overall_score"], 75)
-        self.assertEqual(debrief["score_override_reason"], "Rivisto")
+        with self.assertRaises(frappe.exceptions.ValidationError):
+            instructor_save_review(session_id=session_id, review=self._edits())
+        instructor_start_review(session_id=session_id)
+        bad_edits = [
+            {"overall_score": 100.5},
+            {"overall_score": "abc"},
+            {"criterion_scores": [{"criterion_name": "Listening", "score": 11}]},
+            {"criterion_scores": [{"criterion_name": "Invented", "score": 5}]},
+            {"criterion_scores": [
+                {"criterion_name": "Closing", "score": 5},
+                {"criterion_name": "Closing", "score": 6},
+            ]},
+            {"strengths": [{"title": "x" * 141}]},
+            {"comment": "x" * 5001},
+            {"outcome": "Passed"},  # the scenario has no outcome
+        ]
+        for edits in bad_edits:
+            with self.assertRaises(frappe.exceptions.ValidationError, msg=edits):
+                instructor_save_review(session_id=session_id, review=self._edits(**edits))
+        self.assertEqual(self._debrief(session_id).review_overall_score, 75)
 
-    def test_non_instructor_cannot_override(self):
+    def test_publishing_shows_it_to_the_student(self):
+        session_id = self._debrief_session()
+        instructor_start_review(session_id=session_id)
+        instructor_save_review(session_id=session_id, review=self._edits())
+
+        student_view = _serialize_debrief(self._debrief(session_id), include_scores=False)
+        self.assertIsNone(student_view["teacher_version"])
+        self.assertEqual(student_view["instructor_review"], "")
+
+        version = instructor_save_review(
+            session_id=session_id, review=self._edits(), publish=True
+        )["teacher_version"]
+        self.assertEqual(version["status"], "published")
+        self.assertEqual(version["published_by_name"], self.admin_name)
+
+        student_view = _serialize_debrief(self._debrief(session_id), include_scores=False)
+        self.assertEqual(student_view["teacher_version"]["status"], "published")
+        self.assertNotIn("overall_score", student_view["teacher_version"])
+        self.assertNotIn("criterion_scores", student_view["teacher_version"])
+        self.assertEqual(student_view["instructor_review"], "Buon lavoro, manca la chiusura.")
+
+        # Later saves reach the student at once
+        instructor_save_review(session_id=session_id, review=self._edits(comment="Rivisto"))
+        self.assertEqual(self._debrief(session_id).review_status, "Published")
+        student_view = _serialize_debrief(self._debrief(session_id), include_scores=False)
+        self.assertEqual(student_view["instructor_review"], "Rivisto")
+
+    def test_only_a_draft_can_be_discarded(self):
+        session_id = self._debrief_session()
+        instructor_start_review(session_id=session_id)
+        instructor_save_review(session_id=session_id, review=self._edits())
+        payload = instructor_discard_review(session_id=session_id)
+        self.assertIsNone(payload["teacher_version"])
+        debrief = self._debrief(session_id)
+        self.assertFalse(debrief.review_status)
+        self.assertFalse(debrief.review_criterion_scores)
+        self.assertFalse(debrief.instructor_review)
+
+        instructor_start_review(session_id=session_id)
+        instructor_save_review(session_id=session_id, review=self._edits(), publish=True)
+        with self.assertRaises(frappe.exceptions.ValidationError):
+            instructor_discard_review(session_id=session_id)
+
+    def test_outcome_is_needed_to_publish_on_a_simulation_with_outcome(self):
+        self._set_outcome_flag(1)
+        session_id = self._debrief_session()
+        self.assertTrue(instructor_start_review(session_id=session_id)["outcome_required"])
+
+        # A draft can wait for the decision
+        instructor_save_review(session_id=session_id, review=self._edits())
+        with self.assertRaises(frappe.exceptions.ValidationError):
+            instructor_save_review(session_id=session_id, review=self._edits(), publish=True)
+        with self.assertRaises(frappe.exceptions.ValidationError):
+            instructor_save_review(
+                session_id=session_id, review=self._edits(outcome="Not Passed"), publish=True
+            )
+        self.assertEqual(self._debrief(session_id).review_status, "Draft")
+
+        version = instructor_save_review(
+            session_id=session_id,
+            review=self._edits(outcome="Not Passed", outcome_reason=" Nessuna chiusura "),
+            publish=True,
+        )["teacher_version"]
+        self.assertEqual(version["outcome"], "Not Passed")
+        self.assertEqual(version["outcome_reason"], "Nessuna chiusura")
+        self.assertEqual(version["outcome_decided_by_name"], self.admin_name)
+        self.assertFalse(self._debrief(session_id).passed)
+
+        # Once published the outcome cannot be taken back to undecided
+        with self.assertRaises(frappe.exceptions.ValidationError):
+            instructor_save_review(session_id=session_id, review=self._edits())
+
+    def test_passed_comes_from_the_published_outcome_only(self):
+        self._set_outcome_flag(1)
+        session_id = self._debrief_session()
+        instructor_start_review(session_id=session_id)
+        instructor_save_review(session_id=session_id, review=self._edits(outcome="Passed"))
+        self.assertFalse(self._debrief(session_id).passed)
+
+        instructor_save_review(session_id=session_id, review=self._edits(outcome="Passed"), publish=True)
+        debrief = self._debrief(session_id)
+        self.assertTrue(debrief.passed)
+        self.assertEqual(debrief.outcome_decided_by, "Administrator")
+        decided_at = debrief.outcome_decided_at
+
+        # Editing other parts keeps who decided and when
+        instructor_save_review(
+            session_id=session_id, review=self._edits(outcome="Passed", comment="Altro")
+        )
+        self.assertEqual(self._debrief(session_id).outcome_decided_at, decided_at)
+
+    def test_non_instructor_cannot_edit(self):
         session_id = self._debrief_session()
         frappe.set_user("Guest")
         try:
             with self.assertRaises(frappe.PermissionError):
-                instructor_override_score(session_id=session_id, score=10, reason="x")
+                instructor_start_review(session_id=session_id)
         finally:
             frappe.set_user("Administrator")
-        self.assertEqual(self._debrief(session_id).overall_score, 75)
+        self.assertFalse(self._debrief(session_id).review_status)
 
 
 class TestInstructorReport(_MockBase):
@@ -356,6 +429,13 @@ class TestInstructorReport(_MockBase):
         # top_improvement_titles must include the canned improvement
         titles = [r["title"] for r in report["top_improvement_titles"]]
         self.assertIn("Closing diretto", titles)
+
+        # The teacher version copies the improvements into its own rows; the
+        # report still counts the AI's once
+        instructor_start_review(session_id=start.session)
+        report = instructor_report(course=self.course, period_days=7)
+        counts = {r["title"]: r["occurrences"] for r in report["top_improvement_titles"]}
+        self.assertEqual(counts["Closing diretto"], 1)
 
 
 class TestScenarioCRUD(_MockBase):

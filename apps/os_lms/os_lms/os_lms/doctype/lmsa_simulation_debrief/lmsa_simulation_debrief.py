@@ -57,7 +57,7 @@ def has_permission(doc, ptype: str = "read", user: str | None = None) -> bool:
 		return True
 
 	if "Course Creator" in roles or "LMS Instructor" in roles:
-		# Instructors can review (write the `instructor_review` field).
+		# Instructors write the teacher version (ai/simulations/teacher_review.py).
 		return bool(
 			frappe.db.exists(
 				"Course Instructor", {"parent": doc.course, "instructor": user}

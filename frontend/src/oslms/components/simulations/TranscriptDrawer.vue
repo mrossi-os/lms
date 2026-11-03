@@ -21,78 +21,15 @@
 				<!-- Right: debrief summary -->
 				<div class="col-span-2 space-y-3 max-h-[70vh] overflow-y-auto pr-2">
 					<div v-if="payload.debrief">
-						<div class="text-xs uppercase text-ink-gray-5 mb-1">{{ __('Punteggio') }}</div>
+						<div class="text-xs uppercase text-ink-gray-5 mb-1">
+							{{ __("Versione dell'AI") }}
+						</div>
 						<div class="text-3xl font-semibold text-ink-gray-9">
 							{{ Math.round(payload.debrief.overall_score || 0) }}
 							<span class="text-sm text-ink-gray-5">/100</span>
 						</div>
-
-						<!-- Score source: AI or instructor correction (human oversight). -->
 						<div class="mt-1 text-xs text-ink-gray-5">
-							<template v-if="payload.debrief.score_overridden">
-								<div>
-									{{ __('Voto corretto dal docente') }}
-									{{ payload.debrief.score_overridden_by_name || payload.debrief.score_overridden_by }}
-									· {{ formatDateTime(payload.debrief.score_overridden_at) }}
-								</div>
-								<div>
-									{{ __("Voto dell'AI") }}:
-									{{
-										payload.debrief.ai_overall_score === null
-											? '—'
-											: Math.round(payload.debrief.ai_overall_score)
-									}}
-								</div>
-								<div class="mt-1 text-ink-gray-7 whitespace-pre-wrap">
-									{{ __('Motivazione') }}: {{ payload.debrief.score_override_reason }}
-								</div>
-							</template>
-							<template v-else>{{ __("Voto assegnato dall'AI") }}</template>
-						</div>
-
-						<section v-if="scoreFormOpen" class="mt-3 space-y-2">
-							<FormControl
-								v-model="scoreDraft"
-								type="number"
-								:label="__('Nuovo voto (0-100)')"
-								min="0"
-								max="100"
-							/>
-							<FormControl
-								v-model="reasonDraft"
-								type="textarea"
-								:rows="3"
-								:label="__('Motivazione (obbligatoria)')"
-								:placeholder="__('Perché cambi il voto dell\'AI?')"
-							/>
-							<div class="flex justify-end gap-2">
-								<Button variant="outline" size="sm" @click="scoreFormOpen = false">
-									{{ __('Annulla') }}
-								</Button>
-								<Button
-									variant="solid"
-									size="sm"
-									:loading="savingScore"
-									:disabled="!scoreDraftValid || !reasonDraft.trim()"
-									@click="onSaveScore"
-								>
-									{{ __('Salva voto') }}
-								</Button>
-							</div>
-						</section>
-						<div v-else class="mt-2 flex gap-2">
-							<Button variant="outline" size="sm" @click="openScoreForm">
-								{{ __('Correggi voto') }}
-							</Button>
-							<Button
-								v-if="payload.debrief.score_overridden"
-								variant="ghost"
-								size="sm"
-								:loading="savingScore"
-								@click="onResetScore"
-							>
-								{{ __("Ripristina voto dell'AI") }}
-							</Button>
+							{{ __("Punteggio indicativo dell'AI: non decide l'esito e non si modifica.") }}
 						</div>
 
 						<section v-if="payload.debrief.criterion_scores?.length" class="mt-4">
@@ -136,38 +73,179 @@
 							</ul>
 						</section>
 
-						<!-- Instructor review -->
-						<section class="mt-4">
-							<div class="text-xs font-semibold text-ink-gray-9 mb-1">
-								{{ __('Nota docente') }}
+						<!-- Teacher version: a copy of the AI version the teacher edits and
+							publishes; students see it only once published. On simulations
+							with an outcome the teacher decides passed / not passed here. -->
+						<section class="mt-6 border-t border-outline-gray-2 pt-4">
+							<div class="flex items-center justify-between gap-2 mb-2">
+								<div class="text-sm font-semibold text-ink-gray-9">
+									{{ __('Versione del docente') }}
+								</div>
+								<Badge
+									v-if="teacherVersion"
+									:label="isPublished ? __('Pubblicata') : __('Bozza')"
+									:theme="isPublished ? 'green' : 'orange'"
+								/>
 							</div>
-							<FormControl
-								v-model="reviewDraft"
-								type="textarea"
-								:rows="4"
-								:placeholder="__('Aggiungi un commento privato per lo studente.')"
-							/>
-							<div class="flex justify-end gap-2 mt-2">
-								<Button
-									v-if="isTerminal"
-									variant="outline"
-									size="sm"
-									:loading="evaluating"
-									@click="onEvaluate"
-								>
-									{{ __('Valuta sessione') }}
-								</Button>
+
+							<template v-if="!reviewForm">
+								<p class="text-xs text-ink-gray-5 mb-2">
+									{{ __("Parte dai suggerimenti dell'AI: puoi modificarli prima di pubblicarli allo studente.") }}
+								</p>
+								<p v-if="outcomeRequired" class="text-xs text-ink-gray-7 mb-2">
+									{{ __('Questa simulazione ha un esito: decidi tu se lo studente l\'ha superata.') }}
+								</p>
 								<Button
 									variant="solid"
 									size="sm"
-									:loading="savingReview"
-									:disabled="!reviewDraft.trim()"
-									@click="onSaveReview"
+									:loading="reviewBusy === 'start'"
+									@click="onStartReview"
 								>
-									{{ __('Salva nota') }}
+									{{ __('Crea la versione del docente') }}
 								</Button>
+							</template>
+
+							<div v-else class="space-y-4">
+								<div class="text-xs text-ink-gray-5 space-y-0.5">
+									<div v-if="teacherVersion.edited_at">
+										{{ __('Modificata da {0} il {1}').format(teacherVersion.edited_by_name, formatDateTime(teacherVersion.edited_at)) }}
+									</div>
+									<div v-if="isPublished">
+										{{ __('Pubblicata da {0} il {1}: lo studente vede questa versione.').format(teacherVersion.published_by_name, formatDateTime(teacherVersion.published_at)) }}
+									</div>
+									<div v-else>{{ __('Lo studente non la vede finché non la pubblichi.') }}</div>
+								</div>
+
+								<FormControl
+									v-model="reviewForm.overall_score"
+									type="number"
+									min="0"
+									max="100"
+									:label="__('Punteggio del docente (0-100)')"
+								/>
+
+								<div v-if="reviewForm.criterion_scores.length">
+									<div class="text-xs font-semibold text-ink-gray-9 mb-1">{{ __('Criteri') }}</div>
+									<div
+										v-for="c in reviewForm.criterion_scores"
+										:key="c.criterion_name"
+										class="border border-outline-gray-2 rounded-md p-2 mb-2 space-y-2"
+									>
+										<div class="flex items-center justify-between gap-2">
+											<span class="text-sm text-ink-gray-9">{{ c.criterion_name }}</span>
+											<div class="flex items-center gap-1 w-28">
+												<FormControl v-model="c.score" type="number" min="0" :max="c.max_score || 10" />
+												<span class="text-xs text-ink-gray-5 whitespace-nowrap">/ {{ c.max_score || 10 }}</span>
+											</div>
+										</div>
+										<FormControl v-model="c.note" type="textarea" :rows="2" :placeholder="__('Nota sul criterio')" />
+									</div>
+								</div>
+
+								<div>
+									<div class="flex items-center justify-between mb-1">
+										<div class="text-xs font-semibold text-ink-gray-9">{{ __('Punti di forza') }}</div>
+										<Button size="sm" variant="ghost" @click="addRow('strengths')">+ {{ __('Aggiungi') }}</Button>
+									</div>
+									<div
+										v-for="(row, i) in reviewForm.strengths"
+										:key="`s-${i}`"
+										class="border border-outline-gray-2 rounded-md p-2 mb-2 space-y-2"
+									>
+										<div class="flex gap-2 items-start">
+											<FormControl v-model="row.title" class="flex-1" :placeholder="__('Titolo')" />
+											<Button size="sm" variant="ghost" :title="__('Rimuovi')" @click="removeRow('strengths', i)">✕</Button>
+										</div>
+										<FormControl v-model="row.detail" type="textarea" :rows="2" :placeholder="__('Dettaglio')" />
+									</div>
+								</div>
+
+								<div>
+									<div class="flex items-center justify-between mb-1">
+										<div class="text-xs font-semibold text-ink-gray-9">{{ __('Aree di miglioramento') }}</div>
+										<Button size="sm" variant="ghost" @click="addRow('improvements')">+ {{ __('Aggiungi') }}</Button>
+									</div>
+									<div
+										v-for="(row, i) in reviewForm.improvements"
+										:key="`m-${i}`"
+										class="border border-outline-gray-2 rounded-md p-2 mb-2 space-y-2"
+									>
+										<div class="flex gap-2 items-start">
+											<FormControl v-model="row.title" class="flex-1" :placeholder="__('Titolo')" />
+											<Button size="sm" variant="ghost" :title="__('Rimuovi')" @click="removeRow('improvements', i)">✕</Button>
+										</div>
+										<FormControl v-model="row.detail" type="textarea" :rows="2" :placeholder="__('Dettaglio')" />
+										<FormControl v-model="row.suggestion" type="textarea" :rows="2" :placeholder="__('Consiglio')" />
+									</div>
+								</div>
+
+								<FormControl
+									v-model="reviewForm.comment"
+									type="textarea"
+									:rows="4"
+									:label="__('Commento per lo studente')"
+								/>
+
+								<div v-if="outcomeRequired" class="space-y-2">
+									<FormControl
+										v-model="reviewForm.outcome"
+										type="select"
+										class="lms-select"
+										:label="__('Esito')"
+										:options="[
+											{ label: __('Da decidere'), value: '' },
+											{ label: __('Superata'), value: 'Passed' },
+											{ label: __('Non superata'), value: 'Not Passed' },
+										]"
+									/>
+									<FormControl
+										v-if="reviewForm.outcome"
+										v-model="reviewForm.outcome_reason"
+										type="textarea"
+										:rows="3"
+										:label="reviewForm.outcome === 'Not Passed' ? __('Motivazione (obbligatoria)') : __('Motivazione (facoltativa)')"
+									/>
+									<div v-if="teacherVersion.outcome_decided_at" class="text-xs text-ink-gray-5">
+										{{ __('Esito deciso da {0} il {1}').format(teacherVersion.outcome_decided_by_name, formatDateTime(teacherVersion.outcome_decided_at)) }}
+									</div>
+								</div>
+
+								<div class="flex flex-wrap justify-end gap-2">
+									<Button
+										v-if="!isPublished"
+										variant="ghost"
+										size="sm"
+										:loading="reviewBusy === 'discard'"
+										@click="onDiscardReview"
+									>
+										{{ __('Elimina bozza') }}
+									</Button>
+									<Button
+										v-if="!isPublished"
+										variant="outline"
+										size="sm"
+										:loading="reviewBusy === 'save'"
+										@click="onSaveReview(false)"
+									>
+										{{ __('Salva bozza') }}
+									</Button>
+									<Button
+										variant="solid"
+										size="sm"
+										:loading="reviewBusy === 'publish' || (isPublished && reviewBusy === 'save')"
+										@click="onSaveReview(!isPublished)"
+									>
+										{{ isPublished ? __('Salva e aggiorna per lo studente') : __('Pubblica allo studente') }}
+									</Button>
+								</div>
 							</div>
 						</section>
+
+						<div v-if="isTerminal" class="mt-4 flex justify-end">
+							<Button variant="outline" size="sm" :loading="evaluating" @click="onEvaluate">
+								{{ __('Valuta sessione') }}
+							</Button>
+						</div>
 
 						<section v-if="evalHistory.length" class="mt-4">
 							<div class="text-xs font-semibold text-ink-gray-9 mb-1">
@@ -220,8 +298,6 @@ const visible = computed({
 
 const payload = ref(null)
 const loading = ref(false)
-const reviewDraft = ref('')
-const savingReview = ref(false)
 
 const persona = computed(() => {
 	const raw = payload.value?.session?.generated_persona
@@ -236,8 +312,7 @@ const loadRes = createResource({
 	},
 	onSuccess(data) {
 		payload.value = data
-		reviewDraft.value = data?.debrief?.instructor_review || ''
-		scoreFormOpen.value = false
+		reviewForm.value = formFromDebrief(data?.debrief)
 	},
 	onError(e) {
 		toast.error(e.messages?.[0] || __('Caricamento trascrizione fallito'))
@@ -255,85 +330,124 @@ watch(
 	{ immediate: true },
 )
 
-const reviewRes = createResource({
-	url: 'os_lms.os_lms.ai.simulations.api.instructor_review_debrief',
-	method: 'POST',
-})
+// ---- Teacher version of the debrief (ai/simulations/teacher_review.py) ----
+const reviewForm = ref(null)
+const reviewBusy = ref('')
 
-async function onSaveReview() {
-	if (!reviewDraft.value.trim()) return
-	savingReview.value = true
-	try {
-		await reviewRes.submit({ session_id: props.sessionId, review: reviewDraft.value })
-		toast.success(__('Nota salvata.'))
-		emit('review-saved')
-	} catch (e) {
-		toast.error(e.messages?.[0] || __('Salvataggio fallito'))
-	} finally {
-		savingReview.value = false
+const teacherVersion = computed(() => payload.value?.debrief?.teacher_version || null)
+const isPublished = computed(() => teacherVersion.value?.status === 'published')
+const outcomeRequired = computed(() => !!payload.value?.debrief?.outcome_required)
+
+function formFromDebrief(debrief) {
+	const v = debrief?.teacher_version
+	if (!v) return null
+	return {
+		overall_score: v.overall_score ?? '',
+		criterion_scores: (v.criterion_scores || []).map((c) => ({ ...c })),
+		strengths: (v.strengths || []).map((r) => ({ ...r })),
+		improvements: (v.improvements || []).map((r) => ({ ...r })),
+		comment: v.comment || '',
+		outcome: v.outcome || '',
+		outcome_reason: v.outcome_reason || '',
 	}
 }
 
-// ---- Instructor score correction (human oversight of the AI grade) ----
-const scoreFormOpen = ref(false)
-const scoreDraft = ref('')
-const reasonDraft = ref('')
-const savingScore = ref(false)
-
-const scoreDraftValid = computed(() => {
-	if (scoreDraft.value === '' || scoreDraft.value === null) return false
-	const n = Number(scoreDraft.value)
-	return Number.isFinite(n) && n >= 0 && n <= 100
-})
-
-function openScoreForm() {
-	const d = payload.value?.debrief
-	scoreDraft.value = d?.overall_score ?? ''
-	reasonDraft.value = d?.score_override_reason || ''
-	scoreFormOpen.value = true
+function addRow(field) {
+	reviewForm.value[field].push({ title: '', detail: '', quote: '', suggestion: '' })
 }
 
-const overrideScoreRes = createResource({
-	url: 'os_lms.os_lms.ai.simulations.api.instructor_override_score',
+function removeRow(field, index) {
+	reviewForm.value[field].splice(index, 1)
+}
+
+// Mirrors the server checks, so the teacher gets the message before the call.
+function reviewProblem(publishing) {
+	const f = reviewForm.value
+	const score = Number(f.overall_score)
+	if (f.overall_score === '' || !Number.isFinite(score) || score < 0 || score > 100) {
+		return __('Il punteggio deve essere un numero tra 0 e 100.')
+	}
+	for (const c of f.criterion_scores) {
+		const value = Number(c.score)
+		const max = Number(c.max_score || 10)
+		if (c.score === '' || !Number.isFinite(value) || value < 0 || value > max) {
+			return __('Il voto di {0} deve essere un numero tra 0 e {1}.').format(c.criterion_name, max)
+		}
+	}
+	if (publishing && outcomeRequired.value && !f.outcome) {
+		return __('Decidi se la simulazione è superata prima di pubblicare.')
+	}
+	if (publishing && f.outcome === 'Not Passed' && !f.outcome_reason.trim()) {
+		return __('Scrivi la motivazione: la simulazione non è superata.')
+	}
+	return ''
+}
+
+const startReviewRes = createResource({
+	url: 'os_lms.os_lms.ai.simulations.api.instructor_start_review',
 	method: 'POST',
 })
-const resetScoreRes = createResource({
-	url: 'os_lms.os_lms.ai.simulations.api.instructor_reset_score',
+const saveReviewRes = createResource({
+	url: 'os_lms.os_lms.ai.simulations.api.instructor_save_review',
+	method: 'POST',
+})
+const discardReviewRes = createResource({
+	url: 'os_lms.os_lms.ai.simulations.api.instructor_discard_review',
 	method: 'POST',
 })
 
-async function onSaveScore() {
-	if (!scoreDraftValid.value || !reasonDraft.value.trim()) return
-	savingScore.value = true
+async function runReview(kind, call) {
+	reviewBusy.value = kind
 	try {
-		const data = await overrideScoreRes.submit({
-			session_id: props.sessionId,
-			score: Number(scoreDraft.value),
-			reason: reasonDraft.value,
-		})
-		Object.assign(payload.value.debrief, data)
-		scoreFormOpen.value = false
-		toast.success(__('Voto salvato.'))
+		const debrief = await call()
+		payload.value.debrief = debrief
+		reviewForm.value = formFromDebrief(debrief)
 		emit('review-saved')
+		return true
 	} catch (e) {
 		toast.error(e.messages?.[0] || __('Salvataggio fallito'))
+		return false
 	} finally {
-		savingScore.value = false
+		reviewBusy.value = ''
 	}
 }
 
-async function onResetScore() {
-	savingScore.value = true
-	try {
-		const data = await resetScoreRes.submit({ session_id: props.sessionId })
-		Object.assign(payload.value.debrief, data)
-		toast.success(__("Ripristinato il voto dell'AI."))
-		emit('review-saved')
-	} catch (e) {
-		toast.error(e.messages?.[0] || __('Salvataggio fallito'))
-	} finally {
-		savingScore.value = false
+function onStartReview() {
+	return runReview('start', () => startReviewRes.submit({ session_id: props.sessionId }))
+}
+
+async function onSaveReview(publish) {
+	const wasPublished = isPublished.value
+	const problem = reviewProblem(publish || wasPublished)
+	if (problem) {
+		toast.error(problem)
+		return
 	}
+	const f = reviewForm.value
+	const review = {
+		...f,
+		overall_score: Number(f.overall_score),
+		criterion_scores: f.criterion_scores.map((c) => ({
+			criterion_name: c.criterion_name,
+			score: Number(c.score),
+			note: c.note || '',
+		})),
+	}
+	const ok = await runReview(publish ? 'publish' : 'save', () =>
+		saveReviewRes.submit({ session_id: props.sessionId, review, publish }),
+	)
+	if (!ok) return
+	if (publish) toast.success(__('Versione del docente pubblicata: lo studente la vede.'))
+	else if (wasPublished) toast.success(__('Modifiche salvate: lo studente vede la versione aggiornata.'))
+	else toast.success(__('Bozza salvata.'))
+}
+
+async function onDiscardReview() {
+	if (!window.confirm(__('Eliminare la bozza della versione del docente?'))) return
+	const ok = await runReview('discard', () =>
+		discardReviewRes.submit({ session_id: props.sessionId }),
+	)
+	if (ok) toast.success(__('Bozza eliminata.'))
 }
 
 function formatDateTime(value) {

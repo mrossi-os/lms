@@ -33,6 +33,7 @@ from .orchestrator import (
     scenario_time_limit,
 )
 from .tasks import generate_debrief as _run_generate_debrief
+from . import teacher_review
 
 
 def _service() -> SessionOrchestrator:
@@ -417,16 +418,23 @@ def _serialize_debrief(debrief, include_scores: bool = True) -> dict:
             }
             for r in (debrief.recommended_content or [])
         ],
-        "instructor_review": debrief.instructor_review or "",
-        "instructor_reviewed_by": debrief.instructor_reviewed_by,
-        "instructor_reviewed_at": (
-            str(debrief.instructor_reviewed_at) if debrief.instructor_reviewed_at else None
-        ),
     }
-    # The numeric grade (overall score, pass/fail, per-criterion scores) is
-    # instructor-only. Students see the coaching feedback above, not a grade.
+    # The teacher version: instructors see it from the first draft, students
+    # only once it is published. `include_scores` is True for instructors.
+    published = debrief.review_status == teacher_review.REVIEW_PUBLISHED
+    review = (
+        teacher_review.serialize_review(debrief, include_scores=include_scores)
+        if include_scores or published
+        else None
+    )
+    payload["teacher_version"] = review
+    payload["outcome_required"] = teacher_review.scenario_has_outcome(debrief)
+    # Kept for the student page, which shows the teacher's comment
+    payload["instructor_review"] = review["comment"] if review and published else ""
+    # The numeric grade (AI score, per-criterion scores) is instructor-only.
+    # Students see the coaching feedback above, not a grade.
     if include_scores:
-        payload.update(_score_payload(debrief))
+        payload["overall_score"] = debrief.overall_score
         payload["criterion_scores"] = [
             {
                 "criterion_name": c.criterion_name,
@@ -438,32 +446,6 @@ def _serialize_debrief(debrief, include_scores: bool = True) -> dict:
             for c in (debrief.criterion_scores or [])
         ]
     return payload
-
-
-def _score_payload(debrief) -> dict:
-    """Final score, plus the AI score and the instructor's correction when
-    there is one. Instructor-only, like the rest of the grade. The score is
-    indicative: no pass/fail is derived from it."""
-    overridden = bool(debrief.score_overridden_by)
-    # Until an instructor corrects it, overall_score IS the AI score. Read it
-    # from there: ai_overall_score is 0 (Float is NOT NULL) on debriefs written
-    # before the field existed.
-    ai_score = debrief.ai_overall_score if overridden else debrief.overall_score
-    return {
-        "overall_score": debrief.overall_score,
-        "ai_overall_score": ai_score,
-        "score_overridden": overridden,
-        "score_override_reason": debrief.score_override_reason or "",
-        "score_overridden_by": debrief.score_overridden_by,
-        "score_overridden_by_name": (
-            frappe.db.get_value("User", debrief.score_overridden_by, "full_name")
-            if overridden
-            else None
-        ),
-        "score_overridden_at": (
-            str(debrief.score_overridden_at) if debrief.score_overridden_at else None
-        ),
-    }
 
 
 @frappe.whitelist()
@@ -600,31 +582,6 @@ def list_my_sessions(course: str | None = None, scenario: str | None = None) -> 
 # ============================================================================
 
 
-@frappe.whitelist(methods=["POST"])
-def instructor_review_debrief(session_id: str, review: str) -> dict:
-    """Persist the instructor's review note on the debrief of `session_id`."""
-    if not review or not review.strip():
-        frappe.throw(_("Review cannot be empty"))
-
-    session = load_session(session_id)
-    _ensure_instructor_of_course(session.course)
-
-    name = frappe.db.get_value("LMSA Simulation Debrief", {"session": session.name}, "name")
-    if not name:
-        frappe.throw(_("No debrief available for this session yet"))
-
-    debrief = frappe.get_doc("LMSA Simulation Debrief", name)
-    debrief.instructor_review = review.strip()
-    debrief.instructor_reviewed_by = frappe.session.user
-    debrief.instructor_reviewed_at = frappe.utils.now_datetime()
-    debrief.save(ignore_permissions=True)
-    frappe.db.commit()
-    return {"name": debrief.name, "reviewed_at": str(debrief.instructor_reviewed_at)}
-
-
-SCORE_OVERRIDE_REASON_MAX_LENGTH = 1000
-
-
 def _instructor_debrief(session_id: str):
     """Load the debrief of `session_id` for a course instructor (or moderator)."""
     session = load_session(session_id)
@@ -636,57 +593,42 @@ def _instructor_debrief(session_id: str):
     return frappe.get_doc("LMSA Simulation Debrief", name)
 
 
-@frappe.whitelist(methods=["POST"])
-def instructor_override_score(session_id: str, score: float, reason: str) -> dict:
-    """Replace the AI's overall score with the instructor's (human oversight).
-
-    The AI score stays in `ai_overall_score`; who corrected it, when and why
-    are recorded."""
-    reason = (reason or "").strip()
-    if not reason:
-        frappe.throw(_("A reason is required to change the score"))
-    if len(reason) > SCORE_OVERRIDE_REASON_MAX_LENGTH:
-        frappe.throw(
-            _("The reason cannot be longer than {0} characters").format(
-                SCORE_OVERRIDE_REASON_MAX_LENGTH
-            )
-        )
-    try:
-        score = round(float(score), 1)
-    except (TypeError, ValueError):
-        score = None
-    if score is None or not 0 <= score <= 100:
-        frappe.throw(_("The score must be a number between 0 and 100"))
-
-    debrief = _instructor_debrief(session_id)
-    if not debrief.score_overridden_by:
-        # First correction: overall_score is still the AI score. Copy it always,
-        # since ai_overall_score is 0, not NULL, on debriefs written before the
-        # field existed.
-        debrief.ai_overall_score = debrief.overall_score
-    debrief.overall_score = score
-    debrief.score_override_reason = reason
-    debrief.score_overridden_by = frappe.session.user
-    debrief.score_overridden_at = frappe.utils.now_datetime()
+def _save_teacher_version(debrief) -> dict:
     debrief.save(ignore_permissions=True)
     frappe.db.commit()
-    return _score_payload(debrief)
+    return _serialize_debrief(debrief, include_scores=True)
 
 
 @frappe.whitelist(methods=["POST"])
-def instructor_reset_score(session_id: str) -> dict:
-    """Drop the instructor's correction and go back to the AI's score."""
+def instructor_start_review(session_id: str) -> dict:
+    """Create the teacher version of the debrief as a draft copy of the AI's
+    (teacher_review.start_review). Returns the debrief payload."""
     debrief = _instructor_debrief(session_id)
-    if not debrief.score_overridden_by:
-        frappe.throw(_("The score has not been changed by an instructor"))
+    teacher_review.start_review(debrief)
+    return _save_teacher_version(debrief)
 
-    debrief.overall_score = debrief.ai_overall_score
-    debrief.score_override_reason = None
-    debrief.score_overridden_by = None
-    debrief.score_overridden_at = None
-    debrief.save(ignore_permissions=True)
-    frappe.db.commit()
-    return _score_payload(debrief)
+
+@frappe.whitelist(methods=["POST"])
+def instructor_save_review(session_id: str, review: dict, publish: bool = False) -> dict:
+    """Save the teacher version; with `publish` the student sees it from now
+    on. On simulations with an outcome it cannot be published without one.
+    Returns the debrief payload."""
+    debrief = _instructor_debrief(session_id)
+    teacher_review.apply_review(
+        debrief,
+        review,
+        publish=frappe.utils.sbool(publish),
+        has_outcome=teacher_review.scenario_has_outcome(debrief),
+    )
+    return _save_teacher_version(debrief)
+
+
+@frappe.whitelist(methods=["POST"])
+def instructor_discard_review(session_id: str) -> dict:
+    """Delete a draft teacher version. Returns the debrief payload."""
+    debrief = _instructor_debrief(session_id)
+    teacher_review.discard_review(debrief)
+    return _save_teacher_version(debrief)
 
 
 @frappe.whitelist()
@@ -837,6 +779,8 @@ def _top_improvements(session_names: list[str], limit: int = 5) -> list[dict]:
         SELECT title, COUNT(*) AS occurrences
         FROM `tabLMSA Debrief Improvement`
         WHERE parent IN %(parents)s AND parenttype = 'LMSA Simulation Debrief'
+            -- the AI's rows: the teacher version keeps its own in review_improvements
+            AND parentfield = 'improvements'
         GROUP BY title
         ORDER BY occurrences DESC
         LIMIT %(limit)s

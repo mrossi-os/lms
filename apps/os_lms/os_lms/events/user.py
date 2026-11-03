@@ -25,6 +25,8 @@ ROLE_LINK_FIELDS = (
 	("LMS Live Class", "host"),
 	("LMSA Quality Evaluation", "triggered_by"),
 	("LMSA Simulation Debrief", "instructor_reviewed_by"),
+	("LMSA Simulation Debrief", "review_published_by"),
+	("LMSA Simulation Debrief", "outcome_decided_by"),
 	("LMSA Simulation Scenario", "created_by_instructor"),
 	("Elite API Key", "revoked_by"),
 	# The request stays as the record of the decision, without whom it was about

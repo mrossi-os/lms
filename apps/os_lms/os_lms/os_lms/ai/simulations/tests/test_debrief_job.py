@@ -118,7 +118,6 @@ class TestDebriefJob(_DebriefMockBase):
         # Computed from the criteria (9 and 7 out of 10, equal weights), not
         # the 82.5 the model wrote.
         self.assertEqual(debrief.overall_score, 80.0)
-        self.assertEqual(debrief.ai_overall_score, 80.0)
         # The AI score is indicative: it never sets the outcome, even above
         # the schema's old threshold (70 in the fixture).
         self.assertFalse(debrief.passed)
