@@ -67,3 +67,9 @@ Prove del metodo in ambiente di sviluppo: `coach_scn0144_v1_20261102-130836_loca
 ## Segnalazioni
 
 Nessuna segnalazione registrata.
+
+## Formazione AI
+
+Incontri di formazione del team Overside (politica, punto 11): data, argomenti, partecipanti.
+
+Nessun incontro registrato.

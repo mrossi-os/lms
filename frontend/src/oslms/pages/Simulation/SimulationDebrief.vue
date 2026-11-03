@@ -74,6 +74,14 @@
 						)
 					}}
 				</p>
+				<!-- AI disclosure (AI Act art. 50). -->
+				<p class="mt-2 text-xs text-ink-gray-5">
+					{{
+						__(
+							"Questo commento è generato da un'intelligenza artificiale e il tuo docente può rivederlo.",
+						)
+					}}
+				</p>
 				<div
 					v-if="status === 'needs_review'"
 					class="mt-3 text-xs text-ink-orange-5"

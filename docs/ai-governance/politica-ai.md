@@ -2,11 +2,23 @@
 
 | Voce | Valore |
 |---|---|
-| Versione | 0.1 (bozza, da approvare) |
+| Versione | 0.2 (bozza, da approvare) |
 | Data | 2026-11-03 |
 | Riferimenti | ISO/IEC 42001:2023 (sistema di gestione dell'AI); Regolamento UE 2024/1689 (AI Act); certificato ESG Solidity2 del 2026-10-28 |
 | Responsabile della politica | **[da nominare]** |
 | Revisione | ogni anno e a ogni cambiamento rilevante delle funzioni AI |
+
+### Approvazione
+
+Da compilare quando la politica viene adottata; da quel momento la versione diventa 1.0.
+
+| Voce | Valore |
+|---|---|
+| Approvata da (nome e ruolo) | **[da compilare]** |
+| Data di approvazione | **[da compilare]** |
+| Soglie del punto 6 | **[approvate così / approvate con queste modifiche: …]** |
+| Responsabile della politica nominato | **[nome e ruolo]** |
+| Verificatore umano dei giudici nominato | **[nome e ruolo]** |
 
 ## 1. Scopo
 
@@ -16,7 +28,7 @@ Questa politica dice quali funzioni di intelligenza artificiale usa la piattafor
 
 1. **L'AI aiuta, non decide da sola.** Nessuna funzione AI rilascia certificati, assegna voti ufficiali o blocca il percorso di uno studente senza una persona.
 2. **Equità.** Le risposte e le valutazioni dell'AI non devono cambiare per il nome, il genere, l'origine o il modo di scrivere in italiano dello studente. Lo verifichiamo con test misurabili (punto 6).
-3. **Trasparenza.** Gli studenti devono sapere quando parlano con un'AI (Tutor, cliente simulato, Coach). Per ogni giro di test registriamo modello, prompt (con la sua impronta SHA-256), parametri ed esiti.
+3. **Trasparenza.** Gli studenti sanno quando parlano con un'AI, come chiede l'art. 50 dell'AI Act: il Tutor si presenta come "Assistente AI"; prima di iniziare una simulazione e nell'intestazione della chat è scritto che il cliente è interpretato da un'intelligenza artificiale; sopra il commento del Coach è scritto che è generato da un'intelligenza artificiale e che il docente può rivederlo. Per ogni giro di test registriamo modello, prompt (con la sua impronta SHA-256), parametri ed esiti.
 4. **Minimo uso di dati.** All'AI va solo ciò che serve al compito: il Coach non riceve nome né profilo dello studente, solo la conversazione della simulazione; il Tutor riceve i materiali del corso e la domanda. I test usano solo dati inventati.
 5. **Miglioramento continuo.** Ogni problema trovato dai test o segnalato dagli utenti diventa un'azione registrata, con un responsabile e una verifica.
 
@@ -111,16 +123,21 @@ Ogni giro registra i token consumati (giro ufficiale del 2026-11-02: circa 3,1 m
 
 ## 11. Formazione
 
-Chi gestisce la piattaforma (sviluppo, gestori, docenti che usano i voti del Coach) riceve una formazione di base sull'AI, come chiede l'art. 4 dell'AI Act: cosa fanno le funzioni AI di Elite, i loro limiti, come leggere i voti del Coach, come segnalare un problema.
+L'art. 4 dell'AI Act chiede sia a chi sviluppa un sistema AI sia a chi lo usa di assicurare che il proprio personale abbia una conoscenza sufficiente dell'AI. Per questo:
+
+- **Overside (chi sviluppa Elite)** forma il proprio team (sviluppo, assistenza, chi configura la piattaforma) con un incontro di base all'ingresso e almeno una volta l'anno: cosa fanno le funzioni AI di Elite, i loro limiti, i risultati dei test di equità, come gestire una segnalazione. Ogni incontro si registra (data, argomenti, partecipanti) nel registro.
+- **I clienti (chi usa Elite)** sono responsabili della formazione del proprio personale (gestori e docenti). Overside fornisce loro una guida d'uso: cosa fanno il Tutor e il Coach, cosa possono sbagliare, come leggere e rivedere il voto del Coach, come segnalare un trattamento ingiusto.
 
 ## 12. Punti aperti
 
 | Punto | Stato |
 |---|---|
-| Nomina del responsabile della politica AI e del verificatore umano dei giudici | da decidere |
-| Approvazione delle soglie del punto 6 | da decidere |
+| Nomina del responsabile della politica AI e del verificatore umano dei giudici | da decidere (sezione "Approvazione") |
+| Approvazione delle soglie del punto 6 | da decidere (sezione "Approvazione") |
 | Correzione della penalità del Coach sull'italiano come seconda lingua (registro, azioni A1, A5, A6) | scelta la regola di equità nel prompt, da applicare su staging e produzione; scala e soglia da decidere con i docenti |
 | Verifica della configurazione AI di produzione | da fare, serve un accesso in sola lettura |
 | Classificazione AI Act del Coach | da confermare con un consulente legale |
 | Registro completo delle chiamate AI attivo nel codice (`ai/utils/llm/logger.py`, `ENABLED = True`) | da valutare: può scrivere nei log i testi degli studenti |
 | Temperatura e limiti impostati dal pannello ignorati da Coach e Tutor | da valutare |
+| Primo incontro di formazione AI del team Overside e guida d'uso per i clienti (punto 11) | da fare |
+| Correzione del voto del Coach da parte del docente (oggi può solo aggiungere un commento) | da fare |

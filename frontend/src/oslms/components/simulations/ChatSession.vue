@@ -8,6 +8,8 @@
 				</div>
 				<div class="text-xs text-ink-gray-5">
 					{{ personaSummary || __('Personaggio') }}
+					·
+					{{ __("interpretato da un'intelligenza artificiale") }}
 				</div>
 			</div>
 			<div

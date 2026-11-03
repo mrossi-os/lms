@@ -6,6 +6,14 @@
 		>
 			{{ brief || __('Nessun briefing disponibile.') }}
 		</div>
+		<!-- AI disclosure (AI Act art. 50), shown before chat and voice. -->
+		<div class="text-xs text-ink-gray-5">
+			{{
+				__(
+					"Il cliente di questa simulazione è interpretato da un'intelligenza artificiale. Al termine riceverai un commento generato dall'intelligenza artificiale, che il tuo docente può rivedere.",
+				)
+			}}
+		</div>
 		<!-- The voice runtime hits create_voice_session, which is gated by the
 		     global `realtime_enabled` flag. If it's off, don't offer voice: a
 		     voice-only scenario shows an explanation instead of a dead button;
