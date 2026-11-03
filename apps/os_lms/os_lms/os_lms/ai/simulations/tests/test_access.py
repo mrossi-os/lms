@@ -149,6 +149,45 @@ class TestSimulationAccess(UnitTestCase):
 				self.assertFalse(access.can_manage_course(BATCH_COURSE, user))
 				self.assertFalse(access.can_review(BATCH_COURSE, STUDENT_IN_BATCH, user))
 
+	def test_reviewers_are_the_instructors_and_the_student_batch_valutatori(self):
+		with _roles():
+			self.assertEqual(access.reviewers_of(DOCENTE_COURSE, STUDENT_OUTSIDE), {DOCENTE})
+			self.assertEqual(access.reviewers_of(BATCH_COURSE, STUDENT_IN_BATCH), {VALUTATORE})
+			# Not in the batch: nobody reviews the session from a batch
+			self.assertEqual(access.reviewers_of(BATCH_COURSE, STUDENT_OUTSIDE), set())
+			self.assertEqual(access.reviewers_of(None, STUDENT_IN_BATCH), set())
+
+	def test_reviewers_leave_out_gestori_and_the_student(self):
+		ROLES_STUDENT_TEACHES = {**ROLES, STUDENT_IN_BATCH: ["LMS Student", "Docente"]}
+		rows = [
+			{"name": "acc-test-instructor-gestore", "instructor": GESTORE},
+			{"name": "acc-test-instructor-student", "instructor": STUDENT_IN_BATCH},
+			{"name": "acc-test-instructor-moderator", "instructor": MODERATOR},
+		]
+		for values in rows:
+			frappe.get_doc(
+				{
+					"doctype": "Course Instructor",
+					"parent": DOCENTE_COURSE,
+					"parenttype": "LMS Course",
+					"parentfield": "instructors",
+					**values,
+				}
+			).db_insert()
+		try:
+			with patch.object(
+				frappe, "get_roles", side_effect=lambda user=None: ROLES_STUDENT_TEACHES.get(user, [])
+			):
+				# The Gestore bundle holds Docente, so a Gestore listed as the
+				# course instructor is asked like any teacher; a Moderator
+				# alone is not, and nobody reviews their own session.
+				self.assertEqual(
+					access.reviewers_of(DOCENTE_COURSE, STUDENT_IN_BATCH), {DOCENTE, GESTORE}
+				)
+		finally:
+			for values in rows:
+				frappe.db.delete("Course Instructor", {"name": values["name"]})
+
 	def test_session_hooks_follow_the_valutatore_batch(self):
 		inside = frappe._dict(course=BATCH_COURSE, student=STUDENT_IN_BATCH)
 		outside = frappe._dict(course=BATCH_COURSE, student=STUDENT_OUTSIDE)

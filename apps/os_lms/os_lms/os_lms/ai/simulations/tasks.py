@@ -21,6 +21,7 @@ from os_lms.os_lms.ai.utils.llm import (
 	chat_with_fallback,
 )
 
+from . import notifications
 from .prompts import (
 	DEBRIEF_SCHEMA,
 	DEBRIEF_VERSION,
@@ -71,6 +72,8 @@ def generate_debrief(session_id: str) -> str:
 		frappe.db.commit()
 		_publish(session, EVENT_DEBRIEF_FAILED, {"debrief": debrief.name, "reason": "parse failure"})
 		logger.warning("debrief parsing failed twice: session=%s", session_id)
+		# A teacher still decides the outcome, from the transcript
+		notifications.notify_outcome_requested(debrief)
 		return debrief.name
 
 	# Success: write the structured fields, then back-fill recommendations
@@ -91,6 +94,7 @@ def generate_debrief(session_id: str) -> str:
 		logger.warning("debrief rag enrichment skipped: %s", e)
 
 	_publish(session, EVENT_DEBRIEF_READY, {"debrief": debrief.name})
+	notifications.notify_outcome_requested(debrief)
 	logger.info(
 		"debrief ready: session=%s score=%s method=%s model_score=%s provider=%s",
 		session_id,

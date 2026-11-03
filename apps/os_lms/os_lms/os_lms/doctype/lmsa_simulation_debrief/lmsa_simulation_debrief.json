@@ -41,6 +41,8 @@
   "column_break_outcome",
   "outcome_decided_by",
   "outcome_decided_at",
+  "outcome_requested_at",
+  "outcome_reminded_at",
   "section_audit",
   "debrief_provider_used",
   "debrief_model_used",
@@ -292,6 +294,22 @@
    "read_only": 1
   },
   {
+   "fieldname": "outcome_requested_at",
+   "fieldtype": "Datetime",
+   "label": "Outcome Requested At",
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "When the reviewers were told the session waits for its outcome."
+  },
+  {
+   "fieldname": "outcome_reminded_at",
+   "fieldtype": "Datetime",
+   "label": "Outcome Reminded At",
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "Last reminder to the reviewers; another one follows every 7 days until the outcome is published."
+  },
+  {
    "fieldname": "section_audit",
    "fieldtype": "Section Break",
    "label": "Audit",
@@ -333,7 +351,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-11-03 20:00:00.000000",
+ "modified": "2026-11-03 22:00:00.000000",
  "modified_by": "Administrator",
  "module": "OS LMS",
  "name": "LMSA Simulation Debrief",

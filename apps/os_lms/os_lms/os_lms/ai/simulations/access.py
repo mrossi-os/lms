@@ -130,3 +130,43 @@ def can_review(course: str | None, student: str | None, user: str | None = None)
 	"""Whether the user may read another person's session of `course` and
 	write its teacher version."""
 	return review_scope(user).allows(course, student)
+
+
+def reviewers_of(course: str | None, student: str | None) -> set[str]:
+	"""Who is asked to review a session (phase 8 notifications): the course's
+	instructors and the valutatori of the student's batches holding the
+	course. Gestori are not asked as such (only when listed as the course's
+	instructors): they review from the panel, and hearing about every course
+	would drown them."""
+	if not course:
+		return set()
+	users = {
+		u
+		for u in frappe.get_all(
+			"Course Instructor",
+			filters={"parent": course, "parenttype": "LMS Course"},
+			pluck="instructor",
+		)
+		if INSTRUCTOR_ROLES & set(frappe.get_roles(u))
+	}
+	batches = frappe.get_all(
+		"Batch Course", filters={"course": course, "parenttype": "LMS Batch"}, pluck="parent"
+	)
+	if batches and student:
+		student_batches = frappe.get_all(
+			"LMS Batch Enrollment",
+			filters={"batch": ["in", batches], "member": student},
+			pluck="batch",
+		)
+		if student_batches:
+			users |= {
+				u
+				for u in frappe.get_all(
+					"LMS Batch Valutatore",
+					filters={"parent": ["in", student_batches], "parenttype": "LMS Batch"},
+					pluck="valutatore",
+				)
+				if valutatore.is_valutatore(u)
+			}
+	users.discard(student)
+	return users

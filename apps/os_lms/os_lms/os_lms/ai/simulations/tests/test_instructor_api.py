@@ -6,7 +6,7 @@ from unittest.mock import patch
 import frappe
 from frappe.tests import UnitTestCase
 
-from os_lms.os_lms.ai.simulations import SessionOrchestrator
+from os_lms.os_lms.ai.simulations import SessionOrchestrator, notifications
 from os_lms.os_lms.ai.simulations.api import (
     _first_to_last_improvement,
     _mark_improvements,
@@ -123,6 +123,12 @@ class _MockBase(UnitTestCase):
 class TestInstructorReview(_MockBase):
     def setUp(self):
         super().setUp()
+        # Publishing tells the student (phase 8): no email leaves the tests,
+        # and the bells go with the sessions in tearDown.
+        self.sessions = []
+        email_patch = patch.object(notifications, "send_templated_email")
+        self.email = email_patch.start()
+        self.addCleanup(email_patch.stop)
         F.cleanup_sessions_and_turns()
         for n in frappe.get_all("LMSA Simulation Debrief", pluck="name"):
             frappe.delete_doc("LMSA Simulation Debrief", n, force=True, ignore_permissions=True)
@@ -155,11 +161,15 @@ class TestInstructorReview(_MockBase):
     def tearDown(self):
         MockProvider.chat = self._orig_chat
         self._variant_patch.stop()
+        for session in self.sessions:
+            frappe.db.delete("Notification Log", {"document_name": session})
+        frappe.db.commit()
         super().tearDown()
 
     def _debrief_session(self) -> str:
         svc = SessionOrchestrator()
         start = svc.start_session(scenario_id=self.scenario.name)
+        self.sessions.append(start.session)
         svc.end_session(session_id=start.session, reason="completed")
         generate_debrief(start.session)
         return start.session

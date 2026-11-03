@@ -32,7 +32,7 @@ from .orchestrator import (
     scenario_time_limit,
 )
 from .tasks import generate_debrief as _run_generate_debrief
-from . import access, teacher_review
+from . import access, notifications, teacher_review
 
 
 def _service() -> SessionOrchestrator:
@@ -626,13 +626,19 @@ def instructor_save_review(session_id: str, review: dict, publish: bool = False)
     on. On simulations with an outcome it cannot be published without one.
     Returns the debrief payload."""
     debrief = _instructor_debrief(session_id)
+    was_published = debrief.review_status == teacher_review.REVIEW_PUBLISHED
     teacher_review.apply_review(
         debrief,
         review,
         publish=frappe.utils.sbool(publish),
         has_outcome=teacher_review.scenario_has_outcome(debrief),
     )
-    return _save_teacher_version(debrief)
+    payload = _save_teacher_version(debrief)
+    # Only the first publication reaches the student: later saves of a
+    # published version update the page without a new notification.
+    if not was_published and debrief.review_status == teacher_review.REVIEW_PUBLISHED:
+        notifications.notify_review_published(debrief)
+    return payload
 
 
 @frappe.whitelist(methods=["POST"])

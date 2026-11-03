@@ -13,7 +13,10 @@
 		"live_class_cancelled_template",
 		"live_class_ics_html",
 		"section_auth",
-		"login_with_email_link_template"
+		"login_with_email_link_template",
+		"section_simulations",
+		"simulation_outcome_reminder_template",
+		"simulation_review_published_template"
 	],
 	"fields": [
 		{
@@ -76,13 +79,32 @@
 			"fieldtype": "Link",
 			"label": "Login with Email Link",
 			"options": "Email Template"
+		},
+		{
+			"fieldname": "section_simulations",
+			"fieldtype": "Section Break",
+			"label": "AI Simulations"
+		},
+		{
+			"description": "Promemoria inviato ogni 7 giorni a docenti e valutatori con le simulazioni che aspettano ancora il loro esito (superata / non superata). Variabili: reviewer_name, sessions (elenco; per ciascuna: student_name, scenario_name, waiting_days, url), panel_url.",
+			"fieldname": "simulation_outcome_reminder_template",
+			"fieldtype": "Link",
+			"label": "Simulation Outcome Reminder",
+			"options": "Email Template"
+		},
+		{
+			"description": "Email inviata allo studente la prima volta che un docente pubblica la valutazione della sua simulazione. Variabili: student_name, scenario_name, teacher_name, outcome (Passed / Not Passed, vuoto se la simulazione non ha esito), outcome_reason, report_url.",
+			"fieldname": "simulation_review_published_template",
+			"fieldtype": "Link",
+			"label": "Simulation Review Published",
+			"options": "Email Template"
 		}
 	],
 	"grid_page_length": 50,
 	"index_web_pages_for_search": 1,
 	"issingle": 1,
 	"links": [],
-	"modified": "2026-05-21 12:00:00.000000",
+	"modified": "2026-11-03 22:00:00.000000",
 	"modified_by": "Administrator",
 	"module": "OS LMS",
 	"name": "OS LMS Email Settings",

@@ -275,6 +275,8 @@ onMounted(() => {
 		filters.value.course = requestedCourse
 		scenarioCourseFilter.value = requestedCourse
 	}
+	// The outcome notifications link here with the session to evaluate.
+	if (route.query.session) openTranscript(route.query.session)
 })
 
 // ---- shared course list ----

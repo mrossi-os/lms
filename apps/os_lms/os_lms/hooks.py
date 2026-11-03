@@ -356,6 +356,8 @@ scheduler_events = {
         "os_lms.os_lms.ai.ingestion.scheduler.reindex_lesson_content",
         # Remind the Gestori of account deletion requests close to or past their date.
         "os_lms.os_lms.account_deletion_requests.send_reminders",
+        # Remind the reviewers of the simulation sessions waiting for an outcome.
+        "os_lms.os_lms.ai.simulations.notifications.send_outcome_reminders",
     ],
     "cron": {
         # Email the Administrator user and the Gestori past the attack thresholds.
