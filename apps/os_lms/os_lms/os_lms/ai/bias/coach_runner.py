@@ -32,6 +32,7 @@ from os_lms.os_lms.ai.simulations.prompts.debrief import (
 	DEBRIEF_SCHEMA,
 	build_debrief_messages,
 	parse_debrief_output,
+	with_computed_overall,
 )
 from os_lms.os_lms.ai.utils.llm.errors import LLMRateLimit, LLMServerError
 from os_lms.os_lms.ai.utils.llm.provider import ChatMessage, JsonSchema
@@ -82,6 +83,7 @@ def run_coach_bias_test(
 	run_id = f"{datetime.now():%Y%m%d-%H%M%S}_{label}"
 	provider = resolve_provider("debrief")
 	jobs = build_jobs(dataset, prompt, repeats=repeats, cases=cases, variants=variants)
+	schema_criteria = dataset["scenario"]["evaluation_schema"]["criteria"]
 
 	# Wrapped here, not in the workers: wrap_for_tracing reads frappe.conf,
 	# which is bound to this thread only.
@@ -94,7 +96,7 @@ def run_coach_bias_test(
 
 	def evaluate_job(job: dict) -> dict:
 		return {key: job[key] for key in ("case_id", "variant", "repeat")} | evaluate(
-			job["provider"], job["system"], job["messages"]
+			job["provider"], job["system"], job["messages"], schema_criteria
 		)
 
 	started = time.monotonic()
@@ -121,6 +123,9 @@ def run_coach_bias_test(
 		},
 		"temperature": TEMPERATURE,
 		"max_tokens": MAX_TOKENS,
+		# Since debrief.v2 the score students get is computed from the
+		# criteria (prompts/debrief.compute_overall_score), not the model's.
+		"overall_score_source": "criteria",
 		"repeats": repeats,
 		"elapsed_seconds": round(elapsed),
 		"records": records,
@@ -184,8 +189,9 @@ def build_jobs(
 	]
 
 
-def evaluate(provider, system: str, messages: list[dict]) -> dict:
-	"""One Coach evaluation, with the production corrective retry."""
+def evaluate(provider, system: str, messages: list[dict], schema_criteria: list[dict]) -> dict:
+	"""One Coach evaluation, with the production corrective retry and the
+	production overall score (computed from the criteria)."""
 	chat_messages = [ChatMessage(role=m["role"], content=m["content"]) for m in messages]
 	kwargs = {
 		"system": system,
@@ -194,6 +200,8 @@ def evaluate(provider, system: str, messages: list[dict]) -> dict:
 	}
 	record = {
 		"overall_score": None,
+		"model_overall_score": None,
+		"overall_method": None,
 		"criteria": {},
 		"criterion_max_scores": [],
 		"retried": False,
@@ -222,7 +230,10 @@ def evaluate(provider, system: str, messages: list[dict]) -> dict:
 	except Exception as exc:
 		record["error"] = f"{type(exc).__name__}: {exc}"
 		return record
+	result = with_computed_overall(result, schema_criteria)
 	record["overall_score"] = result.overall_score
+	record["model_overall_score"] = result.model_overall_score
+	record["overall_method"] = result.overall_method
 	# The prompt never states the criterion scale, so the Coach picks one
 	# per answer (seen: out of 100 and out of 20): criteria are compared
 	# as a percentage of the max_score the answer declares.
@@ -300,6 +311,12 @@ def render_report(results: dict) -> str:
 		f"- Prompt del Coach: {results['prompt']['version']}, SHA-256 system"
 		f" `{results['prompt']['system_template_sha256'][:16]}…`, user"
 		f" `{results['prompt']['user_template_sha256'][:16]}…` ({results['prompt']['source']})",
+		"- Voto complessivo: "
+		+ (
+			"calcolato dal codice dai voti per criterio (come per gli studenti dal prompt debrief.v2)"
+			if results.get("overall_score_source") == "criteria"
+			else "quello scritto dal Coach"
+		),
 		f"- Valutazioni: {a['evaluations']}, fallite {a['failed']}, ripetute per JSON non valido"
 		f" {a['retried']}; token {a['tokens']}; durata {results['elapsed_seconds']} s",
 		"",

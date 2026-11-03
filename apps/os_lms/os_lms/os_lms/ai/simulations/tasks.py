@@ -27,6 +27,7 @@ from .prompts import (
 	DebriefResult,
 	build_debrief_messages,
 	parse_debrief_output,
+	with_computed_overall,
 )
 
 EVENT_DEBRIEF_READY = "simulation:debrief_ready"
@@ -91,11 +92,19 @@ def generate_debrief(session_id: str) -> str:
 
 	_publish(session, EVENT_DEBRIEF_READY, {"debrief": debrief.name})
 	logger.info(
-		"debrief ready: session=%s score=%s provider=%s",
+		"debrief ready: session=%s score=%s method=%s model_score=%s provider=%s",
 		session_id,
 		result.overall_score,
+		result.overall_method,
+		result.model_overall_score,
 		provider_used,
 	)
+	if result.overall_method != "weighted":
+		# The criteria did not match the schema: the score is not weighted
+		# as the scenario designed it.
+		logger.warning(
+			"debrief overall score not weighted: session=%s method=%s", session_id, result.overall_method
+		)
 	return debrief.name
 
 
@@ -166,7 +175,8 @@ def _ask_llm(session, logger: logging.Logger) -> tuple[DebriefResult | None, str
 	)
 
 	try:
-		return parse_debrief_output(response.text), response.text, response.provider, response.model
+		result = with_computed_overall(parse_debrief_output(response.text), schema_criteria)
+		return result, response.text, response.provider, response.model
 	except ValueError as first_err:
 		logger.warning("debrief parse failed once, retrying at temperature=0: %s", first_err)
 
@@ -191,7 +201,8 @@ def _ask_llm(session, logger: logging.Logger) -> tuple[DebriefResult | None, str
 		response_format=JsonSchema(name="debrief", schema=DEBRIEF_SCHEMA),
 	)
 	try:
-		return parse_debrief_output(retry.text), retry.text, retry.provider, retry.model
+		result = with_computed_overall(parse_debrief_output(retry.text), schema_criteria)
+		return result, retry.text, retry.provider, retry.model
 	except ValueError as second_err:
 		logger.warning("debrief parse failed twice: %s", second_err)
 		return None, retry.text, retry.provider, retry.model

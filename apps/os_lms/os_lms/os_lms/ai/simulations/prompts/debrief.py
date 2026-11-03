@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 
-DEBRIEF_VERSION = "debrief.v1"
+DEBRIEF_VERSION = "debrief.v2"
 
 # Explicit, unambiguous speaker labels for the transcript fed to the grader.
 # The student ("user" turns) is the ONLY subject of evaluation; the AI
@@ -60,6 +60,12 @@ class DebriefResult:
     improvements: list[ImprovementDC] = field(default_factory=list)
     behavioral_analysis: str = ""
     recommended_content: list[RecommendationDC] = field(default_factory=list)
+    # The overall score the model wrote, kept beside the one computed from
+    # the criteria (see with_computed_overall). None until computed.
+    model_overall_score: float | None = None
+    # How overall_score was obtained: "weighted" (schema weights),
+    # "unweighted" (criteria not matching the schema) or "model".
+    overall_method: str = "model"
 
 
 # SYSTEM_PROMPT used to be hardcoded here; it now lives in `LMSA Prompt
@@ -250,7 +256,50 @@ def parse_debrief_output(text: str) -> DebriefResult:
     )
 
 
+def compute_overall_score(
+    criterion_scores: list[CriterionScoreDC], schema_criteria: list[dict]
+) -> tuple[float | None, str]:
+    """Overall score 0-100 from the criterion scores, not from the model.
+
+    The bias tests of 2026-11-03 showed the model's own overall score
+    carries a penalty for students writing in Italian as a second language
+    that the criterion scores do not (docs/ai-governance/registro-test-bias.md,
+    action A1). Each criterion counts as a percentage of the max_score the
+    model declares, so a desk-edited prompt that uses another scale still
+    adds up. Weighted by the schema when every schema criterion is scored;
+    otherwise the plain mean of the scored criteria. Returns (score, method);
+    (None, "model") when there is nothing to compute from.
+    """
+    percents: dict[str, float] = {}
+    for c in criterion_scores:
+        if c.max_score and c.max_score > 0:
+            percents[_criterion_key(c.criterion)] = min(max(c.score / c.max_score, 0.0), 1.0) * 100
+    if not percents:
+        return None, "model"
+    weights = {_criterion_key(c["name"]): float(c.get("weight") or 0.0) for c in schema_criteria}
+    total = sum(weights.values())
+    if weights and total > 0 and weights.keys() <= percents.keys():
+        score = sum(percents[k] * w for k, w in weights.items()) / total
+        return round(score, 1), "weighted"
+    return round(sum(percents.values()) / len(percents), 1), "unweighted"
+
+
+def with_computed_overall(result: DebriefResult, schema_criteria: list[dict]) -> DebriefResult:
+    """Replace the model's overall score with the one computed from the
+    criteria, keeping the model's in ``model_overall_score``."""
+    result.model_overall_score = result.overall_score
+    score, method = compute_overall_score(result.criterion_scores, schema_criteria)
+    if score is not None:
+        result.overall_score = score
+    result.overall_method = method
+    return result
+
+
 # ---- internals ----
+
+
+def _criterion_key(name: str) -> str:
+    return " ".join((name or "").split()).casefold()
 
 
 def _parse_criterion(node: dict) -> CriterionScoreDC:

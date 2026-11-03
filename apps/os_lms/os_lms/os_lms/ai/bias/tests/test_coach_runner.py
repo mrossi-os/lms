@@ -16,6 +16,7 @@ VALID = json.dumps({
                           "evidence_quote": None, "note": None}],
     "strengths": [], "improvements": [], "behavioral_analysis": "ok", "recommended_content": [],
 })
+SCHEMA = [{"name": "Closing e prossimo passo", "weight": 1.0}]
 
 
 class _ScriptedProvider:
@@ -68,25 +69,28 @@ class TestCoachRunner(UnitTestCase):
 
     def test_evaluate_parses_the_debrief(self):
         provider = _ScriptedProvider(VALID)
-        record = coach_runner.evaluate(provider, "system", [{"role": "user", "content": "x"}])
+        record = coach_runner.evaluate(provider, "system", [{"role": "user", "content": "x"}], SCHEMA)
+        # The overall score is computed from the criteria, as for the students;
+        # the model's own 72 is kept beside it.
         self.assertEqual(
             (record["overall_score"], record["criteria"], record["retried"], record["error"], record["tokens"]),
-            (72.0, {"Closing e prossimo passo": 70.0}, False, None, 15),
+            (70.0, {"Closing e prossimo passo": 70.0}, False, None, 15),
         )
+        self.assertEqual((record["model_overall_score"], record["overall_method"]), (72.0, "weighted"))
         call = provider.calls[0]
         self.assertEqual((call["temperature"], call["max_tokens"], call["system"]), (0.2, 2000, "system"))
 
     def test_evaluate_retries_invalid_json_at_temperature_zero(self):
         provider = _ScriptedProvider("not json", VALID)
-        record = coach_runner.evaluate(provider, "system", [{"role": "user", "content": "x"}])
-        self.assertEqual((record["overall_score"], record["retried"]), (72.0, True))
+        record = coach_runner.evaluate(provider, "system", [{"role": "user", "content": "x"}], SCHEMA)
+        self.assertEqual((record["overall_score"], record["retried"]), (70.0, True))
         retry = provider.calls[1]
         self.assertEqual(retry["temperature"], 0)
         self.assertEqual(retry["messages"][-1].content, coach_runner.RETRY_PROMPT)
 
     def test_evaluate_records_failures_instead_of_raising(self):
         provider = _ScriptedProvider("not json", "still not json")
-        record = coach_runner.evaluate(provider, "system", [{"role": "user", "content": "x"}])
+        record = coach_runner.evaluate(provider, "system", [{"role": "user", "content": "x"}], SCHEMA)
         self.assertIsNone(record["overall_score"])
         self.assertTrue(record["error"].startswith("ValueError"))
 
@@ -95,10 +99,10 @@ class TestCoachRunner(UnitTestCase):
         coach_runner.time.sleep = lambda seconds: None
         try:
             provider = _ScriptedProvider(LLMRateLimit("slow down"), VALID)
-            record = coach_runner.evaluate(provider, "system", [{"role": "user", "content": "x"}])
+            record = coach_runner.evaluate(provider, "system", [{"role": "user", "content": "x"}], SCHEMA)
         finally:
             coach_runner.time.sleep = coach_runner_sleep
-        self.assertEqual((record["overall_score"], len(provider.calls)), (72.0, 2))
+        self.assertEqual((record["overall_score"], len(provider.calls)), (70.0, 2))
 
     def test_report_renders(self):
         records = [

@@ -8,8 +8,11 @@ from frappe.tests import UnitTestCase
 from os_lms.os_lms.ai.simulations.prompts import (
     DEBRIEF_SCHEMA,
     DEBRIEF_VERSION,
+    CriterionScoreDC,
     build_debrief_messages,
+    compute_overall_score,
     parse_debrief_output,
+    with_computed_overall,
 )
 
 
@@ -143,3 +146,46 @@ class TestDebriefParser(UnitTestCase):
         result = parse_debrief_output(json.dumps(payload))
         self.assertEqual(result.overall_score, 50.0)
         self.assertEqual(result.strengths, [])
+
+
+class TestComputedOverallScore(UnitTestCase):
+    SCHEMA = [{"name": "Listening", "weight": 0.75}, {"name": "Closing", "weight": 0.25}]
+
+    def test_weighted_by_the_schema(self):
+        scores = [CriterionScoreDC("Listening", 9, 10), CriterionScoreDC("Closing", 5, 10)]
+        self.assertEqual(compute_overall_score(scores, self.SCHEMA), (80.0, "weighted"))
+
+    def test_names_match_ignoring_case_and_spaces(self):
+        scores = [CriterionScoreDC(" listening ", 9, 10), CriterionScoreDC("CLOSING", 5, 10)]
+        self.assertEqual(compute_overall_score(scores, self.SCHEMA), (80.0, "weighted"))
+
+    def test_each_criterion_counts_on_its_own_scale(self):
+        # A desk-edited prompt without the fixed scale: the model may use 20 or 100.
+        scores = [CriterionScoreDC("Listening", 18, 20), CriterionScoreDC("Closing", 50, 100)]
+        self.assertEqual(compute_overall_score(scores, self.SCHEMA), (80.0, "weighted"))
+
+    def test_scores_are_clamped_to_the_scale(self):
+        scores = [CriterionScoreDC("Listening", 12, 10), CriterionScoreDC("Closing", -1, 10)]
+        self.assertEqual(compute_overall_score(scores, self.SCHEMA), (75.0, "weighted"))
+
+    def test_plain_mean_when_a_schema_criterion_is_missing(self):
+        scores = [CriterionScoreDC("Listening", 9, 10), CriterionScoreDC("Ascolto", 5, 10)]
+        self.assertEqual(compute_overall_score(scores, self.SCHEMA), (70.0, "unweighted"))
+
+    def test_plain_mean_when_the_weights_are_zero(self):
+        schema = [{"name": "Listening", "weight": 0}, {"name": "Closing", "weight": 0}]
+        scores = [CriterionScoreDC("Listening", 9, 10), CriterionScoreDC("Closing", 5, 10)]
+        self.assertEqual(compute_overall_score(scores, schema), (70.0, "unweighted"))
+
+    def test_nothing_to_compute_from(self):
+        self.assertEqual(compute_overall_score([], self.SCHEMA), (None, "model"))
+        self.assertEqual(compute_overall_score([CriterionScoreDC("Listening", 9, 0)], self.SCHEMA), (None, "model"))
+
+    def test_the_model_score_is_kept_beside_the_computed_one(self):
+        result = with_computed_overall(parse_debrief_output(json.dumps(VALID_PAYLOAD)), self.SCHEMA)
+        self.assertEqual((result.overall_score, result.model_overall_score, result.overall_method), (85.0, 82.5, "weighted"))
+
+    def test_the_model_score_stays_when_there_are_no_criteria(self):
+        payload = dict(VALID_PAYLOAD, criterion_scores=[])
+        result = with_computed_overall(parse_debrief_output(json.dumps(payload)), self.SCHEMA)
+        self.assertEqual((result.overall_score, result.model_overall_score, result.overall_method), (82.5, 82.5, "model"))

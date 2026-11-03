@@ -115,7 +115,10 @@ class TestDebriefJob(_DebriefMockBase):
         name = self._run_full_flow()
         debrief = frappe.get_doc("LMSA Simulation Debrief", name)
         self.assertEqual(debrief.status, "Ready")
-        self.assertEqual(debrief.overall_score, 82.5)
+        # Computed from the criteria (9 and 7 out of 10, equal weights), not
+        # the 82.5 the model wrote.
+        self.assertEqual(debrief.overall_score, 80.0)
+        self.assertEqual(debrief.ai_overall_score, 80.0)
         self.assertTrue(debrief.passed)  # threshold 70 in fixture schema
         self.assertEqual(len(debrief.criterion_scores), 2)
         self.assertEqual(len(debrief.strengths), 1)
@@ -220,6 +223,6 @@ class TestGetDebriefEndpoint(_DebriefMockBase):
         ):
             payload = get_debrief(session_id=start.session)
         self.assertEqual(payload["status"], "ready")
-        self.assertEqual(payload["overall_score"], 82.5)
+        self.assertEqual(payload["overall_score"], 80.0)
         self.assertEqual(len(payload["criterion_scores"]), 2)
         self.assertTrue(payload["passed"])

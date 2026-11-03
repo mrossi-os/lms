@@ -33,10 +33,12 @@ def _stub_generate_variant(self, scenario, seed, provider):
     return F.CANNED_VARIANT
 
 
+# The overall score is computed from the criteria (equal weights in the
+# fixture schema): 8 and 7 out of 10 give the same 75 the model writes.
 VALID_DEBRIEF_JSON = (
     '{"overall_score":75,"criterion_scores":['
     '{"criterion":"Listening","score":8},'
-    '{"criterion":"Closing","score":6}'
+    '{"criterion":"Closing","score":7}'
     '],"strengths":[{"title":"Empatia"}],'
     '"improvements":[{"title":"Closing diretto","suggestion":"Proponi un check-call"}],'
     '"behavioral_analysis":"Ottimo ritmo","recommended_content":[]}'

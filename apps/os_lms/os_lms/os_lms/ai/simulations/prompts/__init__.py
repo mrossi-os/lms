@@ -15,7 +15,9 @@ from .debrief import (
     RecommendationDC,
     StrengthDC,
     build_debrief_messages,
+    compute_overall_score,
     parse_debrief_output,
+    with_computed_overall,
 )
 from .defense import (
     INJECTION_PATTERNS,
@@ -50,9 +52,11 @@ __all__ = [
     "build_debrief_messages",
     "build_role_play_system_prompt",
     "build_scenario_generator_messages",
+    "compute_overall_score",
     "detect_injection",
     "in_character_refusal",
     "parse_debrief_output",
     "parse_scenario_generator_output",
     "render_situation_template",
+    "with_computed_overall",
 ]
