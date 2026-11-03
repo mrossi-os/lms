@@ -368,8 +368,7 @@ class TestM5VoiceTurnsAndDebrief(UnitTestCase):
 		with (
 			_session(STUDENT),
 			patch.object(api, "load_session", return_value=session),
-			patch.object(api, "has_moderator_role", return_value=False),
-			patch.object(api, "_is_course_instructor", return_value=staff),
+			patch.object(api.access, "can_review", return_value=staff),
 			patch.object(frappe.db, "get_value", return_value=existing),
 			patch.object(api, "_run_generate_debrief", return_value="D") as run,
 			patch.object(frappe, "get_doc"),
@@ -390,17 +389,14 @@ class TestM5VoiceTurnsAndDebrief(UnitTestCase):
 		self._generate(existing="Ready", staff=True).assert_called_once()
 
 
-	def test_asking_whether_a_student_is_an_instructor_leaves_no_message(self):
+	def test_asking_whether_a_student_is_a_reviewer_leaves_no_message(self):
 		# frappe.throw queues its message even when the caller catches it: the
 		# student saw "You are not an instructor of this course" on their debrief.
-		from os_lms.os_lms.ai.simulations import api
+		from os_lms.os_lms.ai.simulations import access
 
 		before = list(frappe.local.message_log)
-		with (
-			patch.object(api, "has_moderator_role", return_value=False),
-			patch.object(api, "has_course_instructor_role", return_value=False),
-		):
-			self.assertFalse(api._is_course_instructor("C"))
+		with _roles("LMS Student"):
+			self.assertFalse(access.can_review("C", STUDENT, STUDENT))
 		self.assertEqual(frappe.local.message_log, before)
 
 
@@ -1072,11 +1068,14 @@ class TestL4SimulationDataPermissions(UnitTestCase):
 		with _roles(*roles):
 			return schema.has_permission(doc, ptype, user)
 
-	def test_only_the_owner_or_a_moderator_changes_a_schema(self):
+	def test_only_the_owner_or_a_gestore_changes_a_schema(self):
+		# Phase 5 of docs/ai-simulator/PIANO-esito-e-punteggio-coach.md: a
+		# Moderator on its own grants nothing on simulations.
 		for ptype in ("write", "delete", "share"):
 			with self.subTest(ptype):
 				self.assertTrue(self._schema_permission(self.OWNER, ["Course Creator"], ptype))
-				self.assertTrue(self._schema_permission(self.OTHER, ["Moderator"], ptype))
+				self.assertTrue(self._schema_permission(self.OTHER, ["Gestore"], ptype))
+				self.assertFalse(self._schema_permission(self.OTHER, ["Moderator"], ptype, is_shared=1))
 				self.assertFalse(self._schema_permission(self.OTHER, ["Course Creator"], ptype, is_shared=1))
 
 	def test_other_instructors_read_only_shared_schemas(self):
@@ -1091,6 +1090,8 @@ class TestL4SimulationDataPermissions(UnitTestCase):
 		self.assertIn(f"owner = '{self.OTHER}'", condition)
 		self.assertIn("is_shared = 1", condition)
 		with _roles("Moderator"):
+			self.assertIn("is_shared = 1", schema.get_permission_query_conditions(self.OTHER))
+		with _roles("Gestore"):
 			self.assertEqual(schema.get_permission_query_conditions(self.OTHER), "")
 
 	def test_the_transcript_cache_is_still_written_for_any_user(self):

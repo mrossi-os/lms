@@ -12,6 +12,7 @@ import json
 import frappe
 
 from os_lms.os_lms.ai.simulations.eval.permissions import (
+	require_evaluation_access,
 	require_scenario_access,
 	require_session_access,
 )
@@ -113,7 +114,7 @@ def run_production_evaluation(session_id: str) -> dict:
 @frappe.whitelist()
 def get_evaluation_status(eval_id: str) -> dict:
 	evaluation = frappe.get_doc("LMSA Quality Evaluation", eval_id)
-	require_scenario_access(evaluation.scenario)
+	require_evaluation_access(evaluation)
 	return {
 		"eval_id": evaluation.name,
 		"scenario": evaluation.scenario,
@@ -132,7 +133,7 @@ def get_evaluation_status(eval_id: str) -> dict:
 @frappe.whitelist()
 def get_evaluation_result(eval_id: str) -> dict:
 	evaluation = frappe.get_doc("LMSA Quality Evaluation", eval_id)
-	require_scenario_access(evaluation.scenario)
+	require_evaluation_access(evaluation)
 	traces_out = []
 	for trace in evaluation.traces:
 		traces_out.append(

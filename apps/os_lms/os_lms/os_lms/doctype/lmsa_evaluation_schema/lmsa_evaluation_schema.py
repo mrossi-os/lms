@@ -26,12 +26,16 @@ class LMSAEvaluationSchema(Document):
 
 # The same rules as the simulation editor endpoints (get/save/delete_evaluation_schema),
 # applied to Desk and /api/resource too.
-ROLES_WITH_FULL_ACCESS = {"System Manager", "Moderator"}
+def _has_full_access(user: str) -> bool:
+	# Imported here: the simulations package imports the session doctype.
+	from os_lms.os_lms.ai.simulations import access
+
+	return access.has_full_access(user)
 
 
 def get_permission_query_conditions(user: str | None = None) -> str:
 	user = user or frappe.session.user
-	if user == "Administrator" or ROLES_WITH_FULL_ACCESS & set(frappe.get_roles(user)):
+	if _has_full_access(user):
 		return ""
 	owner = frappe.db.escape(user, percent=False)
 	return f"(`tabLMSA Evaluation Schema`.owner = {owner} OR `tabLMSA Evaluation Schema`.is_shared = 1)"
@@ -39,7 +43,7 @@ def get_permission_query_conditions(user: str | None = None) -> str:
 
 def has_permission(doc, ptype: str = "read", user: str | None = None) -> bool:
 	user = user or frappe.session.user
-	if user == "Administrator" or ROLES_WITH_FULL_ACCESS & set(frappe.get_roles(user)):
+	if _has_full_access(user):
 		return True
 	if ptype == "create" or doc.owner == user:
 		return True

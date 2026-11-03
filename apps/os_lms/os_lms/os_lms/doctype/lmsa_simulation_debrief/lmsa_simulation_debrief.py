@@ -4,9 +4,6 @@
 import frappe
 from frappe.model.document import Document
 
-# Mirror Session's full-access roles
-ROLES_WITH_FULL_ACCESS = {"System Manager", "Moderator", "LMS Manager"}
-
 STATUS_PENDING = "Pending"
 STATUS_READY = "Ready"
 STATUS_NEEDS_REVIEW = "Needs Review"
@@ -22,47 +19,36 @@ class LMSASimulationDebrief(Document):
 
 
 def get_permission_query_conditions(user: str | None = None) -> str:
-	"""Instructors see debriefs of their courses; sysadmin/moderator/manager
-	see all. Students get none: the debrief keeps score, outcome and the raw
-	model output, which the simulation page hides from them (it reads the
-	debrief server-side and returns only what they may see)."""
+	"""The debriefs of the sessions the user may review. Students get none:
+	the debrief keeps scores, outcome and the raw model output, which the
+	simulation page hides from them (it reads the debrief server-side and
+	returns only what they may see)."""
+	from os_lms.os_lms.ai.simulations import access
+
 	user = user or frappe.session.user
-	if user == "Administrator":
+	scope = access.review_scope(user)
+	if scope.full:
 		return ""
 
-	roles = set(frappe.get_roles(user))
-	if roles & ROLES_WITH_FULL_ACCESS:
-		return ""
-
-	if "Course Creator" in roles or "LMS Instructor" in roles:
-		courses = frappe.get_all(
-			"Course Instructor", filters={"instructor": user}, pluck="parent"
-		)
-		if not courses:
-			return "1=0"
-		# frappe.db.escape() already wraps each value in quotes.
-		quoted = ",".join(frappe.db.escape(c, percent=False) for c in courses)
-		return f"`tabLMSA Simulation Debrief`.course IN ({quoted})"
-
-	return "1=0"
+	table = "`tabLMSA Simulation Debrief`"
+	clauses = []
+	if scope.courses:
+		quoted = ",".join(frappe.db.escape(c, percent=False) for c in scope.courses)
+		clauses.append(f"{table}.course IN ({quoted})")
+	for course, students in scope.students_by_course.items():
+		if students:
+			quoted = ",".join(frappe.db.escape(s, percent=False) for s in students)
+			clauses.append(
+				f"({table}.course = {frappe.db.escape(course, percent=False)} AND "
+				f"{table}.student IN ({quoted}))"
+			)
+	return f"({' OR '.join(clauses)})" if clauses else "1=0"
 
 
 def has_permission(doc, ptype: str = "read", user: str | None = None) -> bool:
-	user = user or frappe.session.user
-	if user == "Administrator":
-		return True
+	"""Reviewers of the session (ai/simulations/access.py) read and write the
+	debrief; they write the teacher version (ai/simulations/teacher_review.py).
+	Students read theirs only through the simulation page."""
+	from os_lms.os_lms.ai.simulations import access
 
-	roles = set(frappe.get_roles(user))
-	if roles & ROLES_WITH_FULL_ACCESS:
-		return True
-
-	if "Course Creator" in roles or "LMS Instructor" in roles:
-		# Instructors write the teacher version (ai/simulations/teacher_review.py).
-		return bool(
-			frappe.db.exists(
-				"Course Instructor", {"parent": doc.course, "instructor": user}
-			)
-		)
-
-	# Students read their debrief only through the simulation page.
-	return False
+	return access.can_review(doc.course, doc.student, user or frappe.session.user)

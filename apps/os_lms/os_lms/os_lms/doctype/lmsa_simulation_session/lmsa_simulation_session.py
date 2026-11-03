@@ -5,9 +5,6 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
-# Roles that bypass all permission checks for the simulation feature.
-ROLES_WITH_FULL_ACCESS = {"System Manager", "Moderator", "LMS Manager"}
-
 # Session states. Keep in sync with the doctype JSON `status` Select options.
 STATUS_READY = "Ready"
 STATUS_IN_PROGRESS = "In Progress"
@@ -28,65 +25,55 @@ class LMSASimulationSession(Document):
 			self.started_at = frappe.utils.now_datetime()
 
 
+def _access():
+	# Imported here: the simulations package imports this module.
+	from os_lms.os_lms.ai.simulations import access
+
+	return access
+
+
+def _in_clause(values) -> str:
+	# frappe.db.escape() already wraps each value in quotes.
+	return ",".join(frappe.db.escape(v, percent=False) for v in values)
+
+
 def get_permission_query_conditions(user: str | None = None) -> str:
-	"""List filter: students see only their own sessions; instructors see all
-	sessions for their courses; sysadmin/moderator/manager see everything.
-	"""
+	"""List filter: the user's own sessions plus those they may review
+	(ai/simulations/access.py: a Valutatore only their batches' students)."""
 	user = user or frappe.session.user
-	if user == "Administrator":
+	scope = _access().review_scope(user)
+	if scope.full:
 		return ""
 
-	roles = set(frappe.get_roles(user))
-	if roles & ROLES_WITH_FULL_ACCESS:
-		return ""
-
-	if "Course Creator" in roles or "LMS Instructor" in roles:
-		courses = frappe.get_all(
-			"Course Instructor", filters={"instructor": user}, pluck="parent"
-		)
-		if not courses:
-			return "1=0"
-		# frappe.db.escape() already wraps each value in quotes.
-		quoted = ",".join(frappe.db.escape(c, percent=False) for c in courses)
-		return f"`tabLMSA Simulation Session`.course IN ({quoted})"
-
-	if "LMS Student" in roles:
-		return (
-			f"`tabLMSA Simulation Session`.student = "
-			f"{frappe.db.escape(user, percent=False)}"
-		)
-
-	return "1=0"
+	table = "`tabLMSA Simulation Session`"
+	clauses = [f"{table}.student = {frappe.db.escape(user, percent=False)}"]
+	if scope.courses:
+		clauses.append(f"{table}.course IN ({_in_clause(scope.courses)})")
+	for course, students in scope.students_by_course.items():
+		if students:
+			clauses.append(
+				f"({table}.course = {frappe.db.escape(course, percent=False)} AND "
+				f"{table}.student IN ({_in_clause(students)}))"
+			)
+	return f"({' OR '.join(clauses)})"
 
 
 def has_permission(doc, ptype: str = "read", user: str | None = None) -> bool:
 	"""Per-document gate.
 
-	- Sysadmin / Moderator / LMS Manager: full access.
-	- Course Creator / LMS Instructor of the session's course: read-only access
-	  to any session of that course; never write (sessions are owned by students).
-	- LMS Student: only their own sessions, read-only: the DocPerm grants no
-	  create/write, and the orchestrator writes server-side with
+	- Full access (Gestore, System Manager, Administrator): everything.
+	- The session's student: their own session. The DocPerm grants no
+	  create/write; the orchestrator writes server-side with
 	  `ignore_permissions` after the endpoint has checked the owner.
+	- Whoever may review it (Docente of the course, Valutatore of the
+	  student's batch): read-only; sessions belong to the students.
 	"""
 	user = user or frappe.session.user
-	if user == "Administrator":
+	access = _access()
+	if access.has_full_access(user):
 		return True
-
-	roles = set(frappe.get_roles(user))
-	if roles & ROLES_WITH_FULL_ACCESS:
+	if doc.student == user:
 		return True
-
-	if "Course Creator" in roles or "LMS Instructor" in roles:
-		if ptype not in {"read", "report", "print", "export", "email", "share"}:
-			return False
-		return bool(
-			frappe.db.exists(
-				"Course Instructor", {"parent": doc.course, "instructor": user}
-			)
-		)
-
-	if "LMS Student" in roles:
-		return doc.student == user
-
-	return False
+	if ptype not in {"read", "report", "print", "export", "email", "share"}:
+		return False
+	return access.can_review(doc.course, doc.student, user)

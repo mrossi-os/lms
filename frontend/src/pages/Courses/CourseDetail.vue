@@ -415,15 +415,19 @@ const tabs = computed<DetailTab[]>(() => [
 		when: canManageCourse.value,
 		flow: true,
 	},
-	// OSLMS-CUSTOM: admin-only Simulations tab, when simulations are enabled
-	// globally. Students no longer get a Simulations course tab: they launch
-	// simulations and review past attempts through the floating launcher button.
+	// OSLMS-CUSTOM: Simulations tab for whoever manages the course's simulations
+	// (ai/simulations/access.py: course instructors, Gestore, and the valutatori of
+	// a batch holding the course), when simulations are enabled globally. Students
+	// no longer get a Simulations course tab: they launch simulations and review
+	// past attempts through the floating launcher button.
 	{
 		key: 'simulations',
 		label: __('Simulations'),
 		component: markRaw(CourseSimulations),
 		icon: 'lucide-bot',
-		when: canManageCourse.value && simulationsEnabledGlobal.value,
+		when:
+			(canManageCourse.value || isValutatore.value) &&
+			simulationsEnabledGlobal.value,
 	},
 ])
 

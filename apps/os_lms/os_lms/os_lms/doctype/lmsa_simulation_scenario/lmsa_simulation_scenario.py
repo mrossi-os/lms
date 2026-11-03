@@ -5,7 +5,6 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
-ROLES_WITH_FULL_ACCESS = {"System Manager", "Moderator", "LMS Manager"}
 
 
 class LMSASimulationScenario(Document):
@@ -42,77 +41,44 @@ class LMSASimulationScenario(Document):
 			)
 
 
+def _access():
+	# Imported here: the simulations package imports the session doctype.
+	from os_lms.os_lms.ai.simulations import access
+
+	return access
+
+
+def _in_clause(values) -> str:
+	# frappe.db.escape() already wraps each value in quotes.
+	return ",".join(frappe.db.escape(v, percent=False) for v in values)
+
+
 def get_permission_query_conditions(user: str | None = None) -> str:
-	"""Filter list view: instructors see only scenarios of their courses;
-	students see only Published scenarios for courses they are enrolled in.
-	Sysadmin / Moderator / LMS Manager have no filter.
-	"""
+	"""List filter: every scenario of the courses whose simulations the user
+	manages (ai/simulations/access.py), plus the Published scenarios of the
+	courses they are enrolled in."""
 	user = user or frappe.session.user
-	if user == "Administrator":
+	managed = _access().managed_courses(user)
+	if managed is None:
 		return ""
 
-	roles = set(frappe.get_roles(user))
-	if roles & ROLES_WITH_FULL_ACCESS:
-		return ""
-
-	# Instructor: only courses they own
-	if "Course Creator" in roles or "LMS Instructor" in roles:
-		courses = frappe.get_all(
-			"Course Instructor",
-			filters={"instructor": user},
-			pluck="parent",
-		)
-		if not courses:
-			return "1=0"
-		quoted = ",".join(frappe.db.escape(c, percent=False) for c in courses)
-		return f"`tabLMSA Simulation Scenario`.lms_course IN ({quoted})"
-
-	# Student: only Published scenarios for enrolled courses
-	if "LMS Student" in roles:
-		courses = frappe.get_all(
-			"LMS Enrollment",
-			filters={"member": user},
-			pluck="course",
-		)
-		if not courses:
-			return "1=0"
-		quoted = ",".join(frappe.db.escape(c, percent=False) for c in courses)
-		return (
-			f"(`tabLMSA Simulation Scenario`.lms_course IN ({quoted}) AND "
+	clauses = []
+	if managed:
+		clauses.append(f"`tabLMSA Simulation Scenario`.lms_course IN ({_in_clause(managed)})")
+	enrolled = frappe.get_all("LMS Enrollment", filters={"member": user}, pluck="course")
+	if enrolled:
+		clauses.append(
+			f"(`tabLMSA Simulation Scenario`.lms_course IN ({_in_clause(enrolled)}) AND "
 			f"`tabLMSA Simulation Scenario`.status = 'Published')"
 		)
-
-	return "1=0"
+	return f"({' OR '.join(clauses)})" if clauses else "1=0"
 
 
 def has_permission(doc, ptype: str = "read", user: str | None = None) -> bool:
 	"""Per-document gate. Mirrors the list filter but on a single doc."""
 	user = user or frappe.session.user
-	if user == "Administrator":
+	if _access().can_manage_course(doc.lms_course, user):
 		return True
-	roles = set(frappe.get_roles(user))
-	if roles & ROLES_WITH_FULL_ACCESS:
-		return True
-
-	if "Course Creator" in roles or "LMS Instructor" in roles:
-		if ptype in {"read", "report", "print", "export", "email", "share"}:
-			return frappe.db.exists(
-				"Course Instructor",
-				{"parent": doc.lms_course, "instructor": user},
-			)
-		# write/delete only for the course's instructors
-		return frappe.db.exists(
-			"Course Instructor",
-			{"parent": doc.lms_course, "instructor": user},
-		)
-
-	if "LMS Student" in roles:
-		if ptype != "read":
-			return False
-		if doc.status != "Published":
-			return False
-		return frappe.db.exists(
-			"LMS Enrollment", {"member": user, "course": doc.lms_course}
-		)
-
+	if ptype == "read" and doc.status == "Published":
+		return bool(frappe.db.exists("LMS Enrollment", {"member": user, "course": doc.lms_course}))
 	return False

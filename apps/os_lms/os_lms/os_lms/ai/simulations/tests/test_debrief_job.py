@@ -201,7 +201,7 @@ class TestGetDebriefEndpoint(_DebriefMockBase):
         # Force the non-privileged path so the test doesn't depend on how the
         # ambient test user's roles happen to be configured.
         with patch(
-            "os_lms.os_lms.ai.simulations.api._is_course_instructor",
+            "os_lms.os_lms.ai.simulations.access.can_review",
             return_value=False,
         ):
             payload = get_debrief(session_id=start.session)
@@ -221,7 +221,7 @@ class TestGetDebriefEndpoint(_DebriefMockBase):
 
         # An instructor/moderator viewing the same debrief still gets the grade.
         with patch(
-            "os_lms.os_lms.ai.simulations.api.has_moderator_role", return_value=True
+            "os_lms.os_lms.ai.simulations.access.can_review", return_value=True
         ):
             payload = get_debrief(session_id=start.session)
         self.assertEqual(payload["status"], "ready")

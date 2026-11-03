@@ -14,8 +14,8 @@ from typing import NoReturn
 import frappe
 from frappe import _
 
-from lms.lms.utils import has_moderator_role
 from os_lms.os_lms.access_guards import check_user_rate_limit
+from os_lms.os_lms.ai.simulations import access
 from os_lms.os_lms.ai.simulations.api import load_session
 from os_lms.os_lms.ai.simulations.limits import VOICE_TOKEN_ACTION, load_limits
 from os_lms.os_lms.ai.simulations.orchestrator import (
@@ -171,7 +171,7 @@ def end_voice_session(session_id: str, reason: str = "completed", seconds: int =
 	if reason not in ("completed", "abandoned"):
 		frappe.throw(_("Unsupported reason: {0}").format(reason))
 	session = load_session(session_id)
-	if session.student != frappe.session.user and not has_moderator_role():
+	if session.student != frappe.session.user and not access.has_full_access():
 		frappe.throw(_("Only the session owner can end the session."), frappe.PermissionError)
 
 	if seconds:

@@ -12,7 +12,6 @@ from __future__ import annotations
 import frappe
 from frappe import _
 
-from lms.lms.utils import has_course_instructor_role, has_moderator_role, is_instructor
 
 from os_lms.os_lms.access_guards import check_user_rate_limit
 from os_lms.os_lms.ai.audio.pipeline import run_audio_turn
@@ -33,40 +32,34 @@ from .orchestrator import (
     scenario_time_limit,
 )
 from .tasks import generate_debrief as _run_generate_debrief
-from . import teacher_review
+from . import access, teacher_review
 
 
 def _service() -> SessionOrchestrator:
     return SessionOrchestrator()
 
 
-def _instructor_courses(user: str | None = None) -> list[str]:
-    """Return the list of course names where `user` is registered as instructor."""
-    user = user or frappe.session.user
-    return frappe.get_all(
-        "Course Instructor", filters={"instructor": user}, pluck="parent"
-    )
+def _can_manage_course(course: str) -> bool:
+    """Whether the current user may create, edit and list the course's
+    scenarios (access.can_manage_course).
 
-
-def _is_course_instructor(course: str) -> bool:
-    """Whether the current user is a moderator or an instructor of the course.
-
-    Asked directly, not by catching _ensure_instructor_of_course: frappe.throw
+    Asked directly, not by catching _ensure_can_manage_course: frappe.throw
     queues its message on the response even when the exception is caught, so a
     student used to see "You are not an instructor of this course" next to an
     answer that had nothing to do with it."""
-    if has_moderator_role():
-        return True
-    return bool(has_course_instructor_role() and is_instructor(course))
+    return access.can_manage_course(course)
 
 
-def _ensure_instructor_of_course(course: str) -> None:
-    """Raise PermissionError if the current user is neither moderator nor an
-    instructor of the given course."""
-    if not _is_course_instructor(course):
+def _ensure_can_manage_course(course: str) -> None:
+    if not _can_manage_course(course):
         frappe.throw(
-            _("You are not an instructor of this course"), frappe.PermissionError
+            _("You cannot manage the simulations of this course"), frappe.PermissionError
         )
+
+
+def _ensure_can_author() -> None:
+    if not access.may_author():
+        frappe.throw(_("You cannot manage simulations"), frappe.PermissionError)
 
 
 def load_session(session_id: str):
@@ -80,11 +73,9 @@ def load_session(session_id: str):
     session = frappe.get_doc("LMSA Simulation Session", session_id)
     user = frappe.session.user
 
-    if has_moderator_role():
-        return session
     if user == session.student:
         return session
-    if has_course_instructor_role() and session.course and is_instructor(session.course):
+    if access.can_review(session.course, session.student):
         return session
 
     frappe.throw(
@@ -111,9 +102,7 @@ def _resolve_published_scenario(scenario_id: str):
     scenario = frappe.get_doc("LMSA Simulation Scenario", scenario_id)
     user = frappe.session.user
 
-    if has_moderator_role():
-        return scenario
-    if has_course_instructor_role() and is_instructor(scenario.lms_course):
+    if _can_manage_course(scenario.lms_course):
         return scenario
     if scenario.status != "Published":
         frappe.throw(
@@ -271,7 +260,7 @@ def end_session(session_id: str, reason: str = "completed") -> dict:
         frappe.throw(_("Unsupported reason: {0}").format(reason))
 
     session = load_session(session_id)
-    if session.student != frappe.session.user and not has_moderator_role():
+    if session.student != frappe.session.user and not access.has_full_access():
         frappe.throw(_("Only the session owner can end the session"), frappe.PermissionError)
 
     return dict(_service().end_session(session_id=session.name, reason=reason))
@@ -364,7 +353,7 @@ def generate_debrief(session_id: str) -> dict:
     # to redraw their score until they liked it, each draw a paid LLM call.
     if session.status in ("In Progress", "Ready"):
         frappe.throw(_("The debrief is generated when the session ends."))
-    if not _is_course_instructor(session.course):
+    if not access.can_review(session.course, session.student):
         if session.student != frappe.session.user:
             frappe.throw(_("Not permitted"), frappe.PermissionError)
         existing = frappe.db.get_value("LMSA Simulation Debrief", {"session": session.name}, "status")
@@ -380,13 +369,13 @@ def generate_debrief(session_id: str) -> dict:
 def _viewer_can_see_scores(session) -> bool:
     """Whether the current user may see the numeric score and pass/fail.
 
-    Only instructors of the session's course and moderators do. Plain
+    Only the people who may review the session do (access.can_review). Plain
     students — even the session owner — receive qualitative coaching feedback
-    (strengths, improvements, suggestions) without a grade. Delegates to the
-    canonical instructor gate so score visibility can't diverge from who is
-    treated as an instructor elsewhere.
+    (strengths, improvements, suggestions) without a grade. A Docente or
+    Valutatore playing their own test session is a reviewer of it only when
+    their role reaches its course and student.
     """
-    return _is_course_instructor(session.course)
+    return access.can_review(session.course, session.student)
 
 
 def _serialize_debrief(debrief, include_scores: bool = True) -> dict:
@@ -450,70 +439,46 @@ def _serialize_debrief(debrief, include_scores: bool = True) -> dict:
 
 @frappe.whitelist()
 def list_scenarios(course: str | None = None) -> list[dict]:
-    """List Published scenarios accessible to the current user.
+    """List the scenarios the current user may play.
 
-    - Students: scenarios of courses they are enrolled in.
-    - Instructors of the course: all scenarios of that course (any status).
-    - Moderator / sysadmin: all scenarios (filtered by `course` if provided).
+    - Courses whose simulations the user manages (access.managed_courses):
+      every scenario, any status, so the instructor can try drafts.
+    - Courses the user is enrolled in: Published scenarios only.
     """
     user = frappe.session.user
-    filters: dict = {}
-    if course:
-        filters["lms_course"] = course
-
-    if has_moderator_role():
+    fields = ["name", "scenario_name", "lms_course", "course_lesson", "difficulty", "modality", "status"]
+    managed = access.managed_courses()
+    if managed is None:
+        filters: dict = {"lms_course": course} if course else {}
         return frappe.get_all(
-            "LMSA Simulation Scenario",
-            filters=filters,
-            fields=["name", "scenario_name", "lms_course", "course_lesson", "difficulty", "modality", "status"],
-            order_by="modified desc",
+            "LMSA Simulation Scenario", filters=filters, fields=fields, order_by="modified desc"
         )
 
-    if has_course_instructor_role():
-        # Restrict to courses the user instructs
-        instructor_courses = frappe.get_all(
-            "Course Instructor", filters={"instructor": user}, pluck="parent"
-        )
-        if course and course not in instructor_courses:
-            instructor_courses = [c for c in instructor_courses if c == course]
-        if instructor_courses:
-            filters["lms_course"] = ["in", instructor_courses] if not course else course
-            return frappe.get_all(
-                "LMSA Simulation Scenario",
-                filters=filters,
-                fields=["name", "scenario_name", "lms_course", "course_lesson", "difficulty", "modality", "status"],
-                order_by="modified desc",
-            )
-
-    # Student path: enrolled courses + Published scenarios
-    enrolled = frappe.get_all(
-        "LMS Enrollment", filters={"member": user}, pluck="course"
-    )
-    if not enrolled:
-        return []
-    filters["status"] = "Published"
+    enrolled = set(frappe.get_all("LMS Enrollment", filters={"member": user}, pluck="course"))
     if course:
-        if course not in enrolled:
-            return []
-    else:
-        filters["lms_course"] = ["in", enrolled]
-    # `status` is always "Published" on this path (filtered above) but is returned
-    # so clients can filter uniformly across the instructor/moderator payloads,
-    # which include drafts.
-    return frappe.get_all(
-        "LMSA Simulation Scenario",
-        filters=filters,
-        fields=[
-            "name",
-            "scenario_name",
-            "lms_course",
-            "course_lesson",
-            "difficulty",
-            "modality",
-            "status",
-        ],
-        order_by="modified desc",
-    )
+        managed &= {course}
+        enrolled &= {course}
+    enrolled -= managed
+
+    scenarios = []
+    if managed:
+        scenarios += frappe.get_all(
+            "LMSA Simulation Scenario",
+            filters={"lms_course": ["in", list(managed)]},
+            fields=fields + ["modified"],
+        )
+    if enrolled:
+        # `status` is always "Published" here but is returned so clients can
+        # filter uniformly across the managed rows, which include drafts.
+        scenarios += frappe.get_all(
+            "LMSA Simulation Scenario",
+            filters={"lms_course": ["in", list(enrolled)], "status": "Published"},
+            fields=fields + ["modified"],
+        )
+    scenarios.sort(key=lambda r: r.modified, reverse=True)
+    for row in scenarios:
+        row.pop("modified")
+    return scenarios
 
 
 @frappe.whitelist()
@@ -583,9 +548,10 @@ def list_my_sessions(course: str | None = None, scenario: str | None = None) -> 
 
 
 def _instructor_debrief(session_id: str):
-    """Load the debrief of `session_id` for a course instructor (or moderator)."""
+    """Load the debrief of `session_id` for someone who may review it."""
     session = load_session(session_id)
-    _ensure_instructor_of_course(session.course)
+    if not access.can_review(session.course, session.student):
+        frappe.throw(_("You cannot review this session"), frappe.PermissionError)
 
     name = frappe.db.get_value("LMSA Simulation Debrief", {"session": session.name}, "name")
     if not name:
@@ -638,7 +604,8 @@ def instructor_report(
     period_days: int = 30,
     scenario: str | None = None,
 ) -> dict:
-    """Aggregated report + sessions list for the courses the user instructs.
+    """Aggregated report + sessions list for the sessions the user may review
+    (access.review_scope: a Valutatore sees only the students of their batches).
 
     Returns:
       - `kpi`: total_sessions, completed_sessions, avg_score, students_count
@@ -646,7 +613,10 @@ def instructor_report(
       - `top_improvement_titles`: most frequent improvement titles
       - `sessions`: list of session rows with score + status + scenario + student
     """
-    allowed_courses = _allowed_report_courses()
+    scope = access.review_scope()
+    allowed_courses = (
+        set(frappe.get_all("LMS Course", pluck="name")) if scope.full else scope.course_names()
+    )
     if not allowed_courses:
         return _empty_report()
 
@@ -684,6 +654,7 @@ def instructor_report(
         order_by="started_at desc",
         limit_page_length=500,
     )
+    sessions = [s for s in sessions if scope.allows(s["course"], s["student"])]
     session_names = [s["name"] for s in sessions]
 
     debriefs_by_session: dict[str, dict] = {}
@@ -726,12 +697,6 @@ def instructor_report(
         "top_improvement_titles": _top_improvements(session_names),
         "sessions": enriched,
     }
-
-
-def _allowed_report_courses() -> set[str]:
-    if has_moderator_role():
-        return set(frappe.get_all("LMS Course", pluck="name"))
-    return set(_instructor_courses())
 
 
 def _empty_report() -> dict:
@@ -796,15 +761,17 @@ def _top_improvements(session_names: list[str], limit: int = 5) -> list[dict]:
 
 @frappe.whitelist()
 def list_my_scenarios(course: str | None = None) -> list[dict]:
-    """All scenarios for courses the user instructs (any status)."""
-    allowed = _allowed_report_courses()
-    if not allowed:
-        return []
-    filters = {"lms_course": ["in", list(allowed)]}
-    if course:
-        if course not in allowed:
+    """All scenarios (any status) of the courses whose simulations the user
+    manages."""
+    managed = access.managed_courses()
+    if managed is None:
+        filters = {"lms_course": course} if course else {}
+    else:
+        if course:
+            managed &= {course}
+        if not managed:
             return []
-        filters["lms_course"] = course
+        filters = {"lms_course": ["in", list(managed)]}
     return frappe.get_all(
         "LMSA Simulation Scenario",
         filters=filters,
@@ -824,26 +791,43 @@ def list_my_scenarios(course: str | None = None) -> list[dict]:
 
 @frappe.whitelist()
 def list_my_evaluation_schemas() -> list[dict]:
-    """Evaluation Schemas: instructors see their own + shared ones; moderators see all."""
-    if has_moderator_role():
-        return frappe.get_all(
-            "LMSA Evaluation Schema",
-            fields=["name", "schema_name", "scoring_scale", "passing_threshold", "is_shared"],
-            order_by="modified desc",
-        )
+    """Evaluation schemas the user may pick: their own, the shared ones and
+    those the scenarios of their courses use (a colleague's scenario keeps
+    its schema on save); everyone's for full access."""
+    fields = ["name", "schema_name", "scoring_scale", "passing_threshold", "is_shared"]
+    managed = access.managed_courses()
+    if managed is None:
+        return frappe.get_all("LMSA Evaluation Schema", fields=fields, order_by="modified desc")
 
-    user = frappe.session.user
+    names = set(
+        frappe.get_all(
+            "LMSA Evaluation Schema",
+            or_filters=[["owner", "=", frappe.session.user], ["is_shared", "=", 1]],
+            pluck="name",
+        )
+    ) | _schemas_used_by_courses(managed)
+    if not names:
+        return []
     return frappe.get_all(
         "LMSA Evaluation Schema",
-        filters=[["owner", "=", user]],
-        fields=["name", "schema_name", "scoring_scale", "passing_threshold", "is_shared"],
-        order_by="modified desc",
-    ) + frappe.get_all(
-        "LMSA Evaluation Schema",
-        filters=[["is_shared", "=", 1], ["owner", "!=", user]],
-        fields=["name", "schema_name", "scoring_scale", "passing_threshold", "is_shared"],
+        filters={"name": ["in", list(names)]},
+        fields=fields,
         order_by="modified desc",
     )
+
+
+def _schemas_used_by_courses(courses: set[str]) -> set[str]:
+    if not courses:
+        return set()
+    return {
+        name
+        for name in frappe.get_all(
+            "LMSA Simulation Scenario",
+            filters={"lms_course": ["in", list(courses)]},
+            pluck="evaluation_schema",
+        )
+        if name
+    }
 
 
 @frappe.whitelist()
@@ -852,7 +836,7 @@ def get_scenario(name: str) -> dict:
     if not frappe.db.exists("LMSA Simulation Scenario", name):
         frappe.throw(_("Scenario not found"), frappe.DoesNotExistError)
     doc = frappe.get_doc("LMSA Simulation Scenario", name)
-    _ensure_instructor_of_course(doc.lms_course)
+    _ensure_can_manage_course(doc.lms_course)
     return {
         "name": doc.name,
         "scenario_name": doc.scenario_name,
@@ -893,14 +877,14 @@ def save_scenario(payload: dict) -> dict:
     course = payload.get("lms_course")
     if not course:
         frappe.throw(_("lms_course is required"))
-    _ensure_instructor_of_course(course)
+    _ensure_can_manage_course(course)
 
     name = payload.get("name")
     if name and frappe.db.exists("LMSA Simulation Scenario", name):
         doc = frappe.get_doc("LMSA Simulation Scenario", name)
         # Forbid moving a scenario to a course you don't instruct
         if doc.lms_course != course:
-            _ensure_instructor_of_course(doc.lms_course)
+            _ensure_can_manage_course(doc.lms_course)
     else:
         doc = frappe.new_doc("LMSA Simulation Scenario")
 
@@ -955,7 +939,7 @@ def delete_scenario(name: str) -> dict:
     if not frappe.db.exists("LMSA Simulation Scenario", name):
         frappe.throw(_("Scenario not found"), frappe.DoesNotExistError)
     course = frappe.db.get_value("LMSA Simulation Scenario", name, "lms_course")
-    _ensure_instructor_of_course(course)
+    _ensure_can_manage_course(course)
     if frappe.db.exists("LMSA Simulation Session", {"scenario": name}):
         frappe.throw(
             _("Cannot delete a scenario that has sessions. Archive it instead."),
@@ -970,7 +954,7 @@ def _set_scenario_status(name: str, status: str) -> dict:
     if not frappe.db.exists("LMSA Simulation Scenario", name):
         frappe.throw(_("Scenario not found"), frappe.DoesNotExistError)
     course = frappe.db.get_value("LMSA Simulation Scenario", name, "lms_course")
-    _ensure_instructor_of_course(course)
+    _ensure_can_manage_course(course)
     frappe.db.set_value("LMSA Simulation Scenario", name, "status", status)
     frappe.db.commit()
     return {"name": name, "status": status}
@@ -996,9 +980,14 @@ def get_evaluation_schema(name: str) -> dict:
     if not frappe.db.exists("LMSA Evaluation Schema", name):
         frappe.throw(_("Evaluation schema not found"), frappe.DoesNotExistError)
     doc = frappe.get_doc("LMSA Evaluation Schema", name)
-    # Schemas: owner OR moderator OR shared
-    user = frappe.session.user
-    if not has_moderator_role() and doc.owner != user and not doc.is_shared:
+    # The same schemas list_my_evaluation_schemas offers
+    managed = access.managed_courses()
+    if not (
+        managed is None
+        or doc.owner == frappe.session.user
+        or doc.is_shared
+        or doc.name in _schemas_used_by_courses(managed)
+    ):
         frappe.throw(_("You cannot view this evaluation schema"), frappe.PermissionError)
     return {
         "name": doc.name,
@@ -1024,8 +1013,7 @@ def save_evaluation_schema(payload: dict) -> dict:
     """Create or update an evaluation schema. Server enforces weight-sum=1.0 via doctype validate()."""
     if not isinstance(payload, dict):
         frappe.throw(_("payload must be an object"))
-    if not has_course_instructor_role() and not has_moderator_role():
-        frappe.throw(_("Only instructors can manage evaluation schemas"), frappe.PermissionError)
+    _ensure_can_author()
 
     name = payload.get("name")
     is_update = bool(name)
@@ -1039,7 +1027,7 @@ def save_evaluation_schema(payload: dict) -> dict:
                 frappe.DoesNotExistError,
             )
         doc = frappe.get_doc("LMSA Evaluation Schema", name)
-        if doc.owner != frappe.session.user and not has_moderator_role():
+        if doc.owner != frappe.session.user and not access.has_full_access():
             frappe.throw(_("You cannot modify this evaluation schema"), frappe.PermissionError)
     else:
         doc = frappe.new_doc("LMSA Evaluation Schema")
@@ -1095,7 +1083,7 @@ def delete_evaluation_schema(name: str) -> dict:
             frappe.ValidationError,
         )
     owner = frappe.db.get_value("LMSA Evaluation Schema", name, "owner")
-    if owner != frappe.session.user and not has_moderator_role():
+    if owner != frappe.session.user and not access.has_full_access():
         frappe.throw(_("Only the owner can delete this evaluation schema"), frappe.PermissionError)
     frappe.delete_doc("LMSA Evaluation Schema", name, force=True, ignore_permissions=True)
     frappe.db.commit()
@@ -1117,7 +1105,7 @@ def ai_generate_scenario(
     """
     if not course:
         frappe.throw(_("course is required"))
-    _ensure_instructor_of_course(course)
+    _ensure_can_manage_course(course)
 
     from .authoring_ai import generate_scenario_payload
 
@@ -1141,12 +1129,9 @@ def ai_generate_student_brief(payload: dict) -> dict:
 
     course = payload.get("lms_course")
     if course:
-        _ensure_instructor_of_course(course)
-    elif not has_course_instructor_role() and not has_moderator_role():
-        frappe.throw(
-            _("Only instructors can generate simulation briefs"),
-            frappe.PermissionError,
-        )
+        _ensure_can_manage_course(course)
+    else:
+        _ensure_can_author()
 
     from .authoring_ai import generate_student_brief
 
@@ -1189,14 +1174,10 @@ def ai_generate_evaluation_schema(
     context retrieval, otherwise the LLM relies purely on ``hint`` and the
     system prompt. Nothing is persisted.
     """
-    if not has_course_instructor_role() and not has_moderator_role():
-        frappe.throw(
-            _("Only instructors can generate evaluation schemas"),
-            frappe.PermissionError,
-        )
+    _ensure_can_author()
     if course:
         # When a course is supplied, enforce it belongs to the user.
-        _ensure_instructor_of_course(course)
+        _ensure_can_manage_course(course)
 
     from .authoring_ai import generate_evaluation_schema_payload
 
@@ -1210,10 +1191,12 @@ def ai_generate_evaluation_schema(
 def get_transcript(session_id: str) -> dict:
     """Read-only transcript + debrief lookup for the instructor drill-down."""
     session = load_session(session_id)
-    if session.student != frappe.session.user:
-        # Drill-down is only for moderators and the course's instructors.
-        if not has_moderator_role():
-            _ensure_instructor_of_course(session.course)
+    if session.student != frappe.session.user and not access.can_review(
+        session.course, session.student
+    ):
+        # Unreachable while load_session lets in only owners and reviewers;
+        # kept so the drill-down stays closed if that ever changes.
+        frappe.throw(_("You cannot review this session"), frappe.PermissionError)
     turns = frappe.get_all(
         "LMSA Simulation Turn",
         filters={"session": session.name},
