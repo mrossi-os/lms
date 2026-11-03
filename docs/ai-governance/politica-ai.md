@@ -119,7 +119,7 @@ Chi gestisce la piattaforma (sviluppo, gestori, docenti che usano i voti del Coa
 |---|---|
 | Nomina del responsabile della politica AI e del verificatore umano dei giudici | da decidere |
 | Approvazione delle soglie del punto 6 | da decidere |
-| Correzione della penalità del Coach sull'italiano come seconda lingua (registro, azione A1) | da decidere |
+| Correzione della penalità del Coach sull'italiano come seconda lingua (registro, azioni A1, A5, A6) | scelta la regola di equità nel prompt, da applicare su staging e produzione; scala e soglia da decidere con i docenti |
 | Verifica della configurazione AI di produzione | da fare, serve un accesso in sola lettura |
 | Classificazione AI Act del Coach | da confermare con un consulente legale |
 | Registro completo delle chiamate AI attivo nel codice (`ai/utils/llm/logger.py`, `ENABLED = True`) | da valutare: può scrivere nei log i testi degli studenti |

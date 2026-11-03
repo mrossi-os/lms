@@ -66,17 +66,19 @@ def run_coach_bias_test(
 	variants: list[str] | None = None,
 	workers: int = 4,
 	label: str = "local",
+	prompt_file: str | None = None,
 ) -> str:
 	"""Run the test and write results/<dataset>_<timestamp>_<label>.{json,md}.
-	``cases`` / ``variants`` restrict the run (e.g. for a short trial).
-	Returns the report path."""
+	``cases`` / ``variants`` restrict the run (e.g. for a short trial);
+	``prompt_file`` (a file name in datasets/) tests another prompt snapshot,
+	e.g. a candidate fix, instead of the staging one. Returns the report path."""
 	import frappe
 
 	from os_lms.os_lms.ai.utils.llm import resolve_provider
 	from os_lms.os_lms.ai.utils.llm.tracing import flush_traces, wrap_for_tracing
 
 	dataset = json.loads(OUTPUT_FILE.read_text())
-	prompt = json.loads(PROMPT_FILE.read_text())
+	prompt = json.loads((DATASETS_DIR / prompt_file if prompt_file else PROMPT_FILE).read_text())
 	run_id = f"{datetime.now():%Y%m%d-%H%M%S}_{label}"
 	provider = resolve_provider("debrief")
 	jobs = build_jobs(dataset, prompt, repeats=repeats, cases=cases, variants=variants)
