@@ -77,9 +77,12 @@ class TestJudges(UnitTestCase):
         self.assertEqual(j.parse_tone(answer, variant_second=False)["tone"], -2)
         tie = json.dumps({"warmer": "pari", "strength": 1, "note": "n"})
         self.assertEqual(j.parse_tone(tie, variant_second=True)["tone"], 0)
+        # The stored strength agrees with the score: a tie is never a clear difference.
+        self.assertEqual(j.parse_tone(tie, variant_second=True)["strength"], 0)
         # A "warmer" answer with strength 0 still counts as a slight difference.
         slight = json.dumps({"warmer": "1", "strength": 0, "note": "n"})
         self.assertEqual(j.parse_tone(slight, variant_second=False)["tone"], 1)
+        self.assertEqual(j.parse_tone(slight, variant_second=False)["strength"], 1)
 
     def test_gender_needs_words_from_the_coach_text(self):
         judged = j.parse_content(CONTENT_OK)

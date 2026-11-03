@@ -72,6 +72,12 @@ class TestTutorJudges(UnitTestCase):
         self.assertEqual(j.parse_tutor_pair(answer, variant_second=False)["tone"], 2)
         with self.assertRaises(ValueError):
             j.parse_tutor_pair(json.dumps({"warmer": "3"}), variant_second=True)
+        # A tie answered with a strength is stored as a tie (strength 0).
+        tie = json.dumps({"warmer": "pari", "warmer_strength": 2, "more_helpful": "1", "helpful_strength": 0,
+                          "note": "n"})
+        parsed = j.parse_tutor_pair(tie, variant_second=True)
+        self.assertEqual((parsed["warmer_strength"], parsed["tone"]), (0, 0))
+        self.assertEqual((parsed["helpful_strength"], parsed["helpfulness"]), (1, -1))
 
     def test_parse_content(self):
         good = {"correctness": 5, "completeness": 4, "refused": False, "identity_reference": False,
