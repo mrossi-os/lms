@@ -57,12 +57,25 @@ Prove del metodo in ambiente di sviluppo: `coach_scn0144_v1_20261102-130836_loca
 
 | # | Aperta il | Problema | Azione | Responsabile | Stato |
 |---|---|---|---|---|---|
-| A1 | 2026-11-02 | Il Coach dà in media 1,5 punti in meno a chi scrive in italiano come seconda lingua (più basso in 14 casi su 20; promossi 25% contro 42%). I voti per criterio sono uguali: la penalità sta nel voto complessivo, che il Coach decide a parte. | Provati due prompt il 2026-11-03; scelta la sola regola di equità (prova 2), da applicare con l'azione A5; resta in osservazione nel giro trimestrale | [da nominare] | mitigata, in attesa di A5 |
+| A1 | 2026-11-02 | Il Coach dà in media 1,5 punti in meno a chi scrive in italiano come seconda lingua (più basso in 14 casi su 20; promossi 25% contro 42%). I voti per criterio sono uguali: la penalità sta nel voto complessivo, che il Coach decide a parte. | Provati due prompt il 2026-11-03; scelta la sola regola di equità (prova 2), da applicare con l'azione A5; resta in osservazione nel giro trimestrale | [da nominare] | mitigata sullo staging dal 2026-11-03 (A5); produzione e giudici in attesa |
 | A2 | 2026-11-02 | Ahmed −0,8 rispetto a Matteo, ripetuto in due giri; sotto la soglia di 3 punti | Tenere sotto osservazione nel giro trimestrale; ricontrollare dopo A1 | [da nominare] | in osservazione |
 | A3 | 2026-11-02 | I giudici non sono ancora verificati da una persona; il giudice scambia le concordanze al femminile per riferimenti all'identità | Compilare i fogli `_labeling.csv` del giro ufficiale; correggere le istruzioni del giudice in base all'esito | [da nominare] | aperta |
 | A4 | 2026-11-02 | 4 giudizi del Tutor falliti per credito Gemini esaurito | Ricaricare il credito e rifare i 4 giudizi | sviluppo | aperta |
-| A5 | 2026-11-03 | Il prompt del Coach con la regola di equità non è ancora attivo | Aggiungere la sezione "Equità" dal pannello (LMSA Prompt Template "debrief") su staging e produzione, con il testo identico a quello provato; verificare l'impronta `169d9628eb7a90c2…` in sola lettura; giudici sui testi dopo la ricarica di Gemini | [da nominare] | **staging fatto** il 2026-11-03 alle 10:05 (Administrator, impronta verificata nel database); produzione e giudici da fare |
+| A5 | 2026-11-03 | Il prompt del Coach con la regola di equità non è ancora attivo | Aggiungere la sezione "Equità" dal pannello (LMSA Prompt Template "debrief") su staging e produzione, con il testo identico a quello provato; verificare l'impronta `169d9628eb7a90c2…` in sola lettura; giudici sui testi dopo la ricarica di Gemini | [da nominare] | **staging fatto** il 2026-11-03 alle 10:05 (Administrator, impronta verificata nel database; invariata dopo i deploy dello stesso giorno); produzione e giudici da fare |
 | A6 | 2026-11-03 | La scala fissa dei criteri e il voto complessivo calcolato dai criteri (prova 1) eliminano quasi tutta la penalità ma abbassano i promossi | Decidere con i docenti se adottarli insieme a una nuova soglia di promozione | [da nominare] | da decidere |
+
+## Verifiche della sorveglianza umana
+
+### 2026-11-03 — Correzione del voto del Coach da parte del docente (staging 1.16.45)
+
+Prova sullo staging come Administrator, autorizzata, su un debrief reale creato prima della funzione (DBR-1012, sessione SES-0986, voto dell'AI 65, soglia 70).
+
+| Passo | Risultato |
+|---|---|
+| Correzione a 72 con motivazione | voto finale 72, "Superata"; voto dell'AI 65 conservato; registrati autore, data e motivazione; versione del documento salvata |
+| Ripristino del voto dell'AI | voto 65, "Non superata"; campi della correzione svuotati; la cronologia delle versioni conserva la prova |
+
+Prima del rilascio la stessa verifica ha trovato e fatto correggere un difetto: sui debrief già esistenti il voto dell'AI sarebbe andato perso alla prima correzione (versione 1.16.44, corretta nella 1.16.45). Test automatici: `ai/simulations/tests/test_instructor_api.py`, classe `TestInstructorScoreOverride`.
 
 ## Segnalazioni
 

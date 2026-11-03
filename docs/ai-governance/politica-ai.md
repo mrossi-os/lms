@@ -135,10 +135,10 @@ L'art. 4 dell'AI Act chiede sia a chi sviluppa un sistema AI sia a chi lo usa di
 |---|---|
 | Nomina del responsabile della politica AI e del verificatore umano dei giudici | da decidere (sezione "Approvazione") |
 | Approvazione delle soglie del punto 6 | da decidere (sezione "Approvazione") |
-| Correzione della penalità del Coach sull'italiano come seconda lingua (registro, azioni A1, A5, A6) | scelta la regola di equità nel prompt, da applicare su staging e produzione; scala e soglia da decidere con i docenti |
+| Correzione della penalità del Coach sull'italiano come seconda lingua (registro, azioni A1, A5, A6) | regola di equità attiva sullo staging dal 2026-11-03 (impronta `169d9628…`, invariata dopo i deploy); da applicare in produzione quando userà il Coach; giudici sui nuovi commenti dopo la ricarica di Gemini; scala e soglia da decidere con i docenti |
 | Verifica della configurazione AI di produzione | da fare, serve un accesso in sola lettura |
 | Classificazione AI Act del Coach | da confermare con un consulente legale |
 | Registro completo delle chiamate AI attivo nel codice (`ai/utils/llm/logger.py`, `ENABLED = True`) | da valutare: può scrivere nei log i testi degli studenti |
 | Temperatura e limiti impostati dal pannello ignorati da Coach e Tutor | da valutare |
 | Primo incontro di formazione AI del team Overside e guida d'uso per i clienti (punto 11) | da fare |
-| Correzione del voto del Coach da parte del docente | fatta nel codice il 2026-11-03 (punto 5), da rilasciare su staging e produzione |
+| Correzione del voto del Coach da parte del docente | fatta (punto 5): sullo staging dalla versione 1.16.45, provata il 2026-11-03 (registro, "Verifiche della sorveglianza umana"); in produzione con il prossimo rilascio |
