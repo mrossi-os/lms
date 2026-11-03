@@ -653,11 +653,20 @@ def instructor_report(
     """Aggregated report + sessions list for the sessions the user may review
     (access.review_scope: a Valutatore sees only the students of their batches).
 
+    Scores are the ones the students see: the published teacher version's,
+    otherwise the AI's indicative one (docs/ai-simulator/
+    PIANO-esito-e-punteggio-coach.md, phase 7).
+
     Returns:
-      - `kpi`: total_sessions, completed_sessions, avg_score, students_count
+      - `kpi`: total_sessions, completed_sessions, avg_score, students_count,
+        `reviewed` (AI vs teacher average on the sessions with a published
+        teacher version), `outcomes` (passed out of the outcomes people
+        decided), `to_evaluate` (sessions waiting for an outcome) and
+        `improvement` (first vs last attempt per student and scenario)
       - `score_distribution`: bucketed counts (0-20, 20-40, ...)
-      - `top_improvement_titles`: most frequent improvement titles
-      - `sessions`: list of session rows with score + status + scenario + student
+      - `top_improvement_titles`: most frequent improvement titles (the AI's)
+      - `sessions`: list of session rows with score, outcome, status, scenario
+        and student
     """
     scope = access.review_scope()
     allowed_courses = (
@@ -708,28 +717,46 @@ def instructor_report(
         for d in frappe.get_all(
             "LMSA Simulation Debrief",
             filters={"session": ["in", session_names]},
-            fields=["name", "session", "status", "overall_score"],
+            fields=[
+                "name",
+                "session",
+                "status",
+                "overall_score",
+                "review_status",
+                "review_overall_score",
+                "outcome",
+            ],
         ):
             debriefs_by_session[d["session"]] = d
+    outcome_scenarios = set(
+        frappe.get_all(
+            "LMSA Simulation Scenario",
+            filters={
+                "name": ["in", list({s["scenario"] for s in sessions}) or [""]],
+                "has_human_outcome": 1,
+            },
+            pluck="name",
+        )
+    )
 
     enriched = []
-    scores: list[float] = []
     completed_count = 0
     students_seen: set[str] = set()
     for s in sessions:
-        d = debriefs_by_session.get(s["name"]) or {}
+        d = debriefs_by_session.get(s["name"])
         s = dict(s)
-        s["debrief"] = d.get("name")
-        s["overall_score"] = d.get("overall_score")
-        s["debrief_status"] = d.get("status")
+        s["debrief"] = d["name"] if d else None
+        s["debrief_status"] = d["status"] if d else None
+        s["ai_score"] = d["overall_score"] if d else None
+        s.update(_attempt_result(d, has_outcome=s["scenario"] in outcome_scenarios))
+        s["to_evaluate"] = s["review_state"] == "awaiting_outcome"
         enriched.append(s)
         students_seen.add(s["student"])
         if s["status"] == "Completed":
             completed_count += 1
-        if d.get("overall_score") is not None:
-            scores.append(float(d["overall_score"]))
 
-    avg_score = round(sum(scores) / len(scores), 1) if scores else None
+    scores = [float(s["score"]) for s in enriched if s["score"] is not None]
+    avg_score = _mean(scores)
 
     return {
         "kpi": {
@@ -738,10 +765,64 @@ def instructor_report(
             "avg_score": avg_score,
             "students_count": len(students_seen),
             "period_days": period_days,
+            "reviewed": _reviewed_comparison(enriched),
+            "outcomes": _human_outcomes(enriched),
+            "to_evaluate": sum(1 for s in enriched if s["to_evaluate"]),
+            "improvement": _first_to_last_improvement(enriched),
         },
         "score_distribution": _score_buckets(scores),
         "top_improvement_titles": _top_improvements(session_names),
         "sessions": enriched,
+    }
+
+
+def _mean(values: list[float]) -> float | None:
+    return round(sum(values) / len(values), 1) if values else None
+
+
+def _reviewed_comparison(sessions: list[dict]) -> dict:
+    """AI vs teacher average on the sessions whose teacher version is
+    published: how much the teachers correct the AI."""
+    reviewed = [
+        s for s in sessions if s["score_source"] == "teacher" and s["ai_score"] is not None
+    ]
+    return {
+        "count": len(reviewed),
+        "ai_avg": _mean([float(s["ai_score"]) for s in reviewed]),
+        "teacher_avg": _mean([float(s["score"]) for s in reviewed]),
+    }
+
+
+def _human_outcomes(sessions: list[dict]) -> dict:
+    """Passed out of the outcomes a person decided and published; the AI
+    never decides one, so sessions without it do not count."""
+    decided = [s for s in sessions if s["outcome"] in teacher_review.OUTCOMES]
+    passed = sum(1 for s in decided if s["outcome"] == teacher_review.OUTCOME_PASSED)
+    return {
+        "decided": len(decided),
+        "passed": passed,
+        "rate": round(100 * passed / len(decided), 1) if decided else None,
+    }
+
+
+def _first_to_last_improvement(sessions: list[dict]) -> dict:
+    """For each student and scenario with at least two scored attempts, the
+    last attempt's score minus the first one's; `improved` counts the gains
+    above IMPROVEMENT_MIN_POINTS."""
+    attempts: dict[tuple[str, str], list[dict]] = {}
+    for s in sessions:
+        if s["score"] is not None:
+            attempts.setdefault((s["student"], s["scenario"]), []).append(s)
+    gains = []
+    for rows in attempts.values():
+        if len(rows) < 2:
+            continue
+        rows.sort(key=lambda r: str(r["started_at"] or ""))
+        gains.append(float(rows[-1]["score"]) - float(rows[0]["score"]))
+    return {
+        "pairs": len(gains),
+        "avg_gain": _mean(gains),
+        "improved": sum(1 for g in gains if g > IMPROVEMENT_MIN_POINTS),
     }
 
 
@@ -753,6 +834,10 @@ def _empty_report() -> dict:
             "avg_score": None,
             "students_count": 0,
             "period_days": 0,
+            "reviewed": {"count": 0, "ai_avg": None, "teacher_avg": None},
+            "outcomes": {"decided": 0, "passed": 0, "rate": None},
+            "to_evaluate": 0,
+            "improvement": {"pairs": 0, "avg_gain": None, "improved": 0},
         },
         "score_distribution": [],
         "top_improvement_titles": [],

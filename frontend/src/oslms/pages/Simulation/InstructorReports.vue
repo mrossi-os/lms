@@ -57,6 +57,9 @@
 							<div class="text-4xl-semibold text-ink-gray-9 mt-1">
 								{{ card.value }}
 							</div>
+							<div v-if="card.note" class="text-xs text-ink-gray-5 mt-1">
+								{{ card.note }}
+							</div>
 						</div>
 					</div>
 
@@ -99,6 +102,11 @@
 					</div>
 
 					<!-- Sessions table -->
+					<FormControl
+						v-model="onlyToEvaluate"
+						type="checkbox"
+						:label="__('Solo sessioni da valutare')"
+					/>
 					<div class="border rounded-md overflow-hidden">
 						<table class="w-full text-sm os-table-view">
 							<thead class="bg-surface-gray-2 text-xs text-ink-gray-7">
@@ -108,12 +116,13 @@
 									<th class="text-left px-3 py-2">{{ __('Inizio') }}</th>
 									<th class="text-left px-3 py-2">{{ __('Stato') }}</th>
 									<th class="text-right px-3 py-2">{{ __('Punteggio') }}</th>
+									<th class="text-left px-3 py-2">{{ __('Esito') }}</th>
 									<th></th>
 								</tr>
 							</thead>
 							<tbody>
 								<tr
-									v-for="s in sessions"
+									v-for="s in shownSessions"
 									:key="s.name"
 									class="border-t hover:bg-surface-gray-1"
 								>
@@ -126,10 +135,10 @@
 										<Badge :label="sessionStatusLabel(s.status)" :theme="statusTheme(s.status)" />
 									</td>
 									<td class="px-3 py-2 text-right">
-										<span v-if="s.overall_score !== null">
-											{{ Math.round(s.overall_score) }}
-										</span>
-										<span v-else class="text-ink-gray-5">—</span>
+										<SessionScoreCell :session="s" />
+									</td>
+									<td class="px-3 py-2">
+										<SessionOutcomeCell :session="s" />
 									</td>
 									<td class="px-3 py-2">
 										<Button
@@ -141,8 +150,8 @@
 										</Button>
 									</td>
 								</tr>
-								<tr v-if="!sessions.length">
-									<td colspan="6" class="px-3 py-6 text-center text-ink-gray-5">
+								<tr v-if="!shownSessions.length">
+									<td colspan="7" class="px-3 py-6 text-center text-ink-gray-5">
 										{{ __('Nessuna sessione nel periodo selezionato.') }}
 									</td>
 								</tr>
@@ -238,6 +247,8 @@ import {
 } from 'frappe-ui'
 import LayoutHeader from '@/components/Layouts/LayoutHeader.vue'
 import TranscriptDrawer from '@/oslms/components/simulations/TranscriptDrawer.vue'
+import SessionScoreCell from '@/oslms/components/simulations/SessionScoreCell.vue'
+import SessionOutcomeCell from '@/oslms/components/simulations/SessionOutcomeCell.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -302,15 +313,51 @@ const report = createResource({
 })
 
 const kpi = computed(() => report.data?.kpi || {})
+// Scores are the ones the students see: the published teacher version's,
+// otherwise the AI's indicative one. Pass rates count only outcomes a person
+// decided (docs/ai-simulator/PIANO-esito-e-punteggio-coach.md, phase 7).
 const kpiCards = computed(() => {
 	const k = kpi.value
+	const reviewed = k.reviewed || {}
+	const outcomes = k.outcomes || {}
+	const improvement = k.improvement || {}
 	return [
 		{ label: __('Sessioni'), value: k.total_sessions ?? 0 },
 		{ label: __('Completate'), value: k.completed_sessions ?? 0 },
 		{
 			label: __('Punteggio medio'),
-			value:
-				k.avg_score !== null && k.avg_score !== undefined ? k.avg_score : '—',
+			value: formatNumber(k.avg_score),
+			note: reviewed.count
+				? __('Sessioni riviste: AI {0} → docente {1}').format(
+						formatNumber(reviewed.ai_avg),
+						formatNumber(reviewed.teacher_avg),
+					)
+				: __('Nessuna sessione rivista dal docente'),
+		},
+		{
+			label: __('Superate'),
+			value: outcomes.decided ? `${formatNumber(outcomes.rate)}%` : '—',
+			note: outcomes.decided
+				? __('{0} su {1} esiti decisi da un docente').format(
+						outcomes.passed,
+						outcomes.decided,
+					)
+				: __('Nessun esito deciso da un docente'),
+		},
+		{
+			label: __('Da valutare'),
+			value: k.to_evaluate ?? 0,
+			note: __("Sessioni in attesa dell'esito"),
+		},
+		{
+			label: __('Miglioramento'),
+			value: improvement.pairs ? formatGain(improvement.avg_gain) : '—',
+			note: improvement.pairs
+				? __('Primo → ultimo tentativo; migliorati di oltre 5 punti: {0} su {1}').format(
+						improvement.improved,
+						improvement.pairs,
+					)
+				: __('Servono almeno due tentativi dello stesso scenario'),
 		},
 	]
 })
@@ -319,6 +366,12 @@ const topImprovements = computed(
 	() => report.data?.top_improvement_titles || [],
 )
 const sessions = computed(() => report.data?.sessions || [])
+const onlyToEvaluate = ref(false)
+const shownSessions = computed(() =>
+	onlyToEvaluate.value
+		? sessions.value.filter((s) => s.to_evaluate)
+		: sessions.value,
+)
 
 const distributionMax = computed(() =>
 	Math.max(1, ...distribution.value.map((b) => b.count)),
@@ -360,6 +413,16 @@ function openTranscript(sessionId) {
 }
 
 // ---- formatters ----
+function formatNumber(n) {
+	if (n === null || n === undefined) return '—'
+	return Number(n).toLocaleString(undefined, { maximumFractionDigits: 1 })
+}
+
+function formatGain(n) {
+	if (n === null || n === undefined) return '—'
+	return `${n > 0 ? '+' : ''}${formatNumber(n)}`
+}
+
 function formatDate(dt) {
 	if (!dt) return ''
 	const d = new Date(dt)

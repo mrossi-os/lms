@@ -299,7 +299,7 @@ Vedi `runner.py` per il loop di alternanza studente/personaggio, `role_player.py
 - `list_my_evaluation_schemas()` / `get_evaluation_schema(name)` / `save_evaluation_schema(payload)` / `delete_evaluation_schema(name)`
 - `ai_generate_scenario(course, lesson?, hint?)`
 - `ai_generate_evaluation_schema(hint?, course?, lesson?)`
-- `instructor_report(...)` (analytics per docente)
+- `instructor_report(...)` (analytics per docente: punteggi come li vede lo studente, cioè del docente se pubblicati, altrimenti dell'AI; confronto AI → docente sulle sessioni riviste; tasso di superamento solo sugli esiti decisi da persone; sessioni da valutare; miglioramento tra primo e ultimo tentativo per studente e scenario; aree di miglioramento solo dell'AI)
 
 `simulations/eval/api.py` (whitelisted, authoring QA):
 - `run_simulation_test(scenario, student_profile, num_variants, student_scenario_brief?)`

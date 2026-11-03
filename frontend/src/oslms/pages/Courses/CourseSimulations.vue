@@ -162,6 +162,7 @@
 						<th class="text-left px-3 py-2">{{ __('Inizio') }}</th>
 						<th class="text-left px-3 py-2">{{ __('Stato') }}</th>
 						<th class="text-right px-3 py-2">{{ __('Punteggio') }}</th>
+						<th class="text-left px-3 py-2">{{ __('Esito') }}</th>
 						<th></th>
 					</tr>
 				</thead>
@@ -179,13 +180,11 @@
 						<td class="px-3 py-2">
 							<Badge :label="sessionStatusLabel(s.status)" :theme="sessionStatusTheme(s.status)" />
 						</td>
-						<td class="px-3 py-2 text-right">
-							<span
-								v-if="s.overall_score !== null && s.overall_score !== undefined"
-							>
-								{{ Math.round(s.overall_score) }}
-							</span>
-							<span v-else class="">—</span>
+						<td class="px-3 py-2 text-right whitespace-nowrap">
+							<SessionScoreCell :session="s" />
+						</td>
+						<td class="px-3 py-2">
+							<SessionOutcomeCell :session="s" />
 						</td>
 						<td class="px-3 py-2 text-right whitespace-nowrap">
 							<Button
@@ -198,7 +197,7 @@
 						</td>
 					</tr>
 					<tr v-if="!sessions.length">
-						<td colspan="6" class="px-3 py-8 text-center">
+						<td colspan="7" class="px-3 py-8 text-center">
 							{{ __('Nessuna sessione nel periodo selezionato.') }}
 						</td>
 					</tr>
@@ -219,6 +218,8 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Badge, Button, FormControl, createResource, toast } from 'frappe-ui'
 import TranscriptDrawer from '@/oslms/components/simulations/TranscriptDrawer.vue'
+import SessionScoreCell from '@/oslms/components/simulations/SessionScoreCell.vue'
+import SessionOutcomeCell from '@/oslms/components/simulations/SessionOutcomeCell.vue'
 
 const props = defineProps({
 	course: { type: Object, required: true },

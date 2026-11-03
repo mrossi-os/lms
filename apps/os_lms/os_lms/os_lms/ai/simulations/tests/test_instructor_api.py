@@ -8,6 +8,7 @@ from frappe.tests import UnitTestCase
 
 from os_lms.os_lms.ai.simulations import SessionOrchestrator
 from os_lms.os_lms.ai.simulations.api import (
+    _first_to_last_improvement,
     _mark_improvements,
     delete_evaluation_schema,
     delete_scenario,
@@ -345,6 +346,48 @@ class TestTeacherVersion(TestInstructorReview):
         _mark_improvements(sessions)
         self.assertEqual([s["improvement"] for s in sessions], [None, None, None, 5.5, None, None])
 
+    def test_report_counts_teacher_scores_and_human_outcomes(self):
+        self._set_outcome_flag(1)
+        waiting = self._debrief_session()
+        reviewed = self._debrief_session()
+        frappe.db.set_value(
+            "LMSA Simulation Session", waiting, "started_at", frappe.utils.add_to_date(
+                frappe.utils.now_datetime(), hours=-1
+            )
+        )
+        instructor_start_review(session_id=reviewed)
+        instructor_save_review(
+            session_id=reviewed,
+            review=self._edits(overall_score=85, outcome="Passed"),
+            publish=True,
+        )
+
+        report = instructor_report(course=self.course, period_days=7)
+        kpi = report["kpi"]
+        # Scores the students see: 75 (AI, waiting) and 85 (teacher)
+        self.assertEqual(kpi["avg_score"], 80)
+        self.assertEqual(kpi["reviewed"], {"count": 1, "ai_avg": 75, "teacher_avg": 85})
+        self.assertEqual(kpi["outcomes"], {"decided": 1, "passed": 1, "rate": 100})
+        self.assertEqual(kpi["to_evaluate"], 1)
+        # Same student and scenario: first attempt 75, last 85
+        self.assertEqual(kpi["improvement"], {"pairs": 1, "avg_gain": 10, "improved": 1})
+        rows = {r["name"]: r for r in report["sessions"]}
+        self.assertTrue(rows[waiting]["to_evaluate"])
+        self.assertEqual(rows[reviewed]["outcome"], "Passed")
+        self.assertEqual(rows[reviewed]["score_source"], "teacher")
+
+    def test_first_to_last_improvement(self):
+        def row(student, scenario, at, score):
+            return {"student": student, "scenario": scenario, "started_at": at, "score": score}
+
+        result = _first_to_last_improvement([
+            row("a", "S", "3", 70), row("a", "S", "1", 50), row("a", "S", "2", 90),  # +20
+            row("b", "S", "1", 60), row("b", "S", "2", 64),  # +4: not improved
+            row("c", "S", "1", 80),  # one attempt only
+            row("a", "T", "1", 40), row("a", "T", "2", None),  # one scored attempt only
+        ])
+        self.assertEqual(result, {"pairs": 2, "avg_gain": 12, "improved": 1})
+
     def test_the_student_waits_for_the_outcome_until_it_is_published(self):
         self._set_outcome_flag(1)
         session_id = self._debrief_session()
@@ -488,8 +531,11 @@ class TestInstructorReport(_MockBase):
         self.assertEqual(report["kpi"]["completed_sessions"], 1)
         self.assertEqual(report["kpi"]["students_count"], 1)
         self.assertEqual(report["kpi"]["avg_score"], 75)
-        self.assertNotIn("pass_rate", report["kpi"])
-        self.assertEqual(report["sessions"][0]["overall_score"], 75)
+        # No person decided an outcome: no pass rate (the AI never decides one)
+        self.assertEqual(report["kpi"]["outcomes"], {"decided": 0, "passed": 0, "rate": None})
+        self.assertEqual(report["kpi"]["to_evaluate"], 0)
+        row = report["sessions"][0]
+        self.assertEqual((row["score"], row["score_source"], row["ai_score"]), (75, "ai", 75))
         # top_improvement_titles must include the canned improvement
         titles = [r["title"] for r in report["top_improvement_titles"]]
         self.assertIn("Closing diretto", titles)
