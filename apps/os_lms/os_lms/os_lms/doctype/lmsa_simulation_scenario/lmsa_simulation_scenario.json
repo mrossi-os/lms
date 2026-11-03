@@ -20,6 +20,7 @@
   "student_brief",
   "section_objectives",
   "evaluation_schema",
+  "has_human_outcome",
   "learning_objectives",
   "seed_variations",
   "section_limits",
@@ -136,6 +137,13 @@
    "reqd": 1
   },
   {
+   "default": "0",
+   "description": "If set, after each session a teacher, an evaluator or a manager decides whether the student passed the simulation, with a reason when it is not passed. The AI score stays indicative and never decides the outcome. If not set, the student only gets the report with the indicative score; the teacher can still add a review.",
+   "fieldname": "has_human_outcome",
+   "fieldtype": "Check",
+   "label": "Simulation with outcome (passed / not passed)"
+  },
+  {
    "fieldname": "learning_objectives",
    "fieldtype": "Table",
    "label": "Learning Objectives",
@@ -205,7 +213,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-18 12:00:00.000000",
+ "modified": "2026-11-03 19:00:00.000000",
  "modified_by": "Administrator",
  "module": "OS LMS",
  "name": "LMSA Simulation Scenario",

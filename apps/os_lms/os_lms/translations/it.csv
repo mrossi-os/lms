@@ -135,3 +135,5 @@ Role {0} revoked from {1},Ruolo {0} tolto a {1}
 Lesson not found,Lezione non trovata
 You don't have permission to access this lesson,Non hai i permessi per accedere a questa lezione
 Too many requests. Please try again later.,Troppe richieste. Riprova più tardi.
+Simulation with outcome (passed / not passed),Simulazione con esito (superata / non superata),
+"If set, after each session a teacher, an evaluator or a manager decides whether the student passed the simulation, with a reason when it is not passed. The AI score stays indicative and never decides the outcome. If not set, the student only gets the report with the indicative score; the teacher can still add a review.","Se attiva, al termine di ogni sessione un docente, un valutatore o un gestore decide se lo studente ha superato la simulazione, con una motivazione se non è superata. Il punteggio dell'AI resta indicativo e non decide l'esito. Se non attiva, lo studente riceve solo il report con il punteggio indicativo; il docente può comunque aggiungere la sua revisione.",

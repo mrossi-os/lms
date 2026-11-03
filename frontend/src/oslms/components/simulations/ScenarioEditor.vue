@@ -104,6 +104,12 @@
 
 					</div>
 
+					<!-- Outcome: when set, a person (never the AI) decides passed / not
+						passed after each session; the AI score stays indicative. -->
+					<FormControl v-model="model.has_human_outcome" type="checkbox"
+						:label="__('Simulazione con esito (superata / non superata)')"
+						:description="__('Se attiva, al termine di ogni sessione un docente, un valutatore o un gestore decide se lo studente ha superato la simulazione, con una motivazione se non è superata. Il punteggio dell\'AI resta indicativo e non decide l\'esito. Se non attiva, lo studente riceve solo il report con il punteggio indicativo; il docente può comunque aggiungere la sua revisione.')" />
+
 					<!-- Limits: chat sessions are time-bounded only. `max_turns` is
 						hidden from the form (kept bound + defaulted so the automated
 						eval loop, which still reads it, is unaffected). -->
@@ -604,6 +610,7 @@ const model = reactive({
 	situation_template: '',
 	student_brief: '',
 	evaluation_schema: '',
+	has_human_outcome: 0,
 	max_turns: 20,
 	time_limit_minutes: 15,
 	provider_override: 'auto',
@@ -892,6 +899,7 @@ const SCENARIO_EXPORT_FIELDS = [
 	'situation_template',
 	'student_brief',
 	'evaluation_schema',
+	'has_human_outcome',
 	'max_turns',
 	'time_limit_minutes',
 	'provider_override',

@@ -392,6 +392,28 @@ class TestScenarioCRUD(_MockBase):
             "Published",
         )
 
+    def test_outcome_flag_is_off_by_default_and_round_trips(self):
+        base = {
+            "scenario_name": "CRUD Outcome",
+            "lms_course": self.course,
+            "difficulty": "easy",
+            "modality": "chat",
+            "status": "Draft",
+            "roleplay_persona": "P",
+            "situation_template": "S",
+            "evaluation_schema": self.schema.name,
+        }
+        r = save_scenario(base)
+        self.assertEqual(get_scenario(r["name"])["has_human_outcome"], 0)
+
+        # The editor's checkbox sends a boolean
+        save_scenario({**base, "name": r["name"], "has_human_outcome": True})
+        self.assertEqual(get_scenario(r["name"])["has_human_outcome"], 1)
+
+        # A save without the field (older editor, JSON import) leaves it as is
+        save_scenario({**base, "name": r["name"]})
+        self.assertEqual(get_scenario(r["name"])["has_human_outcome"], 1)
+
     def test_list_my_scenarios_returns_instructor_courses(self):
         save_scenario({
             "scenario_name": "CRUD List",
