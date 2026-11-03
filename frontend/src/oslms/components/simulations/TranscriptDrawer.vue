@@ -25,11 +25,6 @@
 						<div class="text-3xl font-semibold text-ink-gray-9">
 							{{ Math.round(payload.debrief.overall_score || 0) }}
 							<span class="text-sm text-ink-gray-5">/100</span>
-							<Badge
-								class="ml-2 align-middle"
-								:label="payload.debrief.passed ? __('Superata') : __('Non superata')"
-								:theme="payload.debrief.passed ? 'green' : 'orange'"
-							/>
 						</div>
 
 						<!-- Score source: AI or instructor correction (human oversight). -->

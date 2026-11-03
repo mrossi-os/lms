@@ -47,7 +47,7 @@
 					</div>
 
 					<!-- KPIs -->
-					<div v-if="report.data" class="grid grid-cols-4 gap-3">
+					<div v-if="report.data" class="grid grid-cols-3 gap-3">
 						<div
 							v-for="card in kpiCards"
 							:key="card.label"
@@ -311,13 +311,6 @@ const kpiCards = computed(() => {
 			label: __('Punteggio medio'),
 			value:
 				k.avg_score !== null && k.avg_score !== undefined ? k.avg_score : '—',
-		},
-		{
-			label: __('Tasso di successo'),
-			value:
-				k.pass_rate !== null && k.pass_rate !== undefined
-					? `${k.pass_rate}%`
-					: '—',
 		},
 	]
 })

@@ -99,7 +99,6 @@ def _load_session_debrief(session_name: str) -> dict | None:
 	doc = frappe.get_doc("LMSA Simulation Debrief", debrief_names[0])
 	return {
 		"overall_score": doc.overall_score,
-		"passed": bool(doc.passed),
 		"criterion_scores": [
 			{
 				"criterion": row.get("criterion_name", ""),

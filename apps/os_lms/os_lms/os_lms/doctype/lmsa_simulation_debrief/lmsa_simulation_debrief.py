@@ -14,23 +14,11 @@ STATUS_FAILED = "Failed"
 
 
 class LMSASimulationDebrief(Document):
-	def before_save(self):
-		# Re-evaluate `passed` whenever overall_score changes. Threshold comes
-		# from the scenario's evaluation schema; we read it lazily to avoid
-		# making this a hard dependency in the orchestrator's hot path.
-		if self.overall_score is None or not self.scenario:
-			return
-		schema = frappe.db.get_value(
-			"LMSA Simulation Scenario", self.scenario, "evaluation_schema"
-		)
-		if not schema:
-			return
-		threshold = frappe.db.get_value(
-			"LMSA Evaluation Schema", schema, "passing_threshold"
-		)
-		if threshold is None:
-			return
-		self.passed = 1 if self.overall_score >= float(threshold) else 0
+	# The AI score is indicative only: `passed` is no longer derived from it
+	# and the schema's passing_threshold (docs/ai-simulator/
+	# PIANO-esito-e-punteggio-coach.md). A person decides the outcome on the
+	# simulations that have one.
+	pass
 
 
 def get_permission_query_conditions(user: str | None = None) -> str:

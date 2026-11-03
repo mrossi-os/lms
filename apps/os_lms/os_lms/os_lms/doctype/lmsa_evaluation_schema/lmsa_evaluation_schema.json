@@ -36,10 +36,10 @@
   },
   {
    "default": "70",
-   "description": "Percent of overall score required to consider the simulation passed.",
+   "description": "No longer used: the AI score is indicative and a person decides the outcome. Kept for older schemas.",
    "fieldname": "passing_threshold",
    "fieldtype": "Percent",
-   "in_list_view": 1,
+   "hidden": 1,
    "label": "Passing Threshold"
   },
   {
@@ -75,7 +75,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-10-27 12:00:00.000000",
+ "modified": "2026-11-03 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "OS LMS",
  "name": "LMSA Evaluation Schema",

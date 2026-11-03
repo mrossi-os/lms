@@ -89,14 +89,12 @@ EVAL_SCHEMA_OUTPUT_SCHEMA: dict = {
 		"schema_name",
 		"description",
 		"scoring_scale",
-		"passing_threshold",
 		"criteria",
 	],
 	"properties": {
 		"schema_name": {"type": "string"},
 		"description": {"type": "string"},
 		"scoring_scale": {"type": "string", "enum": ["0-3", "0-5", "0-10"]},
-		"passing_threshold": {"type": "number"},
 		"criteria": {
 			"type": "array",
 			"items": {

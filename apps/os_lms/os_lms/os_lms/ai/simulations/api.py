@@ -441,8 +441,9 @@ def _serialize_debrief(debrief, include_scores: bool = True) -> dict:
 
 
 def _score_payload(debrief) -> dict:
-    """Final score and pass/fail, plus the AI score and the instructor's
-    correction when there is one. Instructor-only, like the rest of the grade."""
+    """Final score, plus the AI score and the instructor's correction when
+    there is one. Instructor-only, like the rest of the grade. The score is
+    indicative: no pass/fail is derived from it."""
     overridden = bool(debrief.score_overridden_by)
     # Until an instructor corrects it, overall_score IS the AI score. Read it
     # from there: ai_overall_score is 0 (Float is NOT NULL) on debriefs written
@@ -450,7 +451,6 @@ def _score_payload(debrief) -> dict:
     ai_score = debrief.ai_overall_score if overridden else debrief.overall_score
     return {
         "overall_score": debrief.overall_score,
-        "passed": bool(debrief.passed),
         "ai_overall_score": ai_score,
         "score_overridden": overridden,
         "score_override_reason": debrief.score_override_reason or "",
@@ -581,7 +581,7 @@ def list_my_sessions(course: str | None = None, scenario: str | None = None) -> 
 
     # This is the student's own session history. The numeric grade is
     # instructor-only, so we expose only whether the debrief is ready
-    # (debrief_status) — not overall_score / passed.
+    # (debrief_status) — not overall_score.
     for s in sessions:
         s["scenario_name"] = titles.get(s["scenario"], s["scenario"])
         s["started_at"] = str(s["started_at"]) if s["started_at"] else None
@@ -641,7 +641,7 @@ def instructor_override_score(session_id: str, score: float, reason: str) -> dic
     """Replace the AI's overall score with the instructor's (human oversight).
 
     The AI score stays in `ai_overall_score`; who corrected it, when and why
-    are recorded, and `passed` is re-evaluated on save from the new score."""
+    are recorded."""
     reason = (reason or "").strip()
     if not reason:
         frappe.throw(_("A reason is required to change the score"))
@@ -681,10 +681,6 @@ def instructor_reset_score(session_id: str) -> dict:
         frappe.throw(_("The score has not been changed by an instructor"))
 
     debrief.overall_score = debrief.ai_overall_score
-    if debrief.overall_score is None:
-        # No AI score (failed debrief): before_save only re-evaluates `passed`
-        # when there is a score, so clear it here.
-        debrief.passed = 0
     debrief.score_override_reason = None
     debrief.score_overridden_by = None
     debrief.score_overridden_at = None
@@ -703,7 +699,7 @@ def instructor_report(
     """Aggregated report + sessions list for the courses the user instructs.
 
     Returns:
-      - `kpi`: total_sessions, completed_sessions, avg_score, pass_rate, students_count
+      - `kpi`: total_sessions, completed_sessions, avg_score, students_count
       - `score_distribution`: bucketed counts (0-20, 20-40, ...)
       - `top_improvement_titles`: most frequent improvement titles
       - `sessions`: list of session rows with score + status + scenario + student
@@ -753,13 +749,12 @@ def instructor_report(
         for d in frappe.get_all(
             "LMSA Simulation Debrief",
             filters={"session": ["in", session_names]},
-            fields=["name", "session", "status", "overall_score", "passed"],
+            fields=["name", "session", "status", "overall_score"],
         ):
             debriefs_by_session[d["session"]] = d
 
     enriched = []
     scores: list[float] = []
-    passed_count = 0
     completed_count = 0
     students_seen: set[str] = set()
     for s in sessions:
@@ -767,7 +762,6 @@ def instructor_report(
         s = dict(s)
         s["debrief"] = d.get("name")
         s["overall_score"] = d.get("overall_score")
-        s["passed"] = bool(d.get("passed"))
         s["debrief_status"] = d.get("status")
         enriched.append(s)
         students_seen.add(s["student"])
@@ -775,18 +769,14 @@ def instructor_report(
             completed_count += 1
         if d.get("overall_score") is not None:
             scores.append(float(d["overall_score"]))
-            if d.get("passed"):
-                passed_count += 1
 
     avg_score = round(sum(scores) / len(scores), 1) if scores else None
-    pass_rate = round((passed_count / len(scores)) * 100, 1) if scores else None
 
     return {
         "kpi": {
             "total_sessions": len(sessions),
             "completed_sessions": completed_count,
             "avg_score": avg_score,
-            "pass_rate": pass_rate,
             "students_count": len(students_seen),
             "period_days": period_days,
         },
@@ -808,7 +798,6 @@ def _empty_report() -> dict:
             "total_sessions": 0,
             "completed_sessions": 0,
             "avg_score": None,
-            "pass_rate": None,
             "students_count": 0,
             "period_days": 0,
         },

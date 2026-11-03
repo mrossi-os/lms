@@ -3,7 +3,7 @@
 | Voce | Valore |
 |---|---|
 | Data | 2026-11-03 |
-| Stato | approvato dall'utente; fase 1 fatta il 2026-11-03 (non rilasciata) |
+| Stato | approvato dall'utente; fasi 1 e 2 fatte il 2026-11-03 (non rilasciate) |
 | Origine | test di equità del Coach (punto 5 ESG): `docs/ai-governance/registro-test-bias.md`, azioni A1, A5, A6 |
 | Branch | `feature/esg-bias-tests` |
 
@@ -51,6 +51,7 @@ Stima: 6-8 giorni di sviluppo e test, più i giri di equità.
 
 ## Note
 
+- **Fase 2, cosa resta di proposito:** il campo `passed` del debrief e il campo `passing_threshold` dello schema restano nel database (il secondo nascosto nel pannello e nell'editor); l'esportazione e l'importazione degli schemi lo portano ancora con sé. Il runner dei test di equità calcola ancora i promossi con la soglia dello schema: va sostituito nella fase 10. Il prompt del generatore AI degli schemi è cambiato nel codice (`eval_schema_gen_ai.v2`, senza soglia), ma i record già nel database lo citano ancora finché non arriva la fase 9; la soglia che eventualmente restituisce non viene più copiata nell'editor.
 - **Fasi 1 e 2 vanno rilasciate insieme.** Con la sola fase 1 la soglia di promozione dei 70 resta attiva su un punteggio calcolato dai criteri, che è più basso: i promossi scenderebbero per tutti (dal 37-45% al 9-17% nei test).
 - **Lo staging non riceve il prompt v2 da solo**: il suo record `debrief` è stato modificato dal pannello (regola di equità, impronta `169d9628…`) e non verrà toccato nemmeno dalla fase 9. Senza la scala fissa 0-10 il Coach sceglie la scala di ogni criterio e il punteggio calcolato oscilla di più (±9,3 contro ±2,6 nei test): al rilascio il testo del prompt sullo staging va sostituito con quello di `debrief.v2` (impronta `bb628576…`) dal pannello.
 

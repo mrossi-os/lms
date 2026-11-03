@@ -119,7 +119,9 @@ class TestDebriefJob(_DebriefMockBase):
         # the 82.5 the model wrote.
         self.assertEqual(debrief.overall_score, 80.0)
         self.assertEqual(debrief.ai_overall_score, 80.0)
-        self.assertTrue(debrief.passed)  # threshold 70 in fixture schema
+        # The AI score is indicative: it never sets the outcome, even above
+        # the schema's old threshold (70 in the fixture).
+        self.assertFalse(debrief.passed)
         self.assertEqual(len(debrief.criterion_scores), 2)
         self.assertEqual(len(debrief.strengths), 1)
         self.assertEqual(len(debrief.improvements), 1)
@@ -132,7 +134,7 @@ class TestDebriefJob(_DebriefMockBase):
         second = generate_debrief(session_name)
         self.assertEqual(first, second)
 
-    def test_score_below_threshold_marks_not_passed(self):
+    def test_criteria_missing_from_the_schema_give_a_plain_mean(self):
         low_score = json.dumps({
             "overall_score": 40,
             "criterion_scores": [{"criterion": "Listening", "score": 4}],
@@ -148,6 +150,7 @@ class TestDebriefJob(_DebriefMockBase):
         try:
             name = self._run_full_flow()
             debrief = frappe.get_doc("LMSA Simulation Debrief", name)
+            # Only "Listening" is scored: the plain mean of the scored criteria.
             self.assertEqual(debrief.overall_score, 40.0)
             self.assertFalse(bool(debrief.passed))
         finally:
@@ -225,4 +228,4 @@ class TestGetDebriefEndpoint(_DebriefMockBase):
         self.assertEqual(payload["status"], "ready")
         self.assertEqual(payload["overall_score"], 80.0)
         self.assertEqual(len(payload["criterion_scores"]), 2)
-        self.assertTrue(payload["passed"])
+        self.assertNotIn("passed", payload)

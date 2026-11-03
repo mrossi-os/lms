@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 LABEL = "AI authoring: evaluation schema generator"
-VERSION = "eval_schema_gen_ai.v1"
+VERSION = "eval_schema_gen_ai.v2"
 TEMPERATURE = 0.5
 MAX_TOKENS = 1200
 
@@ -18,9 +18,7 @@ SYSTEM_TEMPLATE = (
 	"comportamenti che evidenziano un punteggio alto (es. 'Riformula "
 	"l'obiezione con parole proprie prima di rispondere'). Usato dal "
 	"judge LLM in fase di debrief.\n"
-	"- scoring_scale: scala dei punteggi per criterio (0-3, 0-5 o 0-10).\n"
-	"- passing_threshold: percentuale di punteggio aggregato sotto la "
-	"quale la simulazione è considerata non superata (0-100).\n\n"
+	"- scoring_scale: scala dei punteggi per criterio (0-3, 0-5 o 0-10).\n\n"
 	"Rispondi ESCLUSIVAMENTE con JSON valido conforme allo schema."
 )
 

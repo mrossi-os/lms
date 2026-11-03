@@ -17,7 +17,6 @@
 					<tr>
 						<th class="text-left px-3 py-2">{{ __('Nome') }}</th>
 						<th class="text-left px-3 py-2">{{ __('Scala') }}</th>
-						<th class="text-left px-3 py-2">{{ __('Soglia') }}</th>
 						<th class="text-left px-3 py-2">{{ __('Condivisa') }}</th>
 						<th></th>
 					</tr>
@@ -30,7 +29,6 @@
 					>
 						<td class="px-3 py-2">{{ r.schema_name }}</td>
 						<td class="px-3 py-2">{{ r.scoring_scale }}</td>
-						<td class="px-3 py-2">{{ r.passing_threshold }}%</td>
 						<td class="px-3 py-2">
 							<Badge v-if="r.is_shared" :label="__('Sì')" theme="green" />
 						</td>

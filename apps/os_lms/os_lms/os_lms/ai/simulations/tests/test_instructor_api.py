@@ -200,15 +200,15 @@ class TestInstructorScoreOverride(TestInstructorReview):
         debrief = self._debrief(self._debrief_session())
         self.assertEqual(debrief.ai_overall_score, 75)
         self.assertEqual(debrief.overall_score, 75)
-        self.assertTrue(debrief.passed)
+        self.assertFalse(debrief.passed)
 
-    def test_override_keeps_ai_score_records_author_and_recomputes_passed(self):
+    def test_override_keeps_ai_score_and_records_author(self):
         session_id = self._debrief_session()
         result = instructor_override_score(
             session_id=session_id, score=60, reason="  Closing mai tentato.  "
         )
         self.assertEqual(result["overall_score"], 60)
-        self.assertFalse(result["passed"])
+        self.assertNotIn("passed", result)
         self.assertTrue(result["score_overridden"])
         self.assertEqual(result["ai_overall_score"], 75)
 
@@ -240,7 +240,7 @@ class TestInstructorScoreOverride(TestInstructorReview):
         instructor_override_score(session_id=session_id, score=82, reason="Secondo")
         debrief = self._debrief(session_id)
         self.assertEqual(debrief.overall_score, 82)
-        self.assertTrue(debrief.passed)
+        self.assertFalse(debrief.passed)
         self.assertEqual(debrief.ai_overall_score, 75)
         self.assertEqual(debrief.score_override_reason, "Secondo")
 
@@ -262,7 +262,7 @@ class TestInstructorScoreOverride(TestInstructorReview):
         instructor_override_score(session_id=session_id, score=60, reason="Troppo alto")
         result = instructor_reset_score(session_id=session_id)
         self.assertEqual(result["overall_score"], 75)
-        self.assertTrue(result["passed"])
+        self.assertNotIn("passed", result)
         self.assertFalse(result["score_overridden"])
         debrief = self._debrief(session_id)
         self.assertFalse(debrief.score_overridden_by)
@@ -351,6 +351,7 @@ class TestInstructorReport(_MockBase):
         self.assertEqual(report["kpi"]["completed_sessions"], 1)
         self.assertEqual(report["kpi"]["students_count"], 1)
         self.assertEqual(report["kpi"]["avg_score"], 75)
+        self.assertNotIn("pass_rate", report["kpi"])
         self.assertEqual(report["sessions"][0]["overall_score"], 75)
         # top_improvement_titles must include the canned improvement
         titles = [r["title"] for r in report["top_improvement_titles"]]

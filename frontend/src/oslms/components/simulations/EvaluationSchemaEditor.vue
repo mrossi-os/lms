@@ -60,14 +60,6 @@
 				required
 			/>
 			<FormControl
-				v-model.number="model.passing_threshold"
-				type="number"
-				step="1"
-				min="0"
-				max="100"
-				:label="__('Soglia di superamento (%)')"
-			/>
-			<FormControl
 				v-model="model.is_shared"
 				type="checkbox"
 				:label="__('Condividi con altri docenti')"
@@ -362,12 +354,7 @@ async function onAiGenerate() {
 		if (!payload) {
 			throw new Error(__('Risposta vuota dal generatore.'))
 		}
-		const REPLACE_FIELDS = [
-			'schema_name',
-			'description',
-			'scoring_scale',
-			'passing_threshold',
-		]
+		const REPLACE_FIELDS = ['schema_name', 'description', 'scoring_scale']
 		for (const field of REPLACE_FIELDS) {
 			if (payload[field] !== undefined) {
 				model[field] = payload[field]
