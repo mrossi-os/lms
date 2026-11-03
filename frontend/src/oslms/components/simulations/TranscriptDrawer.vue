@@ -32,6 +32,74 @@
 							/>
 						</div>
 
+						<!-- Score source: AI or instructor correction (human oversight). -->
+						<div class="mt-1 text-xs text-ink-gray-5">
+							<template v-if="payload.debrief.score_overridden">
+								<div>
+									{{ __('Voto corretto dal docente') }}
+									{{ payload.debrief.score_overridden_by_name || payload.debrief.score_overridden_by }}
+									· {{ formatDateTime(payload.debrief.score_overridden_at) }}
+								</div>
+								<div>
+									{{ __("Voto dell'AI") }}:
+									{{
+										payload.debrief.ai_overall_score === null
+											? '—'
+											: Math.round(payload.debrief.ai_overall_score)
+									}}
+								</div>
+								<div class="mt-1 text-ink-gray-7 whitespace-pre-wrap">
+									{{ __('Motivazione') }}: {{ payload.debrief.score_override_reason }}
+								</div>
+							</template>
+							<template v-else>{{ __("Voto assegnato dall'AI") }}</template>
+						</div>
+
+						<section v-if="scoreFormOpen" class="mt-3 space-y-2">
+							<FormControl
+								v-model="scoreDraft"
+								type="number"
+								:label="__('Nuovo voto (0-100)')"
+								min="0"
+								max="100"
+							/>
+							<FormControl
+								v-model="reasonDraft"
+								type="textarea"
+								:rows="3"
+								:label="__('Motivazione (obbligatoria)')"
+								:placeholder="__('Perché cambi il voto dell\'AI?')"
+							/>
+							<div class="flex justify-end gap-2">
+								<Button variant="outline" size="sm" @click="scoreFormOpen = false">
+									{{ __('Annulla') }}
+								</Button>
+								<Button
+									variant="solid"
+									size="sm"
+									:loading="savingScore"
+									:disabled="!scoreDraftValid || !reasonDraft.trim()"
+									@click="onSaveScore"
+								>
+									{{ __('Salva voto') }}
+								</Button>
+							</div>
+						</section>
+						<div v-else class="mt-2 flex gap-2">
+							<Button variant="outline" size="sm" @click="openScoreForm">
+								{{ __('Correggi voto') }}
+							</Button>
+							<Button
+								v-if="payload.debrief.score_overridden"
+								variant="ghost"
+								size="sm"
+								:loading="savingScore"
+								@click="onResetScore"
+							>
+								{{ __("Ripristina voto dell'AI") }}
+							</Button>
+						</div>
+
 						<section v-if="payload.debrief.criterion_scores?.length" class="mt-4">
 							<div class="text-sm font-semibold text-ink-gray-9 mb-2">
 								{{ __('Criteri') }}
@@ -174,6 +242,7 @@ const loadRes = createResource({
 	onSuccess(data) {
 		payload.value = data
 		reviewDraft.value = data?.debrief?.instructor_review || ''
+		scoreFormOpen.value = false
 	},
 	onError(e) {
 		toast.error(e.messages?.[0] || __('Caricamento trascrizione fallito'))
@@ -208,6 +277,74 @@ async function onSaveReview() {
 	} finally {
 		savingReview.value = false
 	}
+}
+
+// ---- Instructor score correction (human oversight of the AI grade) ----
+const scoreFormOpen = ref(false)
+const scoreDraft = ref('')
+const reasonDraft = ref('')
+const savingScore = ref(false)
+
+const scoreDraftValid = computed(() => {
+	if (scoreDraft.value === '' || scoreDraft.value === null) return false
+	const n = Number(scoreDraft.value)
+	return Number.isFinite(n) && n >= 0 && n <= 100
+})
+
+function openScoreForm() {
+	const d = payload.value?.debrief
+	scoreDraft.value = d?.overall_score ?? ''
+	reasonDraft.value = d?.score_override_reason || ''
+	scoreFormOpen.value = true
+}
+
+const overrideScoreRes = createResource({
+	url: 'os_lms.os_lms.ai.simulations.api.instructor_override_score',
+	method: 'POST',
+})
+const resetScoreRes = createResource({
+	url: 'os_lms.os_lms.ai.simulations.api.instructor_reset_score',
+	method: 'POST',
+})
+
+async function onSaveScore() {
+	if (!scoreDraftValid.value || !reasonDraft.value.trim()) return
+	savingScore.value = true
+	try {
+		const data = await overrideScoreRes.submit({
+			session_id: props.sessionId,
+			score: Number(scoreDraft.value),
+			reason: reasonDraft.value,
+		})
+		Object.assign(payload.value.debrief, data)
+		scoreFormOpen.value = false
+		toast.success(__('Voto salvato.'))
+		emit('review-saved')
+	} catch (e) {
+		toast.error(e.messages?.[0] || __('Salvataggio fallito'))
+	} finally {
+		savingScore.value = false
+	}
+}
+
+async function onResetScore() {
+	savingScore.value = true
+	try {
+		const data = await resetScoreRes.submit({ session_id: props.sessionId })
+		Object.assign(payload.value.debrief, data)
+		toast.success(__("Ripristinato il voto dell'AI."))
+		emit('review-saved')
+	} catch (e) {
+		toast.error(e.messages?.[0] || __('Salvataggio fallito'))
+	} finally {
+		savingScore.value = false
+	}
+}
+
+function formatDateTime(value) {
+	if (!value) return ''
+	const d = new Date(value.replace(' ', 'T'))
+	return Number.isNaN(d.getTime()) ? value : d.toLocaleString()
 }
 
 // ---- Production evaluation ----

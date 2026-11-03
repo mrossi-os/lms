@@ -426,8 +426,7 @@ def _serialize_debrief(debrief, include_scores: bool = True) -> dict:
     # The numeric grade (overall score, pass/fail, per-criterion scores) is
     # instructor-only. Students see the coaching feedback above, not a grade.
     if include_scores:
-        payload["overall_score"] = debrief.overall_score
-        payload["passed"] = bool(debrief.passed)
+        payload.update(_score_payload(debrief))
         payload["criterion_scores"] = [
             {
                 "criterion_name": c.criterion_name,
@@ -439,6 +438,32 @@ def _serialize_debrief(debrief, include_scores: bool = True) -> dict:
             for c in (debrief.criterion_scores or [])
         ]
     return payload
+
+
+def _score_payload(debrief) -> dict:
+    """Final score and pass/fail, plus the AI score and the instructor's
+    correction when there is one. Instructor-only, like the rest of the grade."""
+    overridden = bool(debrief.score_overridden_by)
+    ai_score = debrief.ai_overall_score
+    if ai_score is None and not overridden:
+        # Debriefs written before the AI score had its own field.
+        ai_score = debrief.overall_score
+    return {
+        "overall_score": debrief.overall_score,
+        "passed": bool(debrief.passed),
+        "ai_overall_score": ai_score,
+        "score_overridden": overridden,
+        "score_override_reason": debrief.score_override_reason or "",
+        "score_overridden_by": debrief.score_overridden_by,
+        "score_overridden_by_name": (
+            frappe.db.get_value("User", debrief.score_overridden_by, "full_name")
+            if overridden
+            else None
+        ),
+        "score_overridden_at": (
+            str(debrief.score_overridden_at) if debrief.score_overridden_at else None
+        ),
+    }
 
 
 @frappe.whitelist()
@@ -595,6 +620,75 @@ def instructor_review_debrief(session_id: str, review: str) -> dict:
     debrief.save(ignore_permissions=True)
     frappe.db.commit()
     return {"name": debrief.name, "reviewed_at": str(debrief.instructor_reviewed_at)}
+
+
+SCORE_OVERRIDE_REASON_MAX_LENGTH = 1000
+
+
+def _instructor_debrief(session_id: str):
+    """Load the debrief of `session_id` for a course instructor (or moderator)."""
+    session = load_session(session_id)
+    _ensure_instructor_of_course(session.course)
+
+    name = frappe.db.get_value("LMSA Simulation Debrief", {"session": session.name}, "name")
+    if not name:
+        frappe.throw(_("No debrief available for this session yet"))
+    return frappe.get_doc("LMSA Simulation Debrief", name)
+
+
+@frappe.whitelist(methods=["POST"])
+def instructor_override_score(session_id: str, score: float, reason: str) -> dict:
+    """Replace the AI's overall score with the instructor's (human oversight).
+
+    The AI score stays in `ai_overall_score`; who corrected it, when and why
+    are recorded, and `passed` is re-evaluated on save from the new score."""
+    reason = (reason or "").strip()
+    if not reason:
+        frappe.throw(_("A reason is required to change the score"))
+    if len(reason) > SCORE_OVERRIDE_REASON_MAX_LENGTH:
+        frappe.throw(
+            _("The reason cannot be longer than {0} characters").format(
+                SCORE_OVERRIDE_REASON_MAX_LENGTH
+            )
+        )
+    try:
+        score = round(float(score), 1)
+    except (TypeError, ValueError):
+        score = None
+    if score is None or not 0 <= score <= 100:
+        frappe.throw(_("The score must be a number between 0 and 100"))
+
+    debrief = _instructor_debrief(session_id)
+    if not debrief.score_overridden_by and debrief.ai_overall_score is None:
+        # Debriefs written before the AI score had its own field.
+        debrief.ai_overall_score = debrief.overall_score
+    debrief.overall_score = score
+    debrief.score_override_reason = reason
+    debrief.score_overridden_by = frappe.session.user
+    debrief.score_overridden_at = frappe.utils.now_datetime()
+    debrief.save(ignore_permissions=True)
+    frappe.db.commit()
+    return _score_payload(debrief)
+
+
+@frappe.whitelist(methods=["POST"])
+def instructor_reset_score(session_id: str) -> dict:
+    """Drop the instructor's correction and go back to the AI's score."""
+    debrief = _instructor_debrief(session_id)
+    if not debrief.score_overridden_by:
+        frappe.throw(_("The score has not been changed by an instructor"))
+
+    debrief.overall_score = debrief.ai_overall_score
+    if debrief.overall_score is None:
+        # No AI score (failed debrief): before_save only re-evaluates `passed`
+        # when there is a score, so clear it here.
+        debrief.passed = 0
+    debrief.score_override_reason = None
+    debrief.score_overridden_by = None
+    debrief.score_overridden_at = None
+    debrief.save(ignore_permissions=True)
+    frappe.db.commit()
+    return _score_payload(debrief)
 
 
 @frappe.whitelist()

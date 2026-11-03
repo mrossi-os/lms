@@ -199,7 +199,11 @@ def _ask_llm(session, logger: logging.Logger) -> tuple[DebriefResult | None, str
 
 def _populate_debrief(debrief, result: DebriefResult) -> None:
 	"""Write the parsed DebriefResult into the doc and its child tables."""
-	debrief.overall_score = result.overall_score
+	debrief.ai_overall_score = result.overall_score
+	# An instructor's score correction outlives a regenerated debrief: the
+	# human decision stays final, the new AI score is kept beside it.
+	if not debrief.score_overridden_by:
+		debrief.overall_score = result.overall_score
 	debrief.behavioral_analysis = result.behavioral_analysis
 
 	debrief.set("criterion_scores", [])

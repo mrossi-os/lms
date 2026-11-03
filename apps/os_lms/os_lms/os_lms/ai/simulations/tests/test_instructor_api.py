@@ -13,7 +13,9 @@ from os_lms.os_lms.ai.simulations.api import (
     get_evaluation_schema,
     get_scenario,
     get_transcript,
+    instructor_override_score,
     instructor_report,
+    instructor_reset_score,
     instructor_review_debrief,
     list_my_evaluation_schemas,
     list_my_scenarios,
@@ -47,6 +49,10 @@ class _MockBase(UnitTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        # end_session enqueues generate_debrief; a running dev worker would race
+        # the tests on the same debrief rows. Tests call generate_debrief inline.
+        cls._enqueue_patch = patch("frappe.enqueue")
+        cls._enqueue_patch.start()
         F.cleanup_sessions_and_turns()
         for n in frappe.get_all("LMSA Simulation Debrief", pluck="name"):
             frappe.delete_doc("LMSA Simulation Debrief", n, force=True, ignore_permissions=True)
@@ -104,6 +110,7 @@ class _MockBase(UnitTestCase):
             )
             frappe.db.commit()
         F.reset_settings()
+        cls._enqueue_patch.stop()
         super().tearDownClass()
 
 
@@ -167,6 +174,115 @@ class TestInstructorReview(_MockBase):
         generate_debrief(start.session)
         with self.assertRaises(frappe.exceptions.ValidationError):
             instructor_review_debrief(session_id=start.session, review="   ")
+
+
+class TestInstructorScoreOverride(TestInstructorReview):
+    """Human oversight: the instructor corrects the AI's overall score.
+
+    The fixture schema passes at 70 and the mocked AI scores 75."""
+
+    def _debrief_session(self) -> str:
+        svc = SessionOrchestrator()
+        start = svc.start_session(scenario_id=self.scenario.name)
+        svc.end_session(session_id=start.session, reason="completed")
+        generate_debrief(start.session)
+        return start.session
+
+    def _debrief(self, session_id: str):
+        name = frappe.db.get_value(
+            "LMSA Simulation Debrief", {"session": session_id}, "name"
+        )
+        return frappe.get_doc("LMSA Simulation Debrief", name)
+
+    def test_ai_score_is_kept_in_its_own_field(self):
+        debrief = self._debrief(self._debrief_session())
+        self.assertEqual(debrief.ai_overall_score, 75)
+        self.assertEqual(debrief.overall_score, 75)
+        self.assertTrue(debrief.passed)
+
+    def test_override_keeps_ai_score_records_author_and_recomputes_passed(self):
+        session_id = self._debrief_session()
+        result = instructor_override_score(
+            session_id=session_id, score=60, reason="  Closing mai tentato.  "
+        )
+        self.assertEqual(result["overall_score"], 60)
+        self.assertFalse(result["passed"])
+        self.assertTrue(result["score_overridden"])
+        self.assertEqual(result["ai_overall_score"], 75)
+
+        debrief = self._debrief(session_id)
+        self.assertEqual(debrief.overall_score, 60)
+        self.assertEqual(debrief.ai_overall_score, 75)
+        self.assertFalse(debrief.passed)
+        self.assertEqual(debrief.score_override_reason, "Closing mai tentato.")
+        self.assertEqual(debrief.score_overridden_by, "Administrator")
+        self.assertIsNotNone(debrief.score_overridden_at)
+
+    def test_second_override_does_not_touch_ai_score(self):
+        session_id = self._debrief_session()
+        instructor_override_score(session_id=session_id, score=60, reason="Primo")
+        instructor_override_score(session_id=session_id, score=82, reason="Secondo")
+        debrief = self._debrief(session_id)
+        self.assertEqual(debrief.overall_score, 82)
+        self.assertTrue(debrief.passed)
+        self.assertEqual(debrief.ai_overall_score, 75)
+        self.assertEqual(debrief.score_override_reason, "Secondo")
+
+    def test_reason_is_required(self):
+        session_id = self._debrief_session()
+        with self.assertRaises(frappe.exceptions.ValidationError):
+            instructor_override_score(session_id=session_id, score=60, reason="   ")
+        self.assertEqual(self._debrief(session_id).overall_score, 75)
+
+    def test_score_out_of_range_or_not_a_number_rejected(self):
+        session_id = self._debrief_session()
+        for bad in (-1, 100.5, "abc", float("nan")):
+            with self.assertRaises(frappe.exceptions.ValidationError, msg=bad):
+                instructor_override_score(session_id=session_id, score=bad, reason="x")
+        self.assertEqual(self._debrief(session_id).overall_score, 75)
+
+    def test_reset_goes_back_to_ai_score(self):
+        session_id = self._debrief_session()
+        instructor_override_score(session_id=session_id, score=60, reason="Troppo alto")
+        result = instructor_reset_score(session_id=session_id)
+        self.assertEqual(result["overall_score"], 75)
+        self.assertTrue(result["passed"])
+        self.assertFalse(result["score_overridden"])
+        debrief = self._debrief(session_id)
+        self.assertFalse(debrief.score_overridden_by)
+        self.assertFalse(debrief.score_override_reason)
+
+    def test_reset_without_override_rejected(self):
+        session_id = self._debrief_session()
+        with self.assertRaises(frappe.exceptions.ValidationError):
+            instructor_reset_score(session_id=session_id)
+
+    def test_regenerated_debrief_keeps_instructor_score(self):
+        session_id = self._debrief_session()
+        instructor_override_score(session_id=session_id, score=60, reason="Rivisto")
+        generate_debrief(session_id)
+        debrief = self._debrief(session_id)
+        self.assertEqual(debrief.overall_score, 60)
+        self.assertEqual(debrief.ai_overall_score, 75)
+        self.assertFalse(debrief.passed)
+
+    def test_transcript_shows_correction_to_instructor(self):
+        session_id = self._debrief_session()
+        instructor_override_score(session_id=session_id, score=60, reason="Rivisto")
+        debrief = get_transcript(session_id=session_id)["debrief"]
+        self.assertEqual(debrief["overall_score"], 60)
+        self.assertEqual(debrief["ai_overall_score"], 75)
+        self.assertEqual(debrief["score_override_reason"], "Rivisto")
+
+    def test_non_instructor_cannot_override(self):
+        session_id = self._debrief_session()
+        frappe.set_user("Guest")
+        try:
+            with self.assertRaises(frappe.PermissionError):
+                instructor_override_score(session_id=session_id, score=10, reason="x")
+        finally:
+            frappe.set_user("Administrator")
+        self.assertEqual(self._debrief(session_id).overall_score, 75)
 
 
 class TestInstructorReport(_MockBase):

@@ -60,6 +60,7 @@ Modelli in uso (configurazione di staging verificata il 2026-11-02): OpenAI `gpt
 
 - Il voto del Coach (complessivo, per criterio, superato o no) è visibile **solo ai docenti**; lo studente riceve il commento formativo, non il voto.
 - Il docente può aggiungere una propria valutazione scritta al debrief (campo "Instructor Review"), che lo studente vede.
+- Il docente può **correggere il voto complessivo** del Coach (pannello "Trascrizione + Debrief"), con una motivazione obbligatoria. Il voto dell'AI resta salvato e non viene sovrascritto; si registrano chi ha corretto, quando e perché; "superato" si ricalcola sul voto del docente, che diventa il voto finale in report e medie. La correzione si può annullare tornando al voto dell'AI, e resta valida anche se il commento del Coach viene rigenerato.
 - Il voto del Coach **non** è usato per certificati, attestati o voti ufficiali.
 - Le bozze generate dall'AI per i docenti (scenari, criteri) diventano attive solo dopo la revisione di una persona.
 
@@ -140,4 +141,4 @@ L'art. 4 dell'AI Act chiede sia a chi sviluppa un sistema AI sia a chi lo usa di
 | Registro completo delle chiamate AI attivo nel codice (`ai/utils/llm/logger.py`, `ENABLED = True`) | da valutare: può scrivere nei log i testi degli studenti |
 | Temperatura e limiti impostati dal pannello ignorati da Coach e Tutor | da valutare |
 | Primo incontro di formazione AI del team Overside e guida d'uso per i clienti (punto 11) | da fare |
-| Correzione del voto del Coach da parte del docente (oggi può solo aggiungere un commento) | da fare |
+| Correzione del voto del Coach da parte del docente | fatta nel codice il 2026-11-03 (punto 5), da rilasciare su staging e produzione |

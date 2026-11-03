@@ -13,6 +13,12 @@
   "status",
   "overall_score",
   "passed",
+  "section_score_override",
+  "ai_overall_score",
+  "score_override_reason",
+  "column_break_score_override",
+  "score_overridden_by",
+  "score_overridden_at",
   "section_scores",
   "criterion_scores",
   "section_qualitative",
@@ -101,6 +107,43 @@
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Passed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_score_override",
+   "fieldtype": "Section Break",
+   "label": "Instructor Score Correction",
+   "collapsible": 1
+  },
+  {
+   "description": "Score the AI gave, kept unchanged when an instructor corrects the overall score.",
+   "fieldname": "ai_overall_score",
+   "fieldtype": "Float",
+   "label": "AI Score (0-100)",
+   "precision": "1",
+   "read_only": 1
+  },
+  {
+   "fieldname": "score_override_reason",
+   "fieldtype": "Small Text",
+   "label": "Correction Reason",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_score_override",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "score_overridden_by",
+   "fieldtype": "Link",
+   "label": "Corrected By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "score_overridden_at",
+   "fieldtype": "Datetime",
+   "label": "Corrected At",
    "read_only": 1
   },
   {
@@ -217,7 +260,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-10-27 12:00:00.000000",
+ "modified": "2026-11-03 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "OS LMS",
  "name": "LMSA Simulation Debrief",
