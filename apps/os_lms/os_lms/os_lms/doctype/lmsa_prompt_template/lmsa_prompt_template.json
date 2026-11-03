@@ -8,6 +8,7 @@
  "engine": "InnoDB",
  "field_order": [
   "purpose",
+  "code_version_not_applied",
   "label",
   "version",
   "column_break_meta",
@@ -22,6 +23,7 @@
   "output_schema",
   "section_help",
   "available_placeholders",
+  "default_fingerprint",
   "description_field",
   "notes"
  ],
@@ -134,12 +136,28 @@
    "fieldtype": "Long Text",
    "label": "Notes",
    "description": "Free-text notes (e.g. change log, calibration runs)."
+  },
+  {
+   "fieldname": "code_version_not_applied",
+   "fieldtype": "Data",
+   "label": "Code Version Not Applied",
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "The code has this newer version of the prompt, not applied by the migrate because the text was changed from the panel. To take it, copy the code's text here (ai/utils/default_prompt/) or delete the record: the next migrate creates it again from the code."
+  },
+  {
+   "fieldname": "default_fingerprint",
+   "fieldtype": "Data",
+   "label": "Code Fingerprint",
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "Fingerprint of the prompt the code last wrote here. While the record still holds it, the migrate updates the prompt to the code's newer versions; a text changed from the panel is kept."
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-06-09 12:00:00.000000",
+ "modified": "2026-11-03 23:00:00.000000",
  "modified_by": "Administrator",
  "module": "OS LMS",
  "name": "LMSA Prompt Template",

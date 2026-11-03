@@ -12,6 +12,7 @@ from os_lms.os_lms.ai.simulations.api import get_debrief
 from os_lms.os_lms.ai.simulations.tasks import generate_debrief
 from os_lms.os_lms.ai.utils.llm.provider import ChatResponse, Usage
 from os_lms.os_lms.ai.utils.llm.providers.mock import MockProvider
+from os_lms.os_lms.ai.utils.template_loader import PURPOSE_DEBRIEF, load_prompt_template
 
 from . import _fixtures as F
 
@@ -125,6 +126,9 @@ class TestDebriefJob(_DebriefMockBase):
         self.assertEqual(len(debrief.strengths), 1)
         self.assertEqual(len(debrief.improvements), 1)
         self.assertEqual(debrief.debrief_provider_used, "mock")
+        # Version and start of the hash of the text used (phase 9)
+        self.assertEqual(debrief.prompt_version, load_prompt_template(PURPOSE_DEBRIEF)["signature"])
+        self.assertRegex(debrief.prompt_version, r"^.+#[0-9a-f]{8}$")
 
     def test_generate_debrief_is_idempotent(self):
         first = self._run_full_flow()

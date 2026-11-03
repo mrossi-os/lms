@@ -20,11 +20,11 @@ from os_lms.os_lms.ai.utils.llm import (
 	LLMError,
 	chat_with_fallback,
 )
+from os_lms.os_lms.ai.utils.template_loader import PURPOSE_DEBRIEF, load_prompt_template
 
 from . import notifications
 from .prompts import (
 	DEBRIEF_SCHEMA,
-	DEBRIEF_VERSION,
 	DebriefResult,
 	build_debrief_messages,
 	parse_debrief_output,
@@ -50,6 +50,9 @@ def generate_debrief(session_id: str) -> str:
 	debrief.save(ignore_permissions=True)
 	frappe.db.commit()
 
+	# The prompt's version label stays the same when its text is changed from
+	# the panel: the signature names the text actually used (phase 9).
+	prompt_signature = load_prompt_template(PURPOSE_DEBRIEF)["signature"]
 	try:
 		result, raw_text, provider_used, model_used = _ask_llm(session, logger)
 	except LLMError as e:
@@ -67,7 +70,7 @@ def generate_debrief(session_id: str) -> str:
 		debrief.raw_llm_response = raw_text
 		debrief.debrief_provider_used = provider_used
 		debrief.debrief_model_used = model_used
-		debrief.prompt_version = DEBRIEF_VERSION
+		debrief.prompt_version = prompt_signature
 		debrief.save(ignore_permissions=True)
 		frappe.db.commit()
 		_publish(session, EVENT_DEBRIEF_FAILED, {"debrief": debrief.name, "reason": "parse failure"})
@@ -82,7 +85,7 @@ def generate_debrief(session_id: str) -> str:
 	debrief.raw_llm_response = raw_text
 	debrief.debrief_provider_used = provider_used
 	debrief.debrief_model_used = model_used
-	debrief.prompt_version = DEBRIEF_VERSION
+	debrief.prompt_version = prompt_signature
 	debrief.status = "Ready"
 	debrief.save(ignore_permissions=True)
 	frappe.db.commit()

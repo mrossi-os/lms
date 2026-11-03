@@ -32,6 +32,8 @@ doctype is negligible compared to the LLM call that consumes the result.
 
 from __future__ import annotations
 
+import hashlib
+import json
 from types import ModuleType
 
 from os_lms.os_lms.ai.utils.default_prompt import (
@@ -129,7 +131,11 @@ DEFAULTS: dict[str, dict] = {
 
 def load_prompt_template(purpose: str) -> dict:
 	"""Return {system_template, user_template, temperature, max_tokens,
-	version, output_schema}.
+	version, output_schema, signature}.
+
+	``signature`` is the version followed by the start of the SHA-256 of the
+	system template actually used (e.g. ``debrief.v2#bb628576``): the version
+	label alone stays the same when the text is changed from the panel.
 
 	``output_schema`` is the parsed JSON Schema for purposes that have one
 	(currently the 4 judge purposes), and ``None`` for everything else.
@@ -147,7 +153,7 @@ def load_prompt_template(purpose: str) -> dict:
 		if frappe.db.exists("LMSA Prompt Template", purpose):
 			doc = frappe.get_doc("LMSA Prompt Template", purpose)
 			if doc.enabled:
-				return {
+				return _with_signature({
 					"system_template": doc.system_template or "",
 					"user_template": doc.user_template or "",
 					"temperature": float(doc.temperature)
@@ -158,7 +164,7 @@ def load_prompt_template(purpose: str) -> dict:
 					"output_schema": _parse_output_schema(
 						doc.output_schema, DEFAULTS[purpose]["output_schema"]
 					),
-				}
+				})
 	except Exception:
 		pass
 
@@ -181,16 +187,56 @@ def render_template(template: str, ctx: dict) -> str:
 # ---------- internals ----------
 
 
+def prompt_fingerprint(config: dict) -> str:
+	"""SHA-256 of what makes a prompt behave as it does: the two templates,
+	the output schema, temperature and max tokens. Trailing spaces, line
+	endings and the schema's formatting do not count, so a record saved from
+	the Desk keeps the fingerprint of the text it holds. Label, version and
+	placeholder list are descriptions and do not count either.
+
+	`config` is a DEFAULTS entry or a record's values (output_schema as JSON
+	text or as parsed JSON)."""
+	payload = [
+		_normalized_text(config.get("system_template")),
+		_normalized_text(config.get("user_template")),
+		_normalized_schema(config.get("output_schema")),
+		round(float(config.get("temperature") or 0), 2),
+		int(config.get("max_tokens") or 0),
+	]
+	return hashlib.sha256(json.dumps(payload, ensure_ascii=False).encode()).hexdigest()
+
+
+def _normalized_text(text: str | None) -> str:
+	return "\n".join(line.rstrip() for line in (text or "").strip().splitlines())
+
+
+def _normalized_schema(schema) -> str:
+	if schema in (None, ""):
+		return ""
+	if isinstance(schema, str):
+		try:
+			schema = json.loads(schema)
+		except ValueError:
+			return schema.strip()
+	return json.dumps(schema, sort_keys=True, ensure_ascii=False)
+
+
+def _with_signature(config: dict) -> dict:
+	text_hash = hashlib.sha256((config["system_template"] or "").encode()).hexdigest()
+	config["signature"] = f"{config['version']}#{text_hash[:8]}"
+	return config
+
+
 def _default_config(purpose: str) -> dict:
 	d = DEFAULTS[purpose]
-	return {
+	return _with_signature({
 		"system_template": d["system_template"],
 		"user_template": d["user_template"],
 		"temperature": d["temperature"],
 		"max_tokens": d["max_tokens"],
 		"version": d["version"],
 		"output_schema": d["output_schema"],
-	}
+	})
 
 
 def _parse_output_schema(raw, fallback):

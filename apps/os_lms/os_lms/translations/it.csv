@@ -197,3 +197,7 @@ Last reminder to the reviewers; another one follows every 7 days until the outco
 AI Simulations,Simulazioni AI,
 Simulation Outcome Reminder,Promemoria esito simulazione,
 Simulation Review Published,Valutazione simulazione pubblicata,
+Code Version Not Applied,Versione del codice non applicata,
+"The code has this newer version of the prompt, not applied by the migrate because the text was changed from the panel. To take it, copy the code's text here (ai/utils/default_prompt/) or delete the record: the next migrate creates it again from the code.","Il codice ha questa versione più recente del prompt, non applicata dal migrate perché il testo è stato modificato dal pannello. Per prenderla, copia qui il testo del codice (ai/utils/default_prompt/) oppure elimina il record: il migrate successivo lo ricrea dal codice.",
+Code Fingerprint,Impronta del codice,
+"Fingerprint of the prompt the code last wrote here. While the record still holds it, the migrate updates the prompt to the code's newer versions; a text changed from the panel is kept.","Impronta del prompt scritto qui l'ultima volta dal codice. Finché il record la conserva, il migrate aggiorna il prompt alle versioni più recenti del codice; un testo modificato dal pannello resta com'è.",

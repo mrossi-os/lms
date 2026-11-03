@@ -230,6 +230,9 @@ Campi per record: `system_template` (Long Text, required), `user_template` (Long
 2. Save: la modifica è immediatamente effettiva al prossimo call (no cache, no restart)
 3. Bumpare il `version` per tracciare la modifica nel `judge_versions_json` dei trace (audit)
 4. Per resettare al default hardcoded: `enabled=0` (soft) o cancellare il record (al prossimo migrate viene ri-seedato da DEFAULTS)
+5. Un testo modificato dal pannello **non viene più aggiornato dal codice**: quando il codice ha una versione nuova, il record mostra "Versione del codice non applicata" (`code_version_not_applied`) e il migrate lo scrive nel log. Per prenderla si copia il testo del codice o si cancella il record.
+
+**Aggiornamento dei prompt al migrate** (`ai/utils/prompt_sync.py`, fase 9 del piano `docs/ai-simulator/PIANO-esito-e-punteggio-coach.md`): ogni record ricorda in `default_fingerprint` l'impronta del prompt che il codice ci ha scritto (`template_loader.prompt_fingerprint`: template system e user, schema di output, temperatura e max token; non contano spazi a fine riga, a capo e formattazione dello schema). A ogni migrate, `sync_prompt_templates`: se il record ha già il prompt del codice ricorda solo l'impronta; se ha il testo scritto dal codice o un testo passato del codice (`PREVIOUS_FINGERPRINTS`, ricavato dalla storia git di `default_prompt/` più i nostri testi salvati dal pannello sullo staging) lo aggiorna alla versione del codice (salvataggio normale, con la storia delle modifiche); altrimenti lo lascia e compila `code_version_not_applied`. Quando si cambia un prompt nel codice non serve aggiungere nulla a `PREVIOUS_FINGERPRINTS`: l'impronta vecchia è già nei record. `load_prompt_template` restituisce anche `signature` (versione + inizio dello SHA-256 del template system usato, es. `debrief.v2#bb628576`), che il debrief salva in `prompt_version`.
 
 ## L'`AuthoringEvaluationRunner` in dettaglio
 
@@ -356,7 +359,8 @@ Da `setup.py` (chiamati in `hooks.after_migrate`):
 | Funzione | Cosa fa |
 |---|---|
 | `migrate_judge_prompts_to_template` | One-shot idempotente: porta i record del vecchio doctype `LMSA Judge Prompt` (deprecato) dentro `LMSA Prompt Template` preservando eventuale customizzazione, poi droppa il vecchio doctype. Gira prima di `seed_prompt_templates` così il record migrato batte il default fresh. Noop dopo la prima esecuzione. |
-| `seed_prompt_templates` | Crea i record `LMSA Prompt Template` mancanti dai default in `utils/template_loader.DEFAULTS` (idempotente). Copre tutte le famiglie: runtime, authoring, judges (incluso `output_schema`). |
+| `seed_prompt_templates` | Crea i record `LMSA Prompt Template` mancanti dai default in `utils/template_loader.DEFAULTS` (idempotente), con l'impronta del codice. Copre tutte le famiglie: runtime, authoring, judges (incluso `output_schema`). |
+| `ai.utils.prompt_sync.sync_prompt_templates` | Porta alla versione del codice i record che hanno ancora un testo del codice; segnala gli altri (vedi sopra). |
 
 I default hardcoded sotto `ai/utils/default_prompt/` restano in modo che la app funzioni anche senza i record DB (fallback ricorsivo a ogni `load_prompt_template`).
 

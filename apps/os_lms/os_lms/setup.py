@@ -1,5 +1,3 @@
-import json
-
 from os_lms.os_lms.ai.utils.rag.redis_rag_storage import RedisRagStorage
 import frappe
 
@@ -414,6 +412,7 @@ def seed_prompt_templates():
     in-module defaults under ``ai/utils/default_prompt/`` when a record is
     absent.
     """
+    from os_lms.os_lms.ai.utils.prompt_sync import apply_default
     from os_lms.os_lms.ai.utils.template_loader import DEFAULTS
 
     created = 0
@@ -422,19 +421,9 @@ def seed_prompt_templates():
             continue
         doc = frappe.new_doc("LMSA Prompt Template")
         doc.purpose = purpose
-        doc.label = data["label"]
-        doc.version = data["version"]
-        doc.system_template = data["system_template"]
-        doc.user_template = data["user_template"]
-        doc.temperature = data["temperature"]
-        doc.max_tokens = data["max_tokens"]
-        doc.available_placeholders = data["available_placeholders"]
-        if data.get("output_schema") is not None:
-            doc.output_schema = json.dumps(
-                data["output_schema"], indent=2, ensure_ascii=False
-            )
         doc.enabled = 1
-        doc.insert(ignore_permissions=True)
+        # Also remembers the fingerprint, so later code versions reach it
+        apply_default(doc, data)
         created += 1
         print(f"Seeded LMSA Prompt Template: {purpose}")
     if created:

@@ -56,6 +56,8 @@ after_migrate = [
     # take precedence over the freshly-seeded defaults.
     "os_lms.setup.migrate_judge_prompts_to_template",
     "os_lms.setup.seed_prompt_templates",
+    # Records still holding a text of the code follow the code's new prompts.
+    "os_lms.os_lms.ai.utils.prompt_sync.sync_prompt_templates",
     # The OpenAI/Vimeo keys became Password fields: encrypt a value still in clear.
     "os_lms.os_lms.ai.utils.api_keys.encrypt_plaintext_api_keys",
     # The old Google Calendar callback wrote the OAuth tokens in clear.
