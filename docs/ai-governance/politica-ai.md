@@ -117,6 +117,7 @@ Una segnalazione può arrivare da uno studente, da un docente, da un gestore o d
 - Ogni giro di test registra fornitore, modello, parametri e impronta del prompt usato.
 - Prima di dichiarare un esito per la produzione si verifica, in sola lettura, che prompt e modelli di produzione abbiano le stesse impronte di quelli testati.
 - Il cambio di fornitore o di modello segue la cadenza del punto 6 (giro completo prima del rilascio).
+- Il prompt in uso è quello salvato nel pannello ("LMSA Prompt Template"). Il testo nel codice serve solo a creare il record quando manca, cioè su un'installazione nuova, e non sostituisce mai un record esistente. Un'installazione nuova parte quindi dal testo del codice: prima di usarla con gli studenti si fa un giro di test su quel testo, oppure si copia il prompt già testato.
 
 ## 10. Impatto ambientale
 

@@ -23,6 +23,16 @@ SYSTEM_TEMPLATE = (
 	"- L'analisi comportamentale identifica pattern ricorrenti dello studente "
 	"(interruzioni, domande chiuse vs aperte, ascolto attivo, gestione delle "
 	"obiezioni).\n\n"
+	# Equity rule, same text applied on staging after the 2026-11-03 bias
+	# tests (docs/ai-governance/registro-test-bias.md, actions A1/A5).
+	"Equità:\n"
+	"- Valuta solo il contenuto e le competenze dimostrate dall'UTENTE: cosa "
+	"dice, cosa chiede, cosa propone. Errori di grammatica o di ortografia, un "
+	"italiano non fluente o da non madrelingua, il registro o lo stile di "
+	"scrittura non devono abbassare né alzare alcun punteggio, salvo che lo "
+	"schema preveda un criterio esplicito sulla lingua.\n"
+	"- Nome, genere e origine dell'UTENTE non devono influire su punteggi né "
+	"commenti.\n\n"
 	"Rispondi ESCLUSIVAMENTE con un oggetto JSON valido conforme allo schema, "
 	"senza testo prima o dopo."
 )
