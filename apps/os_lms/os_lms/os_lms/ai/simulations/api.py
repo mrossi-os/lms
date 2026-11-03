@@ -444,10 +444,10 @@ def _score_payload(debrief) -> dict:
     """Final score and pass/fail, plus the AI score and the instructor's
     correction when there is one. Instructor-only, like the rest of the grade."""
     overridden = bool(debrief.score_overridden_by)
-    ai_score = debrief.ai_overall_score
-    if ai_score is None and not overridden:
-        # Debriefs written before the AI score had its own field.
-        ai_score = debrief.overall_score
+    # Until an instructor corrects it, overall_score IS the AI score. Read it
+    # from there: ai_overall_score is 0 (Float is NOT NULL) on debriefs written
+    # before the field existed.
+    ai_score = debrief.ai_overall_score if overridden else debrief.overall_score
     return {
         "overall_score": debrief.overall_score,
         "passed": bool(debrief.passed),
@@ -659,8 +659,10 @@ def instructor_override_score(session_id: str, score: float, reason: str) -> dic
         frappe.throw(_("The score must be a number between 0 and 100"))
 
     debrief = _instructor_debrief(session_id)
-    if not debrief.score_overridden_by and debrief.ai_overall_score is None:
-        # Debriefs written before the AI score had its own field.
+    if not debrief.score_overridden_by:
+        # First correction: overall_score is still the AI score. Copy it always,
+        # since ai_overall_score is 0, not NULL, on debriefs written before the
+        # field existed.
         debrief.ai_overall_score = debrief.overall_score
     debrief.overall_score = score
     debrief.score_override_reason = reason

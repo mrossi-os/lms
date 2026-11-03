@@ -218,6 +218,20 @@ class TestInstructorScoreOverride(TestInstructorReview):
         self.assertEqual(debrief.score_overridden_by, "Administrator")
         self.assertIsNotNone(debrief.score_overridden_at)
 
+    def test_override_of_debrief_older_than_ai_score_field_keeps_ai_score(self):
+        # Debriefs written before ai_overall_score existed carry 0 there, not
+        # NULL: Frappe creates Float columns as NOT NULL DEFAULT 0.
+        session_id = self._debrief_session()
+        name = self._debrief(session_id).name
+        frappe.db.set_value("LMSA Simulation Debrief", name, "ai_overall_score", 0)
+        frappe.db.commit()
+        self.assertEqual(get_transcript(session_id=session_id)["debrief"]["ai_overall_score"], 75)
+
+        result = instructor_override_score(session_id=session_id, score=60, reason="Rivisto")
+        self.assertEqual(result["ai_overall_score"], 75)
+        self.assertEqual(self._debrief(session_id).ai_overall_score, 75)
+        self.assertEqual(instructor_reset_score(session_id=session_id)["overall_score"], 75)
+
     def test_second_override_does_not_touch_ai_score(self):
         session_id = self._debrief_session()
         instructor_override_score(session_id=session_id, score=60, reason="Primo")
