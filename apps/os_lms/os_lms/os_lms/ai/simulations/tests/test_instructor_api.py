@@ -8,6 +8,7 @@ from frappe.tests import UnitTestCase
 
 from os_lms.os_lms.ai.simulations import SessionOrchestrator
 from os_lms.os_lms.ai.simulations.api import (
+    _mark_improvements,
     delete_evaluation_schema,
     delete_scenario,
     get_evaluation_schema,
@@ -20,6 +21,7 @@ from os_lms.os_lms.ai.simulations.api import (
     instructor_start_review,
     list_my_evaluation_schemas,
     list_my_scenarios,
+    list_my_sessions,
     save_evaluation_schema,
     save_scenario,
 )
@@ -277,9 +279,11 @@ class TestTeacherVersion(TestInstructorReview):
         instructor_start_review(session_id=session_id)
         instructor_save_review(session_id=session_id, review=self._edits())
 
-        student_view = _serialize_debrief(self._debrief(session_id), include_scores=False)
+        # A draft stays hidden: the student sees the AI version only
+        student_view = _serialize_debrief(self._debrief(session_id), reviewer=False)
         self.assertIsNone(student_view["teacher_version"])
-        self.assertEqual(student_view["instructor_review"], "")
+        self.assertEqual(student_view["review_state"], "not_reviewed")
+        self.assertEqual(student_view["overall_score"], 75)
 
         version = instructor_save_review(
             session_id=session_id, review=self._edits(), publish=True
@@ -287,17 +291,77 @@ class TestTeacherVersion(TestInstructorReview):
         self.assertEqual(version["status"], "published")
         self.assertEqual(version["published_by_name"], self.admin_name)
 
-        student_view = _serialize_debrief(self._debrief(session_id), include_scores=False)
+        # Once published the student sees it whole, scores included (phase 6)
+        student_view = _serialize_debrief(self._debrief(session_id), reviewer=False)
+        self.assertEqual(student_view["review_state"], "published")
         self.assertEqual(student_view["teacher_version"]["status"], "published")
-        self.assertNotIn("overall_score", student_view["teacher_version"])
-        self.assertNotIn("criterion_scores", student_view["teacher_version"])
-        self.assertEqual(student_view["instructor_review"], "Buon lavoro, manca la chiusura.")
+        self.assertEqual(student_view["teacher_version"]["overall_score"], 62)
+        self.assertEqual(len(student_view["teacher_version"]["criterion_scores"]), 2)
+        self.assertEqual(student_view["teacher_version"]["comment"], "Buon lavoro, manca la chiusura.")
+        self.assertEqual(student_view["overall_score"], 75)
 
         # Later saves reach the student at once
         instructor_save_review(session_id=session_id, review=self._edits(comment="Rivisto"))
         self.assertEqual(self._debrief(session_id).review_status, "Published")
-        student_view = _serialize_debrief(self._debrief(session_id), include_scores=False)
-        self.assertEqual(student_view["instructor_review"], "Rivisto")
+        student_view = _serialize_debrief(self._debrief(session_id), reviewer=False)
+        self.assertEqual(student_view["teacher_version"]["comment"], "Rivisto")
+
+    def test_attempts_show_the_published_teacher_score_or_the_ai_one(self):
+        self._set_outcome_flag(1)
+        first = self._debrief_session()
+        second = self._debrief_session()
+        frappe.db.set_value(
+            "LMSA Simulation Session", first, "started_at", "2026-01-01 10:00:00"
+        )
+        instructor_start_review(session_id=second)
+        instructor_save_review(
+            session_id=second,
+            review=self._edits(overall_score=82, outcome="Passed"),
+            publish=True,
+        )
+
+        rows = {r["name"]: r for r in list_my_sessions(scenario=self.scenario.name)}
+        self.assertEqual(
+            (rows[first]["score"], rows[first]["score_source"], rows[first]["review_state"]),
+            (75, "ai", "awaiting_outcome"),
+        )
+        self.assertEqual(rows[first]["outcome"], "")
+        self.assertIsNone(rows[first]["improvement"])
+        self.assertEqual(
+            (rows[second]["score"], rows[second]["score_source"], rows[second]["outcome"]),
+            (82, "teacher", "Passed"),
+        )
+        self.assertEqual(rows[second]["improvement"], 7)
+
+    def test_only_improvements_above_five_points_are_shown(self):
+        sessions = [
+            {"scenario": "A", "started_at": "1", "score": 50},
+            {"scenario": "A", "started_at": "2", "score": 55},  # +5: noise
+            {"scenario": "A", "started_at": "3", "score": None},  # not scored yet
+            {"scenario": "A", "started_at": "4", "score": 60.5},  # +5.5 on 55
+            {"scenario": "A", "started_at": "5", "score": 40},  # a drop
+            {"scenario": "B", "started_at": "6", "score": 90},  # other scenario
+        ]
+        _mark_improvements(sessions)
+        self.assertEqual([s["improvement"] for s in sessions], [None, None, None, 5.5, None, None])
+
+    def test_the_student_waits_for_the_outcome_until_it_is_published(self):
+        self._set_outcome_flag(1)
+        session_id = self._debrief_session()
+        instructor_start_review(session_id=session_id)
+        instructor_save_review(
+            session_id=session_id, review=self._edits(outcome="Passed")
+        )
+        student_view = _serialize_debrief(self._debrief(session_id), reviewer=False)
+        self.assertEqual(student_view["review_state"], "awaiting_outcome")
+        self.assertIsNone(student_view["teacher_version"])
+
+        instructor_save_review(
+            session_id=session_id, review=self._edits(outcome="Passed"), publish=True
+        )
+        student_view = _serialize_debrief(self._debrief(session_id), reviewer=False)
+        self.assertEqual(student_view["review_state"], "published")
+        self.assertEqual(student_view["teacher_version"]["outcome"], "Passed")
 
     def test_only_a_draft_can_be_discarded(self):
         session_id = self._debrief_session()

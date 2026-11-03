@@ -92,6 +92,7 @@
 							<th class="py-2">{{ __('Data') }}</th>
 							<th>{{ __('Modalità') }}</th>
 							<th>{{ __('Stato') }}</th>
+							<th>{{ __('Punteggio') }}</th>
 							<th></th>
 						</tr>
 					</thead>
@@ -105,6 +106,34 @@
 							<td class="capitalize">{{ s.modality }}</td>
 							<td>
 								<Badge :label="statusLabel(s.status)" :theme="statusTheme(s.status)" />
+							</td>
+							<!-- The published teacher score, else the AI's indicative one;
+							     "+N" only for gains above 5 points (decided by the server). -->
+							<td>
+								<div v-if="s.score != null" class="flex flex-wrap items-center gap-1.5">
+									<span class="font-medium tabular-nums">{{ Math.round(s.score) }}</span>
+									<span class="text-xs text-ink-gray-5">
+										{{ s.score_source === 'teacher' ? __('docente') : __('indicativo') }}
+									</span>
+									<Badge
+										v-if="s.improvement"
+										:label="`+${Math.round(s.improvement)}`"
+										theme="green"
+									/>
+								</div>
+								<span v-else class="text-ink-gray-5">—</span>
+								<div v-if="s.outcome" class="mt-1">
+									<Badge
+										:label="s.outcome === 'Passed' ? __('Superata') : __('Non superata')"
+										:theme="s.outcome === 'Passed' ? 'green' : 'red'"
+									/>
+								</div>
+								<div
+									v-else-if="s.review_state === 'awaiting_outcome'"
+									class="mt-1 text-xs text-ink-gray-5"
+								>
+									{{ __('In attesa di valutazione') }}
+								</div>
 							</td>
 							<td class="text-right">
 								<Button

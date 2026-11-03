@@ -190,25 +190,29 @@ class TestGetDebriefEndpoint(_DebriefMockBase):
         payload = get_debrief(session_id=start.session)
         self.assertEqual(payload["status"], "pending")
 
-    def test_ready_payload_hides_scores_from_student(self):
+    def test_ready_payload_shows_the_ai_scores_to_the_student(self):
         svc = SessionOrchestrator()
         start = svc.start_session(scenario_id=self.scenario.name)
         svc.end_session(session_id=start.session, reason="completed")
         generate_debrief(start.session)
 
-        # The session owner is a plain student (not an instructor of the
-        # course): the Coach delivers only qualitative feedback, no grade.
-        # Force the non-privileged path so the test doesn't depend on how the
-        # ambient test user's roles happen to be configured.
+        # The session owner is a plain student (not a reviewer of the course):
+        # since phase 6 of docs/ai-simulator/PIANO-esito-e-punteggio-coach.md
+        # they see the AI's indicative score and criterion scores, but no
+        # teacher version until one is published. Force the non-privileged
+        # path so the test doesn't depend on the ambient test user's roles.
         with patch(
             "os_lms.os_lms.ai.simulations.access.can_review",
             return_value=False,
         ):
             payload = get_debrief(session_id=start.session)
         self.assertEqual(payload["status"], "ready")
-        self.assertNotIn("overall_score", payload)
+        self.assertEqual(payload["overall_score"], 80.0)
+        self.assertEqual(len(payload["criterion_scores"]), 2)
         self.assertNotIn("passed", payload)
-        self.assertNotIn("criterion_scores", payload)
+        self.assertIsNone(payload["teacher_version"])
+        self.assertEqual(payload["review_state"], "not_reviewed")
+        self.assertTrue(payload["can_retry"])
         self.assertTrue(payload["strengths"])
         self.assertTrue(payload["improvements"])
         self.assertTrue(payload["behavioral_analysis"])

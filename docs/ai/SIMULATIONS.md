@@ -131,7 +131,7 @@ Lo stesso `ChatSession` viene riusato dentro `TranscriptDrawer` per mostrare con
 
 `end_session` enqueua `simulations.tasks.generate_debrief(session_id)`. Il job carica la trascrizione + lo schema di valutazione del scenario e fa una LLM call con `build_debrief_messages` (`prompts/debrief.py`) — output strutturato con `overall_score`, `passed`, `criterion_scores`, `strengths`, `improvements`. Persiste su `LMSA Simulation Debrief`.
 
-Il frontend polla via `get_debrief(session_id)` e mostra i risultati in `SimulationDebrief.vue`.
+Il frontend polla via `get_debrief(session_id)` e mostra i risultati in `SimulationDebrief.vue`. Lo studente vede la versione dell'AI con il punteggio indicativo e i voti per criterio; la versione del docente solo quando è pubblicata (`teacher_version`), con due schede Docente / AI. `review_state` dice cosa mostrare prima: `published`, `awaiting_outcome` (simulazione con esito, "in attesa di valutazione") o `not_reviewed` ("non ancora rivista da un docente"); `can_retry` attiva "Rifai la simulazione" (`clone_session`) per chi ha fatto la sessione. `list_my_sessions` restituisce per ogni tentativo `score` (del docente se pubblicato, altrimenti dell'AI, con `score_source`), `outcome`, `review_state` e `improvement` (solo se supera il tentativo precedente dello stesso scenario di più di 5 punti).
 
 ### 5. Versione del docente ed esito
 

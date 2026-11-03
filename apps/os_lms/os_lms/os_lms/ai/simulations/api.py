@@ -332,7 +332,11 @@ def get_debrief(session_id: str) -> dict:
         return {"status": "pending", "session": session.name, "course": session.course}
 
     debrief = frappe.get_doc("LMSA Simulation Debrief", name)
-    return _serialize_debrief(debrief, include_scores=_viewer_can_see_scores(session))
+    payload = _serialize_debrief(debrief, reviewer=_is_reviewer(session))
+    # The report page offers "Rifai la simulazione" (clone_session) to the
+    # student who played it, not to a reviewer opening it.
+    payload["can_retry"] = session.student == frappe.session.user
+    return payload
 
 
 @frappe.whitelist(methods=["POST"])
@@ -362,24 +366,27 @@ def generate_debrief(session_id: str) -> dict:
 
     name = _run_generate_debrief(session.name)
     debrief = frappe.get_doc("LMSA Simulation Debrief", name)
-    return _serialize_debrief(debrief, include_scores=_viewer_can_see_scores(session))
+    return _serialize_debrief(debrief, reviewer=_is_reviewer(session))
 
 
 
-def _viewer_can_see_scores(session) -> bool:
-    """Whether the current user may see the numeric score and pass/fail.
-
-    Only the people who may review the session do (access.can_review). Plain
-    students — even the session owner — receive qualitative coaching feedback
-    (strengths, improvements, suggestions) without a grade. A Docente or
-    Valutatore playing their own test session is a reviewer of it only when
-    their role reaches its course and student.
-    """
+def _is_reviewer(session) -> bool:
+    """Whether the current user reviews the session (access.can_review) rather
+    than only owning it. A Docente or Valutatore playing their own test
+    session is a reviewer of it only when their role reaches its course and
+    student."""
     return access.can_review(session.course, session.student)
 
 
-def _serialize_debrief(debrief, include_scores: bool = True) -> dict:
-    payload = {
+def _serialize_debrief(debrief, *, reviewer: bool) -> dict:
+    """The AI version, scores included, for everyone who may open the
+    debrief (docs/ai-simulator/PIANO-esito-e-punteggio-coach.md, decisions 4
+    and 6: the student sees the indicative score and the criterion scores).
+    The teacher version goes to reviewers from the first draft and to the
+    student only once published."""
+    has_outcome = teacher_review.scenario_has_outcome(debrief)
+    published = debrief.review_status == teacher_review.REVIEW_PUBLISHED
+    return {
         "status": debrief.status.lower().replace(" ", "_"),
         "session": debrief.session,
         "name": debrief.name,
@@ -407,24 +414,8 @@ def _serialize_debrief(debrief, include_scores: bool = True) -> dict:
             }
             for r in (debrief.recommended_content or [])
         ],
-    }
-    # The teacher version: instructors see it from the first draft, students
-    # only once it is published. `include_scores` is True for instructors.
-    published = debrief.review_status == teacher_review.REVIEW_PUBLISHED
-    review = (
-        teacher_review.serialize_review(debrief, include_scores=include_scores)
-        if include_scores or published
-        else None
-    )
-    payload["teacher_version"] = review
-    payload["outcome_required"] = teacher_review.scenario_has_outcome(debrief)
-    # Kept for the student page, which shows the teacher's comment
-    payload["instructor_review"] = review["comment"] if review and published else ""
-    # The numeric grade (AI score, per-criterion scores) is instructor-only.
-    # Students see the coaching feedback above, not a grade.
-    if include_scores:
-        payload["overall_score"] = debrief.overall_score
-        payload["criterion_scores"] = [
+        "overall_score": debrief.overall_score,
+        "criterion_scores": [
             {
                 "criterion_name": c.criterion_name,
                 "score": c.score,
@@ -433,8 +424,13 @@ def _serialize_debrief(debrief, include_scores: bool = True) -> dict:
                 "note": c.note,
             }
             for c in (debrief.criterion_scores or [])
-        ]
-    return payload
+        ],
+        "teacher_version": (
+            teacher_review.serialize_review(debrief) if reviewer or published else None
+        ),
+        "outcome_required": has_outcome,
+        "review_state": teacher_review.review_state(debrief, has_outcome=has_outcome),
+    }
 
 
 @frappe.whitelist()
@@ -481,10 +477,19 @@ def list_scenarios(course: str | None = None) -> list[dict]:
     return scenarios
 
 
+# A later attempt shows its improvement only above this many points: smaller
+# moves are noise (docs/ai-simulator/PIANO-esito-e-punteggio-coach.md, decision 6).
+IMPROVEMENT_MIN_POINTS = 5
+
+# Debrief statuses whose AI score is meaningful
+SCORED_DEBRIEF_STATUSES = ("Ready", "Needs Review")
+
+
 @frappe.whitelist()
 def list_my_sessions(course: str | None = None, scenario: str | None = None) -> list[dict]:
     """List the current user's own simulation sessions (optionally by course
-    and/or scenario), enriched with the debrief score/status when available."""
+    and/or scenario), with each attempt's score: the published teacher
+    version's when there is one, otherwise the AI's indicative one."""
     filters: dict = {"student": frappe.session.user}
     if course:
         filters["course"] = course
@@ -509,12 +514,12 @@ def list_my_sessions(course: str | None = None, scenario: str | None = None) -> 
         return []
 
     scenario_names = {s["scenario"] for s in sessions if s["scenario"]}
-    titles = {
-        r["name"]: r["scenario_name"]
+    scenarios = {
+        r["name"]: r
         for r in frappe.get_all(
             "LMSA Simulation Scenario",
             filters={"name": ["in", list(scenario_names)]},
-            fields=["name", "scenario_name"],
+            fields=["name", "scenario_name", "has_human_outcome"],
         )
     }
     debriefs = {
@@ -522,20 +527,61 @@ def list_my_sessions(course: str | None = None, scenario: str | None = None) -> 
         for d in frappe.get_all(
             "LMSA Simulation Debrief",
             filters={"session": ["in", [s["name"] for s in sessions]]},
-            fields=["session", "status"],
+            fields=[
+                "session",
+                "status",
+                "overall_score",
+                "review_status",
+                "review_overall_score",
+                "outcome",
+            ],
         )
     }
 
-    # This is the student's own session history. The numeric grade is
-    # instructor-only, so we expose only whether the debrief is ready
-    # (debrief_status) — not overall_score.
     for s in sessions:
-        s["scenario_name"] = titles.get(s["scenario"], s["scenario"])
+        sc = scenarios.get(s["scenario"]) or {}
+        s["scenario_name"] = sc.get("scenario_name") or s["scenario"]
         s["started_at"] = str(s["started_at"]) if s["started_at"] else None
         s["ended_at"] = str(s["ended_at"]) if s["ended_at"] else None
         d = debriefs.get(s["name"])
         s["debrief_status"] = d["status"] if d else None
+        s.update(_attempt_result(d, has_outcome=bool(sc.get("has_human_outcome"))))
+    _mark_improvements(sessions)
     return sessions
+
+
+def _attempt_result(debrief: dict | None, *, has_outcome: bool) -> dict:
+    """Score, its source and outcome of one attempt, as its student sees them:
+    the teacher version counts only once published."""
+    result = {"score": None, "score_source": None, "outcome": "", "review_state": None}
+    if not debrief or debrief["status"] not in SCORED_DEBRIEF_STATUSES:
+        return result
+    result["review_state"] = teacher_review.review_state(
+        frappe._dict(debrief), has_outcome=has_outcome
+    )
+    if result["review_state"] == "published":
+        result.update(
+            score=debrief["review_overall_score"],
+            score_source="teacher",
+            outcome=debrief["outcome"] or "",
+        )
+    else:
+        result.update(score=debrief["overall_score"], score_source="ai")
+    return result
+
+
+def _mark_improvements(sessions: list[dict]) -> None:
+    """Set `improvement` on each attempt that beats the previous scored
+    attempt of the same scenario by more than IMPROVEMENT_MIN_POINTS."""
+    previous: dict[str, float] = {}
+    for s in sorted(sessions, key=lambda s: s["started_at"] or ""):
+        s["improvement"] = None
+        if s["score"] is None:
+            continue
+        last = previous.get(s["scenario"])
+        if last is not None and s["score"] - last > IMPROVEMENT_MIN_POINTS:
+            s["improvement"] = round(s["score"] - last, 1)
+        previous[s["scenario"]] = s["score"]
 
 
 # ============================================================================
@@ -562,7 +608,7 @@ def _instructor_debrief(session_id: str):
 def _save_teacher_version(debrief) -> dict:
     debrief.save(ignore_permissions=True)
     frappe.db.commit()
-    return _serialize_debrief(debrief, include_scores=True)
+    return _serialize_debrief(debrief, reviewer=True)
 
 
 @frappe.whitelist(methods=["POST"])
@@ -1222,7 +1268,7 @@ def get_transcript(session_id: str) -> dict:
         "turns": turns,
         "debrief": _serialize_debrief(
             frappe.get_doc("LMSA Simulation Debrief", debrief_name),
-            include_scores=_viewer_can_see_scores(session),
+            reviewer=_is_reviewer(session),
         )
         if debrief_name
         else None,

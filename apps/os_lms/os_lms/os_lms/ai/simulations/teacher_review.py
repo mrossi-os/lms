@@ -139,11 +139,31 @@ def discard_review(debrief) -> None:
 	debrief.passed = 0
 
 
-def serialize_review(debrief, *, include_scores: bool) -> dict | None:
+def review_state(debrief, *, has_outcome: bool) -> str:
+	"""What the student sees of the teacher version: `published`, or, until
+	then (drafts included), `awaiting_outcome` on simulations with an outcome
+	and `not_reviewed` on the others."""
+	if debrief.review_status == REVIEW_PUBLISHED:
+		return "published"
+	return "awaiting_outcome" if has_outcome else "not_reviewed"
+
+
+def serialize_review(debrief) -> dict | None:
 	if not debrief.review_status:
 		return None
-	payload = {
+	return {
 		"status": debrief.review_status.lower(),
+		"overall_score": debrief.review_overall_score,
+		"criterion_scores": [
+			{
+				"criterion_name": c.criterion_name,
+				"score": c.score,
+				"max_score": c.max_score,
+				"evidence_quote": c.evidence_quote,
+				"note": c.note,
+			}
+			for c in debrief.review_criterion_scores or []
+		],
 		"strengths": [
 			{"title": s.title, "detail": s.detail, "quote": s.quote}
 			for s in debrief.review_strengths or []
@@ -162,19 +182,6 @@ def serialize_review(debrief, *, include_scores: bool) -> dict | None:
 		"published_by_name": _full_name(debrief.review_published_by),
 		"published_at": _when(debrief.review_published_at),
 	}
-	if include_scores:
-		payload["overall_score"] = debrief.review_overall_score
-		payload["criterion_scores"] = [
-			{
-				"criterion_name": c.criterion_name,
-				"score": c.score,
-				"max_score": c.max_score,
-				"evidence_quote": c.evidence_quote,
-				"note": c.note,
-			}
-			for c in debrief.review_criterion_scores or []
-		]
-	return payload
 
 
 def _set_criteria(debrief, rows) -> None:
