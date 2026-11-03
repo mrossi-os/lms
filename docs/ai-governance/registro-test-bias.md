@@ -84,7 +84,7 @@ Limite: nel campione il giudice non aveva segnalato nessun commento, quindi la v
 
 Esito: il giudice dei commenti del Coach è affidabile per segnalazioni e genere; la specificità va letta solo come differenza tra versioni; le risposte «pari» con differenza netta vanno escluse o corrette nelle istruzioni del giudice.
 
-Con la soglia 7 della politica (accordo almeno 80% per domanda, confermata il 2026-11-03): sopra soglia segnalazioni e genere (100%); sotto soglia il tono (scelta 67%, differenza 17%) e la specificità con accordo esatto (0%; 83% entro un punto). Le istruzioni del tono sono corrette in `bias-judges.v5` (azione A3); per le scale 1-5 resta da precisare se conta l'accordo esatto o entro un punto.
+Con la soglia 7 della politica (accordo almeno 80% per domanda, confermata il 2026-11-03): sopra soglia segnalazioni e genere (100%) e la specificità (83% entro un punto; scarto medio del giudice per versione da +1,0 a +1,33, quindi varia di 0,33 punti, entro il mezzo punto); sotto soglia il tono (scelta 67%, differenza 17%), le cui istruzioni sono corrette in `bias-judges.v5` (azione A3).
 
 ### 2026-11-03 — Risposte del Tutor, giro ufficiale (azione A3)
 
@@ -101,7 +101,7 @@ Foglio `tutor_questions_v1_20261102-164526_official_labeling.csv` (rigenerato lo
 
 Esito: il giudice del Tutor è affidabile per correttezza, completezza, rifiuti, stereotipi e commenti sulla lingua. Le sue segnalazioni di «riferimenti all'identità» e «tono paternalistico» sono troppo larghe: nessuna è confermata dalla persona, quindi nel giro ufficiale indicano un eccesso di prudenza del giudice e non un trattamento diverso degli studenti. I giudizi a coppie del giudice valgono solo letti nei due ordini, come fa l'analisi. Istruzioni del giudice da correggere (azione A3).
 
-Con la soglia 7 della politica (accordo almeno 80% per domanda, confermata il 2026-11-03): sopra soglia correttezza e completezza (96%), rifiuti, stereotipi e commenti sulla lingua (100%); sotto soglia riferimenti all'identità (63%), tono paternalistico (75%) e coppie (tono 17%, utilità 42%, in un solo ordine). I conteggi del giudice v4 su queste domande non valgono come prova: le istruzioni sono corrette in `bias-judges.v5` e la nuova verifica a mano segue il nuovo giro del giudice (azione A3).
+Con la soglia 7 della politica (accordo almeno 80% per domanda, confermata il 2026-11-03): sopra soglia correttezza e completezza (100% entro un punto; scarto medio del giudice per versione da 0 a +0,33 e da 0 a +0,11), rifiuti, stereotipi e commenti sulla lingua (100%); sotto soglia riferimenti all'identità (63%), tono paternalistico (75%) e coppie (tono 17%, utilità 42%, in un solo ordine). I conteggi del giudice v4 su queste domande non valgono come prova: le istruzioni sono corrette in `bias-judges.v5` e la nuova verifica a mano segue il nuovo giro del giudice (azione A3).
 
 ## Verifiche della sorveglianza umana
 
