@@ -133,3 +133,42 @@ input {
 	flex-direction: column;
 	gap: 8px;
 }
+
+/* Login layout compatibility. This app ships the older Frappe login markup
+   (lms/www/login.html, os_lms/www/login.html), where the title is centered
+   and the field icons are absolutely positioned. Newer Frappe releases
+   (seen on staging) dropped those rules from login.bundle.css, so the title
+   falls to the left and the in-flow 16px icons grow each field by 24px,
+   pushing the "Show" toggle (top: 50%) onto the bottom border of the password
+   input. These are the old stock rules, so on a Frappe that still has them
+   nothing changes. */
+.page-card-head {
+	text-align: center;
+}
+
+:is(.for-login, .for-forgot, .for-login-with-email-link, .for-signup, .for-email-login)
+	.page-card
+	.page-card-body
+	:is(.email-field, .password-field) {
+	position: relative;
+}
+
+:is(.for-login, .for-forgot, .for-login-with-email-link, .for-signup, .for-email-login)
+	.page-card
+	.page-card-body
+	.field-icon {
+	left: 9px;
+	top: 50%;
+	transform: translateY(-50%);
+	position: absolute;
+	z-index: 2;
+	fill: var(--text-light);
+}
+
+:is(.for-login, .for-forgot, .for-login-with-email-link, .for-signup, .for-email-login)
+	.page-card
+	.page-card-body
+	:is(.email-field, .password-field)
+	input {
+	padding-left: 35px;
+}
