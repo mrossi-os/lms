@@ -58,7 +58,7 @@ Modelli in uso (configurazione di staging verificata il 2026-11-02): OpenAI `gpt
 
 ## 5. Sorveglianza umana
 
-Funzioni nella versione 1.16.50-1.16.59 (piano `docs/ai-simulator/PIANO-esito-e-punteggio-coach.md`); sullo staging dal prossimo rilascio.
+Funzioni nella versione 1.16.50-1.16.60 (piano `docs/ai-simulator/PIANO-esito-e-punteggio-coach.md`); sullo staging dal 2026-11-04, provate con gli account di prova (registro, "Verifiche della sorveglianza umana"); in produzione da rilasciare.
 
 - Il punteggio del Coach è **indicativo**: lo calcola il codice come media pesata dei voti per criterio (1.16.50) e non decide nessun esito (1.16.51). Lo studente lo vede con la scritta che il report è generato da un'intelligenza artificiale, che il punteggio non decide l'esito e che il docente può rivederlo.
 - **Simulazioni con esito** (1.16.52): chi crea la simulazione può attivare la casella "Simulazione con esito (superata / non superata)". In quel caso l'esito lo decide una persona, con una motivazione obbligatoria se non è superata; finché non decide, lo studente vede "in attesa di valutazione".
@@ -145,10 +145,10 @@ L'art. 4 dell'AI Act chiede sia a chi sviluppa un sistema AI sia a chi lo usa di
 |---|---|
 | Nomina del responsabile della politica AI e del verificatore umano dei giudici | da decidere (sezione "Approvazione") |
 | Approvazione delle soglie del punto 6 | confermate il 2026-11-03 (sezione "Approvazione"); da far proprie dal responsabile della politica quando nominato |
-| Equità del Coach (registro, azioni A1, A2, A5, A6, A7) | prompt `debrief.v2` con il nome dello studente nascosto: entro le soglie 1-6 in due giri consecutivi (2026-11-04, ambiente di sviluppo). Da rilasciare sullo staging (dopo il deploy verificare in sola lettura l'impronta `bb628576…`) e poi in produzione; giudici sui nuovi commenti (soglie 5 e 7) dopo la ricarica di Gemini |
+| Equità del Coach (registro, azioni A1, A2, A5, A6, A7) | prompt `debrief.v2` con il nome dello studente nascosto: entro le soglie 1-6 in due giri consecutivi (2026-11-04, ambiente di sviluppo). Sullo staging dal 2026-11-04 (impronta `bb628576…` verificata in sola lettura dopo il deploy); da rilasciare in produzione, con la stessa verifica; giudici sui nuovi commenti (soglie 5 e 7) dopo la ricarica di Gemini |
 | Verifica della configurazione AI di produzione | da fare, serve un accesso in sola lettura |
 | Classificazione AI Act del Coach | da confermare con un consulente legale (l'esito deciso da una persona riduce l'impatto, punto 3) |
 | Registro completo delle chiamate AI attivo nel codice (`ai/utils/llm/logger.py`, `ENABLED = True`) | da valutare: può scrivere nei log i testi degli studenti |
 | Temperatura e limiti impostati dal pannello ignorati da Coach e Tutor | da valutare |
 | Primo incontro di formazione AI del team Overside e guida d'uso per i clienti (punto 11) | da fare |
-| Versione del docente ed esito deciso da una persona (punto 5) | fatte nell'ambiente di sviluppo (1.16.50-1.16.58); da provare sullo staging con gli account di prova, poi in produzione. Sostituiscono la correzione del voto della 1.16.45, provata sullo staging il 2026-11-03 (registro, "Verifiche della sorveglianza umana") |
+| Versione del docente ed esito deciso da una persona (punto 5) | provate sullo staging il 2026-11-04 con gli account di prova (1.16.59, più tre correzioni nella 1.16.60; registro, "Verifiche della sorveglianza umana"); da rilasciare in produzione. Sostituiscono la correzione del voto della 1.16.45, provata sullo staging il 2026-11-03 (registro, "Verifiche della sorveglianza umana") |

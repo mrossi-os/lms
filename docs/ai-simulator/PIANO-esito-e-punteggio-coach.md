@@ -3,7 +3,7 @@
 | Voce | Valore |
 |---|---|
 | Data | 2026-11-03 |
-| Stato | approvato dall'utente; fasi 1-9 fatte il 2026-11-03, fasi 10 e 11 il 2026-11-04 (non rilasciate); resta la fase 12 |
+| Stato | approvato dall'utente; fasi 1-9 fatte il 2026-11-03, fasi 10 e 11 il 2026-11-04; fase 12: staging provato il 2026-11-04 (1.16.59, con le correzioni della 1.16.60), resta il rilascio in produzione |
 | Origine | test di equità del Coach (punto 5 ESG): `docs/ai-governance/registro-test-bias.md`, azioni A1, A5, A6 |
 | Branch | `feature/esg-bias-tests` |
 
@@ -80,8 +80,25 @@ Stima: 6-8 giorni di sviluppo e test, più i giri di equità.
   - punti aperti.
 
   `registro-test-bias.md` ha il giro del 2026-11-04 e le azioni A1, A2, A5, A6 aggiornate, più la nuova A7. Traduzioni: le stringhe nuove in inglese delle fasi 1-10 hanno tutte la riga in `it.csv`; quelle delle pagine delle simulazioni sono scritte direttamente in italiano, come il resto del modulo.
+- **Fase 12, staging (2026-11-04):** deploy della 1.16.59.
+  - **Prompt** (verificati in sola lettura): tutti gli 11 hanno la stessa impronta dell'ambiente di sviluppo. `debrief` è `debrief.v2` `bb628576…`, il generatore degli schemi è v2 `3dc6027e…`, il generatore delle varianti `gen.v2` `c94c7bb2…`; nessuno è segnalato con `code_version_not_applied`.
+  - **Dati di prova creati:** simulazione con esito SCN-1085 sul corso `crm-e-gestione-cliente`, con `docente1@gmail.com` aggiunto ai docenti del corso. Sessione SES-1086 dello studente, debrief DBR-1094.
+  - **Prova:** Gestore, Studente, Valutatore e Docente, con i risultati attesi:
+    - firma `debrief.v2#bb628576` nel debrief;
+    - «In attesa di valutazione» per lo studente;
+    - 5 notifiche ai revisori;
+    - nessun «Riccardo» nella risposta del Coach;
+    - versione del docente 72, Superata, pubblicata;
+    - avviso ed email allo studente;
+    - report docenti con «AI 67,5 → docente 72».
+  - **Tre difetti trovati e corretti nella 1.16.60** (commit `d60ce261b`, verificata sullo staging):
+    - il clic sulle notifiche delle simulazioni non apriva la pagina;
+    - il filtro Corso mostrava «Select option»;
+    - i messaggi dello studente in chat erano bianchi su azzurro chiaro.
+  - **Restano dalla fase 7:** la scheda Report si apre vuota finché non la si clicca, e le barre della distribuzione hanno altezza zero.
+  - I dati di prova restano sullo staging per ora.
 - **Fasi 1 e 2 vanno rilasciate insieme.** Con la sola fase 1 la soglia di promozione dei 70 resta attiva su un punteggio calcolato dai criteri, che è più basso: i promossi scenderebbero per tutti (dal 37-45% al 9-17% nei test).
-- **Lo staging riceve il prompt v2 al deploy** (fase 9): il suo record `debrief` è stato modificato dal pannello (regola di equità, impronta del testo `169d9628…`), ma è un testo nostro e la fase 9 lo riconosce. Prima della fase 9 andava sostituito a mano: senza la scala fissa 0-10 il Coach sceglie la scala di ogni criterio e il punteggio calcolato oscilla di più (±9,3 contro ±2,6 nei test). Dopo il deploy va verificato con una SELECT che lo `system_template` abbia l'impronta `bb628576…`.
+- **Lo staging riceve il prompt v2 al deploy** (fase 9): il suo record `debrief` è stato modificato dal pannello (regola di equità, impronta del testo `169d9628…`), ma è un testo nostro e la fase 9 lo riconosce. Prima della fase 9 andava sostituito a mano: senza la scala fissa 0-10 il Coach sceglie la scala di ogni criterio e il punteggio calcolato oscilla di più (±9,3 contro ±2,6 nei test). Dopo il deploy va verificato con una SELECT che lo `system_template` abbia l'impronta `bb628576…`: **verificato il 2026-11-04** (fase 12).
 
 - `prompt_version` del debrief registrava la costante del codice, non il testo realmente usato: dalla fase 9 registra versione e impronta del testo (es. `debrief.v2#bb628576`). I debrief precedenti restano con `debrief.v1`/`debrief.v2`.
 - L'AI Act include tra i sistemi ad alto rischio quelli che valutano i risultati dell'apprendimento anche solo per orientare lo studente: togliere la promozione automatica riduce l'impatto ma non decide da solo la classificazione.
