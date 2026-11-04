@@ -16,6 +16,7 @@ from .debrief import (
     StrengthDC,
     build_debrief_messages,
     compute_overall_score,
+    mask_student_names,
     parse_debrief_output,
     with_computed_overall,
 )
@@ -55,6 +56,7 @@ __all__ = [
     "compute_overall_score",
     "detect_injection",
     "in_character_refusal",
+    "mask_student_names",
     "parse_debrief_output",
     "parse_scenario_generator_output",
     "render_situation_template",

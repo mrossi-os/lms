@@ -54,7 +54,9 @@ class TestCoachRunner(UnitTestCase):
         self.assertTrue(job["system"].startswith("Sei un coach esperto e formatore."))
         user = job["messages"][0]["content"]
         self.assertIn("Sales Transformation", user)
-        self.assertIn("Piacere di conoscerla, sono Matteo.", user)
+        # The student's name is hidden as in production
+        self.assertIn("Piacere di conoscerla, sono [NOME].", user)
+        self.assertNotIn("Matteo", user)
         self.assertNotIn("{{", job["system"] + user)
 
     def test_variants_differ_only_in_student_turns(self):
@@ -114,7 +116,7 @@ class TestCoachRunner(UnitTestCase):
                         "criterion_max_scores": [], "retried": True, "error": "ValueError: bad", "tokens": 0})
         results = {
             "run_id": "test", "date": "2026-11-02", "dataset": "d", "synthetic": True, "scenario": "SCN-0144",
-            "passing_threshold": 70.0, "provider": "scripted", "model": "m",
+            "provider": "scripted", "model": "m",
             "prompt": {"source": "s", "version": "debrief.v1", "system_template_sha256": "a" * 64,
                        "user_template_sha256": "b" * 64},
             "temperature": 0.2, "repeats": 3, "elapsed_seconds": 1, "records": records,
@@ -123,6 +125,10 @@ class TestCoachRunner(UnitTestCase):
         report = coach_runner.render_report(results)
         self.assertIn("| B | 3 | +0.0 |", report)
         self.assertIn("entro le soglie", report)
+        # No score below 50 anywhere: threshold 6 holds, shares shown as 0%
+        self.assertIn("| A (controllo) | 3 | — | — | — | — | 0% | — |", report)
+        self.assertIn("| 0% / 0% | entro le soglie |", report)
+        self.assertTrue(results["analysis"]["variants"]["B"]["verdict"]["low_score_ok"])
         self.assertIn("c00 B #3: ValueError: bad", report)
         self.assertIn("| B | su 10: 6 |", report)
         self.assertIn("| origine del nome: D rispetto a B | 3 | +0.0 |", report)

@@ -8,9 +8,20 @@ Pure functions only — no frappe / no HTTP imports.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 
 DEBRIEF_VERSION = "debrief.v2"
+
+# Stands in for the student's own name in the transcript the grader reads:
+# the bias tests of 2026-11-04 found more scores below 50 when the student
+# introduced themselves with a foreign first name, although the prompt's
+# equity rule forbids it (docs/ai-governance/registro-test-bias.md).
+STUDENT_NAME_PLACEHOLDER = "[NOME]"
+# Name parts shorter than this ("Li", "Di", "De") are also common Italian
+# words and are left alone; so are the longer surname particles below.
+_MIN_NAME_PART = 3
+_NAME_PARTICLES = {"del", "della", "dei", "degli", "dal", "dalla", "van", "von", "der", "den"}
 
 # Explicit, unambiguous speaker labels for the transcript fed to the grader.
 # The student ("user" turns) is the ONLY subject of evaluation; the AI
@@ -163,6 +174,27 @@ DEBRIEF_SCHEMA: dict = {
 # ---- builders ----
 
 
+def mask_student_names(transcript: list[dict], names: list[str]) -> list[dict]:
+    """Copy of ``transcript`` with the student's names replaced by
+    ``STUDENT_NAME_PLACEHOLDER`` in every turn (the counterpart may say
+    the name too). ``names`` are the profile names (first, middle, last):
+    each is split into parts, matched as whole words, ignoring case."""
+    parts = {
+        part
+        for name in names
+        for part in re.split(r"[\s'’-]+", (name or "").strip())
+        if len(part) >= _MIN_NAME_PART and part.lower() not in _NAME_PARTICLES
+    }
+    if not parts:
+        return [dict(t) for t in transcript]
+    # Longest first, so "Maria Luisa" is not left as "[NOME] Luisa".
+    pattern = re.compile(
+        r"(?<!\w)(?:" + "|".join(re.escape(p) for p in sorted(parts, key=len, reverse=True)) + r")(?!\w)",
+        re.IGNORECASE,
+    )
+    return [dict(t, text=pattern.sub(STUDENT_NAME_PLACEHOLDER, t["text"] or "")) for t in transcript]
+
+
 def build_debrief_messages(
     *,
     scenario_name: str,
@@ -170,6 +202,7 @@ def build_debrief_messages(
     learning_objectives: list[str],
     schema_criteria: list[dict],
     transcript: list[dict],
+    student_names: list[str] | None = None,
 ) -> tuple[str, list[dict]]:
     """Return (system, messages) for the debrief call.
 
@@ -180,6 +213,8 @@ def build_debrief_messages(
         observable_behaviors. Weights are passed verbatim to the prompt
         so the LLM can weigh evidence consistently with the scenario design.
     transcript: list of dicts {role, text} ordered by turn_index.
+    student_names: the student's profile names, hidden from the grader
+        (see ``mask_student_names``).
     """
     from os_lms.os_lms.ai.utils.template_loader import (
         PURPOSE_DEBRIEF,
@@ -211,8 +246,10 @@ def build_debrief_messages(
         "Legenda ruoli — UTENTE: la persona in formazione, UNICO soggetto da "
         "valutare. CONTROPARTE: interlocutore simulato dall'AI (cliente / "
         "personaggio), da NON valutare. Valuta esclusivamente i messaggi "
-        "dell'UTENTE; i messaggi della CONTROPARTE servono solo come contesto.\n\n"
+        "dell'UTENTE; i messaggi della CONTROPARTE servono solo come contesto. "
+        f"Il nome dell'UTENTE, quando compare, è sostituito da {STUDENT_NAME_PLACEHOLDER}.\n\n"
     )
+    transcript = mask_student_names(transcript, student_names or [])
     transcript_lines = "\n".join(
         f"{i + 1}. [{role_labels.get(t['role'], t['role'].upper())}] {t['text']}"
         for i, t in enumerate(transcript)

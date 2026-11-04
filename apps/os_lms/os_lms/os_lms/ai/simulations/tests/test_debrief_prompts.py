@@ -11,6 +11,7 @@ from os_lms.os_lms.ai.simulations.prompts import (
     CriterionScoreDC,
     build_debrief_messages,
     compute_overall_score,
+    mask_student_names,
     parse_debrief_output,
     with_computed_overall,
 )
@@ -85,6 +86,36 @@ class TestDebriefMessages(UnitTestCase):
         self.assertNotIn("[USER]", body)
         # The legend states that only the trainee (UTENTE) is evaluated.
         self.assertIn("UNICO soggetto da valutare", body)
+
+    def test_student_names_are_hidden_from_the_grader(self):
+        _system, msgs = build_debrief_messages(
+            scenario_name="S",
+            difficulty="medium",
+            learning_objectives=["O1"],
+            schema_criteria=[{"name": "Listening", "weight": 1.0}],
+            transcript=[
+                {"role": "user", "text": "Piacere, sono Ahmed El Amrani."},
+                {"role": "assistant", "text": "Buongiorno ahmed, mi dica."},
+            ],
+            student_names=["Ahmed", "", "El Amrani"],
+        )
+        body = msgs[0]["content"]
+        self.assertIn("[UTENTE] Piacere, sono [NOME] El [NOME].", body)
+        self.assertIn("[CONTROPARTE] Buongiorno [NOME], mi dica.", body)
+        self.assertNotIn("Ahmed", body)
+        self.assertIn("è sostituito da [NOME]", body)
+
+    def test_name_masking_keeps_whole_words_and_common_words(self):
+        transcript = [{"role": "user", "text": "Di solito con Mariangela, dal lunedì: Maria Luisa De Rossi."}]
+        masked = mask_student_names(transcript, ["Maria Luisa", "De Rossi"])
+        # Whole words only (Mariangela stays); "De", "Di" and "dal" are words too
+        self.assertEqual(masked[0]["text"], "Di solito con Mariangela, dal lunedì: [NOME] [NOME] De [NOME].")
+        self.assertEqual(transcript[0]["text"], "Di solito con Mariangela, dal lunedì: Maria Luisa De Rossi.")
+        self.assertEqual(mask_student_names(transcript, [])[0]["text"], transcript[0]["text"])
+        self.assertEqual(
+            mask_student_names([{"role": "user", "text": "Sono Anna Della Valle"}], ["Anna", "Della Valle"])[0]["text"],
+            "Sono [NOME] Della [NOME]",
+        )
 
     def test_version_is_exposed(self):
         self.assertTrue(DEBRIEF_VERSION)

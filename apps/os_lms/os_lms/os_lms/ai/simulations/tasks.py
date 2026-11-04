@@ -155,6 +155,9 @@ def _ask_llm(session, logger: logging.Logger) -> tuple[DebriefResult | None, str
 		order_by="turn_index asc",
 	)
 	transcript_dicts = [{"role": t["role"], "text": t["text_content"]} for t in transcript]
+	student_names = frappe.db.get_value(
+		"User", session.student, ["first_name", "middle_name", "last_name"], as_dict=True
+	) or {}
 
 	system, messages = build_debrief_messages(
 		scenario_name=scenario.scenario_name,
@@ -162,6 +165,7 @@ def _ask_llm(session, logger: logging.Logger) -> tuple[DebriefResult | None, str
 		learning_objectives=objectives,
 		schema_criteria=schema_criteria,
 		transcript=transcript_dicts,
+		student_names=[n for n in student_names.values() if n],
 	)
 	chat_messages = [ChatMessage(role=m["role"], content=m["content"]) for m in messages]
 

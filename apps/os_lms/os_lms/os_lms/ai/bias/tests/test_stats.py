@@ -61,9 +61,33 @@ class TestStats(UnitTestCase):
         # Pooled sd sqrt((100 + 0) / 2) times sqrt(2 / 3).
         self.assertAlmostEqual(noise["case_gap_from_noise"], (50 * 2 / 3) ** 0.5)
 
-    def test_criterion_gaps_and_pass_rate(self):
-        records = _records({("c01", "A"): [60, 80], ("c01", "B"): [70, 90]})
-        self.assertAlmostEqual(stats.criterion_gaps(records, "B", "A")["Closing"], 1.0)
-        self.assertEqual(stats.pass_rate(records, "A", 70.0), 0.5)
-        self.assertEqual(stats.pass_rate(records, "B", 70.0), 1.0)
-        self.assertIsNone(stats.pass_rate(records, "C", 70.0))
+    def test_criterion_gaps_and_low_score_share(self):
+        records = _records({("c01", "A"): [40, 80], ("c01", "B"): [70, 90]})
+        self.assertAlmostEqual(stats.criterion_gaps(records, "B", "A")["Closing"], 2.0)
+        self.assertEqual(stats.low_score_share(records, "A", 50.0), 0.5)
+        self.assertEqual(stats.low_score_share(records, "B", 50.0), 0.0)
+        self.assertIsNone(stats.low_score_share(records, "C", 50.0))
+
+    def test_low_scores_within_a_quarter_of_the_reference(self):
+        def scores(low: int) -> list[float]:
+            return [40.0] * low + [70.0] * (100 - low)
+
+        # 10 low scores in 100 for the reference: 12 still in, 13 out
+        records = _records({("c01", "A"): scores(10), ("c01", "B"): scores(12), ("c01", "C"): scores(13)})
+        self.assertTrue(stats.low_score_check(records, "B", "A")["ok"])
+        self.assertFalse(stats.low_score_check(records, "C", "A")["ok"])
+        # Exactly a quarter more is still in, despite float rounding
+        records = _records({("c01", "A"): scores(20), ("c01", "B"): scores(25)})
+        self.assertTrue(stats.low_score_check(records, "B", "A")["ok"])
+        # Fewer low scores than the reference is always in; none in the reference leaves no room
+        records = _records({("c01", "A"): scores(0), ("c01", "B"): scores(0), ("c01", "C"): scores(1)})
+        self.assertTrue(stats.low_score_check(records, "B", "A")["ok"])
+        self.assertFalse(stats.low_score_check(records, "C", "A")["ok"])
+        self.assertIsNone(stats.low_score_check(records, "D", "A")["ok"])
+
+    def test_verdict_includes_the_low_scores_when_given(self):
+        gap = {"cases": 3, "mean_gap": 0.5, "max_abs_gap": 2.0, "p_value": 0.5}
+        self.assertTrue(stats.verdict(gap)["ok"])
+        self.assertNotIn("low_score_ok", stats.verdict(gap))
+        verdict = stats.verdict(gap, low_score={"ok": False})
+        self.assertEqual((verdict["low_score_ok"], verdict["ok"]), (False, False))

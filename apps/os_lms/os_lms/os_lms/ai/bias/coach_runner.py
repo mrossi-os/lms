@@ -11,6 +11,9 @@ Run from the bench (real LLM calls, ~300 with the defaults):
     bench --site <site> execute os_lms.os_lms.ai.bias.coach_runner.run_coach_bias_test \\
         --kwargs '{"label": "local"}'
 
+The default prompt is the code's debrief.v2 (datasets/debrief_prompt_v2.json),
+which the migrate brings to every record still holding a text of the code.
+
 Results (every evaluation, with the full debrief text) and a report in
 Italian are written to results/. Synthetic data only.
 """
@@ -37,7 +40,7 @@ from os_lms.os_lms.ai.simulations.prompts.debrief import (
 from os_lms.os_lms.ai.utils.llm.errors import LLMRateLimit, LLMServerError
 from os_lms.os_lms.ai.utils.llm.provider import ChatMessage, JsonSchema
 
-PROMPT_FILE = DATASETS_DIR / "debrief_prompt_staging.json"
+PROMPT_FILE = DATASETS_DIR / "debrief_prompt_v2.json"
 RESULTS_DIR = Path(__file__).parent / "results"
 TRACING_PROJECT = "bias-coach"
 CONTROL = v.VARIANT_NO_NAME
@@ -72,7 +75,8 @@ def run_coach_bias_test(
 	"""Run the test and write results/<dataset>_<timestamp>_<label>.{json,md}.
 	``cases`` / ``variants`` restrict the run (e.g. for a short trial);
 	``prompt_file`` (a file name in datasets/) tests another prompt snapshot,
-	e.g. a candidate fix, instead of the staging one. Returns the report path."""
+	e.g. a candidate fix or debrief_prompt_staging.json (debrief.v1 as it was
+	on staging), instead of debrief.v2. Returns the report path."""
 	import frappe
 
 	from os_lms.os_lms.ai.utils.llm import resolve_provider
@@ -112,7 +116,6 @@ def run_coach_bias_test(
 		"dataset": dataset["dataset"],
 		"synthetic": dataset["synthetic"],
 		"scenario": dataset["scenario"]["name"],
-		"passing_threshold": dataset["scenario"]["evaluation_schema"]["passing_threshold"],
 		"provider": provider.name,
 		"model": settings.get("simulation_debrief_model") or None,
 		"prompt": {
@@ -181,6 +184,8 @@ def build_jobs(
 					learning_objectives=scenario["learning_objectives"],
 					schema_criteria=scenario["evaluation_schema"]["criteria"],
 					transcript=turns,
+					# As the job passes the student's profile names
+					student_names=[v.STUDENT_NAMES[variant]] if variant in v.STUDENT_NAMES else None,
 				)
 	return [
 		{"case_id": case_id, "variant": variant, "repeat": repeat, "system": system, "messages": messages}
@@ -234,9 +239,9 @@ def evaluate(provider, system: str, messages: list[dict], schema_criteria: list[
 	record["overall_score"] = result.overall_score
 	record["model_overall_score"] = result.model_overall_score
 	record["overall_method"] = result.overall_method
-	# The prompt never states the criterion scale, so the Coach picks one
-	# per answer (seen: out of 100 and out of 20): criteria are compared
-	# as a percentage of the max_score the answer declares.
+	# Prompts before debrief.v2 never stated the criterion scale, so the Coach
+	# picked one per answer (seen: out of 100 and out of 20): criteria are
+	# compared as a percentage of the max_score the answer declares.
 	record["criteria"] = {
 		c.criterion: c.score / c.max_score * 100 if c.max_score else c.score for c in result.criterion_scores
 	}
@@ -258,12 +263,32 @@ def _chat(provider, messages, **kwargs):
 def analyse(results: dict) -> dict:
 	records = results["records"]
 	variants = sorted({r["variant"] for r in records} - {CONTROL})
+	compared = {}
+	for var in variants:
+		gap = stats.variant_gap(records, var, CONTROL)
+		low_score = stats.low_score_check(records, var, CONTROL)
+		compared[var] = gap | {
+			"low_score": low_score,
+			"verdict": stats.verdict(gap, low_score=low_score),
+			"criteria": stats.criterion_gaps(records, var, CONTROL),
+		}
+	pairs = {}
+	for label, (var, ref) in NAME_PAIRS.items():
+		if {var, ref} <= set(variants):
+			gap = stats.variant_gap(records, var, ref)
+			low_score = stats.low_score_check(records, var, ref)
+			pairs[label] = gap | {
+				"variant": var,
+				"reference": ref,
+				"low_score": low_score,
+				"verdict": stats.verdict(gap, low_score=low_score),
+			}
 	return {
 		"evaluations": len(records),
 		"failed": sum(r["overall_score"] is None for r in records),
 		"retried": sum(r["retried"] for r in records),
 		"tokens": sum(r["tokens"] for r in records),
-		"thresholds": stats.PROPOSED_THRESHOLDS,
+		"thresholds": stats.THRESHOLDS,
 		"noise": stats.noise(records, CONTROL),
 		"criterion_scales": {
 			var: dict(
@@ -275,20 +300,11 @@ def analyse(results: dict) -> dict:
 			)
 			for var in [CONTROL, *variants]
 		},
-		"pass_rate": {
-			var: stats.pass_rate(records, var, results["passing_threshold"]) for var in [CONTROL, *variants]
+		"low_score_share": {
+			var: stats.low_score_share(records, var, stats.THRESHOLDS["low_score"]) for var in [CONTROL, *variants]
 		},
-		"variants": {
-			var: (gap := stats.variant_gap(records, var, CONTROL))
-			| {"verdict": stats.verdict(gap), "criteria": stats.criterion_gaps(records, var, CONTROL)}
-			for var in variants
-		},
-		"name_pairs": {
-			label: (gap := stats.variant_gap(records, var, ref))
-			| {"variant": var, "reference": ref, "verdict": stats.verdict(gap)}
-			for label, (var, ref) in NAME_PAIRS.items()
-			if {var, ref} <= set(variants)
-		},
+		"variants": compared,
+		"name_pairs": pairs,
 	}
 
 
@@ -336,18 +352,22 @@ def render_report(results: dict) -> str:
 		"",
 		"## Confronto con la versione senza nome",
 		"",
-		f"Soglie proposte (non ancora approvate): differenza media sotto {t['mean_gap']:g} punti,"
-		f" nessun caso oltre ±{t['max_case_gap']:g}, test statistico non significativo (p ≥ {t['alpha']:g}).",
+		"Soglie della politica AI (confermate il 2026-11-03; la 6 riscritta il 2026-11-04, da quando"
+		f" l'AI non decide più chi supera la simulazione): 1) differenza media sotto {t['mean_gap']:g} punti;"
+		f" 2) nessun caso oltre ±{t['max_case_gap']:g}; 3) test statistico non significativo"
+		f" (p ≥ {t['alpha']:g}); 6) quota di voti sotto {t['low_score']:g} non più alta di"
+		f" {t['low_score_max_ratio'] - 1:.0%} rispetto al confronto (es. 10% nel confronto: al massimo"
+		f" {0.10 * t['low_score_max_ratio']:.1%}).",
 		"",
-		"| Versione | Casi | Differenza media | Intervallo 95% | Caso peggiore | p | Promossi | Esito |",
+		f"| Versione | Casi | Differenza media | Intervallo 95% | Caso peggiore | p | Voti sotto {t['low_score']:g} | Esito |",
 		"|---|---|---|---|---|---|---|---|",
 	]
-	pass_rate = a["pass_rate"]
 	lines.append(
-		f"| {CONTROL} (controllo) | {len(cases)} | — | — | — | — | {_percent(pass_rate.get(CONTROL))} | — |"
+		f"| {CONTROL} (controllo) | {len(cases)} | — | — | — | — |"
+		f" {_percent(a['low_score_share'].get(CONTROL))} | — |"
 	)
 	for var, gap in a["variants"].items():
-		lines.append(_gap_row(var, gap, _percent(pass_rate.get(var))))
+		lines.append(_gap_row(var, gap, _percent(gap["low_score"]["share"])))
 	if a.get("name_pairs"):
 		lines += [
 			"",
@@ -357,11 +377,18 @@ def render_report(results: dict) -> str:
 			" misura anche l'effetto del presentarsi. Genere e origine del nome si isolano confrontando"
 			" le versioni con nome tra loro.",
 			"",
-			"| Confronto | Casi | Differenza media | Intervallo 95% | Caso peggiore | p | Esito |",
-			"|---|---|---|---|---|---|---|",
+			f"| Confronto | Casi | Differenza media | Intervallo 95% | Caso peggiore | p | Voti sotto {t['low_score']:g} | Esito |",
+			"|---|---|---|---|---|---|---|---|",
 		]
 		for label, gap in a["name_pairs"].items():
-			lines.append(_gap_row(f"{label}: {gap['variant']} rispetto a {gap['reference']}", gap))
+			low = gap["low_score"]
+			lines.append(
+				_gap_row(
+					f"{label}: {gap['variant']} rispetto a {gap['reference']}",
+					gap,
+					f"{_percent(low['share'])} / {_percent(low['reference_share'])}",
+				)
+			)
 	lines += [
 		"",
 		"Nota: con più confronti nello stesso giro, un p sotto 0,05 può uscire anche per caso"
@@ -378,7 +405,7 @@ def render_report(results: dict) -> str:
 			"## Differenza media per criterio (in punti su 100)",
 			"",
 			"Ogni voto di criterio è riportato in percentuale del massimo che il Coach stesso dichiara:"
-			" il prompt non indica la scala dei criteri e il Coach ne sceglie una diversa da risposta a risposta.",
+			" debrief.v2 fissa la scala 0-10, i prompt precedenti la lasciavano scegliere al Coach.",
 			"",
 			"| Criterio | " + " | ".join(a["variants"]) + " |",
 			"|---|" + "---|" * len(a["variants"]),
@@ -415,16 +442,21 @@ def render_report(results: dict) -> str:
 	return "\n".join(lines) + "\n"
 
 
-def _gap_row(label: str, gap: dict, pass_rate: str | None = None) -> str:
-	"""A table row; ``pass_rate`` adds the "Promossi" column."""
-	extra = "" if pass_rate is None else f" {pass_rate} |"
+def _gap_row(label: str, gap: dict, low_scores: str | None = None) -> str:
+	"""A table row; ``low_scores`` adds the low score column."""
+	extra = "" if low_scores is None else f" {low_scores} |"
 	if not gap.get("cases"):
 		return f"| {label} | 0 | — | — | — | — |{extra} nessun dato |"
 	verdict = gap["verdict"]
 	failed = [
 		name
-		for key, name in (("mean_gap_ok", "media"), ("max_case_gap_ok", "caso singolo"), ("not_significant", "test"))
-		if not verdict[key]
+		for key, name in (
+			("mean_gap_ok", "media"),
+			("max_case_gap_ok", "caso singolo"),
+			("not_significant", "test"),
+			("low_score_ok", "voti bassi"),
+		)
+		if not verdict.get(key, True)
 	]
 	return (
 		f"| {label} | {gap['cases']} | {gap['mean_gap']:+.1f} | {gap['ci95'][0]:+.1f} / {gap['ci95'][1]:+.1f}"

@@ -80,11 +80,13 @@ class _DebriefMockBase(UnitTestCase):
         self._variant_patch.start()
         self._orig_mock_chat = MockProvider.chat
         canned = self.canned_debrief_text
+        self.debrief_calls = []
 
         def patched_chat(slf, messages, *, system=None, model=None,
                          temperature=0.7, top_p=1.0, max_tokens=1024, stop=None,
                          response_format=None, stream=False, timeout=60.0):
             if response_format is not None and response_format.name == "debrief":
+                self.debrief_calls.append(messages)
                 return ChatResponse(
                     text=canned, finish_reason="stop", usage=Usage(50, 80),
                     model=model or "mock-1", provider="mock", raw={"mock": True},
@@ -129,6 +131,20 @@ class TestDebriefJob(_DebriefMockBase):
         # Version and start of the hash of the text used (phase 9)
         self.assertEqual(debrief.prompt_version, load_prompt_template(PURPOSE_DEBRIEF)["signature"])
         self.assertRegex(debrief.prompt_version, r"^.+#[0-9a-f]{8}$")
+
+    def test_the_coach_does_not_see_the_student_name(self):
+        first_name = frappe.db.get_value("User", frappe.session.user, "first_name")
+        svc = SessionOrchestrator()
+        start = svc.start_session(scenario_id=self.scenario.name)
+        svc.send_message(session_id=start.session, user_text=f"Buongiorno, sono {first_name}.")
+        svc.end_session(session_id=start.session, reason="completed")
+        generate_debrief(start.session)
+        sent = self.debrief_calls[-1][0].content
+        self.assertIn("Buongiorno, sono [NOME].", sent)
+        self.assertNotIn(first_name, sent)
+        # The stored transcript keeps the name for the teachers
+        turn = frappe.db.get_value("LMSA Simulation Turn", {"session": start.session, "role": "user"}, "text_content")
+        self.assertIn(first_name, turn)
 
     def test_generate_debrief_is_idempotent(self):
         first = self._run_full_flow()

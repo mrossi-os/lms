@@ -23,11 +23,16 @@ import random
 import statistics
 from collections import defaultdict
 
-# Proposed acceptance thresholds, not yet approved by the AI owner.
-PROPOSED_THRESHOLDS = {
+# Thresholds 1-3 and 6 of the AI policy (docs/ai-governance/politica-ai.md,
+# confirmed 2026-11-03). Number 6 measured the share of passed evaluations
+# until the AI stopped deciding who passes; since phase 10 of
+# docs/ai-simulator/PIANO-esito-e-punteggio-coach.md it measures low scores.
+THRESHOLDS = {
 	"mean_gap": 3.0,  # points on 0-100, |mean gap| must stay below
 	"max_case_gap": 10.0,  # points on 0-100, no single case beyond
 	"alpha": 0.05,  # the permutation test must not be significant
+	"low_score": 50.0,  # a score below this is a low score...
+	"low_score_max_ratio": 1.25,  # ...and a version may have at most a quarter more of them than its reference
 }
 
 _PERMUTATIONS = 20000
@@ -144,15 +149,29 @@ def criterion_gaps(records: list[dict], variant: str, control: str) -> dict[str,
 	return {name: statistics.fmean(values) for name, values in gaps.items()}
 
 
-def pass_rate(records: list[dict], variant: str, threshold: float) -> float | None:
-	"""Share of evaluations that pass, computed like LMSA Simulation Debrief."""
+def low_score_share(records: list[dict], variant: str, below: float) -> float | None:
+	"""Share of the evaluations of `variant` scoring below `below`."""
 	scores = [r["overall_score"] for r in valid(records) if r["variant"] == variant]
 	if not scores:
 		return None
-	return sum(score >= threshold for score in scores) / len(scores)
+	return sum(score < below for score in scores) / len(scores)
 
 
-def verdict(gap: dict, thresholds: dict = PROPOSED_THRESHOLDS) -> dict:
+def low_score_check(records: list[dict], variant: str, reference: str, thresholds: dict = THRESHOLDS) -> dict:
+	"""Threshold 6: the share of low scores of `variant` stays within
+	`low_score_max_ratio` times the share of `reference`. With no low score in
+	the reference, any low score of the variant is out."""
+	share = low_score_share(records, variant, thresholds["low_score"])
+	reference_share = low_score_share(records, reference, thresholds["low_score"])
+	ok = None
+	if share is not None and reference_share is not None:
+		# The tolerance absorbs float rounding (0.1 * 1.25 is not exactly 0.125)
+		ok = share <= reference_share * thresholds["low_score_max_ratio"] + 1e-9
+	return {"share": share, "reference_share": reference_share, "ok": ok}
+
+
+def verdict(gap: dict, thresholds: dict = THRESHOLDS, low_score: dict | None = None) -> dict:
+	"""Thresholds 1-3 on a gap and, given `low_score_check`, threshold 6."""
 	if not gap.get("cases"):
 		return {"ok": False, "reason": "no paired cases"}
 	checks = {
@@ -160,4 +179,6 @@ def verdict(gap: dict, thresholds: dict = PROPOSED_THRESHOLDS) -> dict:
 		"max_case_gap_ok": gap["max_abs_gap"] <= thresholds["max_case_gap"],
 		"not_significant": gap["p_value"] >= thresholds["alpha"],
 	}
+	if low_score is not None:
+		checks["low_score_ok"] = bool(low_score["ok"])
 	return {**checks, "ok": all(checks.values())}
