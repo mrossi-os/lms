@@ -25,7 +25,13 @@ Porta il branch di lavoro da una release di `frappe/lms` a una più recente, **u
 
 ## Conformità (OWASP ed ESG)
 
-Le correzioni del piano di sicurezza (`docs/security/owasp-piano-residuo-2026-10-26.md`) e i requisiti ESG (tema chiaro e scuro, alto contrasto, cancellazione del proprio account) stanno in tre posti, ciascuno con la sua rete:
+Le correzioni del piano di sicurezza (`docs/security/owasp-piano-residuo-2026-10-26.md`) e i requisiti ESG stanno in tre posti, ciascuno con la sua rete. I requisiti ESG sono:
+- tema chiaro e scuro;
+- alto contrasto;
+- cancellazione del proprio account;
+- punto 5, equità e supervisione umana del Coach AI (piano `docs/ai-simulator/PIANO-esito-e-punteggio-coach.md`, governance in `docs/ai-governance/`): nome dello studente nascosto al Coach, punteggio indicativo calcolato dai criteri, esito deciso da una persona, versione del docente, permessi per Gestore, Docente e Valutatore, avvisi, prompt aggiornati al migrate.
+
+I posti e le loro reti:
 
 | Dove | Cosa le protegge |
 | --- | --- |
@@ -35,6 +41,7 @@ Le correzioni del piano di sicurezza (`docs/security/owasp-piano-residuo-2026-10
 
 Suite di conformità:
 - **backend** (in `apps/os_lms/os_lms/os_lms/tests/`): `test_owasp_2026_10`, `test_owasp_package_d`, `test_owasp_package_e`, `test_csp_report`, `test_security_alerts`, `test_account_deletion`, `test_discussion_reply_count`, `test_valutatore_assignment_submission_scope`, `test_role_gates_v2_64`, `test_role_gates_v2_65`, `test_owasp_discussion_submit`, `test_owasp_graded_submission`, `test_override_signatures`;
+- **backend del punto 5 ESG**: tutti i moduli di `apps/os_lms/os_lms/os_lms/ai/simulations/tests/` (tra cui `test_access`, `test_instructor_api`, `test_debrief_prompts`, `test_debrief_job`, `test_notifications`, `test_prompt_sync`) e di `apps/os_lms/os_lms/os_lms/ai/bias/tests/`. Non chiamano l'AI: i fornitori sono finti nei test. Un test rosso in `test_debrief_prompts` o `test_debrief_job` può voler dire che il Coach rivede il nome dello studente: è una regressione di equità, non un dettaglio;
 - **frontend** (in `frontend/src/tests/`): `inertPasteHtml`, `themeBootstrap`, `highContrast`, `accountDeletion`;
 - **script**: `test_dependency_floors`.
 
@@ -115,7 +122,11 @@ Presentalo al committente come tabella compatta (release, data, commit, file, fr
 
 - Se la partenza scelta non è il branch corrente, rilancia `python3 scripts/upstream_plan.py --head <partenza>`: la base potrebbe essere diversa. Se lo è, mostralo e riconferma la Domanda 1.
 - Se il branch di destinazione esiste già (`git rev-parse --verify --quiet <nome>`), fermati e chiedi: riprenderlo, sceglierne un altro nome, o altro. Non cancellarlo mai.
-- **Conformità sulla partenza.** `git ls-tree --name-only -r <partenza> -- apps/os_lms/os_lms/os_lms/tests/test_owasp_package_e.py frontend/src/tests/highContrast.test.ts` deve stampare tutti e due i file. Se ne manca uno, la partenza non contiene le correzioni OWASP o ESG: fermati, spiegalo e chiedi. Al 29/10/2026 stanno solo su `feature/esg`, che va prima unita nella partenza oppure usata come partenza. Non avviare un percorso che le lascerebbe fuori.
+- **Conformità sulla partenza.** `git ls-tree --name-only -r <partenza> -- apps/os_lms/os_lms/os_lms/tests/test_owasp_package_e.py frontend/src/tests/highContrast.test.ts apps/os_lms/os_lms/os_lms/ai/simulations/teacher_review.py` deve stampare tutti e tre i file. Se ne manca uno, la partenza non contiene le correzioni OWASP o ESG: fermati, spiegalo e chiedi. Non avviare un percorso che le lascerebbe fuori. Dove stanno:
+  - **al 29/10/2026**, OWASP e punti ESG 1-4 erano solo su `feature/esg`;
+  - **al 04/11/2026**, il punto 5 (`teacher_review.py`) era solo su `feature/esg-bias-tests`, non ancora unito in `feature/esg` né in `feature/oslms`.
+
+  Il branch che manca va prima unito nella partenza, oppure usato come partenza.
 
 ## Passo 5 — Branch
 

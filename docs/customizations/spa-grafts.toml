@@ -1387,7 +1387,13 @@ BatchDetail e le consegne su AssignmentSubmission. Un link sconosciuto o non pi�
 (documento cancellato, rotta rimossa) mostra un avviso invece di lanciare un errore del router
 non gestito. ATTENZIONE al merge di v2.59.0: l'upstream riscrive il ramo «batches» della sua
 navigateToPage (sempre BatchDetail): conflitto sicuro, tenere la nostra funzione, che fa già
-lo stesso."""
+lo stesso.
+Dalla 1.16.60 (2026-11-04, punto 5 ESG) l'ultimo ramo risolve con router.resolve ogni altra
+pagina della SPA che il percorso nomina, query compresa, e scarta NotFound: è così che si aprono
+gli avvisi delle simulazioni (/simulations/admin?course=…&session=… per i revisori,
+/simulations/<sessione>/debrief per lo studente, da ai/simulations/notifications.py). Senza quel
+ramo il clic mostra «Impossibile aprire questa notifica». Il frammento va ancora nell'hash, quindi
+target resta un oggetto { path, query }."""
 
   [[entries.sites]]
   file = "frontend/src/components/Notifications/NotificationPanel.vue"
@@ -1406,6 +1412,11 @@ lo stesso."""
   [[entries.sites]]
   file = "frontend/src/components/Notifications/NotificationPanel.vue"
   anchor = "router.push(target).catch(() => notifyUnavailable())"
+  symbol = "navigateToPage"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Notifications/NotificationPanel.vue"
+  anchor = "if (route.name && route.name !== 'NotFound')"
   symbol = "navigateToPage"
 
 # --- Modale evento di valutazione (Modals/Event.vue) ------------------------
@@ -5626,6 +5637,42 @@ v-if="!showTabs" e class="flex-1" senza min-h-0 (rimosso di proposito in ab9548b
   deny = ["Student", "Guest"]
 
 [[entries]]
+id = "course-detail-simulations-tab"
+title = "Scheda Simulazioni del corso per chi ne gestisce le simulazioni, Valutatore compreso"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Punto 5 ESG, fase 5 del piano docs/ai-simulator/PIANO-esito-e-punteggio-coach.md (commit
+c0740a705, 1.16.54): la scheda Simulazioni del dettaglio corso (CourseSimulations di os_lms:
+simulazioni del corso, sessioni da rivedere, versione del docente ed esito) la vede chi può
+gestire le simulazioni del corso, cioè i docenti del corso, Gestore e amministratori
+(canManageCourse) e i valutatori di una classe che contiene il corso (isValutatore). Lo dice
+ai/simulations/access.py, che lo controlla anche lato server. Il Valutatore rivede solo le
+sessioni degli studenti delle sue classi: l'esito della simulazione lo decide una persona, quindi
+senza questa scheda il Valutatore non arriva alle sessioni da valutare. La scheda compare solo con
+le simulazioni attive (simulationsEnabledGlobal). Gli studenti non hanno questa scheda: avviano e
+rivedono i tentativi dal pulsante flottante. ATTENZIONE ai merge: se l'upstream riscrive l'array
+tabs del dettaglio corso, la voce va riaggiunta in coda con la stessa condizione when."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDetail.vue"
+  anchor = "component: markRaw(CourseSimulations),"
+  symbol = "tabs"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Courses/CourseDetail.vue"
+  anchor = "(canManageCourse.value || isValutatore.value) &&"
+  symbol = "tabs"
+
+  [entries.visibility]
+  subject = "scheda Simulazioni del dettaglio corso"
+  allow = ["Gestore", "Administrator", "course-instructor", "Valutatore (della classe)"]
+  deny = ["Student", "Guest", "Moderator"]
+
+  [entries.checks]
+  backend = "apps/os_lms/os_lms/os_lms/ai/simulations/tests/test_access.py"
+
+[[entries]]
 id = "time-ago-italian"
 title = "Date relative in italiano («ieri», «3 giorni fa»)"
 layer = "spa-graft"
@@ -8211,6 +8258,10 @@ smette di agire in silenzio; highContrast.test.ts lo segnala. Se l'upstream camb
 
   [[entries.sites]]
   file = "frontend/src/pages/MobileYou.vue"
+  anchor = "} from '@/oslms/utils/contrast'"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/MobileYou.vue"
   anchor = "withContrastRow("
   symbol = "groups"
 
@@ -8317,8 +8368,16 @@ modo in cui login.py sceglie signup_form_template (oggi l'ultimo hook vince), la
   symbol = "columns"
 
   [[entries.sites]]
+  file = "frontend/src/components/Settings/Members.vue"
+  anchor = "const $user = inject<any>('$user')"
+
+  [[entries.sites]]
   file = "lms/templates/signup-form.html"
   anchor = "id=\"signup-privacy\""
+
+  [[entries.sites]]
+  file = "lms/templates/signup-form.html"
+  anchor = ".signup-form .privacy-policy a {"
 
   [[entries.sites]]
   file = "lms/templates/signup-form.html"
