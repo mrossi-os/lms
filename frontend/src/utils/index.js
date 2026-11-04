@@ -219,7 +219,9 @@ export function getEditorTools(
 			// sanitizer then strips). Headings take the same toolbar as text.
 			inlineToolbar: INLINE_TOOLBAR_ORDER,
 			config: {
-				placeholder: 'Header',
+				// Same msgid as the block-tool label below ("Heading"), so the
+				// placeholder reads "Intestazione" like the toolbox entry.
+				placeholder: __('Heading'),
 			},
 		},
 		list: {
