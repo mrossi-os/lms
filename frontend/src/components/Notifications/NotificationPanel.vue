@@ -210,6 +210,12 @@ const navigateToPage = (log) => {
 			name: 'AssignmentSubmission',
 			params: { assignmentID: segments[1], submissionName: segments[2] },
 		}
+	} else if (segments.length) {
+		// Any other in-app page (the simulation panel, a simulation debrief)
+		// opens as the route its path names, query string included.
+		const route = router.resolve(`/${segments.join('/')}`)
+		if (route.name && route.name !== 'NotFound')
+			target = { path: route.path, query: route.query }
 	}
 
 	if (!target) {

@@ -46,20 +46,20 @@
 				:class="[
 					'max-w-[80%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap',
 					turn.role === 'user'
-						? 'bg-surface-blue-3 text-white ml-auto'
+						? 'bg-surface-blue-3 text-ink-gray-9 ml-auto'
 						: 'bg-surface-gray-2 text-ink-gray-9 mr-auto',
 				]"
 			>
 				<div
 					:class="[
 						'text-xs mb-1 flex items-center gap-2',
-						turn.role === 'user' ? 'text-white/80' : 'text-ink-gray-5',
+						turn.role === 'user' ? 'text-ink-gray-6' : 'text-ink-gray-5',
 					]"
 				>
 					<span>{{ turn.role === 'user' ? __('Tu') : rolePlayerLabel }}</span>
 					<span
 						v-if="turn.injection_attempt_detected"
-						:class="turn.role === 'user' ? 'text-white' : 'text-ink-orange-5'"
+						class="text-ink-orange-5"
 						:title="__('Tentativo di prompt injection rilevato')"
 						>⚠️</span
 					>
@@ -100,7 +100,7 @@
 							? __('Conversazione conclusa')
 							: __('Scrivi al personaggio… (Cmd/Ctrl+Enter per inviare)')
 					"
-					class="flex-1 resize-none rounded-md border border-outline-gray-2 px-3 py-2 text-sm focus:border-outline-gray-3 focus:outline-none text-white disabled:opacity-60 disabled:cursor-not-allowed"
+					class="flex-1 resize-none rounded-md border border-outline-gray-2 px-3 py-2 text-sm focus:border-outline-gray-3 focus:outline-none text-ink-gray-9 disabled:opacity-60 disabled:cursor-not-allowed"
 					:disabled="sending || inputLocked"
 					@keydown.meta.enter.prevent="onSend"
 					@keydown.ctrl.enter.prevent="onSend"

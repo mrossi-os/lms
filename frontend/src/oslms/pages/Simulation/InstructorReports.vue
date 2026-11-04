@@ -26,6 +26,7 @@
 							type="select"
 							:label="__('Corso')"
 							:options="courseFilterOptions"
+							:placeholder="__('Tutti')"
 						/>
 						<FormControl
 							v-model.number="filters.period_days"
@@ -168,6 +169,7 @@
 							type="select"
 							:options="courseFilterOptions"
 							:label="__('Corso')"
+							:placeholder="__('Tutti')"
 						/>
 						<Button variant="solid" @click="newScenario"
 							>+ {{ __('Nuovo scenario') }}</Button
