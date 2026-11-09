@@ -926,6 +926,51 @@ esistano ancora, altrimenti la build fallisce su un alias che non risolve."""
   anchor = "find: 'frappe-ui-texteditor-original',"
 
 [[entries]]
+id = "brand-customize-chart-and-table-colors"
+title = "Grafici e tabelle seguono i ruoli Brand Customize (Base e Avanzata)"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+I ruoli «Serie 1-5 dei grafici», «Intestazione tabelle» e «Righe tabelle» di Brand Customize
+(os_lms branding_roles.py) scrivono --os-chart-1..5, --os-table-header-bg e
+--color-company-primary. I grafici frappe-ui (ECharts, renderer SVG, tema light) usano la
+propria tavolozza se la pagina non passa config.colors, e nessuna pagina LMS la passa: gli
+override di AxisChart e DonutChart avvolgono l'originale (alias frappe-ui-*-original, vedi
+vite-original-component-aliases) e passano i colori risolti solo se il brand li imposta,
+ricalcolandoli quando il foglio di brand cambia (anche dall'anteprima del Desk). Senza brand
+i grafici restano quelli di oggi. Al merge e a ogni aggiornamento di frappe-ui: verificare che
+node_modules/frappe-ui/src/components/Charts/{AxisChart,DonutChart}.vue esistano ancora e che
+accettino ancora la prop config con colors (test frontend/src/tests/brandAnchors.test.ts)."""
+
+  [[entries.sites]]
+  file = "frontend/src/oslms/utils/brandChartColors.ts"
+  anchor = "export function withBrandChartColors"
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/frappe-ui/src/components/Charts/AxisChart.vue"
+  anchor = "withBrandChartColors(props.config)"
+
+  [[entries.sites]]
+  file = "frontend/src/overrides/frappe-ui/src/components/Charts/DonutChart.vue"
+  anchor = "withBrandChartColors(props.config)"
+
+  [[entries.sites]]
+  file = "frontend/vite.config.js"
+  anchor = "find: 'frappe-ui-axischart-original',"
+
+  [[entries.sites]]
+  file = "frontend/vite.config.js"
+  anchor = "find: 'frappe-ui-donutchart-original',"
+
+  [[entries.sites]]
+  file = "frontend/src/styles/theme/elite/main.css"
+  anchor = "var(--os-table-header-bg, var(--surface-gray-2))"
+
+  [entries.checks]
+  unit = "frontend/src/tests/brandAnchors.test.ts"
+  backend = "apps/os_lms/os_lms/os_lms/tests/test_branding_roles.py"
+
+[[entries]]
 id = "vite-translate-frappe-ui-strings"
 title = "Traduzione in fase di build dei testi inglesi fissi di frappe-ui (nuovo editor)"
 layer = "spa-graft"

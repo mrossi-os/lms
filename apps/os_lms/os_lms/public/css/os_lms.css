@@ -33,9 +33,13 @@ body {
 	/* border-color: var(--outline-gray-1) !important; */
 }
 
-.btn-login,
-.btn-login:hover,
-.btn-login:focus {
+/* Frappe v16's .btn.btn-primary (buttons.scss) sets the background with
+   specificity 0,2,0 and the login button carries both classes, so the rule
+   must be at least as specific to win. Scoped to .btn-primary so a
+   secondary (btn-default) LDAP button keeps its stock look. */
+.btn.btn-primary.btn-login,
+.btn.btn-primary.btn-login:hover,
+.btn.btn-primary.btn-login:focus {
 	background-color: var(--login-button-bg, var(--btn-primary, #171717));
 	border-color: var(--login-button-bg, var(--btn-primary, #171717));
 }

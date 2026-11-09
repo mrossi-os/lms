@@ -1,0 +1,73 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:preset_name",
+ "creation": "2026-11-09 15:00:00.000000",
+ "description": "A saved set of Brand Customize colors, applied from the Actions menu of Brand Customize.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "preset_name",
+  "mode",
+  "swatches",
+  "data"
+ ],
+ "fields": [
+  {
+   "fieldname": "preset_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Preset Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "mode",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Mode",
+   "options": "Base\nAdvanced\nExpert",
+   "read_only": 1
+  },
+  {
+   "description": "Colors shown next to the preset name (comma separated).",
+   "fieldname": "swatches",
+   "fieldtype": "Data",
+   "label": "Swatches",
+   "read_only": 1
+  },
+  {
+   "description": "The Brand Customize values, in the format of its Export.",
+   "fieldname": "data",
+   "fieldtype": "JSON",
+   "label": "Values",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-09 15:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "OS LMS",
+ "name": "Brand Preset",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 0,
+   "export": 1,
+   "print": 0,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 0,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "preset_name"
+}

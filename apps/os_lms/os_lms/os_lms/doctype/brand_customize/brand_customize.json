@@ -1,340 +1,541 @@
 {
-	"actions": [],
-	"creation": "2026-05-04 12:00:00.000000",
-	"doctype": "DocType",
-	"engine": "InnoDB",
-	"field_order": [
-		"section_theme",
-		"theme",
-		"section_brand",
-		"company_primary",
-		"column_break_brand",
-		"company_secondary",
-		"section_app",
-		"app_main_color",
-		"column_break_app",
-		"app_secondary_color",
-		"section_surfaces",
-		"surface_base",
-		"surface_sidebar",
-		"surface_elevation_3",
-		"surface_elevation_2",
-		"column_break_surfaces",
-		"surface_gray_1",
-		"surface_gray_2",
-		"surface_gray_3",
-		"surface_gray_10",
-		"section_ink",
-		"ink_gray_5",
-		"ink_gray_6",
-		"ink_gray_7",
-		"column_break_ink",
-		"ink_gray_8",
-		"ink_gray_9",
-		"ink_gray_10",
-		"ink_base",
-		"section_borders",
-		"outline_gray_1",
-		"column_break_borders",
-		"outline_elevation_2",
-		"section_layout",
-		"color_sidebar_menu",
-		"surface_elevation_1",
-		"column_break_layout",
-		"color_menu_bar",
-		"section_login",
-		"login_bg_from",
-		"login_bg_to",
-		"login_ink",
-		"column_break_login",
-		"login_input_bg",
-		"login_input_ink",
-		"login_button_bg"
-	],
-	"fields": [
-		{
-			"fieldname": "section_theme",
-			"fieldtype": "Section Break",
-			"hidden": 1,
-			"label": "Theme"
-		},
-		{
-			"default": "light",
-			"description": "Not used anymore: the default theme is light and every user can switch to the stock dark theme. Kept hidden so existing values are not lost.",
-			"fieldname": "theme",
-			"fieldtype": "Select",
-			"hidden": 1,
-			"label": "Theme",
-			"options": "light\ndark"
-		},
-		{
-			"fieldname": "section_brand",
-			"fieldtype": "Section Break",
-			"label": "Brand"
-		},
-		{
-			"description": "CSS: --color-company-primary",
-			"fieldname": "company_primary",
-			"fieldtype": "Color",
-			"label": "Company Primary"
-		},
-		{
-			"fieldname": "column_break_brand",
-			"fieldtype": "Column Break"
-		},
-		{
-			"description": "CSS: --color-company-secondary",
-			"fieldname": "company_secondary",
-			"fieldtype": "Color",
-			"label": "Company Secondary"
-		},
-		{
-			"fieldname": "section_app",
-			"fieldtype": "Section Break",
-			"label": "App"
-		},
-		{
-			"description": "Primary color returned to the mobile app via get_instance_info",
-			"fieldname": "app_main_color",
-			"fieldtype": "Color",
-			"label": "App Main Color"
-		},
-		{
-			"fieldname": "column_break_app",
-			"fieldtype": "Column Break"
-		},
-		{
-			"description": "Secondary color returned to the mobile app via get_instance_info",
-			"fieldname": "app_secondary_color",
-			"fieldtype": "Color",
-			"label": "App Secondary Color"
-		},
-		{
-			"fieldname": "section_surfaces",
-			"fieldtype": "Section Break",
-			"label": "Surfaces"
-		},
-		{
-			"description": "CSS: --surface-white",
-			"fieldname": "surface_base",
-			"fieldtype": "Color",
-			"label": "Surface Base"
-		},
-		{
-			"description": "CSS: --surface-menu-bar",
-			"fieldname": "surface_sidebar",
-			"fieldtype": "Color",
-			"label": "Surface Sidebar"
-		},
-		{
-			"description": "CSS: --surface-selected",
-			"fieldname": "surface_elevation_3",
-			"fieldtype": "Color",
-			"label": "Surface Elevation 3 (selected)"
-		},
-		{
-			"description": "CSS: --surface-modal",
-			"fieldname": "surface_elevation_2",
-			"fieldtype": "Color",
-			"label": "Surface Elevation 2 (modal)"
-		},
-		{
-			"fieldname": "column_break_surfaces",
-			"fieldtype": "Column Break"
-		},
-		{
-			"description": "CSS: --surface-gray-1",
-			"fieldname": "surface_gray_1",
-			"fieldtype": "Color",
-			"label": "Surface Gray 1"
-		},
-		{
-			"description": "CSS: --surface-gray-2",
-			"fieldname": "surface_gray_2",
-			"fieldtype": "Color",
-			"label": "Surface Gray 2"
-		},
-		{
-			"description": "CSS: --surface-gray-3",
-			"fieldname": "surface_gray_3",
-			"fieldtype": "Color",
-			"label": "Surface Gray 3 (hover)"
-		},
-		{
-			"description": "CSS: --surface-gray-7",
-			"fieldname": "surface_gray_10",
-			"fieldtype": "Color",
-			"label": "Surface Gray 10 (CTA)"
-		},
-		{
-			"fieldname": "section_ink",
-			"fieldtype": "Section Break",
-			"label": "Ink (Text)"
-		},
-		{
-			"description": "CSS: --ink-gray-5",
-			"fieldname": "ink_gray_5",
-			"fieldtype": "Color",
-			"label": "Ink Gray 5 (placeholder)"
-		},
-		{
-			"description": "CSS: --ink-gray-6",
-			"fieldname": "ink_gray_6",
-			"fieldtype": "Color",
-			"label": "Ink Gray 6 (secondary)"
-		},
-		{
-			"description": "CSS: --ink-gray-7",
-			"fieldname": "ink_gray_7",
-			"fieldtype": "Color",
-			"label": "Ink Gray 7 (body)"
-		},
-		{
-			"fieldname": "column_break_ink",
-			"fieldtype": "Column Break"
-		},
-		{
-			"description": "CSS: --ink-gray-8",
-			"fieldname": "ink_gray_8",
-			"fieldtype": "Color",
-			"label": "Ink Gray 8 (sidebar)"
-		},
-		{
-			"description": "CSS: --ink-gray-9",
-			"fieldname": "ink_gray_9",
-			"fieldtype": "Color",
-			"label": "Ink Gray 9 (titles)"
-		},
-		{
-			"description": "CSS: --ink-gray-10",
-			"fieldname": "ink_gray_10",
-			"fieldtype": "Color",
-			"label": "Ink Gray 10"
-		},
-		{
-			"description": "CSS: --ink-white",
-			"fieldname": "ink_base",
-			"fieldtype": "Color",
-			"label": "Ink Base"
-		},
-		{
-			"fieldname": "section_borders",
-			"fieldtype": "Section Break",
-			"label": "Borders"
-		},
-		{
-			"description": "CSS: --outline-gray-1",
-			"fieldname": "outline_gray_1",
-			"fieldtype": "Color",
-			"label": "Outline Gray 1"
-		},
-		{
-			"fieldname": "column_break_borders",
-			"fieldtype": "Column Break"
-		},
-		{
-			"description": "CSS: --outline-gray-modals",
-			"fieldname": "outline_elevation_2",
-			"fieldtype": "Color",
-			"label": "Outline Elevation 2 (modals)"
-		},
-		{
-			"fieldname": "section_layout",
-			"fieldtype": "Section Break",
-			"label": "Layout"
-		},
-		{
-			"description": "CSS: --color-sidebar-menu",
-			"fieldname": "color_sidebar_menu",
-			"fieldtype": "Color",
-			"label": "Sidebar Menu"
-		},
-		{
-			"description": "CSS: --surface-card",
-			"fieldname": "surface_elevation_1",
-			"fieldtype": "Color",
-			"label": "Surface Elevation 1 (cards)"
-		},
-		{
-			"fieldname": "column_break_layout",
-			"fieldtype": "Column Break"
-		},
-		{
-			"description": "CSS: --color-menu-bar",
-			"fieldname": "color_menu_bar",
-			"fieldtype": "Color",
-			"label": "Menu Bar"
-		},
-		{
-			"description": "Colors of the /login page and of the account pages that share its look. Leave a field empty to fall back to the Frappe default.",
-			"fieldname": "section_login",
-			"fieldtype": "Section Break",
-			"label": "Login Page"
-		},
-		{
-			"description": "CSS: --login-bg-from — left stop of the page background gradient",
-			"fieldname": "login_bg_from",
-			"fieldtype": "Color",
-			"label": "Background From"
-		},
-		{
-			"description": "CSS: --login-bg-to — right stop of the page background gradient",
-			"fieldname": "login_bg_to",
-			"fieldtype": "Color",
-			"label": "Background To"
-		},
-		{
-			"description": "CSS: --login-ink — title and links sitting on the background",
-			"fieldname": "login_ink",
-			"fieldtype": "Color",
-			"label": "Text On Background"
-		},
-		{
-			"fieldname": "column_break_login",
-			"fieldtype": "Column Break"
-		},
-		{
-			"description": "CSS: --login-input-bg",
-			"fieldname": "login_input_bg",
-			"fieldtype": "Color",
-			"label": "Input Background"
-		},
-		{
-			"description": "CSS: --login-input-ink",
-			"fieldname": "login_input_ink",
-			"fieldtype": "Color",
-			"label": "Input Text"
-		},
-		{
-			"description": "CSS: --login-button-bg — the Login / Sign up button",
-			"fieldname": "login_button_bg",
-			"fieldtype": "Color",
-			"label": "Button"
-		}
-	],
-	"grid_page_length": 50,
-	"index_web_pages_for_search": 1,
-	"issingle": 1,
-	"links": [],
-	"modified": "2026-10-23 12:00:00.000000",
-	"modified_by": "Administrator",
-	"module": "OS LMS",
-	"name": "Brand Customize",
-	"owner": "Administrator",
-	"permissions": [
-		{
-			"create": 1,
-			"delete": 1,
-			"email": 1,
-			"print": 1,
-			"read": 1,
-			"role": "System Manager",
-			"share": 1,
-			"write": 1
-		}
-	],
-	"sort_field": "modified",
-	"sort_order": "DESC",
-	"states": [],
-	"track_changes": 1
+ "actions": [],
+ "creation": "2026-05-04 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_mode",
+  "mode",
+  "contrast_report",
+  "section_base",
+  "base_primary",
+  "base_accent",
+  "column_break_base",
+  "base_background",
+  "base_gray_tint",
+  "base_swatches",
+  "section_adv_structure",
+  "adv_page_bg",
+  "adv_sidebar_bg",
+  "adv_sidebar_ink",
+  "adv_sidebar_icon",
+  "column_break_adv_structure",
+  "adv_sidebar_hover",
+  "adv_sidebar_active_bg",
+  "adv_sidebar_active_ink",
+  "section_adv_text",
+  "adv_heading_ink",
+  "adv_text_ink",
+  "adv_muted_ink",
+  "column_break_adv_text",
+  "adv_placeholder_ink",
+  "adv_link_ink",
+  "section_adv_buttons",
+  "adv_button_bg",
+  "adv_button_ink",
+  "adv_button_hover",
+  "adv_button_pressed",
+  "column_break_adv_buttons",
+  "adv_secondary_bg",
+  "adv_secondary_ink",
+  "adv_outline_border",
+  "section_adv_surfaces",
+  "adv_subtle_bg",
+  "adv_card_bg",
+  "adv_menu_bg",
+  "column_break_adv_surfaces",
+  "adv_input_bg",
+  "adv_table_header_bg",
+  "adv_table_row_bg",
+  "section_adv_borders",
+  "adv_border_light",
+  "adv_border",
+  "column_break_adv_borders",
+  "adv_border_strong",
+  "adv_focus_ring",
+  "section_adv_states",
+  "adv_success",
+  "adv_error",
+  "column_break_adv_states",
+  "adv_warning",
+  "adv_info",
+  "section_adv_charts",
+  "adv_chart_1",
+  "adv_chart_2",
+  "adv_chart_3",
+  "column_break_adv_charts",
+  "adv_chart_4",
+  "adv_chart_5",
+  "section_adv_shape",
+  "adv_radius",
+  "section_expert",
+  "expert_editor",
+  "expert_tokens",
+  "section_login",
+  "login_bg_from",
+  "login_bg_to",
+  "login_ink",
+  "column_break_login",
+  "login_input_bg",
+  "login_input_ink",
+  "login_button_bg",
+  "section_app",
+  "app_main_color",
+  "column_break_app",
+  "app_secondary_color"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_mode",
+   "fieldtype": "Section Break",
+   "label": "Mode"
+  },
+  {
+   "default": "Expert",
+   "description": "Only one mode is applied at a time: the values of the other modes stay saved but are not applied.",
+   "fieldname": "mode",
+   "fieldtype": "Select",
+   "label": "Active Mode",
+   "options": "Base\nAdvanced\nExpert"
+  },
+  {
+   "fieldname": "contrast_report",
+   "fieldtype": "HTML",
+   "label": "Readability"
+  },
+  {
+   "depends_on": "eval:doc.mode==\"Base\"",
+   "description": "Four colors: everything else is computed from them.",
+   "fieldname": "section_base",
+   "fieldtype": "Section Break",
+   "label": "Base"
+  },
+  {
+   "description": "Primary buttons, active sidebar item, links, focus ring and the first chart series.",
+   "fieldname": "base_primary",
+   "fieldtype": "Color",
+   "label": "Primary Color"
+  },
+  {
+   "description": "Secondary buttons and the second chart series. Empty: computed from the primary color.",
+   "fieldname": "base_accent",
+   "fieldtype": "Color",
+   "label": "Accent Color"
+  },
+  {
+   "fieldname": "column_break_base",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Pages, cards and windows; the sidebar is one shade darker. Empty: white.",
+   "fieldname": "base_background",
+   "fieldtype": "Color",
+   "label": "Background"
+  },
+  {
+   "description": "Gives text, borders and light backgrounds a hint of this color. Empty: neutral grays.",
+   "fieldname": "base_gray_tint",
+   "fieldtype": "Color",
+   "label": "Gray Tint"
+  },
+  {
+   "fieldname": "base_swatches",
+   "fieldtype": "HTML",
+   "label": "Computed Colors"
+  },
+  {
+   "depends_on": "eval:doc.mode==\"Advanced\"",
+   "description": "Each color changes only its own area. An empty field keeps the standard color, shown in grey inside the field.",
+   "fieldname": "section_adv_structure",
+   "fieldtype": "Section Break",
+   "label": "Advanced — Structure"
+  },
+  {
+   "fieldname": "adv_page_bg",
+   "fieldtype": "Color",
+   "label": "Page Background"
+  },
+  {
+   "fieldname": "adv_sidebar_bg",
+   "fieldtype": "Color",
+   "label": "Sidebar Background"
+  },
+  {
+   "fieldname": "adv_sidebar_ink",
+   "fieldtype": "Color",
+   "label": "Sidebar Text"
+  },
+  {
+   "fieldname": "adv_sidebar_icon",
+   "fieldtype": "Color",
+   "label": "Sidebar Icons"
+  },
+  {
+   "fieldname": "column_break_adv_structure",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "adv_sidebar_hover",
+   "fieldtype": "Color",
+   "label": "Sidebar Item on Hover"
+  },
+  {
+   "fieldname": "adv_sidebar_active_bg",
+   "fieldtype": "Color",
+   "label": "Active Sidebar Item"
+  },
+  {
+   "fieldname": "adv_sidebar_active_ink",
+   "fieldtype": "Color",
+   "label": "Active Sidebar Item Text"
+  },
+  {
+   "depends_on": "eval:doc.mode==\"Advanced\"",
+   "fieldname": "section_adv_text",
+   "fieldtype": "Section Break",
+   "label": "Advanced — Text"
+  },
+  {
+   "fieldname": "adv_heading_ink",
+   "fieldtype": "Color",
+   "label": "Headings"
+  },
+  {
+   "fieldname": "adv_text_ink",
+   "fieldtype": "Color",
+   "label": "Body Text"
+  },
+  {
+   "description": "Captions, counters, dates.",
+   "fieldname": "adv_muted_ink",
+   "fieldtype": "Color",
+   "label": "Secondary Text"
+  },
+  {
+   "fieldname": "column_break_adv_text",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "adv_placeholder_ink",
+   "fieldtype": "Color",
+   "label": "Placeholders and Disabled Text"
+  },
+  {
+   "fieldname": "adv_link_ink",
+   "fieldtype": "Color",
+   "label": "Links"
+  },
+  {
+   "depends_on": "eval:doc.mode==\"Advanced\"",
+   "fieldname": "section_adv_buttons",
+   "fieldtype": "Section Break",
+   "label": "Advanced — Buttons"
+  },
+  {
+   "fieldname": "adv_button_bg",
+   "fieldtype": "Color",
+   "label": "Primary Button"
+  },
+  {
+   "description": "Empty: white or black, whichever reads better on the button.",
+   "fieldname": "adv_button_ink",
+   "fieldtype": "Color",
+   "label": "Primary Button Text"
+  },
+  {
+   "description": "Empty: computed from the button color.",
+   "fieldname": "adv_button_hover",
+   "fieldtype": "Color",
+   "label": "Primary Button on Hover"
+  },
+  {
+   "description": "Empty: computed from the button color.",
+   "fieldname": "adv_button_pressed",
+   "fieldtype": "Color",
+   "label": "Primary Button when Pressed"
+  },
+  {
+   "fieldname": "column_break_adv_buttons",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "adv_secondary_bg",
+   "fieldtype": "Color",
+   "label": "Secondary Button"
+  },
+  {
+   "fieldname": "adv_secondary_ink",
+   "fieldtype": "Color",
+   "label": "Secondary Button Text"
+  },
+  {
+   "fieldname": "adv_outline_border",
+   "fieldtype": "Color",
+   "label": "Outline Button Border"
+  },
+  {
+   "depends_on": "eval:doc.mode==\"Advanced\"",
+   "fieldname": "section_adv_surfaces",
+   "fieldtype": "Section Break",
+   "label": "Advanced — Surfaces"
+  },
+  {
+   "description": "Tabs, tags, toolbars and other light grey areas.",
+   "fieldname": "adv_subtle_bg",
+   "fieldtype": "Color",
+   "label": "Light Backgrounds"
+  },
+  {
+   "fieldname": "adv_card_bg",
+   "fieldtype": "Color",
+   "label": "Cards"
+  },
+  {
+   "fieldname": "adv_menu_bg",
+   "fieldtype": "Color",
+   "label": "Windows and Menus"
+  },
+  {
+   "fieldname": "column_break_adv_surfaces",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "adv_input_bg",
+   "fieldtype": "Color",
+   "label": "Input Fields"
+  },
+  {
+   "fieldname": "adv_table_header_bg",
+   "fieldtype": "Color",
+   "label": "Table Header"
+  },
+  {
+   "fieldname": "adv_table_row_bg",
+   "fieldtype": "Color",
+   "label": "Table Rows"
+  },
+  {
+   "depends_on": "eval:doc.mode==\"Advanced\"",
+   "fieldname": "section_adv_borders",
+   "fieldtype": "Section Break",
+   "label": "Advanced — Borders"
+  },
+  {
+   "fieldname": "adv_border_light",
+   "fieldtype": "Color",
+   "label": "Light Borders"
+  },
+  {
+   "fieldname": "adv_border",
+   "fieldtype": "Color",
+   "label": "Borders"
+  },
+  {
+   "fieldname": "column_break_adv_borders",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "adv_border_strong",
+   "fieldtype": "Color",
+   "label": "Strong Borders"
+  },
+  {
+   "description": "Outline of the field or button reached with the keyboard.",
+   "fieldname": "adv_focus_ring",
+   "fieldtype": "Color",
+   "label": "Focus Ring"
+  },
+  {
+   "depends_on": "eval:doc.mode==\"Advanced\"",
+   "description": "One color per state: text, background and border shades are computed from it.",
+   "fieldname": "section_adv_states",
+   "fieldtype": "Section Break",
+   "label": "Advanced — States"
+  },
+  {
+   "fieldname": "adv_success",
+   "fieldtype": "Color",
+   "label": "Success"
+  },
+  {
+   "fieldname": "adv_error",
+   "fieldtype": "Color",
+   "label": "Error"
+  },
+  {
+   "fieldname": "column_break_adv_states",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "adv_warning",
+   "fieldtype": "Color",
+   "label": "Warning"
+  },
+  {
+   "fieldname": "adv_info",
+   "fieldtype": "Color",
+   "label": "Information"
+  },
+  {
+   "depends_on": "eval:doc.mode==\"Advanced\"",
+   "description": "Series colors of the statistics and dashboard charts.",
+   "fieldname": "section_adv_charts",
+   "fieldtype": "Section Break",
+   "label": "Advanced — Charts"
+  },
+  {
+   "fieldname": "adv_chart_1",
+   "fieldtype": "Color",
+   "label": "Chart Series 1"
+  },
+  {
+   "fieldname": "adv_chart_2",
+   "fieldtype": "Color",
+   "label": "Chart Series 2"
+  },
+  {
+   "fieldname": "adv_chart_3",
+   "fieldtype": "Color",
+   "label": "Chart Series 3"
+  },
+  {
+   "fieldname": "column_break_adv_charts",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "adv_chart_4",
+   "fieldtype": "Color",
+   "label": "Chart Series 4"
+  },
+  {
+   "fieldname": "adv_chart_5",
+   "fieldtype": "Color",
+   "label": "Chart Series 5"
+  },
+  {
+   "depends_on": "eval:doc.mode==\"Advanced\"",
+   "fieldname": "section_adv_shape",
+   "fieldtype": "Section Break",
+   "label": "Advanced — Shape"
+  },
+  {
+   "default": "Standard",
+   "fieldname": "adv_radius",
+   "fieldtype": "Select",
+   "label": "Corner Rounding",
+   "options": "Standard\nSmall\nLarge"
+  },
+  {
+   "depends_on": "eval:doc.mode==\"Expert\"",
+   "description": "Every variable of the platform, written as it is: each one changes every element that uses it. An empty value keeps the standard one.",
+   "fieldname": "section_expert",
+   "fieldtype": "Section Break",
+   "label": "Expert"
+  },
+  {
+   "fieldname": "expert_editor",
+   "fieldtype": "HTML",
+   "label": "Variables"
+  },
+  {
+   "fieldname": "expert_tokens",
+   "fieldtype": "Table",
+   "hidden": 1,
+   "label": "Expert Variables",
+   "options": "Brand Customize Token"
+  },
+  {
+   "description": "Colors of the /login page and of the account pages that share its look. Leave a field empty to fall back to the Frappe default.",
+   "fieldname": "section_login",
+   "fieldtype": "Section Break",
+   "label": "Login Page"
+  },
+  {
+   "description": "CSS: --login-bg-from — left stop of the page background gradient",
+   "fieldname": "login_bg_from",
+   "fieldtype": "Color",
+   "label": "Background From"
+  },
+  {
+   "description": "CSS: --login-bg-to — right stop of the page background gradient",
+   "fieldname": "login_bg_to",
+   "fieldtype": "Color",
+   "label": "Background To"
+  },
+  {
+   "description": "CSS: --login-ink — title and links sitting on the background",
+   "fieldname": "login_ink",
+   "fieldtype": "Color",
+   "label": "Text On Background"
+  },
+  {
+   "fieldname": "column_break_login",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "CSS: --login-input-bg",
+   "fieldname": "login_input_bg",
+   "fieldtype": "Color",
+   "label": "Input Background"
+  },
+  {
+   "description": "CSS: --login-input-ink",
+   "fieldname": "login_input_ink",
+   "fieldtype": "Color",
+   "label": "Input Text"
+  },
+  {
+   "description": "CSS: --login-button-bg — the Login / Sign up button",
+   "fieldname": "login_button_bg",
+   "fieldtype": "Color",
+   "label": "Button"
+  },
+  {
+   "description": "Colors returned to the mobile app. They are not used by the web platform.",
+   "fieldname": "section_app",
+   "fieldtype": "Section Break",
+   "label": "Mobile App"
+  },
+  {
+   "description": "Primary color returned to the mobile app via get_instance_info",
+   "fieldname": "app_main_color",
+   "fieldtype": "Color",
+   "label": "App Main Color"
+  },
+  {
+   "fieldname": "column_break_app",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Secondary color returned to the mobile app via get_instance_info",
+   "fieldname": "app_secondary_color",
+   "fieldtype": "Color",
+   "label": "App Secondary Color"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-11-09 15:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "OS LMS",
+ "name": "Brand Customize",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
 }

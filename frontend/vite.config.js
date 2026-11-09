@@ -120,6 +120,22 @@ export default defineConfig(async ({ mode }) => {
 						'node_modules/frappe-ui/src/components/Switch/Switch.vue'
 					),
 				},
+				// Same pattern as Switch: the chart overrides hand Brand Customize
+				// series colors to the ORIGINAL AxisChart / DonutChart.
+				{
+					find: 'frappe-ui-axischart-original',
+					replacement: path.resolve(
+						__dirname,
+						'node_modules/frappe-ui/src/components/Charts/AxisChart.vue'
+					),
+				},
+				{
+					find: 'frappe-ui-donutchart-original',
+					replacement: path.resolve(
+						__dirname,
+						'node_modules/frappe-ui/src/components/Charts/DonutChart.vue'
+					),
+				},
 				// Same pattern as Switch: the Combobox override wraps the ORIGINAL
 				// component only to translate its empty-state text.
 				{

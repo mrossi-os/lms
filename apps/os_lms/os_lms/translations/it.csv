@@ -201,3 +201,242 @@ Code Version Not Applied,Versione del codice non applicata,
 "The code has this newer version of the prompt, not applied by the migrate because the text was changed from the panel. To take it, copy the code's text here (ai/utils/default_prompt/) or delete the record: the next migrate creates it again from the code.","Il codice ha questa versione più recente del prompt, non applicata dal migrate perché il testo è stato modificato dal pannello. Per prenderla, copia qui il testo del codice (ai/utils/default_prompt/) oppure elimina il record: il migrate successivo lo ricrea dal codice.",
 Code Fingerprint,Impronta del codice,
 "Fingerprint of the prompt the code last wrote here. While the record still holds it, the migrate updates the prompt to the code's newer versions; a text changed from the panel is kept.","Impronta del prompt scritto qui l'ultima volta dal codice. Finché il record la conserva, il migrate aggiorna il prompt alle versioni più recenti del codice; un testo modificato dal pannello resta com'è.",
+Mode,Modalità,Brand Customize
+Active Mode,Modalità attiva,Brand Customize
+Only one mode is applied at a time. Base and Advanced will be available in a later version.,Viene applicata una sola modalità alla volta. Le modalità Base e Avanzata saranno disponibili in una prossima versione.,Brand Customize
+Base,Base,Brand Customize
+Advanced,Avanzata,Brand Customize
+Expert,Esperto,Brand Customize
+Expert,Esperto,
+Expert — Surfaces,Esperto — Superfici,Brand Customize
+Expert — Text,Esperto — Testi,Brand Customize
+Expert — Borders,Esperto — Bordi,Brand Customize
+Expert — Tables,Esperto — Tabelle,Brand Customize
+"frappe-ui variables written directly: each one changes every element that uses it. An empty field keeps the standard value, shown in grey inside the field.","Variabili di frappe-ui scritte direttamente: ognuna cambia tutti gli elementi che la usano. Un campo vuoto mantiene il valore standard, mostrato in grigio dentro il campo.",
+Main page background.,Sfondo principale delle pagine.,Brand Customize
+Sidebar background.,Sfondo della barra laterale.,Brand Customize
+Card background.,Sfondo delle card.,Brand Customize
+Background of modal dialogs and dropdown menus.,Sfondo delle finestre modali e dei menu a tendina.,Brand Customize
+"Background of the selected item, e.g. the active sidebar link.","Sfondo della voce selezionata, ad esempio la voce attiva della barra laterale.",Brand Customize
+"Subtle backgrounds, e.g. hovered buttons in the lesson editor toolbar.","Sfondi tenui, ad esempio i pulsanti della barra strumenti dell'editor delle lezioni al passaggio del mouse.",Brand Customize
+"Input fields, list headers, text editors, keyboard keys and the scrollbar thumb. Used in many places: changing it affects all of them.","Campi di inserimento, intestazioni degli elenchi, editor di testo, tasti della tastiera e cursore della barra di scorrimento. Usata in molti punti: cambiandola cambiano tutti.",Brand Customize
+Hover backgrounds and selected blocks in the lesson editor.,Sfondi al passaggio del mouse e blocchi selezionati nell'editor delle lezioni.,Brand Customize
+"Dark primary buttons and dark tooltips. The button hover and pressed colors (--surface-gray-9, --surface-gray-8) are not changed by this field.","Pulsanti principali scuri e suggerimenti scuri. I colori del pulsante al passaggio del mouse e alla pressione (--surface-gray-9, --surface-gray-8) non cambiano con questo campo.",Brand Customize
+"Secondary text, counters and placeholders.","Testi secondari, contatori e testi segnaposto.",Brand Customize
+Descriptive text.,Testi descrittivi.,Brand Customize
+Body text and sidebar text. Used in many places: changing it affects all of them.,Testo delle pagine e testo della barra laterale. Usata in molti punti: cambiandola cambiano tutti.,Brand Customize
+"Sidebar links, chart labels and the scrollbar track.","Voci della barra laterale, testi dei grafici e binario della barra di scorrimento.",Brand Customize
+Headings and table rows.,Titoli e righe delle tabelle.,Brand Customize
+Not a frappe-ui variable: it only colors the toggle icon of the lesson editor inline toolbar.,Non è una variabile di frappe-ui: colora solo l'icona del pulsante della barra strumenti dell'editor delle lezioni.,Brand Customize
+"Text on solid buttons, list bullets and the text of success and failure cards. Used in many places: changing it affects all of them.","Testo dei pulsanti pieni, pallini degli elenchi e testo delle card di esito positivo e negativo. Usata in molti punti: cambiandola cambiano tutti.",Brand Customize
+Standard borders.,Bordi standard.,Brand Customize
+Borders of modal dialogs and dropdown menus.,Bordi delle finestre modali e dei menu a tendina.,Brand Customize
+Table and List Rows,Righe di tabelle ed elenchi,Brand Customize
+--color-company-primary: background of the rows of lists and tables. An empty field leaves them transparent.,--color-company-primary: sfondo delle righe di elenchi e tabelle. Con il campo vuoto restano trasparenti.,Brand Customize
+Login Page,Pagina di login,Brand Customize
+Colors of the /login page and of the account pages that share its look. Leave a field empty to fall back to the Frappe default.,Colori della pagina /login e delle pagine dell'account con lo stesso aspetto. Lascia un campo vuoto per usare il valore standard di Frappe.,
+Background From,Sfondo (inizio),Brand Customize
+CSS: --login-bg-from — left stop of the page background gradient,CSS: --login-bg-from — colore di sinistra della sfumatura di sfondo,Brand Customize
+Background To,Sfondo (fine),Brand Customize
+CSS: --login-bg-to — right stop of the page background gradient,CSS: --login-bg-to — colore di destra della sfumatura di sfondo,Brand Customize
+Text On Background,Testo sullo sfondo,Brand Customize
+CSS: --login-ink — title and links sitting on the background,CSS: --login-ink — titolo e link sopra lo sfondo,Brand Customize
+Input Background,Sfondo dei campi,Brand Customize
+Input Text,Testo dei campi,Brand Customize
+Button,Pulsante,Brand Customize
+CSS: --login-button-bg — the Login / Sign up button,CSS: --login-button-bg — il pulsante Accedi / Registrati,Brand Customize
+Mobile App,App mobile,Brand Customize
+Colors returned to the mobile app. They are not used by the web platform.,Colori inviati all'app mobile. La piattaforma web non li usa.,
+App Main Color,Colore principale dell'app,Brand Customize
+Primary color returned to the mobile app via get_instance_info,Colore principale inviato all'app mobile tramite get_instance_info,Brand Customize
+App Secondary Color,Colore secondario dell'app,Brand Customize
+Secondary color returned to the mobile app via get_instance_info,Colore secondario inviato all'app mobile tramite get_instance_info,Brand Customize
+Choose a color,Scegli un colore,
+Preview,Anteprima,Brand Customize
+Hide Preview,Nascondi anteprima,Brand Customize
+Home,Home,Brand Customize
+Courses,Elenco corsi,Brand Customize
+Course Page,Pagina corso,Brand Customize
+Lesson,Lezione,Brand Customize
+Course Dashboard,Dashboard corso,Brand Customize
+Lesson Editor,Editor lezioni,Brand Customize
+Course Settings,Impostazioni corso,Brand Customize
+Batch Dashboard,Dashboard classe,Brand Customize
+Statistics,Statistiche,Brand Customize
+Login,Login,Brand Customize
+Desktop,Desktop,Brand Customize
+Phone,Telefono,Brand Customize
+Close,Chiudi,Brand Customize
+Preview of unsaved changes,Anteprima delle modifiche non salvate,Brand Customize
+Preview of saved colors,Anteprima dei colori salvati,Brand Customize
+Links and buttons are disabled in the preview.,Link e pulsanti sono disattivati nell'anteprima.,Brand Customize
+"Not previewed, the value is not valid: {0}","Non in anteprima, il valore non è valido: {0}",Brand Customize
+This page cannot be previewed.,Questa pagina non si può mostrare in anteprima.,Brand Customize
+There is no published course with lessons you are not enrolled in.,Non c'è un corso pubblicato con lezioni a cui non sei iscritto.,
+There is no published batch.,Non c'è una classe pubblicata.,
+Invalid preview values.,Valori dell'anteprima non validi.,
+These colors are not valid CSS values: {0},Questi colori non sono valori CSS validi: {0},
+Invalid Color,Colore non valido,
+Primary Color,Colore principale,Brand Customize
+Accent Color,Colore di accento,Brand Customize
+Background,Sfondo,Brand Customize
+Gray Tint,Tinta dei grigi,Brand Customize
+Computed Colors,Colori calcolati,Brand Customize
+Advanced — Structure,Avanzata — Struttura,Brand Customize
+Page Background,Sfondo pagina,Brand Customize
+Sidebar Background,Barra laterale — sfondo,Brand Customize
+Sidebar Text,Barra laterale — testo,Brand Customize
+Sidebar Icons,Barra laterale — icone,Brand Customize
+Sidebar Item on Hover,Barra laterale — voce al passaggio del mouse,Brand Customize
+Active Sidebar Item,Barra laterale — voce attiva,Brand Customize
+Active Sidebar Item Text,Barra laterale — testo della voce attiva,Brand Customize
+Advanced — Text,Avanzata — Testi,Brand Customize
+Headings,Titoli,Brand Customize
+Body Text,Testo,Brand Customize
+Secondary Text,Testo secondario,Brand Customize
+Placeholders and Disabled Text,Segnaposto e testo disattivato,Brand Customize
+Links,Link,Brand Customize
+Advanced — Buttons,Avanzata — Pulsanti,Brand Customize
+Primary Button,Pulsante principale,Brand Customize
+Primary Button Text,Testo del pulsante principale,Brand Customize
+Primary Button on Hover,Pulsante principale al passaggio del mouse,Brand Customize
+Primary Button when Pressed,Pulsante principale premuto,Brand Customize
+Secondary Button,Pulsante secondario,Brand Customize
+Secondary Button Text,Testo del pulsante secondario,Brand Customize
+Outline Button Border,Bordo del pulsante con contorno,Brand Customize
+Advanced — Surfaces,Avanzata — Superfici,Brand Customize
+Light Backgrounds,Sfondi chiari,Brand Customize
+Cards,Card,Brand Customize
+Windows and Menus,Finestre e menu,Brand Customize
+Input Fields,Campi di inserimento,Brand Customize
+Table Header,Intestazione tabelle,Brand Customize
+Table Rows,Righe tabelle,Brand Customize
+Advanced — Borders,Avanzata — Bordi,Brand Customize
+Light Borders,Bordi leggeri,Brand Customize
+Borders,Bordi,Brand Customize
+Strong Borders,Bordi marcati,Brand Customize
+Focus Ring,Contorno di focus,Brand Customize
+Advanced — States,Avanzata — Stati,Brand Customize
+Success,Successo,Brand Customize
+Error,Errore,Brand Customize
+Warning,Avviso,Brand Customize
+Information,Informazione,Brand Customize
+Advanced — Charts,Avanzata — Grafici,Brand Customize
+Chart Series 1,Serie 1 dei grafici,Brand Customize
+Chart Series 2,Serie 2 dei grafici,Brand Customize
+Chart Series 3,Serie 3 dei grafici,Brand Customize
+Chart Series 4,Serie 4 dei grafici,Brand Customize
+Chart Series 5,Serie 5 dei grafici,Brand Customize
+Advanced — Shape,Avanzata — Forma,Brand Customize
+Corner Rounding,Arrotondamento degli angoli,Brand Customize
+Standard,Standard,Brand Customize
+Small,Piccolo,Brand Customize
+Large,Grande,Brand Customize
+Only one mode is applied at a time: the values of the other modes stay saved but are not applied.,Si applica una sola modalità alla volta: i valori delle altre restano salvati ma non vengono applicati.,Brand Customize
+"Primary buttons, active sidebar item, links, focus ring and the first chart series.","Pulsanti principali, voce attiva della barra laterale, link, contorno di focus e prima serie dei grafici.",Brand Customize
+Secondary buttons and the second chart series. Empty: computed from the primary color.,Pulsanti secondari e seconda serie dei grafici. Vuoto: calcolato dal colore principale.,Brand Customize
+"Pages, cards and windows; the sidebar is one shade darker. Empty: white.","Pagine, card e finestre; la barra laterale è un tono più scura. Vuoto: bianco.",Brand Customize
+"Gives text, borders and light backgrounds a hint of this color. Empty: neutral grays.","Dà a testi, bordi e sfondi chiari una sfumatura di questo colore. Vuoto: grigi neutri.",Brand Customize
+"Captions, counters, dates.","Didascalie, contatori, date.",Brand Customize
+"Empty: white or black, whichever reads better on the button.","Vuoto: bianco o nero, quello più leggibile sul pulsante.",Brand Customize
+Empty: computed from the button color.,Vuoto: calcolato dal colore del pulsante.,Brand Customize
+"Tabs, tags, toolbars and other light grey areas.","Schede, etichette, barre degli strumenti e altre aree grigio chiaro.",Brand Customize
+Outline of the field or button reached with the keyboard.,Contorno del campo o del pulsante raggiunto con la tastiera.,Brand Customize
+Replace the Advanced colors with the ones computed from the Base colors?,Sostituire i colori dell'Avanzata con quelli calcolati dai colori della Base?,Brand Customize
+Start from the colors computed from the Base colors?,Vuoi partire dai colori calcolati dalla Base?,Brand Customize
+Advanced colors filled in from Base. Save to apply.,Colori dell'Avanzata compilati dalla Base. Salva per applicarli.,Brand Customize
+Choose a primary color to see the computed colors.,Scegli un colore principale per vedere i colori calcolati.,Brand Customize
+Four colors: everything else is computed from them.,Quattro colori: tutto il resto è calcolato da questi.,
+"Each color changes only its own area. An empty field keeps the standard color, shown in grey inside the field.","Ogni colore cambia solo la sua area. Un campo vuoto mantiene il colore standard, mostrato in grigio dentro il campo.",
+"One color per state: text, background and border shades are computed from it.","Un colore per stato: testo, sfondo e bordo vengono calcolati da questo.",
+Series colors of the statistics and dashboard charts.,Colori delle serie dei grafici di statistiche e dashboard.,
+"Every variable of the platform, written as it is: each one changes every element that uses it. An empty value keeps the standard one.","Tutte le variabili della piattaforma, scritte così come sono: ognuna cambia tutti gli elementi che la usano. Un valore vuoto mantiene quello standard.",Brand Customize
+Variables,Variabili,Brand Customize
+Expert Variables,Variabili dell'Esperto,Brand Customize
+Surfaces,Superfici,Brand Customize
+Text,Testi,Brand Customize
+Palettes,Tavolozze,Brand Customize
+Shadows,Ombre,Brand Customize
+Focus,Focus,Brand Customize
+Video Player,Player video,Brand Customize
+Platform,Piattaforma,Brand Customize
+Other,Altro,Brand Customize
+Search variables,Cerca variabili,Brand Customize
+All families,Tutte le famiglie,Brand Customize
+Only set,Solo compilate,Brand Customize
+Only on the preview page,Solo nella pagina dell'anteprima,Brand Customize
+Show variables without effect,Mostra anche le variabili senza effetto,Brand Customize
+{0} of {1} variables shown · {2} set,{0} variabili mostrate su {1} · {2} compilate,Brand Customize
+The list of variables is not available: the platform frontend has not been built.,L'elenco delle variabili non è disponibile: il frontend della piattaforma non è stato compilato.,Brand Customize
+Open the preview to use this filter.,Apri l'anteprima per usare questo filtro.,Brand Customize
+No variable matches the filters.,Nessuna variabile corrisponde ai filtri.,Brand Customize
+Not on the platform any more,Non più presente nella piattaforma,Brand Customize
+No standard value,Nessun valore standard,Brand Customize
+Choose a color,Scegli un colore,Brand Customize
+Replace the Expert variables with the colors of the {0} mode?,Sostituire le variabili dell'Esperto con i colori della modalità {0}?,Brand Customize
+Start from the colors of the {0} mode?,Vuoi partire dai colori della modalità {0}?,Brand Customize
+{0} variables filled in from the {1} mode. Save to apply.,{0} variabili compilate dalla modalità {1}. Salva per applicarle.,Brand Customize
+"{0} colors of that mode apply only to an area (buttons, sidebar, fields...) and have no Expert equivalent: they were not copied.","{0} colori di quella modalità valgono solo in un'area (pulsanti, barra laterale, campi...) e non hanno un equivalente nell'Esperto: non sono stati copiati.",Brand Customize
+Brand Customize Token,Variabile di Brand Customize,
+Variable,Variabile,
+These variables are set more than once: {0},Queste variabili sono impostate più di una volta: {0},
+Invalid Variable,Variabile non valida,
+These variables have a name or a value that cannot be used: {0},Queste variabili hanno un nome o un valore che non si può usare: {0},
+These variables do not exist on the platform: {0},Queste variabili non esistono nella piattaforma: {0},
+"These saved variables no longer exist on the platform, probably after an update: {0}. They are kept but have no effect.","Queste variabili salvate non esistono più nella piattaforma, probabilmente dopo un aggiornamento: {0}. Restano salvate ma non hanno effetto.",
+Variables Without Effect,Variabili senza effetto,
+Readability,Leggibilità,Brand Customize
+Save as Preset,Salva come preset,Brand Customize
+Apply Preset,Applica preset,Brand Customize
+All colors read at least as well as the standard ones.,Tutti i colori si leggono almeno quanto quelli standard.,Brand Customize
+These colors are harder to read than the standard ones. Click a row to go to its color.,Questi colori si leggono peggio di quelli standard. Fai clic su una riga per andare al suo colore.,Brand Customize
+"{0}: {1}:1 (minimum {2}:1, standard colors {3}:1)","{0}: {1}:1 (minimo {2}:1, colori standard {3}:1)",Brand Customize
+"{0} other pairs are under the WCAG minimum, as they are with the standard colors.","Altre {0} coppie sono sotto il minimo WCAG, come lo sono con i colori standard.",Brand Customize
+AA ✓,AA ✓,Brand Customize
+As standard ({0}:1),Come lo standard ({0}:1),Brand Customize
+Low contrast ({0}:1),Contrasto basso ({0}:1),Brand Customize
+Preset Name,Nome del preset,Brand Customize
+"The current colors, including changes not saved yet.","I colori attuali, comprese le modifiche non ancora salvate.",Brand Customize
+A preset with this name already exists. Overwrite it?,Esiste già un preset con questo nome. Sovrascriverlo?,Brand Customize
+Preset saved: {0},Preset salvato: {0},Brand Customize
+There are no presets yet. Use Save as Preset first.,Non ci sono ancora preset. Usa prima «Salva come preset».,Brand Customize
+Preset Applied,Preset applicato,Brand Customize
+This will overwrite the current brand settings with {0} value(s) from the preset {1}. Continue?,Le impostazioni del brand attuali verranno sovrascritte con {0} valore/i del preset {1}. Continuare?,Brand Customize
+Preset {0} applied: {1} setting(s). Review and Save to apply.,Preset {0} applicato: {1} impostazione/i. Controlla e salva per applicare.,Brand Customize
+Headings on the page,Titoli sulla pagina,Brand Customize
+Text on the page,Testo sulla pagina,Brand Customize
+Secondary text on the page,Testo secondario sulla pagina,Brand Customize
+Links on the page,Link sulla pagina,Brand Customize
+Headings on cards,Titoli sulle card,Brand Customize
+Text on cards,Testo sulle card,Brand Customize
+Secondary text on cards,Testo secondario sulle card,Brand Customize
+Links on cards,Link sulle card,Brand Customize
+Text in fields,Testo nei campi,Brand Customize
+Placeholder in fields,Segnaposto nei campi,Brand Customize
+Text in menus and dialogs,Testo in menu e finestre,Brand Customize
+Sidebar text,Testo della barra laterale,Brand Customize
+Sidebar secondary text,Testo secondario della barra laterale,Brand Customize
+Active sidebar item,Voce attiva della barra laterale,Brand Customize
+Primary button text,Testo del pulsante principale,Brand Customize
+Secondary button text,Testo del pulsante secondario,Brand Customize
+Primary button against the page,Pulsante principale rispetto alla pagina,Brand Customize
+Secondary button against the page,Pulsante secondario rispetto alla pagina,Brand Customize
+Focus ring against the page,Anello di focus rispetto alla pagina,Brand Customize
+Login text on the background (start),Testo del login sullo sfondo (inizio),Brand Customize
+Login text on the background (end),Testo del login sullo sfondo (fine),Brand Customize
+Login field text,Testo dei campi del login,Brand Customize
+{0}: {1}:1 (minimum {2}:1),{0}: {1}:1 (minimo {2}:1),Brand Customize
+Saved. These colors are harder to read than the standard ones:,Salvato. Questi colori si leggono peggio di quelli standard:,
+Low Contrast,Contrasto basso,
+Enter a name for the preset.,Inserisci un nome per il preset.,
+The preset has no brand values.,Il preset non contiene valori del brand.,
+Invalid Preset,Preset non valido,
+Brand Preset,Preset del brand,
+Preset Name,Nome del preset,Brand Preset
+Mode,Modalità,Brand Preset
+Swatches,Campioni di colore,Brand Preset
+Values,Valori,Brand Preset
+Colors shown next to the preset name (comma separated).,Colori mostrati accanto al nome del preset (separati da virgola).,Brand Preset
+"The Brand Customize values, in the format of its Export.","I valori di Brand Customize, nel formato del suo Esporta.",Brand Preset
+"A saved set of Brand Customize colors, applied from the Actions menu of Brand Customize.","Un insieme salvato di colori di Brand Customize, da applicare dal menu Azioni di Brand Customize.",
+"The file was exported from {0}, not from {1}.","Il file è stato esportato da {0}, non da {1}.",
