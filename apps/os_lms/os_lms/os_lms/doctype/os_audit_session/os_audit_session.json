@@ -13,6 +13,7 @@
 		"last_seen_at",
 		"last_active_at",
 		"closed",
+		"paused",
 		"section_totals",
 		"presence_seconds",
 		"active_seconds",
@@ -81,6 +82,14 @@
 			"read_only": 1
 		},
 		{
+			"default": "0",
+			"description": "Closed because the tab was hidden: when the tab is visible again the visit goes on in a new session.",
+			"fieldname": "paused",
+			"fieldtype": "Check",
+			"label": "Paused",
+			"read_only": 1
+		},
+		{
 			"fieldname": "section_totals",
 			"fieldtype": "Section Break",
 			"label": "Totals"
@@ -129,7 +138,7 @@
 	"in_create": 1,
 	"index_web_pages_for_search": 0,
 	"links": [],
-	"modified": "2026-11-11 18:00:00.000000",
+	"modified": "2026-11-11 19:00:00.000000",
 	"modified_by": "Administrator",
 	"module": "OS LMS",
 	"name": "OS Audit Session",

@@ -125,9 +125,12 @@ class OsAuditTestCase(UnitTestCase):
 		self.assertTrue(answer, "the lesson should be tracked")
 		return answer["session"]
 
-	def beat(self, session: str, moment: datetime, active=True, close=False) -> dict:
+	def beat(self, session: str, moment: datetime, active=True, close=False, hidden=False) -> dict:
 		with at(moment):
-			return os_audit.heartbeat(session, active=active, close=close)
+			return os_audit.heartbeat(session, active=active, close=close, hidden=hidden)
+
+	def sessions_of(self, user: str) -> list:
+		return frappe.get_all(os_audit.SESSION, filters={"user": user}, pluck="name")
 
 	def session(self, name: str):
 		return frappe.db.get_value(os_audit.SESSION, name, ["*"], as_dict=True)
@@ -238,6 +241,59 @@ class TestLessonTime(OsAuditTestCase):
 		self.assertEqual(total, 135)
 		self.assertGreater(self.session(tab_a).presence_seconds, 0)
 		self.assertGreater(self.session(tab_b).presence_seconds, 0)
+
+	def test_a_hidden_tab_is_not_credited_and_goes_on_in_a_new_session(self):
+		session = self.open_as(STUDENT)
+		self.beat(session, T0 + timedelta(seconds=30))
+		# Hidden 5 s after a signal: those 5 s count, then the session pauses.
+		self.assertEqual(self.beat(session, T0 + timedelta(seconds=35), hidden=True), {"session": session})
+		row = self.session(session)
+		self.assertEqual((row.presence_seconds, row.closed, row.paused), (35, 1, 1))
+		# Visible again 72 s later: nothing for the hidden time, a new session.
+		answer = self.beat(session, T0 + timedelta(seconds=107))
+		resumed = answer["session"]
+		self.assertNotEqual(resumed, session)
+		self.beat(resumed, T0 + timedelta(seconds=137))
+		self.assertEqual(self.session(resumed).presence_seconds, 30)
+		os_audit.flush(commit=False)
+		self.assertIn('"reason":"hidden"', events("session_closed", session=session)[0].data)
+
+	def test_a_signal_arriving_after_the_page_closed_opens_nothing(self):
+		session = self.open_as(STUDENT)
+		self.beat(session, T0 + timedelta(seconds=30))
+		self.beat(session, T0 + timedelta(seconds=40), close=True)
+		# The hidden signal of visibilitychange, sent before pagehide, comes in late.
+		self.assertEqual(self.beat(session, T0 + timedelta(seconds=40.2), hidden=True), {"stop": 1})
+		self.assertEqual(self.beat(session, T0 + timedelta(seconds=41)), {"stop": 1})
+		self.assertEqual(self.sessions_of(STUDENT), [session])
+		# A page closed while hidden: its close finds the paused session and stops.
+		other = self.open_as(STUDENT, T0 + timedelta(seconds=50))
+		self.beat(other, T0 + timedelta(seconds=55), hidden=True)
+		self.assertEqual(self.beat(other, T0 + timedelta(seconds=90), close=True), {"stop": 1})
+		self.assertEqual(len(self.sessions_of(STUDENT)), 2)
+
+	def test_switching_tabs_counts_the_wall_time_once_in_any_arrival_order(self):
+		for a_first in (True, False):
+			with self.subTest(a_first=a_first):
+				frappe.db.sql(f"DELETE FROM `tab{os_audit.SESSION}`")
+				tab_a = self.open_as(STUDENT)
+				self.beat(tab_a, T0 + timedelta(seconds=30))
+				# The student moves to tab B at 40 s and back to tab A at 105 s.
+				self.beat(tab_a, T0 + timedelta(seconds=40), hidden=True)
+				tab_b = self.open_as(STUDENT, T0 + timedelta(seconds=40))
+				self.beat(tab_b, T0 + timedelta(seconds=70))
+				self.beat(tab_b, T0 + timedelta(seconds=100))
+				back = T0 + timedelta(seconds=105)
+				if a_first:
+					tab_a2 = self.beat(tab_a, back)["session"]
+					self.beat(tab_b, back + timedelta(seconds=0.5), hidden=True)
+				else:
+					self.beat(tab_b, back, hidden=True)
+					tab_a2 = self.beat(tab_a, back + timedelta(seconds=0.5))["session"]
+				# Seconds are credited rounded down: half a second later keeps it exact.
+				self.beat(tab_a2, T0 + timedelta(seconds=135.5))
+				total = sum(self.session(name).presence_seconds for name in self.sessions_of(STUDENT))
+				self.assertEqual(total, 135)
 
 	def test_a_session_of_another_user_is_refused(self):
 		session = self.open_as(STUDENT)
@@ -506,6 +562,44 @@ class TestServerEvents(OsAuditTestCase):
 		)
 		# Recorded for the student while the Administrator made the request: no device.
 		self.assertFalse(any(e.device for e in events(user=STUDENT)))
+
+	def test_an_assignment_submitted_from_the_lesson_page_finds_its_course(self):
+		# The lesson iframe saves the submission with no course and no lesson, and
+		# the assignment has no course either: the lessons placing it tell.
+		frappe.set_user("Administrator")
+		configure(courses=[COURSE, OTHER_COURSE])
+		other_lesson = f"{P}other-lesson"
+		for lesson, course in ((LESSON, COURSE), (other_lesson, OTHER_COURSE)):
+			insert({"doctype": "Course Lesson", "name": lesson, "title": lesson, "course": course})
+			row = frappe.get_doc(
+				{
+					"doctype": "LMS Lesson Assessment",
+					"parent": lesson,
+					"parenttype": "Course Lesson",
+					"parentfield": "assessments",
+					"assessment_type": "LMS Assignment",
+					"assessment_name": f"{P}assignment",
+				}
+			)
+			row.set_new_name()
+			row.db_insert()
+
+		def submit(name):
+			os_audit.on_assignment_submission_insert(
+				frappe._dict(doctype="LMS Assignment Submission", name=name, member=STUDENT, assignment=f"{P}assignment")
+			)
+			os_audit.flush(commit=False)
+			return events("assignment_submit", reference_name=name)[0]
+
+		# Never visited: the first audited course the student is enrolled in.
+		self.assertEqual(submit("a1").course, COURSE)
+		# Placed in two courses: the lesson the student visited last.
+		frappe.set_user(STUDENT)
+		with at(T0):
+			os_audit.open_session(STUDENT, OTHER_COURSE, other_lesson)
+		frappe.set_user("Administrator")
+		submitted = submit("a2")
+		self.assertEqual((submitted.course, submitted.lesson), (OTHER_COURSE, other_lesson))
 
 	def test_logins_from_the_activity_log(self):
 		for operation, status in (("Login", "Success"), ("Login", "Failed"), ("Logout", "Success")):

@@ -127,6 +127,7 @@ SESSION_FIELDS = [
 	"last_seen_at",
 	"last_active_at",
 	"closed",
+	"paused",
 	"presence_seconds",
 	"active_seconds",
 	"video_seconds",
@@ -595,12 +596,23 @@ def _session_row(name: str, for_update: bool = False):
 @frappe.whitelist(methods=["POST"])
 # Per IP and session: a class behind one office NAT must not share a single budget.
 @rate_limit(key="session", limit=300, seconds=60 * 60)
-def heartbeat(session: str, active: bool = False, events: list | None = None, close: bool = False) -> dict:
+def heartbeat(
+	session: str,
+	active: bool = False,
+	events: list | None = None,
+	close: bool = False,
+	hidden: bool = False,
+) -> dict:
 	"""Periodic "still here" signal of a lesson page (PIANO §5).
 
 	Answers {"session": name} with the session to keep using (a new one after a
 	long gap), or {"stop": 1} when the page should stop sending. ``events`` is
 	reserved for the batched client events of phase 3 and ignored for now.
+
+	``hidden`` is the last signal before the tab is hidden: it credits the time up
+	to now and closes the session as paused, so the hidden time is never credited;
+	the first signal after the tab is visible again goes on in a new session.
+	``close`` is the last signal of the page.
 	"""
 	user = frappe.session.user
 	if user == "Guest":
@@ -616,15 +628,22 @@ def heartbeat(session: str, active: bool = False, events: list | None = None, cl
 		return {"stop": 1}
 
 	now = now_datetime()
-	if cint(row.closed):
-		return {"stop": 1} if close else _reopen(row, settings)
-
 	delta = (now - get_datetime(row.last_seen_at)).total_seconds()
-	if delta > inactivity_seconds(settings) + SESSION_GRACE_SECONDS:
+	timed_out = delta > inactivity_seconds(settings) + SESSION_GRACE_SECONDS
+	if cint(row.closed):
+		# A session paused by a hidden tab, or closed after a long pause, goes on in
+		# a new one when the page signals again. One the page closed itself is
+		# over: the hidden signal of visibilitychange, sent right before pagehide,
+		# may reach the server after the close.
+		if close or hidden or not (cint(row.paused) or timed_out):
+			return {"stop": 1}
+		return _reopen(row, settings)
+
+	if timed_out:
 		close_session(row.name, "timeout")
 		return {"stop": 1} if close else _reopen(row, settings)
 
-	if delta >= MIN_HEARTBEAT_GAP or close:
+	if delta >= MIN_HEARTBEAT_GAP or close or hidden:
 		presence, active_seconds = credit_seconds(row, now, bool(active), delta)
 		frappe.db.sql(
 			f"""
@@ -646,6 +665,8 @@ def heartbeat(session: str, active: bool = False, events: list | None = None, cl
 	if close:
 		close_session(row.name, "page_closed")
 		return {"stop": 1}
+	if hidden:
+		close_session(row.name, "hidden", paused=True)
 	return {"session": row.name}
 
 
@@ -680,19 +701,25 @@ def _window(now, own, other, cap: float) -> int:
 
 
 def _reopen(row, settings) -> dict:
-	# The page is still open after a long pause: go on in a new session, as long as
-	# the student is still enrolled and the course still audited.
+	# The page is still open after a long pause or a hidden tab: go on in a new
+	# session, as long as the student is still enrolled and the course still
+	# audited. A new session covers no time yet, so it never takes seconds away
+	# from another tab (credit_seconds).
 	if not course_in_scope(row.course, settings) or not is_enrolled(row.user, row.course):
 		return {"stop": 1}
 	return {"session": open_session(row.user, row.course, row.lesson, settings)}
 
 
-def close_session(name: str, reason: str) -> bool:
-	"""Close an open session once and write its totals in a session_closed event."""
+def close_session(name: str, reason: str, paused: bool = False) -> bool:
+	"""Close an open session once and write its totals in a session_closed event.
+	``paused``: closed because the tab was hidden, the page may go on in a new one."""
 	row = _session_row(name, for_update=True)
 	if not row or cint(row.closed):
 		return False
-	frappe.db.sql(f"UPDATE `tab{SESSION}` SET closed = 1 WHERE name = %s", (name,))
+	frappe.db.sql(
+		f"UPDATE `tab{SESSION}` SET closed = 1, paused = %s WHERE name = %s",
+		(1 if paused else 0, name),
+	)
 	record(
 		"session_closed",
 		user=row.user,
@@ -865,15 +892,60 @@ def quiz_start(quiz: str) -> None:
 
 
 def on_assignment_submission_insert(doc, method=None) -> None:
-	_student_event(
-		"assignment_submit",
-		doc.member,
-		doc.course,
-		lesson=doc.get("lesson"),
-		reference_doctype=doc.doctype,
-		reference_name=doc.name,
-		data={"assignment": doc.get("assignment"), "type": doc.get("type")},
+	try:
+		course, lesson = assignment_context(doc)
+		_student_event(
+			"assignment_submit",
+			doc.member,
+			course,
+			lesson=lesson,
+			reference_doctype=doc.doctype,
+			reference_name=doc.name,
+			data={"assignment": doc.get("assignment"), "type": doc.get("type")},
+		)
+	except Exception:
+		frappe.log_error(title="OS Audit: assignment_submit not recorded")
+
+
+def assignment_context(doc) -> tuple[str | None, str | None]:
+	"""Course and lesson of an assignment submission.
+
+	The submission made from the lesson page (its iframe) carries neither, and
+	most assignments have no course either: the lessons placing the assignment
+	(LMS Lesson Assessment) tell. An assignment placed in several courses goes
+	to the lesson the student visited last, else to an audited course they are
+	enrolled in."""
+	if doc.get("course"):
+		return doc.course, doc.get("lesson")
+	if doc.get("lesson"):
+		return frappe.db.get_value("Course Lesson", doc.lesson, "course"), doc.lesson
+	lessons = frappe.get_all(
+		"LMS Lesson Assessment",
+		filters={
+			"parenttype": "Course Lesson",
+			"assessment_type": "LMS Assignment",
+			"assessment_name": doc.get("assignment"),
+		},
+		pluck="parent",
 	)
+	if lessons:
+		visited = frappe.get_all(
+			SESSION,
+			filters={"user": doc.member, "lesson": ["in", lessons]},
+			fields=["course", "lesson"],
+			order_by="started_at desc",
+			limit=1,
+		)
+		if visited:
+			return visited[0].course, visited[0].lesson
+		settings = get_settings()
+		for row in frappe.get_all(
+			"Course Lesson", filters={"name": ["in", lessons]}, fields=["name", "course"], order_by="name"
+		):
+			if course_in_scope(row.course, settings) and is_enrolled(doc.member, row.course):
+				return row.course, row.name
+	course = frappe.db.get_value("LMS Assignment", doc.get("assignment"), "course")
+	return course or None, None
 
 
 def on_certificate_insert(doc, method=None) -> None:

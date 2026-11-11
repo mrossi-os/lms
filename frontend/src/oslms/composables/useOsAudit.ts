@@ -11,6 +11,10 @@
  * hidden nothing is sent. The seconds are computed by the server from the gaps
  * between signals, so this code only reports state.
  *
+ * The signal sent when the tab is hidden says so (`hidden: 1`): the server
+ * pauses the session there, so the hidden time is never credited, and answers
+ * the first signal after the tab is visible again with a new session.
+ *
  * The last signals (tab hidden, page left, lesson changed) use
  * `fetch(..., { keepalive: true })`: unlike `sendBeacon` it can carry Frappe's
  * CSRF header.
@@ -90,10 +94,15 @@ export function useOsAudit(lesson: { data?: any } | Ref<any>) {
 		else if (answer.session) session = answer.session
 	}
 
-	const send = (options: { close?: boolean; keepalive?: boolean } = {}) => {
+	const send = (options: { close?: boolean; hidden?: boolean; keepalive?: boolean } = {}) => {
 		const current = session
 		if (!current) return
-		const body = { session: current, active: isActive() ? 1 : 0, close: options.close ? 1 : 0 }
+		const body = {
+			session: current,
+			active: isActive() ? 1 : 0,
+			close: options.close ? 1 : 0,
+			hidden: options.hidden ? 1 : 0,
+		}
 		post(HEARTBEAT_URL, body, Boolean(options.keepalive))
 			.then((answer) => handleAnswer(answer, current))
 			.catch(() => {
@@ -106,9 +115,9 @@ export function useOsAudit(lesson: { data?: any } | Ref<any>) {
 	}
 
 	const onVisibility = () => {
-		// Hidden: one last signal (the server ignores it if too close to the previous).
-		// Visible again: signal at once, so a long pause opens a new session promptly.
-		if (document.visibilityState === 'hidden') send({ keepalive: true })
+		// Hidden: one last signal, which pauses the session on the server.
+		// Visible again: signal at once, so the visit goes on in a new session promptly.
+		if (document.visibilityState === 'hidden') send({ hidden: true, keepalive: true })
 		else {
 			lastInteraction = Date.now()
 			send()

@@ -10411,6 +10411,10 @@ msgid "Time with the page visible and a recent interaction."
 msgstr "Tempo con la pagina visibile e un'interazione recente."
 
 #: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Closed because the tab was hidden: when the tab is visible again the visit goes on in a new session."
+msgstr "Chiusa perché la scheda è stata nascosta: quando la scheda torna visibile la visita prosegue in una nuova sessione."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
 msgid "Video Time (seconds)"
 msgstr "Tempo di video (secondi)"
 

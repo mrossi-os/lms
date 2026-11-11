@@ -94,9 +94,23 @@ describe('useOsAudit', () => {
 		const wrapper = mountWith(reactive({ data: tracked() }))
 		visibility = 'hidden'
 		document.dispatchEvent(new Event('visibilitychange'))
-		expect(bodies()).toEqual([expect.objectContaining({ keepalive: true, close: 0 })])
+		expect(bodies()).toEqual([expect.objectContaining({ keepalive: true, close: 0, hidden: 1 })])
 		await vi.advanceTimersByTimeAsync(120_000)
 		expect(fetchMock).toHaveBeenCalledTimes(1)
+		wrapper.unmount()
+	})
+
+	it('signals at once when visible again and goes on in the session the server gives', async () => {
+		const wrapper = mountWith(reactive({ data: tracked('S1') }))
+		visibility = 'hidden'
+		document.dispatchEvent(new Event('visibilitychange'))
+		await vi.advanceTimersByTimeAsync(60_000)
+		fetchMock.mockImplementationOnce(() => answer({ session: 'S2' }))
+		visibility = 'visible'
+		document.dispatchEvent(new Event('visibilitychange'))
+		expect(bodies().at(-1)).toMatchObject({ session: 'S1', hidden: 0, close: 0, active: 1 })
+		await vi.advanceTimersByTimeAsync(30_000)
+		expect(bodies().at(-1)).toMatchObject({ session: 'S2', hidden: 0 })
 		wrapper.unmount()
 	})
 
