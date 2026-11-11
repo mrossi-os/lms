@@ -31,6 +31,10 @@ def on_activity_log_insert(doc, method=None):
 		_handle(doc)
 	except Exception:
 		frappe.logger("os_lms_access", allow_site=True).exception("access tracking failed")
+	# OS Audit: login, logout and failed logins in the audit chain (never raises).
+	from os_lms.os_lms.os_audit import on_activity_log_insert as record_audit_access
+
+	record_audit_access(doc)
 
 
 def _handle(doc):

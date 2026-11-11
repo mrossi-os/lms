@@ -152,7 +152,8 @@ def join(name: str) -> None:
 		frappe.throw(_("Live class non specificata."), frappe.PermissionError)
 
 	doc = frappe.get_doc("LMS Live Class", name)
-	if not authorize_live_class_request(doc):
+	user = authorize_live_class_request(doc)
+	if not user:
 		return
 
 	if now_datetime() > class_end(doc):
@@ -160,6 +161,10 @@ def join(name: str) -> None:
 		return
 
 	if doc.get("started_at") and doc.get("join_url"):
+		# OS Audit: the platform-side proof of entry (the exit comes in phase 4).
+		from os_lms.os_lms.os_audit import on_live_class_join
+
+		on_live_class_join(doc, user)
 		frappe.local.response["type"] = "redirect"
 		frappe.local.response["location"] = doc.join_url
 		return

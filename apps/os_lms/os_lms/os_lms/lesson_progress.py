@@ -41,7 +41,25 @@ def save_progress(lesson: str, course: str | None = None, scorm_details: dict = 
 		scorm_details = None
 	if isinstance(lesson, str):
 		assert_can_complete(lesson, scorm_details)
-	return lms_save_progress(lesson, course, scorm_details)
+	# OS Audit: the SCORM update path completes with db.set_value, which fires no
+	# document hook (the insert paths are recorded by LMS Course Progress.after_insert).
+	scorm_update = bool(scorm_details) and _has_open_progress(lesson)
+	result = lms_save_progress(lesson, course, scorm_details)
+	if scorm_update:
+		from os_lms.os_lms.os_audit import on_scorm_progress_update
+
+		on_scorm_progress_update(lesson, get_lesson_course(lesson))
+	return result
+
+
+def _has_open_progress(lesson) -> bool:
+	# A progress row exists and is not complete yet.
+	if not isinstance(lesson, str):
+		return False
+	status = frappe.db.get_value(
+		"LMS Course Progress", {"lesson": lesson, "member": frappe.session.user}, "status"
+	)
+	return bool(status) and status != "Complete"
 
 
 @frappe.whitelist()
@@ -60,6 +78,10 @@ def get_scorm_playback(chapter: str) -> dict:
 	# The SCORM player never calls get_lesson: its lesson is opened here.
 	playback = lms_get_scorm_playback(chapter)
 	record_lesson_open(playback.get("lesson"))
+	# OS Audit: scorm_open for a playable package (never raises).
+	from os_lms.os_lms.os_audit import on_scorm_open
+
+	on_scorm_open(playback)
 	return playback
 
 

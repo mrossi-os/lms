@@ -76,6 +76,11 @@ def _purge_member_course_data(course: str, member: str, enrollment: str) -> None
 	# enrollment goes before the certificate it links to, and course progress
 	# goes after the enrollment so its after_delete recalculation only rolls up
 	# program progress instead of rewriting an enrollment about to disappear.
+	# OS Audit data first: its rule (erase or keep until expiry) is on OS Audit
+	# Settings, and erasure keeps the integrity chain verifiable.
+	from os_lms.os_lms.os_audit import erase_course_member
+
+	erase_course_member(course, member)
 	quiz_submissions = frappe.get_all(
 		"LMS Quiz Submission", filters={"course": course, "member": member}, pluck="name"
 	)

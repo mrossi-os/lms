@@ -1,0 +1,147 @@
+{
+	"actions": [],
+	"autoname": "hash",
+	"creation": "2026-11-11 18:00:00.000000",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"user",
+		"course",
+		"lesson",
+		"column_break_who",
+		"started_at",
+		"last_seen_at",
+		"last_active_at",
+		"closed",
+		"section_totals",
+		"presence_seconds",
+		"active_seconds",
+		"video_seconds",
+		"column_break_totals",
+		"device",
+		"ip_address"
+	],
+	"fields": [
+		{
+			"fieldname": "user",
+			"fieldtype": "Link",
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"label": "User",
+			"options": "User",
+			"read_only": 1,
+			"search_index": 1
+		},
+		{
+			"fieldname": "course",
+			"fieldtype": "Link",
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"label": "Course",
+			"options": "LMS Course",
+			"read_only": 1,
+			"search_index": 1
+		},
+		{
+			"fieldname": "lesson",
+			"fieldtype": "Link",
+			"label": "Lesson",
+			"options": "Course Lesson",
+			"read_only": 1
+		},
+		{
+			"fieldname": "column_break_who",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "started_at",
+			"fieldtype": "Datetime",
+			"in_list_view": 1,
+			"label": "Started At",
+			"read_only": 1
+		},
+		{
+			"fieldname": "last_seen_at",
+			"fieldtype": "Datetime",
+			"label": "Last Seen At",
+			"read_only": 1
+		},
+		{
+			"fieldname": "last_active_at",
+			"fieldtype": "Datetime",
+			"label": "Last Active At",
+			"read_only": 1
+		},
+		{
+			"default": "0",
+			"fieldname": "closed",
+			"fieldtype": "Check",
+			"in_standard_filter": 1,
+			"label": "Closed",
+			"read_only": 1
+		},
+		{
+			"fieldname": "section_totals",
+			"fieldtype": "Section Break",
+			"label": "Totals"
+		},
+		{
+			"default": "0",
+			"description": "Connected time, with the caps of the heartbeat and without overlaps with the user's other sessions.",
+			"fieldname": "presence_seconds",
+			"fieldtype": "Int",
+			"label": "Presence (seconds)",
+			"read_only": 1
+		},
+		{
+			"default": "0",
+			"description": "Time with the page visible and a recent interaction.",
+			"fieldname": "active_seconds",
+			"fieldtype": "Int",
+			"label": "Active Time (seconds)",
+			"read_only": 1
+		},
+		{
+			"default": "0",
+			"fieldname": "video_seconds",
+			"fieldtype": "Int",
+			"label": "Video Time (seconds)",
+			"read_only": 1
+		},
+		{
+			"fieldname": "column_break_totals",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "device",
+			"fieldtype": "Select",
+			"label": "Device",
+			"options": "\ndesktop\ntablet\nmobile",
+			"read_only": 1
+		},
+		{
+			"fieldname": "ip_address",
+			"fieldtype": "Data",
+			"label": "IP Address",
+			"read_only": 1
+		}
+	],
+	"in_create": 1,
+	"index_web_pages_for_search": 0,
+	"links": [],
+	"modified": "2026-11-11 18:00:00.000000",
+	"modified_by": "Administrator",
+	"module": "OS LMS",
+	"name": "OS Audit Session",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"read": 1,
+			"report": 1,
+			"role": "System Manager"
+		}
+	],
+	"sort_field": "creation",
+	"sort_order": "DESC",
+	"states": []
+}

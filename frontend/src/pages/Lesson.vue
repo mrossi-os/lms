@@ -460,6 +460,7 @@ import InlineLessonMenu from '@/components/Notes/InlineLessonMenu.vue'
 import { parseStoredEditorJs } from '@/utils/lessonForm'
 import { getLmsRoute } from '@/utils/basePath'
 import { provideStudentView } from '@/composables/useStudentView'
+import { useOsAudit } from '@/oslms/composables/useOsAudit'
 
 const router = useRouter()
 const route = useRoute()
@@ -584,6 +585,8 @@ const lesson = createResource({
 	},
 	auto: true,
 })
+// OSLMS-CUSTOM: OS Audit lesson time, fed by os_audit in the os_lms get_lesson override
+useOsAudit(lesson)
 
 // The stored body would not parse, so there is nothing to render and nothing
 // the student can do about it. Say so rather than show a lesson with no body.

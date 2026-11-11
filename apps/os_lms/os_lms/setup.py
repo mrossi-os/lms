@@ -146,6 +146,11 @@ GESTORE_DOCPERMS = {
     "LMS Assignment Submission": {"read": 1},
     # The Gestore sets the AI simulation limits from the SPA settings (OWASP H-3/H-4).
     "LMSA Simulation Limits": {"read": 1, "write": 1},
+    # OS Audit (docs/audit-studenti/PIANO.md §8): the Gestore configures and reads
+    # it; nobody writes or deletes events and sessions, which only the server does.
+    "OS Audit Settings": {"read": 1, "write": 1},
+    "OS Audit Event": {"read": 1, "report": 1},
+    "OS Audit Session": {"read": 1, "report": 1},
 }
 
 

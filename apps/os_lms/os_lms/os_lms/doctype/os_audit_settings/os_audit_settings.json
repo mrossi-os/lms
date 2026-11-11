@@ -1,0 +1,232 @@
+{
+	"actions": [],
+	"creation": "2026-11-11 18:00:00.000000",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"section_general",
+		"enabled",
+		"retention_days",
+		"column_break_general",
+		"counted_time",
+		"inactivity_minutes",
+		"section_scope",
+		"scope",
+		"courses",
+		"section_events",
+		"track_logins",
+		"track_course_lesson",
+		"track_lesson_time",
+		"track_quizzes",
+		"column_break_events",
+		"track_assignments",
+		"track_live_classes",
+		"track_scorm",
+		"track_certificates",
+		"section_technical",
+		"store_device",
+		"store_ip",
+		"column_break_technical",
+		"on_account_deletion",
+		"seal_email",
+		"section_chain",
+		"chain_anchor_seq",
+		"chain_anchor_hash"
+	],
+	"fields": [
+		{
+			"fieldname": "section_general",
+			"fieldtype": "Section Break",
+			"label": "General"
+		},
+		{
+			"default": "0",
+			"description": "Nothing is recorded while the audit is off. It can be turned on only with a retention period.",
+			"fieldname": "enabled",
+			"fieldtype": "Check",
+			"label": "Audit Enabled"
+		},
+		{
+			"description": "Days after which events and sessions are deleted. Required to turn the audit on.",
+			"fieldname": "retention_days",
+			"fieldtype": "Int",
+			"label": "Retention (days)",
+			"non_negative": 1
+		},
+		{
+			"fieldname": "column_break_general",
+			"fieldtype": "Column Break"
+		},
+		{
+			"default": "Presence",
+			"description": "The time that counts for totals and attendance. The other one is always reported next to it.",
+			"fieldname": "counted_time",
+			"fieldtype": "Select",
+			"label": "Counted Time",
+			"options": "Presence\nActive Time"
+		},
+		{
+			"default": "3",
+			"description": "Minutes without interaction after which a student is no longer active.",
+			"fieldname": "inactivity_minutes",
+			"fieldtype": "Int",
+			"label": "Inactivity Threshold (minutes)",
+			"non_negative": 1
+		},
+		{
+			"fieldname": "section_scope",
+			"fieldtype": "Section Break",
+			"label": "Scope"
+		},
+		{
+			"default": "Selected Courses",
+			"fieldname": "scope",
+			"fieldtype": "Select",
+			"label": "Audited Courses",
+			"options": "Selected Courses\nAll Courses"
+		},
+		{
+			"depends_on": "eval:doc.scope == 'Selected Courses'",
+			"fieldname": "courses",
+			"fieldtype": "Table",
+			"label": "Courses",
+			"options": "OS Audit Course"
+		},
+		{
+			"fieldname": "section_events",
+			"fieldtype": "Section Break",
+			"label": "What to Record"
+		},
+		{
+			"default": "1",
+			"fieldname": "track_logins",
+			"fieldtype": "Check",
+			"label": "Logins and Logouts"
+		},
+		{
+			"default": "1",
+			"fieldname": "track_course_lesson",
+			"fieldtype": "Check",
+			"label": "Course and Lesson Opening and Completion"
+		},
+		{
+			"default": "1",
+			"fieldname": "track_lesson_time",
+			"fieldtype": "Check",
+			"label": "Time Spent in Lessons"
+		},
+		{
+			"default": "1",
+			"fieldname": "track_quizzes",
+			"fieldtype": "Check",
+			"label": "Quizzes (with Duration)"
+		},
+		{
+			"fieldname": "column_break_events",
+			"fieldtype": "Column Break"
+		},
+		{
+			"default": "1",
+			"fieldname": "track_assignments",
+			"fieldtype": "Check",
+			"label": "Assignments"
+		},
+		{
+			"default": "1",
+			"fieldname": "track_live_classes",
+			"fieldtype": "Check",
+			"label": "Live Classes"
+		},
+		{
+			"default": "1",
+			"fieldname": "track_scorm",
+			"fieldtype": "Check",
+			"label": "SCORM"
+		},
+		{
+			"default": "1",
+			"fieldname": "track_certificates",
+			"fieldtype": "Check",
+			"label": "Certificates"
+		},
+		{
+			"fieldname": "section_technical",
+			"fieldtype": "Section Break",
+			"label": "Technical Data and Privacy"
+		},
+		{
+			"default": "1",
+			"fieldname": "store_device",
+			"fieldtype": "Check",
+			"label": "Store Device Type"
+		},
+		{
+			"default": "Not Stored",
+			"description": "Truncated keeps the network part only (IPv4 /24, IPv6 /48).",
+			"fieldname": "store_ip",
+			"fieldtype": "Select",
+			"label": "Store IP Address",
+			"options": "Not Stored\nTruncated\nFull Address"
+		},
+		{
+			"fieldname": "column_break_technical",
+			"fieldtype": "Column Break"
+		},
+		{
+			"default": "Delete Audit Data",
+			"description": "Keeping the data needs a legal basis assessed by the DPO.",
+			"fieldname": "on_account_deletion",
+			"fieldtype": "Select",
+			"label": "On Account Deletion",
+			"options": "Delete Audit Data\nKeep Until Expiry"
+		},
+		{
+			"description": "Optional. The daily seal is also emailed here, so a copy exists outside the platform.",
+			"fieldname": "seal_email",
+			"fieldtype": "Data",
+			"label": "Daily Seal Email",
+			"options": "Email"
+		},
+		{
+			"collapsible": 1,
+			"fieldname": "section_chain",
+			"fieldtype": "Section Break",
+			"hidden": 1,
+			"label": "Integrity Chain"
+		},
+		{
+			"description": "Sequence number the oldest kept event must carry, set by the retention job.",
+			"fieldname": "chain_anchor_seq",
+			"fieldtype": "Int",
+			"label": "Chain Anchor Sequence",
+			"read_only": 1
+		},
+		{
+			"description": "Previous hash the oldest kept event must carry, set by the retention job.",
+			"fieldname": "chain_anchor_hash",
+			"fieldtype": "Data",
+			"label": "Chain Anchor Hash",
+			"read_only": 1
+		}
+	],
+	"index_web_pages_for_search": 0,
+	"issingle": 1,
+	"links": [],
+	"modified": "2026-11-11 18:00:00.000000",
+	"modified_by": "Administrator",
+	"module": "OS LMS",
+	"name": "OS Audit Settings",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"read": 1,
+			"role": "System Manager",
+			"write": 1
+		}
+	],
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": [],
+	"track_changes": 1
+}

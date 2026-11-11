@@ -10197,3 +10197,343 @@ msgstr "Certificati Elite"
 #: frontend/src/oslms/components/trueskills/ReceivedCertificates.vue
 msgid "TrueSkill certificates"
 msgstr "Certificati TrueSkill"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "OS Audit Settings"
+msgstr "Impostazioni OS Audit"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "OS Audit Event"
+msgstr "Evento OS Audit"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "OS Audit Session"
+msgstr "Sessione OS Audit"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "OS Audit Course"
+msgstr "Corso OS Audit"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Audit Enabled"
+msgstr "Audit attivo"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Nothing is recorded while the audit is off. It can be turned on only with a retention period."
+msgstr "Con l'audit spento non viene registrato nulla. Si può attivare solo dopo aver impostato la conservazione."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Retention (days)"
+msgstr "Conservazione (giorni)"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Days after which events and sessions are deleted. Required to turn the audit on."
+msgstr "Giorni dopo i quali eventi e sessioni vengono cancellati. Obbligatorio per attivare l'audit."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Counted Time"
+msgstr "Tempo che fa fede"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "The time that counts for totals and attendance. The other one is always reported next to it."
+msgstr "Il tempo usato per i totali e la presenza. L'altro è sempre riportato accanto."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Presence"
+msgstr "Permanenza"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Active Time"
+msgstr "Tempo attivo"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Inactivity Threshold (minutes)"
+msgstr "Soglia di inattività (minuti)"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Minutes without interaction after which a student is no longer active."
+msgstr "Minuti senza interazione dopo i quali lo studente non è più considerato attivo."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Scope"
+msgstr "Ambito"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Audited Courses"
+msgstr "Corsi tracciati"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Selected Courses"
+msgstr "Solo i corsi selezionati"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "What to Record"
+msgstr "Cosa registrare"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Logins and Logouts"
+msgstr "Accessi e uscite"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Course and Lesson Opening and Completion"
+msgstr "Apertura e completamento di corsi e lezioni"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Time Spent in Lessons"
+msgstr "Tempo in lezione"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Quizzes (with Duration)"
+msgstr "Quiz (con durata)"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Live Classes"
+msgstr "Lezioni live"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Technical Data and Privacy"
+msgstr "Dati tecnici e privacy"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Store Device Type"
+msgstr "Registra il tipo di dispositivo"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Store IP Address"
+msgstr "Registra l'indirizzo IP"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Truncated keeps the network part only (IPv4 /24, IPv6 /48)."
+msgstr "Troncato conserva solo la parte di rete (IPv4 /24, IPv6 /48)."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Not Stored"
+msgstr "Non registrato"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Truncated"
+msgstr "Troncato"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Full Address"
+msgstr "Completo"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "On Account Deletion"
+msgstr "Alla cancellazione dell'account"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Delete Audit Data"
+msgstr "Cancella i dati di audit"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Keep Until Expiry"
+msgstr "Conservali fino a scadenza"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Keeping the data needs a legal basis assessed by the DPO."
+msgstr "Conservare i dati richiede una base giuridica valutata dal DPO."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Daily Seal Email"
+msgstr "Email del sigillo giornaliero"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Optional. The daily seal is also emailed here, so a copy exists outside the platform."
+msgstr "Facoltativo. Il sigillo giornaliero viene inviato anche a questo indirizzo, così ne esiste una copia fuori dalla piattaforma."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Integrity Chain"
+msgstr "Catena di integrità"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Chain Anchor Sequence"
+msgstr "Numero di partenza della catena"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Chain Anchor Hash"
+msgstr "Hash di partenza della catena"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Sequence number the oldest kept event must carry, set by the retention job."
+msgstr "Numero progressivo che deve avere l'evento più vecchio conservato; lo imposta il job di conservazione."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Previous hash the oldest kept event must carry, set by the retention job."
+msgstr "Hash precedente che deve avere l'evento più vecchio conservato; lo imposta il job di conservazione."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Planned Hours"
+msgstr "Monte ore previsto"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Optional. Hours the course is expected to take."
+msgstr "Facoltativo. Ore previste per il corso."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Minimum Attendance %"
+msgstr "% minima di presenza"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Optional. Share of the planned hours a student must attend."
+msgstr "Facoltativo. Quota del monte ore che lo studente deve frequentare."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Started At"
+msgstr "Iniziata il"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Last Seen At"
+msgstr "Ultimo segnale il"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Last Active At"
+msgstr "Ultima attività il"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Totals"
+msgstr "Totali"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Presence (seconds)"
+msgstr "Permanenza (secondi)"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Connected time, with the caps of the heartbeat and without overlaps with the user's other sessions."
+msgstr "Tempo di collegamento, con i tetti del segnale periodico e senza sovrapposizioni con le altre sessioni dell'utente."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Active Time (seconds)"
+msgstr "Tempo attivo (secondi)"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Time with the page visible and a recent interaction."
+msgstr "Tempo con la pagina visibile e un'interazione recente."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Video Time (seconds)"
+msgstr "Tempo di video (secondi)"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Session"
+msgstr "Sessione"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Sequence Number"
+msgstr "Numero progressivo"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Event Type"
+msgstr "Tipo di evento"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "The user the event is about. Plain text, not a link: the record outlives the account when the settings keep audit data until expiry."
+msgstr "L'utente a cui si riferisce l'evento. Testo semplice, non un collegamento: il record sopravvive all'account quando le impostazioni conservano i dati fino a scadenza."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Event Data"
+msgstr "Dati dell'evento"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Integrity"
+msgstr "Integrità"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Erased"
+msgstr "Cancellato"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "The personal data of this event was erased; its fingerprint keeps the chain verifiable."
+msgstr "I dati personali di questo evento sono stati cancellati; la sua impronta mantiene verificabile la catena."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Fingerprint Salt"
+msgstr "Sale dell'impronta"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Content Fingerprint"
+msgstr "Impronta del contenuto"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Previous Hash"
+msgstr "Hash precedente"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Set a retention period in days before enabling the audit."
+msgstr "Imposta la conservazione in giorni prima di attivare l'audit."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "The retention period cannot be negative."
+msgstr "La conservazione non può essere negativa."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "The inactivity threshold must be at least one minute."
+msgstr "La soglia di inattività deve essere di almeno un minuto."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Course {0} is listed more than once."
+msgstr "Il corso {0} è indicato più di una volta."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "The planned hours cannot be negative."
+msgstr "Il monte ore non può essere negativo."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "The minimum attendance must be between 0 and 100."
+msgstr "La presenza minima deve essere tra 0 e 100."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Audit sessions are written by the system only."
+msgstr "Le sessioni di audit le scrive solo il sistema."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Audit events cannot be created or changed."
+msgstr "Gli eventi di audit non si possono creare né modificare."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Audit events cannot be deleted."
+msgstr "Gli eventi di audit non si possono cancellare."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Audit events cannot be renamed."
+msgstr "Gli eventi di audit non si possono rinominare."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "You are not allowed to use OS Audit."
+msgstr "Non hai i permessi per usare OS Audit."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Log in to continue."
+msgstr "Accedi per continuare."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "This audit session does not belong to you."
+msgstr "Questa sessione di audit non è tua."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Events recorded"
+msgstr "Eventi registrati"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Last sequence number"
+msgstr "Ultimo numero progressivo"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Last hash"
+msgstr "Ultimo hash"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Keep this email: it lets you show later that the audit data up to this day was not altered."
+msgstr "Conserva questa email: permette di dimostrare in seguito che i dati di audit fino a questo giorno non sono stati alterati."
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "OS Audit daily seal of {0}"
+msgstr "Sigillo giornaliero OS Audit del {0}"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Reference"
+msgstr "Riferimento"
+
+#: apps/os_lms/os_lms/os_lms/os_audit.py
+msgid "Timestamp"
+msgstr "Timestamp"

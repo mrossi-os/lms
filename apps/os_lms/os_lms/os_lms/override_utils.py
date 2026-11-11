@@ -34,6 +34,7 @@ from os_lms.os_lms.api import (
 	get_batch_tab_unread_counts,
 )
 from os_lms.os_lms.lesson_progress import record_lesson_open
+from os_lms.os_lms.os_audit import on_course_view, on_lesson_open
 from os_lms.os_lms.utils import get_course_feature_sections, get_courses_total_minutes
 from os_lms.os_lms.valutatore import (
 	_only_scoped_valutatore,
@@ -92,6 +93,9 @@ def get_course_details(course: str):
 		0 if course_detail.published else int(is_course_in_member_program(course))
 	)
 
+	# OS Audit: an enrolled student opened the course page (never raises).
+	on_course_view(course)
+
 	return course_detail
 
 
@@ -127,6 +131,10 @@ def get_lesson(course: str, chapter: int, lesson: int) -> dict:
 		lesson_details["tags"] = frappe.db.get_value("Course Lesson", lesson_name, "tags")
 		# save_progress completes only a lesson handed out here (audit H-1).
 		record_lesson_open(lesson_name)
+		# OS Audit: lesson_open and the time session the page sends heartbeats for.
+		audit = on_lesson_open(course, lesson_name)
+		if audit:
+			lesson_details["os_audit"] = audit
 
 		user = frappe.session.user
 		is_guest = not user or user == "Guest"

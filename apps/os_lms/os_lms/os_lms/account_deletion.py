@@ -185,6 +185,12 @@ def erase_user(user: str, notify: bool = True) -> None:
 
 	clear_sessions(user=user, force=True)
 
+	# OS Audit: erased (fingerprints kept, so the chain still verifies) or kept until
+	# expiry, as OS Audit Settings says. After clear_sessions: its logout events go too.
+	from os_lms.os_lms.os_audit import erase_user_data
+
+	erase_user_data(user)
+
 	_delete_owned_records(user)
 	_delete_owned_topics(user)
 	_delete_where("TrueSkills Issue Log", {"recipient_email": email})

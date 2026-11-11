@@ -9818,3 +9818,57 @@ tempo di visione (2 righe identiche già nell'upstream, 3 con H-1). onVideoEnded
 
   [entries.checks]
   unit = "apps/os_lms/os_lms/os_lms/tests/test_owasp_lesson_completion.py"
+
+# ---------------------------------------------------------------------------
+# OS Audit (docs/audit-studenti/PIANO.md, fase 1)
+# ---------------------------------------------------------------------------
+
+[[entries]]
+id = "os-audit-lesson-heartbeat"
+title = "OS Audit: tempo in lezione (segnale periodico)"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+OS Audit deve dimostrare quanto tempo ogni studente passa in ogni lezione (D0). Il tempo lo
+calcola il server dai segnali periodici della pagina. La pagina lezione monta il composable
+useOsAudit, che legge `os_audit` dalla risposta di get_lesson (override os_lms) e, solo se
+presente, ogni 30 s invia heartbeat (attivo/presente), un ultimo segnale con fetch keepalive
+quando la scheda si nasconde o la pagina si chiude, e chiude la sessione al cambio lezione.
+Se l'upstream riscrive Lesson.vue, rimettere import e chiamata `useOsAudit(lesson)` subito dopo
+la risorsa `lesson` (get_lesson). Aggiunto 2026-11-11."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "useOsAudit(lesson)"
+  symbol = "lesson"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Lesson.vue"
+  anchor = "import { useOsAudit } from '@/oslms/composables/useOsAudit'"
+
+  [entries.checks]
+  unit = "frontend/src/tests/useOsAudit.test.ts"
+
+[[entries]]
+id = "os-audit-quiz-start"
+title = "OS Audit: inizio del quiz per la durata calcolata sul server"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La durata di un quiz in OS Audit è calcolata sul server: dall'evento quiz_start, registrato
+quando lo studente avvia il tentativo, fino all'inserimento della LMS Quiz Submission. Il
+pulsante di avvio del quiz chiama quindi os_audit.quiz_start (mai in anteprima autore). Se
+l'upstream riscrive startQuiz, rimettere `recordQuizStart(quiz.data.name)` dopo il controllo
+dell'anteprima. Aggiunto 2026-11-11."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Quiz.vue"
+  anchor = "recordQuizStart(quiz.data.name)"
+  symbol = "startQuiz"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Quiz.vue"
+  anchor = "import { recordQuizStart } from '@/oslms/composables/useOsAudit'"
+
+  [entries.checks]
+  unit = "apps/os_lms/os_lms/os_lms/tests/test_os_audit.py"

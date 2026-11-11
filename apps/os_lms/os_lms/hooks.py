@@ -293,10 +293,18 @@ doc_events = {
     "LMS Quiz Submission": {
         # One row per question and at most 100%: a repeated question inflated the score.
         "validate": "os_lms.events.quiz_submission.validate_quiz_rows",
+        # OS Audit: quiz_submit with score and server-computed duration.
+        "after_insert": "os_lms.os_lms.os_audit.on_quiz_submission_insert",
     },
     "LMS Assignment Submission": {
         # Once graded, a student can no longer change the answer the grade refers to.
         "validate": "os_lms.events.assignment_submission.freeze_graded_submission",
+        # OS Audit: assignment_submit.
+        "after_insert": "os_lms.os_lms.os_audit.on_assignment_submission_insert",
+    },
+    "LMS Course Progress": {
+        # OS Audit: lesson_complete.
+        "after_insert": "os_lms.os_lms.os_audit.on_course_progress_insert",
     },
     "LMS Batch": {
         # Grant the "Valutatore" role to the users listed in the batch
@@ -313,7 +321,11 @@ doc_events = {
         "before_insert": "os_lms.os_lms.ai.simulations.orchestrator.validate_quota",
     },
     "LMS Certificate": {
-        "after_insert": "os_lms.os_lms.trueskills.emission.enqueue_issue",
+        "after_insert": [
+            "os_lms.os_lms.trueskills.emission.enqueue_issue",
+            # OS Audit: certificate_issued.
+            "os_lms.os_lms.os_audit.on_certificate_insert",
+        ],
     },
     "LMS Settings": {
         # Only a System Manager or a Gestore may repoint the TrueSkills connection,
@@ -345,6 +357,10 @@ on_session_creation = ["os_lms.auth.on_session_creation"]
 
 # Retention (days) offered to Log Settings; os_lms.setup.setup_elite_api_client
 # registers it, since Log Settings only reads this hook when it is saved.
+# OS Audit rows outlive the lessons, courses and documents they mention: they must
+# not block deleting them (retention removes the audit rows on its own schedule).
+ignore_links_on_delete = ["OS Audit Event", "OS Audit Session"]
+
 default_log_clearing_doctypes = {
     "Elite API Access Log": 90,
     "OS CSP Violation": 90,
@@ -360,6 +376,9 @@ scheduler_events = {
         "os_lms.os_lms.account_deletion_requests.send_reminders",
         # Remind the reviewers of the simulation sessions waiting for an outcome.
         "os_lms.os_lms.ai.simulations.notifications.send_outcome_reminders",
+        # OS Audit: seal the previous day, then delete what is past the retention period.
+        "os_lms.os_lms.os_audit.daily_seal",
+        "os_lms.os_lms.os_audit.apply_retention",
     ],
     "cron": {
         # Email the Administrator user and the Gestori past the attack thresholds.
@@ -368,6 +387,8 @@ scheduler_events = {
         ],
         "*/15 * * * *": [
             "os_lms.os_lms.live_class_reminders.send_live_class_reminders",
+            # OS Audit: close the lesson sessions with no heartbeat past the threshold.
+            "os_lms.os_lms.os_audit.close_stale_sessions",
         ],
         "*/10 * * * *": [
             "os_lms.os_lms.ai.simulations.tasks.reap_stale_sessions",

@@ -1,0 +1,211 @@
+{
+	"actions": [],
+	"creation": "2026-11-11 18:00:00.000000",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"seq",
+		"event_type",
+		"timestamp",
+		"user",
+		"column_break_what",
+		"course",
+		"lesson",
+		"batch",
+		"session",
+		"section_reference",
+		"reference_doctype",
+		"reference_name",
+		"column_break_reference",
+		"device",
+		"ip_address",
+		"section_data",
+		"data",
+		"section_integrity",
+		"redacted",
+		"salt",
+		"content_hash",
+		"column_break_integrity",
+		"prev_hash",
+		"hash"
+	],
+	"fields": [
+		{
+			"fieldname": "seq",
+			"fieldtype": "Int",
+			"in_list_view": 1,
+			"label": "Sequence Number",
+			"read_only": 1,
+			"unique": 1
+		},
+		{
+			"fieldname": "event_type",
+			"fieldtype": "Select",
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"label": "Event Type",
+			"options": "login\nlogout\nlogin_failed\ncourse_view\nlesson_open\nsession_closed\nlesson_complete\nquiz_start\nquiz_submit\nassignment_submit\nscorm_open\nlive_class_join\nlive_attendance\ncertificate_issued\naudit_settings_changed\naudit_export\naudit_data_erased\ndaily_seal\nvideo_play\nvideo_pause\nvideo_seek\nvideo_ended\npdf_open\ndownload",
+			"read_only": 1
+		},
+		{
+			"fieldname": "timestamp",
+			"fieldtype": "Datetime",
+			"in_list_view": 1,
+			"label": "Timestamp",
+			"read_only": 1,
+			"search_index": 1
+		},
+		{
+			"description": "The user the event is about. Plain text, not a link: the record outlives the account when the settings keep audit data until expiry.",
+			"fieldname": "user",
+			"fieldtype": "Data",
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"label": "User",
+			"read_only": 1,
+			"search_index": 1
+		},
+		{
+			"fieldname": "column_break_what",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "course",
+			"fieldtype": "Link",
+			"in_standard_filter": 1,
+			"label": "Course",
+			"options": "LMS Course",
+			"read_only": 1,
+			"search_index": 1
+		},
+		{
+			"fieldname": "lesson",
+			"fieldtype": "Link",
+			"label": "Lesson",
+			"options": "Course Lesson",
+			"read_only": 1
+		},
+		{
+			"fieldname": "batch",
+			"fieldtype": "Link",
+			"label": "Batch",
+			"options": "LMS Batch",
+			"read_only": 1
+		},
+		{
+			"fieldname": "session",
+			"fieldtype": "Link",
+			"label": "Session",
+			"options": "OS Audit Session",
+			"read_only": 1
+		},
+		{
+			"fieldname": "section_reference",
+			"fieldtype": "Section Break",
+			"label": "Reference"
+		},
+		{
+			"fieldname": "reference_doctype",
+			"fieldtype": "Link",
+			"label": "Reference Document Type",
+			"options": "DocType",
+			"read_only": 1
+		},
+		{
+			"fieldname": "reference_name",
+			"fieldtype": "Dynamic Link",
+			"label": "Reference Name",
+			"options": "reference_doctype",
+			"read_only": 1
+		},
+		{
+			"fieldname": "column_break_reference",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "device",
+			"fieldtype": "Select",
+			"label": "Device",
+			"options": "\ndesktop\ntablet\nmobile",
+			"read_only": 1
+		},
+		{
+			"fieldname": "ip_address",
+			"fieldtype": "Data",
+			"label": "IP Address",
+			"read_only": 1
+		},
+		{
+			"fieldname": "section_data",
+			"fieldtype": "Section Break",
+			"label": "Details"
+		},
+		{
+			"fieldname": "data",
+			"fieldtype": "Small Text",
+			"label": "Event Data",
+			"read_only": 1
+		},
+		{
+			"collapsible": 1,
+			"fieldname": "section_integrity",
+			"fieldtype": "Section Break",
+			"label": "Integrity"
+		},
+		{
+			"default": "0",
+			"description": "The personal data of this event was erased; its fingerprint keeps the chain verifiable.",
+			"fieldname": "redacted",
+			"fieldtype": "Check",
+			"label": "Erased",
+			"read_only": 1
+		},
+		{
+			"fieldname": "salt",
+			"fieldtype": "Data",
+			"hidden": 1,
+			"label": "Fingerprint Salt",
+			"read_only": 1
+		},
+		{
+			"fieldname": "content_hash",
+			"fieldtype": "Data",
+			"label": "Content Fingerprint",
+			"read_only": 1
+		},
+		{
+			"fieldname": "column_break_integrity",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "prev_hash",
+			"fieldtype": "Data",
+			"label": "Previous Hash",
+			"read_only": 1
+		},
+		{
+			"fieldname": "hash",
+			"fieldtype": "Data",
+			"label": "Hash",
+			"read_only": 1
+		}
+	],
+	"in_create": 1,
+	"index_web_pages_for_search": 0,
+	"links": [],
+	"modified": "2026-11-11 18:00:00.000000",
+	"modified_by": "Administrator",
+	"module": "OS LMS",
+	"name": "OS Audit Event",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"read": 1,
+			"report": 1,
+			"role": "System Manager"
+		}
+	],
+	"sort_field": "seq",
+	"sort_order": "DESC",
+	"states": []
+}

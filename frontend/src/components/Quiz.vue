@@ -976,6 +976,7 @@ import ProgressBar from '@/components/ProgressBar.vue'
 import ResponsiveListView from '@/components/ResponsiveListView.vue'
 import RichTextEditor from '@/components/RichTextEditor.vue'
 import ProctoringMonitor from '@/components/ProctoringMonitor.vue'
+import { recordQuizStart } from '@/oslms/composables/useOsAudit'
 
 const user = inject('$user')
 const activeQuestion = ref(0)
@@ -1416,6 +1417,8 @@ const startQuiz = () => {
 	// would reach zero with no way to end the attempt and the camera would stay on
 	// with it, and a violation cap would do the same.
 	if (props.preview) return
+	// OSLMS-CUSTOM: OS Audit quiz_start, the server times the attempt from here
+	recordQuizStart(quiz.data.name)
 	if (quiz.data.duration) startTimer()
 	if (quiz.data.enable_proctoring) proctoringActive.value = true
 }
