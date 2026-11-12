@@ -4258,6 +4258,40 @@ v2.59.0 non tocca queste righe."""
   anchor = 'class="border rounded-lg p-3 card"'
 
 [[entries]]
+id = "assignment-new-submission-no-shared-cache"
+title = "Consegna del compito: niente cache condivisa per il modulo «new»"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+frappe-ui (createDocumentResource) tiene ogni documento in un singleton per nome e in IndexedDB,
+che sopravvivono al logout. L'upstream legava il modulo di nuova consegna al nome "new" e, dopo
+l'inserimento, rinominava quella stessa risorsa e la ricaricava: la consegna finiva salvata sotto
+la chiave condivisa ["LMS Assignment Submission","new"]. Su un PC condiviso lo studente successivo
+vedeva file e stato dello studente precedente su qualunque compito e non riusciva a consegnare
+(staging 2026-11-11, ASG-00810). Ora per "new" si usa un segnaposto locale vuoto, la vecchia chiave
+viene cancellata dal browser e dopo l'inserimento non si rinomina nulla: il cambio di rotta rimonta
+il componente (key su submissionName in AssignmentSubmission.vue) con la risorsa della consegna
+salvata. Se l'upstream riscrive submissionResource o addNewSubmission, rimettere entrambe le parti.
+Aggiunto 2026-11-11."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Assignment.vue"
+  anchor = "? reactive({ doc: null })"
+  symbol = "submissionResource"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Assignment.vue"
+  anchor = "if (props.submissionName == 'new') deleteLocal(NEW_SUBMISSION_CACHE_KEY)"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Assignment.vue"
+  anchor = "// OSLMS-CUSTOM: no rename + reload of the \"new\" resource here"
+  symbol = "addNewSubmission"
+
+  [entries.checks]
+  unit = "frontend/src/tests/assignmentSharedBrowserCache.test.ts"
+
+[[entries]]
 id = "assignment-form-required-warnings"
 title = "Avviso sui campi obbligatori nel modulo del compito"
 layer = "spa-graft"

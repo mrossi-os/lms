@@ -238,11 +238,12 @@ import {
 	call,
 	createResource,
 	createDocumentResource,
+	deleteLocal,
 	FileUploader,
 	FormControl,
 	toast,
 } from 'frappe-ui'
-import { computed, inject, onUnmounted, ref, watch } from 'vue'
+import { computed, inject, onUnmounted, reactive, ref, watch } from 'vue'
 import ShortcutTooltip from '@/components/ShortcutTooltip.vue'
 import {
 	useKeyboardShortcuts,
@@ -311,14 +312,31 @@ const assignment = createResource({
 	},
 })
 
-const submissionResource = createDocumentResource({
-	doctype: 'LMS Assignment Submission',
-	name: props.submissionName,
-	auto: false,
-	onError(err) {
-		toast.error(err.messages?.[0] || err)
-	},
-})
+// OSLMS-CUSTOM: no document resource for an unsaved ("new") submission.
+// frappe-ui keeps every document resource in a per-name singleton and in
+// IndexedDB, both surviving logout. Binding "new" to it shared one slot across
+// assignments and users, so on a shared browser the next student saw the
+// previous student's file and status and could not submit. The new-submission
+// form only ever reads `.doc`, so a local empty stand-in is enough; the saved
+// submission gets its own resource when the page remounts on its name.
+// Same shape as frappe-ui's internal getCacheKey (not exported).
+const NEW_SUBMISSION_CACHE_KEY = JSON.stringify([
+	'LMS Assignment Submission',
+	'new',
+])
+const submissionResource =
+	props.submissionName == 'new'
+		? reactive({ doc: null })
+		: createDocumentResource({
+				doctype: 'LMS Assignment Submission',
+				name: props.submissionName,
+				auto: false,
+				onError(err) {
+					toast.error(err.messages?.[0] || err)
+				},
+			})
+// Purge what earlier builds left under the shared "new" key on this browser.
+if (props.submissionName == 'new') deleteLocal(NEW_SUBMISSION_CACHE_KEY)
 
 watch(submissionResource, () => {
 	if (!submissionResource.doc) return
@@ -388,8 +406,9 @@ const addNewSubmission = () => {
 			})
 			markLessonProgress()
 			isDirty.value = false
-			submissionResource.name = data.name
-			submissionResource.reload()
+			// OSLMS-CUSTOM: no rename + reload of the "new" resource here (it wrote
+			// this submission into the shared "new" cache slot); the route change
+			// remounts the component (keyed on submissionName) with its own resource.
 		})
 		.catch((err) => {
 			toast.error(err.messages?.[0] || err)
