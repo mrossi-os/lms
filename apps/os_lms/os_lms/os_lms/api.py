@@ -2169,6 +2169,11 @@ def join_live_class(name: str) -> None:
 		)
 		return
 
+	# OS Audit: the platform-side proof of entry, as the calendar gate records it.
+	# The card's Join button and the invitation email both land here.
+	from os_lms.os_lms.os_audit import on_live_class_join
+
+	on_live_class_join(doc, frappe.session.user)
 	frappe.local.response["type"] = "redirect"
 	frappe.local.response["location"] = target
 

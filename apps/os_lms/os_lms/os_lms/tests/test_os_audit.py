@@ -625,6 +625,45 @@ class TestServerEvents(OsAuditTestCase):
 		self.assertEqual(len(joined), 1)
 		self.assertEqual(joined[0].batch, f"{P}batch")
 
+	def test_the_join_button_and_the_invitation_link_record_the_join(self):
+		# Both go through api.join_live_class, which did not record the entry (staging
+		# collaudo of 2026-11-12): only the calendar gate did.
+		from os_lms.os_lms import api
+
+		insert({"doctype": "LMS Batch", "name": f"{P}batch", "title": "B"})
+		row = frappe.get_doc(
+			{"doctype": "Batch Course", "parent": f"{P}batch", "parenttype": "LMS Batch", "parentfield": "courses", "course": COURSE}
+		)
+		row.set_new_name()
+		row.db_insert()
+		live = f"{P}live"
+		insert(
+			{
+				"doctype": "LMS Live Class",
+				"name": live,
+				"title": "Live",
+				"batch_name": f"{P}batch",
+				"host": "host@x.it",
+				"date": T0.date(),
+				"time": "10:00:00",
+				"duration": 60,
+				"started_at": T0,
+				"join_url": "https://zoom.example/j/1",
+			}
+		)
+		frappe.set_user(STUDENT)
+		with (
+			patch.object(api, "_live_class_access", return_value="student"),
+			patch("frappe.utils.now_datetime", return_value=T0 + timedelta(minutes=5)),
+		):
+			api.join_live_class(live)
+		self.assertEqual(frappe.local.response["location"], "https://zoom.example/j/1")
+		frappe.set_user("Administrator")
+		os_audit.flush(commit=False)
+		joined = events("live_class_join", user=STUDENT)
+		self.assertEqual([(e.reference_name, e.batch) for e in joined], [(live, f"{P}batch")])
+		self.assertEqual(frappe.parse_json(joined[0].data), {"host": 0})
+
 	def test_device_and_ip_helpers(self):
 		self.assertEqual(os_audit.classify_device("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) Mobile"), "mobile")
 		self.assertEqual(os_audit.classify_device("Mozilla/5.0 (Linux; Android 14; SM-X200)"), "tablet")
