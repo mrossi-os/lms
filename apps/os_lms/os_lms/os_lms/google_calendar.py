@@ -3,11 +3,12 @@
 
 import json
 import secrets
+from urllib.parse import quote
 
 import frappe
 import requests
 from frappe import _
-from frappe.integrations.doctype.google_calendar.google_calendar import get_authentication_url
+from frappe.integrations.doctype.google_calendar.google_calendar import SCOPES, get_authentication_url
 from frappe.utils import get_request_site_address
 from frappe.utils.password import set_encrypted_password
 
@@ -19,6 +20,9 @@ CALLBACK_METHOD = "frappe.integrations.doctype.google_calendar.google_calendar.g
 STATE_TTL_SECONDS = 10 * 60
 TOKEN_FIELDS = ("authorization_code", "refresh_token")
 MASK = "*****"
+# OS Audit reads the attendance of the Google Meet live classes (fase 4): the consent
+# asks for read access to the Meet conferences next to the calendar.
+MEET_SCOPE = "https://www.googleapis.com/auth/meetings.space.readonly"
 
 
 @frappe.whitelist()
@@ -62,8 +66,14 @@ def authorize_access(g_calendar: str, reauthorize: bool = False):
 		expires_in_sec=STATE_TTL_SECONDS,
 	)
 	auth = get_authentication_url(client_id=google_settings.client_id, redirect_uri=_redirect_uri())
+	auth["url"] = with_meet_scope(auth["url"])
 	auth["url"] += f"&state={state}"
 	return auth
+
+
+def with_meet_scope(url: str) -> str:
+	"""Frappe's consent URL with the Meet attendance scope next to the calendar one."""
+	return url.replace(f"scope={SCOPES}", "scope=" + quote(f"{SCOPES} {MEET_SCOPE}", safe=""), 1)
 
 
 @frappe.whitelist()

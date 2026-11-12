@@ -1,0 +1,168 @@
+{
+	"actions": [],
+	"autoname": "hash",
+	"creation": "2026-11-12 18:00:00.000000",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"live_class",
+		"batch",
+		"provider",
+		"instance",
+		"column_break_who",
+		"display_name",
+		"email",
+		"external_id",
+		"section_time",
+		"joined_at",
+		"left_at",
+		"seconds",
+		"column_break_match",
+		"user",
+		"is_host",
+		"matched_by",
+		"matched_by_user",
+		"matched_at"
+	],
+	"fields": [
+		{
+			"fieldname": "live_class",
+			"fieldtype": "Link",
+			"label": "Live Class",
+			"read_only": 1,
+			"options": "LMS Live Class",
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"search_index": 1
+		},
+		{
+			"fieldname": "batch",
+			"fieldtype": "Link",
+			"label": "Batch",
+			"read_only": 1,
+			"options": "LMS Batch",
+			"in_standard_filter": 1
+		},
+		{
+			"fieldname": "provider",
+			"fieldtype": "Select",
+			"label": "Provider",
+			"read_only": 1,
+			"options": "Zoom\nGoogle Meet"
+		},
+		{
+			"fieldname": "instance",
+			"fieldtype": "Data",
+			"label": "Meeting Instance",
+			"read_only": 1,
+			"description": "Zoom meeting instance UUID or Google Meet conference record."
+		},
+		{
+			"fieldname": "column_break_who",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "display_name",
+			"fieldtype": "Data",
+			"label": "Name at the Provider",
+			"read_only": 1,
+			"in_list_view": 1
+		},
+		{
+			"fieldname": "email",
+			"fieldtype": "Data",
+			"label": "Email at the Provider",
+			"read_only": 1
+		},
+		{
+			"fieldname": "external_id",
+			"fieldtype": "Data",
+			"label": "Provider Identity",
+			"read_only": 1,
+			"description": "Zoom user id or Google account (users/...) when the provider reports one."
+		},
+		{
+			"fieldname": "section_time",
+			"fieldtype": "Section Break",
+			"label": "Time"
+		},
+		{
+			"fieldname": "joined_at",
+			"fieldtype": "Datetime",
+			"label": "Joined At",
+			"read_only": 1,
+			"in_list_view": 1
+		},
+		{
+			"fieldname": "left_at",
+			"fieldtype": "Datetime",
+			"label": "Left At",
+			"read_only": 1
+		},
+		{
+			"fieldname": "seconds",
+			"fieldtype": "Int",
+			"label": "Duration (seconds)",
+			"read_only": 1,
+			"default": "0"
+		},
+		{
+			"fieldname": "column_break_match",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "user",
+			"fieldtype": "Data",
+			"label": "User",
+			"read_only": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"search_index": 1,
+			"description": "Platform user this participant is matched to; empty while unmatched."
+		},
+		{
+			"fieldname": "is_host",
+			"fieldtype": "Check",
+			"label": "Teacher",
+			"read_only": 1,
+			"default": "0"
+		},
+		{
+			"fieldname": "matched_by",
+			"fieldtype": "Select",
+			"label": "Matched By",
+			"read_only": 1,
+			"options": "\nhost\nidentity\nemail\nname\nmanual\nguest"
+		},
+		{
+			"fieldname": "matched_by_user",
+			"fieldtype": "Data",
+			"label": "Matched By User",
+			"read_only": 1
+		},
+		{
+			"fieldname": "matched_at",
+			"fieldtype": "Datetime",
+			"label": "Matched At",
+			"read_only": 1
+		}
+	],
+	"in_create": 1,
+	"index_web_pages_for_search": 0,
+	"links": [],
+	"modified": "2026-11-12 18:00:00.000000",
+	"modified_by": "Administrator",
+	"module": "OS LMS",
+	"name": "OS Live Attendance",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"read": 1,
+			"report": 1,
+			"role": "System Manager"
+		}
+	],
+	"sort_field": "creation",
+	"sort_order": "DESC",
+	"states": []
+}

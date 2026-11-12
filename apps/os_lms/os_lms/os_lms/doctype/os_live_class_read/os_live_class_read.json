@@ -1,0 +1,116 @@
+{
+	"actions": [],
+	"autoname": "field:live_class",
+	"creation": "2026-11-12 18:00:00.000000",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"live_class",
+		"provider",
+		"status",
+		"column_break_when",
+		"read_at",
+		"attempts",
+		"error",
+		"section_counts",
+		"rows",
+		"matched",
+		"unmatched"
+	],
+	"fields": [
+		{
+			"fieldname": "live_class",
+			"fieldtype": "Link",
+			"label": "Live Class",
+			"read_only": 1,
+			"options": "LMS Live Class",
+			"in_list_view": 1,
+			"reqd": 1,
+			"unique": 1
+		},
+		{
+			"fieldname": "provider",
+			"fieldtype": "Select",
+			"label": "Provider",
+			"read_only": 1,
+			"options": "Zoom\nGoogle Meet"
+		},
+		{
+			"fieldname": "status",
+			"fieldtype": "Select",
+			"label": "Status",
+			"read_only": 1,
+			"options": "Pending\nRead\nNot Held\nError",
+			"default": "Pending",
+			"in_list_view": 1,
+			"in_standard_filter": 1
+		},
+		{
+			"fieldname": "column_break_when",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "read_at",
+			"fieldtype": "Datetime",
+			"label": "Read At",
+			"read_only": 1
+		},
+		{
+			"fieldname": "attempts",
+			"fieldtype": "Int",
+			"label": "Attempts",
+			"read_only": 1,
+			"default": "0"
+		},
+		{
+			"fieldname": "error",
+			"fieldtype": "Small Text",
+			"label": "Error",
+			"read_only": 1
+		},
+		{
+			"fieldname": "section_counts",
+			"fieldtype": "Section Break",
+			"label": "Counts"
+		},
+		{
+			"fieldname": "rows",
+			"fieldtype": "Int",
+			"label": "Rows Read",
+			"read_only": 1,
+			"default": "0"
+		},
+		{
+			"fieldname": "matched",
+			"fieldtype": "Int",
+			"label": "Matched",
+			"read_only": 1,
+			"default": "0"
+		},
+		{
+			"fieldname": "unmatched",
+			"fieldtype": "Int",
+			"label": "Unmatched",
+			"read_only": 1,
+			"default": "0"
+		}
+	],
+	"in_create": 1,
+	"index_web_pages_for_search": 0,
+	"links": [],
+	"modified": "2026-11-12 18:00:00.000000",
+	"modified_by": "Administrator",
+	"module": "OS LMS",
+	"name": "OS Live Class Read",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"read": 1,
+			"report": 1,
+			"role": "System Manager"
+		}
+	],
+	"sort_field": "creation",
+	"sort_order": "DESC",
+	"states": []
+}

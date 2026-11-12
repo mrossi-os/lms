@@ -247,31 +247,31 @@ class TestAttendance(OsAuditTestCase):
 		self.assertFalse(student["enrolled"])
 		self.assertEqual(student["visits"], 1)
 
-	def test_live_classes_bring_platform_joins_and_provider_attendance(self):
+	def test_live_classes_bring_the_teacher_and_platform_joins(self):
+		# Provider attendance (phase 4) is covered by test_os_audit_live.
 		make_user(HOST, ("Docente",))
 		insert({"doctype": "LMS Batch", "name": BATCH, "title": BATCH, "start_date": T0.date(), "end_date": T0.date()})
 		row = frappe.get_doc({"doctype": "Batch Course", "parent": BATCH, "parenttype": "LMS Batch", "parentfield": "courses", "course": COURSE})
 		row.set_new_name()
 		row.db_insert()
 		insert({"doctype": "LMS Live Class", "name": LIVE, "title": "Live", "batch_name": BATCH, "host": HOST, "date": T0.date(), "time": "10:00:00", "duration": 60, "conferencing_provider": "Zoom"})
-		participant = frappe.get_doc({"doctype": "LMS Live Class Participant", "live_class": LIVE, "member": HOST, "joined_at": T0, "left_at": T0 + timedelta(minutes=55), "duration": 3300})
-		participant.name = f"{P}participant"
-		participant.db_insert()
 		os_audit.record("live_class_join", user=STUDENT, batch=BATCH, reference_doctype="LMS Live Class", reference_name=LIVE)
 		os_audit.flush(commit=False)
 
 		live = os_audit_page.get_attendance(COURSE)["live_classes"]
 		self.assertEqual([l["name"] for l in live], [LIVE])
+		self.assertIsNone(live[0]["read_status"])
 		people = {p["user"]: p for p in live[0]["participants"]}
 		self.assertTrue(people[HOST]["is_host"])
-		self.assertEqual(people[HOST]["duration_seconds"], 3300)
+		self.assertIsNone(people[HOST]["duration_seconds"])
 		self.assertIsNotNone(people[STUDENT]["joined_from_platform"])
 		self.assertIsNone(people[STUDENT]["joined_at"])
 
 		rows, count = os_audit_export.build_rows("os_audit_live", {"course": COURSE})
 		self.assertEqual(count, 2)
-		self.assertEqual(rows[1][5], "Teacher")
-		self.assertEqual(rows[1][-1], "0:55")
+		role = rows[0].index("Role")
+		self.assertEqual(rows[1][role], "Teacher")
+		self.assertEqual(rows[1][rows[0].index("Attendance status")], "Not read yet")
 
 
 class TestExports(OsAuditTestCase):

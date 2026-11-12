@@ -123,7 +123,7 @@
 				<p class="text-p-sm text-ink-gray-6">
 					{{
 						__(
-							'Joining from the platform is recorded by the audit. Entry and exit come from Zoom or Google Meet, when they report them.',
+							'Joining from the platform is recorded by the audit. Entry and exit are read from Zoom or Google Meet about half an hour after the end of the class, for the classes of the last 30 days.',
 						)
 					}}
 				</p>
@@ -133,68 +133,12 @@
 				>
 					{{ __('No live classes for this course in this period') }}
 				</div>
-				<div
+				<AuditLiveClass
 					v-for="live in data.live_classes"
 					:key="live.name"
-					class="rounded border border-outline-gray-2 p-3"
-				>
-					<div class="flex flex-wrap items-baseline justify-between gap-2">
-						<div class="font-medium text-ink-gray-9">{{ live.title }}</div>
-						<div class="text-sm text-ink-gray-6">
-							{{ formatDate(live.date) }} {{ formatClock(live.time) }}
-							· {{ live.batch_title }} · {{ live.provider }}
-						</div>
-					</div>
-					<div class="mt-1 text-sm text-ink-gray-6">
-						{{ __('Teacher') }}: {{ live.host_name || '—' }}
-					</div>
-					<div
-						v-if="!live.participants.length"
-						class="mt-2 text-sm text-ink-gray-5"
-					>
-						{{ __('No attendance recorded') }}
-					</div>
-					<div v-else class="mt-2 overflow-x-auto">
-						<table class="w-full text-sm">
-							<thead>
-								<tr class="text-left text-ink-gray-5">
-									<th class="py-1 pr-3 font-medium">{{ __('Participant') }}</th>
-									<th class="py-1 pr-3 font-medium">{{ __('Joined from the platform') }}</th>
-									<th class="py-1 pr-3 font-medium">{{ __('Entry') }}</th>
-									<th class="py-1 pr-3 font-medium">{{ __('Exit') }}</th>
-									<th class="py-1 font-medium">{{ __('Duration') }}</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr
-									v-for="person in live.participants"
-									:key="person.user || person.full_name"
-									class="border-t border-outline-gray-1"
-								>
-									<td class="py-1 pr-3 text-ink-gray-8">
-										{{ person.full_name }}
-										<Badge
-											v-if="person.is_host"
-											theme="blue"
-											:label="__('Teacher')"
-											class="ml-1"
-										/>
-									</td>
-									<td class="py-1 pr-3">{{ formatTime(person.joined_from_platform) || '—' }}</td>
-									<td class="py-1 pr-3">{{ formatTime(person.joined_at) || '—' }}</td>
-									<td class="py-1 pr-3">{{ formatTime(person.left_at) || '—' }}</td>
-									<td class="py-1">
-										{{
-											person.duration_seconds === null
-												? '—'
-												: formatHM(person.duration_seconds)
-										}}
-									</td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
-				</div>
+					:live="live"
+					@changed="load"
+				/>
 			</section>
 		</template>
 	</div>
@@ -204,14 +148,12 @@
 import { computed, reactive, ref } from 'vue'
 import { Badge, Button, FormControl, call, toast } from 'frappe-ui'
 import Link from '@/oslms/components/Controls/Link.vue'
+import AuditLiveClass from './AuditLiveClass.vue'
 import {
 	AUDIT_API,
-	formatClock,
-	formatDate,
 	formatDateTime,
 	formatHM,
 	formatPercent,
-	formatTime,
 } from './format'
 
 const filters = reactive({ course: '', from_date: '', to_date: '' })

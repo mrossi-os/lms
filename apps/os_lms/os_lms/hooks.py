@@ -62,6 +62,9 @@ after_migrate = [
     "os_lms.os_lms.ai.utils.api_keys.encrypt_plaintext_api_keys",
     # The old Google Calendar callback wrote the OAuth tokens in clear.
     "os_lms.os_lms.google_calendar.encrypt_plaintext_tokens",
+    # OS Audit reads the Zoom attendance itself: stop upstream's hourly reader,
+    # which aborted on the first meeting never held (PIANO fase 4).
+    "os_lms.os_lms.os_audit_live.stop_upstream_attendance_job",
 ]
 
 # fix error email check content MAX SIZE
@@ -359,7 +362,13 @@ on_session_creation = ["os_lms.auth.on_session_creation"]
 # registers it, since Log Settings only reads this hook when it is saved.
 # OS Audit rows outlive the lessons, courses and documents they mention: they must
 # not block deleting them (retention removes the audit rows on its own schedule).
-ignore_links_on_delete = ["OS Audit Event", "OS Audit Session"]
+ignore_links_on_delete = [
+    "OS Audit Event",
+    "OS Audit Session",
+    "OS Live Attendance",
+    "OS Live Identity",
+    "OS Live Class Read",
+]
 
 default_log_clearing_doctypes = {
     "Elite API Access Log": 90,
@@ -389,6 +398,8 @@ scheduler_events = {
             "os_lms.os_lms.live_class_reminders.send_live_class_reminders",
             # OS Audit: close the lesson sessions with no heartbeat past the threshold.
             "os_lms.os_lms.os_audit.close_stale_sessions",
+            # OS Audit: read the Zoom / Google Meet attendance of the ended live classes.
+            "os_lms.os_lms.os_audit_live.read_due_live_classes",
         ],
         "*/10 * * * *": [
             "os_lms.os_lms.ai.simulations.tasks.reap_stale_sessions",

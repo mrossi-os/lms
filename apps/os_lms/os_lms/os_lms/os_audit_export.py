@@ -268,16 +268,20 @@ def register_rows(filters: dict) -> tuple[list[list], int]:
 
 def live_rows(filters: dict) -> tuple[list[list], int]:
 	"""Per live class: date, time, teacher and every participant with entry, exit and
-	duration (PIANO §7). Entry and exit come from the provider (phase 4)."""
+	duration as Zoom or Google Meet reported them (PIANO §7, phase 4), how each one
+	was matched, then the participants still unmatched and the external guests."""
 	header = [
 		_("Date"),
 		_("Time"),
 		_("Live class"),
 		_("Class"),
 		_("Provider"),
+		_("Attendance status"),
 		_("Role"),
 		_("Participant"),
 		_("Email"),
+		_("Name at the provider"),
+		_("Matched by"),
 		_("Joined from the platform"),
 		_("Entry"),
 		_("Exit"),
@@ -285,36 +289,47 @@ def live_rows(filters: dict) -> tuple[list[list], int]:
 	]
 	rows = [header]
 	for live in live_attendance(filters["course"], filters.get("from_date"), filters.get("to_date")):
-		base = [_date(live["date"]), str(live["time"] or "")[:5], live["title"], live["batch_title"], live["provider"] or ""]
-		people = live["participants"]
-		if not any(p["is_host"] for p in people) and live["host"]:
-			people = [
-				{
-					"user": live["host"],
-					"full_name": live["host_name"],
-					"is_host": True,
-					"joined_from_platform": None,
-					"joined_at": None,
-					"left_at": None,
-					"duration_seconds": None,
-				},
-				*people,
-			]
-		if not people:
-			rows.append([*base, "", _("No attendance recorded"), "", "", "", "", ""])
-		for p in people:
+		base = [
+			_date(live["date"]),
+			str(live["time"] or "")[:5],
+			live["title"],
+			live["batch_title"],
+			live["provider"] or "",
+			live["read_status_label"] or _("Not read yet"),
+		]
+		for p in live["participants"]:
 			rows.append(
 				[
 					*base,
 					_("Teacher") if p["is_host"] else _("Participant"),
 					p["full_name"],
 					p["user"] or "",
+					", ".join(p["names"]),
+					p["matched_label"],
 					_dt(p["joined_from_platform"]),
 					_dt(p["joined_at"]),
 					_dt(p["left_at"]),
 					"" if p["duration_seconds"] is None else format_hm(p["duration_seconds"]),
 				]
 			)
+		for role, people in ((_("Unmatched"), live["unmatched"]), (_("External guest"), live["guests"])):
+			for p in people:
+				rows.append(
+					[
+						*base,
+						role,
+						"",
+						p["email"],
+						p["display_name"],
+						"",
+						"",
+						_dt(p["joined_at"]),
+						_dt(p["left_at"]),
+						format_hm(p["duration_seconds"]),
+					]
+				)
+		if not live["participants"] and not live["unmatched"] and not live["guests"]:
+			rows.append([*base, "", _("No attendance recorded"), "", "", "", "", "", "", ""])
 	return rows, len(rows) - 1
 
 

@@ -2009,6 +2009,10 @@ def start_live_class(name: str) -> dict:
 	"""Mark a Live Class as started by the host so enrolled students can join."""
 	doc = frappe.get_doc("LMS Live Class", name)
 	_ensure_can_start_live_class(doc)
+	# OS Audit: who opened the meeting as teacher (before started_at is set).
+	from os_lms.os_lms.os_audit import on_live_class_start
+
+	on_live_class_start(doc, frappe.session.user)
 
 	if not doc.get("started_at"):
 		now = frappe.utils.now_datetime()

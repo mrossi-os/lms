@@ -44,7 +44,7 @@
 			"in_list_view": 1,
 			"in_standard_filter": 1,
 			"label": "Event Type",
-			"options": "login\nlogout\nlogin_failed\ncourse_view\nlesson_open\nsession_closed\nlesson_complete\nquiz_start\nquiz_submit\nassignment_submit\nscorm_open\nlive_class_join\nlive_attendance\ncertificate_issued\naudit_settings_changed\naudit_export\naudit_data_erased\ndaily_seal\nvideo_play\nvideo_pause\nvideo_seek\nvideo_ended\npdf_open\ndownload",
+			"options": "login\nlogout\nlogin_failed\ncourse_view\nlesson_open\nsession_closed\nlesson_complete\nquiz_start\nquiz_submit\nassignment_submit\nscorm_open\nlive_class_join\nlive_class_start\nlive_attendance\nlive_attendance_read\ncertificate_issued\naudit_settings_changed\naudit_export\naudit_data_erased\ndaily_seal\nvideo_play\nvideo_pause\nvideo_seek\nvideo_ended\npdf_open\ndownload",
 			"read_only": 1
 		},
 		{
@@ -193,7 +193,7 @@
 	"in_create": 1,
 	"index_web_pages_for_search": 0,
 	"links": [],
-	"modified": "2026-11-11 18:00:00.000000",
+	"modified": "2026-11-12 18:00:00.000000",
 	"modified_by": "Administrator",
 	"module": "OS LMS",
 	"name": "OS Audit Event",

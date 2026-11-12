@@ -151,6 +151,10 @@ GESTORE_DOCPERMS = {
     "OS Audit Settings": {"read": 1, "write": 1},
     "OS Audit Event": {"read": 1, "report": 1},
     "OS Audit Session": {"read": 1, "report": 1},
+    # OS Audit phase 4: live attendance read from Zoom and Google Meet.
+    "OS Live Attendance": {"read": 1, "report": 1},
+    "OS Live Identity": {"read": 1, "report": 1},
+    "OS Live Class Read": {"read": 1, "report": 1},
 }
 
 

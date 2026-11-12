@@ -6,6 +6,7 @@ import dayjs from '@/utils/dayjs'
 
 export const AUDIT_API = 'os_lms.os_lms.os_audit_page'
 export const EXPORT_API = 'os_lms.os_lms.os_audit_export'
+export const LIVE_API = 'os_lms.os_lms.os_audit_live'
 
 export function formatHM(seconds?: number | null): string {
 	const minutes = Math.floor(Math.max(Number(seconds) || 0, 0) / 60)
@@ -150,4 +151,26 @@ export function describeEvent(event: {
 		default:
 			return ''
 	}
+}
+
+// Badge colour of the attendance read status of a live class (OS Live Class Read).
+export function readStatusTheme(
+	status?: string | null,
+): 'green' | 'orange' | 'red' | 'gray' {
+	if (status === 'Read') return 'green'
+	if (status === 'Error') return 'red'
+	if (status === 'Pending') return 'orange'
+	return 'gray'
+}
+
+// A live class can be read again once it has ended and has a provider meeting.
+export function canRereadLive(
+	live: { date?: string | null; time?: string | null; duration?: number | null },
+	now: Date = new Date(),
+): boolean {
+	if (!live.date || !live.time) return false
+	const start = dayjs(`${live.date} ${formatClock(live.time)}`)
+	if (!start.isValid()) return false
+	const end = start.add(Number(live.duration) || 60, 'minute')
+	return dayjs(now).isAfter(end)
 }

@@ -4,12 +4,14 @@
  */
 import { beforeAll, describe, expect, it } from 'vitest'
 import {
+	canRereadLive,
 	describeEvent,
 	exportLabel,
 	formatClock,
 	formatHM,
 	formatPosition,
 	mediaName,
+	readStatusTheme,
 } from '../oslms/components/osAudit/format'
 
 beforeAll(() => {
@@ -143,5 +145,23 @@ describe('describeEvent', () => {
 				}),
 			),
 		).toBe('Live class attendance, 12 rows')
+	})
+})
+
+describe('live attendance helpers (phase 4)', () => {
+	it('colours the read status of a live class', () => {
+		expect(readStatusTheme('Read')).toBe('green')
+		expect(readStatusTheme('Pending')).toBe('orange')
+		expect(readStatusTheme('Error')).toBe('red')
+		expect(readStatusTheme('Not Held')).toBe('gray')
+		expect(readStatusTheme(null)).toBe('gray')
+	})
+
+	it('allows reading again only after the end of the class', () => {
+		const live = { date: '2026-11-10', time: '9:00:00', duration: 60 }
+		expect(canRereadLive(live, new Date('2026-11-10T09:59:00'))).toBe(false)
+		expect(canRereadLive(live, new Date('2026-11-10T10:01:00'))).toBe(true)
+		expect(canRereadLive({ ...live, duration: 0 }, new Date('2026-11-10T09:30:00'))).toBe(false)
+		expect(canRereadLive({ date: null, time: null })).toBe(false)
 	})
 })

@@ -11233,3 +11233,295 @@ msgstr "{0} al punto {1}"
 #: frontend/src/oslms/components/osAudit/format.ts
 msgid "{0}: skipped from {1} to {2}"
 msgstr "{0}: spostato da {1} a {2}"
+
+#: apps/os_lms/os_lms/os_lms/os_audit_page.py
+msgid "Live class started"
+msgstr "Lezione live avviata"
+
+#: apps/os_lms/os_lms/os_lms/os_audit_page.py
+msgid "Live class attendance read"
+msgstr "Presenze della lezione live lette"
+
+#: apps/os_lms/os_lms/os_lms/os_audit_page.py
+msgid "Teacher's Zoom account"
+msgstr "Account Zoom del docente"
+
+#: apps/os_lms/os_lms/os_lms/os_audit_page.py
+msgid "Known account"
+msgstr "Account già abbinato"
+
+#: apps/os_lms/os_lms/os_lms/os_audit_page.py
+msgid "Matched by hand"
+msgstr "Abbinato a mano"
+
+#: apps/os_lms/os_lms/os_lms/os_audit_page.py
+msgid "External guest"
+msgstr "Ospite esterno"
+
+#: apps/os_lms/os_lms/os_lms/os_audit_page.py
+msgid "Waiting for the provider"
+msgstr "In attesa del fornitore"
+
+#: apps/os_lms/os_lms/os_lms/os_audit_page.py
+msgid "Attendance read"
+msgstr "Presenze lette"
+
+#: apps/os_lms/os_lms/os_lms/os_audit_page.py
+msgid "Not held"
+msgstr "Non tenuta"
+
+#: apps/os_lms/os_lms/os_lms/os_audit_live.py
+msgid "Unexpected error: see the Error Log."
+msgstr "Errore imprevisto: vedi l'Error Log."
+
+#: apps/os_lms/os_lms/os_lms/os_audit_live.py
+msgid "Zoom account {0}: {1}"
+msgstr "Account Zoom {0}: {1}"
+
+#: apps/os_lms/os_lms/os_lms/os_audit_live.py
+msgid "Zoom account {0}: no access token."
+msgstr "Account Zoom {0}: nessun token di accesso."
+
+#: apps/os_lms/os_lms/os_lms/os_audit_live.py
+msgid "Zoom did not answer: {0}"
+msgstr "Zoom non ha risposto: {0}"
+
+#: apps/os_lms/os_lms/os_lms/os_audit_live.py
+msgid "Zoom answered {0}: {1}"
+msgstr "Zoom ha risposto {0}: {1}"
+
+#: apps/os_lms/os_lms/os_lms/os_audit_live.py
+msgid "The Google Meet account {0} has no calendar."
+msgstr "L'account Google Meet {0} non ha un calendario."
+
+#: apps/os_lms/os_lms/os_lms/os_audit_live.py
+msgid "The Google calendar {0} is not authorized."
+msgstr "Il calendario Google {0} non è autorizzato."
+
+#: apps/os_lms/os_lms/os_lms/os_audit_live.py
+msgid "Google did not answer: {0}"
+msgstr "Google non ha risposto: {0}"
+
+#: apps/os_lms/os_lms/os_lms/os_audit_live.py
+msgid "Google Meet attendance is not authorized on the calendar {0}: authorize the calendar again."
+msgstr "La lettura delle presenze Google Meet non è autorizzata sul calendario {0}: autorizza di nuovo il calendario."
+
+#: apps/os_lms/os_lms/os_lms/os_audit_live.py
+msgid "Google Meet answered {0}: {1}"
+msgstr "Google Meet ha risposto {0}: {1}"
+
+#: apps/os_lms/os_lms/os_lms/os_audit_live.py
+msgid "The live class has no Google Meet link."
+msgstr "La lezione live non ha un link Google Meet."
+
+#: apps/os_lms/os_lms/os_lms/os_audit_live.py
+msgid "The live class of this participant no longer exists."
+msgstr "La lezione live di questo partecipante non esiste più."
+
+#: apps/os_lms/os_lms/os_lms/os_audit_live.py
+msgid "Live class not found."
+msgstr "Lezione live non trovata."
+
+#: apps/os_lms/os_lms/os_lms/os_audit_live.py
+msgid "Participant not found."
+msgstr "Partecipante non trovato."
+
+#: apps/os_lms/os_lms/os_lms/os_audit_live.py
+msgid "Choose a person of this class."
+msgstr "Scegli una persona di questa classe."
+
+#: apps/os_lms/os_lms/os_lms/os_audit_live.py
+msgid "This live class has no Zoom or Google Meet meeting."
+msgstr "Questa lezione live non ha una riunione Zoom o Google Meet."
+
+#: apps/os_lms/os_lms/os_lms/os_audit_live.py
+msgid "The attendance can be read once the class has ended."
+msgstr "Le presenze si possono leggere quando la lezione è finita."
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_attendance/os_live_attendance.py
+msgid "Live attendance rows are written by the system only."
+msgstr "Le presenze delle lezioni live le scrive solo il sistema."
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_identity/os_live_identity.py
+msgid "Live class identities are written by the system only."
+msgstr "Le identità delle lezioni live le scrive solo il sistema."
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_class_read/os_live_class_read.py
+msgid "Live class reads are written by the system only."
+msgstr "Le letture delle lezioni live le scrive solo il sistema."
+
+#: apps/os_lms/os_lms/os_lms/os_audit_export.py
+msgid "Attendance status"
+msgstr "Stato delle presenze"
+
+#: apps/os_lms/os_lms/os_lms/os_audit_export.py
+msgid "Name at the provider"
+msgstr "Nome presso il fornitore"
+
+#: frontend/src/oslms/components/osAudit/AuditLiveClass.vue
+msgid "Matched by"
+msgstr "Abbinato tramite"
+
+#: frontend/src/oslms/components/osAudit/AuditLiveClass.vue
+msgid "Not read yet"
+msgstr "Non ancora lette"
+
+#: apps/os_lms/os_lms/os_lms/os_audit_export.py
+msgid "Unmatched"
+msgstr "Non abbinato"
+
+#: frontend/src/oslms/components/osAudit/AuditLiveClass.vue
+msgid "Read attendance again"
+msgstr "Rileggi presenze"
+
+#: frontend/src/oslms/components/osAudit/AuditLiveClass.vue
+msgid "At the provider"
+msgstr "Presso il fornitore"
+
+#: frontend/src/oslms/components/osAudit/AuditLiveClass.vue
+msgid "{0} segments"
+msgstr "{0} segmenti"
+
+#: frontend/src/oslms/components/osAudit/AuditLiveClass.vue
+msgid "Unmatched participants"
+msgstr "Partecipanti non abbinati"
+
+#: frontend/src/oslms/components/osAudit/AuditLiveClass.vue
+msgid "The provider reported them with a name or email that does not belong to anyone in this class. Match each one to a person, or mark them as an external guest."
+msgstr "Il fornitore li ha riportati con un nome o un'email che non corrisponde a nessuno di questa classe. Abbina ciascuno a una persona, oppure segnalo come ospite esterno."
+
+#: frontend/src/oslms/components/osAudit/AuditLiveClass.vue
+msgid "No name"
+msgstr "Senza nome"
+
+#: frontend/src/oslms/components/osAudit/AuditLiveClass.vue
+msgid "No email"
+msgstr "Senza email"
+
+#: frontend/src/oslms/components/osAudit/AuditLiveClass.vue
+msgid "Match"
+msgstr "Abbina"
+
+#: frontend/src/oslms/components/osAudit/AuditLiveClass.vue
+msgid "External guests"
+msgstr "Ospiti esterni"
+
+#: frontend/src/oslms/components/osAudit/AuditLiveClass.vue
+msgid "Match to a person"
+msgstr "Abbina a una persona"
+
+#: frontend/src/oslms/components/osAudit/AuditLiveClass.vue
+msgid "Choose a person"
+msgstr "Scegli una persona"
+
+#: frontend/src/oslms/components/osAudit/AuditLiveClass.vue
+msgid "Could not load the people of the class"
+msgstr "Impossibile caricare le persone della classe"
+
+#: frontend/src/oslms/components/osAudit/AuditLiveClass.vue
+msgid "Marked as external guest"
+msgstr "Segnato come ospite esterno"
+
+#: frontend/src/oslms/components/osAudit/AuditLiveClass.vue
+msgid "Participant matched"
+msgstr "Partecipante abbinato"
+
+#: frontend/src/oslms/components/osAudit/AuditLiveClass.vue
+msgid "Could not save the match"
+msgstr "Impossibile salvare l'abbinamento"
+
+#: frontend/src/oslms/components/osAudit/AuditLiveClass.vue
+msgid "The attendance will be read again in a few moments: reload to see it."
+msgstr "Le presenze verranno rilette tra pochi istanti: ricarica per vederle."
+
+#: frontend/src/oslms/components/osAudit/AuditLiveClass.vue
+msgid "Could not read the attendance again"
+msgstr "Impossibile rileggere le presenze"
+
+#: frontend/src/oslms/components/osAudit/AuditAttendance.vue
+msgid "Joining from the platform is recorded by the audit. Entry and exit are read from Zoom or Google Meet about half an hour after the end of the class, for the classes of the last 30 days."
+msgstr "L'ingresso dalla piattaforma lo registra l'audit. Entrata e uscita si leggono da Zoom o Google Meet circa mezz'ora dopo la fine della lezione, per le lezioni degli ultimi 30 giorni."
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_attendance/os_live_attendance.json
+msgid "OS Live Attendance"
+msgstr "Presenze live OS"
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_identity/os_live_identity.json
+msgid "OS Live Identity"
+msgstr "Identità live OS"
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_class_read/os_live_class_read.json
+msgid "OS Live Class Read"
+msgstr "Lettura lezione live OS"
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_attendance/os_live_attendance.json
+msgid "Meeting Instance"
+msgstr "Istanza della riunione"
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_attendance/os_live_attendance.json
+msgid "Name at the Provider"
+msgstr "Nome presso il fornitore"
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_attendance/os_live_attendance.json
+msgid "Email at the Provider"
+msgstr "Email presso il fornitore"
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_attendance/os_live_attendance.json
+msgid "Provider Identity"
+msgstr "Identità presso il fornitore"
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_attendance/os_live_attendance.json
+msgid "Duration (seconds)"
+msgstr "Durata (secondi)"
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_attendance/os_live_attendance.json
+msgid "Matched By"
+msgstr "Abbinato tramite"
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_attendance/os_live_attendance.json
+msgid "Matched By User"
+msgstr "Abbinato da"
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_attendance/os_live_attendance.json
+msgid "Matched At"
+msgstr "Abbinato il"
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_class_read/os_live_class_read.json
+msgid "Rows Read"
+msgstr "Righe lette"
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_class_read/os_live_class_read.json
+msgid "Matched"
+msgstr "Abbinati"
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_class_read/os_live_class_read.json
+msgid "Read At"
+msgstr "Letto il"
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_class_read/os_live_class_read.json
+msgid "Attempts"
+msgstr "Tentativi"
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_class_read/os_live_class_read.json
+msgid "Not Held"
+msgstr "Non tenuta"
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_class_read/os_live_class_read.json
+msgid "Counts"
+msgstr "Conteggi"
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_attendance/os_live_attendance.json
+msgid "Zoom meeting instance UUID or Google Meet conference record."
+msgstr "UUID dell'istanza della riunione Zoom o record della conferenza Google Meet."
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_attendance/os_live_attendance.json
+msgid "Zoom user id or Google account (users/...) when the provider reports one."
+msgstr "Id dell'utente Zoom o account Google (users/...), quando il fornitore lo riporta."
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_live_attendance/os_live_attendance.json
+msgid "Platform user this participant is matched to; empty while unmatched."
+msgstr "Utente della piattaforma a cui è abbinato il partecipante; vuoto finché non è abbinato."
+
+#: apps/os_lms/os_lms/os_lms/os_audit_live.py
+msgid "Live attendance is not recorded for this class: check the OS Audit settings."
+msgstr "Le presenze live non vengono registrate per questa classe: controlla le impostazioni di OS Audit."

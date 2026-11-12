@@ -40,6 +40,8 @@ Extension points for the later phases
   plus its default in ``TOGGLE_DEFAULTS``.
 - A new browser event type goes in ``CLIENT_EVENTS`` and ``client_event_data``.
 - ``verify_chain`` and ``can_use_os_audit`` are the gates the phase 2 page uses.
+- Live attendance (phase 4) lives in ``os_audit_live``: provider rows in ``OS Live
+  Attendance``, retention and erasure below cover them too.
 """
 
 import hashlib
@@ -87,6 +89,9 @@ EVENT_TOGGLES = {
 	"quiz_submit": "track_quizzes",
 	"assignment_submit": "track_assignments",
 	"live_class_join": "track_live_classes",
+	"live_class_start": "track_live_classes",
+	"live_attendance": "track_live_classes",
+	"live_attendance_read": "track_live_classes",
 	"scorm_open": "track_scorm",
 	"certificate_issued": "track_certificates",
 	"video_play": "track_videos",
@@ -1118,6 +1123,23 @@ def on_live_class_join(doc, user: str) -> None:
 		frappe.log_error(title="OS Audit: live_class_join not recorded")
 
 
+def on_live_class_start(doc, user: str) -> None:
+	"""start_live_class hook: the teacher opening the meeting from the platform
+	(PIANO fase 4: the teacher of the class is whoever started it first)."""
+	try:
+		record(
+			"live_class_start",
+			user=user,
+			batch=doc.get("batch_name"),
+			reference_doctype=doc.doctype,
+			reference_name=doc.name,
+			data={"first": 0 if doc.get("started_at") else 1},
+			request_info=True,
+		)
+	except Exception:
+		frappe.log_error(title="OS Audit: live_class_start not recorded")
+
+
 def on_activity_log_insert(doc) -> None:
 	"""Activity Log hook (access_tracking): login, logout and failed logins."""
 	try:
@@ -1294,7 +1316,10 @@ def apply_retention() -> dict:
 	sessions = frappe.db.count(SESSION, {"last_seen_at": ["<", cutoff]})
 	if sessions:
 		frappe.db.delete(SESSION, {"last_seen_at": ["<", cutoff]})
-	return {"events": deleted, "sessions": sessions}
+	from os_lms.os_lms.os_audit_live import apply_retention as apply_live_retention
+
+	live = apply_live_retention(cutoff)
+	return {"events": deleted, "sessions": sessions, "live_rows": live}
 
 
 # ---------------------------------------------------------------------------
@@ -1312,8 +1337,11 @@ def erase_user_data(user: str) -> int:
 	keep it until expiry. Returns the number of events erased."""
 	if keeps_data_on_deletion():
 		return 0
+	from os_lms.os_lms.os_audit_live import erase_user as erase_live_user
+
 	_drop_pending(lambda event: event.user == user)
 	frappe.db.delete(SESSION, {"user": user})
+	erase_live_user(user)
 	erased = _redact({"user": user})
 	if erased:
 		record("audit_data_erased", data={"reason": "account_deletion", "events": erased})

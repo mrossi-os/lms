@@ -57,7 +57,9 @@ EVENT_LABELS = {
 	"assignment_submit": "Assignment submitted",
 	"scorm_open": "SCORM package opened",
 	"live_class_join": "Live class joined",
+	"live_class_start": "Live class started",
 	"live_attendance": "Live class attendance",
+	"live_attendance_read": "Live class attendance read",
 	"certificate_issued": "Certificate issued",
 	"audit_settings_changed": "Audit settings changed",
 	"audit_data_erased": "Audit data erased",
@@ -602,10 +604,41 @@ def course_attendance(course: str, from_date=None, to_date=None) -> dict:
 	}
 
 
+# How a live participant was matched to a platform user (OS Live Attendance.matched_by).
+MATCH_LABELS = {
+	"host": "Teacher's Zoom account",
+	"identity": "Known account",
+	"email": "Email",
+	"name": "Name",
+	"manual": "Matched by hand",
+	"guest": "External guest",
+}
+READ_STATUS_LABELS = {
+	"Pending": "Waiting for the provider",
+	"Read": "Attendance read",
+	"Not Held": "Not held",
+	"Error": "Error",
+}
+
+
+def match_label(matched_by: str | None) -> str:
+	return _(MATCH_LABELS[matched_by]) if matched_by in MATCH_LABELS else ""
+
+
 def live_attendance(course: str, from_date=None, to_date=None) -> list:
-	"""Live classes of the classes containing the course: who joined from the
-	platform (audit events) and, where the provider reported it, entry and exit
-	(LMS Live Class Participant). Provider attendance arrives with phase 4."""
+	"""Live classes of the classes containing the course: the teacher, who joined from
+	the platform (live_class_join) and the real entry and exit reported by Zoom or
+	Google Meet (OS Live Attendance, phase 4), with the participants still unmatched."""
+	from os_lms.os_lms.os_audit_live import (
+		ATTENDANCE,
+		READ,
+		ROW_FIELDS,
+		group_key,
+		people_options,
+		person_totals,
+		provider_of,
+	)
+
 	batches = frappe.get_all("Batch Course", filters={"course": course, "parenttype": "LMS Batch"}, pluck="parent")
 	if not batches:
 		return []
@@ -617,7 +650,7 @@ def live_attendance(course: str, from_date=None, to_date=None) -> list:
 	classes = frappe.get_all(
 		"LMS Live Class",
 		filters=filters,
-		fields=["name", "title", "date", "time", "duration", "host", "batch_name", "conferencing_provider"],
+		fields=["name", "title", "date", "time", "duration", "host", "batch_name", "conferencing_provider", "zoom_account"],
 		order_by="date desc, time desc",
 		limit=500,
 	)
@@ -630,51 +663,69 @@ def live_attendance(course: str, from_date=None, to_date=None) -> list:
 		fields=["reference_name", "user", "timestamp"],
 		order_by="timestamp asc",
 	)
-	participants = frappe.get_all(
-		"LMS Live Class Participant",
-		filters={"live_class": ["in", names]},
-		fields=["live_class", "member", "member_name", "joined_at", "left_at", "duration"],
-		order_by="joined_at asc",
+	starts = frappe.get_all(
+		EVENT,
+		filters={"event_type": "live_class_start", "reference_name": ["in", names], "redacted": 0},
+		fields=["reference_name", "user", "timestamp"],
+		order_by="seq asc",
 	)
-	people = full_names({j.user for j in joins} | {p.member for p in participants} | {c.host for c in classes})
+	segments = frappe.get_all(
+		ATTENDANCE, filters={"live_class": ["in", names]}, fields=ROW_FIELDS, order_by="joined_at asc"
+	)
+	reads = {
+		r.name: r
+		for r in frappe.get_all(
+			READ, filters={"name": ["in", names]}, fields=["name", "status", "read_at", "error"]
+		)
+	}
+	first_start = {}
+	for start in starts:
+		first_start.setdefault(start.reference_name, start)
+	people = full_names(
+		{j.user for j in joins}
+		| {s.user for s in segments if s.user}
+		| {s.user for s in starts}
+		| {c.host for c in classes}
+	)
 	batch_titles = names_of("LMS Batch", (c.batch_name for c in classes), "title")
 	result = []
 	for live in classes:
+		started = first_start.get(live.name)
+		teacher = (started.user if started else None) or live.host
 		first_join = {}
 		for join in joins:
 			if join.reference_name == live.name and join.user not in first_join:
 				first_join[join.user] = join.timestamp
+		mine = [s for s in segments if s.live_class == live.name]
+		by_user = {}
+		for segment in mine:
+			if segment.user:
+				by_user.setdefault(segment.user, []).append(segment)
 		rows = []
-		for p in participants:
-			if p.live_class != live.name:
-				continue
-			rows.append(
-				{
-					"user": p.member,
-					"full_name": people.get(p.member) or p.member_name or p.member,
-					"is_host": bool(p.member and p.member == live.host),
-					"joined_from_platform": first_join.get(p.member),
-					"joined_at": p.joined_at,
-					"left_at": p.left_at,
-					"duration_seconds": cint(p.duration),
-				}
-			)
-		reported = {row["user"] for row in rows}
-		for user, joined in first_join.items():
-			if user in reported:
-				continue
+		for user in set(by_user) | set(first_join) | ({teacher} if teacher else set()):
+			own = by_user.get(user, [])
+			totals = person_totals(own)
+			how = next((s.matched_by for s in own if s.matched_by), None)
 			rows.append(
 				{
 					"user": user,
 					"full_name": people.get(user) or user,
-					"is_host": user == live.host,
-					"joined_from_platform": joined,
-					"joined_at": None,
-					"left_at": None,
-					"duration_seconds": None,
+					"is_host": user == teacher,
+					"started_at": started.timestamp if started and user == teacher else None,
+					"joined_from_platform": first_join.get(user),
+					"joined_at": totals["joined_at"],
+					"left_at": totals["left_at"],
+					"duration_seconds": totals["seconds"] if own else None,
+					"segments": len(totals["segments"]),
+					"matched_by": how,
+					"matched_label": match_label(how),
+					"names": sorted({s.display_name for s in own if s.display_name}),
 				}
 			)
 		rows.sort(key=lambda r: (not r["is_host"], (r["full_name"] or "").lower()))
+		read = reads.get(live.name)
+		unmatched = provider_groups([s for s in mine if not s.user and s.matched_by != "guest"], group_key)
+		guests = provider_groups([s for s in mine if s.matched_by == "guest"], group_key)
 		result.append(
 			{
 				"name": live.name,
@@ -684,13 +735,51 @@ def live_attendance(course: str, from_date=None, to_date=None) -> list:
 				"duration": cint(live.duration),
 				"host": live.host,
 				"host_name": people.get(live.host) or live.host,
+				"teacher": teacher,
+				"teacher_name": people.get(teacher) or teacher,
 				"batch": live.batch_name,
 				"batch_title": batch_titles.get(live.batch_name) or live.batch_name,
-				"provider": live.conferencing_provider,
-				"provider_reported": any(row["joined_at"] for row in rows),
+				# The meeting the attendance is read from; None for a class with no
+				# Zoom or Google Meet meeting (nothing to read).
+				"provider": provider_of(live),
+				"read_status": read.status if read else None,
+				"read_status_label": _(READ_STATUS_LABELS[read.status]) if read and read.status in READ_STATUS_LABELS else "",
+				"read_at": read.read_at if read else None,
+				"read_error": read.error if read and read.status == "Error" else None,
+				"provider_reported": bool(mine),
 				"participants": rows,
+				"unmatched": unmatched,
+				"guests": guests,
+				# The picker of the match action, only where there is something to match.
+				"people": people_options(live) if unmatched or guests else [],
 			}
 		)
+	return result
+
+
+def provider_groups(segments: list, group_key) -> list:
+	"""Participants reported by the provider and not matched to a user: one entry per
+	person (all their segments), identified by the first row for the match action."""
+	from os_lms.os_lms.os_audit_live import person_totals
+
+	groups = {}
+	for segment in segments:
+		groups.setdefault(group_key(segment), []).append(segment)
+	result = []
+	for group in groups.values():
+		totals = person_totals(group)
+		result.append(
+			{
+				"row": group[0].name,
+				"display_name": group[0].display_name or "",
+				"email": group[0].email or "",
+				"joined_at": totals["joined_at"],
+				"left_at": totals["left_at"],
+				"duration_seconds": totals["seconds"],
+				"segments": len(totals["segments"]),
+			}
+		)
+	result.sort(key=lambda g: ((g["display_name"] or "").lower(), str(g["joined_at"] or "")))
 	return result
 
 
