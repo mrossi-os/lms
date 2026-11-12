@@ -11173,3 +11173,11 @@ msgstr "{0} studenti sotto la presenza minima"
 #: apps/os_lms/os_lms/os_lms/os_audit_page.py
 msgid "{0}, {1} rows"
 msgstr "{0}, {1} righe"
+
+#: frontend/src/oslms/components/osAudit/AuditLog.vue
+msgid "Abandoned"
+msgstr "Abbandonato"
+
+#: frontend/src/oslms/components/osAudit/AuditLog.vue
+msgid "Needs Review"
+msgstr "Da revisionare"

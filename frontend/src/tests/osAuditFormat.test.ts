@@ -3,7 +3,12 @@
  * attendance registers want them, and the one-line description of an event.
  */
 import { beforeAll, describe, expect, it } from 'vitest'
-import { describeEvent, exportLabel, formatHM } from '../oslms/components/osAudit/format'
+import {
+	describeEvent,
+	exportLabel,
+	formatClock,
+	formatHM,
+} from '../oslms/components/osAudit/format'
 
 beforeAll(() => {
 	// The app's __() returns a String with .format(); the identity is enough here.
@@ -26,6 +31,19 @@ describe('formatHM', () => {
 		expect(formatHM(null)).toBe('0:00')
 		expect(formatHM(undefined)).toBe('0:00')
 		expect(formatHM(-30)).toBe('0:00')
+	})
+})
+
+describe('formatClock', () => {
+	it('pads a single-digit hour of a Time field', () => {
+		expect(formatClock('9:00:00')).toBe('09:00')
+		expect(formatClock('0:30:00')).toBe('00:30')
+		expect(formatClock('19:45:00')).toBe('19:45')
+	})
+
+	it('returns nothing for a missing time', () => {
+		expect(formatClock(null)).toBe('')
+		expect(formatClock('')).toBe('')
 	})
 })
 

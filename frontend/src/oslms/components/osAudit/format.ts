@@ -24,6 +24,13 @@ export function formatTime(value?: string | null): string {
 	return value ? dayjs(value).format('HH:mm') : ''
 }
 
+// A Time field comes as "9:00:00" (no leading zero), so slicing it is not enough.
+export function formatClock(value?: string | null): string {
+	const [hours, minutes] = String(value || '').split(':')
+	if (!hours || minutes === undefined) return ''
+	return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`
+}
+
 export function formatPercent(value?: number | null): string {
 	return value === null || value === undefined ? '—' : `${value}%`
 }

@@ -141,7 +141,7 @@
 					<div class="flex flex-wrap items-baseline justify-between gap-2">
 						<div class="font-medium text-ink-gray-9">{{ live.title }}</div>
 						<div class="text-sm text-ink-gray-6">
-							{{ formatDate(live.date) }} {{ String(live.time || '').slice(0, 5) }}
+							{{ formatDate(live.date) }} {{ formatClock(live.time) }}
 							· {{ live.batch_title }} · {{ live.provider }}
 						</div>
 					</div>
@@ -206,6 +206,7 @@ import { Badge, Button, FormControl, call, toast } from 'frappe-ui'
 import Link from '@/oslms/components/Controls/Link.vue'
 import {
 	AUDIT_API,
+	formatClock,
 	formatDate,
 	formatDateTime,
 	formatHM,
