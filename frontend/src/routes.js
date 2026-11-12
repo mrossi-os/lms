@@ -493,6 +493,12 @@ export const routes = [
 		name: 'StudentStatsExport',
 		component: () => import('@/oslms/pages/StudentStatsExport.vue'),
 	},
+	// OSLMS-CUSTOM: OS Audit page (docs/audit-studenti/PIANO.md §7)
+	{
+		path: '/os-audit',
+		name: 'OsAudit',
+		component: () => import('@/oslms/pages/OsAudit.vue'),
+	},
 	{
 		path: '/:pathMatch(.*)*',
 		name: 'NotFound',

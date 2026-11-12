@@ -430,6 +430,10 @@ def get_user_info():
         from os_lms.os_lms.api import can_export_student_stats
 
         result["can_export_stats"] = can_export_student_stats()
+        # Gate for the OS Audit page (docs/audit-studenti/PIANO.md §8).
+        from os_lms.os_lms.os_audit import can_use_os_audit
+
+        result["can_use_os_audit"] = can_use_os_audit()
         # Account deletion requests (review page, direct deletion of members) and
         # the privacy policy dialog shown until the user accepts it.
         from os_lms.os_lms.account_deletion_requests import has_requests_to_review, is_manager

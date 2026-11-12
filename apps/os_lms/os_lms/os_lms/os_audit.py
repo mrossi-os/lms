@@ -101,7 +101,13 @@ UNSCOPED_EVENTS = {"login", "logout", "login_failed"}
 # Events about the audit itself: written whenever a retention period is set, even
 # with the audit off (a session closed after the audit was turned off still holds
 # time collected while it was on).
-SYSTEM_EVENTS = {"audit_settings_changed", "audit_data_erased", "daily_seal", "session_closed"}
+SYSTEM_EVENTS = {
+	"audit_settings_changed",
+	"audit_data_erased",
+	"audit_export",
+	"daily_seal",
+	"session_closed",
+}
 
 # The event fields covered by the salted fingerprint, in canonical order. Erasure
 # blanks exactly these (plus the salt).

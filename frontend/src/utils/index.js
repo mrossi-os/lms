@@ -845,6 +845,16 @@ const getSidebarItems = (forMobile = false) => {
 						return !forMobile && userResource?.data?.can_export_stats
 					},
 				},
+				{
+					// OSLMS-CUSTOM: sidebar entry for the OS Audit page (can_use_os_audit)
+					label: 'OS Audit',
+					icon: 'ShieldCheck',
+					to: 'OsAudit',
+					activeFor: ['OsAudit'],
+					condition: () => {
+						return !forMobile && userResource?.data?.can_use_os_audit
+					},
+				},
 			],
 		},
 	]

@@ -9906,3 +9906,49 @@ dell'anteprima. Aggiunto 2026-11-11."""
 
   [entries.checks]
   unit = "apps/os_lms/os_lms/os_lms/tests/test_os_audit.py"
+
+# ---------------------------------------------------------------------------
+# OS Audit (docs/audit-studenti/PIANO.md, fase 2: pagina OS Audit)
+# ---------------------------------------------------------------------------
+
+[[entries]]
+id = "os-audit-page-route"
+title = "OS Audit: rotta della pagina /os-audit"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La pagina OS Audit (oslms/pages/OsAudit.vue: impostazioni, registro, presenze, export,
+integrità) vive nella SPA perché il Gestore di norma non raggiunge il Desk. Senza la rotta la
+voce di menu non apre nulla. Se l'upstream riscrive routes.js, rimettere la rotta OsAudit
+accanto a StudentStatsExport. Aggiunto 2026-11-12."""
+
+  [[entries.sites]]
+  file = "frontend/src/routes.js"
+  anchor = "path: '/os-audit',"
+
+  [entries.checks]
+  unit = "apps/os_lms/os_lms/os_lms/tests/test_os_audit_page.py"
+
+[[entries]]
+id = "os-audit-sidebar-entry"
+title = "OS Audit: voce «OS Audit» nella barra laterale"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Voce di menu verso la pagina OS Audit. Compare solo se get_user_info restituisce
+can_use_os_audit, calcolato da os_audit.can_use_os_audit() (OS_AUDIT_ROLES: System Manager e
+Gestore), e mai nel menu mobile. Gli endpoint ricontrollano lo stesso permesso. Aggiunto
+2026-11-12."""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = "return !forMobile && userResource?.data?.can_use_os_audit"
+  symbol = "getSidebarItems"
+
+  [entries.visibility]
+  subject = "voce OS Audit nella barra laterale"
+  allow = ["System Manager", "Gestore"]
+  deny = ["Moderator", "Docente", "Valutatore", "Student", "Guest"]
+
+  [entries.checks]
+  unit = "apps/os_lms/os_lms/os_lms/tests/test_os_audit_page.py"

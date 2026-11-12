@@ -1654,6 +1654,8 @@ def list_student_stats_exports():
 	_ensure_can_export_student_stats()
 	return frappe.get_all(
 		"Student Stats Export",
+		# OS Audit exports share the queue but live on their own page (os_audit_export).
+		filters={"report_type": ["not like", "os_audit_%"]},
 		fields=[
 			"name",
 			"report_type",
