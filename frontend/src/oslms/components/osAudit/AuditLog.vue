@@ -74,6 +74,12 @@
 							formatHM(summary.totals.active_seconds)
 						}}</b></span
 					>
+					<span v-if="summary.totals.video_seconds"
+						>{{ __('Video time') }}:
+						<b class="text-ink-gray-9">{{
+							formatHM(summary.totals.video_seconds)
+						}}</b></span
+					>
 				</div>
 			</div>
 
@@ -93,6 +99,7 @@
 								<th class="py-1.5 pr-3 font-medium">{{ __('Visits') }}</th>
 								<th class="py-1.5 pr-3 font-medium">{{ __('Presence') }}</th>
 								<th class="py-1.5 pr-3 font-medium">{{ __('Active Time') }}</th>
+								<th class="py-1.5 pr-3 font-medium">{{ __('Video time') }}</th>
 								<th class="py-1.5 font-medium">{{ __('Last visit') }}</th>
 							</tr>
 						</thead>
@@ -107,6 +114,7 @@
 								<td class="py-1.5 pr-3">{{ row.visits }}</td>
 								<td class="py-1.5 pr-3">{{ formatHM(row.presence_seconds) }}</td>
 								<td class="py-1.5 pr-3">{{ formatHM(row.active_seconds) }}</td>
+								<td class="py-1.5 pr-3">{{ formatHM(row.video_seconds) }}</td>
 								<td class="py-1.5 text-ink-gray-6">{{ formatDateTime(row.last_at) }}</td>
 							</tr>
 						</tbody>
@@ -127,7 +135,8 @@
 								<th class="py-1.5 pr-3 font-medium">{{ __('Last signal') }}</th>
 								<th class="py-1.5 pr-3 font-medium">{{ __('Lessons') }}</th>
 								<th class="py-1.5 pr-3 font-medium">{{ __('Presence') }}</th>
-								<th class="py-1.5 font-medium">{{ __('Active Time') }}</th>
+								<th class="py-1.5 pr-3 font-medium">{{ __('Active Time') }}</th>
+								<th class="py-1.5 font-medium">{{ __('Video time') }}</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -141,7 +150,8 @@
 								<td class="py-1.5 pr-3">{{ formatTime(day.last_at) }}</td>
 								<td class="py-1.5 pr-3">{{ day.lessons }}</td>
 								<td class="py-1.5 pr-3">{{ formatHM(day.presence_seconds) }}</td>
-								<td class="py-1.5">{{ formatHM(day.active_seconds) }}</td>
+								<td class="py-1.5 pr-3">{{ formatHM(day.active_seconds) }}</td>
+								<td class="py-1.5">{{ formatHM(day.video_seconds) }}</td>
 							</tr>
 						</tbody>
 					</table>

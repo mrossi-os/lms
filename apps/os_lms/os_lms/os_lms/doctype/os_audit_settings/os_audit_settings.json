@@ -23,6 +23,8 @@
 		"track_live_classes",
 		"track_scorm",
 		"track_certificates",
+		"track_videos",
+		"track_files",
 		"section_technical",
 		"store_device",
 		"store_ip",
@@ -150,6 +152,20 @@
 			"label": "Certificates"
 		},
 		{
+			"default": "1",
+			"description": "Play, pause, skips and end of the videos in a lesson, and the time a video was playing. Needs Time Spent in Lessons.",
+			"fieldname": "track_videos",
+			"fieldtype": "Check",
+			"label": "Videos"
+		},
+		{
+			"default": "1",
+			"description": "PDFs viewed in a lesson and platform files opened or downloaded from it. Needs Time Spent in Lessons.",
+			"fieldname": "track_files",
+			"fieldtype": "Check",
+			"label": "PDFs and Downloads"
+		},
+		{
 			"fieldname": "section_technical",
 			"fieldtype": "Section Break",
 			"label": "Technical Data and Privacy"
@@ -212,7 +228,7 @@
 	"index_web_pages_for_search": 0,
 	"issingle": 1,
 	"links": [],
-	"modified": "2026-11-11 18:00:00.000000",
+	"modified": "2026-11-12 12:00:00.000000",
 	"modified_by": "Administrator",
 	"module": "OS LMS",
 	"name": "OS Audit Settings",

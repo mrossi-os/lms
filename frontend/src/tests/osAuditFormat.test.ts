@@ -8,6 +8,8 @@ import {
 	exportLabel,
 	formatClock,
 	formatHM,
+	formatPosition,
+	mediaName,
 } from '../oslms/components/osAudit/format'
 
 beforeAll(() => {
@@ -47,7 +49,58 @@ describe('formatClock', () => {
 	})
 })
 
+describe('formatPosition and mediaName', () => {
+	it('gives a video position as m:ss, or h:mm:ss past the hour', () => {
+		expect(formatPosition(0)).toBe('0:00')
+		expect(formatPosition(65.7)).toBe('1:05')
+		expect(formatPosition(3725)).toBe('1:02:05')
+		expect(formatPosition(undefined)).toBe('0:00')
+	})
+
+	it('names a platform file by its file name and an embed by its URL', () => {
+		expect(mediaName('/private/files/lesson 1.mp4')).toBe('lesson 1.mp4')
+		expect(mediaName('https://www.youtube.com/watch?v=abc')).toBe(
+			'https://www.youtube.com/watch?v=abc',
+		)
+		expect(mediaName(undefined)).toBe('')
+	})
+})
+
 describe('describeEvent', () => {
+	it('describes video, PDF and download events', () => {
+		const source = '/files/intro.mp4'
+		expect(
+			String(describeEvent({ event_type: 'video_pause', data: { source, position: 95 } })),
+		).toBe('intro.mp4 at position 1:35')
+		expect(
+			String(
+				describeEvent({
+					event_type: 'video_seek',
+					data: { source, from: 10, position: 130 },
+				}),
+			),
+		).toBe('intro.mp4: skipped from 0:10 to 2:10')
+		expect(
+			describeEvent({ event_type: 'download', data: { file: '/files/handout.pdf' } }),
+		).toBe('handout.pdf')
+		expect(
+			String(
+				describeEvent({
+					event_type: 'session_closed',
+					data: { presence_seconds: 600, active_seconds: 300, video_seconds: 240, reason: 'timeout' },
+				}),
+			),
+		).toBe('Presence 0:10, active 0:05, closed by inactivity, video playing 0:04')
+		expect(
+			String(
+				describeEvent({
+					event_type: 'session_closed',
+					data: { presence_seconds: 49, active_seconds: 49, video_seconds: 11, reason: 'timeout' },
+				}),
+			),
+		).toBe('Presence 0:00, active 0:00, closed by inactivity')
+	})
+
 	it('gives the totals and the reason of a closed lesson visit', () => {
 		expect(
 			String(

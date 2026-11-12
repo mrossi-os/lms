@@ -162,3 +162,201 @@ describe('useOsAudit', () => {
 		expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ quiz: 'quiz-1' })
 	})
 })
+
+// Phase 3 (PIANO §15): videos, PDFs and downloads travel with the heartbeat.
+describe('useOsAudit, videos and files', () => {
+	const collecting = (flags = { track_videos: 1, track_files: 1 }) => ({
+		name: 'lesson-1',
+		os_audit: { session: 'S1', heartbeat_seconds: 30, inactivity_minutes: 3, ...flags },
+	})
+
+	function fakeVideo(state: Record<string, any>) {
+		const el = document.createElement('video')
+		for (const [key, value] of Object.entries({ currentSrc: '/files/a.mp4', duration: 100, ended: false, paused: true, currentTime: 0, ...state }))
+			Object.defineProperty(el, key, { value, writable: true, configurable: true })
+		document.body.appendChild(el)
+		return el as HTMLVideoElement & Record<string, any>
+	}
+
+	const fire = (el: EventTarget, type: string, init?: CustomEventInit) =>
+		el.dispatchEvent(init ? new CustomEvent(type, init) : new Event(type))
+
+	async function sentEvents() {
+		await vi.advanceTimersByTimeAsync(30_000)
+		return bodies().at(-1)
+	}
+
+	afterEach(() => {
+		document.body.innerHTML = ''
+	})
+
+	it('collects nothing when the audit does not ask for it', async () => {
+		const wrapper = mountWith(reactive({ data: collecting({ track_videos: 0, track_files: 0 }) }))
+		fire(fakeVideo({ currentTime: 5 }), 'play')
+		const body = await sentEvents()
+		expect(body.events).toBeUndefined()
+		expect(body.video_seconds).toBeUndefined()
+		wrapper.unmount()
+	})
+
+	it('sends play, pause and end with the video and the position', async () => {
+		const wrapper = mountWith(reactive({ data: collecting() }))
+		const video = fakeVideo({ currentTime: 5.2 })
+		fire(video, 'play')
+		fire(video, 'play') // the same event twice in a row is one event
+		video.currentTime = 40
+		fire(video, 'pause')
+		// The pause the browser fires right before the end is not recorded.
+		video.currentTime = 100
+		video.ended = true
+		fire(video, 'pause')
+		fire(video, 'ended')
+		expect((await sentEvents()).events).toEqual([
+			{ type: 'video_play', source: '/files/a.mp4', position: 5.2, duration: 100 },
+			{ type: 'video_pause', source: '/files/a.mp4', position: 40, duration: 100 },
+			{ type: 'video_ended', source: '/files/a.mp4', position: 100, duration: 100 },
+		])
+		wrapper.unmount()
+	})
+
+	it('counts the Plyr event on the media once, not its copy on the container', async () => {
+		const wrapper = mountWith(reactive({ data: collecting() }))
+		const container = document.createElement('div')
+		const media = document.createElement('div')
+		container.appendChild(media)
+		document.body.appendChild(container)
+		const plyr = { media, currentTime: 12, duration: 300, paused: false, source: 'https://www.youtube.com/watch?v=abc' }
+		fire(media, 'play', { detail: { plyr } })
+		fire(container, 'play', { detail: { plyr }, bubbles: true })
+		expect((await sentEvents()).events).toEqual([
+			{ type: 'video_play', source: 'https://www.youtube.com/watch?v=abc', position: 12, duration: 300 },
+		])
+		wrapper.unmount()
+	})
+
+	it('names a Vimeo embed by its player iframe when Plyr has no source', async () => {
+		const wrapper = mountWith(reactive({ data: collecting() }))
+		const media = document.createElement('div')
+		media.innerHTML =
+			'<iframe src="https://player.vimeo.com/video/1176116607?loop=false&h=464f910a1b"></iframe>'
+		document.body.appendChild(media)
+		const plyr = { media, currentTime: 3, duration: 450, paused: false, source: undefined }
+		fire(media, 'play', { detail: { plyr } })
+		expect((await sentEvents()).events).toEqual([
+			{ type: 'video_play', source: 'https://player.vimeo.com/video/1176116607', position: 3, duration: 450 },
+		])
+		wrapper.unmount()
+	})
+
+	it('leaves out the pause and play Plyr makes around a skip', async () => {
+		const wrapper = mountWith(reactive({ data: collecting() }))
+		const video = fakeVideo({ currentTime: 7, paused: false, duration: 458 })
+		fire(video, 'play')
+		vi.advanceTimersByTime(5000)
+		// Plyr on Vimeo: pause, play at the new point, then seeked.
+		fire(video, 'seeking')
+		fire(video, 'pause')
+		video.currentTime = 348
+		fire(video, 'play')
+		fire(video, 'seeked')
+		vi.advanceTimersByTime(4000)
+		video.currentTime = 352
+		fire(video, 'pause')
+		expect((await sentEvents()).events.map((e: any) => [e.type, e.position])).toEqual([
+			['video_play', 7],
+			['video_seek', 348],
+			['video_pause', 352],
+		])
+		wrapper.unmount()
+	})
+
+	it('merges a drag on the progress bar into one skip and drops a skip that snaps back', async () => {
+		const wrapper = mountWith(reactive({ data: collecting() }))
+		const video = fakeVideo({ currentTime: 10 })
+		fire(video, 'timeupdate')
+		for (const position of [30, 55, 80]) {
+			fire(video, 'seeking')
+			video.currentTime = position
+			fire(video, 'seeked')
+			vi.advanceTimersByTime(300)
+		}
+		// Skipping blocked by the course: the video jumps forward and back.
+		vi.advanceTimersByTime(3000)
+		fire(video, 'seeking')
+		video.currentTime = 95
+		fire(video, 'seeked')
+		fire(video, 'seeking')
+		video.currentTime = 80
+		fire(video, 'seeked')
+		expect((await sentEvents()).events).toEqual([
+			{ type: 'video_seek', source: '/files/a.mp4', from: 10, position: 80, duration: 100 },
+		])
+		wrapper.unmount()
+	})
+
+	it('sends the time a video was playing, counted once with two videos', async () => {
+		const wrapper = mountWith(reactive({ data: collecting() }))
+		const first = fakeVideo({ paused: false })
+		const second = fakeVideo({ paused: false })
+		for (let i = 0; i < 40; i++) {
+			fire(first, 'timeupdate')
+			fire(second, 'timeupdate')
+			vi.advanceTimersByTime(250)
+		}
+		// 10 s of wall time; the first tick only starts the count.
+		expect((await sentEvents()).video_seconds).toBe(10)
+		wrapper.unmount()
+	})
+
+	it('records platform files opened from a link, nothing else', async () => {
+		const wrapper = mountWith(reactive({ data: collecting() }))
+		document.body.innerHTML = `
+			<a id="file" href="/files/slides%20v2.pdf"><span id="icon"></span></a>
+			<a id="private" href="/private/files/data.zip"></a>
+			<a id="outside" href="https://example.com/files/x.pdf"></a>
+			<a id="page" href="/lms/courses"></a>
+			<a id="gated" download href="/api/method/lms.lms.doctype.course_lesson.course_lesson.serve_resource?file_url=/private/files/message%20%285%29.txt"></a>`
+		const click = (id: string, init: MouseEventInit = {}) =>
+			document.getElementById(id)!.dispatchEvent(new MouseEvent(init.button === undefined ? 'click' : 'auxclick', { bubbles: true, ...init }))
+		click('icon')
+		click('private', { button: 1 })
+		click('private', { button: 2 })
+		click('outside')
+		click('page')
+		click('gated')
+		expect((await sentEvents()).events).toEqual([
+			{ type: 'download', file: '/files/slides v2.pdf' },
+			{ type: 'download', file: '/private/files/data.zip' },
+			// A private lesson file goes through the gated endpoint: the file is its parameter.
+			{ type: 'download', file: '/private/files/message (5).txt' },
+		])
+		wrapper.unmount()
+	})
+
+	it('records a PDF once, when half of it is on screen', async () => {
+		let notify: (entries: any[]) => void = () => {}
+		const observed: Element[] = []
+		vi.stubGlobal(
+			'IntersectionObserver',
+			class {
+				constructor(callback: any) {
+					notify = callback
+				}
+				observe(el: Element) {
+					observed.push(el)
+				}
+				unobserve() {}
+				disconnect() {}
+			}
+		)
+		document.body.innerHTML = '<div class="pdf-block"><a href="/files/handout.pdf"></a></div>'
+		const wrapper = mountWith(reactive({ data: collecting() }))
+		const block = document.querySelector('.pdf-block')!
+		expect(observed).toEqual([block])
+		notify([{ target: block, isIntersecting: false }])
+		notify([{ target: block, isIntersecting: true }])
+		notify([{ target: block, isIntersecting: true }])
+		expect((await sentEvents()).events).toEqual([{ type: 'pdf_open', file: '/files/handout.pdf' }])
+		wrapper.unmount()
+	})
+})

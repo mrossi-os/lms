@@ -33,6 +33,8 @@ EDITABLE_FIELDS = (
 	"track_live_classes",
 	"track_scorm",
 	"track_certificates",
+	"track_videos",
+	"track_files",
 	"store_device",
 	"store_ip",
 	"on_account_deletion",
@@ -66,7 +68,7 @@ EVENT_LABELS = {
 	"video_seek": "Video skipped",
 	"video_ended": "Video finished",
 	"pdf_open": "PDF opened",
-	"download": "File downloaded",
+	"download": "File opened or downloaded",
 }
 DEVICE_LABELS = {"desktop": "Desktop", "tablet": "Tablet", "mobile": "Mobile"}
 
@@ -421,7 +423,7 @@ def get_student_summary(
 	sessions = frappe.get_all(
 		SESSION,
 		filters=filters,
-		fields=["course", "lesson", "started_at", "last_seen_at", "presence_seconds", "active_seconds"],
+		fields=["course", "lesson", "started_at", "last_seen_at", "presence_seconds", "active_seconds", "video_seconds"],
 		order_by="started_at asc",
 	)
 	courses = names_of("LMS Course", (s.course for s in sessions), "title")
@@ -439,6 +441,7 @@ def get_student_summary(
 				"visits": 0,
 				"presence_seconds": 0,
 				"active_seconds": 0,
+				"video_seconds": 0,
 				"first_at": s.started_at,
 				"last_at": s.last_seen_at,
 			},
@@ -446,12 +449,13 @@ def get_student_summary(
 		day_key = str(getdate(s.started_at))
 		day = by_day.setdefault(
 			day_key,
-			{"date": day_key, "visits": 0, "presence_seconds": 0, "active_seconds": 0, "first_at": s.started_at, "last_at": s.last_seen_at, "_lessons": set()},
+			{"date": day_key, "visits": 0, "presence_seconds": 0, "active_seconds": 0, "video_seconds": 0, "first_at": s.started_at, "last_at": s.last_seen_at, "_lessons": set()},
 		)
 		for bucket in (lesson, day):
 			bucket["visits"] += 1
 			bucket["presence_seconds"] += cint(s.presence_seconds)
 			bucket["active_seconds"] += cint(s.active_seconds)
+			bucket["video_seconds"] += cint(s.video_seconds)
 			bucket["last_at"] = max(get_datetime(bucket["last_at"]), get_datetime(s.last_seen_at))
 		day["_lessons"].add(s.lesson)
 
@@ -462,6 +466,7 @@ def get_student_summary(
 
 	presence = sum(cint(s.presence_seconds) for s in sessions)
 	active = sum(cint(s.active_seconds) for s in sessions)
+	video = sum(cint(s.video_seconds) for s in sessions)
 	return {
 		"user": user,
 		"full_name": frappe.db.get_value("User", user, "full_name") or user,
@@ -470,6 +475,7 @@ def get_student_summary(
 			"visits": len(sessions),
 			"presence_seconds": presence,
 			"active_seconds": active,
+			"video_seconds": video,
 			"counted_seconds": counted_seconds(presence, active, settings),
 		},
 		"lessons": sorted(by_lesson.values(), key=lambda row: (row["course_title"] or "", get_datetime(row["first_at"]))),

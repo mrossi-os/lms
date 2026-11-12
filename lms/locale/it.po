@@ -11181,3 +11181,55 @@ msgstr "Abbandonato"
 #: frontend/src/oslms/components/osAudit/AuditLog.vue
 msgid "Needs Review"
 msgstr "Da revisionare"
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_audit_settings/os_audit_settings.json
+msgid "Videos"
+msgstr "Video"
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_audit_settings/os_audit_settings.json
+msgid "PDFs and Downloads"
+msgstr "PDF e download"
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_audit_settings/os_audit_settings.json
+msgid "Play, pause, skips and end of the videos in a lesson, and the time a video was playing. Needs Time Spent in Lessons."
+msgstr "Avvio, pausa, spostamenti e fine dei video di una lezione, e il tempo in cui un video era in riproduzione. Richiede Tempo nelle lezioni."
+
+#: apps/os_lms/os_lms/os_lms/doctype/os_audit_settings/os_audit_settings.json
+msgid "PDFs viewed in a lesson and platform files opened or downloaded from it. Needs Time Spent in Lessons."
+msgstr "PDF visualizzati in una lezione e file della piattaforma aperti o scaricati da lì. Richiede Tempo nelle lezioni."
+
+#: apps/os_lms/os_lms/os_lms/os_audit_page.py
+msgid "File opened or downloaded"
+msgstr "File aperto o scaricato"
+
+#: apps/os_lms/os_lms/os_lms/os_audit_export.py
+msgid "Video time (h:mm)"
+msgstr "Tempo video (h:mm)"
+
+#: frontend/src/oslms/components/osAudit/AuditSettings.vue
+msgid "Videos: play, pause, skips, end and watch time"
+msgstr "Video: avvio, pausa, spostamenti, fine e tempo di visione"
+
+#: frontend/src/oslms/components/osAudit/AuditSettings.vue
+msgid "PDFs viewed and files opened or downloaded"
+msgstr "PDF visualizzati e file aperti o scaricati"
+
+#: frontend/src/oslms/components/osAudit/AuditSettings.vue
+msgid "Videos, PDFs and files travel with the time-in-lessons signal: they are recorded only while «Time in lessons» is on."
+msgstr "Video, PDF e file viaggiano con il segnale del tempo nelle lezioni: si registrano solo se «Tempo nelle lezioni» è attivo."
+
+#: frontend/src/oslms/components/osAudit/AuditLog.vue
+msgid "Video time"
+msgstr "Tempo video"
+
+#: frontend/src/oslms/components/osAudit/format.ts
+msgid "video playing {0}"
+msgstr "video in riproduzione {0}"
+
+#: frontend/src/oslms/components/osAudit/format.ts
+msgid "{0} at position {1}"
+msgstr "{0} al punto {1}"
+
+#: frontend/src/oslms/components/osAudit/format.ts
+msgid "{0}: skipped from {1} to {2}"
+msgstr "{0}: spostato da {1} a {2}"

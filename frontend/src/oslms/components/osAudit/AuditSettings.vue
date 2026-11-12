@@ -153,6 +153,13 @@
 					<Switch v-model="form[toggle.field]" />
 				</label>
 			</div>
+			<p class="text-p-sm text-ink-gray-6">
+				{{
+					__(
+						'Videos, PDFs and files travel with the time-in-lessons signal: they are recorded only while «Time in lessons» is on.',
+					)
+				}}
+			</p>
 		</section>
 
 		<!-- Technical data, deletion, seal -->
@@ -304,6 +311,8 @@ const TOGGLE_FIELDS = [
 	'track_live_classes',
 	'track_scorm',
 	'track_certificates',
+	'track_videos',
+	'track_files',
 ]
 
 const form = reactive<Record<string, any>>({ courses: [] })
@@ -372,6 +381,8 @@ const toggles = computed(() => {
 		track_live_classes: __('Live classes'),
 		track_scorm: __('SCORM packages'),
 		track_certificates: __('Certificates'),
+		track_videos: __('Videos: play, pause, skips, end and watch time'),
+		track_files: __('PDFs viewed and files opened or downloaded'),
 	}
 	return TOGGLE_FIELDS.map((field) => ({ field, label: labels[field] }))
 })

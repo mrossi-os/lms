@@ -22,6 +22,12 @@ What lives here
   30 s from frontend/src/oslms/composables/useOsAudit.ts). Time is computed on
   the server from the gaps between heartbeats, capped, and credited per user
   so that two open tabs never count twice.
+- Videos and files (phase 3): the lesson page collects video play/pause/seek/
+  end, PDFs scrolled into view and platform files opened or downloaded, and
+  sends them with the next heartbeat (``events``) together with the seconds a
+  video was playing in the session (``video_seconds``). ``record_client_events``
+  accepts only those types, with the fields of each one, so the browser cannot
+  write anything else into the chain.
 - Jobs: ``close_stale_sessions`` (every 15 min), ``daily_seal`` and
   ``apply_retention`` (daily).
 
@@ -31,9 +37,8 @@ Extension points for the later phases
   A new course-bound type needs an entry in ``EVENT_TOGGLES``; a type that is not
   bound to a course goes in ``UNSCOPED_EVENTS`` or ``SYSTEM_EVENTS``.
 - Settings: a new per-event toggle is a Check field on ``OS Audit Settings``
-  plus its default in ``TOGGLE_DEFAULTS`` (phase 3: track_videos, track_pdfs).
-- ``heartbeat(events=...)`` accepts the batched client events of phase 3; it
-  ignores them for now.
+  plus its default in ``TOGGLE_DEFAULTS``.
+- A new browser event type goes in ``CLIENT_EVENTS`` and ``client_event_data``.
 - ``verify_chain`` and ``can_use_os_audit`` are the gates the phase 2 page uses.
 """
 
@@ -84,6 +89,12 @@ EVENT_TOGGLES = {
 	"live_class_join": "track_live_classes",
 	"scorm_open": "track_scorm",
 	"certificate_issued": "track_certificates",
+	"video_play": "track_videos",
+	"video_pause": "track_videos",
+	"video_seek": "track_videos",
+	"video_ended": "track_videos",
+	"pdf_open": "track_files",
+	"download": "track_files",
 }
 TOGGLE_DEFAULTS = {
 	"track_logins": 1,
@@ -94,6 +105,8 @@ TOGGLE_DEFAULTS = {
 	"track_live_classes": 1,
 	"track_scorm": 1,
 	"track_certificates": 1,
+	"track_videos": 1,
+	"track_files": 1,
 	"store_device": 1,
 }
 # Events not bound to a course: recorded for any real user while the audit is on.
@@ -108,6 +121,17 @@ SYSTEM_EVENTS = {
 	"daily_seal",
 	"session_closed",
 }
+
+# Events the lesson page sends with the heartbeat (phase 3). At most
+# MAX_CLIENT_EVENTS per heartbeat are kept; texts are cut at MAX_CLIENT_TEXT.
+VIDEO_EVENTS = {"video_play", "video_pause", "video_seek", "video_ended"}
+FILE_EVENTS = {"pdf_open", "download"}
+CLIENT_EVENTS = VIDEO_EVENTS | FILE_EVENTS
+MAX_CLIENT_EVENTS = 30
+MAX_CLIENT_TEXT = 300
+# A video position beyond this is not a real position (two days of video).
+MAX_VIDEO_POSITION = 2 * 24 * 3600
+PLATFORM_FILE_PATH = re.compile(r"^/(private/)?files/[^?#]+$")
 
 # The event fields covered by the salted fingerprint, in canonical order. Erasure
 # blanks exactly these (plus the salt).
@@ -560,6 +584,8 @@ def on_lesson_open(course: str, lesson: str) -> dict | None:
 			"session": session,
 			"heartbeat_seconds": HEARTBEAT_SECONDS,
 			"inactivity_minutes": inactivity_seconds(settings) // 60,
+			"track_videos": _flag(settings, "track_videos"),
+			"track_files": _flag(settings, "track_files"),
 		}
 	except Exception:
 		frappe.log_error(title="OS Audit: lesson open not recorded")
@@ -608,12 +634,17 @@ def heartbeat(
 	events: list | None = None,
 	close: bool = False,
 	hidden: bool = False,
+	video_seconds: int = 0,
 ) -> dict:
 	"""Periodic "still here" signal of a lesson page (PIANO §5).
 
 	Answers {"session": name} with the session to keep using (a new one after a
-	long gap), or {"stop": 1} when the page should stop sending. ``events`` is
-	reserved for the batched client events of phase 3 and ignored for now.
+	long gap), or {"stop": 1} when the page should stop sending.
+
+	``events`` are the video and file events the page collected since its last
+	signal (``record_client_events``). ``video_seconds`` is the total time a video
+	was playing in this session, as measured by the page: the session keeps the
+	highest total received, never more than its own presence.
 
 	``hidden`` is the last signal before the tab is hidden: it credits the time up
 	to now and closes the session as paused, so the hidden time is never credited;
@@ -633,6 +664,10 @@ def heartbeat(
 			close_session(row.name, "audit_disabled")
 		return {"stop": 1}
 
+	# Recorded whatever happens to the time below: they were collected while
+	# the session was in use.
+	record_client_events(row, events, settings)
+
 	now = now_datetime()
 	delta = (now - get_datetime(row.last_seen_at)).total_seconds()
 	timed_out = delta > inactivity_seconds(settings) + SESSION_GRACE_SECONDS
@@ -651,12 +686,16 @@ def heartbeat(
 
 	if delta >= MIN_HEARTBEAT_GAP or close or hidden:
 		presence, active_seconds = credit_seconds(row, now, bool(active), delta)
+		video = cint(row.video_seconds)
+		if _flag(settings, "track_videos"):
+			video = session_video_seconds(row, video_seconds, presence)
 		frappe.db.sql(
 			f"""
 			UPDATE `tab{SESSION}`
 			SET last_seen_at = %(now)s,
 				presence_seconds = presence_seconds + %(presence)s,
 				active_seconds = active_seconds + %(active_seconds)s,
+				video_seconds = %(video)s,
 				last_active_at = IF(%(active)s, %(now)s, last_active_at)
 			WHERE name = %(name)s AND closed = 0
 			""",
@@ -664,6 +703,7 @@ def heartbeat(
 				"now": now,
 				"presence": presence,
 				"active_seconds": active_seconds,
+				"video": video,
 				"active": 1 if active else 0,
 				"name": row.name,
 			},
@@ -674,6 +714,83 @@ def heartbeat(
 	if hidden:
 		close_session(row.name, "hidden", paused=True)
 	return {"session": row.name}
+
+
+def session_video_seconds(row, reported, presence: int) -> int:
+	"""Video time of a session after this heartbeat. The page reports the total
+	for the session; it can only grow, and never beyond the presence credited to
+	the session (which already excludes hidden tabs and other open tabs)."""
+	current = cint(row.video_seconds)
+	ceiling = cint(row.presence_seconds) + cint(presence)
+	return max(current, min(max(cint(reported), 0), ceiling))
+
+
+def record_client_events(row, events, settings) -> int:
+	"""Record the video and file events a lesson page sent with a heartbeat.
+
+	Course, lesson, device and IP come from the session, never from the page;
+	the page only says what happened. Unknown types and malformed items are
+	dropped, at most MAX_CLIENT_EVENTS are kept. Returns how many were queued."""
+	if isinstance(events, str):
+		try:
+			events = json.loads(events)
+		except ValueError:
+			return 0
+	if not isinstance(events, list):
+		return 0
+	queued = 0
+	for item in events[:MAX_CLIENT_EVENTS]:
+		if not isinstance(item, dict) or item.get("type") not in CLIENT_EVENTS:
+			continue
+		data = client_event_data(item["type"], item)
+		if data is None:
+			continue
+		queued += record(
+			item["type"],
+			user=row.user,
+			course=row.course,
+			lesson=row.lesson,
+			session=row.name,
+			device=row.device,
+			ip_address=row.ip_address,
+			data=data,
+			settings=settings,
+		)
+	return queued
+
+
+def client_event_data(event_type: str, item: dict) -> dict | None:
+	"""The fields kept for one browser event, or None to drop it."""
+	if event_type in VIDEO_EVENTS:
+		source = _client_text(item.get("source"))
+		if not source:
+			return None
+		data = {
+			"source": source,
+			"position": _video_position(item.get("position")),
+			"duration": _video_position(item.get("duration")),
+		}
+		if event_type == "video_seek":
+			data["from"] = _video_position(item.get("from"))
+		return {key: value for key, value in data.items() if value is not None}
+	file_path = _client_text(item.get("file"))
+	if not file_path or not PLATFORM_FILE_PATH.match(file_path):
+		return None
+	return {"file": file_path}
+
+
+def _client_text(value) -> str | None:
+	if not isinstance(value, str):
+		return None
+	return value.strip()[:MAX_CLIENT_TEXT] or None
+
+
+def _video_position(value) -> int | None:
+	if isinstance(value, bool) or not isinstance(value, int | float):
+		return None
+	if value != value or value < 0 or value > MAX_VIDEO_POSITION:
+		return None
+	return round(value)
 
 
 def credit_seconds(row, now, active: bool, delta: float) -> tuple[int, int]:

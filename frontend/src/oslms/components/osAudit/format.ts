@@ -31,6 +31,24 @@ export function formatClock(value?: string | null): string {
 	return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`
 }
 
+/** A position in a video: m:ss, or h:mm:ss past the hour. */
+export function formatPosition(seconds?: number | null): string {
+	const total = Math.floor(Math.max(Number(seconds) || 0, 0))
+	const hours = Math.floor(total / 3600)
+	const minutes = Math.floor((total % 3600) / 60)
+	const secs = String(total % 60).padStart(2, '0')
+	return hours
+		? `${hours}:${String(minutes).padStart(2, '0')}:${secs}`
+		: `${minutes}:${secs}`
+}
+
+/** What a reader recognises: the file name of a platform file, the URL of an embed. */
+export function mediaName(source?: string | null): string {
+	if (!source) return ''
+	if (!source.startsWith('/')) return source
+	return source.split('/').pop() || source
+}
+
 export function formatPercent(value?: number | null): string {
 	return value === null || value === undefined ? '—' : `${value}%`
 }
@@ -79,12 +97,34 @@ export function describeEvent(event: {
 	const data = event.data || {}
 	if (event.redacted) return __('Personal data erased')
 	switch (event.event_type) {
-		case 'session_closed':
-			return __('Presence {0}, active {1}, closed by {2}').format(
+		case 'session_closed': {
+			const text = __('Presence {0}, active {1}, closed by {2}').format(
 				formatHM(data.presence_seconds),
 				formatHM(data.active_seconds),
 				closeReason(data.reason),
 			)
+			// Under a minute h:mm reads 0:00, as if no video had played: the exact
+			// seconds stay in the event data and the exports.
+			return Number(data.video_seconds) >= 60
+				? `${text}, ${__('video playing {0}').format(formatHM(data.video_seconds))}`
+				: text
+		}
+		case 'video_play':
+		case 'video_pause':
+		case 'video_ended':
+			return __('{0} at position {1}').format(
+				mediaName(data.source),
+				formatPosition(data.position),
+			)
+		case 'video_seek':
+			return __('{0}: skipped from {1} to {2}').format(
+				mediaName(data.source),
+				formatPosition(data.from),
+				formatPosition(data.position),
+			)
+		case 'pdf_open':
+		case 'download':
+			return mediaName(data.file)
 		case 'quiz_submit': {
 			const parts = []
 			if (data.score !== undefined && data.score !== null)

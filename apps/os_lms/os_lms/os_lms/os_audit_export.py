@@ -327,7 +327,7 @@ def session_rows(filters: dict) -> tuple[list[list], int]:
 	sessions = frappe.get_all(
 		SESSION,
 		filters=conditions,
-		fields=["name", "user", "course", "lesson", "started_at", "last_seen_at", "presence_seconds", "active_seconds", "closed", "device", "ip_address"],
+		fields=["name", "user", "course", "lesson", "started_at", "last_seen_at", "presence_seconds", "active_seconds", "video_seconds", "closed", "device", "ip_address"],
 		order_by="started_at asc",
 		limit=MAX_ROWS,
 	)
@@ -344,6 +344,7 @@ def session_rows(filters: dict) -> tuple[list[list], int]:
 			_("Last signal"),
 			_("Presence (h:mm)"),
 			_("Active time (h:mm)"),
+			_("Video time (h:mm)"),
 			_("Closed"),
 			_("Device"),
 			_("IP Address"),
@@ -361,6 +362,7 @@ def session_rows(filters: dict) -> tuple[list[list], int]:
 				_dt(s.last_seen_at),
 				format_hm(s.presence_seconds),
 				format_hm(s.active_seconds),
+				format_hm(s.video_seconds),
 				_("Yes") if cint(s.closed) else _("No"),
 				device_label(s.device),
 				s.ip_address or "",
