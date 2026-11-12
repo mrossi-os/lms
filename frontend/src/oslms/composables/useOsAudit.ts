@@ -84,7 +84,12 @@ export function sourcePath(url: string | undefined | null): string {
 	if (!url) return ''
 	try {
 		const parsed = new URL(url, window.location.href)
-		return parsed.origin === window.location.origin ? sitePath(parsed) : parsed.href
+		if (parsed.origin === window.location.origin) return sitePath(parsed)
+		// YouTube puts the current time in the video URL (t=118): the same video
+		// must keep the same name.
+		parsed.searchParams.delete('t')
+		parsed.hash = ''
+		return parsed.href
 	} catch {
 		return url
 	}
@@ -110,7 +115,16 @@ export function platformFile(href: string | undefined | null): string {
 export function mediaOf(event: Event): { el: any; plyr: any } | null {
 	const target = event.target as any
 	const plyr = (event as CustomEvent).detail?.plyr
-	if (plyr) return target === plyr.media ? { el: target, plyr } : null
+	if (plyr) {
+		if (target === plyr.media) return { el: target, plyr }
+		// YouTube: its API swaps Plyr's media element for the player iframe, so
+		// that element is out of the page and its events never reach the
+		// document. Only then the copy on the container is the one to count.
+		const media = plyr.media as Node | undefined
+		return target === plyr.elements?.container && media && !media.isConnected
+			? { el: target, plyr }
+			: null
+	}
 	return typeof HTMLMediaElement !== 'undefined' && target instanceof HTMLMediaElement
 		? { el: target, plyr: null }
 		: null
@@ -288,6 +302,18 @@ export function useOsAudit(lesson: { data?: any } | Ref<any>) {
 		// The browser pauses a video right before it ends: the end says it all.
 		if (event.type === 'pause' && (el.ended || (duration && duration - position < 0.5))) return
 		if (event.type !== 'play') lastPlayTick = 0
+		// A pause the video resumes from within moments is not a pause: YouTube
+		// pauses and plays again while it starts and around each skip.
+		const last = queue[queue.length - 1]
+		if (
+			event.type === 'play' &&
+			last?.type === 'video_pause' &&
+			last.source === source &&
+			now - (queuedAt.get(last) ?? 0) < SEEK_MERGE_MS
+		) {
+			queue.pop()
+			return
+		}
 		push({ type: `video_${event.type}`, source, position, duration })
 	}
 

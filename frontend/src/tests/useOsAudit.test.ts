@@ -225,11 +225,96 @@ describe('useOsAudit, videos and files', () => {
 		const media = document.createElement('div')
 		container.appendChild(media)
 		document.body.appendChild(container)
-		const plyr = { media, currentTime: 12, duration: 300, paused: false, source: 'https://www.youtube.com/watch?v=abc' }
+		const plyr = {
+			media,
+			elements: { container },
+			currentTime: 12,
+			duration: 300,
+			paused: false,
+			source: 'https://player.vimeo.com/video/123',
+		}
 		fire(media, 'play', { detail: { plyr } })
 		fire(container, 'play', { detail: { plyr }, bubbles: true })
 		expect((await sentEvents()).events).toEqual([
-			{ type: 'video_play', source: 'https://www.youtube.com/watch?v=abc', position: 12, duration: 300 },
+			{ type: 'video_play', source: 'https://player.vimeo.com/video/123', position: 12, duration: 300 },
+		])
+		wrapper.unmount()
+	})
+
+	it('counts the container copy once when YouTube took the media out of the page', async () => {
+		const wrapper = mountWith(reactive({ data: collecting() }))
+		const container = document.createElement('div')
+		container.innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/abc"></iframe>'
+		document.body.appendChild(container)
+		// Plyr keeps a reference to the element the YouTube API replaced.
+		const media = document.createElement('div')
+		const plyr = {
+			media,
+			elements: { container },
+			currentTime: 0,
+			duration: 180,
+			paused: false,
+			source: 'https://www.youtube.com/watch?v=abc',
+		}
+		const both = (type: string) => {
+			fire(media, type, { detail: { plyr } })
+			fire(container, type, { detail: { plyr }, bubbles: true })
+		}
+		both('play')
+		for (let second = 1; second <= 3; second++) {
+			vi.advanceTimersByTime(1000)
+			plyr.currentTime = second
+			both('timeupdate')
+		}
+		plyr.paused = true
+		both('pause')
+		const body = await sentEvents()
+		expect(body.events).toEqual([
+			{ type: 'video_play', source: 'https://www.youtube.com/watch?v=abc', position: 0, duration: 180 },
+			{ type: 'video_pause', source: 'https://www.youtube.com/watch?v=abc', position: 3, duration: 180 },
+		])
+		expect(body.video_seconds).toBe(2)
+		wrapper.unmount()
+	})
+
+	it('keeps one name per YouTube video and drops the pauses it resumes from at once', async () => {
+		const wrapper = mountWith(reactive({ data: collecting() }))
+		const container = document.createElement('div')
+		document.body.appendChild(container)
+		const plyr = {
+			media: document.createElement('div'),
+			elements: { container },
+			currentTime: 0,
+			duration: 143,
+			paused: false,
+			source: 'https://www.youtube.com/watch?v=abc',
+		}
+		const at = (type: string, time: number, url = `https://www.youtube.com/watch?t=${Math.floor(time)}&v=abc`) => {
+			plyr.currentTime = time
+			plyr.source = url
+			fire(container, type, { detail: { plyr }, bubbles: true })
+		}
+		// What Plyr reported on staging: play, pause and play again while starting...
+		at('play', 0, 'https://www.youtube.com/watch?v=abc')
+		at('pause', 0, 'https://www.youtube.com/watch?v=abc')
+		vi.advanceTimersByTime(400)
+		at('play', 5)
+		vi.advanceTimersByTime(5000)
+		at('timeupdate', 78)
+		// ...then pause, play, skip, pause, play around a skip.
+		at('pause', 78)
+		at('play', 78)
+		at('seeking', 78)
+		at('seeked', 118)
+		at('pause', 118)
+		vi.advanceTimersByTime(300)
+		at('play', 119)
+		vi.advanceTimersByTime(7000)
+		at('pause', 126)
+		expect((await sentEvents()).events).toEqual([
+			{ type: 'video_play', source: 'https://www.youtube.com/watch?v=abc', position: 0, duration: 143 },
+			{ type: 'video_seek', source: 'https://www.youtube.com/watch?v=abc', from: 78, position: 118, duration: 143 },
+			{ type: 'video_pause', source: 'https://www.youtube.com/watch?v=abc', position: 126, duration: 143 },
 		])
 		wrapper.unmount()
 	})
