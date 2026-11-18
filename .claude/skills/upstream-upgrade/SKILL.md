@@ -40,9 +40,9 @@ I posti e le loro reti:
 | Dipendenze del frontend | `scripts/tests/test_dependency_floors.py`: versioni minime risolte in `frontend/yarn.lock` (voce `security-dependency-floors`) |
 
 Suite di conformità:
-- **backend** (in `apps/os_lms/os_lms/os_lms/tests/`): `test_owasp_2026_10`, `test_owasp_package_d`, `test_owasp_package_e`, `test_csp_report`, `test_security_alerts`, `test_account_deletion`, `test_discussion_reply_count`, `test_valutatore_assignment_submission_scope`, `test_role_gates_v2_64`, `test_role_gates_v2_65`, `test_owasp_discussion_submit`, `test_owasp_graded_submission`, `test_override_signatures`;
+- **backend** (in `apps/os_lms/os_lms/os_lms/tests/`): `test_owasp_2026_10`, `test_owasp_package_d`, `test_owasp_package_e`, `test_csp_report`, `test_security_alerts`, `test_account_deletion`, `test_discussion_reply_count`, `test_valutatore_assignment_submission_scope`, `test_role_gates_v2_64`, `test_role_gates_v2_65`, `test_owasp_discussion_submit`, `test_owasp_graded_submission`, `test_owasp_simulation_limits`, `test_owasp_lesson_completion`, `test_override_signatures`;
 - **backend del punto 5 ESG**: tutti i moduli di `apps/os_lms/os_lms/os_lms/ai/simulations/tests/` (tra cui `test_access`, `test_instructor_api`, `test_debrief_prompts`, `test_debrief_job`, `test_notifications`, `test_prompt_sync`) e di `apps/os_lms/os_lms/os_lms/ai/bias/tests/`. Non chiamano l'AI: i fornitori sono finti nei test. Un test rosso in `test_debrief_prompts` o `test_debrief_job` può voler dire che il Coach rivede il nome dello studente: è una regressione di equità, non un dettaglio;
-- **frontend** (in `frontend/src/tests/`): `inertPasteHtml`, `themeBootstrap`, `highContrast`, `accountDeletion`;
+- **frontend** (in `frontend/src/tests/`): `inertPasteHtml`, `themeBootstrap`, `highContrast`, `accountDeletion`, `lessonLocking`;
 - **script**: `test_dependency_floors`.
 
 Quando una correzione di conformità nuova viene committata, aggiungi qui la sua suite.
