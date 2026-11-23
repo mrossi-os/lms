@@ -19,9 +19,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from scripts.customizations.checks import OVERRIDES_DIR  # noqa: E402
 from scripts.customizations.gitbase import Git, PlanError  # noqa: E402
 from scripts.customizations.model import InventoryError, load_inventory  # noqa: E402
+from scripts.customizations.paths import INVENTORY_DIR, OVERRIDES_DIR  # noqa: E402
 from scripts.upstream_plan import frozen_originals  # noqa: E402
 
 DEFAULT_REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -86,7 +86,7 @@ def main(argv: list[str] | None = None) -> int:
 	args = build_parser().parse_args(argv)
 	repo_root = args.repo_root.resolve()
 	try:
-		entries = load_inventory(args.inventory or (repo_root / "docs" / "customizations"))
+		entries = load_inventory(args.inventory or (repo_root / INVENTORY_DIR))
 	except InventoryError as exc:
 		print(f"Inventario non valido: {exc}", file=sys.stderr)
 		return 2

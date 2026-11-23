@@ -14,9 +14,9 @@ from pathlib import Path
 from typing import Callable
 
 from scripts.customizations.model import InventoryError, list_cached_toml
+from scripts.customizations.paths import STRICT_FEATURES_FLAG  # noqa: F401 (re-exported)
 
 FEATURE_STATUSES = frozenset({"active", "retired", "replaced-by-upstream"})
-STRICT_FEATURES_FLAG = Path("docs/customizations/features/.strict")
 REQUIRED_FIELDS = (
 	"id",
 	"title",

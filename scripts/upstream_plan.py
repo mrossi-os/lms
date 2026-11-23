@@ -38,12 +38,12 @@ from scripts.customizations.gitbase import (  # noqa: E402,F401
 	sort_release_tags,
 )
 from scripts.customizations.model import InventoryError, load_inventory  # noqa: E402
+from scripts.customizations.paths import INVENTORY_DIR, OVERRIDES_DIR  # noqa: E402
 
 DEFAULT_REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_INVENTORY = Path("docs/customizations")
+DEFAULT_INVENTORY = Path(INVENTORY_DIR)
 PACKAGE_JSON = "frontend/package.json"
 WATCHED_DEPENDENCY = "frappe-ui"
-OVERRIDES_DIR = "frontend/src/overrides/"
 OVERRIDDEN_ROOT = "frontend/src/"
 
 # Conventional Commits breaking marker. frappe/lms merges pull requests with

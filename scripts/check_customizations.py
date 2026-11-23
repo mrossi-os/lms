@@ -34,8 +34,9 @@ from scripts.customizations.checks import (  # noqa: E402
 	disk_reader,
 )
 from scripts.customizations.gitbase import Git, PlanError, find_base  # noqa: E402
-from scripts.customizations.features import STRICT_FEATURES_FLAG, load_features  # noqa: E402
+from scripts.customizations.features import load_features  # noqa: E402
 from scripts.customizations.model import InventoryError, load_inventory  # noqa: E402
+from scripts.customizations.paths import INVENTORY_DIR, STRICT_FEATURES_FLAG  # noqa: E402
 from scripts.customizations.report import render_json, render_table  # noqa: E402
 from scripts.customizations.translations import (  # noqa: E402
 	PO_PATH,
@@ -45,7 +46,7 @@ from scripts.customizations.translations import (  # noqa: E402
 )
 
 DEFAULT_REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_INVENTORY = Path("docs/customizations")
+DEFAULT_INVENTORY = Path(INVENTORY_DIR)
 
 
 def build_parser() -> argparse.ArgumentParser:

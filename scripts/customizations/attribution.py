@@ -23,15 +23,13 @@ import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from scripts.commit_guard import NONE_VALUE, is_exempt_path, parse_trailers
 from scripts.customizations.features import Feature, load_features
 from scripts.customizations.gitbase import Git, find_base
 from scripts.customizations.model import Entry, InventoryError, load_inventory
+from scripts.customizations.paths import FEATURES_DIR, INVENTORY_DIR, LEGACY_FILE, is_exempt_path
+from scripts.customizations.trailers import NONE_VALUE, parse_trailers
 from scripts.upstream_plan import is_customization_candidate
 
-FEATURES_DIR = Path("docs/customizations/features")
-INVENTORY_DIR = Path("docs/customizations")
-LEGACY_FILE = INVENTORY_DIR / "legacy-attribution.toml"
 SOURCES = ("trailer", "anchor", "area", "legacy")
 UNATTRIBUTED = "unattributed"
 

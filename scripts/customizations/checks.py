@@ -13,6 +13,7 @@ from pathlib import Path
 
 from scripts.customizations.features import Feature
 from scripts.customizations.model import Entry
+from scripts.customizations.paths import OVERRIDES_DIR
 
 ERROR = "error"
 WARNING = "warning"
@@ -216,9 +217,6 @@ def check_feature_links(entries: list[Entry], features: dict[str, Feature], stri
 				Finding(entry.id, "C8", severity, f"funzionalità sconosciuta '{entry.feature}'", None, None)
 			)
 	return findings
-
-
-OVERRIDES_DIR = "frontend/src/overrides/"
 
 
 def check_frozen_base(entries: list[Entry]) -> list[Finding]:

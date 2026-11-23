@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import os
 import re
-import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -46,44 +45,28 @@ from scripts.customizations.checks import (  # noqa: E402
 from scripts.customizations.features import Feature, load_features  # noqa: E402
 from scripts.customizations.gitbase import Git, PlanError, find_base  # noqa: E402
 from scripts.customizations.model import Entry, load_inventory  # noqa: E402
-from scripts.customizations.stage import (  # noqa: E402
+from scripts.customizations.paths import (  # noqa: E402,F401
+	EXEMPT_BASENAMES,
+	EXEMPT_FILES,
+	EXEMPT_PREFIXES,
+	FEATURES_DIR,
 	INVENTORY_DIR,
+	OUR_PREFIXES,
+	is_exempt_path,
+	is_our_path,
+)
+from scripts.customizations.stage import (  # noqa: E402
 	MergeInfo,
 	cached_reader,
 	changed_entry_ids,
 	read_merge_info,
 	staged_paths,
 )
+from scripts.customizations.trailers import NONE_VALUE, TRAILER_KEY, parse_trailers  # noqa: E402,F401
 
-TRAILER_KEY = "oslms-feature"
-FEATURES_DIR = "docs/customizations/features"
 SIDEBAR = "frontend/src/components/Sidebar/AppSidebar.vue"
 SCISSORS = "# ------------------------ >8 ------------------------"
 COMMIT_TYPE = re.compile(r"^(\w+)(\(.+\))?!?:")
-NONE_VALUE = re.compile(r"^none(?:\s*\((.*)\))?\s*$", re.IGNORECASE)
-
-OUR_PREFIXES = ("apps/os_lms/", "frontend/src/oslms/", "frontend/src/overrides/", "frontend/oslms-vite/")
-EXEMPT_PREFIXES = (
-	"docs/",
-	"reports/",
-	"scripts/",
-	".claude/",
-	".githooks/",
-	".github/",
-	"lms/locale/",
-	"lms/translations/",
-	"graphify-out/",
-	".agents/",
-	".vscode/",
-)
-EXEMPT_FILES = (
-	"frontend/yarn.lock",
-	"yarn.lock",
-	"frontend/components.d.ts",
-	"frontend/src/utils/frappe-ui-colors.json",
-	"osv-scanner.toml",
-)
-EXEMPT_BASENAMES = ("CLAUDE.md", "AGENTS.md")  # agent instructions, at any depth
 
 WHERE_TO_WRITE = (
 	"Scrivi la riga nell'ultimo paragrafo del messaggio, quello delle righe finali: "
@@ -112,24 +95,6 @@ def clean_message(text: str) -> str:
 	return "\n".join(kept).strip("\n") + "\n"
 
 
-def parse_trailers(message: str) -> list[str]:
-	"""The `Oslms-Feature` values of the final trailer block, with git's own rules."""
-	result = subprocess.run(
-		["git", "interpret-trailers", "--parse", "--no-divider"],
-		input=message,
-		capture_output=True,
-		text=True,
-		encoding="utf-8",
-		check=True,
-	)
-	values = []
-	for line in result.stdout.splitlines():
-		key, _, value = line.partition(":")
-		if key.strip().lower() == TRAILER_KEY and value.strip():
-			values.append(value.strip())
-	return values
-
-
 def commit_type(message: str) -> str:
 	"""The Conventional Commits type of the subject line, or "" when there is none."""
 	for line in message.splitlines():
@@ -139,21 +104,13 @@ def commit_type(message: str) -> str:
 	return ""
 
 
-def is_exempt_path(path: str) -> bool:
-	return (
-		path.startswith(EXEMPT_PREFIXES)
-		or path in EXEMPT_FILES
-		or path.rsplit("/", 1)[-1] in EXEMPT_BASENAMES
-	)
-
-
 def classify(paths: set[str], base_files: set[str]) -> dict[str, set[str]]:
 	"""Split staged paths into upstream-owned, ours and exempt (docs, tooling, generated)."""
 	groups: dict[str, set[str]] = {"upstream": set(), "ours": set(), "exempt": set()}
 	for path in paths:
 		if is_exempt_path(path):
 			groups["exempt"].add(path)
-		elif path.startswith(OUR_PREFIXES) or path not in base_files:
+		elif is_our_path(path, base_files):
 			groups["ours"].add(path)
 		else:
 			groups["upstream"].add(path)

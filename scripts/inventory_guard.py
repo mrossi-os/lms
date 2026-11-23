@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from scripts.customizations.checks import Finding, check_uncatalogued_markers  # noqa: E402
 from scripts.customizations.gitbase import Git  # noqa: E402
 from scripts.customizations.model import load_inventory  # noqa: E402
+from scripts.customizations.paths import INVENTORY_DIR  # noqa: E402
 
 DEFAULT_REPO_ROOT = Path(__file__).resolve().parent.parent
 SENTINEL_NAME = "oslms-inventory-guard"
@@ -74,7 +75,7 @@ def main(argv: list[str] | None = None, stdin_text: str | None = None) -> int:
 		raw = stdin_text if stdin_text is not None else sys.stdin.read()
 		session_id = json.loads(raw or "{}").get("session_id", "")
 
-		entries = load_inventory(repo_root / "docs" / "customizations")
+		entries = load_inventory(repo_root / INVENTORY_DIR)
 		decision = build_decision(check_uncatalogued_markers(entries, repo_root))
 		hooks_problem = hooks_path_problem(repo_root)
 		if hooks_problem:

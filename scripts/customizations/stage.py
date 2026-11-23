@@ -14,9 +14,8 @@ from pathlib import Path
 from scripts.customizations.checks import Reader
 from scripts.customizations.gitbase import Git, sort_release_tags
 from scripts.customizations.model import Entry, list_cached_toml
+from scripts.customizations.paths import INVENTORY_DIR
 from scripts.upstream_plan import parse_name_status
-
-INVENTORY_DIR = "docs/customizations"
 
 
 @dataclass(frozen=True)
