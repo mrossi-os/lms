@@ -204,6 +204,123 @@ class AttributionTest(unittest.TestCase):
 		self.assertEqual(data["base"], "v1.0.0")
 
 
+MIXED_INVENTORY = """
+[[entries]]
+id = "z-anchor"
+title = "anchor"
+layer = "spa-graft"
+confidence = "high"
+intent = "x"
+feature = "feat-z"
+sites = [{ file = "src/n.vue", anchor = "ANCHOR_Z" }]
+"""
+
+
+class MixedFork(FakeFork):
+	"""Hunks written by commits with and without the trailer (design §5.5, per commit)."""
+
+	def __init__(self, root):
+		self.root = Path(root)
+		self.git("init", "-q", "-b", "main")
+		self.commit(
+			"chore(release): v1.0.0",
+			**{"src/m.vue": "m1\nm2\nm3\n", "src/n.vue": "n1\nn2\n", "lms/lms/test_api.py": "def test_a():\n\tpass\n"},
+		)
+		self.git("tag", "v1.0.0")
+		self.commit(
+			"docs: catalogue",
+			**{
+				"docs/customizations/features/feat-x.toml": card("feat-x"),
+				"docs/customizations/features/feat-y.toml": card("feat-y", ["src/m.vue"]),
+				"docs/customizations/features/feat-z.toml": card("feat-z"),
+				"docs/customizations/spa-grafts.toml": MIXED_INVENTORY,
+			},
+		)
+		self.commit("feat: x\n\nOslms-Feature: feat-x", **{"src/m.vue": "m1\nx line\nm2\nm3\n"})
+		self.commit("fix: y", **{"src/m.vue": "m1\nx line\ny line\nm2\nm3\n"})
+		self.commit("fix: x end\n\nOslms-Feature: feat-x", **{"src/m.vue": "m1\nx line\ny line\nm2\nm3\nx end\n"})
+		self.commit("fix: z\n\nOslms-Feature: feat-x", **{"src/n.vue": "n1\nANCHOR_Z here\nn2\n"})
+		self.commit(
+			"test: ours\n\nOslms-Feature: feat-x",
+			**{"lms/lms/test_api.py": "def test_a():\n\tpass\n\n\ndef test_ours():\n\tpass\n"},
+		)
+
+
+def features_of(result, file, head_start):
+	return sorted(
+		fid
+		for fid, feature in result["features"].items()
+		for h in feature["hunks"]
+		if h["file"] == file and h["head_start"] == head_start
+	)
+
+
+class MixedAttributionTest(unittest.TestCase):
+	@classmethod
+	def setUpClass(cls):
+		cls.tmp = tempfile.TemporaryDirectory()
+		MixedFork(cls.tmp.name)
+		cls.result = build_map(Path(cls.tmp.name))
+
+	@classmethod
+	def tearDownClass(cls):
+		cls.tmp.cleanup()
+
+	def test_mixed_hunk_unites_trailer_and_fallback_of_untrailered_lines(self):
+		# Line 2 comes from the feat-x commit, line 3 from a commit without trailer: area feat-y.
+		self.assertEqual(features_of(self.result, "src/m.vue", 2), ["feat-x", "feat-y"])
+		sources = {
+			fid: h["source"]
+			for fid, f in self.result["features"].items()
+			for h in f["hunks"]
+			if h["file"] == "src/m.vue" and h["head_start"] == 2
+		}
+		self.assertEqual(sources, {"feat-x": "trailer", "feat-y": "area"})
+
+	def test_fully_trailered_hunk_skips_area(self):
+		self.assertEqual(features_of(self.result, "src/m.vue", 6), ["feat-x"])
+
+	def test_anchor_is_always_added(self):
+		self.assertEqual(features_of(self.result, "src/n.vue", 2), ["feat-x", "feat-z"])
+
+	def test_includes_modified_upstream_test_files(self):
+		self.assertIn("lms/lms/test_api.py", self.result["features"]["feat-x"]["files"])
+
+
+class RefCatalogueTest(unittest.TestCase):
+	"""With --ref, cards, inventory and legacy map are read at that ref."""
+
+	def setUp(self):
+		self.tmp = tempfile.TemporaryDirectory()
+		self.addCleanup(self.tmp.cleanup)
+		self.fork = MixedFork(self.tmp.name)
+		self.root = Path(self.tmp.name)
+		self.fork.git("tag", "snap")
+		self.fork.git("rm", "-q", "docs/customizations/features/feat-y.toml")
+		self.fork.commit(
+			"docs: rename card",
+			**{
+				"docs/customizations/features/feat-w.toml": card("feat-w", ["src/m.vue"]),
+				"docs/customizations/legacy-attribution.toml": '[[files]]\npath = "src/m.vue"\nfeatures = ["feat-w"]\n',
+			},
+		)
+		# A commit on top so that "snap" and HEAD differ in history, not only in the catalogue.
+		self.fork.commit("docs: note", **{"docs/note.md": "n\n"})
+
+	def test_reads_the_catalogue_at_the_ref(self):
+		result = build_map(self.root, "snap")
+		self.assertIn("feat-y", result["features"])
+		self.assertNotIn("feat-w", result["features"])
+		self.assertEqual(features_of(result, "src/m.vue", 2), ["feat-x", "feat-y"])
+
+	def test_head_reads_the_working_tree(self):
+		write_files(self.root, **{"docs/customizations/features/feat-v.toml": card("feat-v")})
+		result = build_map(self.root)
+		self.assertIn("feat-w", result["features"])
+		self.assertIn("feat-v", result["features"])
+		self.assertNotIn("feat-y", result["features"])
+
+
 class AttributeFunctionTest(unittest.TestCase):
 	def test_attribute_without_shared_history(self):
 		with tempfile.TemporaryDirectory() as tmp:

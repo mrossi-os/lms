@@ -3,15 +3,19 @@
 For a ref (default HEAD) and its upstream base (the last release tag merged
 into it), each upstream file that differs from the base is split into diff
 hunks and every hunk is attributed to one or more features of the catalogue,
-in the order of design §5.5:
+following design §5.5, which applies the fallback per commit:
 
 1. the `Oslms-Feature` trailers of the commits that wrote its added lines
    (`git blame`, merge commits included), or, for a hunk that only removes
    upstream lines, of our commit that removed them (`git log -S`);
-2. the inventory entries whose anchor the hunk contains or touches;
-3. the cards whose `areas` cover the file;
-4. the legacy map (`legacy-attribution.toml`), file → features;
-5. otherwise the hunk is unattributed: the number to bring to zero.
+2. for the lines whose commit has no trailer, in order: the inventory entries
+   whose anchor those lines contain or touch, the cards whose `areas` cover
+   the file, the legacy map (`legacy-attribution.toml`);
+3. the inventory entries whose anchor the hunk contains or touches are always
+   added: anchors are explicit facts of the inventory;
+4. a hunk nothing claims is unattributed: the number to bring to zero.
+
+The hunk's features are the union of what each part contributes.
 
 Read-only: nothing here writes to the repository.
 """
@@ -20,15 +24,20 @@ from __future__ import annotations
 
 import re
 import tomllib
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from pathlib import Path
+from fnmatch import fnmatch
+from pathlib import Path, PurePosixPath
 
 from scripts.customizations.features import Feature, load_features
 from scripts.customizations.gitbase import Git, find_base
 from scripts.customizations.model import Entry, InventoryError, load_inventory
-from scripts.customizations.paths import FEATURES_DIR, INVENTORY_DIR, LEGACY_FILE, is_exempt_path
+from scripts.customizations.paths import FEATURES_DIR, INVENTORY_DIR, LEGACY_FILE, is_exempt_path, is_our_path
 from scripts.customizations.trailers import NONE_VALUE, parse_trailers
-from scripts.upstream_plan import is_customization_candidate
+from scripts.upstream_plan import NOT_CUSTOMIZATION, TEST_FILES
+
+# The map keeps modified upstream test files: the guard asks a trailer for them too.
+MAP_EXCLUDED = tuple(pattern for pattern in NOT_CUSTOMIZATION if pattern is not TEST_FILES)
 
 SOURCES = ("trailer", "anchor", "area", "legacy")
 UNATTRIBUTED = "unattributed"
@@ -103,22 +112,39 @@ def _binary_path(line: str) -> str:
 	return (match.group(2) or match.group(1)) if match else ""
 
 
-def load_legacy(path: Path) -> dict[str, list[str]]:
-	"""The legacy map, file path → feature ids; an absent file is an empty map."""
-	try:
-		text = Path(path).read_text(encoding="utf-8")
-	except FileNotFoundError:
+def parse_legacy(text: str | None, name: str = "legacy-attribution.toml") -> dict[str, list[str]]:
+	"""The legacy map, path (exact or glob) → feature ids; None (no file) is an empty map."""
+	if text is None:
 		return {}
 	try:
 		raw = tomllib.loads(text)
 	except tomllib.TOMLDecodeError as exc:
-		raise InventoryError(f"{Path(path).name}: TOML non valido ({exc})") from exc
+		raise InventoryError(f"{name}: TOML non valido ({exc})") from exc
 	legacy: dict[str, list[str]] = {}
 	for item in raw.get("files", []):
 		if not item.get("path") or not item.get("features"):
-			raise InventoryError(f"{Path(path).name}: ogni [[files]] vuole 'path' e 'features'")
+			raise InventoryError(f"{name}: ogni [[files]] vuole 'path' e 'features'")
 		legacy.setdefault(item["path"], []).extend(item["features"])
 	return legacy
+
+
+def load_legacy(path: Path) -> dict[str, list[str]]:
+	"""The legacy map read from disk; an absent file is an empty map."""
+	try:
+		text = Path(path).read_text(encoding="utf-8")
+	except FileNotFoundError:
+		text = None
+	return parse_legacy(text, Path(path).name)
+
+
+def path_matches(path: str, pattern: str) -> bool:
+	"""Exact path, or glob (fnmatch, like the cards' `areas`)."""
+	return path == pattern or fnmatch(path, pattern)
+
+
+def legacy_features(legacy: dict[str, list[str]], path: str) -> list[str]:
+	"""Feature ids the legacy map gives `path`, from exact and glob keys."""
+	return sorted({fid for pattern, ids in legacy.items() if path_matches(path, pattern) for fid in ids})
 
 
 class History:
@@ -146,12 +172,15 @@ class History:
 					lines[int(match.group(2))] = match.group(1)
 		self._blame[path] = lines
 
-	def commits_of_added(self, hunk: Hunk) -> list[str]:
+	def blame_of(self, hunk: Hunk) -> dict[int, str | None]:
+		"""Line number → commit that wrote it, for every added line (None: not blamed)."""
 		if hunk.file not in self._blame:
 			self.prepare_blame(hunk.file, [hunk])
 		blamed = self._blame[hunk.file]
-		commits = {blamed[n] for n in range(hunk.head_start, hunk.head_start + hunk.head_len) if n in blamed}
-		return sorted(commits)
+		return {n: blamed.get(n) for n in range(hunk.head_start, hunk.head_start + hunk.head_len)}
+
+	def commits_of_added(self, hunk: Hunk) -> list[str]:
+		return sorted({commit for commit in self.blame_of(hunk).values() if commit})
 
 	def remover_of(self, hunk: Hunk) -> str | None:
 		"""Our commit that removed the hunk's first non-blank line, if any."""
@@ -198,25 +227,12 @@ def _touches(hunk: Hunk, span: tuple[int, int]) -> bool:
 	return span[0] <= high and span[1] >= low
 
 
-def _by_trailer(hunk: Hunk, history: History) -> tuple[list[str], list[str]]:
-	"""Feature ids and the commits that named them, from blame or from the remover."""
-	if hunk.head_len > 0:
-		commits = history.commits_of_added(hunk)
+def _by_anchor(hunk: Hunk, entries: list[Entry], history: History, lines: set[int] | None = None) -> list[str]:
+	"""Features of entries whose anchor the hunk (or only `lines` of it) contains or touches."""
+	if lines is None:
+		added = "\n".join(hunk.added)
 	else:
-		remover = history.remover_of(hunk)
-		commits = [remover] if remover else []
-	ids: set[str] = set()
-	naming: list[str] = []
-	for commit in commits:
-		found = history.trailers(commit)
-		if found:
-			ids.update(found)
-			naming.append(commit)
-	return sorted(ids), naming
-
-
-def _by_anchor(hunk: Hunk, entries: list[Entry], history: History) -> list[str]:
-	added = "\n".join(hunk.added)
+		added = "\n".join(text for n, text in enumerate(hunk.added, hunk.head_start) if n in lines)
 	ids = set()
 	for entry in entries:
 		if not entry.feature:
@@ -224,11 +240,77 @@ def _by_anchor(hunk: Hunk, entries: list[Entry], history: History) -> list[str]:
 		for site in entry.sites:
 			if site.file != hunk.file:
 				continue
-			if (added and site.anchor in added) or any(
-				_touches(hunk, span) for span in _anchor_lines(history.content(hunk.file), site.anchor)
-			):
+			spans = _anchor_lines(history.content(hunk.file), site.anchor)
+			if lines is None:
+				touched = any(_touches(hunk, span) for span in spans)
+			else:
+				touched = any(span[0] <= n <= span[1] for span in spans for n in lines)
+			if (added and site.anchor in added) or touched:
 				ids.add(entry.feature)
 	return sorted(ids)
+
+
+@dataclass
+class Attribution:
+	"""The features of one hunk, which source gave each, and the commits whose trailers named them."""
+
+	sources: dict[str, str]
+	commits: list[str]
+
+	@property
+	def ids(self) -> list[str]:
+		return sorted(self.sources)
+
+	@property
+	def source(self) -> str:
+		"""The strongest source that contributed, or "unattributed"."""
+		return next((s for s in SOURCES if s in self.sources.values()), UNATTRIBUTED)
+
+
+def attribute_hunk(
+	hunk: Hunk,
+	*,
+	history: History,
+	features: dict[str, Feature],
+	entries: list[Entry],
+	legacy: dict[str, list[str]],
+) -> Attribution:
+	"""Every feature of `hunk`: trailers, fallback for what has none, anchors always."""
+	sources: dict[str, str] = {}
+	naming: list[str] = []
+	if hunk.head_len > 0:
+		blamed = list(history.blame_of(hunk).items())
+	else:
+		blamed = [(None, history.remover_of(hunk))]
+	untrailered: set[int] = set()
+	whole_untrailered = False
+	for line, commit in blamed:
+		found = history.trailers(commit) if commit else []
+		if found:
+			for feature_id in found:
+				sources.setdefault(feature_id, "trailer")
+			if commit not in naming:
+				naming.append(commit)
+		elif line is None:
+			whole_untrailered = True
+		else:
+			untrailered.add(line)
+
+	for feature_id in _by_anchor(hunk, entries, history):
+		sources.setdefault(feature_id, "anchor")
+
+	if whole_untrailered or untrailered:
+		fallback = _by_anchor(hunk, entries, history, None if whole_untrailered else untrailered)
+		source = "anchor"
+		if not fallback:
+			fallback = sorted(f.id for f in features.values() if f.matches_path(hunk.file))
+			source = "area"
+		if not fallback:
+			fallback = legacy_features(legacy, hunk.file)
+			source = "legacy"
+		for feature_id in fallback:
+			sources.setdefault(feature_id, source)
+	return Attribution(sources, sorted(naming))
 
 
 def attribute(
@@ -267,47 +349,83 @@ def attribute_with_commits(
 	legacy: dict[str, list[str]],
 ) -> tuple[tuple[list[str], str], list[str]]:
 	"""Like `attribute`, plus the commits whose trailers gave the attribution."""
-	ids, commits = _by_trailer(hunk, history)
-	if ids:
-		return (ids, "trailer"), commits
-	ids = _by_anchor(hunk, entries, history)
-	if ids:
-		return (ids, "anchor"), []
-	ids = sorted(f.id for f in features.values() if f.matches_path(hunk.file))
-	if ids:
-		return (ids, "area"), []
-	ids = sorted(set(legacy.get(hunk.file, [])))
-	if ids:
-		return (ids, "legacy"), []
-	return ([], UNATTRIBUTED), []
+	found = attribute_hunk(hunk, history=history, features=features, entries=entries, legacy=legacy)
+	return (found.ids, found.source), found.commits
 
 
 def map_paths(git: Git, base: str, ref: str) -> tuple[list[str], list[str]]:
-	"""Upstream files that differ from the base, and our own files, both filtered."""
+	"""Upstream files that differ from the base, and our own files (as the commit guard sees them)."""
 	base_files = set(git.lines("ls-tree", "-r", "--name-only", "-z", base))
 	changed = git.lines("diff", "--no-renames", "--name-only", "-z", base, ref)
 	ref_files = git.lines("ls-tree", "-r", "--name-only", "-z", ref)
 
-	def kept(path: str) -> bool:
-		return is_customization_candidate(path) and not is_exempt_path(path)
+	def upstream_kept(path: str) -> bool:
+		return (
+			path in base_files
+			and not is_our_path(path, base_files)
+			and not is_exempt_path(path)
+			and not any(pattern.search(path) for pattern in MAP_EXCLUDED)
+		)
 
-	upstream = sorted(p for p in changed if p in base_files and kept(p))
-	ours = sorted(p for p in ref_files if p not in base_files and kept(p))
+	upstream = sorted(p for p in changed if upstream_kept(p))
+	ours = sorted(p for p in ref_files if is_our_path(p, base_files))
 	return upstream, ours
+
+
+@dataclass
+class Catalogue:
+	"""Cards, inventory entries and legacy map, as known at the mapped ref."""
+
+	features: dict[str, Feature]
+	entries: list[Entry]
+	legacy: dict[str, list[str]]
+
+
+def _toml_lister(git: Git, ref: str) -> Callable[[Path], list[str]]:
+	"""Like `list_cached_toml`, but over the tree of `ref`."""
+
+	def list_files(directory: Path) -> list[str]:
+		parent = PurePosixPath(Path(directory).as_posix())
+		return sorted(
+			path
+			for path in git.lines("ls-tree", "--name-only", "-z", ref, "--", f"{parent}/")
+			if path.endswith(".toml") and PurePosixPath(path).parent == parent
+		)
+
+	return list_files
+
+
+def load_catalogue(repo_root: Path, git: Git, ref: str) -> Catalogue:
+	"""The catalogue of `ref`: the working tree when `ref` is the checked-out commit, else `git show`."""
+	head = git.run("rev-parse", "--verify", "HEAD^{commit}").strip()
+	target = git.run("rev-parse", "--verify", f"{ref}^{{commit}}").strip()
+	if head == target:
+		return Catalogue(
+			load_features(repo_root / FEATURES_DIR),
+			load_inventory(repo_root / INVENTORY_DIR),
+			load_legacy(repo_root / LEGACY_FILE),
+		)
+	read = lambda relative: git.show(target, relative)  # noqa: E731
+	list_files = _toml_lister(git, target)
+	return Catalogue(
+		load_features(Path(FEATURES_DIR), read=read, list_files=list_files),
+		load_inventory(Path(INVENTORY_DIR), read=read, list_files=list_files),
+		parse_legacy(read(LEGACY_FILE)),
+	)
 
 
 def build_map(repo_root: Path, ref: str = "HEAD") -> dict:
 	"""The customization map of `ref` against its upstream base.
 
-	Cards, inventory and legacy map are read from the working tree of
-	`repo_root`: they describe what we know today, whatever ref is mapped.
+	Cards, inventory and legacy map describe the mapped ref: they come from the
+	working tree when `ref` is the checked-out commit (uncommitted edits count),
+	otherwise from the tree of `ref`.
 	"""
 	repo_root = Path(repo_root)
 	git = Git(repo_root)
 	base = find_base(git, ref)
-	features = load_features(repo_root / FEATURES_DIR)
-	entries = load_inventory(repo_root / INVENTORY_DIR)
-	legacy = load_legacy(repo_root / LEGACY_FILE)
+	catalogue = load_catalogue(repo_root, git, ref)
+	features, entries, legacy = catalogue.features, catalogue.entries, catalogue.legacy
 	history = History(git, base, ref, git.release_tags())
 
 	upstream_paths, our_paths = map_paths(git, base, ref)
@@ -327,15 +445,13 @@ def build_map(repo_root: Path, ref: str = "HEAD") -> dict:
 	unknown: set[str] = set()
 
 	for hunk in hunks:
-		(ids, source), commits = attribute_with_commits(
-			hunk, history=history, features=features, entries=entries, legacy=legacy
-		)
+		found = attribute_hunk(hunk, history=history, features=features, entries=entries, legacy=legacy)
 		where = {"file": hunk.file, "head_start": hunk.head_start, "head_len": hunk.head_len}
-		if source == UNATTRIBUTED:
+		if found.source == UNATTRIBUTED:
 			unattributed.append(where)
 			continue
-		by_source[source] += 1
-		for feature_id in ids:
+		by_source[found.source] += 1
+		for feature_id, source in sorted(found.sources.items()):
 			if feature_id not in features:
 				unknown.add(feature_id)
 			slot = result_features.setdefault(
@@ -343,7 +459,7 @@ def build_map(repo_root: Path, ref: str = "HEAD") -> dict:
 			)
 			slot["files"].add(hunk.file)
 			slot["hunks"].append({**where, "source": source})
-			slot["commits"].update(c for c in commits if feature_id in history.trailers(c))
+			slot["commits"].update(c for c in found.commits if feature_id in history.trailers(c))
 
 	for feature in features.values():
 		result_features[feature.id]["files"].update(p for p in our_paths if feature.matches_path(p))

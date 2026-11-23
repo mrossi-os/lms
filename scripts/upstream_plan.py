@@ -54,11 +54,10 @@ BREAKING_LINE = re.compile(r"^[a-z]+(\([^)]*\))?!: .+|^BREAKING[ -]CHANGE: .+")
 # Files we touch that are not customizations to catalogue: translations and
 # tests by design, lock and generated files because they are regenerated, never
 # hand-merged.
-NOT_CUSTOMIZATION = (
-	re.compile(r"(^|/)locale/|(^|/)translations/|\.pot?$|\.mo$"),
-	re.compile(r"(^|/)tests?/|(^|/)test_[^/]*\.py$|_test\.py$|\.(test|spec)\.[jt]s$|^cypress/"),
-	re.compile(r"(^|/)yarn\.lock$|(^|/)package-lock\.json$|^frontend/components\.d\.ts$"),
-)
+TRANSLATION_FILES = re.compile(r"(^|/)locale/|(^|/)translations/|\.pot?$|\.mo$")
+TEST_FILES = re.compile(r"(^|/)tests?/|(^|/)test_[^/]*\.py$|_test\.py$|\.(test|spec)\.[jt]s$|^cypress/")
+LOCK_FILES = re.compile(r"(^|/)yarn\.lock$|(^|/)package-lock\.json$|^frontend/components\.d\.ts$")
+NOT_CUSTOMIZATION = (TRANSLATION_FILES, TEST_FILES, LOCK_FILES)
 
 
 # ── Pure logic ────────────────────────────────────────────────────────────────

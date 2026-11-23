@@ -82,7 +82,9 @@ def _build_feature(raw: dict, filename: str) -> Feature:
 
 
 def load_features(
-	directory: Path, read: Callable[[str], str | None] | None = None
+	directory: Path,
+	read: Callable[[str], str | None] | None = None,
+	list_files: Callable[[Path], list[str]] | None = None,
 ) -> dict[str, Feature]:
 	"""Load every card and return them keyed by id.
 
@@ -92,12 +94,13 @@ def load_features(
 	`list_cached_toml` (git index, current working directory) and their contents
 	come from `read(relative_path)`, which reads the git index; the disk is not
 	touched. `read` returning None means the file is absent and it is skipped.
+	`list_files` replaces `list_cached_toml`, for instance to list a ref.
 	"""
 	if read is None:
 		sources = [(path.name, path.read_text(encoding="utf-8")) for path in sorted(Path(directory).glob("*.toml"))]
 	else:
 		sources = []
-		for relative in list_cached_toml(Path(directory)):
+		for relative in (list_files or list_cached_toml)(Path(directory)):
 			text = read(relative)
 			if text is not None:
 				sources.append((relative.rsplit("/", 1)[-1], text))

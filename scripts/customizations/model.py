@@ -123,7 +123,11 @@ def list_cached_toml(directory: Path) -> list[str]:
 	)
 
 
-def load_inventory(directory: Path, read: Callable[[str], str | None] | None = None) -> list[Entry]:
+def load_inventory(
+	directory: Path,
+	read: Callable[[str], str | None] | None = None,
+	list_files: Callable[[Path], list[str]] | None = None,
+) -> list[Entry]:
 	"""Read every *.toml in `directory` and return the entries they declare.
 
 	Files without an `entries` array (actors.toml, for instance) are read and
@@ -132,13 +136,14 @@ def load_inventory(directory: Path, read: Callable[[str], str | None] | None = N
 
 	Without `read` the files come from disk. With `read`, `directory` is
 	repo-relative, the files are listed from the git index (see
-	`list_cached_toml`) and their text comes from `read`; None means absent.
+	`list_cached_toml`, or `list_files` when given, for instance a listing at
+	a ref) and their text comes from `read`; None means absent.
 	"""
 	if read is None:
 		sources = [(path.name, path.read_text(encoding="utf-8")) for path in sorted(Path(directory).glob("*.toml"))]
 	else:
 		sources = []
-		for relative in list_cached_toml(directory):
+		for relative in (list_files or list_cached_toml)(directory):
 			text = read(relative)
 			if text is not None:
 				sources.append((PurePosixPath(relative).name, text))
