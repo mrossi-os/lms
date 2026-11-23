@@ -6150,7 +6150,7 @@ dell'anteprima, lontano dalle nostre righe: merge atteso pulito."""
 
   [[entries.sites]]
   file = "frontend/src/components/Controls/Uploader.vue"
-  anchor = "description?: string"
+  anchor = "declared so NewCourseModal/BadgeForm hints are shown"
 
 [[entries]]
 id = "video-preview-field-vimeo"
