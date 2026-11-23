@@ -16,6 +16,7 @@ from scripts.customizations.checks import (
 	check_sites,
 	check_test_paths,
 	check_uncatalogued_markers,
+	check_uncatalogued_markers_in,
 	disk_reader,
 )
 from scripts.customizations.features import Feature
@@ -117,6 +118,18 @@ class CheckUncataloguedMarkersTest(unittest.TestCase):
 			root = fake_repo(tmp, **{"frontend/src/notes.md": "OSLMS-CUSTOM\n"})
 			findings = check_uncatalogued_markers([], root)
 		self.assertEqual(findings, [])
+
+
+	def test_staged_variant_checks_only_the_given_paths(self):
+		files = {
+			"frontend/src/Loose.vue": "// OSLMS-CUSTOM: nostro\n",
+			"frontend/src/Other.vue": "// OSLMS-CUSTOM: altro\n",
+			"frontend/src/notes.md": "OSLMS-CUSTOM\n",
+			"lms/public/frontend/assets/index.js": "OSLMS-CUSTOM\n",
+		}
+		paths = {"frontend/src/Loose.vue", "frontend/src/notes.md", "lms/public/frontend/assets/index.js", "gone.vue"}
+		findings = check_uncatalogued_markers_in([], paths, files.get)
+		self.assertEqual([(f.check, f.file) for f in findings], [("C3", "frontend/src/Loose.vue")])
 
 
 class CheckTestPathsTest(unittest.TestCase):

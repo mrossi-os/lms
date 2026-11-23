@@ -2,9 +2,9 @@
 
 import tempfile
 import unittest
-import unittest.mock
 from pathlib import Path
 
+from scripts.tests.gitrepo import chdir, git_repo
 from scripts.customizations.features import FEATURE_STATUSES, Feature, load_features
 from scripts.customizations.model import InventoryError
 
@@ -96,13 +96,23 @@ class LoadFeaturesTest(unittest.TestCase):
 			calls.append(relative)
 			return CARD
 
-		with unittest.mock.patch(
-			"scripts.customizations.features._list_cached",
-			return_value=["docs/customizations/features/live-class-draft-publish.toml"],
-		):
+		with tempfile.TemporaryDirectory() as tmp, chdir(tmp):
+			git_repo(
+				tmp,
+				**{
+					"docs/customizations/features/live-class-draft-publish.toml": CARD,
+					"docs/customizations/features/README.md": "x\n",
+					"docs/customizations/features/old/other.toml": CARD,
+				},
+			)
 			features = load_features(directory, read=read)
 		self.assertEqual(list(features), ["live-class-draft-publish"])
 		self.assertEqual(calls, ["docs/customizations/features/live-class-draft-publish.toml"])
+
+	def test_reader_mode_outside_a_repository_raises_inventory_error(self):
+		with tempfile.TemporaryDirectory() as tmp, chdir(tmp):
+			with self.assertRaises(InventoryError):
+				load_features(Path("docs/customizations/features"), read=lambda relative: CARD)
 
 	def test_matches_path_with_globs(self):
 		with tempfile.TemporaryDirectory() as tmp:

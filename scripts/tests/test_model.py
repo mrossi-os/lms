@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 from scripts.customizations.model import InventoryError, load_inventory
+from scripts.tests.gitrepo import chdir, git_repo
 
 VALID_ENTRY = """
 [[entries]]
@@ -109,6 +110,21 @@ class LoadInventoryTest(unittest.TestCase):
 			with self.assertRaises(InventoryError) as caught:
 				load_inventory(write_inventory(tmp, grafts="[[entries]\nid = 'x'"))
 		self.assertIn("grafts.toml", str(caught.exception))
+
+
+	def test_reads_staged_files_through_a_reader(self):
+		with tempfile.TemporaryDirectory() as tmp, chdir(tmp):
+			git_repo(
+				tmp,
+				**{
+					"docs/customizations/grafts.toml": "# placeholder on disk\n",
+					"docs/customizations/features/card.toml": "not an inventory file\n",
+				},
+			)
+			bodies = {"docs/customizations/grafts.toml": VALID_ENTRY}
+			entries = load_inventory(Path("docs/customizations"), read=bodies.get)
+		self.assertEqual([e.id for e in entries], ["course-card-admin-gate"])
+		self.assertEqual(entries[0].source, "grafts.toml")
 
 
 if __name__ == "__main__":

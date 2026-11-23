@@ -118,6 +118,15 @@ SCAN_SUFFIXES = (".vue", ".ts", ".js", ".py")
 EXCLUDED_PARTS = ("node_modules", "__pycache__", "lms/public/frontend", "/.git/")
 
 
+def is_watched_source(relative: str) -> bool:
+	"""True for a repo-relative path the marker scan (C3) looks at."""
+	return (
+		relative.startswith(tuple(f"{root}/" for root in SCAN_ROOTS))
+		and relative.endswith(SCAN_SUFFIXES)
+		and not any(part in relative for part in EXCLUDED_PARTS)
+	)
+
+
 def _iter_source_files(repo_root: Path):
 	"""Yield (relative path, absolute path) for every watched source file."""
 	root = Path(repo_root)
@@ -134,6 +143,15 @@ def _iter_source_files(repo_root: Path):
 			yield relative, path
 
 
+def _uncatalogued(entries: list[Entry], marked: list[str]) -> list[Finding]:
+	catalogued = {site.file for entry in entries for site in entry.sites}
+	return [
+		Finding("-", "C3", ERROR, f"file con marcatore {MARKER} non censito", relative, None)
+		for relative in marked
+		if relative not in catalogued
+	]
+
+
 def check_uncatalogued_markers(entries: list[Entry], repo_root: Path) -> list[Finding]:
 	"""C3: every file carrying the marker is referenced by some inventory entry.
 
@@ -141,16 +159,21 @@ def check_uncatalogued_markers(entries: list[Entry], repo_root: Path) -> list[Fi
 	nobody wrote down. Without it the inventory silently drifts out of date and
 	the whole suite reports green over half the real surface.
 	"""
-	catalogued = {site.file for entry in entries for site in entry.sites}
-	findings: list[Finding] = []
-	for relative, path in _iter_source_files(repo_root):
-		if relative in catalogued:
+	return _uncatalogued(
+		entries, [relative for relative, path in _iter_source_files(repo_root) if MARKER in _read(path)]
+	)
+
+
+def check_uncatalogued_markers_in(entries: list[Entry], paths: set[str], read: Reader) -> list[Finding]:
+	"""C3 limited to `paths`, read through `read` (the commit guard uses the index)."""
+	marked = []
+	for relative in sorted(paths):
+		if not is_watched_source(relative):
 			continue
-		if MARKER in _read(path):
-			findings.append(
-				Finding("-", "C3", ERROR, f"file con marcatore {MARKER} non censito", relative, None)
-			)
-	return findings
+		text = read(relative)
+		if text is not None and MARKER in text:
+			marked.append(relative)
+	return _uncatalogued(entries, marked)
 
 
 def check_test_paths(entries: list[Entry], repo_root: Path) -> list[Finding]:

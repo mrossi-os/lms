@@ -7,14 +7,13 @@ the quick alarm. Entries point at a card through their `feature` field.
 
 from __future__ import annotations
 
-import subprocess
 import tomllib
 from dataclasses import dataclass
 from fnmatch import fnmatch
 from pathlib import Path
 from typing import Callable
 
-from scripts.customizations.model import InventoryError
+from scripts.customizations.model import InventoryError, list_cached_toml
 
 FEATURE_STATUSES = frozenset({"active", "retired", "replaced-by-upstream"})
 STRICT_FEATURES_FLAG = Path("docs/customizations/features/.strict")
@@ -55,17 +54,6 @@ class Feature:
 		return any(fnmatch(path, pattern) for pattern in self.areas)
 
 
-def _list_cached(directory: Path) -> list[str]:
-	"""List the *.toml files tracked in the git index under `directory`."""
-	result = subprocess.run(
-		["git", "ls-files", "--cached", "--", directory.as_posix()],
-		capture_output=True,
-		text=True,
-		check=True,
-	)
-	return sorted(line for line in result.stdout.splitlines() if line.endswith(".toml"))
-
-
 def _build_feature(raw: dict, filename: str) -> Feature:
 	for key in REQUIRED_FIELDS:
 		if not raw.get(key):
@@ -101,7 +89,7 @@ def load_features(
 	Without `read`, the `*.toml` files in `directory` are read from disk. With
 	`read`, `directory` is the repo-relative path (for instance
 	Path("docs/customizations/features")): cards are enumerated with
-	`git ls-files --cached` in the current working directory and their contents
+	`list_cached_toml` (git index, current working directory) and their contents
 	come from `read(relative_path)`, which reads the git index; the disk is not
 	touched. `read` returning None means the file is absent and it is skipped.
 	"""
@@ -109,7 +97,7 @@ def load_features(
 		sources = [(path.name, path.read_text(encoding="utf-8")) for path in sorted(Path(directory).glob("*.toml"))]
 	else:
 		sources = []
-		for relative in _list_cached(Path(directory)):
+		for relative in list_cached_toml(Path(directory)):
 			text = read(relative)
 			if text is not None:
 				sources.append((relative.rsplit("/", 1)[-1], text))
