@@ -12,6 +12,7 @@ from frappe.tests import UnitTestCase
 
 GESTORE = "settings-gestore-test@example.com"
 SYSMANAGER = "settings-sysmanager-test@example.com"
+DOCENTE = "settings-docente-test@example.com"
 # The real Gestore bundle: Gestore is never assigned alone.
 GESTORE_BUNDLE = ("Gestore", "Moderator", "Docente", "Course Creator", "Batch Evaluator")
 
@@ -37,6 +38,7 @@ class TestLMSSettingsAccess(UnitTestCase):
 		frappe.set_user("Administrator")
 		ensure_user(GESTORE, GESTORE_BUNDLE)
 		ensure_user(SYSMANAGER, ("System Manager",))
+		ensure_user(DOCENTE, ("Docente",))
 
 	def tearDown(self):
 		# Nothing here commits: every settings change and test user goes away.
@@ -104,3 +106,44 @@ class TestLMSSettingsAccess(UnitTestCase):
 		with self.assertRaises(frappe.PermissionError) as raised:
 			doc.save()
 		self.assertIn("Disable Signup", str(raised.exception))
+
+
+class TestSaveBranding(UnitTestCase):
+	"""Website Settings is writable by Website Manager only; Gestore saves Branding here."""
+
+	def setUp(self):
+		super().setUp()
+		self.addCleanup(frappe.set_user, frappe.session.user)
+		frappe.set_user("Administrator")
+		ensure_user(GESTORE, GESTORE_BUNDLE)
+		ensure_user(DOCENTE, ("Docente",))
+
+	def tearDown(self):
+		frappe.db.rollback()
+
+	def save(self, **fields):
+		from os_lms.os_lms.settings_access import save_branding
+
+		save_branding(**fields)
+
+	def test_gestore_saves_the_branding_fields(self):
+		frappe.set_user(GESTORE)
+		self.save(app_name="Brand Test", banner_image="/files/brand-logo.png", favicon="/files/brand-fav.png")
+		stored = frappe.get_single("Website Settings")
+		self.assertEqual(stored.app_name, "Brand Test")
+		self.assertEqual(stored.banner_image, "/files/brand-logo.png")
+		self.assertEqual(stored.app_logo, "/files/brand-logo.png")
+		self.assertEqual(stored.favicon, "/files/brand-fav.png")
+
+	def test_gestore_can_remove_the_logo(self):
+		frappe.db.set_single_value("Website Settings", {"banner_image": "/files/old.png", "app_logo": "/files/old.png"})
+		frappe.set_user(GESTORE)
+		self.save(app_name="Brand Test", banner_image=None, favicon=None)
+		stored = frappe.get_single("Website Settings")
+		self.assertFalse(stored.banner_image)
+		self.assertFalse(stored.app_logo)
+
+	def test_docente_cannot_save_branding(self):
+		frappe.set_user(DOCENTE)
+		with self.assertRaises(frappe.PermissionError):
+			self.save(app_name="Nope", banner_image=None, favicon=None)

@@ -11537,3 +11537,7 @@ msgstr "Impostazioni gestore"
 #: frontend/src/utils/index.js
 msgid "This section is only available to administrators."
 msgstr "Questa sezione è disponibile solo agli amministratori."
+
+#: apps/os_lms/os_lms/os_lms/settings_access.py
+msgid "Not permitted to change the branding."
+msgstr "Non hai i permessi per modificare il branding."

@@ -98,3 +98,21 @@ def validate_lms_settings_access(doc: Document, method: str | None = None) -> No
 			_("Only an administrator can change: {0}").format(", ".join(labels)),
 			frappe.PermissionError,
 		)
+
+
+# Branding lives in Website Settings, which only Website Manager may write. Gestore must not
+# get that role (it opens every website setting), so the Branding tab saves through here.
+BRANDING_EDITOR_ROLES = frozenset({"Gestore"})
+
+
+@frappe.whitelist(methods=["POST"])
+def save_branding(app_name: str | None = None, banner_image: str | None = None, favicon: str | None = None) -> None:
+	"""Save the Branding tab: brand name, logo (also used as app logo) and favicon."""
+	if not (is_settings_admin() or BRANDING_EDITOR_ROLES & set(frappe.get_roles())):
+		frappe.throw(_("Not permitted to change the branding."), frappe.PermissionError)
+	settings = frappe.get_single("Website Settings")
+	settings.app_name = app_name
+	settings.banner_image = banner_image
+	settings.app_logo = banner_image
+	settings.favicon = favicon
+	settings.save(ignore_permissions=True)

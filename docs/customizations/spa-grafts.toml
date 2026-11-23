@@ -10058,3 +10058,23 @@ aspettano la riga «Settings» sono in oslms-test/known-failures.json (kind rule
 
   [entries.checks]
   unit = "frontend/src/tests/openSettingsRouting.test.ts"
+
+[[entries]]
+id = "branding-save-endpoint"
+title = "Impostazioni → Branding salva tramite os_lms (Gestore senza Website Manager)"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+La scheda Branding salvava con frappe.client.set_value su Website Settings, scrivibile solo
+da Website Manager: il Gestore non poteva salvarla. Ora BrandSettings.vue chiama
+os_lms.os_lms.settings_access.save_branding (Administrator, System Manager o Gestore), che
+scrive solo app_name, banner_image, app_logo (= banner_image) e favicon. Non dare al Gestore
+il ruolo Website Manager: aprirebbe tutto Website Settings. Aggiunto 2026-11-23."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/BrandSettings.vue"
+  anchor = "url: 'os_lms.os_lms.settings_access.save_branding',"
+  symbol = "saveSettings"
+
+  [entries.checks]
+  unit = "apps/os_lms/os_lms/os_lms/tests/test_settings_access.py"

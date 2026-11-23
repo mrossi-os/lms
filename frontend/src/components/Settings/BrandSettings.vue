@@ -133,13 +133,15 @@ const branding = createResource({
 	cache: 'brand',
 })
 
+// OSLMS-CUSTOM: save through os_lms so Gestore can brand the platform without the
+// Website Manager role (Website Settings is writable by Website Manager only).
 const saveSettings = createResource({
-	url: 'frappe.client.set_value',
+	url: 'os_lms.os_lms.settings_access.save_branding',
 	makeParams(values) {
 		return {
-			doctype: 'Website Settings',
-			name: 'Website Settings',
-			fieldname: values.fields,
+			app_name: values.fields.app_name,
+			banner_image: values.fields.banner_image,
+			favicon: values.fields.favicon,
 		}
 	},
 })
