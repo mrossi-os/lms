@@ -10098,3 +10098,22 @@ Aggiunto 2026-11-23."""
 
   [entries.checks]
   unit = "frontend/src/tests/linkSettingsRefresh.test.ts"
+
+[[entries]]
+id = "user-dropdown-translations-loaded"
+title = "Menu utente: le voci si traducono anche al primo caricamento"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+userDropdownOptions è un computed() di etichette __(). __() legge un dizionario globale che
+arriva dopo l'avvio: al primo caricamento il menu veniva costruito vuoto di traduzioni e restava
+in inglese («Toggle Theme», «Apps», «Manager Settings»…). Il computed legge translationsLoaded
+(frontend/src/translation.js) e si ricostruisce quando i messaggi arrivano. Aggiunto 2026-11-23."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Sidebar/UserDropdown.vue"
+  anchor = "void translationsLoaded.value"
+  symbol = "userDropdownOptions"
+
+  [entries.checks]
+  unit = "frontend/src/tests/userDropdownTranslations.test.ts"

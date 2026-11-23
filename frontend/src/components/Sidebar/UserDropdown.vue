@@ -77,6 +77,8 @@ import { convertToTitleCase } from '@/utils'
 import { toggleTheme, theme } from '@/utils/theme'
 // OSLMS-CUSTOM: high-contrast switch (ESG), next to Toggle Theme
 import { highContrast, toggleContrast } from '@/oslms/utils/contrast'
+// OSLMS-CUSTOM: rebuild the menu once the translations land (cold load)
+import { translationsLoaded } from '@/translation'
 import { usersStore } from '@/stores/user'
 import { useSettings } from '@/stores/settings'
 import { h, watch, ref, computed } from 'vue'
@@ -186,6 +188,9 @@ watch(
 )
 
 const userDropdownOptions = computed(() => {
+	// OSLMS-CUSTOM: __() reads a plain global; this ref makes the labels recompute
+	// once the messages arrive, otherwise they stay English after a hard reload
+	void translationsLoaded.value
 	return [
 		{
 			group: '',
