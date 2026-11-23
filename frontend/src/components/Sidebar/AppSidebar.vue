@@ -75,7 +75,7 @@
 					</Tooltip>
 					<!-- OSLMS-CUSTOM: upstream help, onboarding-call and "Powered by Frappe Learning" icons removed -->
 					<!-- OSLMS-CUSTOM: app version label shown in the sidebar footer -->
-					<span id="versionApp" class="text-xs text-ink-gray-5"> 1.16.73 </span>
+					<span id="versionApp" class="text-xs text-ink-gray-5"> 1.16.74 </span>
 				</div>
 
 				<Tooltip
