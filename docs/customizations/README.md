@@ -74,7 +74,7 @@ Ogni file `*.toml` di questa cartella può dichiarare un array `[[entries]]`. I 
 | `contract` | no | contratto di un endpoint (fasi successive) |
 | `checks` | no | `{ unit = "...", e2e = "..." }` percorsi dei test collegati |
 | `feature` | sì (C8) | `id` della scheda del catalogo a cui la voce appartiene |
-| `frozen_from` | per le copie congelate | tag upstream (es. `v2.58.0`) o versione frappe-ui senza `v` (es. `1.0.0-beta.7`) da cui è stata fatta la copia in `frontend/src/overrides/` (C9) |
+| `frozen_from` | per le copie congelate | tag upstream (es. `v2.58.0`) o versione frappe-ui (es. `1.0.0-beta.7`; la `v` iniziale è ammessa) da cui è stata fatta la copia in `frontend/src/overrides/` (C9) |
 | `status` | no | `accepted-drift` esclude la voce da C1, C2, C4, C5, C6, C8 e C9 |
 
 L'`intent` è il campo più importante: è quello che permette di **riapplicare** la regola

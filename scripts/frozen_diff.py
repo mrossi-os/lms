@@ -75,11 +75,24 @@ def diff_lms(git: Git, original: str, frozen_from: str, to: str) -> str:
 	return git.run("diff", f"{frozen_from}:{original}", f"{to}:{original}")
 
 
+def frappe_ui_tag(version: str) -> str:
+	"""The frappe-ui tag of a version written with or without its leading "v"."""
+	return "v" + version.removeprefix("v")
+
+
 def diff_frappe_ui(git: Git, component: str, frozen_from: str, to: str) -> str:
 	hint = f"git -C {git.repo_root} fetch --tags"
-	_require_tag(git, f"v{frozen_from}", "frappe-ui", hint)
-	_require_tag(git, f"v{to}", "frappe-ui", hint)
-	return git.run("diff", f"v{frozen_from}", f"v{to}", "--", component)
+	old, new = frappe_ui_tag(frozen_from), frappe_ui_tag(to)
+	_require_tag(git, old, "frappe-ui", hint)
+	_require_tag(git, new, "frappe-ui", hint)
+	if git.show(old, component) is None and git.show(new, component) is None:
+		# An empty diff here would read as "nothing changed upstream".
+		raise PlanError(
+			f"{component} non esiste in frappe-ui né a {old} né a {new}: il percorso della copia in "
+			f"{FRAPPE_UI_OVERRIDES} deve ricalcare quello del repository frappe-ui. "
+			"Controlla il percorso della copia, o il nome del componente se upstream lo ha spostato."
+		)
+	return git.run("diff", old, new, "--", component)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -115,7 +128,7 @@ def main(argv: list[str] | None = None) -> int:
 				ui_path = args.frappe_ui_repo or (repo_root / "frappe-ui")
 				ui_git = _frappe_ui_git(Path(ui_path))
 				component = path[len(FRAPPE_UI_OVERRIDES) :]
-				header = f"frappe-ui {component}: v{found.frozen_from} -> v{args.to}"
+				header = f"frappe-ui {component}: {frappe_ui_tag(found.frozen_from)} -> {frappe_ui_tag(args.to)}"
 				diff = diff_frappe_ui(ui_git, component, found.frozen_from, args.to)
 			else:
 				original = next(o for o, override in originals.items() if override == path)

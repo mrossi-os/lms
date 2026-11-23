@@ -120,6 +120,26 @@ class FrozenDiffFrappeUiTest(unittest.TestCase):
 		self.assertIn("-old combobox", out)
 		self.assertIn("+new combobox", out)
 
+	def test_accepts_a_leading_v_in_frozen_from_and_to(self):
+		write_inventory(
+			self.lms.root, ["frontend/src/overrides/frappe-ui/src/components/Combobox/Combobox.vue"], "v1.0.0-beta.29"
+		)
+		code, out, err = run(self.argv("v1.0.0-rc.1"))
+		self.assertEqual(code, 0, err)
+		self.assertIn("+new combobox", out)
+		self.assertIn("v1.0.0-beta.29 -> v1.0.0-rc.1", out)
+		self.assertNotIn("vv", out)
+
+	def test_component_absent_at_both_tags_exits_2_with_hint(self):
+		write_inventory(
+			self.lms.root, ["frontend/src/overrides/frappe-ui/src/components/Missing.vue"], "1.0.0-beta.29"
+		)
+		code, out, err = run(self.argv("1.0.0-rc.1"))
+		self.assertEqual(code, 2)
+		self.assertNotIn("nessuna modifica upstream", out)
+		self.assertIn("src/components/Missing.vue", err)
+		self.assertIn("frontend/src/overrides/frappe-ui/", err)
+
 	def test_missing_tag_prints_fetch_hint_and_exits_2(self):
 		code, _, err = run(self.argv("1.0.0-rc.9"))
 		self.assertEqual(code, 2)
