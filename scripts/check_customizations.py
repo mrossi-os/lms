@@ -22,10 +22,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.customizations.checks import (  # noqa: E402
 	ERROR,
+	check_feature_links,
 	check_sites,
 	check_test_paths,
 	check_uncatalogued_markers,
 )
+from scripts.customizations.features import STRICT_FEATURES_FLAG, load_features  # noqa: E402
 from scripts.customizations.model import InventoryError, load_inventory  # noqa: E402
 from scripts.customizations.report import render_json, render_table  # noqa: E402
 
@@ -63,6 +65,7 @@ def main(argv: list[str] | None = None) -> int:
 
 	try:
 		entries = load_inventory(inventory_dir)
+		features = load_features(inventory_dir / "features")
 	except InventoryError as exc:
 		print(f"Inventario non valido: {exc}", file=sys.stderr)
 		return 2
@@ -76,6 +79,7 @@ def main(argv: list[str] | None = None) -> int:
 		check_sites(entries, repo_root)
 		+ check_uncatalogued_markers(entries, repo_root)
 		+ check_test_paths(entries, repo_root)
+		+ check_feature_links(entries, features, strict=(repo_root / STRICT_FEATURES_FLAG).is_file())
 	)
 
 	if args.json:

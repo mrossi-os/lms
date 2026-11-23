@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from scripts.customizations.features import Feature
 from scripts.customizations.model import Entry
 
 ERROR = "error"
@@ -115,4 +116,24 @@ def check_test_paths(entries: list[Entry], repo_root: Path) -> list[Finding]:
 				findings.append(
 					Finding(entry.id, "C4", WARNING, f"test '{kind}' non trovato", relative, None)
 				)
+	return findings
+
+
+def check_feature_links(entries: list[Entry], features: dict[str, Feature], strict: bool) -> list[Finding]:
+	"""C8: every entry points at a feature card that exists.
+
+	A warning until the catalogue is migrated (the strict flag file does not
+	exist yet), an error afterwards.
+	"""
+	severity = ERROR if strict else WARNING
+	findings: list[Finding] = []
+	for entry in entries:
+		if entry.status == "accepted-drift":
+			continue
+		if not entry.feature:
+			findings.append(Finding(entry.id, "C8", severity, "voce senza funzionalità collegata", None, None))
+		elif entry.feature not in features:
+			findings.append(
+				Finding(entry.id, "C8", severity, f"funzionalità sconosciuta '{entry.feature}'", None, None)
+			)
 	return findings

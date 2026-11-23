@@ -7,14 +7,16 @@ from pathlib import Path
 from scripts.customizations.checks import (
 	ERROR,
 	WARNING,
+	check_feature_links,
 	check_sites,
 	check_test_paths,
 	check_uncatalogued_markers,
 )
+from scripts.customizations.features import Feature
 from scripts.customizations.model import Entry, Site
 
 
-def entry(entry_id="gate", sites=(), status=None, checks=None, layer="spa-graft"):
+def entry(entry_id="gate", sites=(), status=None, checks=None, layer="spa-graft", feature=None):
 	"""Build an Entry directly, bypassing the TOML layer."""
 	return Entry(
 		id=entry_id,
@@ -26,6 +28,7 @@ def entry(entry_id="gate", sites=(), status=None, checks=None, layer="spa-graft"
 		sites=tuple(sites),
 		checks=checks or {},
 		status=status,
+		feature=feature,
 	)
 
 
@@ -133,3 +136,41 @@ class CheckTestPathsTest(unittest.TestCase):
 
 if __name__ == "__main__":
 	unittest.main()
+
+
+def feature_card(feature_id="live-class"):
+	return Feature(
+		id=feature_id,
+		title="t",
+		status="active",
+		summary="s",
+		why="w",
+		behaviour=("b",),
+		areas=("a",),
+		upstream_watch=("u",),
+		history=({"date": "2026-11-01"},),
+	)
+
+
+class CheckFeatureLinksTest(unittest.TestCase):
+	def test_c8_warns_on_entry_without_feature_when_not_strict(self):
+		findings = check_feature_links([entry()], {"live-class": feature_card()}, strict=False)
+		self.assertEqual(len(findings), 1)
+		self.assertEqual(findings[0].check, "C8")
+		self.assertEqual(findings[0].severity, WARNING)
+		self.assertEqual(findings[0].entry_id, "gate")
+
+	def test_c8_errors_on_unknown_feature_when_strict(self):
+		findings = check_feature_links([entry(feature="ghost")], {"live-class": feature_card()}, strict=True)
+		self.assertEqual(len(findings), 1)
+		self.assertEqual(findings[0].check, "C8")
+		self.assertEqual(findings[0].severity, ERROR)
+		self.assertIn("ghost", findings[0].message)
+
+	def test_c8_skips_accepted_drift(self):
+		findings = check_feature_links([entry(status="accepted-drift")], {}, strict=True)
+		self.assertEqual(findings, [])
+
+	def test_c8_accepts_a_known_feature(self):
+		findings = check_feature_links([entry(feature="live-class")], {"live-class": feature_card()}, strict=True)
+		self.assertEqual(findings, [])

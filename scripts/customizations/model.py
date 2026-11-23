@@ -46,6 +46,8 @@ class Entry:
 	contract: dict | None = None
 	checks: dict = field(default_factory=dict)
 	status: str | None = None
+	feature: str | None = None
+	frozen_from: str | None = None
 
 
 def _build_site(raw: dict, entry_id: str, source: str) -> Site:
@@ -86,6 +88,8 @@ def _build_entry(raw: dict, source: str) -> Entry:
 		contract=raw.get("contract"),
 		checks=raw.get("checks", {}),
 		status=raw.get("status"),
+		feature=raw.get("feature"),
+		frozen_from=raw.get("frozen_from"),
 	)
 
 
