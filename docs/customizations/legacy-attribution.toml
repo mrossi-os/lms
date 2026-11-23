@@ -1,0 +1,10 @@
+# Legacy map: upstream file → features, for hunks written before the
+# Oslms-Feature rule (design §5.5, "Mappa della storia passata").
+# Written once during the migration, never updated afterwards: new commits
+# carry the trailer. Format:
+#
+# [[files]]
+# path = "frontend/src/pages/CourseDetail.vue"
+# features = ["mobile-course-cta", "program-members-unpublished"]
+
+schema_version = 1
