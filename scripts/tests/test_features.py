@@ -81,6 +81,25 @@ class LoadFeaturesTest(unittest.TestCase):
 					load_features(Path(tmp))
 				self.assertIn(key, str(ctx.exception))
 
+	def test_accepts_empty_areas(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			write_card(tmp, body=CARD.replace('areas = ["apps/os_lms/os_lms/os_lms/live_class_*.py"]', "areas = []"))
+			feature = load_features(Path(tmp))["live-class-draft-publish"]
+		self.assertEqual(feature.areas, ())
+
+	def test_missing_and_empty_fields_have_distinct_messages(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			write_card(tmp, body=without(CARD, "areas"))
+			with self.assertRaises(InventoryError) as missing:
+				load_features(Path(tmp))
+		self.assertIn("mancante", str(missing.exception))
+		with tempfile.TemporaryDirectory() as tmp:
+			write_card(tmp, body=without(CARD, "behaviour") + "behaviour = []\n")
+			with self.assertRaises(InventoryError) as empty:
+				load_features(Path(tmp))
+		self.assertIn("vuoto", str(empty.exception))
+		self.assertIn("behaviour", str(empty.exception))
+
 	def test_rejects_unknown_status(self):
 		with tempfile.TemporaryDirectory() as tmp:
 			write_card(tmp, body=CARD.replace('status = "active"', 'status = "weird"'))

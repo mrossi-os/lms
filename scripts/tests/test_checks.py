@@ -12,6 +12,7 @@ from scripts.customizations.checks import (
 	WARNING,
 	check_anchor_provenance,
 	check_anchor_uniqueness,
+	check_area_globs,
 	check_feature_links,
 	check_sites,
 	check_test_paths,
@@ -22,6 +23,7 @@ from scripts.customizations.checks import (
 from scripts.customizations.features import Feature
 from scripts.customizations.model import Entry, Site
 from scripts.check_customizations import main
+from scripts.tests.gitrepo import git_repo, run_git
 
 
 def entry(entry_id="gate", sites=(), status=None, checks=None, layer="spa-graft", feature=None):
@@ -154,17 +156,18 @@ class CheckTestPathsTest(unittest.TestCase):
 		self.assertEqual(findings, [])
 
 
-def feature_card(feature_id="live-class"):
+def feature_card(feature_id="live-class", areas=("a",), status="active"):
 	return Feature(
 		id=feature_id,
 		title="t",
-		status="active",
+		status=status,
 		summary="s",
 		why="w",
 		behaviour=("b",),
-		areas=("a",),
+		areas=tuple(areas),
 		upstream_watch=("u",),
 		history=({"date": "2026-11-01"},),
+		source=f"{feature_id}.toml",
 	)
 
 
@@ -190,6 +193,56 @@ class CheckFeatureLinksTest(unittest.TestCase):
 	def test_c8_accepts_a_known_feature(self):
 		findings = check_feature_links([entry(feature="live-class")], {"live-class": feature_card()}, strict=True)
 		self.assertEqual(findings, [])
+
+	def test_c8_errors_on_active_card_without_areas_or_entries(self):
+		cards = {"bare": feature_card("bare", areas=())}
+		findings = check_feature_links([], cards, strict=False)
+		self.assertEqual([(f.check, f.severity, f.entry_id) for f in findings], [("C8", ERROR, "bare")])
+		self.assertEqual(findings[0].file, "docs/customizations/features/bare.toml")
+
+	def test_c8_accepts_card_without_areas_but_with_a_linked_entry(self):
+		cards = {"bare": feature_card("bare", areas=())}
+		self.assertEqual(check_feature_links([entry(feature="bare")], cards, strict=True), [])
+
+	def test_c8_ignores_retired_card_without_areas(self):
+		cards = {"old": feature_card("old", areas=(), status="retired")}
+		self.assertEqual(check_feature_links([], cards, strict=True), [])
+
+
+class CheckAreaGlobsTest(unittest.TestCase):
+	def test_c10_warns_on_area_matching_no_tracked_file(self):
+		cards = {"live-class": feature_card(areas=("apps/os_lms/live_*.py", "apps/os_lms/gone/**"))}
+		findings = check_area_globs(cards, ["apps/os_lms/live_class.py", "README.md"])
+		self.assertEqual(
+			[(f.check, f.severity, f.entry_id, f.anchor) for f in findings],
+			[("C10", WARNING, "live-class", "apps/os_lms/gone/**")],
+		)
+
+	def test_c10_accepts_exact_paths_and_skips_retired_cards(self):
+		cards = {
+			"a": feature_card("a", areas=("src/x.vue",)),
+			"b": feature_card("b", areas=("src/removed.vue",), status="retired"),
+		}
+		self.assertEqual(check_area_globs(cards, ["src/x.vue"]), [])
+
+	def test_cli_runs_c10_on_git_tracked_files(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			card = (
+				'id = "live-class"\ntitle = "t"\nstatus = "active"\nsummary = "s"\nwhy = "w"\n'
+				'behaviour = ["b"]\nareas = ["src/*.vue", "nowhere/**"]\nupstream_watch = ["u"]\n'
+				'history = [{ date = "2026-11-01" }]\n'
+			)
+			root = fake_repo(
+				tmp,
+				**{"src/a.vue": "x\n", "docs/customizations/features/live-class.toml": card, "untracked/x.vue": "x\n"},
+			)
+			git_repo(root)
+			run_git(root, "rm", "-q", "--cached", "untracked/x.vue")
+			out = io.StringIO()
+			with contextlib.redirect_stdout(out):
+				main(["--repo-root", tmp, "--no-base", "--json"])
+		c10 = [f for f in json.loads(out.getvalue())["findings"] if f["check"] == "C10"]
+		self.assertEqual([(f["id"], f["anchor"]) for f in c10], [("live-class", "nowhere/**")])
 
 
 class CheckAnchorProvenanceTest(unittest.TestCase):

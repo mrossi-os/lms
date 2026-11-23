@@ -26,6 +26,7 @@ from scripts.customizations.checks import (  # noqa: E402
 	Finding,
 	check_anchor_provenance,
 	check_anchor_uniqueness,
+	check_area_globs,
 	check_feature_links,
 	check_frozen_base,
 	check_sites,
@@ -107,6 +108,14 @@ def translation_findings(repo_root: Path, read) -> list[Finding]:
 	return check_translations(recorded, head_po)
 
 
+def tracked_files(repo_root: Path) -> list[str] | None:
+	"""Files in the git index of `repo_root`, or None outside a repository (C10 is then skipped)."""
+	try:
+		return Git(repo_root).lines("ls-files", "--cached", "-z")
+	except (PlanError, OSError):
+		return None
+
+
 def main(argv: list[str] | None = None) -> int:
 	args = build_parser().parse_args(argv)
 	repo_root = args.repo_root.resolve()
@@ -147,6 +156,9 @@ def main(argv: list[str] | None = None) -> int:
 	)
 
 	findings += translation_findings(repo_root, read)
+	tracked = tracked_files(repo_root)
+	if tracked is not None:
+		findings += check_area_globs(features, tracked)
 
 	if args.json:
 		print(render_json(findings, len(entries), datetime.now().isoformat(timespec="seconds")))

@@ -14,16 +14,20 @@ critiche, la scheda porta il significato.
 | `why` | sì | perché esiste: esigenza del cliente o lacuna upstream che colma |
 | `roles` | no | ruoli coinvolti (`Gestore`, `Docente`, `Valutatore`, `Student`, ...) |
 | `behaviour` | sì | elenco di regole osservabili, una per riga, verificabili da fuori ("una classe live nuova nasce in bozza"). È la base del confronto con l'upstream |
-| `areas` | sì | percorsi o glob del codice che le appartiene per intero (moduli os_lms, componenti nostri) |
+| `areas` | sì, anche vuoto (`[]`) | percorsi o glob del codice che le appartiene per intero (moduli os_lms, componenti nostri). Vuoto quando la funzionalità vive solo in innesti nei file upstream, coperti dalle voci collegate |
 | `upstream_watch` | sì | indizi da cercare nelle release upstream: parole chiave, doctype, campi, endpoint, nomi di pagina |
 | `data` | no | dati che la funzionalità possiede (custom field, doctype, impostazioni): servono a stimare la migrazione se si adotta l'upstream |
 | `tests` | no | test che ne verificano il comportamento |
 | `notes` | no | conoscenza operativa: insidie, cosa riverificare dopo i merge |
 | `history` | sì | eventi (array di tabelle): creazione, cambi di comportamento rilevanti, decisioni di confronto con l'upstream (data, commit o release, sintesi) |
 
-Il caricamento (`scripts/customizations/features.py`) valida: campi obbligatori, `id` uguale
-al nome del file, stato ammesso. Il controllo C8 verifica che ogni voce punti a una scheda
-esistente; è un avviso finché non esiste il file `.strict` in questa cartella, un errore dopo.
+Il caricamento (`scripts/customizations/features.py`) valida: campi obbligatori presenti
+(«campo obbligatorio mancante») e non vuoti («è vuoto»; solo `areas` può essere vuoto), `id`
+uguale al nome del file, stato ammesso. Il controllo C8 verifica che ogni voce punti a una
+scheda esistente; è un avviso finché non esiste il file `.strict` in questa cartella, un errore
+dopo. C8 segnala sempre come errore una scheda `active` senza `areas` e senza voci collegate:
+non punterebbe a nessun codice. C10 avvisa quando un glob di `areas` di una scheda `active`
+non corrisponde a nessun file tracciato.
 
 Esempio minimo:
 

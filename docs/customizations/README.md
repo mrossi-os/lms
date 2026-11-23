@@ -49,7 +49,9 @@ Codici di uscita: `0` intatto (avvisi ammessi), `1` scostamento, `2` inventario 
 | `C6` | l'ancora compare più di una volta nel file | errore |
 | `C7` | una traduzione registrata in `translations-it.toml` non c'è più in `lms/locale/it.po`, o è cambiata | errore |
 | `C8` | la voce non ha il campo `feature`, o punta a una scheda inesistente | avviso; errore quando esiste `features/.strict` |
+| `C8` | una scheda `active` non ha `areas` né voci collegate (`feature = "<id>"`) | errore |
 | `C9` | una voce con una copia congelata in `frontend/src/overrides/` non ha `frozen_from` | avviso |
+| `C10` | un glob di `areas` di una scheda `active` non corrisponde a nessun file tracciato da git (refuso, o codice spostato) | avviso |
 
 `C5` ha bisogno della base upstream, cioè della storia completa e dei tag di `frappe/lms`;
 lo stesso vale per la rigenerazione di `translations-it.toml` (`--write`). `C7` invece

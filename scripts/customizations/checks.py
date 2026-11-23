@@ -9,11 +9,12 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from fnmatch import fnmatch
 from pathlib import Path
 
 from scripts.customizations.features import Feature
 from scripts.customizations.model import Entry
-from scripts.customizations.paths import OVERRIDES_DIR
+from scripts.customizations.paths import FEATURES_DIR, OVERRIDES_DIR
 
 ERROR = "error"
 WARNING = "warning"
@@ -203,10 +204,23 @@ def check_feature_links(entries: list[Entry], features: dict[str, Feature], stri
 	"""C8: every entry points at a feature card that exists.
 
 	A warning until the catalogue is migrated (the strict flag file does not
-	exist yet), an error afterwards.
+	exist yet), an error afterwards. Also, always an error: an active card with
+	no `areas` and no entry linked to it, since it then points at no code at
+	all (design §5.2: every active card has at least a site or an area).
 	"""
 	severity = ERROR if strict else WARNING
 	findings: list[Finding] = []
+	linked = {entry.feature for entry in entries if entry.feature}
+	for feature in sorted(features.values(), key=lambda f: f.id):
+		if feature.status == "active" and not feature.areas and feature.id not in linked:
+			findings.append(
+				Finding(
+					feature.id, "C8", ERROR,
+					"scheda active senza 'areas' e senza voci collegate: aggiungi le aree del suo codice "
+					f"o collega una voce con feature = \"{feature.id}\"",
+					f"{FEATURES_DIR}/{feature.source or feature.id + '.toml'}", None,
+				)
+			)
 	for entry in entries:
 		if entry.status == "accepted-drift":
 			continue
@@ -216,6 +230,28 @@ def check_feature_links(entries: list[Entry], features: dict[str, Feature], stri
 			findings.append(
 				Finding(entry.id, "C8", severity, f"funzionalità sconosciuta '{entry.feature}'", None, None)
 			)
+	return findings
+
+
+def check_area_globs(features: dict[str, Feature], tracked: list[str]) -> list[Finding]:
+	"""C10: every `areas` glob of an active card matches at least one tracked file.
+
+	A glob that matches nothing usually has a typo, or points at code that was
+	moved: the card then silently stops covering its files. Retired cards are
+	skipped, their code is gone by definition. Warning: the fix is the glob.
+	"""
+	findings: list[Finding] = []
+	for feature in sorted(features.values(), key=lambda f: f.id):
+		if feature.status != "active":
+			continue
+		for pattern in feature.areas:
+			if not any(path == pattern or fnmatch(path, pattern) for path in tracked):
+				findings.append(
+					Finding(
+						feature.id, "C10", WARNING, "area della scheda che non corrisponde a nessun file tracciato",
+						f"{FEATURES_DIR}/{feature.source or feature.id + '.toml'}", pattern,
+					)
+				)
 	return findings
 
 

@@ -28,6 +28,8 @@ REQUIRED_FIELDS = (
 	"upstream_watch",
 	"history",
 )
+# Required, but may be empty: a card can live only in inventory entries (design §5.2).
+MAY_BE_EMPTY = frozenset({"areas"})
 
 
 @dataclass(frozen=True)
@@ -56,8 +58,10 @@ class Feature:
 
 def _build_feature(raw: dict, filename: str) -> Feature:
 	for key in REQUIRED_FIELDS:
-		if not raw.get(key):
-			raise InventoryError(f"{filename}: la scheda non ha il campo obbligatorio '{key}'")
+		if key not in raw:
+			raise InventoryError(f"{filename}: campo obbligatorio mancante '{key}'")
+		if not raw[key] and key not in MAY_BE_EMPTY:
+			raise InventoryError(f"{filename}: il campo obbligatorio '{key}' è vuoto")
 	expected = filename.removesuffix(".toml")
 	if raw["id"] != expected:
 		raise InventoryError(f"{filename}: l'id '{raw['id']}' non coincide con il nome del file")
