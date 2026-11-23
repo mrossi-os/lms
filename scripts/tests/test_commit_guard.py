@@ -327,6 +327,51 @@ class WorktreeTest(GuardTestCase):
 		self.assertEqual(accepted.returncode, 0, accepted.stderr)
 
 
+class WrapperInterpreterTest(unittest.TestCase):
+	"""The real .githooks/commit-msg fails closed, in Italian, without a usable python3."""
+
+	def _run_wrapper(self, bin_dir, repo):
+		msgfile = Path(repo) / "MSG"
+		msgfile.write_text(message("docs: x"), encoding="utf-8")
+		return subprocess.run(
+			["/bin/sh", str(REPO_ROOT / ".githooks/commit-msg"), str(msgfile)],
+			cwd=repo,
+			capture_output=True,
+			text=True,
+			env={"PATH": str(bin_dir), "HOME": os.environ.get("HOME", "/")},
+		)
+
+	def _bin_with_git(self, tmp):
+		bin_dir = Path(tmp) / "bin"
+		bin_dir.mkdir()
+		(bin_dir / "git").symlink_to(shutil.which("git"))
+		repo = Path(tmp) / "repo"
+		repo.mkdir()
+		run_git(repo, "init", "-q")
+		return bin_dir, repo
+
+	def test_too_old_python_blocks_with_italian_message(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			bin_dir, repo = self._bin_with_git(tmp)
+			# Behaves like an old interpreter running the wrapper's version probe.
+			stub = bin_dir / "python3"
+			stub.write_text("#!/bin/sh\necho 3.9.6\nexit 1\n", encoding="utf-8")
+			stub.chmod(0o755)
+			result = self._run_wrapper(bin_dir, repo)
+		self.assertEqual(result.returncode, 1, result.stderr)
+		for fragment in ("3.9.6", "3.11", "rifiutato", "PATH"):
+			self.assertIn(fragment, result.stderr)
+		self.assertNotIn("Traceback", result.stderr)
+
+	def test_missing_python_blocks_with_italian_message(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			bin_dir, repo = self._bin_with_git(tmp)
+			result = self._run_wrapper(bin_dir, repo)
+		self.assertEqual(result.returncode, 1, result.stderr)
+		self.assertIn("python3 non trovato", result.stderr)
+		self.assertIn("3.11", result.stderr)
+
+
 class HelpersTest(unittest.TestCase):
 	def test_parse_trailers_reads_only_the_final_block(self):
 		text = "fix: x\n\nOslms-Feature: middle\n\nbody\n\nVersion: 1\nOslms-Feature: a\noslms-feature: b\n"
@@ -338,6 +383,21 @@ class HelpersTest(unittest.TestCase):
 		self.assertEqual(groups["exempt"], {"docs/x.md", "frontend/yarn.lock"})
 		self.assertEqual(groups["upstream"], {UP})
 		self.assertEqual(groups["ours"], {"frontend/src/New.vue", "apps/os_lms/x.py"})
+
+	def test_agent_instructions_and_tooling_files_are_exempt(self):
+		exempt = {
+			"CLAUDE.md",
+			"apps/os_lms/CLAUDE.md",
+			"frontend/src/AGENTS.md",
+			"graphify-out/graph.json",
+			".agents/skills/x.md",
+			".vscode/settings.json",
+			"osv-scanner.toml",
+		}
+		not_exempt = {"frontend/src/CLAUDE.md.vue", "frontend/osv-scanner.toml"}
+		groups = classify(exempt | not_exempt, set())
+		self.assertEqual(groups["exempt"], exempt)
+		self.assertEqual(groups["ours"], not_exempt)
 
 	def test_version_bump_detection(self):
 		bump = (

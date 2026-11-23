@@ -21,6 +21,17 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+MIN_PYTHON = (3, 11)  # tomllib
+if sys.version_info < MIN_PYTHON:  # the imports below would die with a raw traceback
+	found = ".".join(str(part) for part in sys.version_info[:3])
+	print(
+		f"commit_guard: Python {found} ({sys.executable}) è troppo vecchio: serve Python 3.11 o più recente. "
+		"Il commit è rifiutato. Installa Python 3.11 o più recente e mettilo prima nel PATH di git, "
+		"poi ripeti il commit.",
+		file=sys.stderr,
+	)
+	sys.exit(1)
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.customizations.checks import (  # noqa: E402
@@ -52,8 +63,27 @@ COMMIT_TYPE = re.compile(r"^(\w+)(\(.+\))?!?:")
 NONE_VALUE = re.compile(r"^none(?:\s*\((.*)\))?\s*$", re.IGNORECASE)
 
 OUR_PREFIXES = ("apps/os_lms/", "frontend/src/oslms/", "frontend/src/overrides/", "frontend/oslms-vite/")
-EXEMPT_PREFIXES = ("docs/", "reports/", "scripts/", ".claude/", ".githooks/", ".github/", "lms/locale/", "lms/translations/")
-EXEMPT_FILES = ("frontend/yarn.lock", "yarn.lock", "frontend/components.d.ts", "frontend/src/utils/frappe-ui-colors.json")
+EXEMPT_PREFIXES = (
+	"docs/",
+	"reports/",
+	"scripts/",
+	".claude/",
+	".githooks/",
+	".github/",
+	"lms/locale/",
+	"lms/translations/",
+	"graphify-out/",
+	".agents/",
+	".vscode/",
+)
+EXEMPT_FILES = (
+	"frontend/yarn.lock",
+	"yarn.lock",
+	"frontend/components.d.ts",
+	"frontend/src/utils/frappe-ui-colors.json",
+	"osv-scanner.toml",
+)
+EXEMPT_BASENAMES = ("CLAUDE.md", "AGENTS.md")  # agent instructions, at any depth
 
 WHERE_TO_WRITE = (
 	"Scrivi la riga nell'ultimo paragrafo del messaggio, quello delle righe finali: "
@@ -110,7 +140,11 @@ def commit_type(message: str) -> str:
 
 
 def is_exempt_path(path: str) -> bool:
-	return path.startswith(EXEMPT_PREFIXES) or path in EXEMPT_FILES
+	return (
+		path.startswith(EXEMPT_PREFIXES)
+		or path in EXEMPT_FILES
+		or path.rsplit("/", 1)[-1] in EXEMPT_BASENAMES
+	)
 
 
 def classify(paths: set[str], base_files: set[str]) -> dict[str, set[str]]:

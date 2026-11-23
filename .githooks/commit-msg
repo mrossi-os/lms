@@ -1,9 +1,16 @@
 #!/bin/sh
 # Refuse commits that leave a customization unattributed (scripts/commit_guard.py).
 # Activated per clone with `git config core.hooksPath .githooks`.
+# Fails closed: without a usable python3 (>= 3.11, for tomllib) the commit is refused.
 top=$(git rev-parse --show-toplevel) || exit 1
 if ! command -v python3 >/dev/null 2>&1; then
-	echo "commit_guard: python3 non trovato nel PATH: il controllo dei commit non può girare." >&2
+	echo "commit_guard: python3 non trovato nel PATH, quindi il controllo dei commit non può girare e il commit è rifiutato." >&2
+	echo "Installa Python 3.11 o più recente e mettilo nel PATH di git, poi ripeti il commit." >&2
+	exit 1
+fi
+if ! version=$(python3 -c 'import sys; print("%d.%d.%d" % sys.version_info[:3]); sys.exit(sys.version_info < (3, 11))' 2>/dev/null); then
+	echo "commit_guard: il python3 trovato nel PATH ($(command -v python3), versione ${version:-sconosciuta}) è troppo vecchio: serve Python 3.11 o più recente. Il commit è rifiutato." >&2
+	echo "Installa Python 3.11 o più recente e mettilo prima nel PATH di git (per esempio /usr/local/bin o /opt/homebrew/bin prima di /usr/bin), poi ripeti il commit." >&2
 	exit 1
 fi
 exec python3 "$top/scripts/commit_guard.py" "$1"
