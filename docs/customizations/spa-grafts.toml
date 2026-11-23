@@ -9952,3 +9952,36 @@ Gestore), e mai nel menu mobile. Gli endpoint ricontrollano lo stesso permesso. 
 
   [entries.checks]
   unit = "apps/os_lms/os_lms/os_lms/tests/test_os_audit_page.py"
+
+[[entries]]
+id = "settings-shared-tabs"
+title = "Impostazioni: schede condivise con «Impostazioni gestore»"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Le schede comuni al pannello Administrator (Settings.vue) e al pannello gestore
+(oslms/components/Settings/SettingsGestore.vue) sono definite una sola volta in
+src/oslms/utils/settingsTabs.js: Course Progress, Categories, Email Templates, Users (key
+'Members'), Zoom, Google Meet, Google Calendar, Branding, Welcome (key 'Welcome Video').
+Settings.vue chiama i builder al posto delle definizioni in linea. Course Progress ed Email
+Templates hanno ora una key stabile ('Course Progress', 'Email Templates'). Dopo un merge
+upstream che cambia una di queste schede, portare la modifica nel builder, non in
+Settings.vue. Aggiunto 2026-11-23 (design docs/superpowers/specs/2026-11-18-impostazioni-gestore-design.md)."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = "courseProgressTab(),"
+  symbol = "tabsStructure"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = "googleCalendarTab(canManageGoogleCalendars),"
+  symbol = "tabsStructure"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Settings/Settings.vue"
+  anchor = "welcomeTab(),"
+  symbol = "tabsStructure"
+
+  [entries.checks]
+  unit = "frontend/src/tests/settingsTabs.test.ts"
