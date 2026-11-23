@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from scripts.customizations.checks import Finding, check_uncatalogued_markers  # noqa: E402
 from scripts.customizations.gitbase import Git  # noqa: E402
 from scripts.customizations.model import load_inventory  # noqa: E402
-from scripts.customizations.paths import INVENTORY_DIR  # noqa: E402
+from scripts.customizations.paths import INVENTORY_DIR, STRICT_FEATURES_FLAG  # noqa: E402
 
 DEFAULT_REPO_ROOT = Path(__file__).resolve().parent.parent
 SENTINEL_NAME = "oslms-inventory-guard"
@@ -49,7 +49,15 @@ def build_decision(findings: list[Finding]) -> dict | None:
 
 
 def hooks_path_problem(repo_root: Path) -> str | None:
-	"""Return a message when the commit guard hooks are not enabled, else None."""
+	"""Return a message when the commit guard hooks are not enabled, else None.
+
+	Only after the catalogue migration (the strict flag file exists): before
+	it the guard would refuse every commit. Enabling the hooks is a
+	configuration change the user approves, so the message asks Claude to
+	ask, never to run the command on its own.
+	"""
+	if not (repo_root / STRICT_FEATURES_FLAG).is_file():
+		return None
 	result = subprocess.run(
 		["git", "config", "--get", "core.hooksPath"],
 		cwd=repo_root,
@@ -61,7 +69,9 @@ def hooks_path_problem(repo_root: Path) -> str | None:
 		return None
 	return (
 		"La guardia sui commit non è attiva in questo clone: i commit non vengono "
-		"controllati. Attivala con: git config core.hooksPath " + HOOKS_PATH
+		"controllati. Chiedi all'utente l'ok per attivarla e, solo dopo il suo ok, esegui: "
+		"git config core.hooksPath " + HOOKS_PATH + " (è una modifica alla configurazione: "
+		"non farla di tua iniziativa)."
 	)
 
 

@@ -26,6 +26,7 @@ EXEMPT_PREFIXES = (
 	"graphify-out/",
 	".agents/",
 	".vscode/",
+	"frontend/oslms-test/",
 )
 EXEMPT_FILES = (
 	"frontend/yarn.lock",
@@ -33,6 +34,7 @@ EXEMPT_FILES = (
 	"frontend/components.d.ts",
 	"frontend/src/utils/frappe-ui-colors.json",
 	"osv-scanner.toml",
+	"skills-lock.json",
 )
 EXEMPT_BASENAMES = ("CLAUDE.md", "AGENTS.md")  # agent instructions, at any depth
 

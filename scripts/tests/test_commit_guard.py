@@ -187,6 +187,29 @@ class AttributionTest(GuardTestCase):
 		)
 
 
+class TranslationReminderTest(GuardTestCase):
+	PO = "lms/locale/it.po"
+	REGISTRY = "docs/customizations/translations-it.toml"
+
+	def test_reminds_to_regenerate_the_registry_when_it_po_is_staged_alone(self):
+		self.repo.stage(**{self.PO: 'msgid "a"\nmsgstr "b"\n'})
+		code, stderr = self.repo.guard(message("fix(i18n): translate a string"))
+		self.assertEqual(code, 0, stderr)
+		self.assertIn("python3 scripts/customization_translations.py --write", stderr)
+		self.assertIn(self.REGISTRY, stderr)
+
+	def test_no_reminder_when_the_registry_is_staged_too(self):
+		self.repo.stage(**{self.PO: 'msgid "a"\nmsgstr "b"\n', self.REGISTRY: "schema_version = 1\n"})
+		code, stderr = self.repo.guard(message("fix(i18n): translate a string"))
+		self.assertEqual((code, stderr), (0, ""))
+
+	def test_reminder_does_not_hide_a_blocking_problem(self):
+		self.repo.stage(**{self.PO: 'msgid "a"\nmsgstr "b"\n', UP: OUR_UP + "<!-- one more -->\n"})
+		code, stderr = self.repo.guard(message("fix(up): tweak the page"))
+		self.assertEqual(code, 1, stderr)
+		self.assertIn("customization_translations.py --write", stderr)
+
+
 class CardTest(GuardTestCase):
 	def test_blocks_feat_without_card_staged(self):
 		self.repo.stage(**{UP: OUR_UP + "<!-- one more -->\n"})
@@ -393,8 +416,11 @@ class HelpersTest(unittest.TestCase):
 			".agents/skills/x.md",
 			".vscode/settings.json",
 			"osv-scanner.toml",
+			"frontend/oslms-test/setup.ts",
+			"skills-lock.json",
 		}
-		not_exempt = {"frontend/src/CLAUDE.md.vue", "frontend/osv-scanner.toml"}
+		# docker/ ships upstream: our edits there are customizations.
+		not_exempt = {"frontend/src/CLAUDE.md.vue", "frontend/osv-scanner.toml", "docker/init.sh", "frontend/skills-lock.json"}
 		groups = classify(exempt | not_exempt, set())
 		self.assertEqual(groups["exempt"], exempt)
 		self.assertEqual(groups["ours"], not_exempt)

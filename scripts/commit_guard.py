@@ -63,6 +63,7 @@ from scripts.customizations.stage import (  # noqa: E402
 	staged_paths,
 )
 from scripts.customizations.trailers import NONE_VALUE, TRAILER_KEY, parse_trailers  # noqa: E402,F401
+from scripts.customizations.translations import PO_PATH, TRANSLATIONS_FILE  # noqa: E402
 
 SIDEBAR = "frontend/src/components/Sidebar/AppSidebar.vue"
 SCISSORS = "# ------------------------ >8 ------------------------"
@@ -145,6 +146,17 @@ def is_exempt_commit(message: str, merge: MergeInfo | None) -> bool:
 	if message.startswith('Revert "'):
 		return True
 	return merge is not None and (not merge.is_upstream_release or not merge.had_conflicts)
+
+
+def translation_reminder(staged: set[str]) -> list[Problem]:
+	"""Not blocking: it.po changed but the registry of our translations was not regenerated."""
+	if PO_PATH not in staged or TRANSLATIONS_FILE in staged:
+		return []
+	return [Problem("traduzioni", (
+		f"Il commit cambia {PO_PATH} ma non {TRANSLATIONS_FILE}: se hai aggiunto o cambiato "
+		"traduzioni nostre, esegui 'python3 scripts/customization_translations.py --write' "
+		f"e aggiungi allo stage {TRANSLATIONS_FILE}, così restano registrate."
+	), False)]
 
 
 def _finding_problem(finding: Finding, entries_by_id: dict[str, Entry], base: str | None) -> Problem:
@@ -293,12 +305,13 @@ def evaluate(
 	if is_exempt_commit(message, merge):
 		return []
 	exempt = {p for p in staged if is_exempt_path(p)}
+	reminders = translation_reminder(staged)
 	if base_files is None:
 		if staged - exempt or changed_entries:
 			return [Problem("6", (
 				"Non trovo la base upstream: nessun tag di release (vX.Y.Z) è antenato di HEAD, quindi "
 				"non so quali file sono upstream. Esegui 'git fetch upstream --tags' e ripeti il commit."
-			), True)]
+			), True)] + reminders
 		base_files = set()
 	groups = classify(staged, base_files)
 	if SIDEBAR in groups["upstream"] and is_version_bump_only(sidebar_diff):
@@ -307,7 +320,7 @@ def evaluate(
 	values = parse_trailers(message)
 	problems = _attribution_problems(message, commit_type, values, groups, staged, features, entries, merge)
 	problems += _inventory_problems(staged, read_staged, read_base, base, entries, changed_entries)
-	return problems
+	return problems + reminders
 
 
 def check_commit(message: str) -> list[Problem]:

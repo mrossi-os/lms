@@ -35,10 +35,16 @@ class BuildDecisionTest(unittest.TestCase):
 		self.assertEqual(decision["reason"].count("a.vue"), 1)
 
 
-def guard_repo(tmp, marked, hooks_path=".githooks"):
-	"""A real git repository with an empty inventory and optionally one marked file."""
+def guard_repo(tmp, marked, hooks_path=".githooks", strict=True):
+	"""A real git repository with an empty inventory and optionally one marked file.
+
+	`strict` creates the flag file that marks the catalogue migration as done:
+	only then does the guard ask for the commit hooks.
+	"""
 	root = Path(tmp)
-	(root / "docs" / "customizations").mkdir(parents=True)
+	(root / "docs" / "customizations" / "features").mkdir(parents=True)
+	if strict:
+		(root / "docs" / "customizations" / "features" / ".strict").write_text("", encoding="utf-8")
 	subprocess.run(["git", "init", "-q"], cwd=root, check=True)
 	if hooks_path is not None:
 		subprocess.run(["git", "config", "core.hooksPath", hooks_path], cwd=root, check=True)
@@ -99,6 +105,25 @@ class MainTest(unittest.TestCase):
 		self.assertEqual(json.loads(first)["decision"], "block")
 		self.assertIn("git config core.hooksPath .githooks", json.loads(first)["reason"])
 		self.assertEqual(second, "")
+
+	def test_hooks_reminder_asks_for_the_user_ok(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			_, output = run_guard(guard_repo(tmp, marked=False, hooks_path=None), "s1")
+		reason = json.loads(output)["reason"]
+		self.assertIn("chiedi", reason.lower())
+		self.assertIn("ok", reason)
+
+	def test_silent_about_hooks_before_the_migration(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			code, output = run_guard(guard_repo(tmp, marked=False, hooks_path=None, strict=False), "s1")
+		self.assertEqual((code, output), (0, ""))
+
+	def test_marker_still_blocks_before_the_migration(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			_, output = run_guard(guard_repo(tmp, marked=True, hooks_path=None, strict=False), "s1")
+		reason = json.loads(output)["reason"]
+		self.assertIn("Loose.vue", reason)
+		self.assertNotIn("core.hooksPath", reason)
 
 	def test_silent_when_hooks_path_set(self):
 		with tempfile.TemporaryDirectory() as tmp:

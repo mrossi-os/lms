@@ -168,7 +168,12 @@ Sono esenti i commit di soli documenti, script e traduzioni, i merge fra branch 
 i `git revert` e i merge di release upstream **senza conflitti**. Un merge di release upstream
 **con conflitti** porta una riga per ogni funzionalità riapplicata nella risoluzione.
 Regole complete e percorsi esenti: `CLAUDE.md`, sezione «Customization tracking».
-L'hook `Stop` ricorda di attivare il controllo se `core.hooksPath` non è `.githooks`.
+Dopo la migrazione del catalogo (quando esiste `features/.strict`) l'hook `Stop` segnala
+che il controllo è spento se `core.hooksPath` non è `.githooks`, e chiede a Claude di
+chiedere l'ok al committente prima di attivarlo: è una modifica alla configurazione.
+Se un commit mette in stage `lms/locale/it.po` senza `translations-it.toml`, il controllo
+ricorda (senza bloccare) di rigenerare il registro con
+`python3 scripts/customization_translations.py --write`.
 
 ## Regola di manutenzione
 
