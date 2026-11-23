@@ -11529,3 +11529,7 @@ msgstr "Le presenze live non vengono registrate per questa classe: controlla le 
 #: apps/os_lms/os_lms/os_lms/settings_access.py
 msgid "Only an administrator can change: {0}"
 msgstr "Solo un amministratore può modificare: {0}"
+
+#: frontend/src/oslms/components/Settings/SettingsGestore.vue
+msgid "Manager Settings"
+msgstr "Impostazioni gestore"

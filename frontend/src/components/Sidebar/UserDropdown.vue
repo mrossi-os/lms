@@ -58,9 +58,14 @@
 			</template>
 		</Dropdown>
 	</div>
+	<!-- OSLMS-CUSTOM: "Impostazioni" for administrators only; "Impostazioni gestore" for Gestore + administrators -->
 	<SettingsModal
-		v-if="userResource.data?.is_moderator"
+		v-if="isSettingsAdmin(userResource.data)"
 		v-model="showSettingsModal"
+	/>
+	<SettingsGestoreModal
+		v-if="canOpenGestoreSettings(userResource.data)"
+		v-model="showGestoreSettingsModal"
 	/>
 </template>
 
@@ -79,6 +84,12 @@ import { createDialog } from '@/utils/dialogs'
 import FrappeCloudIcon from '@/components/Icons/FrappeCloudIcon.vue'
 import LMSLogo from '@/components/Icons/LMSLogo.vue'
 import SettingsModal from '@/components/Settings/Settings.vue'
+// OSLMS-CUSTOM: manager settings panel and the rules on who opens which panel
+import SettingsGestoreModal from '@/oslms/components/Settings/SettingsGestore.vue'
+import {
+	canOpenGestoreSettings,
+	isSettingsAdmin,
+} from '@/oslms/utils/settingsAccess'
 // OSLMS-CUSTOM: lucide components as menu icons instead of 'lucide-*' strings
 import {
 	Contrast,
@@ -89,6 +100,7 @@ import {
 	Upload,
 	User,
 	Settings,
+	SlidersHorizontal,
 	Trash2,
 } from 'lucide-vue-next'
 import { safeUrl } from '@/utils/safeUrl'
@@ -100,6 +112,7 @@ let { userResource } = usersStore()
 const settingsStore = useSettings()
 let { isLoggedIn } = sessionStore()
 const showSettingsModal = ref(false)
+const showGestoreSettingsModal = ref(false)
 const frappeCloudBaseEndpoint = 'https://frappecloud.com'
 const $dialog = createDialog
 
@@ -164,6 +177,14 @@ watch(
 	},
 )
 
+// OSLMS-CUSTOM: same contract for the manager settings panel
+watch(
+	() => settingsStore.isGestoreSettingsOpen,
+	(value) => {
+		showGestoreSettingsModal.value = value
+	},
+)
+
 const userDropdownOptions = computed(() => {
 	return [
 		{
@@ -216,8 +237,20 @@ const userDropdownOptions = computed(() => {
 					onClick: () => {
 						settingsStore.isSettingsOpen = true
 					},
+					// OSLMS-CUSTOM: administrators only; Gestore uses "Impostazioni gestore" below
 					condition: () => {
-						return userResource.data?.is_moderator
+						return isSettingsAdmin(userResource.data)
+					},
+				},
+				{
+					// OSLMS-CUSTOM: manager settings panel for Gestore and administrators
+					icon: SlidersHorizontal,
+					label: __('Manager Settings'),
+					onClick: () => {
+						settingsStore.isGestoreSettingsOpen = true
+					},
+					condition: () => {
+						return canOpenGestoreSettings(userResource.data)
 					},
 				},
 				{

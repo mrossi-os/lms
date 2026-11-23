@@ -11,6 +11,7 @@ import BrandSettings from '@/components/Settings/BrandSettings.vue'
 import ZoomSettings from '@/components/Settings/ZoomSettings.vue'
 import GoogleMeetSettings from '@/components/Settings/GoogleMeetSettings.vue'
 import GoogleCalendarSettings from '@/components/Settings/GoogleCalendarSettings.vue'
+import { buildOslmsSettingsTabs } from '@/oslms/utils/settings'
 
 export const courseProgressTab = () => ({
 	// Stable key: the label is translated, so it cannot identify the tab.
@@ -258,3 +259,56 @@ export const welcomeTab = () => ({
 		},
 	],
 })
+
+// Drops the groups and tabs whose role condition fails, then the groups left
+// empty (same rule as Settings.vue).
+export const applyTabConditions = (groups) =>
+	groups
+		.filter((group) => !group.condition || group.condition())
+		.map((group) => ({
+			...group,
+			items: group.items.filter((item) => !item.condition || item.condition()),
+		}))
+		.filter((group) => group.items.length > 0)
+
+// Tabs of the manager panel ("Impostazioni gestore"), in the same groups and
+// order as Settings.vue. Their keys must match GESTORE_SETTINGS_TAB_KEYS in
+// settingsAccess.js (pinned by settingsTabs.test.ts).
+export const buildGestoreSettingsTabs = () => [
+	{
+		key: 'Configuration',
+		label: __('Configuration'),
+		hideLabel: false,
+		items: [courseProgressTab(), categoriesTab()],
+	},
+	{
+		key: 'Email',
+		label: 'Email',
+		items: [emailTemplatesTab()],
+	},
+	{
+		key: 'Users',
+		label: __('User Management'),
+		hideLabel: false,
+		items: [membersTab()],
+	},
+	{
+		key: 'Conferencing',
+		label: __('Conferencing'),
+		hideLabel: false,
+		items: [zoomTab(), googleMeetTab(), googleCalendarTab()],
+	},
+	{
+		key: 'Customize',
+		label: __('Customize'),
+		hideLabel: false,
+		items: [brandingTab(), welcomeTab()],
+	},
+	// os_lms tabs: TrueSkills API, Elite API, Prompt AI, Limiti simulazioni AI and
+	// deletion requests (own condition); the administrator-only groups come back
+	// empty and applyTabConditions drops them.
+	...buildOslmsSettingsTabs({
+		isAdministrator: () => false,
+		canManageOsIntegrations: () => true,
+	}),
+]

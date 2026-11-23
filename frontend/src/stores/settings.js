@@ -13,6 +13,11 @@ export const useSettings = defineStore('settings', () => {
 	// than flip a flag into the void. Settings.vue owns this.
 	const isSettingsMounted = ref(false)
 
+	// OSLMS-CUSTOM: the manager settings panel (oslms/components/Settings/SettingsGestore.vue),
+	// for Gestore and administrators; same open/mounted contract as Settings above.
+	const isGestoreSettingsOpen = ref(false)
+	const isGestoreSettingsMounted = ref(false)
+
 	const settings = createResource({
 		url: 'lms.lms.api.get_lms_settings',
 		auto: true,
@@ -41,6 +46,8 @@ export const useSettings = defineStore('settings', () => {
 		activeTab,
 		isSettingsOpen,
 		isSettingsMounted,
+		isGestoreSettingsOpen,
+		isGestoreSettingsMounted,
 		isCommandPaletteOpen,
 		programs,
 		settings,

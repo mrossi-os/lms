@@ -18,9 +18,34 @@ vi.mock('@/components/Settings/GoogleMeetSettings.vue', () =>
 vi.mock('@/components/Settings/GoogleCalendarSettings.vue', () =>
 	stub('GoogleCalendarSettings'),
 )
+vi.mock('@/oslms/components/ai/Settings/AISettings.vue', () => stub('AISettings'))
+vi.mock('@/oslms/components/ai/Settings/PromptSettings.vue', () =>
+	stub('PromptSettings'),
+)
+vi.mock('@/oslms/components/ai/Settings/SimulationLimitsSettings.vue', () =>
+	stub('SimulationLimitsSettings'),
+)
+vi.mock('@/oslms/components/trueskills/TrueSkillsSettings.vue', () =>
+	stub('TrueSkillsSettings'),
+)
+vi.mock('@/oslms/components/eliteApi/EliteApiSettings.vue', () =>
+	stub('EliteApiSettings'),
+)
+vi.mock('@/oslms/components/AccountDeletionRequestsSettings.vue', () =>
+	stub('AccountDeletionRequestsSettings'),
+)
+const { userData } = vi.hoisted(() => ({
+	userData: { show_account_deletion_requests: true } as Record<string, unknown>,
+}))
+vi.mock('@/stores/user', () => ({
+	usersStore: () => ({ userResource: { data: userData } }),
+}))
 
+import { GESTORE_SETTINGS_TAB_KEYS } from '@/oslms/utils/settingsAccess'
 import {
+	applyTabConditions,
 	brandingTab,
+	buildGestoreSettingsTabs,
 	categoriesTab,
 	courseProgressTab,
 	emailTemplatesTab,
@@ -79,5 +104,31 @@ describe('shared settings tabs', () => {
 	it('passes the caller condition to Google Calendar', () => {
 		const condition = () => true
 		expect(googleCalendarTab(condition).condition).toBe(condition)
+	})
+})
+
+describe('manager settings panel', () => {
+	const keys = () =>
+		applyTabConditions(buildGestoreSettingsTabs()).flatMap((group: any) =>
+			group.items.map((item: any) => item.key),
+		)
+
+	it('shows exactly the tabs a Gestore may open', () => {
+		userData.show_account_deletion_requests = true
+		expect(new Set(keys())).toEqual(new Set(GESTORE_SETTINGS_TAB_KEYS))
+		expect(keys()).toHaveLength(GESTORE_SETTINGS_TAB_KEYS.length)
+	})
+
+	it('hides deletion requests when there is nothing to review', () => {
+		userData.show_account_deletion_requests = false
+		expect(keys()).not.toContain('Account deletion requests')
+		expect(keys()).toHaveLength(GESTORE_SETTINGS_TAB_KEYS.length - 1)
+	})
+
+	it('never shows an administrator-only tab', () => {
+		userData.show_account_deletion_requests = true
+		for (const key of ['General', 'Badges', 'Sidebar', 'Signup', 'SEO', 'Raven', 'AI', 'Accounts', 'Corsi', 'Classi', 'Privacy']) {
+			expect(keys()).not.toContain(key)
+		}
 	})
 })

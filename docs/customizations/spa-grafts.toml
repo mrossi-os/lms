@@ -9985,3 +9985,41 @@ Settings.vue. Aggiunto 2026-11-23 (design docs/superpowers/specs/2026-11-18-impo
 
   [entries.checks]
   unit = "frontend/src/tests/settingsTabs.test.ts"
+
+[[entries]]
+id = "settings-gestore-panel"
+title = "Impostazioni: voce «Impostazioni gestore» e voce «Impostazioni» solo Administrator"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Il menu utente monta due pannelli: Settings.vue («Impostazioni») solo per l'Administrator
+(utente Administrator o ruolo System Manager), e oslms/components/Settings/SettingsGestore.vue
+(«Impostazioni gestore») per Gestore e Administrator, con le schede di
+buildGestoreSettingsTabs (oslms/utils/settingsTabs.js). Prima la voce «Impostazioni» si
+mostrava a chiunque avesse is_moderator. Lo store settings ha isGestoreSettingsOpen e
+isGestoreSettingsMounted, con lo stesso contratto di isSettingsOpen/isSettingsMounted. Il
+server limita i campi di LMS Settings salvabili dal non-Administrator
+(os_lms settings_access.py). Aggiunto 2026-11-23."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Sidebar/UserDropdown.vue"
+  anchor = "v-if=\"isSettingsAdmin(userResource.data)\""
+  symbol = "template"
+
+  [[entries.sites]]
+  file = "frontend/src/components/Sidebar/UserDropdown.vue"
+  anchor = "return canOpenGestoreSettings(userResource.data)"
+  symbol = "userDropdownOptions"
+
+  [[entries.sites]]
+  file = "frontend/src/stores/settings.js"
+  anchor = "const isGestoreSettingsOpen = ref(false)"
+  symbol = "useSettings"
+
+  [entries.visibility]
+  subject = "voce «Impostazioni gestore» nel menu utente"
+  allow = ["System Manager", "Gestore"]
+  deny = ["Moderator", "Docente", "Valutatore", "Student", "Guest"]
+
+  [entries.checks]
+  unit = "frontend/src/tests/settingsTabs.test.ts"
