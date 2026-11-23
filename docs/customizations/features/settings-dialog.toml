@@ -1,0 +1,65 @@
+id = "settings-dialog"
+title = "Dialogo Impostazioni"
+status = "active"
+summary = """
+Il dialogo Impostazioni dell'interfaccia studenti ospita anche le schede aggiunte da os_lms
+(integrazioni, configurazioni, AI) ed è tutto in italiano. Le schede che cambiano il comportamento
+dell'intera piattaforma restano agli amministratori, anche se il dialogo si apre anche a Moderator e
+Gestore; un gruppo senza schede visibili non compare."""
+why = """
+Il Gestore amministra la piattaforma senza il Desk, quindi le funzioni os_lms vanno configurate da
+questo dialogo; ma il dialogo upstream è aperto a ogni Moderator e un Gestore (che ha sempre anche
+Moderator) avrebbe potuto cambiare accesso ospite, registrazione o SEO. Tradurre le etichette ha reso
+necessario identificare le schede con una chiave stabile, altrimenti i collegamenti diretti si
+rompono."""
+roles = ["System Manager", "Gestore", "Moderator"]
+behaviour = [
+	"le schede Generale, Badge, Registrazione, SEO e Raven sono visibili solo a System Manager e all'utente Administrator; Moderator, Gestore, Docente e Course Creator non le vedono",
+	"il dialogo contiene le schede os_lms: TrueSkills API ed Elite API (amministratori e Gestore), Richieste di eliminazione (chi rivede le richieste di eliminazione dell'account), il gruppo Configurazioni con Corsi, Classi e Privacy e il gruppo AI (solo amministratori), Prompt AI e Limiti simulazioni AI (amministratori e Gestore)",
+	"un gruppo che per l'utente resta senza schede visibili non compare (per esempio Integrazioni o AI per un Gestore senza System Manager)",
+	"gruppi, schede, sezioni, campi e descrizioni del dialogo sono in italiano",
+	"i collegamenti che aprono il dialogo su una scheda precisa (per esempio Membri o Generale) funzionano con l'interfaccia in italiano, perché ogni scheda ha una chiave inglese stabile",
+	"il pannello del contenuto ha margini interni e scorrimento propri",
+	"nei campi delle impostazioni pulsante e percentuale del caricamento dell'immagine, descrizione dell'HTML di registrazione e segnaposto delle tendine sono tradotti",
+]
+areas = [
+	"frontend/src/oslms/utils/settings.js",
+]
+upstream_watch = [
+	"Settings.vue", "SettingsDialog", "SettingsNavItem", "SettingsPanel", "SettingsContent", "settingsStructure.js",
+	"panelProps", "activeTab", "openSettings", "SettingFields.vue", "SettingDetails.vue", "condition",
+	"Integrations", "Raven", "User Management", "Members",
+]
+data = [
+	"albero delle schede tenuto in Settings.vue invece del settingsStructure.js upstream (v2.62.0), con condizioni di ruolo e chiavi stabili",
+	"funzione buildOslmsSettingsTabs({ isAdministrator, canManageOsIntegrations }) in frontend/src/oslms/utils/settings.js",
+]
+notes = """
+- Ruoli: isAdministrator = System Manager o utente Administrator; canManageOsIntegrations =
+  amministratori più Gestore; la scheda Google Calendar ha la sua regola (System Manager e Gestore,
+  scheda zoom-google-calendar). Il contenuto delle singole schede os_lms è nelle schede delle rispettive
+  funzionalità (trueskills-certificates, elite-api, account-deletion, ai-platform, live-classes...).
+- Le schede si riconoscono da key, non da label (già tradotta): scheda attiva, chiave del pannello,
+  collegamenti diretti e prop dei componenti (Members, Transactions, AI, TrueSkills API). La scheda
+  upstream «Users» tiene la chiave 'Members' perché openSettings('Members') continui a funzionare.
+  'Course Progress' e le schede del gruppo Email non hanno ancora una key.
+- Dal merge di v2.59.0 il dialogo usa SettingsDialog upstream: padding e scorrimento sono sul
+  SettingsPanel, id settings-modal sul SettingsContent; dal v2.62.0 l'upstream sposta l'albero in
+  settingsStructure.js, che noi non usiamo.
+- Se i salvataggi delle impostazioni falliscono con un errore di validazione su un campo che non si è
+  toccato, sospettare un campo validato aggiunto dall'upstream a LMS Settings che non è stato
+  valorizzato sul record esistente (caso lesson_dwell_time, 417 su ogni scheda): serve una patch di
+  riempimento.
+- Se un'impostazione non si salva in silenzio o una funzione legata a un'impostazione sparisce in
+  sviluppo, il container ha i metadati del doctype vecchi (migrate solo all'avvio).
+- Il ramo 'Branding' nel passaggio delle sections è un residuo upstream.
+- setting-details-formatting è solo formattazione: al merge prendere l'upstream."""
+history = [
+	{ date = "2026-03-19", ref = "e577585ca", summary = "creazione: etichette del dialogo Impostazioni tradotte" },
+	{ date = "2026-05-05", ref = "07e6e6478", summary = "schede di sistema riservate agli amministratori" },
+	{ date = "2026-05-08", ref = "862b6961a", summary = "chiavi stabili delle schede (merge feature/oslms-premerge)" },
+	{ date = "2026-07-01", ref = "b96f3d7d2", summary = "schede os_lms costruite da buildOslmsSettingsTabs e iniettate nel dialogo" },
+	{ date = "2026-07-31", ref = "1af13d630", summary = "schede delle integrazioni os_lms aperte anche al Gestore" },
+	{ date = "2026-09-23", ref = "f02f4448f", summary = "merge v2.59.0: ritocchi riportati sul SettingsDialog upstream" },
+	{ date = "2026-09-23", ref = "1b4b2d2f5", summary = "merge v2.61.0: scheda Raven solo per gli amministratori" },
+]

@@ -22,7 +22,7 @@ behaviour = [
 	"il Valutatore trova negli elenchi anche le classi non pubblicate che valuta",
 	"il Valutatore legge in sola lettura i corsi delle sue classi, anche non pubblicati: outline, capitoli (anche SCORM), lezioni e quiz, con le schede Panoramica e Dashboard e senza Editor né Impostazioni; non gli viene mai offerta l'iscrizione",
 	"le risorse delle lezioni riservate agli istruttori restano escluse per il Valutatore",
-	"il Valutatore vede le lezioni dal vivo della sua classe ma non può crearle, modificarle o eliminarle",
+	"il Valutatore vede le lezioni dal vivo della sua classe ma non può crearle, modificarle, eliminarle né avviarle: vi partecipa solo da osservatore (decisione dell'utente del 2026-11-23; oggi il codice gli mostra ancora Avvia, difetto noto nella scheda live-classes)",
 	"il Valutatore vede la consegna di un quiz solo se lo studente è iscritto a una sua classe e il quiz appartiene a quella stessa classe; la vede in sola lettura: nel dettaglio Salva, voti e Mod+S sono disattivati, nell'elenco niente selezione, Elimina né filtro per quiz",
 	"il Valutatore vede e corregge i compiti dei soli studenti delle sue classi e ne invia la valutazione",
 	"il Valutatore vede il registro di sorveglianza (proctoring) con le foto solo per le consegne della sua classe; il server rifiuta le altre",

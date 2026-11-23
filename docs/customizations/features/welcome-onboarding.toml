@@ -1,0 +1,54 @@
+id = "welcome-onboarding"
+title = "Benvenuto al primo accesso"
+status = "active"
+summary = """
+Al primo accesso il nuovo utente riceve una notifica di benvenuto e, in cima alla home, un video di
+benvenuto scelto dal cliente, che vede una sola volta. Notifica e video si accendono separatamente
+dalla scheda Benvenuto delle impostazioni. Nella home dello studente un riquadro lo saluta per nome,
+mostra l'avanzamento medio dei suoi corsi e lo riporta all'ultima lezione."""
+why = """
+Il cliente vuole accogliere chi entra per la prima volta con un messaggio e un video del proprio
+marchio, senza scrivere codice. L'upstream non ha nulla di simile e la sua home dello studente non
+offre un punto da cui riprendere il corso."""
+roles = ["Student", "Moderator", "Gestore"]
+behaviour = [
+	"la scheda Benvenuto (gruppo Personalizza del dialogo Impostazioni) configura separatamente la notifica di benvenuto (attiva, testo) e il video di benvenuto (attivo, titolo, sottotitolo, video)",
+	"ogni utente creato riceve il segno di primo accesso; al suo primo login, se la notifica è attiva, riceve una notifica in piattaforma con il testo configurato (o «Benvenuto/a nella piattaforma! Siamo felici di averti con noi.» se vuoto), con i ritorni a capo conservati",
+	"il primo accesso si consuma comunque al primo login: con la notifica spenta in quel momento l'utente non la riceverà più; l'utente Administrator non la riceve mai",
+	"con il video attivo, ogni utente che non l'ha ancora visto lo trova in cima alla home, che parte da solo senza audio; da quel momento risulta visto e non ricompare",
+	"il video ha in sovrimpressione il titolo (o «Benvenuto nella piattaforma») e il sottotitolo, un pulsante per ridurlo e riaprirlo, e un video caricato si riduce da solo a fine riproduzione",
+	"il campo del video accetta un link YouTube o Vimeo, mostrato con il lettore incorporato (YouTube in modalità senza cookie), oppure un file caricato, mostrato con il lettore nativo; indirizzi di altro tipo vengono ignorati",
+	"nella home dello studente un riquadro saluta per nome, mostra l'avanzamento medio dei corsi a cui è iscritto con il numero di corsi, e offre «Riprendi dove eri rimasto» (ultima lezione del corso in corso) ed «Esplora corso»",
+]
+areas = [
+	"apps/os_lms/os_lms/auth.py",
+	"frontend/src/oslms/components/Home/*",
+	"frontend/src/oslms/components/Form/VideoSourceInput.vue",
+]
+upstream_watch = [
+	"welcome", "first login", "onboarding", "Home.vue", "StudentHome.vue", "SettingFields.vue",
+	"on_session_creation", "LMS Settings", "Customize", "hero video", "persona",
+]
+data = [
+	"custom field LMS Settings welcome_notification_enabled, welcome_notification_message, welcome_video_enabled, welcome_video_title, welcome_video_subtitle, welcome_video_file, con la sezione welcome_video_section, dalle fixture custom_field.json",
+	"custom field User.first_login e User.welcome_video_seen (Check)",
+	"hook on_session_creation os_lms.auth.on_session_creation; doc_events User after_insert os_lms.auth.mark_first_login",
+	"endpoint os_lms.os_lms.api get_welcome_video_config, mark_welcome_video_seen, replay_welcome_video, get_lesson_position",
+]
+notes = """
+- Le descrizioni della scheda parlano di «studenti», ma notifica e video valgono per ogni utente
+  nuovo (la notifica) e per ogni utente che non ha ancora visto il video, qualunque ruolo abbia.
+- Chi esisteva prima della funzione ha first_login a 0: non riceve la notifica; il video invece lo
+  vede una volta, perché welcome_video_seen parte da 0.
+- replay_welcome_video (azzera il visto e torna alla home) esiste ma in questo albero nessuna pagina
+  lo richiama.
+- SettingFields.vue deve tenere il ramo del tipo di campo VideoSourceInput: perso in un merge
+  precedente e ripristinato (verifica del 2026-09-24); senza, il campo cade nel FormControl generico.
+- I video e gli iframe passano da safeUrl (v2.62.0)."""
+history = [
+	{ date = "2026-03-17", ref = "7cba26d7e", summary = "creazione: riquadro di benvenuto con avanzamento complessivo nella home dello studente" },
+	{ date = "2026-04-22", ref = "3ff41473e", summary = "video di benvenuto nella home" },
+	{ date = "2026-04-23", ref = "1ac7315b9", summary = "un solo campo per link YouTube/Vimeo o file caricato" },
+	{ date = "2026-04-27", ref = "cc101d5e7", summary = "notifica di benvenuto al primo accesso" },
+	{ date = "2026-06-16", ref = "88a13f16b", summary = "notifica e video attivabili separatamente" },
+]

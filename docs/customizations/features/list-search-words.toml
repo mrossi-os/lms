@@ -1,0 +1,40 @@
+id = "list-search-words"
+title = "Ricerca per parole nelle liste"
+status = "active"
+summary = """
+Nelle caselle di ricerca delle liste di corsi, classi, programmi, quiz, compiti ed esercizi di
+programmazione si possono scrivere più parole: ogni parola aggiunta restringe i risultati invece di
+azzerarli. La lista segue subito quello che si scrive e svuotare la casella toglie il filtro."""
+why = """
+L'upstream cercava l'intera frase come un unico blocco contiguo: aggiungere una seconda parola, anche
+una sola lettera, svuotava la lista. In più alcune liste ricaricavano sull'evento sbagliato ed erano
+sempre indietro di un carattere, e dopo «Carica altri» una nuova ricerca faceva sparire righe."""
+roles = ["Student", "Moderator", "Course Creator", "Docente"]
+behaviour = [
+	"nelle liste di corsi, classi, programmi, quiz, compiti ed esercizi di programmazione le parole cercate devono comparire nel titolo nell'ordine scritto, con qualunque testo in mezzo («Corso p» trova «Corso di public speaking»): ogni parola in più restringe i risultati",
+	"una casella vuota, o di soli spazi, toglie il filtro",
+	"nelle liste di corsi, classi, programmi ed esercizi la ricerca usa il testo appena scritto, non quello del carattere precedente, e svuotando la casella si toglie il filtro (negli esercizi anche quello nell'indirizzo della pagina)",
+	"nelle liste di quiz ed esercizi una nuova ricerca, o il suo svuotamento, riparte dalla prima pagina anche dopo «Carica altri», senza far sparire righe",
+]
+areas = []
+upstream_watch = [
+	"searchLikeFilter", "like", "title filter", "Courses.vue", "Batches.vue", "Programs.vue", "Quizzes.vue",
+	"Assignments.vue", "ProgrammingExercises.vue", "ListPage", "createListResource reload", "start: 0",
+	"update:modelValue", "@input",
+]
+data = [
+	"funzione searchLikeFilter in frontend/src/utils/index.js (file upstream condiviso)",
+]
+notes = """
+- searchLikeFilter vive in un file upstream condiviso (utils/index.js): dopo un merge controllare che
+  la funzione esista ancora e che le sei liste la usino.
+- reload() di createListResource (frappe-ui) con start > 0 ricarica da 0 le righe già caricate e poi
+  ripristina il vecchio start: per questo il cambio di filtro passa start: 0, come già fa l'upstream
+  in Questions.vue e QuizSubmissions.vue. Se l'upstream aggiunge da sé start: 0 a Quizzes e
+  ProgrammingExercises, segnare la voce accepted-drift.
+- Lo stesso schema senza start: 0 resta in altre pagine con «Carica altri» (Assignments,
+  AssignmentSubmissionList, CertifiedParticipants, JobApplications, CourseDashboard): non toccate."""
+history = [
+	{ date = "2026-07-16", ref = "91db1a9fd", summary = "creazione: parole cercate in modo indipendente nelle caselle di ricerca delle liste" },
+	{ date = "2026-09-25", ref = "b723ad981", summary = "la ricerca di quiz ed esercizi riparte dalla prima pagina" },
+]
