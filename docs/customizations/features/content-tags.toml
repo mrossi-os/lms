@@ -1,0 +1,49 @@
+id = "content-tags"
+title = "Tag colorati su corsi e lezioni"
+status = "active"
+summary = """
+Corsi e lezioni si etichettano con tag colorati scelti da un elenco comune, che si crea e si
+modifica direttamente dal selettore. I tag compaiono come badge colorati sulla card del corso, nella
+pagina del corso e accanto a ogni lezione nel programma."""
+why = """
+Il cliente voleva classificare visivamente corsi e lezioni con etichette riconoscibili dal colore.
+L'upstream ha solo tag liberi senza colore sui corsi e nessun tag sulle lezioni."""
+roles = ["Moderator", "Course Creator", "Docente", "Student"]
+behaviour = [
+	"nella sezione Dettagli del corso e nell'editor della lezione i tag si scelgono con il selettore os_lms da un elenco di etichette con colore, al posto dei tag liberi dell'upstream",
+	"dal selettore («Manage Tags») si creano nuovi tag con il loro colore e si cambia il colore di quelli esistenti",
+	"la card del corso mostra i tag del corso come badge colorati",
+	"nella pagina del corso i tag hanno gli stessi colori che nell'elenco corsi",
+	"nel programma del corso ogni lezione mostra i propri tag come badge",
+]
+areas = [
+	"frontend/src/oslms/components/TagPicker.vue",
+	"frontend/src/oslms/components/CourseTagBadges.vue",
+	"apps/os_lms/os_lms/os_lms/doctype/lms_os_tag/*",
+	"apps/os_lms/os_lms/patches/v0_0_2/*",
+]
+upstream_watch = [
+	"tags", "course tags", "lesson tags", "tag color", "TagOption", "MultiSelect tags",
+	"CourseDetailsSection.vue", "ChapterRow.vue", "CourseCard.vue", "get_course_outline", "gradientColor",
+]
+data = [
+	"doctype LMS OS Tag (tag_name, color), già LMS OS Course Tag: rinominato o fuso dalla patch os_lms v0_0_2.rename_lms_os_course_tag",
+	"campo upstream LMS Course.tags (testo separato da virgole, ora con i nomi dei tag os_lms)",
+	"custom field Course Lesson.tags (Small Text, separato da virgole) restituito dall'override os_lms di get_course_outline",
+]
+notes = """
+- I colori arrivano con provide('tagColorMap'): l'elenco corsi carica una volta la mappa tag→colore,
+  la pagina corso la ricarica e la fornisce a sua volta. Senza il provide i badge non hanno colore
+  (nella pagina corso non si rendono affatto).
+- Nel modulo corso tutta la logica upstream dei tag (parsedTags, tagsArray, tagOptions, «Create …»)
+  è stata tolta: in conflitto tenere il nostro TagPicker, scartare il blocco upstream, non reimportare
+  MultiSelect né TagOption. TagPicker e il MultiSelect upstream scrivono entrambi doc.tags come testo
+  separato da virgole; TagPicker segnala la modifica con @dirty.
+- Al merge di v2.59.0 l'upstream ha cancellato frappe-ui-colors.json e riscritto gradientColor in
+  CourseCard.vue accanto al nostro import di CourseTagBadges: tenere la loro versione e i nostri import.
+- L'innesto nell'editor della lezione (OsLessonForm) appartiene alla scheda lesson-editor."""
+history = [
+	{ date = "2026-04-01", ref = "2bfd9d1d4", summary = "creazione: componente dei tag colorati del corso" },
+	{ date = "2026-04-14", ref = "39c0bb7e4", summary = "tag anche sulle lezioni, componente rifattorizzato" },
+	{ date = "2026-06-04", ref = "6d6d2af78", summary = "TagPicker innestato nella nuova sezione Dettagli del modulo corso upstream" },
+]

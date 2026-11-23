@@ -1,0 +1,53 @@
+id = "feature-sections"
+title = "Sezioni in evidenza di corsi e classi"
+status = "active"
+summary = """
+Chi crea un corso o una classe può aggiungere sezioni in evidenza: blocchi con un titolo e una serie
+di voci, ciascuna con icona, titolo, descrizione e un file da scaricare (per esempio obiettivi,
+destinatari, prerequisiti, materiali). Le sezioni compaiono nella pagina del corso e in quella della
+classe; alcune voci possono essere riservate agli iscritti."""
+why = """
+Il cliente voleva presentare corsi e classi con blocchi ordinati e iconografici, invece del solo
+testo della descrizione, e distribuire materiali scaricabili solo a chi è iscritto. L'upstream non ha
+nulla di simile (2026-03, sostituendo i primi «learning items» con sezioni libere)."""
+roles = ["Moderator", "Course Creator", "Docente", "Student"]
+behaviour = [
+	"nelle impostazioni del corso l'autore crea sezioni in evidenza con un nome e voci («badge») con icona scelta da un elenco, titolo, descrizione e file allegato facoltativo",
+	"le sezioni del corso compaiono nella pagina del corso dopo la descrizione",
+	"una voce segnata «Visibile agli iscritti» la vedono solo gli studenti iscritti e, sempre, moderatori, istruttori, evaluator e System Manager",
+	"una voce con file mostra il download del file, oppure l'avviso «File not found» se il file non esiste più",
+	"una sezione senza voci visibili non viene mostrata",
+	"la classe ha le sue sezioni in evidenza, modificabili nel modulo impostazioni della classe subito dopo i Dettagli e mostrate in sola lettura nella panoramica della classe",
+	"nel corso l'editor delle sezioni offre «Reindicizza features» per l'assistente AI; nella classe il pulsante non c'è",
+]
+areas = [
+	"frontend/src/oslms/components/FeatureSectionEditor.vue",
+	"frontend/src/oslms/components/FeaturedSectionView.vue",
+	"frontend/src/oslms/components/IconPicker.vue",
+	"apps/os_lms/os_lms/os_lms/doctype/lms_course_learning_item/*",
+]
+upstream_watch = [
+	"learning outcomes", "course features", "what you will learn", "prerequisites", "course highlights",
+	"feature_sections", "batch overview", "BatchOverview.vue", "BatchForm.vue", "CourseOverviewSection",
+]
+data = [
+	"custom field LMS Course.feature_sections (Long Text, JSON; creato da os_lms.setup.CUSTOM_FIELDS) letto da os_lms.os_lms.utils.get_course_feature_sections e restituito dall'override di get_course_details",
+	"custom field LMS Batch.custom_feature_sections (Long Text, JSON; fixtures/custom_field.json) deserializzato dall'override di get_batch_details",
+	"doctype LMS Course Learning Item (title, description, icon): resto dei primi «learning items», oggi non usato dalle sezioni in JSON",
+]
+notes = """
+- L'editor delle sezioni della classe era già stato perso in un merge (3caf07639, BatchForm.vue preso
+  dalla versione upstream) e ripristinato; il lato backend non era mai stato tolto. Va montato dopo il
+  blocco Dettagli della classe (che dal merge di v2.59.0 usa RichTextEditor). Il documento si passa
+  come modelValue perché il componente lo modifica sul posto; courseName si omette per nascondere la
+  reindicizzazione AI.
+- Nel modulo del corso l'editor è montato da OsCourseDetailForm (scheda course-settings-extensions).
+- Il rendering nella panoramica della classe sta in BatchOverview.vue, file upstream senza una voce
+  d'inventario che lo protegga (solo il backend e il modulo sono censiti).
+- Il doctype LMS Course Learning Item sembra un residuo del primo modello «learning items»
+  (ae296ed02), sostituito dalle sezioni in JSON (9befeae18): da verificare prima di rimuoverlo."""
+history = [
+	{ date = "2026-03-17", ref = "ae296ed02", summary = "creazione: sezione «learning items» del corso con icone" },
+	{ date = "2026-03-19", ref = "9befeae18", summary = "i learning items diventano sezioni in evidenza libere (JSON)" },
+	{ date = "2026-03-25", ref = "fb31a0a98", summary = "sezioni in evidenza anche nella classe" },
+]

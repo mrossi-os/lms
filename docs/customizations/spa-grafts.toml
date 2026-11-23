@@ -16,6 +16,7 @@ id = "course-card-admin-gate"
 title = "Menu di gestione sulla card corso visibile anche al Docente"
 layer = "spa-graft"
 confidence = "high"
+feature = "docente-role"
 intent = """
 Il ruolo custom Docente è un istruttore globale: deve essere trattato come amministratore
 del corso sulla card (niente CTA di iscrizione, azioni di gestione) esattamente come
@@ -36,6 +37,7 @@ id = "course-card-self-enrol-badge-wraps"
 title = "Il messaggio «Contatta l'amministratore per iscriverti» va a capo nella card corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-page-redesign"
 intent = """
 Sui corsi con iscrizione autonoma disattivata la card mostra il messaggio in un Badge di
 frappe-ui, che è una riga sola (whitespace-nowrap) ad altezza fissa (h-6): il testo
@@ -51,6 +53,7 @@ id = "course-detail-docente-admin-gate"
 title = "Pagina corso e lezione: il Docente è trattato da amministratore su ogni corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "docente-role"
 intent = """
 Il Docente è un istruttore globale (come can_modify_course lato server): su un corso che
 non insegna deve aprire i corsi, anche non pubblicati o in arrivo, e avere i controlli di
@@ -88,6 +91,7 @@ id = "course-card-valutatore-no-enroll"
 title = "Nessuna CTA di iscrizione per il Valutatore"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore di un batch che contiene il corso lo consulta in sola lettura e non è mai
 uno studente. Raggiunge le lezioni senza iscrizione: offrirgli la CTA di iscrizione è una
@@ -118,6 +122,7 @@ id = "course-card-certificate-dedup"
 title = "Niente doppio pulsante certificato dopo l'emissione"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-certificates"
 intent = """
 Una volta emesso il certificato deve restare solo il «View Certificate» di
 CertificationLinks, non anche un «Get Certificate». LMS Enrollment.certificate non viene
@@ -209,6 +214,7 @@ id = "course-card-outline"
 title = "Programma del corso navigabile al posto delle statistiche"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-page-redesign"
 intent = """
 La card mostra il programma del corso (CourseOutline) navigabile al posto del blocco
 «This course includes» con le statistiche, che resta commentato nel file per un facile
@@ -231,6 +237,7 @@ id = "course-mobile-cta-bar"
 title = "Barra fissa «Continue Learning» su telefono"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-page-mobile"
 intent = """
 Sul telefono (<640px, MobileLayout con barra di navigazione in basso) lo studente iscritto
 vede una barra fissa a tutta larghezza con «Continue Learning», che diventa l'unica azione
@@ -276,6 +283,7 @@ id = "course-mobile-outline-bottom"
 title = "Programma del corso in fondo alla pagina su telefono"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-page-mobile"
 intent = """
 Sul telefono (<640px) il programma del corso si sposta in fondo alla pagina, sotto le
 sezioni di contenuto, e viene tolto dalla card (hideOutline). In ogni layout più largo
@@ -299,6 +307,7 @@ id = "course-card-hide-when-empty"
 title = "La card corso sparisce quando resterebbe vuota"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-page-mobile"
 intent = """
 Su telefono programma e CTA escono dalla card, che può rimanere senza contenuto: invece di
 un riquadro vuoto con bordo la card non si rende. Per saperlo replica la visibilità di
@@ -317,6 +326,7 @@ id = "course-tablet-inline-card"
 title = "Card corso completa in linea sul tablet"
 layer = "override-file"
 confidence = "high"
+feature = "course-page-mobile"
 intent = """
 Tra 640 e 1023px la pagina è a colonna singola ma la card laterale desktop (lg:) è
 nascosta: lì si rende in linea la card completa originale, così il trattamento mobile
@@ -335,6 +345,7 @@ id = "course-hero-banner"
 title = "Banner hero del corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-page-redesign"
 intent = """
 Se il corso ha un hero abilitato con un media, il media compare come sezione a tutta
 larghezza con angoli arrotondati tra l'introduzione breve e «About this course», e usa lo
@@ -368,6 +379,7 @@ id = "course-instructors-hidden-from-students"
 title = "Istruttori nascosti agli studenti (pagina corso e intestazione della lezione)"
 layer = "override-file"
 confidence = "high"
+feature = "course-page-redesign"
 intent = """
 L'elenco degli istruttori in testa alla pagina corso è visibile solo a moderatori e
 istruttori del corso, non agli studenti.
@@ -395,6 +407,7 @@ id = "course-short-intro-preline"
 title = "Introduzione breve del corso su più righe"
 layer = "override-file"
 confidence = "high"
+feature = "course-page-redesign"
 intent = """
 short_introduction è un campo Small Text in cui gli autori scrivono su più righe; l'HTML
 collasserebbe gli a capo, quindi si conservano con whitespace-pre-line."""
@@ -408,6 +421,7 @@ id = "course-content-section-removed"
 title = "Sezione «Course content» rimossa dalla pagina corso"
 layer = "override-file"
 confidence = "high"  # rimozione confermata voluta dal committente il 2026-09-23
+feature = "course-page-redesign"
 intent = """
 La sezione «Course content» dell'upstream è commentata, insieme alla risorsa
 get_course_outline che la alimentava (per non sprecare la chiamata API). Il programma
@@ -427,6 +441,7 @@ id = "course-description-collapsible"
 title = "Descrizione del corso comprimibile"
 layer = "override-file"
 confidence = "high"
+feature = "course-page-redesign"
 intent = """
 La descrizione lunga del corso si rende con CourseDescription, che la comprime con
 «mostra di più / di meno» invece di mostrarla sempre per intero."""
@@ -440,6 +455,7 @@ id = "course-feature-sections"
 title = "Sezioni in evidenza del corso"
 layer = "override-file"
 confidence = "high"
+feature = "feature-sections"
 intent = """
 Il corso può avere sezioni in evidenza configurate dall'autore, rese dopo la descrizione;
 i dati arrivano annidati dall'override os_lms di get_course_details e il rendering tiene
@@ -472,6 +488,7 @@ id = "course-creator-card-removed"
 title = "Card dell'autore rimossa dalla pagina corso"
 layer = "override-file"
 confidence = "high"  # rimozione confermata voluta dal committente il 2026-09-23
+feature = "course-page-redesign"
 intent = """
 La CourseCreatorCard dell'upstream nella colonna laterale è commentata. Coerente con
 l'occultamento degli istruttori agli studenti, ma la motivazione non è scritta."""
@@ -485,6 +502,7 @@ id = "course-overview-tag-colors"
 title = "Colori dei tag anche nella pagina corso"
 layer = "override-file"
 confidence = "high"
+feature = "content-tags"
 intent = """
 La mappa colori dei tag (LMS OS Tag) è fornita da Courses.vue solo nell'elenco corsi;
 la pagina corso la ricarica e la fornisce, altrimenti CourseTagBadges non si rende."""
@@ -515,6 +533,7 @@ id = "lesson-tag-badges"
 title = "Badge dei tag sulle lezioni nel programma"
 layer = "spa-graft"
 confidence = "high"
+feature = "content-tags"
 intent = """
 Ogni lezione nel programma del corso mostra i propri tag come badge. I tag arrivano
 come stringa separata da virgole dall'override os_lms di get_course_outline."""
@@ -609,6 +628,7 @@ id = "program-description"
 title = "Descrizione del programma visibile allo studente"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 La descrizione del programma (campo custom os_lms) si mostra sia nel dettaglio del
 programma sia nel dialogo di iscrizione, con la formattazione conservata e sanificata
@@ -634,6 +654,7 @@ id = "home-programs-row"
 title = "Riga dei programmi nella home dello studente"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 La home dello studente mostra i suoi programmi o, se non è iscritto a nessuno, quelli
 pubblicati (stesso schema della riga dei batch). Riusa la risorsa programs dello store
@@ -654,6 +675,7 @@ id = "program-member-unpublished-course"
 title = "Membri del programma vedono i corsi non pubblicati"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 Un programma si pubblica nel suo insieme: chi ne è membro vede, apre e si iscrive a ogni
 corso del programma anche se il corso da solo non è pubblicato. La regola vive in tre
@@ -730,6 +752,7 @@ id = "course-form-os-sections"
 title = "Impostazioni custom del corso nel modulo impostazioni"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-settings-extensions"
 intent = """
 Le impostazioni del corso volute dal cliente vivono in due componenti os_lms montati dentro
 il CourseForm upstream: OsCourseDetailForm (hero con immagine o video, feature sections) nella
@@ -1752,6 +1775,7 @@ id = "settings-members-row-opens-edit"
 title = "Clic sulla riga di un membro apre la modifica"
 layer = "spa-graft"
 confidence = "high"
+feature = "members-and-roles"
 intent = """
 Nella scheda Membri il clic su una riga apre la finestra di modifica del membro (nome, ruoli,
 compreso Valutatore), non solo la voce "Edit member" del menu; così il gestore modifica un
@@ -1775,6 +1799,7 @@ id = "settings-members-valutatore-badge"
 title = "Badge del ruolo Valutatore nell'elenco membri"
 layer = "spa-graft"
 confidence = "high"
+feature = "members-and-roles"
 intent = """
 L'elenco dei membri mostra un badge anche per il ruolo personalizzato Valutatore (valutatore di
 una singola classe), che l'override get_members ora restituisce (commit 1af13d630); un ruolo
@@ -1852,6 +1877,7 @@ id = "profile-roles-custom-role-toggles"
 title = "Interruttori dei ruoli Valutatore, Gestore e Docente nel profilo"
 layer = "spa-graft"
 confidence = "high"
+feature = "members-and-roles"
 intent = """
 La scheda Ruoli del profilo (visibile ai moderatori) permette di assegnare anche i tre ruoli
 personalizzati: Valutatore (valutatore per classe; l'interruttore assegna il ruolo globale,
@@ -2081,6 +2107,7 @@ id = "permissions-valutatore-lesson-access"
 title = "Il Valutatore legge le lezioni dei corsi delle sue classi"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Un Valutatore rivede i corsi delle classi che valuta: può leggere ogni lezione e i suoi
 materiali per studenti come uno studente iscritto, senza iscrizione (quindi senza tracciamento
@@ -2970,6 +2997,7 @@ id = "courses-card-duration"
 title = "Durata del corso sulla card al posto degli iscritti"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-catalogue"
 intent = """
 La card del corso mostra la durata complessiva (somma dei minuti delle lezioni, campo os_lms
 total_minutes calcolato dall'override get_courses) invece del numero di studenti iscritti:
@@ -2993,6 +3021,7 @@ id = "courses-card-certification-badge"
 title = "Indicatore \"certificazione disponibile\" sulla card del corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-catalogue"
 intent = """
 Al posto della valutazione media (le recensioni sono disattivate, vedi course-reviews-removed)
 la card indica se il corso rilascia un certificato, anche quando il certificato è solo
@@ -3011,6 +3040,7 @@ id = "courses-card-tag-colors"
 title = "Tag colorati (LMS OS Tag) sulla card del corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "content-tags"
 intent = """
 I tag del corso si mostrano sulla card come badge colorati, con i colori configurati nel
 doctype os_lms LMS OS Tag. L'elenco corsi carica una volta la mappa tag→colore e la fornisce
@@ -3039,6 +3069,7 @@ id = "courses-card-footer-removed"
 title = "Piè di card del corso rimosso (istruttori, prezzo, certificazione)"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-catalogue"
 intent = """
 Dalla card del corso è stata tolta la fascia inferiore dell'upstream: avatar e nomi degli
 istruttori, prezzo del corso a pagamento e icona "Get Certified". Tolta nel commit 84bde1890
@@ -3074,6 +3105,7 @@ id = "course-certificate-pdf-chrome"
 title = "Certificato scaricato con il generatore PDF Chrome"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-certificates"
 intent = """
 download_pdf usa wkhtmltopdf se non riceve pdf_generator, ignorando sia il Print Format sia
 le Print Settings; il modello di certificato del cliente usa transform:rotate, che solo il
@@ -3119,6 +3151,7 @@ id = "course-dashboard-sortable-students"
 title = "Colonne ordinabili nell'elenco studenti della dashboard del corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-dashboard"
 intent = """
 Chi gestisce il corso può ordinare gli studenti per nome, avanzamento e data di iscrizione
 cliccando le intestazioni (freccia di direzione). L'ordinamento è lato server (orderBy della
@@ -3150,6 +3183,7 @@ id = "course-dashboard-progress-labels-it"
 title = "Legenda della distribuzione dei progressi in italiano"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-dashboard"
 intent = """
 Il backend restituisce le fasce di avanzamento in inglese ("Just Started (0-30%)"…) e non
 passano da __(): la risposta viene rietichettata in italiano, conservando il suffisso
@@ -3174,6 +3208,7 @@ id = "course-dashboard-mobile-layout"
 title = "Dashboard del corso impilata in una colonna su mobile"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-dashboard"
 intent = """
 Su telefono le griglie a più colonne della dashboard rendevano il contenuto più largo dello
 schermo e l'intera pagina scorreva di lato. I numeri vanno in una colonna sotto sm, elenco
@@ -3191,6 +3226,7 @@ id = "course-dashboard-search-by-name"
 title = "Ritocchi di stile/traduzioni nella dashboard del corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-dashboard"
 intent = """
 Ritocchi senza regola di business: il campo di ricerca studenti è compatto (classe small-form
 del tema elite) ed etichettato "Cerca per nome", perché cerca solo sul nome; i riquadri hanno
@@ -3234,6 +3270,7 @@ id = "course-overview-original-shadowed"
 title = "CourseOverview originale oscurato dall'override"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-page-redesign"
 intent = """
 Codice morto a runtime: il plugin osOverrideTheme serve al suo posto
 frontend/src/overrides/pages/Courses/CourseOverview.vue, dove vivono tutte le
@@ -3279,6 +3316,7 @@ id = "course-form-mobile-layout"
 title = "Creazione e copertina del corso utilizzabili su mobile"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-settings-extensions"
 status = "accepted-drift"
 intent = """
 Su telefono il campo copertina del corso (anteprima + pulsanti) e i campi del dialogo "Nuovo
@@ -3317,6 +3355,7 @@ id = "courses-list-students-enrolled-only"
 title = "Lo studente vede nell'elenco corsi solo i corsi a cui è iscritto"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-catalogue"
 intent = """
 Per lo studente l'elenco corsi ha solo la scheda "Iscritto": le schede pubbliche "Pubblicati"
 e "In arrivo" sono nascoste, il selettore delle schede sparisce quando resta una sola scheda,
@@ -3354,6 +3393,7 @@ id = "courses-list-persist-tab"
 title = "L'elenco corsi ricorda la scheda selezionata"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-catalogue"
 intent = """
 La scheda scelta nell'elenco corsi resta selezionata quando si esce e si torna (localStorage
 'lms_courses_tab'); se la scheda salvata non è più disponibile per il ruolo dell'utente si
@@ -3368,6 +3408,7 @@ id = "courses-list-category-per-tab"
 title = "Filtro categoria dell'elenco corsi limitato alla scheda attiva"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-catalogue"
 intent = """
 Il menu delle categorie elencava solo le categorie dei corsi pubblicati, quindi risultava
 vuoto sulle schede con bozze o iscrizioni (Creati, Non pubblicati, Iscritto). Ora le
@@ -3424,6 +3465,7 @@ id = "courses-list-certification-first-click"
 title = "Il filtro Certificazione dell'elenco corsi si applica al primo clic"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-catalogue"
 status = "accepted-drift"
 intent = """
 La casella "Certificazione" usava @change, che scatta prima che il Checkbox di frappe-ui
@@ -3442,6 +3484,7 @@ id = "courses-list-gestore-no-import"
 title = "Import dei corsi da file nascosto al Gestore"
 layer = "spa-graft"
 confidence = "high"
+feature = "gestore-role"
 intent = """
 Il Gestore può creare i corsi solo a mano: dal menu "Crea" spariscono "Importa tramite Data
 Import" e "Importa tramite ZIP". Il System Manager li conserva anche se ha il ruolo Gestore,
@@ -3476,6 +3519,7 @@ id = "courses-list-upcoming-students-unpublished"
 title = "Scheda In arrivo senza filtro pubblicati per lo studente"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-catalogue"
 intent = """
 Aggiunta con il commit 7c44a7dc8 ("accesso ai corsi tramite i batch"): sulla scheda "In
 arrivo" lo studente non riceveva il filtro published=1, presumibilmente per vedere i corsi
@@ -3496,6 +3540,7 @@ id = "home-valutatore-admin-home"
 title = "Il Valutatore riceve la home in stile amministratore"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore non è uno studente: la home dello studente lanciava widget per cui non ha
 permessi (valutazioni in arrivo, conteggio delle richieste di certificato) e produceva 403.
@@ -3593,6 +3638,7 @@ id = "program-form-title-rename"
 title = "Il titolo del programma si modifica rinominando il documento"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 LMS Program ha come nome il titolo (autoname field:title, allow_rename). Il campo Titolo
 dell'upstream era legato a program.name, quindi su un programma esistente modificarlo non
@@ -3622,6 +3668,7 @@ id = "program-form-description-editor"
 title = "Descrizione del programma modificabile con formattazione"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 Il modulo del programma ha un editor ricco per la descrizione (campo custom os_lms di LMS
 Program), mostrata poi allo studente (program-description). Al salvataggio passa da
@@ -3654,6 +3701,7 @@ id = "description-images-upload-public"
 title = "Le immagini nelle descrizioni di programmi e corsi si caricano pubbliche"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 Gli editor ricchi (TextEditor di frappe-ui e il nostro RichTextEditor) caricano le immagini
 private per default, senza agganciarle al documento: Frappe aggancia in automatico solo i file
@@ -3685,6 +3733,7 @@ id = "program-form-add-courses-multi"
 title = "Più corsi aggiunti insieme a un programma"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 Il dialogo "Aggiungi corso al programma" usa un MultiSelect: si scelgono più corsi in una
 volta, quelli già presenti nel programma sono esclusi dalla lista e le nuove righe prendono il
@@ -3709,6 +3758,7 @@ id = "program-form-add-members-bulk"
 title = "Membri del programma aggiunti in blocco o da un batch"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 Al posto del singolo campo "Membro del programma" ci sono due azioni: "Aggiungi membro" (più
 utenti insieme, esclusi quelli già membri) e "Aggiungi gruppo", che elenca gli iscritti di un
@@ -3735,6 +3785,7 @@ id = "program-form-full-document"
 title = "Il modulo del programma lavora sul documento completo"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 Invece delle due list resource upstream sui doctype figli (LMS Program Course, LMS Program
 Member) il modulo carica l'intero LMS Program con frappe.client.get (righe ordinate per idx),
@@ -3772,6 +3823,7 @@ id = "program-form-translated-selection"
 title = "Ritocchi di traduzione nel modulo del programma"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 Testi del modulo del programma resi traducibili: il banner di selezione delle righe usa
 l'override os_lms di ListSelectBanner (importato direttamente dal percorso overrides) con il
@@ -3965,6 +4017,7 @@ id = "quiz-submission-valutatore-readonly"
 title = "Il Valutatore vede le consegne dei quiz in sola lettura"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore di un batch deve poter leggere le risposte ai quiz dei propri studenti,
 arrivandoci dalla dashboard della classe (Dashboard → studente → riga del quiz): decisione del
@@ -4175,6 +4228,7 @@ id = "assignment-valutatore-grading"
 title = "Il Valutatore corregge i compiti degli studenti del proprio batch"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore di un batch vede, corregge e invia la valutazione dei compiti («elaborati») dei
 soli studenti del proprio batch. Frontend: canGradeSubmission lo ammette al riquadro di
@@ -4666,6 +4720,7 @@ id = "batch-form-valutatori"
 title = "Valutatori della classe nel modulo impostazioni"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore è un ruolo os_lms limitato a una sola classe: si assegna dentro la classe, nel
 campo custom valutatori (Table MultiSelect, figlio LMS Batch Valutatore), scegliendo fra tutti
@@ -4737,6 +4792,7 @@ id = "batch-form-feature-sections"
 title = "Editor delle sezioni in evidenza nelle impostazioni della classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "feature-sections"
 intent = """
 La classe ha sezioni in evidenza (campo custom custom_feature_sections su LMS Batch) mostrate in
 sola lettura nella pagina della classe; l'editor os_lms FeatureSectionEditor, montato dopo i
@@ -4989,6 +5045,7 @@ id = "course-dashboard-remove-students"
 title = "Rimozione di studenti dal corso, con pulizia completa per l'amministratore"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-dashboard"
 intent = """
 Nella dashboard del corso chi ha System Manager (Administrator) o Gestore seleziona uno o più
 studenti e li toglie dal corso: si cancella solo la LMS Enrollment, progressi/consegne/certificati
@@ -5031,6 +5088,7 @@ id = "responsive-list-desktop-banner-dock"
 title = "Barra di selezione di ResponsiveListView in un dock fornito dalla pagina (desktop)"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-dashboard"
 intent = """
 frappe-ui ancora la barra di selezione (absolute bottom-6) al fondo della radice di ListView, alta
 quanto tutte le righe: in una pagina dove a scorrere è un riquadro esterno (dashboard del corso,
@@ -5649,6 +5707,7 @@ id = "permissions-valutatore-quiz-access"
 title = "Il Valutatore vede i quiz dei corsi e delle classi che valuta"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore di una classe legge le lezioni dei corsi di quella classe senza esserne iscritto
 (permissions-valutatore-lesson-access). Da v2.59.0 l'upstream protegge i quiz con
@@ -5697,6 +5756,7 @@ id = "course-detail-valutatore-tabs"
 title = "Il Valutatore vede il corso a schede (Panoramica + Dashboard) in sola lettura"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore di una classe che contiene il corso apre la vista a schede del dettaglio corso con
 Panoramica e Dashboard, per seguire i progressi degli studenti che valuta, ma senza le schede di
@@ -5785,6 +5845,7 @@ id = "certification-links-view-on-profile"
 title = "\"Visualizza certificato\" porta alla pagina Certificati del profilo"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-certificates"
 intent = """
 Nella card del corso, quando lo studente ha già il certificato, il pulsante «Visualizza
 certificato» non scarica più il PDF da qui: è un router-link alla pagina Certificati del
@@ -6074,6 +6135,7 @@ id = "multiselect-exclude-cached-options"
 title = "MultiSelect con valori esclusi e opzioni scelte esposte"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 Il dialogo «Aggiungi corso al programma» (ProgramForm, voce program-form-add-courses-multi)
 passa :exclude con i corsi già nel programma, che non devono comparire tra le opzioni, e legge
@@ -6690,6 +6752,7 @@ id = "batch-detail-valutatore-tabs"
 title = "Il Valutatore della classe vede le schede e la dashboard amministrativa"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore è un ruolo per singola classe (campo valutatori di LMS Batch; is_valutatore
 calcolato lato server nel get_batch_details di lms/lms/utils.py, innesto backend nostro). Per la sua classe non vede la sola panoramica
@@ -6723,6 +6786,7 @@ id = "batch-detail-docente-admin"
 title = "Il Docente gestisce la classe come un moderatore"
 layer = "spa-graft"
 confidence = "high"
+feature = "docente-role"
 intent = """
 Docente è il ruolo globale di istruttore del cliente (flag is_docente): nella pagina della
 classe conta come amministratore, quindi vede Dashboard amministrativa e Impostazioni, può
@@ -6805,6 +6869,7 @@ id = "batch-content-add-moderator-only"
 title = "Aggiunta di corsi e valutazioni alla classe solo per Moderator"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-management-permissions"
 intent = """
 I pulsanti Aggiungi delle schede Corsi e Valutazioni della classe erano concessi a
 is_moderator || is_evaluator, ma i selettori che aprono caricano le opzioni con search_link,
@@ -6893,6 +6958,7 @@ id = "course-details-tag-picker"
 title = "Selettore di tag colorati os_lms nella sezione Dettagli del corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "content-tags"
 intent = """
 Il MultiSelect dei tag upstream (tag liberi senza colore) è sostituito dal TagPicker os_lms,
 che gestisce i tag con colore usati nelle card e nella panoramica del corso (voci
@@ -6919,6 +6985,7 @@ id = "course-details-os-link"
 title = "Campo Categoria del corso con il wrapper os-link e segnaposto tradotto"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-settings-extensions"
 intent = """
 Il campo Categoria usa il wrapper os_lms Controls/Link.vue (div os-link attorno al Link
 upstream, per restilizzarlo con i colori del cliente senza toccare il componente base; come
@@ -6941,6 +7008,7 @@ id = "course-details-doc-guard"
 title = "Sezione Dettagli del corso resa solo a documento caricato"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-settings-extensions"
 intent = """
 La sezione ha v-if="doc" sulla radice, così il template (v-model="doc.title", doc.category,
 doc.tags…) non viene valutato prima che resource.doc esista. Introdotto da Gabriele Pagnotta nel
@@ -7019,6 +7087,7 @@ id = "course-instructors-orphan-removable"
 title = "Istruttore con account cancellato ancora rimovibile dal corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-settings-extensions"
 intent = """
 Le opzioni del menu degli istruttori selezionati nascono da resolvedSelected, e deselezionarle
 lì è l'unico modo per togliere un istruttore. Un istruttore il cui utente è stato cancellato non
@@ -7146,6 +7215,7 @@ id = "student-course-progress-i18n-mobile"
 title = "Dialogo dei progressi dello studente tradotto e a una colonna su telefono"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-dashboard"
 intent = """
 Ritocchi senza regola di business nel dialogo aperto dalla dashboard del corso: titolo
 «Student Progress» passato da __(); stato di compiti ed esercizi di programmazione nel badge
@@ -7278,6 +7348,7 @@ id = "proctoring-log-hidden-from-valutatore"
 title = "Registro del proctoring con le foto: Gestore e Valutatore (solo la sua classe) lo vedono"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 v2.63.0 introduce il proctoring dei quiz (13d2114da e seguenti): durante il tentativo la webcam
 riconosce il volto e a ogni violazione salva una foto (File privato su LMS Quiz Violation Log);
@@ -7359,6 +7430,7 @@ id = "student-view-oslms-roles"
 title = "La vista studente spegne anche i ruoli os_lms (Valutatore, Docente, Gestore)"
 layer = "spa-graft"
 confidence = "high"
+feature = "members-and-roles"
 intent = """
 v2.61.0 introduce la «vista studente» (useStudentView: $user simulato per il sottoalbero della
 lezione in anteprima), che spegne solo flag e ruoli upstream (is_moderator, is_instructor,
@@ -7765,6 +7837,7 @@ id = "course-paid-certificate-fields-cleared"
 title = "Valutatore e fuso del certificato a pagamento azzerati quando lo si disattiva"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-certificates"
 intent = """
 evaluator e timezone appartengono solo al certificato a pagamento (prezzo e valuta sono
 condivisi con paid_course). Spegnendo il certificato restavano valorizzati ma nascosti dal
@@ -7824,6 +7897,7 @@ id = "live-class-valutatore-read"
 title = "Il Valutatore legge le classi live della propria classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore di una classe non è iscritto come studente ma deve vedere (e raggiungere) le
 classi live della classe che valuta, come uno studente iscritto: has_permission concede la sola
@@ -8170,6 +8244,7 @@ id = "bulk-certificates-select-placeholder"
 title = "Segnaposto tradotto sulla scelta del corso nei certificati in blocco"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-certificates"
 intent = """
 La select Corso del modale «Genera certificati» della classe mostra il segnaposto tradotto
 «Select option» invece di un valore vuoto (commit e577585ca, traduzioni). Il resto del diff
@@ -8755,6 +8830,7 @@ id = "live-class-docente-manage"
 title = "Il Docente vede, crea, modifica ed elimina le lezioni live"
 layer = "spa-graft"
 confidence = "high"
+feature = "docente-role"
 intent = """
 Decisione del committente al merge di v2.62.0 (2026-09-23): il Docente, istruttore globale, gestisce
 le lezioni live di ogni classe come Moderator e Batch Evaluator. L'upstream conosce solo quei due
@@ -8813,6 +8889,7 @@ id = "batch-list-valutatore-docente"
 title = "Elenco classi: il Valutatore vede le classi non pubblicate che valuta, il Docente tutte"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 v2.62.0 aggiunge un filtro sugli elenchi di LMS Batch (pubblicate, oppure quelle in cui si è
 iscritti; tutte per Moderator e Batch Evaluator). Decisione del committente (2026-09-23): il
@@ -8841,6 +8918,7 @@ id = "course-lesson-list-mirrors-read-gate"
 title = "Elenco lezioni allineato al gate di lettura (Docente e Valutatore)"
 layer = "spa-graft"
 confidence = "high"
+feature = "docente-role"
 intent = """
 v2.62.0 aggiunge un filtro sugli elenchi di Course Lesson che traduce in SQL resolve_lesson_access
 (istruttore del corso, iscritto, lezione di anteprima di un corso pubblicato; tutto al Moderator).
@@ -8866,6 +8944,7 @@ id = "member-valutatore-role-exact-roles"
 title = "Gestione membri: ruolo Valutatore e creazione con i soli ruoli scelti"
 layer = "spa-graft"
 confidence = "high"
+feature = "members-and-roles"
 intent = """
 La gestione dei membri (Impostazioni → Membri, e la creazione al volo di un istruttore dai campi
 Istruttori di corso e classe) deve conoscere il ruolo custom Valutatore (valutatore per classe,
@@ -8925,6 +9004,7 @@ id = "valutatore-phone-back-history"
 title = "Su telefono il Valutatore torna indietro nella cronologia dalle liste consegne"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Su telefono PageHeader (v2.62.0) trasforma la briciola padre in un pulsante «indietro» verso
 quella rotta. Nelle liste consegne di quiz e compiti la briciola padre è l'elenco dei quiz (o il
@@ -9063,6 +9143,7 @@ id = "permissions-docente-global-v264"
 title = "Il Docente resta docente globale nei cancelli di permesso di v2.64.0"
 layer = "spa-graft"
 confidence = "high"
+feature = "docente-role"
 intent = """
 Il Docente è un docente globale: gestisce ogni corso, classe e contenuto anche senza comparire
 fra gli istruttori (graft in can_modify_course). v2.64.0 aggiunge cancelli che riconoscono solo
@@ -9115,6 +9196,7 @@ id = "permissions-valutatore-course-scope-v264"
 title = "Il Valutatore legge i corsi delle sue classi anche nei cancelli di v2.64.0"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore di una classe legge, in sola lettura, i corsi di quella classe anche se non
 pubblicati: dashboard del corso con il drilldown dei progressi, bozze assegnate nelle liste di
@@ -9171,6 +9253,7 @@ id = "program-authoring-pool"
 title = "Moderator, Course Creator e Docente modificano tutti i programmi"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 I programmi sono gestiti come un insieme condiviso: chiunque abbia un ruolo di authoring
 (Moderator/Gestore, Course Creator, Docente) crea e modifica ogni programma. v2.64.0 restringe la
@@ -9199,6 +9282,7 @@ id = "course-categories-published-gate"
 title = "Le categorie dei corsi rispettano il filtro dei pubblicati"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-catalogue"
 intent = """
 La nostra get_course_categories accetta gli stessi filtri di scheda di get_courses per elencare
 solo le categorie presenti nella scheda. v2.64.0 chiude in get_courses/get_batches la fuga per cui
@@ -9249,6 +9333,7 @@ id = "docente-people-pickers-access"
 title = "Il Docente può cercare gli utenti per assegnare istruttori e valutatori"
 layer = "override-file"
 confidence = "high"
+feature = "docente-role"
 intent = """
 I campi Istruttori (corsi e classi) e Valutatori (classi) sono alimentati da tre ricerche
 che upstream apre solo a Moderator / Course Creator / Batch Evaluator: un utente con il solo
@@ -9287,6 +9372,7 @@ id = "gestore-submission-lists"
 title = "Il Gestore apre le liste degli invii di quiz e compiti (sola lettura)"
 layer = "spa-graft"
 confidence = "high"
+feature = "gestore-role"
 intent = """
 Un Gestore senza i flag di amministratore (nessun Moderator, istruttore o evaluator) non
 aveva Quiz né Elaborati nella barra laterale e le due liste lo rimandavano a Corsi, quindi
@@ -9322,6 +9408,7 @@ id = "program-form-description-dirty-guard"
 title = "Il modulo programma non si dichiara «Non salvato» per le modifiche fatte dall'editor"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 L'editor della descrizione (frappe-ui TextEditor su tiptap v3) emette change da solo: quando apre
 una descrizione e la normalizza (id dei titoli, contenitori delle tabelle…) e quando il
@@ -9349,6 +9436,7 @@ id = "permissions-docente-global-v265"
 title = "Il Docente resta docente globale nei cancelli di permesso di v2.65.0"
 layer = "spa-graft"
 confidence = "high"
+feature = "docente-role"
 intent = """
 Il Docente è un docente globale (decisione «Docente globale ovunque» del merge di v2.64.0,
 confermata dal committente al merge di v2.65.0 il 2026-10-12). v2.65.0 aggiunge cancelli che
@@ -9420,6 +9508,7 @@ id = "permissions-valutatore-batch-scope-v265"
 title = "Il Valutatore legge prove, consegne e iscrizioni della sua classe nei cancelli di v2.65.0"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore di una classe legge (mai modifica) le prove della classe e le consegne dei suoi
 studenti, corregge i compiti, vede la dashboard con la lista studenti (decisione del committente
@@ -9504,6 +9593,7 @@ id = "batch-course-creator-tagged-manage-v265"
 title = "Il Course Creator taggato su una classe la gestisce (adozione di #2845, v2.65.0)"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-management-permissions"
 intent = """
 Decisione del committente al merge di v2.65.0 (2026-10-12): si adotta la regola upstream per cui
 un Course Creator taggato come istruttore di una classe (o evaluator di un suo corso) gestisce
@@ -9670,6 +9760,7 @@ id = "permissions-valutatore-batch-learners"
 title = "Il Valutatore legge i dati degli studenti delle sue classi, non di tutto il corso (OWASP E8)"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Iscrizioni, avanzamento, tempo di visione e recensioni (course_record_has_permission e
 course_record_query_conditions) erano aperti al Valutatore per tutti gli studenti dei corsi

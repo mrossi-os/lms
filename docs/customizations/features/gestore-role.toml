@@ -1,0 +1,66 @@
+id = "gestore-role"
+title = "Ruolo Gestore"
+status = "active"
+summary = """
+Il Gestore è il responsabile della piattaforma per il cliente: ha tutti i poteri di gestione
+dell'LMS ma lavora dall'interfaccia degli studenti, perché quasi sempre non può entrare nel Desk.
+Questa scheda raccoglie le regole che guardano proprio al ruolo Gestore: niente import dei corsi
+da file, accesso in sola lettura agli invii di quiz e compiti, utenti importati che restano
+studenti."""
+why = """
+Il cliente voleva una figura di gestione distinta dal Moderator tecnico. Nella pratica il Gestore
+viene sempre assegnato insieme a Moderator, Docente, Course Creator e Batch Evaluator (conferma del
+cliente del 2026-07-30), quindi la maggior parte dei suoi poteri arriva da quei ruoli; i gestori
+sono però Website User e non raggiungono il Desk, perciò ciò che gli serve deve stare nella SPA.
+Alcune scelte del cliente (niente import da file, consultazione degli invii) valgono solo per lui."""
+roles = ["Gestore", "System Manager", "Moderator"]
+behaviour = [
+	"dal menu «Crea» dell'elenco corsi il Gestore non vede «Importa tramite Data Import» né «Importa tramite ZIP»: crea i corsi solo a mano",
+	"aprendo per indirizzo la pagina di import dei corsi da ZIP il Gestore vede il messaggio di rifiuto",
+	"un utente che è anche System Manager conserva l'import dei corsi pur avendo il ruolo Gestore",
+	"un Gestore senza ruoli di amministrazione LMS (né Moderator, né istruttore, né evaluator) trova su desktop nella barra laterale le voci «Invii quiz» e «Invii compiti»",
+	"il Gestore apre gli elenchi degli invii di quiz e compiti e il dettaglio di un invio di quiz in sola lettura: niente caselle di selezione, Elimina, filtro per quiz, né correzione",
+	"il ruolo Gestore riceve sul server la lettura delle consegne di quiz e compiti",
+	"un utente creato da un Gestore con l'importazione dati del doctype User, che l'import lascerebbe senza alcun ruolo, riceve LMS Student; utenti già esistenti e utenti con ruoli indicati nel file restano come sono",
+]
+areas = ["apps/os_lms/os_lms/os_lms/tests/test_gestore_user_import_role.py"]
+upstream_watch = [
+	"manager role", "LMS Manager", "is_manager", "data import roles", "validate_higher_perm_levels",
+	"add_lms_student_role", "course import", "CourseImportForm", "import zip", "QuizSubmissions",
+	"AssignmentSubmissionList", "sidebar links", "Website User desk access",
+]
+data = [
+	"Ruolo «Gestore» (creato e assegnato dal Desk, desk_access = 1; nel sito vive anche nel Role Profile «Professore»)",
+	"DocPerm Gestore da os_lms.setup.setup_gestore_role_permissions: lettura di LMS Quiz Submission e LMS Assignment Submission (oltre a Student Stats Export e LMSA Simulation Limits, che appartengono alle loro schede)",
+	"flag is_gestore nell'override os_lms di get_user_info (solo informativo, non cambia is_student)",
+]
+tests = ["apps/os_lms/os_lms/os_lms/tests/test_gestore_user_import_role.py"]
+notes = """
+- Trattare il Gestore come «gestore completo»: un account con il solo ruolo Gestore non esiste. Le
+  domande sui suoi poteri si risolvono dall'unione Moderator + Docente + Course Creator + Batch
+  Evaluator. Bundle reale: Gestore + Moderator + Docente + Course Creator + Batch Evaluator.
+- Proprio perché il Gestore ha anche Moderator, una regola «solo X e Gestore» non si costruisce
+  concedendo al Moderator: nei hook di permesso si concede su «Gestore» e non si aggiunge mai un ramo
+  Moderator (esempio svolto nella spec docs/superpowers/specs/2026-09-18-tutor-chat-history-design.md, §6).
+- Il Desk non è una soluzione per il Gestore: desk_access conta solo per i System User e i gestori in
+  produzione sono Website User (misurato il 2026-09-18). Promuoverli a System User darebbe loro tutto
+  il back office.
+- Non esiste un flag is_manager: le regole che guardano il Gestore controllano il nome del ruolo in
+  roles (o il flag is_gestore). Matrice del cliente 2026-10-05: tutto SI tranne Desk NO e
+  impostazioni generali «solo alcune».
+- Import di utenti: il campo roles di User è permlevel 1 (solo System Manager) e Data Import rispetta
+  i permessi, quindi senza il nostro hook gli utenti importati da un Gestore uscivano senza ruoli e
+  non vedevano i quiz (Academy Salescience, 2026-10-22). Per «lo studente non vede il quiz/esame»
+  controllare prima i suoi ruoli. L'import delle iscrizioni alle classi non è toccato (scrive gli
+  utenti con ignore_permissions) ma non aggiunge il ruolo agli utenti già esistenti.
+- Altre regole che nominano il Gestore stanno nelle loro schede: chi assegna i ruoli
+  (members-and-roles), rimozione degli studenti dal corso (course-dashboard), registro di
+  sorveglianza (valutatore-role), esportazione statistiche (student-stats-export), Google Calendar,
+  TrueSkill, Prompt AI, chiavi Elite API (schede relative)."""
+history = [
+	{ date = "2026-04-29", ref = "f91a0e9be", summary = "creazione: interruttori Gestore e Docente nella scheda Ruoli del profilo" },
+	{ date = "2026-07-31", ref = "93a9e39ef", summary = "import dei corsi da file nascosto al Gestore" },
+	{ date = "2026-07-31", ref = "1af13d630", summary = "funzioni di gestione aperte al Gestore (permessi di base da setup_gestore_role_permissions)" },
+	{ date = "2026-10-05", ref = "8c543f298", summary = "il Gestore apre in sola lettura le liste degli invii di quiz e compiti" },
+	{ date = "2026-10-22", ref = "783051ec4", summary = "gli utenti importati da un Gestore ricevono LMS Student" },
+]
