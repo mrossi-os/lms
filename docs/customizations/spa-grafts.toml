@@ -582,6 +582,7 @@ id = "video-preview-plyr"
 title = "Anteprima YouTube/Vimeo nel player Plyr"
 layer = "spa-graft"
 confidence = "high"
+feature = "video-embeds"
 intent = """
 Un'anteprima YouTube/Vimeo si riproduce con lo stesso player Plyr delle lezioni invece
 che con l'iframe nudo del provider, così non compaiono i controlli del provider (titolo,
@@ -597,6 +598,7 @@ id = "batch-description-preline"
 title = "Descrizione del batch su più righe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-detail-page"
 intent = """
 La descrizione del batch è un campo Small Text scritto su più righe; si conservano gli a
 capo con whitespace-pre-line, come per l'introduzione breve del corso."""
@@ -610,6 +612,7 @@ id = "batch-preview-video"
 title = "Video di anteprima nella pagina batch"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-detail-page"
 intent = """
 Il video di anteprima del batch compare sotto la descrizione breve a ogni larghezza (mai
 in colonna laterale), largo quanto la descrizione e in 16:9. Solo il video: il resto di
@@ -776,6 +779,7 @@ id = "course-outline-editor-hash"
 title = "Modifica lezione dal programma del corso apre la scheda giusta"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
 status = "accepted-drift"
 intent = """
 Il pulsante di modifica di una lezione nel programma del corso porta al corso con l'hash
@@ -819,6 +823,7 @@ id = "lesson-pdf-inline-filename"
 title = "PDF delle lezioni con il nome giusto su mobile"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-attachments"
 intent = """
 serve_resource dà un nome esplicito ai file privati serviti inline (in pratica i PDF delle
 lezioni) con un Content-Disposition inline; senza, il browser usa l'ultimo pezzo dell'URL, cioè
@@ -838,6 +843,7 @@ id = "quiz-submit-unanswered"
 title = "Un quiz si può consegnare con domande senza risposta"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 intent = """
 Una domanda saltata arriva con risposta vuota o nulla; prima faceva fallire l'intera consegna
 e lo studente non riusciva più a consegnare il quiz. Ora le risposte vuote vengono filtrate e
@@ -2196,6 +2202,7 @@ id = "lesson-sequential-access-lock"
 title = "Blocco sequenziale di lezioni e quiz nella pagina lezione"
 layer = "spa-graft"
 confidence = "high"
+feature = "guided-learning-path"
 intent = """
 Quando il corso ha attivi enforce_lesson_order o enforce_quiz_on_completion (impostazioni
 os_lms del corso, OsCourseSettings), lo studente non può aprire una lezione finché la
@@ -2232,6 +2239,7 @@ id = "lesson-edit-button-editor-hash"
 title = "Il pulsante Modifica della lezione apre la scheda Editor"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
 intent = """
 Gemella di course-outline-editor-hash: il pulsante Modifica nella pagina lezione porta al
 corso con hash '#editor', che è l'id della scheda Editor; l'upstream usava '#course editor',
@@ -2249,6 +2257,7 @@ id = "lesson-discussions-removed"
 title = "Discussioni/Community rimosse dalla lezione; restano solo le Note dello studente"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-page"
 intent = """
 Il cliente non usa la community: la scheda Community (Discussions) e il pulsante delle
 domande in modalità Zen sono rimossi per tutti i ruoli. Sotto la lezione resta solo il
@@ -2295,6 +2304,7 @@ id = "lesson-zen-mode-fullscreen-only"
 title = "Modalità Zen nascosta dove manca la Fullscreen API (iPhone)"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-page"
 intent = """
 La modalità Zen usa la Fullscreen API, che su iPhone (tutti i browser iOS sono WebKit) non
 esiste per elementi non video: il pulsante non faceva nulla. canGoZen() rileva il supporto
@@ -2311,6 +2321,7 @@ id = "lesson-video-error-keeps-enforcement"
 title = "Un errore non fatale del player non disattiva l'obbligo di vedere il video"
 layer = "spa-graft"
 confidence = "high"
+feature = "guided-learning-path"
 intent = """
 Con enforce_video_completion attivo, un errore del player fa ripiegare il completamento
 sul timer di permanenza. Plyr inoltra però anche errori non legati alla riproduzione: Vimeo
@@ -2333,6 +2344,7 @@ id = "lesson-highlight-offset"
 title = "Evidenziazioni dello studente sull'occorrenza selezionata"
 layer = "spa-graft"
 confidence = "high"
+feature = "student-highlights"
 intent = """
 Un'evidenziazione salvata solo come testo si ripristinava sempre sulla prima occorrenza
 (evidenziando il terzo «con» si illuminava il primo). Ora la nota salva anche text_offset
@@ -2389,6 +2401,7 @@ id = "lesson-highlight-menu-ink"
 title = "Ritocco di stile: etichette del menu evidenziazione leggibili nel tema"
 layer = "spa-graft"
 confidence = "high"
+feature = "student-highlights"
 intent = """
 Il menu che compare selezionando testo nella lezione non aveva un colore di inchiostro:
 nomi dei colori e azioni restavano neri e ignoravano il tema (illeggibili in scuro).
@@ -2404,6 +2417,7 @@ id = "lesson-long-strings-wrap"
 title = "Stringhe lunghe nella lezione vanno a capo invece di spostare la pagina"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-page"
 intent = """
 Una lezione con un token lungo senza spazi (per esempio un URL Cloudflare/Bunny incollato
 come testo) sforava la colonna e spingeva tutta la pagina a destra. overflow-wrap sul
@@ -2431,6 +2445,7 @@ id = "lesson-sidebar-open-active-chapter"
 title = "La barra laterale apre il capitolo della lezione attiva"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-page"
 intent = """
 Il Disclosure di headlessui legge defaultOpen solo al mount e la barra laterale non si
 rimonta tra una lezione e l'altra: passando con «Next» a una lezione del capitolo
@@ -2454,6 +2469,7 @@ id = "editor-i18n-labels"
 title = "Etichette dell'editor EditorJS tradotte"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
 intent = """
 EditorJS mostra menu dei blocchi, barra inline e block tune in inglese se non riceve un
 dizionario i18n. getEditorI18n() passa ogni etichetta per __() così l'editor segue la
@@ -2477,6 +2493,7 @@ id = "lesson-form-os-settings-panel"
 title = "Pannello impostazioni os_lms nell'editor della lezione"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
 intent = """
 Al posto dell'interruttore upstream «Include in preview» l'editor della lezione monta
 OsLessonForm, che raccoglie le impostazioni volute dal cliente: include_in_preview, durata
@@ -2498,6 +2515,7 @@ id = "lesson-form-editable-fields"
 title = "Il salvataggio della lezione scrive solo i campi modificabili"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
 intent = """
 L'upstream salvava con set_value l'intero oggetto lesson caricato all'apertura; così ogni
 salvataggio o autosave riscriveva anche i campi gestiti dal server, in particolare
@@ -2517,6 +2535,7 @@ id = "lesson-form-style-tweaks"
 title = "Ritocchi di stile nell'editor della lezione"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
 intent = """
 Su telefono l'editor perde il margine orizzontale e il padding di 20 unità (resta px-3),
 così non è schiacciato in una colonna stretta (commit a1437f5fa). Il titolo ha
@@ -2536,6 +2555,7 @@ id = "upload-documents-and-archives"
 title = "Documenti e archivi caricabili nelle lezioni"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-attachments"
 intent = """
 Gli autori allegano alle lezioni anche documenti e archivi (doc/xls/ppt/odt, csv, txt,
 zip, rar, 7z…), non solo immagini, video, audio e PDF; prima tutto il resto veniva
@@ -2588,6 +2608,7 @@ id = "upload-unattached-new-lesson"
 title = "Upload senza allegato finché la lezione non è salvata"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-attachments"
 status = "accepted-drift"
 intent = """
 Una lezione nuova non ha ancora un docname; inviare doctype senza un docname valido fa
@@ -2611,6 +2632,7 @@ id = "upload-pdf-block-mobile"
 title = "PDF delle lezioni leggibili su mobile"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-attachments"
 intent = """
 I browser mobili non mostrano un PDF in un iframe (Chrome Android mostra un segnaposto di
 download, Safari iOS una prima pagina statica). Fino a v2.59.0 il nostro PdfBlock mostrava su
@@ -2670,6 +2692,7 @@ id = "upload-toolbox-icon-theme"
 title = "Ritocco di stile: icona Upload dell'editor segue il tema"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-attachments"
 intent = """
 L'icona del tool Upload nel menu dei blocchi era nera fissa, invisibile nel tema scuro;
 con currentColor segue il colore del testo del menu. Commit «fix color» (75ded9ac6), il
@@ -2686,6 +2709,7 @@ id = "video-block-dead-timeupdate"
 title = "Rimosso il binding @timeupdate orfano dal VideoBlock"
 layer = "spa-graft"
 confidence = "high"
+feature = "video-embeds"
 intent = """
 Il template legava @timeupdate="updateTime" a una funzione che non esiste più (il player
 traccia il tempo con videoRef.ontimeupdate): il gestore era un no-op che generava un
@@ -2702,6 +2726,7 @@ id = "editor-style-css-import"
 title = "Foglio di stile del nuovo editor importato a mano (colori ed evidenziatori)"
 layer = "spa-graft"
 confidence = "high"
+feature = "rich-text-colors"
 intent = """
 Il nuovo editor di frappe-ui (frappe-ui/editor, usato da RichTextEditor: descrizione di corsi e
 classi, discussioni, compiti, quiz) ha un proprio foglio di stile, che definisce le variabili
@@ -2725,6 +2750,7 @@ id = "editor-inline-color-persist"
 title = "Il colore del testo delle lezioni sopravvive al caricamento"
 layer = "spa-graft"
 confidence = "high"
+feature = "rich-text-colors"
 intent = """
 Il tool colore inline avvolge la selezione in <lms-inline-color style=…>; DOMPurify con la
 configurazione di default scarta i tag sconosciuti, quindi a ogni caricamento o
@@ -2772,6 +2798,7 @@ id = "editor-header-inline-toolbar"
 title = "Barra inline anche sui titoli delle lezioni"
 layer = "spa-graft"
 confidence = "low"
+feature = "lesson-editor"
 status = "accepted-drift"
 intent = """
 I blocchi titolo dell'editor hanno la stessa barra inline dei paragrafi (colore,
@@ -2791,6 +2818,7 @@ id = "embed-vimeo-share-links"
 title = "Link di condivisione Vimeo incollati nelle lezioni"
 layer = "spa-graft"
 confidence = "high"
+feature = "video-embeds"
 intent = """
 Il pulsante «Copia link» di Vimeo dà vimeo.com/share/<uuid>, che non contiene l'id del
 video, non reindirizza e che l'oEmbed di Vimeo rifiuta: gli autori ottenevano testo invece
@@ -2823,6 +2851,7 @@ id = "video-embed-url-reexport"
 title = "getVideoEmbedURL riesportata da utils per l'hero del corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "video-embeds"
 intent = """
 getVideoEmbedURL (YouTube e Vimeo, incluse le forme con hash) vive in utils/video.ts ed è
 riesportata da utils/index.js per i chiamanti esistenti, in particolare l'hero os_lms del
@@ -2908,6 +2937,7 @@ id = "prose-hr-table-colors"
 title = "Ritocchi di stile del testo ricco: separatori e bordi delle tabelle"
 layer = "spa-graft"
 confidence = "high"
+feature = "rich-text-colors"
 intent = """
 Nei testi ricchi (descrizioni) il separatore <hr> prende il colore del testo circostante
 invece del grigio di prose, così resta visibile dove il testo è bianco (per esempio su un
@@ -2928,6 +2958,7 @@ id = "quiz-radio-classic"
 title = "Radio button classici nei quiz"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 intent = """
 @tailwindcss/forms ridisegna i radio selezionati come cerchio pieno colorato con puntino
 bianco; il cliente vuole l'aspetto classico (cerchio bianco con puntino nero) per le
@@ -3871,6 +3902,7 @@ id = "quiz-skip-unanswered-ui"
 title = "Nel player del quiz si può saltare una domanda e consegnare da qualunque domanda"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 intent = """
 Metà frontend della regola quiz-submit-unanswered (quella voce copre solo process_results in
 lms_quiz.py). Lo studente deve poter lasciare una domanda senza risposta e consegnare il quiz
@@ -3913,6 +3945,7 @@ id = "quiz-cached-remount"
 title = "Un quiz riaperto dalla cache non perde le domande"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 status = "accepted-drift"
 intent = """
 La risorsa del quiz è in cache per nome e frappe-ui restituisce lo stesso oggetto ai mount
@@ -3942,6 +3975,7 @@ id = "quiz-timer-wall-clock"
 title = "Timer del quiz ancorato all'orologio e consegna una sola volta"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 intent = """
 Il conto alla rovescia dei quiz a tempo si calcola da una scadenza reale (Date.now) invece di
 decrementare un contatore: setInterval rallenta molto nelle schede in background, il contatore
@@ -3968,6 +4002,7 @@ id = "quiz-player-style-translations"
 title = "Ritocchi di stile, layout mobile e traduzioni del player del quiz"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 intent = """
 Testi delle istruzioni leggibili (text-ink-gray-9 al posto del blu), classe card del tema sui
 riquadri, riga delle azioni impilata su telefono (checkbox di revisione, paginazione e pulsanti
@@ -3996,6 +4031,7 @@ id = "quiz-form-mobile-layout"
 title = "Modulo del quiz usabile su telefono e pulsanti in stile del tema"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 status = "accepted-drift"
 intent = """
 Il modulo di authoring del quiz (Docente, Moderator, istruttori) sotto lg passa a una colonna:
@@ -4083,6 +4119,7 @@ id = "quiz-submission-list-style"
 title = "Tema della lista consegne del quiz"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 status = "accepted-drift"
 intent = """
 La lista delle consegne di un quiz usa la classe os-list-view del tema, come le altre liste.
@@ -4098,6 +4135,7 @@ id = "quiz-list-mobile-columns"
 title = "Lista dei quiz ridotta su telefono"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 status = "accepted-drift"
 intent = """
 Su telefono la lista dei quiz (Moderator, Docente, istruttori) mostra solo titolo, percentuale
@@ -4120,6 +4158,7 @@ id = "quiz-list-style"
 title = "Ritocchi di stile della lista dei quiz"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 intent = """
 Lista dei quiz con la classe os-list-view del tema, testo delle celle in text-sm, segnaposto
 della ricerca tradotto e, nella colonna Show Answers, una spunta verde al posto di una checkbox
@@ -4167,6 +4206,7 @@ id = "quiz-question-type-translated"
 title = "Tipi di domanda tradotti nel modale della domanda"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 status = "accepted-drift"
 intent = """
 Nel modale di creazione della domanda la select del tipo mostra etichette tradotte (Scelta
@@ -4186,6 +4226,7 @@ id = "quiz-question-radio-style-removed"
 title = "Rimosso lo stile globale dei radio del modale domanda"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 status = "accepted-drift"
 intent = """
 Il modale della domanda portava un blocco <style> non scoped che forzava in gray-900 ogni radio
@@ -4270,6 +4311,7 @@ id = "assignment-mobile-single-column"
 title = "Pagina del compito a una colonna su telefono"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 Su telefono consegna e testo del compito stanno in colonna: affiancati ogni riquadro era largo
 circa 190px e Save e la barra dell'editor uscivano dallo schermo; l'altezza fissa e lo
@@ -4292,6 +4334,7 @@ id = "assignment-style-translations"
 title = "Ritocchi di stile e traduzioni della pagina del compito"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 Stato della consegna tradotto nel badge e nella select di correzione (Non valutato, Superato,
 Non superato) con valori inglesi invariati, tipo di file tradotto nel testo «You can only upload
@@ -4316,6 +4359,7 @@ id = "assignment-new-submission-no-shared-cache"
 title = "Consegna del compito: niente cache condivisa per il modulo «new»"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 frappe-ui (createDocumentResource) tiene ogni documento in un singleton per nome e in IndexedDB,
 che sopravvivono al logout. L'upstream legava il modulo di nuova consegna al nome "new" e, dopo
@@ -4350,6 +4394,7 @@ id = "assignment-form-required-warnings"
 title = "Avviso sui campi obbligatori nel modulo del compito"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 Salvando un compito senza titolo, tipo di consegna o testo della domanda, chi crea il compito
 (Moderator, Docente, istruttori) riceve un avviso tradotto «{0} is required» sul campo mancante
@@ -4367,6 +4412,7 @@ id = "assignment-form-translations"
 title = "Tipi di consegna e segnaposto tradotti nel modulo del compito"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 Nel modulo del compito le etichette dei tipi di consegna (PDF, Immagine, Documento, Testo, URL)
 sono tradotte con valori inglesi invariati, e i campi hanno segnaposto tradotti invece del
@@ -4387,6 +4433,7 @@ id = "assignment-submission-list-style"
 title = "Ritocchi di stile e traduzioni della lista consegne dei compiti"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 La lista delle consegne dei compiti ha filtri impilati su telefono, la classe os-list-view del
 tema, e stato, colonne, filtro di stato e breadcrumb tradotti (i valori restano inglesi).
@@ -4406,6 +4453,7 @@ id = "assignment-submission-list-header"
 title = "Intestazione a tema della lista consegne dei compiti"
 layer = "spa-graft"
 confidence = "low"
+feature = "assignments"
 status = "accepted-drift"
 intent = """
 La pagina usa un <header> sticky con la classe main-page-header del tema invece del
@@ -4425,6 +4473,7 @@ id = "assignment-block-empty-placeholder"
 title = "Blocco compito nella lezione: segnaposto e etichetta tradotti"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 Nell'editor della lezione, salvare il modale del blocco compito senza scegliere un compito
 passava null e il blocco mostrava «Assignment: undefined»: ora mostra un segnaposto tradotto
@@ -4448,6 +4497,7 @@ id = "assignment-block-iframe-height"
 title = "Consegna del compito nella lezione a tutta altezza"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 Lo studente consegna il compito dentro la lezione attraverso un iframe: con l'altezza fissa di
 500px dell'upstream editor e pulsanti restavano tagliati. La classe os-frame (in
@@ -4678,6 +4728,7 @@ id = "assignment-list-type-i18n"
 title = "Tipo di consegna tradotto nell'elenco Elaborati"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 Nell'elenco Elaborati la colonna Tipo mostrava il valore grezzo (Document, Image, PDF, URL,
 Text) mentre il filtro Tipo sopra la tabella lo traduce già con __(). La cella passa ora il
@@ -4694,6 +4745,7 @@ id = "assignment-list-style"
 title = "Ritocchi di stile della lista dei compiti"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 La lista dei compiti usa la classe os-list-view del tema, con padding ridotto e testo delle
 celle più piccolo su telefono, come le altre liste del fork. v2.59.0 cambia le icone delle
@@ -4750,6 +4802,7 @@ id = "batch-form-people-dirty-autosave"
 title = "Modificare istruttori o valutatori attiva il salvataggio"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-form"
 intent = """
 I selettori di istruttori e valutatori usano ref separate, non batchDetail.doc, quindi il
 watcher profondo del documento non vede le loro modifiche: senza questo watcher il modulo non
@@ -4766,6 +4819,7 @@ id = "batch-form-saved-people-removable"
 title = "Istruttori e valutatori non più attivi restano rimovibili dalla classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-form"
 intent = """
 I due selettori ricevono opzioni solo dall'endpoint di ricerca, che esclude utenti disattivati,
 utenti che hanno perso il ruolo e utenti cancellati, e restituisce una sola pagina di risultati.
@@ -4813,6 +4867,7 @@ id = "batch-form-os-link"
 title = "Campi Link del modulo classe con lo stile del tema"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-form"
 intent = """
 I campi Link del modulo classe (categoria, template email, account Zoom/Meet) usano il wrapper
 os_lms Controls/Link.vue, che avvolge il Link upstream in un div os-link solo per restilizzarlo
@@ -4830,6 +4885,7 @@ id = "batch-form-style-i18n"
 title = "Ritocchi di stile e traduzioni nel modulo classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-form"
 intent = """
 Ritocchi cosmetici: i segnaposto dei selettori di data e ora passano da __() ("Select date",
 "Select time"), perché i default di frappe-ui sono letterali inglesi; i selettori (fuso orario,
@@ -4847,6 +4903,7 @@ id = "batch-list-student-enrolled-only"
 title = "Lo studente vede solo le proprie classi, senza schede"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-list"
 intent = """
 Allo studente la lista delle classi mostra solo quelle a cui è iscritto: niente barra delle
 schede e scheda fissa su "Iscritto". La scheda non si legge dalla chiave per browser
@@ -4879,6 +4936,7 @@ id = "batch-list-default-tab-persist"
 title = "Scheda iniziale per ruolo e ricordata fra una visita e l'altra"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-list"
 intent = """
 Chi gestisce le classi (Moderator, istruttore, Batch Evaluator) parte da "Prossime"; chi non ha
 quelle schede, come un Valutatore limitato a una classe, parte da "Tutte". La scheda scelta si
@@ -4903,6 +4961,7 @@ id = "batch-list-enrolled-tab-members"
 title = "La scheda Iscritto filtra per iscrizione per ogni membro"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-list"
 intent = """
 La scheda "Iscritto" è offerta a ogni utente non gestore, compreso un Valutatore che è anche
 iscritto (per lui is_student è falso). Il filtro upstream era legato a is_student, quindi quei
@@ -4920,6 +4979,7 @@ id = "batch-list-archived-end-date"
 title = "Archiviate = classi già finite"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-list"
 intent = """
 La scheda "Archiviate" mostra le classi con data di fine passata; l'upstream usava la data di
 inizio, così una classe appena iniziata e ancora in corso finiva fra le archiviate."""
@@ -4934,6 +4994,7 @@ id = "batch-list-category-all"
 title = "Opzione Tutte per azzerare il filtro categoria"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-list"
 intent = """
 Scelta una categoria non c'era modo di toglierla dal menu (il pulsante di pulizia del
 combobox è inaffidabile) e bisognava ricaricare la pagina. La voce "Tutte" azzera il filtro e
@@ -4971,6 +5032,7 @@ id = "batch-list-certification-filter-hidden"
 title = "Casella Certificazione tolta dai filtri della lista classi"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-list"
 intent = """
 La casella "Certificazione" (solo classi che rilasciano un certificato) è tolta dai filtri
 della lista; la logica del filtro resta e si può ancora attivare con ?certification=1
@@ -4991,6 +5053,7 @@ id = "batch-dashboard-export-statistics"
 title = "Esportazione delle statistiche della classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-dashboard"
 intent = """
 Dalla dashboard della classe il gestore scarica i progressi degli studenti in due formati da un
 solo endpoint (os_lms.os_lms.api.export_batch_progress): Excel leggibile (una riga per studente
@@ -5021,6 +5084,7 @@ id = "batch-dashboard-remove-students"
 title = "Rimozione di studenti dalla classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-students"
 intent = """
 Il gestore seleziona uno o più studenti nella lista della dashboard e li toglie dalla classe
 (cancellazione delle LMS Batch Enrollment). La selezione è attiva solo con isFullAdmin: il
@@ -5110,6 +5174,7 @@ id = "batch-dashboard-import-students"
 title = "Importazione degli studenti nella classe dalla dashboard"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-students"
 intent = """
 Il pulsante Importa nell'intestazione della classe (BatchDetail, via childRef) apre
 un'importazione dati di LMS Batch Enrollment già nominata, per iscrivere molti studenti in
@@ -5130,6 +5195,7 @@ id = "batch-dashboard-student-progress"
 title = "Progresso di ogni studente nella dashboard della classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-dashboard"
 intent = """
 La lista studenti della dashboard ha una colonna Progresso (barra + percentuale): la media dei
 progressi dello studente sui corsi della classe. Dati e conteggio dei certificati arrivano da
@@ -5159,6 +5225,7 @@ id = "batch-dashboard-sortable-students"
 title = "Lista studenti ordinabile per colonna"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-dashboard"
 intent = """
 Le intestazioni della lista studenti (nome, progresso, data di iscrizione) sono cliccabili e
 ordinano in modo crescente/decrescente, come nella dashboard del corso. Nome e data si
@@ -5182,6 +5249,7 @@ id = "batch-dashboard-progress-panel"
 title = "Riepilogo progressi e progresso per corso nella dashboard della classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-dashboard"
 intent = """
 Al posto del grafico a barre upstream "Batch Summary" la dashboard ha una sola card con: un
 anello "Riepilogo progressi" che divide gli studenti in Appena iniziato / In corso / Avanzato /
@@ -5233,6 +5301,7 @@ id = "batch-admin-dashboard-style"
 title = "Ritocchi di stile nella dashboard del gestore della classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-dashboard"
 intent = """
 Ritocco cosmetico: il riquadro della lista studenti porta la classe card del tema. Nessuna
 regola di comportamento."""
@@ -5246,6 +5315,7 @@ id = "batch-student-dashboard-style"
 title = "Ritocchi di stile nella dashboard dello studente della classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-dashboard"
 intent = """
 Ritocco cosmetico: la tabella dei corsi della classe porta la classe os-list-view del tema.
 Nessuna regola di comportamento.
@@ -5260,6 +5330,7 @@ id = "batch-student-progress-lesson-drilldown"
 title = "Dettaglio per lezione nel riquadro progressi dello studente"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-dashboard"
 intent = """
 Nel riquadro che si apre cliccando uno studente nella dashboard della classe, un selettore di
 corso passa dalla media per corso ("Tutti i corsi") al dettaglio per lezione di quello studente
@@ -5283,6 +5354,7 @@ id = "batch-student-progress-i18n"
 title = "Traduzioni nel riquadro progressi dello studente"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-dashboard"
 intent = """
 Ritocchi di traduzione: intestazioni di colonna e stato dei compiti passano da __(), e il
 badge di completamento usa il letterale italiano "Completato" dentro __() (motivazione
@@ -5302,6 +5374,7 @@ id = "batch-card-style"
 title = "Ritocchi di stile nella card della classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-list"
 intent = """
 Ritocco cosmetico: la card della classe (lista classi e home) porta la classe card del tema.
 Nessuna regola di comportamento. ATTENZIONE al merge di v2.59.0: l'upstream cambia la riga del
@@ -5330,6 +5403,7 @@ id = "batch-overlay-meta-image"
 title = "Anteprima della classe: immagine di ripiego da meta_image"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-detail-page"
 intent = """
 LMS Batch non ha un campo image, quindi il ripiego upstream sull'immagine (quando manca il
 video) non poteva mai comparire: si usa meta_image. Il video è ritagliato con gli angoli
@@ -5431,6 +5505,7 @@ id = "announcement-named-colors"
 title = "Colori e evidenziazioni degli annunci visibili ovunque"
 layer = "spa-graft"
 confidence = "high"
+feature = "rich-text-colors"
 intent = """
 L'editor di frappe-ui salva i colori con nome come var(--prose-color-<nome>) e le
 evidenziazioni come var(--prose-highlight-<nome>), variabili definite solo dentro l'editor
@@ -5615,6 +5690,7 @@ id = "batch-new-modal-required-warnings"
 title = "Avvisi sui campi obbligatori nella creazione di una classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-form"
 intent = """
 Prima di creare la classe il modal controlla uno per uno i campi obbligatori (titolo, date,
 orari, fuso, descrizione, istruttori, dettagli) e mostra un avviso che nomina il campo
@@ -5631,6 +5707,7 @@ id = "batch-new-modal-i18n"
 title = "Traduzioni nel modal Nuova classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-form"
 intent = """
 Ritocchi di traduzione: il titolo del dialog e i segnaposto dei selettori di data e ora
 passano da __() (i default di frappe-ui sono letterali inglesi). Nessuna regola di
@@ -5648,6 +5725,7 @@ id = "batch-enrollment-courses-after-insert"
 title = "Iscrizione ai corsi della classe dopo aver scritto l'iscrizione alla classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-students"
 intent = """
 Iscrivendosi a una classe lo studente viene iscritto ai suoi corsi. LMS Enrollment concede
 l'accesso a un membro della classe cercando nel database proprio questa LMS Batch Enrollment
@@ -5679,6 +5757,7 @@ id = "assignment-answer-readonly-for-graders"
 title = "Chi corregge vede la risposta del compito in sola lettura"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 Chi corregge un compito (Valutatore, istruttori, moderatori) deve poter leggere la risposta dello
 studente e compilare solo voto e commenti, mai modificare la risposta. Fino a v2.58.1 l'upstream
@@ -5932,6 +6011,7 @@ id = "notes-type-text-offset"
 title = "Campo text_offset nel tipo Note delle evidenziazioni"
 layer = "spa-graft"
 confidence = "high"
+feature = "student-highlights"
 intent = """
 Il tipo Note ha il campo opzionale text_offset (numero o null): è la parte di tipizzazione
 della regola lesson-highlight-offset (commit a4573499a), cioè l'evidenziazione salvata con la
@@ -6219,6 +6299,7 @@ id = "video-preview-field-vimeo"
 title = "Campo video di anteprima: link Vimeo e link di condivisione Vimeo"
 layer = "spa-graft"
 confidence = "high"
+feature = "video-embeds"
 intent = """
 Il campo «Video di anteprima» di corsi e batch accetta anche link Vimeo, non solo YouTube:
 l'anteprima nel modulo usa l'iframe anche per il tipo 'embed' (Vimeo) di getVideoPreview, e
@@ -6420,6 +6501,7 @@ id = "router-lesson-edit-route"
 title = "Rotta diretta dell'editor di lezione /learn/<cap>-<lez>/edit"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
 intent = """
 La rotta LessonForm (/courses/:courseName/learn/:chapterNumber-:lessonNumber/edit) apre
 l'editor di una lezione con un URL proprio. L'upstream l'ha eliminata spostando la modifica
@@ -6551,6 +6633,7 @@ id = "patch-backfill-batch-course-enrollments"
 title = "Patch di recupero delle iscrizioni ai corsi dei batch"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-students"
 intent = """
 Le iscrizioni ai corsi di un batch nascevano solo all'ingresso dello studente nel batch: un
 corso aggiunto dopo a un batch in corso non arrivava agli studenti già iscritti (commit
@@ -6606,6 +6689,7 @@ id = "assignment-submission-mobile-frame"
 title = "Cornice ad altezza fissa della consegna solo da md in su"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 Contenitore di pagina della voce assignment-mobile-single-column (che vive in
 components/Assignment.vue): su telefono consegna e testo del compito sono impilati e la pagina
@@ -6627,6 +6711,7 @@ id = "batch-detail-mobile-header"
 title = "Intestazione della classe su due righe e compatta su telefono"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-detail-page"
 status = "accepted-drift"
 intent = """
 Su telefono l'intestazione della classe (breadcrumb, badge Pubblicata, azioni) non stava in una
@@ -6660,6 +6745,7 @@ id = "batch-detail-tab-keys"
 title = "Schede della classe con chiave non tradotta ed etichetta tradotta"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-detail-page"
 status = "accepted-drift"
 intent = """
 Le etichette delle schede passano da __() (Panoramica, Dashboard, Lezioni, Annunci,
@@ -6698,6 +6784,7 @@ id = "batch-detail-hash-sync"
 title = "La scheda attiva segue anche il solo cambio di hash"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-detail-page"
 status = "accepted-drift"
 intent = """
 Cliccando una notifica della classe mentre si è già dentro quella classe cambia solo l'hash
@@ -6836,6 +6923,7 @@ id = "batch-detail-header-actions"
 title = "Azioni della scheda nell'intestazione della classe (Importa, Fai un annuncio)"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-detail-page"
 intent = """
 Sulla scheda Dashboard l'intestazione ha, accanto a Iscrivi (ora solid), il pulsante Importa
 che chiama goToImport della dashboard via childRef (voce batch-dashboard-import-students). Sulla
@@ -6910,6 +6998,7 @@ id = "batch-courses-row-course-link"
 title = "Il clic su un corso della classe apre il corso giusto"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-detail-page"
 intent = """
 Le righe della scheda Corsi sono righe figlie Batch Course: row.name è il nome della riga
 figlia, non del corso, quindi il link upstream verso CourseDetail portava a un corso
@@ -6925,6 +7014,7 @@ id = "batch-tabs-list-style-i18n"
 title = "Stile e traduzioni delle liste Corsi e Valutazioni della classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-detail-page"
 intent = """
 Ritocchi senza regola di business: le due liste portano la classe os-list-view del tema elite;
 le intestazioni di colonna della lista Corsi (Title, Evaluator) passano da __(); lo stato della
@@ -7030,6 +7120,7 @@ id = "course-editor-tab-hash"
 title = "L'editor del corso tiene l'hash della scheda Editor"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
 intent = """
 Compagna di course-outline-editor-hash. Quando l'editor del corso riscrive l'URL (lezione
 selezionata, modalità, lezione eliminata) e l'hash è vuoto, usa '#editor', che è l'id della
@@ -7499,6 +7590,7 @@ id = "block-editor-i18n-labels"
 title = "Etichette dell'editor a blocchi dell'autore tradotte"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
 intent = """
 Completa la voce editor-i18n-labels (che censisce getEditorI18n() in utils/index.js e il
 renderer in sola lettura di Lesson.vue) sul lato autore: l'editor EditorJS con cui docenti
@@ -7519,6 +7611,7 @@ id = "block-editor-table-popover-tokens"
 title = "Popover delle tabelle dell'editor con i colori del tema"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
 intent = """
 Il plugin tabelle di EditorJS inietta a runtime un CSS che ridefinisce
 --color-background: #fff direttamente su .tc-popover, e a parità di specificità vince sul
@@ -7545,6 +7638,7 @@ id = "quiz-editor-placeholder-title"
 title = "Segnaposto del quiz nell'editor con titolo tradotto e sicuro"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
 intent = """
 Nell'editor della lezione (modalità modifica, non lettura) il blocco quiz mostrava
 «Quiz: untitled-quiz-5», cioè il docname del Link, che all'autore non dice nulla. Il
@@ -7677,6 +7771,7 @@ id = "batch-added-courses-enroll-existing-students"
 title = "Un corso aggiunto a una classe in corso iscrive gli studenti già presenti"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-students"
 intent = """
 Le iscrizioni ai corsi di una classe nascevano solo quando lo studente entrava nella classe:
 un corso aggiunto dopo a una classe già avviata non arrivava agli studenti già iscritti, che
@@ -7807,6 +7902,7 @@ id = "course-video-link-youtube-id"
 title = "Video di anteprima del corso: YouTube ridotto all'id, Vimeo intatto"
 layer = "spa-graft"
 confidence = "high"
+feature = "video-embeds"
 intent = """
 Il vecchio codice upstream prendeva l'ultimo segmento del percorso del link e rovinava i link
 Vimeo vimeo.com/<id>/<hash>. Il nostro validate_video_link (commit f51e0a512, «add support for
@@ -7949,6 +8045,7 @@ id = "batch-course-modal-all-courses"
 title = "Nella scelta del corso da aggiungere alla classe compaiono anche le bozze"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-detail-page"
 intent = """
 Il Link «Corso» del modale «Aggiungi un corso alla classe» non ha più il filtro upstream
 :filters="{ published: 1 }": compaiono tutti i corsi, bozze comprese, perché i corsi di una
@@ -8182,6 +8279,7 @@ id = "batch-student-modal-bulk-enroll"
 title = "Iscrizione di più studenti alla classe in un colpo solo, senza campo Pagamento"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-students"
 intent = """
 Il modale di iscrizione alla classe (dashboard admin della classe) sceglie PIÙ studenti con
 MultiLink invece di uno solo con Link (commit 033a2378a, «Enroll Students»): per ciascuno fa
@@ -8599,6 +8697,7 @@ id = "video-utils-vimeo-embed"
 title = "Supporto Vimeo nelle utilità video (share link, embed URL, anteprima)"
 layer = "spa-graft"
 confidence = "high"
+feature = "video-embeds"
 intent = """
 Lezioni, anteprime di corsi e batch e hero del corso devono riprodurre anche video Vimeo,
 mentre le utilità upstream conoscono solo YouTube e i file caricati. utils/video.ts ospita: VIMEO_SHARE_RE, il riconoscitore dei link
@@ -9906,6 +10005,7 @@ id = "lesson-completion-after-open-and-watch"
 title = "La lezione si completa solo dopo averla aperta e, con l'obbligo video, dopo un tempo di visione (OWASP H-1)"
 layer = "spa-graft"
 confidence = "high"
+feature = "guided-learning-path"
 intent = """
 Il server completa una lezione solo se l'ha consegnata allo stesso utente (get_lesson o il
 player SCORM registrano l'apertura in cache per 7 giorni) e, con enforce_video_completion

@@ -1,0 +1,47 @@
+id = "batch-form"
+title = "Creazione e impostazioni della classe"
+status = "active"
+summary = """
+La finestra di creazione di una classe e il modulo delle sue impostazioni guidano chi le gestisce:
+un avviso dice quale campo obbligatorio manca, cambiare istruttori o valutatori fa partire il
+salvataggio automatico, e chi non è più attivo resta comunque visibile e rimovibile. Testi e campi
+sono in italiano e con lo stile del cliente."""
+why = """
+Nell'upstream la creazione falliva con un errore generico del server senza dire quale campo
+mancasse; le modifiche a istruttori e valutatori non rendevano il modulo modificato, quindi Salva
+non compariva e l'autosalvataggio non partiva; un istruttore disattivato o cancellato spariva dal
+menu e non si poteva più togliere dalla classe. I segnaposto di data e ora di frappe-ui sono fissi
+in inglese."""
+roles = ["Moderator", "Course Creator", "Batch Evaluator", "Docente", "Gestore"]
+behaviour = [
+	"creando una classe, se manca un campo obbligatorio (titolo, data di inizio, data di fine, ora di inizio, ora di fine, fuso orario, descrizione, istruttori, dettagli della classe) compare un avviso che nomina il primo campo mancante, invece dell'errore generico del server",
+	"aggiungere o togliere istruttori o valutatori nel modulo della classe rende il modulo modificato e fa partire il salvataggio automatico",
+	"un istruttore o un valutatore salvato sulla classe resta nell'elenco e si può togliere anche se nel frattempo è stato disattivato, ha perso il ruolo, è stato cancellato o non rientra nella prima pagina della ricerca; il riepilogo mostra il suo nome, o l'id utente se il nome non si trova",
+	"i campi di scelta del modulo della classe (categoria, template email, account Zoom o Meet) hanno lo stile del tema del cliente",
+	"titolo della finestra «Nuova classe» e segnaposto dei selettori di data e ora, nella creazione e nel modulo, sono in italiano",
+]
+areas = []
+upstream_watch = [
+	"BatchForm.vue", "NewBatchForm.vue", "NewBatchModal", "saveBatch", "is required", "instructors",
+	"valutatori", "MultiSelect extraOptions", "autoSave", "isDirty", "Controls/Link.vue", "Select date",
+	"Select time", "get_instructors search",
+]
+notes = """
+- I campi Link del modulo passano dal wrapper os_lms frontend/src/oslms/components/Controls/Link.vue,
+  che avvolge il Link upstream in un div os-link solo per restilizzarlo. Dopo un merge l'import può
+  tornare al percorso upstream '@/components/Controls/Link.vue': va ripuntato al wrapper. Se
+  l'upstream cambia le prop o i metodi esposti del Link base (onCreate, reload) va aggiornato anche il
+  wrapper.
+- I selettori di istruttori e valutatori usano ref separate da batchDetail.doc: il watcher profondo
+  del documento non le vede, da qui il watcher dedicato che le confronta con le righe caricate.
+- I valori salvati si risolvono a parte con gli stessi endpoint di ricerca e passano come
+  extraOptions: è la stessa correzione del campo istruttori del corso.
+- Dal merge di v2.62.0 la creazione è una pagina instradata (pages/Forms/NewBatchForm.vue) e non più
+  una finestra modale; le regole sono state riapplicate lì.
+- Il campo Valutatori e le sue regole sono nella scheda valutatore-role (voce batch-form-valutatori)."""
+history = [
+	{ date = "2026-03-26", ref = "1ca00184b", summary = "creazione: avvisi sui campi obbligatori e traduzioni nella nuova classe" },
+	{ date = "2026-06-09", ref = "7f78b5d98", summary = "Salva e autosalvataggio anche quando cambiano istruttori o valutatori" },
+	{ date = "2026-07-01", ref = "027c0c56f", summary = "campi Link del modulo con il wrapper os-link" },
+	{ date = "2026-09-11", ref = "bdb54ddd0", summary = "istruttori e valutatori non più attivi restano rimovibili dalla classe" },
+]

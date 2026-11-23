@@ -1,0 +1,43 @@
+id = "student-highlights"
+title = "Evidenziazioni dello studente"
+status = "active"
+summary = """
+Lo studente può evidenziare a colori una frase della lezione e attaccarci una nota. Le
+evidenziazioni ricompaiono esattamente sul punto scelto, anche quando la stessa parola compare più
+volte, e il menu che si apre selezionando il testo è leggibile anche nel tema scuro."""
+why = """
+Nell'upstream un'evidenziazione era salvata solo come testo e al ritorno si illuminava sempre la
+prima occorrenza (evidenziando il terzo «con» si accendeva il primo), con effetti a catena: il menu
+cancellava la nota sbagliata e le selezioni che attraversavano più elementi fallivano. Il menu non
+aveva un colore del testo e nel tema scuro restava nero su scuro."""
+roles = ["Student"]
+behaviour = [
+	"un'evidenziazione ricompare sull'occorrenza selezionata, non sulla prima uguale nel testo",
+	"le evidenziazioni salvate prima della correzione ricompaiono sull'occorrenza più vicina alla posizione salvata, o sulla prima se la posizione manca",
+	"si può evidenziare una selezione che attraversa più elementi (per esempio parte in grassetto e parte no)",
+	"ricaricando l'elenco delle note le evidenziazioni non si sovrappongono né si duplicano",
+	"dal menu di un'evidenziazione si modifica o si cancella proprio quella nota, anche se lo stesso testo è evidenziato altrove; cancellandola il testo torna normale",
+	"nel menu che si apre selezionando il testo, nomi dei colori e azioni sono leggibili sia nel tema chiaro sia in quello scuro",
+]
+areas = ["frontend/src/tests/lessonHighlight.test.ts"]
+upstream_watch = [
+	"highlight", "LMS Lesson Note", "text_offset", "InlineLessonMenu.vue", "highlightText",
+	"createHighlightSpan", "surroundContents", "getRangeOffset", "removeHighlight", "types/notes.ts",
+	"frappe-ui-colors.json",
+]
+data = [
+	"custom field LMS Lesson Note.text_offset (posizione dell'occorrenza), creato da apps/os_lms/os_lms/setup.py e tipizzato in frontend/src/types/notes.ts",
+]
+tests = ["frontend/src/tests/lessonHighlight.test.ts"]
+notes = """
+- Al merge di v2.59.0 l'upstream ha tolto frappe-ui-colors.json e getColor e ha portato i colori del
+  menu su var(--<colore>-200/400): accettare la rimozione e tenere i nostri getRangeOffset e
+  removeHighlight.
+- Al merge di v2.61.0 il tipo Note è passato da un file proprio a frontend/src/types/notes.ts; git
+  ha portato con sé il campo text_offset. Se un merge futuro sposta di nuovo i tipi, rimettere
+  text_offset?: number | null con il marcatore.
+- Il campo text_offset non è nelle fixture custom_field.json: nasce da setup.py."""
+history = [
+	{ date = "2026-07-14", ref = "613ecaff2", summary = "creazione: etichette del menu delle evidenziazioni leggibili nel tema" },
+	{ date = "2026-07-30", ref = "a4573499a", summary = "evidenziazione salvata con la posizione e ripristinata sull'occorrenza scelta" },
+]

@@ -1,0 +1,66 @@
+id = "batch-dashboard"
+title = "Dashboard della classe: progressi ed esportazione"
+status = "active"
+summary = """
+La dashboard di una classe dice a chi la segue come vanno gli studenti: l'avanzamento di ciascuno,
+la distribuzione dei progressi, il completamento per corso e per lezione, e il dettaglio di ogni
+studente fino alla singola lezione. Chi gestisce la classe può scaricare i progressi in Excel o in
+CSV; il Valutatore della classe vede tutto ma non esporta."""
+why = """
+Il cliente deve rendicontare l'avanzamento delle classi (anche verso enti e committenti) e analizzare
+i dati con l'AI. L'upstream mostrava un grafico riassuntivo e una lista studenti senza progresso,
+non ordinabile e senza esportazione; le sue statistiche per corso contano tutti gli iscritti al
+corso, non solo gli studenti della classe."""
+roles = ["Moderator", "Batch Evaluator", "Docente", "Course Creator", "Valutatore"]
+behaviour = [
+	"la lista studenti della dashboard ha una colonna Progresso con barra e percentuale, pari alla media dei progressi dello studente sui corsi della classe",
+	"le intestazioni nome, progresso e data di iscrizione della lista studenti si cliccano per ordinare in modo crescente o decrescente; nome e data restano ordinati anche dopo «Carica altri», il progresso si ordina sulle righe già caricate",
+	"al posto del grafico «Batch Summary» dell'upstream la dashboard mostra un anello «Riepilogo progressi» che divide gli studenti in Appena iniziato, In corso, Avanzato e Completato, con le stesse fasce della dashboard del corso",
+	"il pannello del progresso dei corsi ha un selettore: senza corso mostra la media di ogni corso fra gli studenti della classe, con un corso mostra il completamento di ogni lezione; le percentuali contano solo gli studenti della classe",
+	"il menu «Esporta statistiche» scarica un Excel leggibile (una riga per studente e corso iniziato, con corsi iniziati e non iniziati e lezioni completate e da completare; anche gli studenti senza corsi iniziati hanno una riga) oppure un CSV grezzo con una riga per studente, corso e lezione, pensato per l'analisi con l'AI",
+	"il menu di esportazione compare a Moderator, Batch Evaluator, Docente e a chi gestisce la classe, non al Valutatore; il server esporta solo per amministratori, Moderator, Docente e istruttori o valutatori di un corso indicati sulla classe, e rifiuta tutti gli altri, Valutatore compreso",
+	"cliccando uno studente, il riquadro dei progressi ha un selettore di corso: «Tutti i corsi» mostra la media per corso, un corso mostra il dettaglio per lezione (capitolo.lezione, titolo, completata o da fare), caricato solo quando lo si sceglie",
+	"nel riquadro dello studente la lista delle valutazioni (quiz e compiti) resta visibile anche al Valutatore della classe; intestazioni, stato dei compiti e badge «Completato» sono in italiano",
+	"progressi, statistiche e dettaglio per lezione sono serviti dal server solo a chi gestisce la classe e al suo Valutatore",
+]
+areas = []
+upstream_watch = [
+	"AdminBatchDashboard.vue", "BatchStudentProgress.vue", "BatchDashboard.vue", "get_batch_chart_data",
+	"Batch Summary", "batch progress", "export", "xlsx", "csv", "frappe.client.get_count certificates",
+	"ResponsiveListView sort", "studentColumns", "get_batch_student_progress", "can_author_batch",
+	"is_batch_valutatore",
+]
+data = [
+	"endpoint os_lms in apps/os_lms/os_lms/os_lms/api.py: get_batch_certified_count (conteggio certificati e progresso medio per studente in una sola chiamata), get_batch_progress_stats, get_batch_student_course_progress, export_batch_progress",
+	"il progresso dello studente è calcolato, non è una colonna del database; nessun campo proprio",
+]
+notes = """
+- Regola del progetto: una sola chiamata per pagina al caricamento. Il progresso medio per studente è
+  stato accorpato a get_batch_certified_count (che restituisce certified_count e students_progress)
+  invece di aggiungere una risorsa; le altre chiamate indipendenti vanno segnalate, non rifattorizzate
+  senza richiesta.
+- Il dettaglio per lezione passa da un endpoint autorizzato per classe perché il Valutatore non può
+  leggere direttamente LMS Course Progress.
+- Decisione del committente (2026-07-31): la lista delle valutazioni nel riquadro dello studente resta
+  visibile al Valutatore, è il suo punto d'ingresso ai risultati; non reintrodurre il filtro tolto in
+  65d736aed.
+- I quattro endpoint controllano can_author_batch (dalla v2.65.0: amministratori, Moderator, Docente,
+  istruttori e valutatori di un corso indicati sulla classe) o is_batch_valutatore;
+  export_batch_progress solo il primo. Il ruolo globale Batch Evaluator non basta lato server: la SPA
+  gli mostra il menu (isFullAdmin) ma, se non è indicato sulla classe, l'esportazione viene rifiutata.
+- L'anello e le fasce sono calcolati lato client, senza chiamate in più. La chiamata upstream
+  get_batch_chart_data non si fa più.
+- Come nella dashboard del corso, la barra di selezione degli studenti può restare fuori vista in fondo
+  al riquadro scorrevole: lasciata com'è.
+- Nessun test automatico nostro per questi endpoint. Rimozione e iscrizione degli studenti sono nella
+  scheda batch-students."""
+history = [
+	{ date = "2026-03-20", ref = "175b0a754", summary = "creazione: ritocchi di stile della dashboard della classe" },
+	{ date = "2026-06-24", ref = "8cbf6d20a", summary = "progresso di ogni studente nella lista della dashboard" },
+	{ date = "2026-07-21", ref = "473784a94", summary = "colonne ordinabili e barra del progresso" },
+	{ date = "2026-07-21", ref = "253c61395", summary = "pannello del progresso per corso e per lezione limitato agli studenti della classe" },
+	{ date = "2026-07-21", ref = "bcf6765f4", summary = "dettaglio per lezione nel riquadro dello studente" },
+	{ date = "2026-07-21", ref = "bba705ebd", summary = "esportazione dei progressi in Excel e CSV" },
+	{ date = "2026-07-29", ref = "9e2ce4d1e", summary = "anello del riepilogo progressi" },
+	{ date = "2026-10-26", ref = "ae689ba8a", summary = "OWASP: endpoint dei progressi limitati a chi gestisce la classe e al suo Valutatore" },
+]

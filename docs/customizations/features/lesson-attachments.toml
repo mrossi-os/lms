@@ -1,0 +1,61 @@
+id = "lesson-attachments"
+title = "Allegati e PDF nelle lezioni"
+status = "active"
+summary = """
+Nelle lezioni si possono allegare anche documenti e archivi (Word, Excel, PowerPoint, OpenDocument,
+CSV, testo, ZIP, RAR, 7z), che lo studente scarica da una scheda dedicata. I PDF si leggono dentro
+la lezione anche su telefono, compresi quelli privati, e si scaricano con il loro nome."""
+why = """
+Gli autori dovevano distribuire materiali che non sono immagini, video, audio o PDF: l'upstream li
+rifiutava o li mostrava come un'immagine rotta. Sui browser mobili un PDF in un iframe non si legge
+(Chrome Android mostra un segnaposto di download, Safari una prima pagina statica), i PDF privati non
+si aprivano per una doppia codifica dell'indirizzo e Chrome su telefono mostrava il nome del metodo
+al posto del nome del file."""
+roles = ["Moderator", "Course Creator", "Docente", "Student"]
+behaviour = [
+	"nel blocco di caricamento dell'editor della lezione si caricano anche doc, docx, xls, xlsx, ppt, pptx, rtf, odt, ods, odp, csv, txt, zip, rar e 7z, oltre a immagini, video, audio e PDF",
+	"un file che non è un'immagine, un video, un audio o un PDF compare nella lezione come una scheda con il nome del file e un'icona: il download parte solo cliccando l'icona",
+	"quando Frappe non restituisce il tipo del file (succede con alcuni archivi) il tipo si ricava dall'estensione, e il blocco non sparisce al salvataggio",
+	"un errore di caricamento (per esempio un file oltre la dimensione massima) compare in un messaggio invece di lasciare il blocco vuoto",
+	"su telefono e su Android il PDF di una lezione si legge dentro la lezione con il visualizzatore integrato; su Safari e iOS lo stesso; sugli altri browser desktop resta l'iframe nativo",
+	"i PDF privati della lezione si aprono anche se il loro indirizzo contiene spazi o caratteri speciali: l'indirizzo già codificato non viene ricodificato",
+	"i testi del visualizzatore dei PDF sono in italiano",
+	"aprendo o scaricando un PDF privato della lezione il browser mostra il nome del file, non il nome del metodo che lo serve",
+	"l'icona del caricamento nel menu dei blocchi dell'editor segue il colore del tema ed è visibile nel tema scuro",
+]
+areas = [
+	"frontend/src/components/FileBlock.vue",
+	"frontend/src/tests/pdfBlockPrivateUrl.test.ts",
+	"frontend/src/tests/pdfInlineViewerMobile.test.ts",
+]
+upstream_watch = [
+	"UploadPlugin.vue", "upload.js", "fileTypes", "file_type", "uploadContext", "PdfBlock.vue",
+	"pdfViewer.ts", "pdf.js", "usesWebkitPdfViewer", "encodeURI", "LessonContent.vue", "serve_resource",
+	"_serve_private_file", "Content-Disposition", "max_file_size", "document upload", "archive",
+]
+data = [
+	"nessun dato proprio: i file sono File di Frappe allegati alla lezione; serve_resource in lms/lms/doctype/course_lesson/course_lesson.py serve i file privati",
+]
+tests = [
+	"frontend/src/tests/pdfBlockPrivateUrl.test.ts",
+	"frontend/src/tests/pdfInlineViewerMobile.test.ts",
+]
+notes = """
+- Visualizzatore PDF: dal merge di v2.60.0 si usa pdf.js dell'upstream (decisione del committente).
+  Al merge di v2.61.0 l'upstream lo ha limitato a WebKit e ha rimesso l'iframe nativo altrove,
+  riportando il segnaposto di download su Android e ricodificando gli URL privati: decisione del
+  committente «gate allargato», usesInlinePdfViewer = WebKit upstream OPPURE browser mobile/Android,
+  e la regola di codifica in encodePdfURL (utils/pdfViewer.ts).
+- serve_resource: dal merge di v2.58.1 il file si serve con _serve_private_file dell'upstream; il
+  nostro Content-Disposition inline con il nome resta dopo, protetto da «Content-Disposition not in
+  response.headers», così non sovrascrive l'intestazione se Frappe l'ha già messa.
+- Lo upload senza allegato finché la lezione nuova non ha un nome lo fa ora l'upstream
+  (uploadContext); la nostra voce upload-unattached-new-lesson è tollerata dal 2026-09-23.
+- Le immagini e i video del blocco di caricamento seguono le regole upstream; i video YouTube e Vimeo
+  sono nella scheda video-embeds."""
+history = [
+	{ date = "2026-07-21", ref = "fa9734e29", summary = "creazione: documenti e archivi caricabili nelle lezioni, scheda di download" },
+	{ date = "2026-07-21", ref = "d241aef6e", summary = "niente doppia codifica degli indirizzi dei file privati" },
+	{ date = "2026-09-08", ref = "9e1b79482", summary = "PDF delle lezioni leggibili su telefono e con il nome giusto" },
+	{ date = "2026-09-23", ref = "1b4b2d2f5", summary = "merge v2.61.0: visualizzatore integrato anche su Android e telefoni oltre al gate WebKit upstream" },
+]

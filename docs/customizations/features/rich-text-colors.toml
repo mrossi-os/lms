@@ -1,0 +1,78 @@
+id = "rich-text-colors"
+title = "Colori ed evidenziazioni nel testo formattato"
+status = "active"
+summary = """
+I colori del testo e gli evidenziatori scelti negli editor si salvano e si vedono dove il testo
+viene letto: nelle lezioni, nelle descrizioni di corsi e classi, negli annunci (anteprima, email e
+notifica). Nelle lezioni lo strumento colore permette anche di togliere un colore o un
+evidenziatore già messo."""
+why = """
+Docenti e gestori usano il colore per mettere in risalto i passaggi importanti, ma in più punti
+dell'upstream il colore si perdeva: nelle lezioni il server lo cancellava al salvataggio, nel nuovo
+editor di frappe-ui il foglio di stile non arrivava nel build e il colore veniva salvato ma non
+dipinto, negli annunci le variabili di colore esistevano solo dentro l'editor. Con v2.63.0
+l'upstream ha tolto lo strumento colore delle lezioni e lo abbiamo ricostruito."""
+roles = ["Moderator", "Course Creator", "Docente", "Gestore", "Student"]
+behaviour = [
+	"nell'editor della lezione lo strumento Colore applica alla selezione un colore del testo e un evidenziatore, che restano dopo il salvataggio e il ricaricamento e si vedono nella lezione dello studente",
+	"il pannello dello strumento Colore ha per ciascun selettore un pulsante di ripristino («Predefinito» per il testo, «Nessun evidenziatore» per lo sfondo); se non resta nessuno stile, il testo torna normale",
+	"le lezioni scritte con il vecchio strumento colore conservano il colore e si possono di nuovo modificare con quello nuovo",
+	"nel nuovo editor di testo (descrizioni di corsi e classi, discussioni, compiti, quiz) il colore del testo e l'evidenziatore scelti si vedono davvero, sia mentre si scrive sia nel testo pubblicato",
+	"negli annunci, colori ed evidenziatori compaiono nell'anteprima e nell'email ricevuta; nella notifica senza email la card dell'annuncio li mostra con tonalità leggibili nel tema chiaro e in quello scuro, e il testo evidenziato mantiene il suo colore",
+	"nel menu colore della barra del vecchio editor di testo (per esempio nella descrizione dei programmi) intestazioni e nomi dei colori sono in italiano",
+	"nei testi formattati la linea di separazione prende il colore del testo intorno, quindi resta visibile su sfondi scuri, e i bordi delle tabelle sono visibili",
+]
+areas = [
+	"frontend/src/oslms/utils/inline/*",
+	"frontend/src/overrides/frappe-ui/src/components/TextEditor/components/FontColor.vue",
+	"apps/os_lms/os_lms/patches/v0_0_7/*",
+	"apps/os_lms/os_lms/os_lms/tests/test_convert_lms_inline_color.py",
+	"frontend/src/tests/oslmsColorTool.test.ts",
+]
+upstream_watch = [
+	"inline color", "Color.ts", "ToolButton", "BaseInline", "INLINE_TOOLBAR_ORDER", "lms-inline-color",
+	"lms-align", "sanitizeJSON", "ADD_TAGS", "EDITORJS_CUSTOM_TAGS", "sanitize_editorjs",
+	"editor-style.css", "--prose-color", "--prose-highlight", "AnnouncementForm.vue", "Announcements.vue",
+	"FontColor.vue", "frappe-ui/editor", "RichTextEditor", ".ProseMirror hr",
+]
+data = [
+	"nessun campo: il colore vive nel contenuto (EditorJS JSON delle lezioni, HTML dei testi ricchi) come <span class=\"lms-inline-color\" style=...> o come color: var(--prose-color-*) / background-color: var(--prose-highlight-*)",
+	"patch os_lms.patches.v0_0_7.convert_lms_inline_color: converte una volta i vecchi elementi <lms-inline-color> di content e instructor_content",
+	"allowlist EDITORJS_CUSTOM_TAGS in lms/lms/utils.py (oggi solo lms-inline-color)",
+]
+tests = [
+	"frontend/src/tests/oslmsColorTool.test.ts",
+	"apps/os_lms/os_lms/os_lms/tests/test_convert_lms_inline_color.py",
+]
+notes = """
+- Due editor diversi, due percorsi diversi. Le lezioni usano EditorJS: il colore è un elemento nel
+  testo del blocco, e il server lo toglieva al salvataggio perché sanitize_json passa ogni testo a
+  sanitize_html con always_sanitize=True (nh3 scarta i tag sconosciuti); da qui l'allowlist server e
+  l'ADD_TAGS di DOMPurify sul client. Descrizioni, annunci e quiz usano l'editor ProseMirror di
+  frappe-ui, che salva var(--prose-color-*): il server lo conserva, il problema è solo di
+  visualizzazione.
+- Le variabili --prose-color-* / --prose-highlight-* esistono solo dentro .ProseMirror: ogni
+  visualizzazione in sola lettura con v-html deve avere la classe ProseMirror sul contenitore (e la
+  regola p:empty per le righe vuote), altrimenti il colore sparisce senza errori.
+- Il nuovo editor (frappe-ui/editor) importa il suo style.css dentro editor/index.ts, ma il pacchetto
+  dichiara sideEffects solo per css e vue e il build lo scarta: lo importiamo a mano in index.css. Dopo
+  ogni aggiornamento di frappe-ui cercare prose-highlight-orange nel CSS generato in
+  lms/public/frontend.
+- Decisione del 2026-09-24 (v2.63.0): lo strumento colore è riscritto su ToolButton (non BaseInline,
+  che scambierebbe gli span.lms-align per colori) ed emette <span class="lms-inline-color" style>;
+  porta le tre protezioni della vecchia correzione (nodi catturati all'apertura del pannello,
+  listener fissi sugli input colore, mousedown che non fa perdere la selezione). <lms-align> è stato
+  tolto dall'allowlist: l'upstream emette span.lms-align.
+- FontColor.vue è una copia dell'override frappe-ui con le sole stringhe tradotte: va tenuta allineata
+  al file in node_modules dopo ogni aggiornamento di frappe-ui. Eccezione accettata (2026-09-24): il
+  test upstream inkOnTintContrast segnala i 9 campioni bg-*-100, che restano.
+- Nel composer degli annunci i colori si «cuociono» in esadecimale per anteprima ed email; la
+  notifica tiene le variabili, risolte dalla card a tema."""
+history = [
+	{ date = "2026-06-03", ref = "b97184fbf", summary = "creazione: colori con nome resi in esadecimale negli annunci" },
+	{ date = "2026-07-01", ref = "af167dc5a", summary = "il colore del testo delle lezioni sopravvive al caricamento (DOMPurify)" },
+	{ date = "2026-07-13", ref = "edcabb717", summary = "colori ed evidenziazioni degli annunci nella card della notifica" },
+	{ date = "2026-07-14", ref = "cf402d604", summary = "il server non toglie più il colore delle lezioni al salvataggio" },
+	{ date = "2026-09-24", ref = "4ff63b218", summary = "strumento colore delle lezioni ricostruito sulla barra di v2.63.0, con patch di conversione" },
+	{ date = "2026-10-05", ref = "b01f6a0e9", summary = "foglio di stile del nuovo editor caricato; colore ed evidenziatore si possono togliere" },
+]

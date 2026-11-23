@@ -1,0 +1,44 @@
+id = "batch-list"
+title = "Elenco delle classi"
+status = "active"
+summary = """
+L'elenco delle classi mostra a ciascuno quello che gli serve: lo studente vede solo le classi a cui
+è iscritto, senza schede; chi gestisce le classi parte dalle prossime e ritrova la scheda che aveva
+scelto. Le classi archiviate sono quelle già finite e i filtri sono più semplici."""
+why = """
+Nell'upstream lo studente vedeva le schede di tutte le classi e, con una scheda lasciata nel browser
+da un altro utente, finiva su una lista vuota senza modo di tornare indietro. «Archiviate» si basava
+sulla data di inizio e ci finivano classi ancora in corso; scelta una categoria non c'era modo di
+toglierla senza ricaricare la pagina. Il cliente non usa i certificati di classe come criterio di
+ricerca (le certificazioni passano da TrueSkill sui corsi)."""
+roles = ["Student", "Moderator", "Course Creator", "Batch Evaluator", "Docente", "Valutatore"]
+behaviour = [
+	"lo studente vede solo le classi a cui è iscritto: niente barra delle schede, sempre la scheda delle iscrizioni (Enrolled), indipendentemente da ciò che un altro utente ha lasciato nello stesso browser",
+	"chi gestisce le classi (Moderator, istruttore, Batch Evaluator) apre l'elenco sulla scheda delle prossime classi (Upcoming); chi ha le schede ma non gestisce, come il Valutatore, lo apre su tutte le classi (All)",
+	"la scheda scelta si ricorda nel browser e si ritrova tornando all'elenco; se la scheda salvata non esiste per il ruolo attuale si torna a quella iniziale del ruolo",
+	"la scheda delle iscrizioni (Enrolled) mostra solo le classi a cui l'utente è iscritto per chiunque la scelga (anche un Valutatore iscritto a una classe); passando a un'altra scheda il filtro di iscrizione viene tolto",
+	"la scheda delle archiviate (Archived) mostra le classi con la data di fine passata; una classe iniziata e ancora in corso non è archiviata",
+	"il filtro categoria ha la voce «Tutte» (All), che lo azzera e mostra ogni classe, con o senza categoria, senza aggiungere nulla all'indirizzo",
+	"fra i filtri non c'è la casella «Certificazione»; il filtro resta raggiungibile aggiungendo ?certification=true all'indirizzo",
+]
+areas = []
+upstream_watch = [
+	"Batches.vue", "batchTabs", "lms_batches_tab", "TabButtons", "ListPage", "updateTabFilter",
+	"archived batches", "end_date", "start_date", "category filter", "certification filter",
+	"ToggleFilter", "BatchCard.vue", "is_student",
+]
+notes = """
+- La lista classi è passata al ListPage upstream con v2.61.0: il filtro Certificazione upstream è un
+  ToggleFilter nello slot #toggles, che lasciamo fuori; l'URL upstream legge certification === 'true'
+  (non più =1).
+- Al merge di v2.59.0 l'upstream ha rinominato la prop di TabButtons da :buttons a :options proprio
+  sotto la nostra condizione !is_student: tenere la condizione con la prop nuova.
+- La card della classe porta la classe card del tema (ritocco senza regola).
+- Il Valutatore e il Docente nell'elenco delle classi (classi non pubblicate che valutano) sono nelle
+  schede valutatore-role e docente-role (voce batch-list-valutatore-docente)."""
+history = [
+	{ date = "2026-03-11", ref = "11e55207b", summary = "creazione: archiviate in base alla data di fine" },
+	{ date = "2026-03-30", ref = "80eda5421", summary = "schede nascoste allo studente, che parte dalle sue iscrizioni" },
+	{ date = "2026-06-10", ref = "203a9f90e", summary = "scheda iniziale per ruolo e ricordata nel browser" },
+	{ date = "2026-07-20", ref = "22c8b53cf", summary = "voce «Tutte» per azzerare il filtro categoria" },
+]
