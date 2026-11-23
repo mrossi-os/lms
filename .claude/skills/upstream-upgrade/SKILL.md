@@ -221,7 +221,7 @@ Scrivila nel rapporto e chiedi. Non proseguire da solo.
    - tabella delle regole `behaviour` della scheda: per ciascuna, coperta / coperta in parte / non coperta dall'upstream, con la prova (file e funzione in `T`, o perché manca);
    - ruoli: chi può fare cosa nell'una e nell'altra (`roles` della scheda contro i permessi della novità);
    - dati: cosa andrebbe migrato (i `data` della scheda, nostri custom field e doctype, contro i campi upstream);
-   - livello di somiglianza in parole, **alta**, **parziale** o **bassa**, con il motivo; nessun punteggio numerico;
+   - livello di somiglianza in parole, **alta**, **parziale** o **bassa**, con il motivo; nessun punteggio numerico. Nel dubbio fra bassa e parziale, tratta come parziale e chiedi;
    - cosa si perde e quanto costa ciascuna strada;
    - raccomandazione motivata.
 3. *Domanda, sempre.* Per **ogni** candidato con somiglianza alta o parziale, `AskUserQuestion`, **anche quando la raccomandazione è chiara**. Prima di porla scrivi la fermata in `stop`. Nel testo: la scheda (titolo e id), la novità, la somiglianza con il motivo e il rimando alla sezione del rapporto. Le opzioni sono sempre queste quattro, nessuna esclusa:
