@@ -192,6 +192,11 @@ override_whitelisted_methods = {
     "lms.lms.doctype.course_chapter.course_chapter.get_scorm_playback": "os_lms.os_lms.lesson_progress.get_scorm_playback",
     # The course ZIP packs only the private files the exporter could download.
     "lms.lms.api.export_course_as_zip": "os_lms.os_lms.course_export.export_course_as_zip",
+    # Sidebar and payment-country rows of LMS Settings are admin-only (Impostazioni gestore):
+    # these endpoints write them without the LMS Settings validate hook.
+    "lms.lms.api.update_sidebar_item": "os_lms.os_lms.settings_access.update_sidebar_item",
+    "lms.lms.api.delete_sidebar_item": "os_lms.os_lms.settings_access.delete_sidebar_item",
+    "lms.lms.api.delete_documents": "os_lms.os_lms.settings_access.delete_documents",
 
     
     "lms.command_palette.search_sqlite": "os_lms.os_lms.override_api.search_sqlite",

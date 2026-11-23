@@ -230,8 +230,9 @@ const onQuery = useDebounceFn((txt: unknown) => reload(txt as string), 300)
 // Evaluators, etc. Refresh options once it closes so newly-created
 // linked records show up without a full reload.
 const settingsStore = useSettings()
+// OSLMS-CUSTOM: the manager settings panel (Impostazioni gestore) counts too
 watchDebounced(
-	() => settingsStore.isSettingsOpen,
+	() => settingsStore.isSettingsOpen || settingsStore.isGestoreSettingsOpen,
 	(isOpen, wasOpen) => {
 		if (wasOpen && !isOpen && loaded) reload('')
 	},

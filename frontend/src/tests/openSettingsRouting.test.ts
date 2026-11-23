@@ -1,4 +1,4 @@
-// OSLMS-CUSTOM: openSettings opens the panel the user can open
+// openSettings opens the panel the user can open
 // (Impostazioni for administrators, Impostazioni gestore for Gestore).
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

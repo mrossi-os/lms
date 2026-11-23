@@ -11541,3 +11541,19 @@ msgstr "Questa sezione è disponibile solo agli amministratori."
 #: apps/os_lms/os_lms/os_lms/settings_access.py
 msgid "Not permitted to change the branding."
 msgstr "Non hai i permessi per modificare il branding."
+
+#: apps/os_lms/os_lms/os_lms/settings_access.py
+msgid "Logo and favicon must be files uploaded to the site."
+msgstr "Logo e favicon devono essere file caricati sul sito."
+
+#: apps/os_lms/os_lms/os_lms/settings_access.py
+msgid "The brand name cannot contain the characters < > or double quotes."
+msgstr "Il nome del brand non può contenere i caratteri < > o le virgolette doppie."
+
+#: frontend/src/oslms/utils/settingsTabs.js
+msgid "Templates"
+msgstr "Modelli"
+
+#: frontend/src/oslms/utils/settingsTabs.js
+msgid "Manage the email templates for your learning system"
+msgstr "Gestisci i modelli email per il tuo sistema di apprendimento"

@@ -1,4 +1,4 @@
-// OSLMS-CUSTOM: who opens which settings panel (Impostazioni / Impostazioni gestore).
+// who opens which settings panel (Impostazioni / Impostazioni gestore).
 import { describe, expect, it } from 'vitest'
 import {
 	canOpenGestoreSettings,

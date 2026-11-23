@@ -1,5 +1,5 @@
 <template>
-	<!-- OSLMS-CUSTOM: manager settings panel ("Impostazioni gestore") for Gestore and administrators.
+	<!-- Manager settings panel ("Impostazioni gestore") for Gestore and administrators.
 	     Same shell as components/Settings/Settings.vue; the tabs come from oslms/utils/settingsTabs.js. -->
 	<SettingsDialog v-model="show" v-model:tab="activeTab" size="5xl">
 		<template #title>{{ __('Manager Settings') }}</template>

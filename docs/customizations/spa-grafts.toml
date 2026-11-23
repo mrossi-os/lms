@@ -10078,3 +10078,23 @@ il ruolo Website Manager: aprirebbe tutto Website Settings. Aggiunto 2026-11-23.
 
   [entries.checks]
   unit = "apps/os_lms/os_lms/os_lms/tests/test_settings_access.py"
+
+[[entries]]
+id = "link-refresh-after-gestore-settings"
+title = "Link: le tendine si ricaricano anche alla chiusura di Impostazioni gestore"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Upstream ricarica le opzioni di <Link> quando si chiude il pannello Impostazioni
+(settingsStore.isSettingsOpen), così una Categoria o un account Zoom creati lì compaiono subito.
+Il Gestore crea gli stessi record dal pannello Impostazioni gestore (isGestoreSettingsOpen):
+il watcher osserva entrambi i flag. Test: frontend/src/tests/linkSettingsRefresh.test.ts.
+Aggiunto 2026-11-23."""
+
+  [[entries.sites]]
+  file = "frontend/src/components/Controls/Link.vue"
+  anchor = "() => settingsStore.isSettingsOpen || settingsStore.isGestoreSettingsOpen,"
+  symbol = "watchDebounced"
+
+  [entries.checks]
+  unit = "frontend/src/tests/linkSettingsRefresh.test.ts"

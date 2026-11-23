@@ -1,4 +1,4 @@
-// OSLMS-CUSTOM: who opens which settings panel.
+// who opens which settings panel.
 // "Impostazioni" (Settings.vue) is for administrators; "Impostazioni gestore"
 // (SettingsGestore.vue) for Gestore and administrators. The server enforces the
 // same split on LMS Settings (os_lms settings_access.py).

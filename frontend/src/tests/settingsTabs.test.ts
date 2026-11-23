@@ -1,4 +1,4 @@
-// OSLMS-CUSTOM: tab definitions shared by Settings.vue and the manager panel.
+// tab definitions shared by Settings.vue and the manager panel.
 import { describe, expect, it, vi } from 'vitest'
 
 // The tab components are only referenced, never rendered, here.
@@ -129,6 +129,22 @@ describe('manager settings panel', () => {
 		userData.show_account_deletion_requests = true
 		for (const key of ['General', 'Badges', 'Sidebar', 'Signup', 'SEO', 'Raven', 'AI', 'Accounts', 'Corsi', 'Classi', 'Privacy']) {
 			expect(keys()).not.toContain(key)
+		}
+	})
+})
+
+describe('Email Templates tab translations', () => {
+	it('passes the Email group label and the tab texts through __()', () => {
+		const original = (globalThis as any).__
+		vi.stubGlobal('__', (message: string) => `it:${message}`)
+		try {
+			const email = buildGestoreSettingsTabs().find((group: any) => group.key === 'Email')
+			expect(email?.label).toBe('it:Email')
+			const tab = emailTemplatesTab()
+			expect(tab.label).toBe('it:Templates')
+			expect(tab.description).toBe('it:Manage the email templates for your learning system')
+		} finally {
+			vi.stubGlobal('__', original)
 		}
 	})
 })

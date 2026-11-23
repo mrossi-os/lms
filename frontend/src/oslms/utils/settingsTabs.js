@@ -1,4 +1,4 @@
-// OSLMS-CUSTOM: settings tabs shared by Settings.vue (administrators) and
+// settings tabs shared by Settings.vue (administrators) and
 // SettingsGestore.vue (Gestore + administrators). One definition per tab, so
 // the two panels cannot drift apart. Builders are functions, called inside a
 // computed, so every __() label re-evaluates once translations load.
@@ -91,8 +91,8 @@ export const categoriesTab = () => ({
 export const emailTemplatesTab = () => ({
 	// Stable key: before this module the tab was identified by its label "Templates".
 	key: 'Email Templates',
-	label: 'Templates',
-	description: 'Manage the email templates for your learning system',
+	label: __('Templates'),
+	description: __('Manage the email templates for your learning system'),
 	icon: 'lucide-mail-plus',
 	template: markRaw(EmailTemplatePage),
 })
@@ -283,7 +283,7 @@ export const buildGestoreSettingsTabs = () => [
 	},
 	{
 		key: 'Email',
-		label: 'Email',
+		label: __('Email'),
 		items: [emailTemplatesTab()],
 	},
 	{
