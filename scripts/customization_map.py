@@ -4,7 +4,8 @@
 For a ref (default HEAD) and the last upstream release merged into it, each
 upstream file that differs is split into hunks and each hunk is attributed to
 features of the catalogue (design §5.5). Hunks nobody claims are listed: that
-is the number to bring to zero before an upstream upgrade.
+is the number to bring to zero before an upstream upgrade, together with our
+own files no card covers; the residue the user approved is shown apart.
 
 Report only: exit code 0 whatever the map says; 2 when it cannot be computed.
 """
@@ -33,7 +34,11 @@ def build_parser() -> argparse.ArgumentParser:
 	parser.add_argument("--ref", default="HEAD", help="ref da mappare (default: HEAD)")
 	parser.add_argument("--json", action="store_true", help="uscita JSON, per la skill")
 	parser.add_argument("--feature", metavar="ID", help="mostra una sola funzionalità")
-	parser.add_argument("--unattributed", action="store_true", help="mostra solo i blocchi non attribuiti")
+	parser.add_argument(
+		"--unattributed",
+		action="store_true",
+		help="mostra solo i blocchi non attribuiti, i file nostri non coperti e il residuo approvato",
+	)
 	return parser
 
 
@@ -47,9 +52,18 @@ def _where(hunk: dict) -> str:
 
 
 def render_unattributed(data: dict) -> str:
+	totals = data["totals"]
 	lines = ["Non attribuiti:"]
 	lines += [f"  {_where(hunk)}" for hunk in data["unattributed"]] or ["  nessuno"]
-	lines.append(f"Totale non attribuiti: {data['totals']['unattributed']}")
+	lines.append(f"Totale non attribuiti: {totals['unattributed']}")
+	lines += ["", "File nostri non coperti (nessuna scheda, mappa storica o residuo):"]
+	lines += [f"  {path}" for path in data["uncovered_files"]] or ["  nessuno"]
+	lines.append(f"Totale file nostri non coperti: {totals['uncovered_files']}")
+	lines += ["", "Residuo approvato (ammesso, mostrato a parte):"]
+	residue = [f"  {_where(hunk)} — {hunk['reason']} (ok del {hunk['approved']})" for hunk in data["residue"]]
+	residue += [f"  {item['file']} — {item['reason']} (ok del {item['approved']})" for item in data["residue_files"]]
+	lines += residue or ["  nessuno"]
+	lines.append(f"Totale residuo approvato: blocchi {totals['residue']}, file {totals['residue_files']}")
 	return "\n".join(lines)
 
 

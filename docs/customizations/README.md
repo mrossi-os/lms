@@ -16,7 +16,7 @@ Cosa contiene la cartella:
 | --- | --- |
 | `*.toml` (es. `spa-grafts.toml`) | le voci di inventario: dove vive una regola e come si verifica |
 | `features/<id>.toml` | il catalogo: una scheda per funzionalità, con il suo significato (vedi [features/README.md](features/README.md)) |
-| `legacy-attribution.toml` | mappa della storia passata: file upstream → funzionalità, per le modifiche anteriori alla riga `Oslms-Feature` |
+| `legacy-attribution.toml` | mappa della storia passata: file upstream → funzionalità, per le modifiche anteriori alla riga `Oslms-Feature`; e il residuo approvato (`[[residue]]`) |
 | `translations-it.toml` | registro generato delle nostre traduzioni italiane: non si scrive a mano |
 
 ## Comandi
@@ -126,23 +126,31 @@ e chiede **sempre** al committente cosa fare.
 python3 scripts/customization_map.py                 # tabella per funzionalità
 python3 scripts/customization_map.py --json          # per le skill
 python3 scripts/customization_map.py --feature <id>  # una sola funzionalità
-python3 scripts/customization_map.py --unattributed  # solo i blocchi senza funzionalità
+python3 scripts/customization_map.py --unattributed  # blocchi senza funzionalità, file nostri non coperti, residuo
 python3 scripts/customization_map.py --ref <branch>  # un altro ref (default HEAD)
 ```
 
 Sola lettura. Confronta il ref con l'ultima release upstream fusa in esso e divide ogni
-file upstream che differisce in blocchi; ogni blocco va a una o più funzionalità, in
-quest'ordine:
+file upstream che differisce in blocchi (test upstream modificati compresi); ogni blocco va
+a una o più funzionalità, commit per commit:
 
-1. le righe `Oslms-Feature` del commit che lo ha introdotto;
-2. l'ancora di una voce che il blocco contiene o tocca → `feature` della voce;
-3. il file ricade nelle `areas` di una scheda;
-4. il file compare in `legacy-attribution.toml` (modifiche anteriori alla regola).
+1. le righe `Oslms-Feature` dei commit che hanno scritto le sue righe;
+2. per le righe scritte da commit senza la riga, in quest'ordine: l'ancora di una voce che
+   quelle righe contengono o toccano → `feature` della voce; il file ricade nelle `areas` di
+   una scheda; il file compare in `legacy-attribution.toml` (modifiche anteriori alla regola);
+3. le ancore delle voci che il blocco contiene o tocca si aggiungono **sempre**.
 
-Quello che resta è **non attribuito**: è il numero da portare a zero. `/upstream-upgrade`
-ne fa una fermata (F9) prima di creare il branch del percorso. Il JSON ha `base`, `ref`,
-`features` (per id: `title`, `summary`, `files`, `hunks`, `commits`), `unattributed` e
-`totals`.
+Un blocco nessuno rivendica è **non attribuito**. I file nostri (quelli per cui il controllo
+al commit chiede la riga) che nessuna `areas`, nessuna voce `[[files]]` e nessun residuo
+coprono sono **file non coperti**. Blocchi non attribuiti e file non coperti sono i numeri da
+portare a zero: `/upstream-upgrade` ne fa una fermata (F9) prima di creare il branch del
+percorso. Fa eccezione il **residuo approvato**: le voci `[[residue]]` di
+`legacy-attribution.toml` (`path` esatto o glob, `reason`, `approved` con la data dell'ok del
+committente, tutti obbligatori) tolgono quei blocchi e file dai due conteggi e li mostrano a
+parte. Con `--ref` schede, voci e mappa storica si leggono a quel ref. Il JSON ha `base`,
+`ref`, `features` (per id: `title`, `summary`, `files`, `hunks` con la fonte di ciascuna
+funzionalità, `commits`), `unattributed`, `uncovered_files`, `residue` (blocchi con `reason` e
+`approved`), `residue_files` e `totals`.
 
 ## Controllo al commit
 

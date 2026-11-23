@@ -13,15 +13,21 @@ following design §5.5, which applies the fallback per commit:
    the file, the legacy map (`legacy-attribution.toml`);
 3. the inventory entries whose anchor the hunk contains or touches are always
    added: anchors are explicit facts of the inventory;
-4. a hunk nothing claims is unattributed: the number to bring to zero.
+4. a hunk nothing claims is unattributed: the number to bring to zero, unless
+   its file is in the approved residue (`[[residue]]` of the legacy file),
+   which is counted and listed apart.
 
-The hunk's features are the union of what each part contributes.
+The hunk's features are the union of what each part contributes. Our own
+files (the ones the commit guard asks a trailer for) that no card's `areas`,
+no legacy path and no residue cover are listed as uncovered files: together
+with the unattributed hunks, the gate of /upstream-upgrade's F9.
 
 Read-only: nothing here writes to the repository.
 """
 
 from __future__ import annotations
 
+import datetime
 import re
 import tomllib
 from collections.abc import Callable
@@ -128,13 +134,72 @@ def parse_legacy(text: str | None, name: str = "legacy-attribution.toml") -> dic
 	return legacy
 
 
+def _read_optional(path: Path) -> str | None:
+	try:
+		return Path(path).read_text(encoding="utf-8")
+	except FileNotFoundError:
+		return None
+
+
 def load_legacy(path: Path) -> dict[str, list[str]]:
 	"""The legacy map read from disk; an absent file is an empty map."""
+	return parse_legacy(_read_optional(path), Path(path).name)
+
+
+@dataclass(frozen=True)
+class Residue:
+	"""Changes the user approved to leave without a feature (design §5.8.6)."""
+
+	path: str
+	reason: str
+	approved: str
+
+
+DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _residue_field(item: dict, key: str, label: str, name: str) -> str:
+	if key not in item:
+		raise InventoryError(f"{name}: [[residue]] {label}: campo obbligatorio mancante '{key}'")
+	value = item[key]
+	if isinstance(value, datetime.date) and key == "approved":
+		value = value.isoformat()
+	if not isinstance(value, str):
+		raise InventoryError(f"{name}: [[residue]] {label}: il campo '{key}' deve essere una stringa")
+	if not value.strip():
+		raise InventoryError(f"{name}: [[residue]] {label}: il campo obbligatorio '{key}' è vuoto")
+	return value.strip()
+
+
+def parse_residue(text: str | None, name: str = "legacy-attribution.toml") -> list[Residue]:
+	"""The approved residue of the legacy file; every field is required and non-empty."""
+	if text is None:
+		return []
 	try:
-		text = Path(path).read_text(encoding="utf-8")
-	except FileNotFoundError:
-		text = None
-	return parse_legacy(text, Path(path).name)
+		raw = tomllib.loads(text)
+	except tomllib.TOMLDecodeError as exc:
+		raise InventoryError(f"{name}: TOML non valido ({exc})") from exc
+	residue = []
+	for index, item in enumerate(raw.get("residue", []), 1):
+		label = f"n. {index}" + (f" ('{item['path']}')" if isinstance(item.get("path"), str) and item["path"] else "")
+		path = _residue_field(item, "path", label, name)
+		reason = _residue_field(item, "reason", label, name)
+		approved = _residue_field(item, "approved", label, name)
+		try:
+			valid = bool(DATE.match(approved)) and bool(datetime.date.fromisoformat(approved))
+		except ValueError:
+			valid = False
+		if not valid:
+			raise InventoryError(
+				f"{name}: [[residue]] {label}: 'approved' deve essere una data AAAA-MM-GG "
+				f"(il giorno dell'ok del committente), non '{approved}'"
+			)
+		residue.append(Residue(path, reason, approved))
+	return residue
+
+
+def residue_for(residue: list[Residue], path: str) -> Residue | None:
+	return next((item for item in residue if path_matches(path, item.path)), None)
 
 
 def path_matches(path: str, pattern: str) -> bool:
@@ -379,6 +444,7 @@ class Catalogue:
 	features: dict[str, Feature]
 	entries: list[Entry]
 	legacy: dict[str, list[str]]
+	residue: list[Residue] = field(default_factory=list)
 
 
 def _toml_lister(git: Git, ref: str) -> Callable[[Path], list[str]]:
@@ -400,10 +466,12 @@ def load_catalogue(repo_root: Path, git: Git, ref: str) -> Catalogue:
 	head = git.run("rev-parse", "--verify", "HEAD^{commit}").strip()
 	target = git.run("rev-parse", "--verify", f"{ref}^{{commit}}").strip()
 	if head == target:
+		legacy_text = _read_optional(repo_root / LEGACY_FILE)
 		return Catalogue(
 			load_features(repo_root / FEATURES_DIR),
 			load_inventory(repo_root / INVENTORY_DIR),
-			load_legacy(repo_root / LEGACY_FILE),
+			parse_legacy(legacy_text),
+			parse_residue(legacy_text),
 		)
 	read = lambda relative: git.show(target, relative)  # noqa: E731
 	list_files = _toml_lister(git, target)
@@ -411,6 +479,7 @@ def load_catalogue(repo_root: Path, git: Git, ref: str) -> Catalogue:
 		load_features(Path(FEATURES_DIR), read=read, list_files=list_files),
 		load_inventory(Path(INVENTORY_DIR), read=read, list_files=list_files),
 		parse_legacy(read(LEGACY_FILE)),
+		parse_residue(read(LEGACY_FILE)),
 	)
 
 
@@ -441,6 +510,7 @@ def build_map(repo_root: Path, ref: str = "HEAD") -> dict:
 		for f in features.values()
 	}
 	unattributed: list[dict] = []
+	residue_hunks: list[dict] = []
 	by_source = {source: 0 for source in SOURCES}
 	unknown: set[str] = set()
 
@@ -448,7 +518,11 @@ def build_map(repo_root: Path, ref: str = "HEAD") -> dict:
 		found = attribute_hunk(hunk, history=history, features=features, entries=entries, legacy=legacy)
 		where = {"file": hunk.file, "head_start": hunk.head_start, "head_len": hunk.head_len}
 		if found.source == UNATTRIBUTED:
-			unattributed.append(where)
+			approved = residue_for(catalogue.residue, hunk.file)
+			if approved:
+				residue_hunks.append({**where, "reason": approved.reason, "approved": approved.approved})
+			else:
+				unattributed.append(where)
 			continue
 		by_source[found.source] += 1
 		for feature_id, source in sorted(found.sources.items()):
@@ -464,6 +538,17 @@ def build_map(repo_root: Path, ref: str = "HEAD") -> dict:
 	for feature in features.values():
 		result_features[feature.id]["files"].update(p for p in our_paths if feature.matches_path(p))
 
+	uncovered: list[str] = []
+	residue_files: list[dict] = []
+	for path in our_paths:
+		if any(f.matches_path(path) for f in features.values()) or legacy_features(legacy, path):
+			continue
+		approved = residue_for(catalogue.residue, path)
+		if approved:
+			residue_files.append({"file": path, "reason": approved.reason, "approved": approved.approved})
+		else:
+			uncovered.append(path)
+
 	for slot in result_features.values():
 		slot["files"] = sorted(slot["files"])
 		slot["commits"] = sorted(slot["commits"])
@@ -473,11 +558,17 @@ def build_map(repo_root: Path, ref: str = "HEAD") -> dict:
 		"ref": ref,
 		"features": dict(sorted(result_features.items())),
 		"unattributed": unattributed,
+		"uncovered_files": uncovered,
+		"residue": residue_hunks,
+		"residue_files": residue_files,
 		"totals": {
 			"files": len(by_file),
 			"hunks": len(hunks),
-			"attributed": len(hunks) - len(unattributed),
+			"attributed": len(hunks) - len(unattributed) - len(residue_hunks),
 			"unattributed": len(unattributed),
+			"uncovered_files": len(uncovered),
+			"residue": len(residue_hunks),
+			"residue_files": len(residue_files),
 			"by_source": by_source,
 			"unknown_features": sorted(unknown),
 		},

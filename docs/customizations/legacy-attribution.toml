@@ -1,10 +1,21 @@
 # Legacy map: upstream file → features, for hunks written before the
 # Oslms-Feature rule (design §5.5, "Mappa della storia passata").
 # Written once during the migration, never updated afterwards: new commits
-# carry the trailer. Format:
+# carry the trailer. `path` is an exact path or a glob (same matching as the
+# cards' `areas`). Format:
 #
 # [[files]]
 # path = "frontend/src/pages/CourseDetail.vue"
 # features = ["mobile-course-cta", "program-members-unpublished"]
+#
+# Approved residue (design §5.8.6): changes whose feature cannot be told,
+# left unattributed with the user's OK. The map counts and lists them apart
+# from the unattributed hunks and the uncovered files. Every field is
+# required and non-empty; `approved` is the day of the user's OK.
+#
+# [[residue]]
+# path = "frontend/src/pages/Old.vue"
+# reason = "leftover of the old upstream/develop merge, purpose not recoverable"
+# approved = "2026-11-23"
 
 schema_version = 1

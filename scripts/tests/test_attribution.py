@@ -8,7 +8,8 @@ import unittest
 from pathlib import Path
 
 from scripts.customization_map import main
-from scripts.customizations.attribution import attribute, build_map, diff_hunks, load_legacy
+from scripts.customizations.attribution import attribute, build_map, diff_hunks, load_legacy, parse_residue
+from scripts.customizations.model import InventoryError
 from scripts.customizations.gitbase import Git
 from scripts.tests.gitrepo import run_git, write_files
 
@@ -181,7 +182,8 @@ class AttributionTest(unittest.TestCase):
 			code = main(["--repo-root", str(self.root), "--unattributed"])
 		self.assertEqual(code, 0)
 		self.assertIn("src/f.vue:2", out.getvalue())
-		self.assertEqual(out.getvalue().strip().splitlines()[-1], "Totale non attribuiti: 1")
+		self.assertIn("Totale non attribuiti: 1", out.getvalue().splitlines())
+		self.assertIn("Totale file nostri non coperti: 0", out.getvalue().splitlines())
 
 	def test_reads_trailers_of_a_merge_commit_that_wrote_the_line(self):
 		hunks = hunks_of(self.result, "merge-feature")
@@ -319,6 +321,118 @@ class RefCatalogueTest(unittest.TestCase):
 		self.assertIn("feat-w", result["features"])
 		self.assertIn("feat-v", result["features"])
 		self.assertNotIn("feat-y", result["features"])
+
+
+RESIDUE_LEGACY = LEGACY + """
+[[files]]
+path = "frontend/src/stores/legacy_*.js"
+features = ["legacy-feature"]
+
+[[residue]]
+path = "src/f.vue"
+reason = "riga orfana di un vecchio merge, scopo non ricostruibile"
+approved = "2026-11-23"
+
+[[residue]]
+path = "frontend/src/stores/residue_*.js"
+reason = "prototipo abbandonato"
+approved = "2026-11-23"
+"""
+
+
+class ResidueAndUncoveredTest(unittest.TestCase):
+	"""Approved residue is counted apart; our files no card covers are listed."""
+
+	@classmethod
+	def setUpClass(cls):
+		cls.tmp = tempfile.TemporaryDirectory()
+		fork = FakeFork(cls.tmp.name)
+		fork.commit(
+			"fix: stores",
+			**{
+				"frontend/src/stores/orphan.js": "x\n",
+				"frontend/src/stores/legacy_one.js": "x\n",
+				"frontend/src/stores/residue_one.js": "x\n",
+				"frontend/oslms-test/setup.ts": "x\n",
+				"docs/customizations/legacy-attribution.toml": RESIDUE_LEGACY,
+			},
+		)
+		cls.root = Path(cls.tmp.name)
+		cls.result = build_map(cls.root)
+
+	@classmethod
+	def tearDownClass(cls):
+		cls.tmp.cleanup()
+
+	def test_residue_hunks_are_not_unattributed(self):
+		self.assertEqual(self.result["unattributed"], [])
+		self.assertEqual(
+			[(h["file"], h["head_start"], h["reason"], h["approved"]) for h in self.result["residue"]],
+			[("src/f.vue", 2, "riga orfana di un vecchio merge, scopo non ricostruibile", "2026-11-23")],
+		)
+		totals = self.result["totals"]
+		self.assertEqual((totals["unattributed"], totals["residue"]), (0, 1))
+		self.assertEqual(totals["attributed"], totals["hunks"] - 1)
+
+	def test_lists_our_files_no_card_covers(self):
+		self.assertEqual(self.result["uncovered_files"], ["frontend/src/stores/orphan.js"])
+		self.assertEqual(self.result["totals"]["uncovered_files"], 1)
+		self.assertEqual(
+			[r["file"] for r in self.result["residue_files"]], ["frontend/src/stores/residue_one.js"]
+		)
+
+	def test_unattributed_view_shows_uncovered_files_and_residue(self):
+		out = io.StringIO()
+		with contextlib.redirect_stdout(out):
+			code = main(["--repo-root", str(self.root), "--unattributed"])
+		self.assertEqual(code, 0)
+		text = out.getvalue()
+		self.assertIn("frontend/src/stores/orphan.js", text)
+		self.assertIn("Totale file nostri non coperti: 1", text.splitlines())
+		self.assertIn("prototipo abbandonato", text)
+		self.assertIn("Totale residuo approvato: blocchi 1, file 1", text.splitlines())
+
+	def test_json_carries_the_new_lists(self):
+		out = io.StringIO()
+		with contextlib.redirect_stdout(out):
+			main(["--repo-root", str(self.root), "--json"])
+		data = json.loads(out.getvalue())
+		self.assertEqual(data["uncovered_files"], ["frontend/src/stores/orphan.js"])
+		self.assertEqual(len(data["residue"]), 1)
+
+
+class ResidueValidationTest(unittest.TestCase):
+	def parse(self, body):
+		return parse_residue(body, "legacy-attribution.toml")
+
+	def test_valid_residue(self):
+		[item] = self.parse('[[residue]]\npath = "a/*.vue"\nreason = "motivo"\napproved = "2026-11-23"\n')
+		self.assertEqual((item.path, item.reason, item.approved), ("a/*.vue", "motivo", "2026-11-23"))
+
+	def test_missing_and_empty_fields_are_errors(self):
+		full = {"path": '"a.vue"', "reason": '"motivo"', "approved": '"2026-11-23"'}
+		for key in full:
+			with self.subTest(missing=key):
+				body = "[[residue]]\n" + "".join(f"{k} = {v}\n" for k, v in full.items() if k != key)
+				with self.assertRaises(InventoryError) as ctx:
+					self.parse(body)
+				self.assertIn(key, str(ctx.exception))
+				self.assertIn("mancante", str(ctx.exception))
+			with self.subTest(empty=key):
+				blanked = {**full, key: '" "'}
+				body = "[[residue]]\n" + "".join(f"{k} = {v}\n" for k, v in blanked.items())
+				with self.assertRaises(InventoryError) as ctx:
+					self.parse(body)
+				self.assertIn(key, str(ctx.exception))
+				self.assertIn("vuoto", str(ctx.exception))
+
+	def test_approved_must_be_a_date(self):
+		with self.assertRaises(InventoryError) as ctx:
+			self.parse('[[residue]]\npath = "a.vue"\nreason = "motivo"\napproved = "ieri"\n')
+		self.assertIn("AAAA-MM-GG", str(ctx.exception))
+
+	def test_absent_file_has_no_residue(self):
+		self.assertEqual(parse_residue(None), [])
 
 
 class AttributeFunctionTest(unittest.TestCase):
