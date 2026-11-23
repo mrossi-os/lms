@@ -11533,3 +11533,7 @@ msgstr "Solo un amministratore può modificare: {0}"
 #: frontend/src/oslms/components/Settings/SettingsGestore.vue
 msgid "Manager Settings"
 msgstr "Impostazioni gestore"
+
+#: frontend/src/utils/index.js
+msgid "This section is only available to administrators."
+msgstr "Questa sezione è disponibile solo agli amministratori."

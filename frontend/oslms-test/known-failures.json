@@ -471,6 +471,31 @@
 			"kind": "rule",
 			"entry": "raven-framework-ui-stub",
 			"why": "the ConditionBuilder from @framework/ui is stubbed: it exists only on Frappe develop"
+		},
+		"commandPaletteCategories.test.ts > command palette categories shows Settings to a 'moderator': true": {
+			"kind": "rule",
+			"entry": "settings-admin-only-routing",
+			"why": "Settings row is administrator-only now (Impostazioni gestore split, 2026-11-23); the upstream test mocks a plain { is_moderator: true } user, which no longer sees it"
+		},
+		"commandPaletteCategories.test.ts > command palette categories opens the settings dialog rather than routing": {
+			"kind": "rule",
+			"entry": "settings-admin-only-routing",
+			"why": "Settings row is administrator-only now (Impostazioni gestore split, 2026-11-23); the upstream test mocks a plain { is_moderator: true } user, which no longer sees it"
+		},
+		"commandPaletteCategories.test.ts > command palette jump-to targets never offers Contact Us": {
+			"kind": "rule",
+			"entry": "settings-admin-only-routing",
+			"why": "Settings row is administrator-only now (Impostazioni gestore split, 2026-11-23); the upstream test mocks a plain { is_moderator: true } user, which no longer sees it"
+		},
+		"commandPaletteCategories.test.ts > command palette settings row finds Settings by typing its name": {
+			"kind": "rule",
+			"entry": "settings-admin-only-routing",
+			"why": "Settings row is administrator-only now (Impostazioni gestore split, 2026-11-23); the upstream test mocks a plain { is_moderator: true } user, which no longer sees it"
+		},
+		"commandPaletteCategories.test.ts > command palette settings row still opens the dialog when reached by typing": {
+			"kind": "rule",
+			"entry": "settings-admin-only-routing",
+			"why": "Settings row is administrator-only now (Impostazioni gestore split, 2026-11-23); the upstream test mocks a plain { is_moderator: true } user, which no longer sees it"
 		}
 	}
 }

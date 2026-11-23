@@ -10023,3 +10023,38 @@ server limita i campi di LMS Settings salvabili dal non-Administrator
 
   [entries.checks]
   unit = "frontend/src/tests/settingsTabs.test.ts"
+
+[[entries]]
+id = "settings-admin-only-routing"
+title = "Impostazioni: openSettings, palette ed esercizi seguono la divisione Administrator / Gestore"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+openSettings(category, close) usa resolveSettingsTarget (oslms/utils/settingsAccess.js):
+l'Administrator apre Settings.vue, il Gestore apre il pannello gestore solo per le sue schede
+(GESTORE_SETTINGS_TAB_KEYS), chiunque altro riceve l'avviso «Questa sezione è disponibile solo
+agli amministratori.». Gli alias 'Zoom Accounts' e 'Google Meet Accounts' usati da BatchForm
+diventano le key reali 'Zoom' e 'Google Meet' (prima quei pulsanti aprivano General per tutti).
+Nella palette Cmd+K la riga «Settings» è solo Administrator e la nuova «Manager Settings» è per
+Gestore e Administrator. Il pulsante Impostazioni → General negli esercizi di programmazione è
+solo Administrator. I test upstream della palette che simulano { is_moderator: true } e si
+aspettano la riga «Settings» sono in oslms-test/known-failures.json (kind rule). Aggiunto
+2026-11-23."""
+
+  [[entries.sites]]
+  file = "frontend/src/utils/index.js"
+  anchor = "const { panel, key } = resolveSettingsTarget(category, userResource?.data)"
+  symbol = "openSettings"
+
+  [[entries.sites]]
+  file = "frontend/src/components/CommandPalette/CommandPalette.vue"
+  anchor = "if (isSettingsAdmin(userResource.data) && settingsStore.isSettingsMounted) {"
+  symbol = "accountItems"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/ProgrammingExercises/ProgrammingExerciseSubmission.vue"
+  anchor = "v-if=\"isSettingsAdmin(user.data)\""
+  symbol = "template"
+
+  [entries.checks]
+  unit = "frontend/src/tests/openSettingsRouting.test.ts"

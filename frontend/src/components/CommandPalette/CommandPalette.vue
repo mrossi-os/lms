@@ -99,6 +99,11 @@ import {
 import { openFormRoute } from '@/composables/useFormRoute'
 // OSLMS-CUSTOM: shared doctype-to-route mapping for search results
 import { getSearchResultRoute } from '@/oslms/utils/searchRoutes'
+// OSLMS-CUSTOM: who sees the Settings / Manager Settings rows
+import {
+	canOpenGestoreSettings,
+	isSettingsAdmin,
+} from '@/oslms/utils/settingsAccess'
 
 const chipClass =
 	'inline-flex size-5 shrink-0 items-center justify-center rounded-sm bg-surface-gray-2'
@@ -550,19 +555,32 @@ const browseGroups = computed<PaletteGroup[]>(() => {
 
 /** Settings is a dialog owned by the desktop sidebar and open to moderators
  * only; on a phone nothing listens to the flag, so the row would do nothing. */
+// OSLMS-CUSTOM: "Settings" for administrators only; "Manager Settings" (the
+// manager panel) for Gestore and administrators (oslms/utils/settingsAccess.js).
 const accountItems = computed<PaletteItem[]>(() => {
-	if (!userResource.data?.is_moderator || !settingsStore.isSettingsMounted) {
-		return []
-	}
-	return [
-		{
+	const items: PaletteItem[] = []
+	if (isSettingsAdmin(userResource.data) && settingsStore.isSettingsMounted) {
+		items.push({
 			title: __('Settings'),
 			icon: 'lucide-settings',
 			perform: () => {
 				settingsStore.isSettingsOpen = true
 			},
-		},
-	]
+		})
+	}
+	if (
+		canOpenGestoreSettings(userResource.data) &&
+		settingsStore.isGestoreSettingsMounted
+	) {
+		items.push({
+			title: __('Manager Settings'),
+			icon: 'lucide-sliders-horizontal',
+			perform: () => {
+				settingsStore.isGestoreSettingsOpen = true
+			},
+		})
+	}
+	return items
 })
 </script>
 <style>

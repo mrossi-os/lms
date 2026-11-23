@@ -6,6 +6,8 @@ import { Upload } from '@/utils/upload'
 import { Markdown } from '@/utils/markdownParser'
 import { useSettings } from '@/stores/settings'
 import { usersStore } from '@/stores/user'
+// OSLMS-CUSTOM: who opens which settings panel (openSettings)
+import { resolveSettingsTarget } from '@/oslms/utils/settingsAccess'
 import { Heading } from '@/utils/heading'
 import Paragraph from '@editorjs/paragraph'
 import { CodeBox } from '@/utils/code'
@@ -1112,17 +1114,34 @@ export const createLMSCategory = (name) => {
 // arrived. Say so instead, and leave the form where it is.
 // Returns whether Settings actually opened, so a caller that closes itself
 // separately can stay put when it did not.
+// OSLMS-CUSTOM: two panels. Administrators open Settings.vue, Gestore opens the
+// manager panel (SettingsGestore.vue) for its own tabs; tab aliases such as
+// 'Zoom Accounts' resolve to the real key (oslms/utils/settingsAccess.js).
 export const openSettings = (category, close = null) => {
 	const settingsStore = useSettings()
-	if (!settingsStore.isSettingsMounted) {
+	const { userResource } = usersStore()
+	const { panel, key } = resolveSettingsTarget(category, userResource?.data)
+	if (panel === 'none') {
+		toast.error(__('This section is only available to administrators.'))
+		return false
+	}
+	const isMounted =
+		panel === 'admin'
+			? settingsStore.isSettingsMounted
+			: settingsStore.isGestoreSettingsMounted
+	if (!isMounted) {
 		toast.error(__('Settings is only available on a larger screen.'))
 		return false
 	}
 	if (close) {
 		close()
 	}
-	settingsStore.activeTab = category
-	settingsStore.isSettingsOpen = true
+	settingsStore.activeTab = key
+	if (panel === 'admin') {
+		settingsStore.isSettingsOpen = true
+	} else {
+		settingsStore.isGestoreSettingsOpen = true
+	}
 	return true
 }
 

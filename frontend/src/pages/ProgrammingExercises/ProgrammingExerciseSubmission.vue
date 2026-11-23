@@ -7,7 +7,8 @@
 		<span>
 			{{ falconError }}
 		</span>
-		<Button v-if="user.data?.is_moderator" @click="openSettings('General')">
+		<!-- OSLMS-CUSTOM: General is an administrator-only settings tab -->
+		<Button v-if="isSettingsAdmin(user.data)" @click="openSettings('General')">
 			<template #prefix>
 				<span class="lucide-settings size-4" />
 			</template>
@@ -147,6 +148,8 @@ import PageHeader from '@/components/Layouts/PageHeader.vue'
 import { sessionStore } from '@/stores/session'
 import { useRouter } from 'vue-router'
 import { openSettings } from '@/utils'
+// OSLMS-CUSTOM: General settings tab is for administrators only
+import { isSettingsAdmin } from '@/oslms/utils/settingsAccess'
 import { useSettings } from '@/stores/settings'
 import { getLmsRoute } from '@/utils/basePath'
 import { provideStudentView } from '@/composables/useStudentView'
