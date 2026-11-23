@@ -36,6 +36,12 @@ from scripts.customizations.gitbase import Git, PlanError, find_base  # noqa: E4
 from scripts.customizations.features import STRICT_FEATURES_FLAG, load_features  # noqa: E402
 from scripts.customizations.model import InventoryError, load_inventory  # noqa: E402
 from scripts.customizations.report import render_json, render_table  # noqa: E402
+from scripts.customizations.translations import (  # noqa: E402
+	PO_PATH,
+	TRANSLATIONS_FILE,
+	check_translations,
+	read_recorded,
+)
 
 DEFAULT_REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_INVENTORY = Path("docs/customizations")
@@ -69,7 +75,7 @@ def build_parser() -> argparse.ArgumentParser:
 	parser.add_argument(
 		"--no-base",
 		action="store_true",
-		help="skip the checks that need the upstream base (C5, C7), without warning",
+		help="skip the checks that need the upstream base (C5), without warning",
 	)
 	return parser
 
@@ -82,6 +88,21 @@ def resolve_base(repo_root: Path, requested: str | None) -> tuple[Git, str]:
 		git.run("rev-parse", "--verify", f"{requested}^{{commit}}")
 		return git, requested
 	return git, find_base(git, "HEAD")
+
+
+def translation_findings(repo_root: Path, read) -> list[Finding]:
+	"""C7, when the recorded translations exist. It needs no base: it compares the record with it.po."""
+	record = repo_root / TRANSLATIONS_FILE
+	if not record.is_file():
+		return []
+	head_po = read(PO_PATH)
+	try:
+		_, recorded = read_recorded(record)
+	except (OSError, ValueError) as exc:
+		return [Finding("translations", "C7", ERROR, f"registro traduzioni non valido: {exc}", file=TRANSLATIONS_FILE)]
+	if head_po is None:
+		return [Finding("translations", "C7", ERROR, f"{PO_PATH} non trovato", file=PO_PATH)]
+	return check_translations(recorded, head_po)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -108,7 +129,7 @@ def main(argv: list[str] | None = None) -> int:
 			git, base = resolve_base(repo_root, args.base)
 		except PlanError:
 			base_findings.append(
-				Finding("-", "C0", WARNING, "base upstream non disponibile: C5 e C7 saltati")
+				Finding("-", "C0", WARNING, "base upstream non disponibile: C5 saltato")
 			)
 		else:
 			base_findings += check_anchor_provenance(entries, read, lambda path: git.show(base, path))
@@ -121,6 +142,8 @@ def main(argv: list[str] | None = None) -> int:
 		+ check_test_paths(entries, repo_root)
 		+ check_feature_links(entries, features, strict=(repo_root / STRICT_FEATURES_FLAG).is_file())
 	)
+
+	findings += translation_findings(repo_root, read)
 
 	if args.json:
 		print(render_json(findings, len(entries), datetime.now().isoformat(timespec="seconds")))
