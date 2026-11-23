@@ -21,7 +21,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import subprocess
 import sys
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
@@ -30,6 +29,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.customizations.checks import MARKER  # noqa: E402
+from scripts.customizations.gitbase import (  # noqa: E402,F401
+	RELEASE_TAG,
+	Git,
+	PlanError,
+	find_base,
+	parse_version,
+	sort_release_tags,
+)
 from scripts.customizations.model import InventoryError, load_inventory  # noqa: E402
 
 DEFAULT_REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -38,10 +45,6 @@ PACKAGE_JSON = "frontend/package.json"
 WATCHED_DEPENDENCY = "frappe-ui"
 OVERRIDES_DIR = "frontend/src/overrides/"
 OVERRIDDEN_ROOT = "frontend/src/"
-
-# Upstream release tags only: our own tags (ve1.0.1, vi1.0.7) and the
-# assets-* tags never match.
-RELEASE_TAG = re.compile(r"^v(\d+)\.(\d+)\.(\d+)$")
 
 # Conventional Commits breaking marker. frappe/lms merges pull requests with
 # merge commits whose subject is "Merge pull request #N" and whose body carries
@@ -58,22 +61,7 @@ NOT_CUSTOMIZATION = (
 )
 
 
-class PlanError(Exception):
-	"""The plan cannot be computed; the message says why, for a human."""
-
-
 # ── Pure logic ────────────────────────────────────────────────────────────────
-
-
-def parse_version(tag: str) -> tuple[int, int, int] | None:
-	"""Return the numeric version of an upstream release tag, or None."""
-	match = RELEASE_TAG.match(tag)
-	return tuple(int(part) for part in match.groups()) if match else None
-
-
-def sort_release_tags(tags: list[str]) -> list[str]:
-	"""Keep upstream release tags only, in version order (like `sort -V`)."""
-	return sorted((t for t in tags if parse_version(t)), key=parse_version)
 
 
 def breaking_changes(messages: list[str]) -> list[str]:
@@ -199,59 +187,6 @@ def recommend(releases: list[Release]) -> dict:
 
 
 # ── Git access ────────────────────────────────────────────────────────────────
-
-
-class Git:
-	"""Thin read-only wrapper around the git CLI."""
-
-	def __init__(self, repo_root: Path):
-		self.repo_root = repo_root
-
-	def run(self, *args: str, check: bool = True) -> str:
-		result = subprocess.run(
-			["git", *args],
-			cwd=self.repo_root,
-			capture_output=True,
-			text=True,
-			encoding="utf-8",
-			errors="replace",
-		)
-		if check and result.returncode != 0:
-			raise PlanError(f"git {' '.join(args)}: {result.stderr.strip()}")
-		return result.stdout
-
-	def is_ancestor(self, ancestor: str, descendant: str) -> bool:
-		result = subprocess.run(
-			["git", "merge-base", "--is-ancestor", ancestor, descendant],
-			cwd=self.repo_root,
-			capture_output=True,
-		)
-		return result.returncode == 0
-
-	def show(self, ref: str, path: str) -> str | None:
-		result = subprocess.run(
-			["git", "show", f"{ref}:{path}"],
-			cwd=self.repo_root,
-			capture_output=True,
-			text=True,
-			encoding="utf-8",
-			errors="replace",
-		)
-		return result.stdout if result.returncode == 0 else None
-
-	def lines(self, *args: str) -> list[str]:
-		return [line for line in self.run(*args).split("\0" if "-z" in args else "\n") if line]
-
-
-def find_base(git: Git, head: str) -> str:
-	"""The most recent upstream release tag already merged into `head`."""
-	merged = sort_release_tags(git.lines("tag", "--merged", head))
-	if not merged:
-		raise PlanError(
-			f"Nessun tag di release upstream è antenato di {head}: "
-			"controlla il remote 'upstream' e lancia 'git fetch upstream --tags'."
-		)
-	return merged[-1]
 
 
 def pending_tags(git: Git, base: str, target: str | None) -> list[str]:

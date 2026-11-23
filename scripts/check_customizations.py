@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check the repository against the customization inventory.
 
-Runs the four textual drift checks and reports what no longer matches what the
+Runs the textual drift checks and reports what no longer matches what the
 inventory declares. Standard library only, no Frappe, no bench, no site: this
 is meant to answer in seconds right after an upstream merge.
 
@@ -22,11 +22,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.customizations.checks import (  # noqa: E402
 	ERROR,
+	WARNING,
+	Finding,
+	check_anchor_provenance,
+	check_anchor_uniqueness,
 	check_feature_links,
 	check_sites,
 	check_test_paths,
 	check_uncatalogued_markers,
+	disk_reader,
 )
+from scripts.customizations.gitbase import Git, PlanError, find_base  # noqa: E402
 from scripts.customizations.features import STRICT_FEATURES_FLAG, load_features  # noqa: E402
 from scripts.customizations.model import InventoryError, load_inventory  # noqa: E402
 from scripts.customizations.report import render_json, render_table  # noqa: E402
@@ -55,7 +61,27 @@ def build_parser() -> argparse.ArgumentParser:
 		action="store_true",
 		help="print the catalogued file paths, one per line, and exit",
 	)
+	parser.add_argument(
+		"--base",
+		default=None,
+		help="upstream release tag to compare against (default: the last one merged into HEAD)",
+	)
+	parser.add_argument(
+		"--no-base",
+		action="store_true",
+		help="skip the checks that need the upstream base (C5, C7), without warning",
+	)
 	return parser
+
+
+def resolve_base(repo_root: Path, requested: str | None) -> tuple[Git, str]:
+	"""The git handle and the base tag, or PlanError when either is unavailable."""
+	git = Git(repo_root)
+	git.git_dir()
+	if requested:
+		git.run("rev-parse", "--verify", f"{requested}^{{commit}}")
+		return git, requested
+	return git, find_base(git, "HEAD")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -75,8 +101,22 @@ def main(argv: list[str] | None = None) -> int:
 			print(path)
 		return 0
 
+	read = disk_reader(repo_root)
+	base_findings: list[Finding] = []
+	if not args.no_base:
+		try:
+			git, base = resolve_base(repo_root, args.base)
+		except PlanError:
+			base_findings.append(
+				Finding("-", "C0", WARNING, "base upstream non disponibile: C5 e C7 saltati")
+			)
+		else:
+			base_findings += check_anchor_provenance(entries, read, lambda path: git.show(base, path))
+
 	findings = (
-		check_sites(entries, repo_root)
+		check_sites(entries, read)
+		+ check_anchor_uniqueness(entries, read)
+		+ base_findings
 		+ check_uncatalogued_markers(entries, repo_root)
 		+ check_test_paths(entries, repo_root)
 		+ check_feature_links(entries, features, strict=(repo_root / STRICT_FEATURES_FLAG).is_file())

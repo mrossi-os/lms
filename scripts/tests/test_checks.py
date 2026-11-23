@@ -1,5 +1,8 @@
 """Tests for the four drift checks."""
 
+import contextlib
+import io
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -7,13 +10,17 @@ from pathlib import Path
 from scripts.customizations.checks import (
 	ERROR,
 	WARNING,
+	check_anchor_provenance,
+	check_anchor_uniqueness,
 	check_feature_links,
 	check_sites,
 	check_test_paths,
 	check_uncatalogued_markers,
+	disk_reader,
 )
 from scripts.customizations.features import Feature
 from scripts.customizations.model import Entry, Site
+from scripts.check_customizations import main
 
 
 def entry(entry_id="gate", sites=(), status=None, checks=None, layer="spa-graft", feature=None):
@@ -46,14 +53,14 @@ class CheckSitesTest(unittest.TestCase):
 		site = Site(file="src/Card.vue", anchor="is_docente")
 		with tempfile.TemporaryDirectory() as tmp:
 			root = fake_repo(tmp, **{"src/Card.vue": "const isAdmin = is_docente || false\n"})
-			findings = check_sites([entry(sites=[site])], root)
+			findings = check_sites([entry(sites=[site])], disk_reader(root))
 		self.assertEqual(findings, [])
 
 	def test_reports_c1_when_the_anchor_is_gone(self):
 		site = Site(file="src/Card.vue", anchor="is_docente")
 		with tempfile.TemporaryDirectory() as tmp:
 			root = fake_repo(tmp, **{"src/Card.vue": "const isAdmin = is_moderator\n"})
-			findings = check_sites([entry(sites=[site])], root)
+			findings = check_sites([entry(sites=[site])], disk_reader(root))
 		self.assertEqual(len(findings), 1)
 		self.assertEqual(findings[0].check, "C1")
 		self.assertEqual(findings[0].severity, ERROR)
@@ -64,20 +71,20 @@ class CheckSitesTest(unittest.TestCase):
 	def test_reports_only_c2_when_the_file_is_gone(self):
 		site = Site(file="src/Gone.vue", anchor="is_docente")
 		with tempfile.TemporaryDirectory() as tmp:
-			findings = check_sites([entry(sites=[site])], Path(tmp))
+			findings = check_sites([entry(sites=[site])], disk_reader(Path(tmp)))
 		self.assertEqual([f.check for f in findings], ["C2"])
 
 	def test_skips_entries_marked_accepted_drift(self):
 		site = Site(file="src/Gone.vue", anchor="is_docente")
 		with tempfile.TemporaryDirectory() as tmp:
-			findings = check_sites([entry(sites=[site], status="accepted-drift")], Path(tmp))
+			findings = check_sites([entry(sites=[site], status="accepted-drift")], disk_reader(Path(tmp)))
 		self.assertEqual(findings, [])
 
 	def test_checks_every_site_of_an_entry(self):
 		sites = [Site(file="src/A.vue", anchor="x"), Site(file="src/B.vue", anchor="y")]
 		with tempfile.TemporaryDirectory() as tmp:
 			root = fake_repo(tmp, **{"src/A.vue": "x", "src/B.vue": "nothing"})
-			findings = check_sites([entry(sites=sites)], root)
+			findings = check_sites([entry(sites=sites)], disk_reader(root))
 		self.assertEqual([f.file for f in findings], ["src/B.vue"])
 
 
@@ -134,10 +141,6 @@ class CheckTestPathsTest(unittest.TestCase):
 		self.assertEqual(findings, [])
 
 
-if __name__ == "__main__":
-	unittest.main()
-
-
 def feature_card(feature_id="live-class"):
 	return Feature(
 		id=feature_id,
@@ -174,3 +177,78 @@ class CheckFeatureLinksTest(unittest.TestCase):
 	def test_c8_accepts_a_known_feature(self):
 		findings = check_feature_links([entry(feature="live-class")], {"live-class": feature_card()}, strict=True)
 		self.assertEqual(findings, [])
+
+
+class CheckAnchorProvenanceTest(unittest.TestCase):
+	def test_c5_flags_anchor_also_in_base(self):
+		site = Site(file="src/Card.vue", anchor="is_docente")
+		read = {"src/Card.vue": "a is_docente b"}.get
+		read_base = {"src/Card.vue": "upstream is_docente"}.get
+		findings = check_anchor_provenance([entry(sites=[site])], read, read_base)
+		self.assertEqual([f.check for f in findings], ["C5"])
+		self.assertEqual(findings[0].severity, WARNING)
+		self.assertEqual(findings[0].file, "src/Card.vue")
+		self.assertEqual(findings[0].anchor, "is_docente")
+
+	def test_c5_ignores_anchor_only_ours(self):
+		site = Site(file="src/Card.vue", anchor="is_docente")
+		read = {"src/Card.vue": "a is_docente b"}.get
+		read_base = {"src/Card.vue": "upstream code"}.get
+		self.assertEqual(check_anchor_provenance([entry(sites=[site])], read, read_base), [])
+
+	def test_c5_skips_file_absent_in_base(self):
+		site = Site(file="src/New.vue", anchor="is_docente")
+		read = {"src/New.vue": "is_docente"}.get
+		self.assertEqual(check_anchor_provenance([entry(sites=[site])], read, {}.get), [])
+
+
+class CheckAnchorUniquenessTest(unittest.TestCase):
+	def test_c6_flags_anchor_found_twice(self):
+		site = Site(file="src/Card.vue", anchor="wrap")
+		read = {"src/Card.vue": "wrap one\nwrap two"}.get
+		findings = check_anchor_uniqueness([entry(sites=[site])], read)
+		self.assertEqual([f.check for f in findings], ["C6"])
+		self.assertEqual(findings[0].severity, ERROR)
+
+	def test_c6_accepts_unique_anchor(self):
+		site = Site(file="src/Card.vue", anchor="wrap")
+		read = {"src/Card.vue": "wrap once"}.get
+		self.assertEqual(check_anchor_uniqueness([entry(sites=[site])], read), [])
+
+
+class ReaderTest(unittest.TestCase):
+	def test_check_sites_reads_through_reader(self):
+		site = Site(file="virtual/File.vue", anchor="marker")
+		self.assertEqual(check_sites([entry(sites=[site])], {"virtual/File.vue": "has marker"}.get), [])
+		findings = check_sites([entry(sites=[site])], {}.get)
+		self.assertEqual([f.check for f in findings], ["C2"])
+
+	def test_disk_reader_returns_none_for_a_missing_file(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			root = fake_repo(tmp, **{"a/b.txt": "hello"})
+			read = disk_reader(root)
+			self.assertEqual(read("a/b.txt"), "hello")
+			self.assertIsNone(read("a/missing.txt"))
+
+
+class CliBaseTest(unittest.TestCase):
+	def test_cli_reports_c0_when_base_missing(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			out = io.StringIO()
+			with contextlib.redirect_stdout(out):
+				main(["--repo-root", tmp, "--inventory", tmp, "--json"])
+		findings = json.loads(out.getvalue())["findings"]
+		c0 = [f for f in findings if f["check"] == "C0"]
+		self.assertEqual(len(c0), 1)
+		self.assertEqual(c0[0]["severity"], "warning")
+
+	def test_cli_no_base_skips_c0(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			out = io.StringIO()
+			with contextlib.redirect_stdout(out):
+				main(["--repo-root", tmp, "--inventory", tmp, "--no-base", "--json"])
+		self.assertEqual([f for f in json.loads(out.getvalue())["findings"] if f["check"] == "C0"], [])
+
+
+if __name__ == "__main__":
+	unittest.main()

@@ -1,12 +1,13 @@
 """The drift checks.
 
-Each check is a pure function taking the inventory entries plus the repository
-root and returning findings. Nothing here executes application code: the whole
+Each check is a pure function taking the inventory entries plus a reader (or
+the repository root) and returning findings. Nothing here executes application code: the whole
 point of the detector is that it answers in seconds with Docker switched off.
 """
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -33,7 +34,22 @@ def _read(path: Path) -> str:
 	return path.read_text(encoding="utf-8", errors="replace")
 
 
-def check_sites(entries: list[Entry], repo_root: Path) -> list[Finding]:
+Reader = Callable[[str], "str | None"]
+"""Given a repository-relative path, return the file text, or None if absent."""
+
+
+def disk_reader(repo_root: Path) -> Reader:
+	"""A reader over the working tree."""
+	root = Path(repo_root)
+
+	def read(relative: str) -> str | None:
+		path = root / relative
+		return _read(path) if path.is_file() else None
+
+	return read
+
+
+def check_sites(entries: list[Entry], read: Reader) -> list[Finding]:
 	"""C1: every anchor still occurs in its file. C2: every file still exists.
 
 	C2 short-circuits C1: a missing file is one fact, not two.
@@ -43,15 +59,55 @@ def check_sites(entries: list[Entry], repo_root: Path) -> list[Finding]:
 		if entry.status == "accepted-drift":
 			continue
 		for site in entry.sites:
-			path = Path(repo_root) / site.file
-			if not path.is_file():
+			text = read(site.file)
+			if text is None:
 				findings.append(
 					Finding(entry.id, "C2", ERROR, "file non trovato", site.file, site.anchor)
 				)
-				continue
-			if site.anchor not in _read(path):
+			elif site.anchor not in text:
 				findings.append(
 					Finding(entry.id, "C1", ERROR, "ancora non trovata nel file", site.file, site.anchor)
+				)
+	return findings
+
+
+def check_anchor_provenance(entries: list[Entry], read: Reader, read_base: Reader) -> list[Finding]:
+	"""C5: the anchor also occurs in the same file at the upstream base.
+
+	Such an anchor cannot tell our code from upstream's, so a merge could wipe
+	our change and the anchor would still match. Warning: the fix is choosing a
+	better anchor, not repairing drift. A file absent in the base is ours alone.
+	"""
+	findings: list[Finding] = []
+	for entry in entries:
+		if entry.status == "accepted-drift":
+			continue
+		for site in entry.sites:
+			base_text = read_base(site.file)
+			if base_text is not None and site.anchor in base_text:
+				findings.append(
+					Finding(
+						entry.id, "C5", WARNING, "ancora presente anche nel file della base upstream",
+						site.file, site.anchor,
+					)
+				)
+	return findings
+
+
+def check_anchor_uniqueness(entries: list[Entry], read: Reader) -> list[Finding]:
+	"""C6: the anchor occurs exactly once, so it points at one place."""
+	findings: list[Finding] = []
+	for entry in entries:
+		if entry.status == "accepted-drift":
+			continue
+		for site in entry.sites:
+			text = read(site.file)
+			if text is not None and text.count(site.anchor) > 1:
+				findings.append(
+					Finding(
+						entry.id, "C6", ERROR, "ancora presente più di una volta nel file",
+						site.file, site.anchor,
+					)
 				)
 	return findings
 
