@@ -333,7 +333,11 @@ doc_events = {
     "LMS Settings": {
         # Only a System Manager or a Gestore may repoint the TrueSkills connection,
         # and only to a public https host.
-        "validate": "os_lms.os_lms.trueskills.settings.validate_lms_settings",
+        "validate": [
+            "os_lms.os_lms.trueskills.settings.validate_lms_settings",
+            # Non-administrators (Gestore) may only save the fields of the manager settings panel.
+            "os_lms.os_lms.settings_access.validate_lms_settings_access",
+        ],
     },
     "LMS Course": {
         # Refuse a TrueSkill template whose required data the emission never sends.

@@ -11525,3 +11525,7 @@ msgstr "Utente della piattaforma a cui è abbinato il partecipante; vuoto finch�
 #: apps/os_lms/os_lms/os_lms/os_audit_live.py
 msgid "Live attendance is not recorded for this class: check the OS Audit settings."
 msgstr "Le presenze live non vengono registrate per questa classe: controlla le impostazioni di OS Audit."
+
+#: apps/os_lms/os_lms/os_lms/settings_access.py
+msgid "Only an administrator can change: {0}"
+msgstr "Solo un amministratore può modificare: {0}"
