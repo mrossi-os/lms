@@ -27,6 +27,7 @@ from scripts.customizations.checks import (  # noqa: E402
 	check_anchor_provenance,
 	check_anchor_uniqueness,
 	check_feature_links,
+	check_frozen_base,
 	check_sites,
 	check_test_paths,
 	check_uncatalogued_markers,
@@ -140,6 +141,7 @@ def main(argv: list[str] | None = None) -> int:
 		+ base_findings
 		+ check_uncatalogued_markers(entries, repo_root)
 		+ check_test_paths(entries, repo_root)
+		+ check_frozen_base(entries)
 		+ check_feature_links(entries, features, strict=(repo_root / STRICT_FEATURES_FLAG).is_file())
 	)
 

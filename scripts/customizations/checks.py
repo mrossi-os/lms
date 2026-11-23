@@ -193,3 +193,29 @@ def check_feature_links(entries: list[Entry], features: dict[str, Feature], stri
 				Finding(entry.id, "C8", severity, f"funzionalità sconosciuta '{entry.feature}'", None, None)
 			)
 	return findings
+
+
+OVERRIDES_DIR = "frontend/src/overrides/"
+
+
+def check_frozen_base(entries: list[Entry]) -> list[Finding]:
+	"""C9: an entry with a frozen copy under overrides/ records where it was copied from.
+
+	Without `frozen_from` nobody can tell which upstream version the copy
+	froze, so the upstream changes it has missed cannot be listed. Warning:
+	the fix is writing the version down, not repairing drift.
+	"""
+	findings: list[Finding] = []
+	for entry in entries:
+		if entry.status == "accepted-drift" or entry.frozen_from:
+			continue
+		for site in entry.sites:
+			if site.file.startswith(OVERRIDES_DIR):
+				findings.append(
+					Finding(
+						entry.id, "C9", WARNING, "copia congelata senza 'frozen_from' (versione upstream di partenza)",
+						site.file, None,
+					)
+				)
+				break
+	return findings
