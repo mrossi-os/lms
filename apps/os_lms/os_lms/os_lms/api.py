@@ -2005,10 +2005,44 @@ def update_live_class(name: str, payload: dict) -> dict:
 
 
 @frappe.whitelist(methods=["POST"])
+def publish_live_class(name: str) -> dict:
+	"""Publish a draft live class: the participants get the invitation and the notification.
+
+	The row is locked first, so a second click waits for the first publish to commit,
+	then finds the class published and stops: the batch is invited once.
+	"""
+	from os_lms.os_lms.live_class_draft import PUBLISHED, is_draft
+
+	_ensure_live_class_admin(name)
+	status = frappe.db.get_value("LMS Live Class", name, "status", for_update=True)
+	if not is_draft(status):
+		frappe.throw(frappe._("This live class has already been published."))
+
+	doc = frappe.get_doc("LMS Live Class", name)
+	doc.check_permission("write")
+	end = frappe.utils.get_datetime(f"{doc.date} {doc.time}") + timedelta(
+		minutes=frappe.utils.cint(doc.duration)
+	)
+	if end <= frappe.utils.now_datetime():
+		frappe.throw(
+			frappe._("This live class is already over: change its date and time before publishing it.")
+		)
+
+	doc.publish()
+	frappe.db.commit()
+	return {"name": doc.name, "status": PUBLISHED}
+
+
+@frappe.whitelist(methods=["POST"])
 def start_live_class(name: str) -> dict:
 	"""Mark a Live Class as started by the host so enrolled students can join."""
+	from os_lms.os_lms.live_class_draft import is_draft
+
 	doc = frappe.get_doc("LMS Live Class", name)
 	_ensure_can_start_live_class(doc)
+	# The students of a draft were never invited and cannot see it.
+	if is_draft(doc):
+		frappe.throw(frappe._("Publish the live class before starting it."))
 	# OS Audit: who opened the meeting as teacher (before started_at is set).
 	from os_lms.os_lms.os_audit import on_live_class_start
 
@@ -2131,6 +2165,13 @@ def join_live_class(name: str) -> None:
 		)
 		return
 
+	# A draft is not announced yet: only its hosts may open it (e.g. to test the room).
+	from os_lms.os_lms.live_class_draft import is_draft
+
+	if is_draft(doc) and tier != "host":
+		_live_class_message(frappe._("Questa lezione dal vivo non esiste o è stata rimossa."), color="red")
+		return
+
 	class_start = frappe.utils.get_datetime(f"{doc.date} {doc.time}")
 	class_end = class_start + timedelta(minutes=frappe.utils.cint(doc.duration))
 	now = frappe.utils.now_datetime()
@@ -2210,7 +2251,10 @@ def delete_live_class(name: str, notify_students: int = 0) -> dict:
 	zoom_account = doc.get("zoom_account")
 	meeting_id = doc.get("meeting_id")
 
-	if int(notify_students or 0):
+	# A draft was never announced: there is nothing to cancel for the students.
+	from os_lms.os_lms.live_class_draft import is_draft
+
+	if int(notify_students or 0) and not is_draft(doc):
 		_notify_students_class_cancelled(doc)
 
 	frappe.delete_doc("LMS Live Class", name)

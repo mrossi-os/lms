@@ -75,20 +75,8 @@
 			>
 				<template v-if="isAdmin()" #actions>
 					<!-- OSLMS-CUSTOM: edit/delete menu on each class for batch admins -->
-					<Dropdown
-						:options="[
-							{
-								label: __('Edit'),
-								icon: 'edit-2',
-								onClick: () => openEditForm(cls),
-							},
-							{
-								label: __('Delete'),
-								icon: 'trash-2',
-								onClick: () => openDeleteModal(cls),
-							},
-						]"
-					>
+					<!-- OSLMS-CUSTOM: a draft is published from here too -->
+					<Dropdown :options="classActions(cls)">
 						<template #default>
 							<Button :variant="'ghost'">
 								<template #icon>
@@ -166,7 +154,11 @@
 						).format(deletingClass.title)
 					}}
 				</p>
-				<label class="flex items-start gap-2 cursor-pointer">
+				<!-- OSLMS-CUSTOM: a draft was announced to nobody, there is no one to warn -->
+				<label
+					v-if="!isDraftLiveClass(deletingClass)"
+					class="flex items-start gap-2 cursor-pointer"
+				>
 					<input
 						type="checkbox"
 						v-model="notifyStudentsOnDelete"
@@ -207,6 +199,10 @@ import { openBatchForm } from '@/composables/useBatchForms'
 import { openFormRoute } from '@/composables/useFormRoute'
 import LiveClassAttendance from '@/components/Modals/LiveClassAttendance.vue'
 import LiveClassCard from '@/components/LiveClassCard.vue'
+import {
+	confirmPublishLiveClass,
+	isDraftLiveClass,
+} from '@/oslms/utils/liveClassDraft'
 
 // OSLMS-CUSTOM: server-side pagination of the class list
 const PAGE_SIZE = 20
@@ -273,6 +269,8 @@ const liveClasses = createResource({
 				'owner',
 				'conferencing_provider',
 				'batch_name',
+				// OSLMS-CUSTOM: draft badge and Publish action
+				'status',
 			],
 			filters: listFilters.value,
 			order_by: computedOrderBy.value,
@@ -350,9 +348,33 @@ const openEditForm = (cls) => {
 	})
 }
 
+// OSLMS-CUSTOM: card menu; a draft also offers Publish
+const classActions = (cls) => [
+	...(isDraftLiveClass(cls)
+		? [
+				{
+					label: __('Publish'),
+					icon: 'send',
+					onClick: () =>
+						confirmPublishLiveClass(cls, { onPublished: refreshList }),
+				},
+			]
+		: []),
+	{
+		label: __('Edit'),
+		icon: 'edit-2',
+		onClick: () => openEditForm(cls),
+	},
+	{
+		label: __('Delete'),
+		icon: 'trash-2',
+		onClick: () => openDeleteModal(cls),
+	},
+]
+
 const openDeleteModal = (cls) => {
 	deletingClass.value = cls
-	notifyStudentsOnDelete.value = true
+	notifyStudentsOnDelete.value = !isDraftLiveClass(cls)
 	showDeleteDialog.value = true
 }
 

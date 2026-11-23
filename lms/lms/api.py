@@ -2743,6 +2743,8 @@ def get_my_live_classes():
 		filters={
 			"date": [">=", getdate()],
 			"batch_name": ["in", batches],
+			# OSLMS-CUSTOM: a draft live class is not shown to the students (os_lms live_class_draft)
+			"status": ["!=", "Draft"],
 		},
 		fields=[
 			"name",
@@ -2862,6 +2864,8 @@ def get_admin_live_classes():
 			LMSLiveClass.join_url,
 			LMSLiveClass.started_at,
 			LMSLiveClass.owner,
+			# OSLMS-CUSTOM: the card marks a draft live class (os_lms live_class_draft)
+			LMSLiveClass.status,
 		)
 		.where(CourseInstructor.instructor == frappe.session.user)
 		.where(LMSLiveClass.date >= getdate())

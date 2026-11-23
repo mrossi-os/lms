@@ -11557,3 +11557,47 @@ msgstr "Modelli"
 #: frontend/src/oslms/utils/settingsTabs.js
 msgid "Manage the email templates for your learning system"
 msgstr "Gestisci i modelli email per il tuo sistema di apprendimento"
+
+#: frontend/src/pages/Forms/LiveClassForm.vue
+msgid "The live class is saved as a draft: the students are not notified and do not see it until you publish it."
+msgstr "La lezione dal vivo viene salvata in bozza: gli studenti non ricevono avvisi e non la vedono finché non la pubblichi."
+
+#: frontend/src/pages/Forms/LiveClassForm.vue
+msgid "Save as Draft"
+msgstr "Salva bozza"
+
+#: frontend/src/pages/Forms/LiveClassForm.vue
+msgid "Live class saved as a draft"
+msgstr "Lezione dal vivo salvata in bozza"
+
+#: frontend/src/oslms/utils/liveClassDraft.js
+msgid "Publish live class"
+msgstr "Pubblica la lezione dal vivo"
+
+#: frontend/src/oslms/utils/liveClassDraft.js
+msgid "Publish {0}? Everyone in the batch receives the invitation email and a notification right away."
+msgstr "Pubblicare {0}? Tutti gli iscritti della classe ricevono subito l'email di invito e una notifica."
+
+#: frontend/src/oslms/utils/liveClassDraft.js
+msgid "Live class published: the invitations are on their way"
+msgstr "Lezione dal vivo pubblicata: gli inviti sono in partenza"
+
+#: frontend/src/components/LiveClassCard.vue
+msgid "Draft"
+msgstr "Bozza"
+
+#: frontend/src/components/LiveClassCard.vue
+msgid "Not published: the students do not see it"
+msgstr "Non pubblicata: gli studenti non la vedono"
+
+#: apps/os_lms/os_lms/os_lms/api.py
+msgid "This live class has already been published."
+msgstr "Questa lezione dal vivo è già stata pubblicata."
+
+#: apps/os_lms/os_lms/os_lms/api.py
+msgid "This live class is already over: change its date and time before publishing it."
+msgstr "Questa lezione dal vivo è già terminata: cambiane data e ora prima di pubblicarla."
+
+#: apps/os_lms/os_lms/os_lms/api.py
+msgid "Publish the live class before starting it."
+msgstr "Pubblica la lezione dal vivo prima di avviarla."

@@ -78,6 +78,11 @@ def user_can_access(doc, user: str) -> bool:
 		return False
 	if user == "Administrator" or user == doc.get("host"):
 		return True
+	from os_lms.os_lms.live_class_draft import can_see_drafts, is_draft
+
+	# A draft was announced to nobody: its students get no calendar file or join link.
+	if is_draft(doc):
+		return can_see_drafts(doc.get("batch_name"), user)
 	if LIVE_CLASS_STAFF_ROLES & set(frappe.get_roles(user)):
 		return True
 	batch = doc.get("batch_name")

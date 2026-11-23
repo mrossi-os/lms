@@ -569,9 +569,15 @@ def get_batch_timetable(batch: str):
 
 
 def get_live_classes(batch):
+	# OSLMS-CUSTOM: the timetable of a student leaves the draft live classes out
+	from os_lms.os_lms.live_class_draft import can_see_drafts
+
+	filters = {"batch_name": batch}
+	if not can_see_drafts(batch):
+		filters["status"] = ["!=", "Draft"]
 	live_classes = frappe.get_all(
 		"LMS Live Class",
-		{"batch_name": batch},
+		filters,
 		["name", "title", "date", "time as start_time", "duration", "join_url as url"],
 		order_by="date",
 	)

@@ -10117,3 +10117,76 @@ in inglese («Toggle Theme», «Apps», «Manager Settings»…). Il computed le
 
   [entries.checks]
   unit = "frontend/src/tests/userDropdownTranslations.test.ts"
+
+# --- Lezioni live in bozza (LiveClassForm, LiveClass, LiveClassCard) ----------
+
+[[entries]]
+id = "live-class-draft-publish"
+title = "Le lezioni live nascono in bozza e si pubblicano a parte"
+layer = "spa-graft"
+confidence = "high"
+intent = """
+Richiesta del cliente (2026-11-23): creare una live mandava subito email di invito e notifica a
+tutta la classe. Ogni lezione nasce ora come bozza (status Draft, forzato in before_insert
+dell'override os_lms) e nessuno viene avvisato finché un gestore non la pubblica
+(os_lms.os_lms.api.publish_live_class, che invia invito + notifica). Lato SPA: il pulsante di
+creazione dice «Salva bozza» con un avviso; il form di modifica di una bozza ha anche «Pubblica»
+(salva e poi pubblica); la card mostra il badge Bozza e nessun Avvia/Partecipa; il menu della
+card offre «Pubblica»; eliminando una bozza non si propone di avvisare gli studenti. Pubblicare
+chiede conferma (frontend/src/oslms/utils/liveClassDraft.js), perché le email non si ritirano.
+Gli studenti non vedono le bozze: lo garantisce il backend (live_class_draft.py: permission
+query + has_permission, filtri status != Draft su home studente, timetable, promemoria,
+iscrizione, ics/join). Le live senza status (create prima) contano come pubblicate."""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
+  anchor = ":label=\"isEdit ? __('Save') : __('Save as Draft')\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
+  anchor = "v-else-if=\"!isEdit || isDraft\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
+  anchor = "data-testid=\"live-class-publish\""
+  symbol = "publishFromForm"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
+  anchor = "() => isEdit.value && isDraftLiveClass(liveClassDoc.data)"
+  symbol = "isDraft"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/LiveClass.vue"
+  anchor = "<Dropdown :options=\"classActions(cls)\">"
+  symbol = "classActions"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/LiveClass.vue"
+  anchor = "v-if=\"!isDraftLiveClass(deletingClass)\""
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Batches/components/LiveClass.vue"
+  anchor = "notifyStudentsOnDelete.value = !isDraftLiveClass(cls)"
+  symbol = "openDeleteModal"
+
+  [[entries.sites]]
+  file = "frontend/src/components/LiveClassCard.vue"
+  anchor = "const draft = computed(() => isDraftLiveClass(props.cls))"
+  symbol = "draft"
+
+  [[entries.sites]]
+  file = "frontend/src/components/LiveClassCard.vue"
+  anchor = "<Badge :label=\"__('Draft')\" theme=\"orange\" size=\"sm\" />"
+
+  [[entries.sites]]
+  file = "frontend/src/tests/liveClassForm.test.ts"
+  anchor = "it('creates a draft: the button says so and the form warns nobody is notified', async () => {"
+
+  [entries.visibility]
+  subject = "lezioni live in bozza (badge, Pubblica, visibilità)"
+  allow = ["Moderator", "Docente", "Batch Evaluator", "course-instructor", "Valutatore"]
+  deny = ["Student"]
+
+  [entries.checks]
+  unit = "apps/os_lms/os_lms/os_lms/tests/test_live_class_draft.py"

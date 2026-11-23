@@ -9,6 +9,7 @@ from lms.lms.doctype.lms_live_class.lms_live_class import LMSLiveClass
 from lms.lms.utils import get_lms_route
 
 from os_lms.os_lms.email_utils import as_email_text, send_templated_email
+from os_lms.os_lms.live_class_draft import DRAFT, PUBLISHED, is_draft
 from os_lms.os_lms.live_class_ics import get_calendar_links
 from os_lms.os_lms.live_class_join import get_join_gate_url
 
@@ -31,6 +32,22 @@ class CustomLMSLiveClass(LMSLiveClass):
 		if self.conferencing_provider != "Google Meet" and self.zoom_account:
 			return True
 		return False
+
+	def before_insert(self):
+		# Every class is born a draft, whoever creates it and whatever the caller sent:
+		# nobody is told about it until it is published (see `publish`).
+		self.status = DRAFT
+
+	def publish(self):
+		"""Turn a draft into a published class and tell the participants.
+
+		The invitation email and the in-app notification used to go out at creation;
+		they are sent here now. The caller (`api.publish_live_class`) holds the row
+		lock and has already checked the class is a draft that has not ended.
+		"""
+		self.db_set("status", PUBLISHED)
+		self._send_invitation_safe()
+		self._send_notification_safe()
 
 	def on_update(self):
 		# Keeps the linked Google Calendar event in sync (upstream behaviour).
@@ -70,9 +87,14 @@ class CustomLMSLiveClass(LMSLiveClass):
 		"""
 		from os_lms.os_lms.api import normalize_live_class_value
 
+		# A draft has told nobody yet: the invitation sent on publish carries the
+		# details as they are then.
+		if is_draft(self):
+			return
+
 		previous = self.get_doc_before_save()
 		if not previous:
-			# Part of the insert: the invitation email already covers this.
+			# Part of the insert: nothing was announced before.
 			return
 
 		changed = [
@@ -216,8 +238,8 @@ class CustomLMSLiveClass(LMSLiveClass):
 			else:
 				_lc_log(f"[create_calendar_event] {self.name} NO meet link returned by Google")
 
-		self._send_invitation_safe()
-		self._send_notification_safe()
+		# No invitation or notification here: the class is a draft until it is
+		# published, and `publish` sends them.
 		_lc_log(f"[create_calendar_event] END name={self.name} ({'Meet' if is_meet else 'Zoom'})")
 
 	def _send_invitation_safe(self):

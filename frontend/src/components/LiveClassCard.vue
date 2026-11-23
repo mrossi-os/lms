@@ -7,6 +7,10 @@
 		<div v-if="$slots.actions" class="absolute top-2 right-2" @click.stop>
 			<slot name="actions" />
 		</div>
+		<!-- OSLMS-CUSTOM: draft badge (a draft is visible only to the batch staff) -->
+		<div v-if="draft" class="mb-1">
+			<Badge :label="__('Draft')" theme="orange" size="sm" />
+		</div>
 		<div class="font-semibold text-ink-gray-9 mb-1 pr-8">
 			{{ cls.title }}
 		</div>
@@ -27,8 +31,16 @@
 					{{ dayjs(getClassEnd(cls)).format('hh:mm A') }}
 				</span>
 			</div>
+			<!-- OSLMS-CUSTOM: a draft cannot be started or joined until it is published -->
 			<div
-				v-if="canHost(cls)"
+				v-if="draft"
+				class="flex items-center gap-x-2 text-ink-gray-5 text-sm"
+			>
+				<Info class="w-4 h-4 stroke-1.5" />
+				<span>{{ __('Not published: the students do not see it') }}</span>
+			</div>
+			<div
+				v-else-if="canHost(cls)"
 				class="flex items-center gap-x-2 text-ink-gray-9 mt-auto"
 				@click.stop
 			>
@@ -90,9 +102,10 @@
 <script setup>
 import { openExternal } from '@/utils/openExternal'
 import { safeUrl } from '@/utils/safeUrl'
-import { createResource, Tooltip, toast } from 'frappe-ui'
+import { Badge, createResource, Tooltip, toast } from 'frappe-ui'
 import { Calendar, Clock, Info, Monitor, Video } from 'lucide-vue-next'
-import { inject } from 'vue'
+import { computed, inject } from 'vue'
+import { isDraftLiveClass } from '@/oslms/utils/liveClassDraft'
 
 const JOIN_WINDOW_MINUTES_BEFORE = 15
 
@@ -123,6 +136,9 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['card-click', 'started'])
+
+// OSLMS-CUSTOM: drafts carry `status` (batch tab, admin home); student lists never do
+const draft = computed(() => isDraftLiveClass(props.cls))
 
 const getClassStart = (cls) => {
 	// A Frappe Time field is serialised as `str(timedelta)`, which drops the

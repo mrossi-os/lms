@@ -141,7 +141,10 @@ class LMSBatchEnrollment(Document):
 				enrollment.save(ignore_permissions=True)
 
 	def add_member_to_live_class(self):
-		live_classes = frappe.get_all("LMS Live Class", {"batch_name": self.batch}, ["name", "event"])
+		# OSLMS-CUSTOM: no calendar invite for a draft live class (os_lms live_class_draft)
+		live_classes = frappe.get_all(
+			"LMS Live Class", {"batch_name": self.batch, "status": ["!=", "Draft"]}, ["name", "event"]
+		)
 
 		for live_class in live_classes:
 			if live_class.event:

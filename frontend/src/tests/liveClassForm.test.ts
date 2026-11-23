@@ -294,6 +294,17 @@ describe('LiveClassForm as a route', () => {
 		expect(meetSubmit).toHaveBeenCalledTimes(1)
 	})
 
+	// OSLMS-CUSTOM: every class is saved as a draft; nothing is sent at creation
+	it('creates a draft: the button says so and the form warns nobody is notified', async () => {
+		const router = makeRouter()
+		await router.push('/batches/B1/live-class/new')
+		const wrapper = await mountForm(router, moderator)
+		const save = wrapper.find('[data-testid="live-class-save"]')
+		expect(save.attributes('label')).toBe('Save as Draft')
+		expect(wrapper.find('[data-testid="live-class-draft-notice"]').exists()).toBe(true)
+		expect(wrapper.find('[data-testid="live-class-publish"]').exists()).toBe(false)
+	})
+
 	it('refreshes the Classes tab list after a create, by cache key', async () => {
 		// The `reloadLiveClasses` defineModel is gone with the modal; the tab's
 		// list resource is found by the key LiveClass.vue registers it under.

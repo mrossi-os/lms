@@ -100,7 +100,11 @@ permission_query_conditions = {
     ),
     # Scope list views to the batches a "Valutatore" is assigned to.
     "LMS Batch Enrollment": "os_lms.os_lms.valutatore.batch_enrollment_query_conditions",
-    "LMS Live Class": "os_lms.os_lms.valutatore.live_class_query_conditions",
+    # Valutatore scope, plus drafts hidden from the students (live_class_draft).
+    "LMS Live Class": [
+        "os_lms.os_lms.valutatore.live_class_query_conditions",
+        "os_lms.os_lms.live_class_draft.query_conditions",
+    ],
     "LMS Quiz Submission": "os_lms.os_lms.valutatore.quiz_submission_query_conditions",
     # The proctoring log (and its camera stills, which inherit its audience) follows the
     # quiz submission it belongs to.
@@ -131,6 +135,8 @@ has_permission = {
     "LMSA Query Log": "os_lms.os_lms.doctype.lmsa_query_log.lmsa_query_log.has_permission",
     # Course Creator and Docente issue certificates only for the courses they teach.
     "LMS Certificate": "os_lms.os_lms.certificate_permissions.has_permission",
+    # A draft live class exists only for its batch's staff, not for its students.
+    "LMS Live Class": "os_lms.os_lms.live_class_draft.has_permission",
     # Veto by-name access to submissions outside the valutatore's batches.
     "LMS Quiz Submission": "os_lms.os_lms.valutatore.quiz_submission_has_permission",
     "LMS Quiz Violation Log": "os_lms.os_lms.valutatore.violation_log_has_permission",

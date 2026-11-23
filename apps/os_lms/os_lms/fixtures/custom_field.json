@@ -378,6 +378,21 @@
  },
  {
   "doctype": "Custom Field",
+  "name": "LMS Live Class-status",
+  "dt": "LMS Live Class",
+  "label": "Status",
+  "fieldname": "status",
+  "fieldtype": "Select",
+  "options": "Draft\nPublished",
+  "insert_after": "batch_name",
+  "read_only": 1,
+  "no_copy": 1,
+  "in_list_view": 1,
+  "in_standard_filter": 1,
+  "description": "A draft live class has not been announced: its students get no invitation, reminder or notification and do not see it. Publish it from the batch's Live Class tab. Empty = created before drafts existed (published)."
+ },
+ {
+  "doctype": "Custom Field",
   "name": "LMS Quiz-penalize_unanswered",
   "dt": "LMS Quiz",
   "label": "Penalise Unanswered Questions",

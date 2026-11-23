@@ -26,6 +26,21 @@
 						}}
 					</span>
 				</div>
+				<!-- OSLMS-CUSTOM: a draft (and every new class) is announced to nobody until it is published -->
+				<div
+					v-else-if="!isEdit || isDraft"
+					data-testid="live-class-draft-notice"
+					class="flex items-start gap-2 bg-surface-blue-1 px-3 py-2 rounded-lg text-ink-blue-6 text-sm"
+				>
+					<span class="lucide-info size-4 shrink-0 mt-0.5" />
+					<span>
+						{{
+							__(
+								'The live class is saved as a draft: the students are not notified and do not see it until you publish it.'
+							)
+						}}
+					</span>
+				</div>
 				<div
 					v-else-if="isEdit"
 					class="flex items-start gap-2 bg-surface-blue-1 px-3 py-2 rounded-lg text-ink-blue-3 text-sm"
@@ -180,11 +195,20 @@
 		<template #actions>
 			<div
 				v-if="!refusal && !loadingBatch"
-				class="flex items-center justify-end"
+				class="flex items-center justify-end gap-2"
 			>
+				<!-- OSLMS-CUSTOM: a draft is published from its edit form too (saves first) -->
+				<HeaderButton
+					v-if="isEdit && isDraft"
+					data-testid="live-class-publish"
+					:label="__('Publish')"
+					:loading="saving"
+					@click="publishFromForm()"
+				/>
+				<!-- OSLMS-CUSTOM: creating saves a draft, nothing is sent -->
 				<HeaderButton
 					data-testid="live-class-save"
-					:label="__('Save')"
+					:label="isEdit ? __('Save') : __('Save as Draft')"
 					variant="solid"
 					:loading="
 						saving ||
@@ -220,6 +244,10 @@ import {
 import { useFormRoute } from '@/composables/useFormRoute'
 import { submitResource } from '@/utils/resource'
 import { getDateFormat } from '@/utils/format'
+import {
+	confirmPublishLiveClass,
+	isDraftLiveClass,
+} from '@/oslms/utils/liveClassDraft'
 
 const props = defineProps({
 	batchName: {
@@ -333,6 +361,10 @@ const saving = ref(false)
 // editable, because students are already being let in on the old slot.
 const scheduleLocked = computed(
 	() => isEdit.value && !!liveClassDoc.data?.started_at
+)
+// OSLMS-CUSTOM: the class being edited is still a draft
+const isDraft = computed(
+	() => isEdit.value && isDraftLiveClass(liveClassDoc.data)
 )
 
 const reminderUnitOptions = [
@@ -491,6 +523,7 @@ const submitCreate = () => {
 // OSLMS-CUSTOM: reminders are saved on the new class right after the upstream create call
 const persistRemindersAfterCreate = (created) => {
 	const finish = () => {
+		toast.success(__('Live class saved as a draft'))
 		reloadLiveClassList()
 		close()
 	}
@@ -516,7 +549,7 @@ const persistRemindersAfterCreate = (created) => {
 	)
 }
 
-const submitUpdate = () => {
+const submitUpdate = ({ onSaved } = {}) => {
 	const payload = {
 		title: liveClass.title,
 		description: liveClass.description,
@@ -543,6 +576,7 @@ const submitUpdate = () => {
 		{
 			validate: () => validateEditFields(),
 			onSuccess() {
+				if (onSaved) return onSaved()
 				toast.success(__('Live class updated'))
 				reloadLiveClassList()
 				close()
@@ -552,6 +586,31 @@ const submitUpdate = () => {
 	).finally(() => {
 		saving.value = false
 	})
+}
+
+// OSLMS-CUSTOM: publish the draft being edited, after saving what the form holds so
+// the invitation carries it. The dialog asks first: publishing emails the batch.
+const publishFromForm = () => {
+	if (refusal.value || saving.value) return
+	confirmPublishLiveClass(
+		{ name: props.liveClassName, title: liveClass.title },
+		{
+			// false = not saved (the validation or save error was already toasted)
+			beforePublish: async () => {
+				let saved = false
+				await submitUpdate({
+					onSaved: () => {
+						saved = true
+					},
+				})
+				return saved
+			},
+			onPublished() {
+				reloadLiveClassList()
+				close()
+			},
+		}
+	)
 }
 
 // OSLMS-CUSTOM: only a real reschedule must land in the future when editing

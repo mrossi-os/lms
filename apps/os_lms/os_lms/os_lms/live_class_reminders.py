@@ -21,7 +21,9 @@ def send_live_class_reminders():
 
 	classes = frappe.get_all(
 		"LMS Live Class",
-		filters={"date": [">=", today]},
+		# A draft reminds nobody: its students were never invited. "!=" keeps the
+		# classes with no status (created before drafts existed), Frappe wraps it in IFNULL.
+		filters={"date": [">=", today], "status": ["!=", "Draft"]},
 		fields=["name", "batch_name", "title", "date", "time"],
 	)
 
