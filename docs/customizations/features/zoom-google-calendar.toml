@@ -1,0 +1,74 @@
+id = "zoom-google-calendar"
+title = "Zoom e Google Calendar"
+status = "active"
+summary = """
+Gli inviti delle lezioni dal vivo partono da un Google Calendar del cliente: ogni account Zoom (e
+ogni account Google Meet) è legato a un calendario autorizzato, che si gestisce da una scheda delle
+Impostazioni senza passare dal Desk. La piattaforma rifiuta subito, con un messaggio chiaro, una
+lezione che non potrebbe creare l'evento, e fissa le riunioni Zoom all'ora giusta."""
+why = """
+L'upstream crea l'evento di calendario delle lezioni Zoom senza dire da quale calendario mandare gli
+inviti, gestisce i Google Calendar solo dal Desk (che il Gestore non raggiunge) e il suo callback
+OAuth atterra nel Desk. Inoltre inviava a Zoom l'orario con un offset sbagliato (una lezione alle
+15:00 di Roma finiva alle 15:00 GMT) e mostrava errori incomprensibili quando credenziali o
+autorizzazioni mancavano."""
+roles = ["System Manager", "Gestore", "Moderator", "Docente", "Batch Evaluator"]
+behaviour = [
+	"nel dialogo Impostazioni, gruppo Conferenze, la scheda Google Calendar è visibile solo a System Manager e Gestore: elenca i calendari con lo stato abilitato e autorizzato e permette di crearli, modificarli e autorizzarli",
+	"se in Google Settings mancano le credenziali OAuth, la scheda lo dice e offre il collegamento «Open Google Settings» invece del pulsante di autorizzazione",
+	"«Authorize Google Calendar Access» apre il consenso Google in una finestra che, al ritorno, si chiude dentro la piattaforma e aggiorna lo stato, senza atterrare nel Desk",
+	"il ritorno dal consenso Google è accettato solo per lo stesso utente che l'ha avviato, entro 10 minuti, una sola volta e se ha ancora il permesso di scrittura sul calendario; un consenso rifiutato non salva nulla; i token sono salvati cifrati",
+	"ogni account Zoom ha un campo Google Calendar obbligatorio, mostrato nel modulo dell'account e nell'elenco degli account",
+	"rinominando un account Zoom il nome resta quello nuovo dopo il salvataggio",
+	"una classe con fornitore Zoom non si salva se l'account scelto è disattivato o non ha un Google Calendar; creare una lezione Zoom con un account così è rifiutato subito con un messaggio chiaro",
+	"creare una lezione dal vivo, Zoom o Google Meet, è rifiutato prima di scrivere nulla se il Google Calendar dell'account non è stato autorizzato, con l'indicazione di premere «Authorize Google Calendar Access»",
+	"se Google rifiuta la creazione dell'evento, l'utente legge che l'autorizzazione del calendario potrebbe essere mancante, scaduta o revocata e va ricompletata",
+	"la riunione Zoom è fissata all'ora locale della lezione nel suo fuso (15:00 Europe/Rome resta 15:00 in Zoom)",
+	"con credenziali Zoom sbagliate o account revocato l'errore dice «Zoom authentication failed for account <account>» con il motivo dato da Zoom",
+	"l'evento di calendario creato per la lezione ha oggetto e descrizione in italiano («Lezione dal vivo: <titolo>»)",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/google_calendar.py",
+	"frontend/src/components/Settings/GoogleCalendarModal.vue",
+	"frontend/src/components/Settings/GoogleCalendarSettings.vue",
+]
+upstream_watch = [
+	"Google Calendar", "google_calendar", "LMS Zoom Settings", "LMS Google Meet Settings", "ZoomSettings.vue",
+	"ZoomAccountForm.vue", "GoogleMeetSettings", "authorize_access", "google_callback", "refresh_token",
+	"validate_conferencing_provider", "create_live_class", "create_google_meet_live_class", "authenticate",
+	"start_time", "format_datetime", "create_calendar_event", "Conferencing",
+]
+data = [
+	"campo google_calendar (Link a Google Calendar, obbligatorio) aggiunto da noi al JSON upstream di LMS Zoom Settings (commit 0619704f2); LMS Google Meet Settings ha già il suo",
+	"override_whitelisted_methods di frappe.integrations...google_calendar.authorize_access e google_callback verso os_lms.os_lms.google_calendar",
+	"after_migrate os_lms.os_lms.google_calendar.encrypt_plaintext_tokens (cifra i token lasciati in chiaro dal vecchio callback)",
+	"endpoint os_lms.os_lms.google_calendar.is_google_oauth_configured",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_2026_10.py",
+]
+notes = """
+- L'orario Zoom vive in un file upstream (lms_batch.py, create_live_class): l'upstream usa
+  format_datetime con il pattern Babel «yyyy-MM-ddTHH:mm:ssZ», dove la Z finale è l'offset RFC822
+  (+0000), non una Z letterale. Riportare get_datetime(...).strftime("%Y-%m-%dT%H:%M:%S") se un merge
+  la reintroduce. Solo la vista Zoom era sbagliata: finestra di ingresso, promemoria e .ics erano
+  corretti.
+- Anche controlli di account e calendario, _ensure_calendar_authorized e authenticate sono innesti in
+  lms/lms/doctype/lms_batch/lms_batch.py; authenticate è usata anche da os_lms per riprogrammare e
+  cancellare le riunioni Zoom.
+- Il redirect registrato nella console Google nomina il metodo di Frappe: l'override lo intercetta,
+  quindi non cambiare l'URL di redirect.
+- ZoomAccountForm: al merge 027c0c56f il nostro corpo era finito in uno slot che SettingsLayout non
+  ha e il pulsante Salva era sparito (corretto il 2026-09-24): dopo ogni merge provare a salvare un
+  account Zoom.
+- La scheda Google Calendar compare nel dialogo Impostazioni (regole generali nella scheda
+  settings-dialog)."""
+history = [
+	{ date = "2026-05-04", ref = "9072515cd", summary = "creazione: gestione dei Google Calendar nelle impostazioni LMS" },
+	{ date = "2026-05-11", ref = "0619704f2", summary = "account Zoom legati a un Google Calendar per gli inviti delle lezioni" },
+	{ date = "2026-05-13", ref = "d2f1196b0", summary = "nome dell'account Zoom mantenuto e avviso per il calendario non autorizzato" },
+	{ date = "2026-05-19", ref = "99a0cc721", summary = "ritorno dal consenso Google dentro la SPA" },
+	{ date = "2026-06-01", ref = "365aa5df1", summary = "errore leggibile quando l'autenticazione Zoom fallisce" },
+	{ date = "2026-09-17", ref = "7b6ea7a18", summary = "orario della riunione Zoom inviato come ora locale" },
+	{ date = "2026-10-27", ref = "8cde04a40", summary = "OWASP: consenso legato all'utente con stato monouso, token cifrati" },
+]

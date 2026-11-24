@@ -11,6 +11,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch upstream tags
+        continue-on-error: true
+        run: git fetch --no-tags https://github.com/frappe/lms.git 'refs/tags/v*:refs/tags/v*'
 
       - uses: actions/setup-python@v6
         with:
@@ -21,3 +27,7 @@ jobs:
 
       - name: Customization drift
         run: python3 scripts/check_customizations.py
+
+      - name: Translation records
+        if: hashFiles('docs/customizations/translations-it.toml') != ''
+        run: python3 scripts/customization_translations.py --check

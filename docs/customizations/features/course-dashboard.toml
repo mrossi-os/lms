@@ -1,0 +1,61 @@
+id = "course-dashboard"
+title = "Dashboard del corso e rimozione studenti"
+status = "active"
+summary = """
+La dashboard del corso, dove chi gestisce il corso segue i suoi studenti, è più comoda e in
+italiano: l'elenco studenti si ordina, la legenda dei progressi è tradotta, il dettaglio dello
+studente si legge anche su telefono. Gestore e amministratore possono togliere studenti dal corso;
+solo l'amministratore può anche cancellare tutti i loro dati del corso."""
+why = """
+Il cliente deve poter togliere dal corso studenti iscritti per errore o non più attivi, e in casi
+particolari cancellarne ogni traccia (regola decisa il 2026-09-25). L'upstream non prevede la
+rimozione di uno studente dal corso. Le etichette dei progressi arrivano dal backend in inglese e
+l'elenco studenti non era ordinabile."""
+roles = ["System Manager", "Gestore", "Moderator", "Course Creator", "Docente"]
+behaviour = [
+	"nella dashboard del corso l'elenco studenti si ordina per nome, avanzamento e data di iscrizione: su desktop cliccando le intestazioni, su telefono con un selettore accanto alla ricerca; l'ordine vale anche per gli studenti caricati con «Carica altro»",
+	"la legenda della distribuzione dei progressi è in italiano (Appena iniziato, In corso, Avanzato, Completato) con i colori rosso, ambra, blu e verde per fascia",
+	"il campo di ricerca degli studenti è etichettato «Cerca per nome»",
+	"il dialogo dei progressi dello studente ha titolo e stati di compiti ed esercizi in italiano e, sotto i 768 px, una sola colonna",
+	"System Manager e Gestore selezionano uno o più studenti e li tolgono dal corso, dopo una conferma: si cancella solo l'iscrizione, mentre progressi, consegne e certificati restano e tornano se lo studente viene reiscritto",
+	"solo il System Manager ha in più «Rimuovi e cancella i dati» (cestino rosso), che dopo una conferma cancella tutto ciò che lo studente ha in quel corso: consegne dei quiz con registro di sorveglianza, compiti, esercizi di programmazione, tempi di visione, note, richieste e valutazioni di certificazione, recensione, interesse, domande al tutor AI, simulazioni AI, progressi, certificati e registro TrueSkill",
+	"il server rifiuta la rimozione a chi non ha System Manager o Gestore e la cancellazione dei dati a chi non è System Manager, anche chiamando l'endpoint direttamente; rifiuta anche iscrizioni che non appartengono al corso indicato",
+	"un badge TrueSkill già emesso resta valido su TrueSkill dopo la cancellazione dei dati, e il dialogo di conferma lo dice",
+	"ogni record cancellato resta come Deleted Document e un amministratore può ripristinarlo dal Desk",
+	"su desktop la barra di selezione degli studenti resta visibile in fondo al riquadro scorrevole, senza dover scorrere fino all'ultima riga",
+]
+areas = ["apps/os_lms/os_lms/os_lms/course_students.py"]
+upstream_watch = [
+	"CourseDashboard.vue", "remove student", "unenroll", "delete enrollment", "LMS Enrollment delete",
+	"ResponsiveListView", "selection banner", "sort", "get_course_progress_distribution",
+	"StudentCourseProgress.vue", "student progress", "course dashboard mobile",
+]
+data = [
+	"REMOVE_ROLES (System Manager, Gestore) e PURGE_ROLES (System Manager) in os_lms.os_lms.course_students; endpoint remove_course_students",
+]
+notes = """
+- Le regole stanno sul server (course_students.remove_course_students); la SPA le rispecchia
+  leggendo user.data.roles. Non tornare a N chiamate frappe.client.delete dalla pagina: qualunque
+  Moderator potrebbe farle.
+- L'ordine della cancellazione completa è vincolato dai collegamenti: registri di sorveglianza prima
+  delle consegne dei quiz; turni, tracce e debrief prima delle sessioni di simulazione; iscrizione
+  prima del certificato (LMS Enrollment.certificate); progressi del corso dopo l'iscrizione (il loro
+  after_delete ricalcola). Gli esercizi di programmazione non hanno il campo corso: si ricavano dai
+  blocchi «program» delle lezioni. Se l'upstream aggiunge un nuovo doctype per studente e corso, va
+  aggiunto alla cancellazione completa.
+- La prima versione (9a2a1a38a, 2026-03-30, per tutti i gestori) è stata persa in silenzio il
+  2026-06-04 nel commit 6d6d2af78 e nessuno se n'è accorto per tre mesi: non era nell'inventario.
+- ResponsiveListView è un file upstream con due innesti opzionali (prop bannerTo per il dock della
+  barra di selezione; prop sortColumn/sortOrder ed evento sort per le intestazioni ordinabili): senza
+  le prop il componente è identico all'upstream. La dashboard della classe ha lo stesso problema della
+  barra fuori vista, lasciato com'è.
+- La rimozione dalla classe ha regole diverse ed è nella scheda batch-students. Il redesign mobile
+  upstream di v2.62.0 copre già l'impilamento su telefono (voce course-dashboard-mobile-layout, il cui
+  testo è ormai anche nell'upstream). Non esiste un test automatico di
+  os_lms.os_lms.course_students."""
+history = [
+	{ date = "2026-03-30", ref = "9a2a1a38a", summary = "creazione: rimozione degli studenti dal corso (poi persa nel merge del 2026-06-04)" },
+	{ date = "2026-06-04", ref = "8fafc219c", summary = "legenda dei progressi in italiano" },
+	{ date = "2026-07-21", ref = "473784a94", summary = "colonne ordinabili nell'elenco studenti" },
+	{ date = "2026-09-25", ref = "03b8a5dca", summary = "rimozione ripristinata con la regola del committente: System Manager e Gestore rimuovono, solo System Manager cancella i dati" },
+]

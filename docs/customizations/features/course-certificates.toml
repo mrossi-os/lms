@@ -1,0 +1,65 @@
+id = "course-certificates"
+title = "Certificato di completamento interno (PDF)"
+status = "active"
+summary = """
+Il certificato di fine corso generato dalla piattaforma (PDF dal modello del cliente) si scarica
+sempre con il generatore che lo rende correttamente, si apre dalla pagina Certificati del profilo e
+compare una sola volta nella card del corso. Lo staff che non è moderatore vede e gestisce solo i
+certificati dei corsi che insegna."""
+why = """
+Il modello di certificato del cliente usa una rotazione che solo il generatore PDF Chrome sa
+rendere, mentre il download upstream usa wkhtmltopdf e produceva una pagina bianca (2026-07-07).
+L'upstream lascia inoltre a ogni Course Creator, e quindi a ogni Docente, creare, cambiare o revocare
+qualunque certificato, anche per chi non è mai stato iscritto (e su un corso TrueSkill l'inserimento
+emette il badge esterno): chiuso con l'analisi OWASP del 2026-10-28."""
+roles = ["Student", "Moderator", "Course Creator", "Batch Evaluator", "Docente"]
+behaviour = [
+	"ogni download del certificato PDF interno, dalla pagina Certificazione del corso, dall'evento di valutazione e dal profilo, usa il generatore PDF Chrome, così il modello del cliente non esce bianco",
+	"dopo l'emissione la card del corso mostra solo «Visualizza certificato» e non anche «Ottieni certificato»; il pulsante aspetta i dati del certificato per non comparire e sparire",
+	"«Visualizza certificato» nella card porta alla pagina Certificati del profilo dello studente, dove si apre il certificato giusto (PDF interno o badge TrueSkill)",
+	"nella pagina «Genera certificati» della classe la scelta del corso mostra il segnaposto tradotto",
+	"spegnendo il certificato a pagamento di un corso valutatore e fuso orario si azzerano; un valutatore che non esiste più viene tolto anche a certificato attivo, così il corso torna a salvarsi",
+	"Course Creator, Batch Evaluator e Docente senza Moderator creano, modificano, revocano e vedono negli elenchi solo i certificati dei corsi di cui sono istruttori indicati (o della classe, per un certificato senza corso), più quelli che la regola upstream del valutatore assegnato concede loro",
+	"un certificato non si può spostare da o verso un corso che l'utente non insegna",
+	"un certificato senza corso né classe è riservato a Moderator e System Manager",
+	"i certificati pubblicati e i propri restano leggibili da tutti; Moderator e amministratori mantengono ogni potere",
+	"nel Desk la scheda di un LMS Certificate ha il pulsante «TrueSkills Issue Log» per chi può leggere quel registro",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/certificate_permissions.py",
+	"apps/os_lms/os_lms/public/js/lms_certificate.js",
+]
+upstream_watch = [
+	"LMS Certificate", "certificate download", "download_pdf", "pdf_generator", "print format",
+	"create_certificate", "CertificationLinks.vue", "CourseCardOverlay certificate", "CourseCertification.vue",
+	"Event.vue", "BulkCertificatesForm", "validate_certification", "paid certificate", "evaluator",
+	"evaluates_certificate", "is_assigned_evaluator", "LMS Certificate has_permission",
+]
+data = [
+	"Print Format del cliente su LMS Certificate creato a mano nel Desk (la cartella esportata è in .gitignore), impostato come predefinito; il template è congelato in ogni certificato alla creazione",
+	"hook has_permission e get_permission_query_conditions di LMS Certificate in os_lms.os_lms.certificate_permissions (STAFF_ROLES = Course Creator, Batch Evaluator, Docente)",
+]
+tests = ["apps/os_lms/os_lms/os_lms/tests/test_owasp_package_e.py"]
+notes = """
+- download_pdf usa wkhtmltopdf se non riceve pdf_generator, ignorando sia il Print Format sia le
+  Print Settings: l'unico modo di avere Chrome è &pdf_generator=chrome nell'indirizzo. Oggi la regola
+  vive in useCertificateViewer.js, Event.vue e CourseCertification.vue; dopo ogni merge che tocca
+  questi file ricontrollarla. Serve Chromium disponibile sul server.
+- PDF di Frappe: i meta pdfkit-* sono ignorati, pagina e margini si regolano con la classe CSS
+  .print-format; wkhtmltopdf non fa transform:rotate né object-fit; l'anteprima del Desk è HTML e non
+  applica l'orientamento, provare sempre il PDF vero.
+- Il template è congelato nel certificato alla creazione: cambiare il Print Format predefinito vale
+  solo per i certificati futuri (per quelli vecchi serve aggiornare il campo template in blocco).
+- Sul certificato del corso la regola globale del Docente non vale (decisione del cliente del 28/10):
+  insegna i corsi in cui è indicato. Frappe mette questi hook in AND con quelli upstream: possono solo
+  restringere.
+- Il pulsante della card non deve tornare a scaricare il PDF: se l'upstream reintroduce
+  downloadCertificate in CertificationLinks.vue, tenere il router-link al profilo.
+- Il badge TrueSkill che sostituisce il PDF sui corsi TrueSkill è nella scheda trueskills-certificates."""
+history = [
+	{ date = "2026-07-07", ref = "28976b969", summary = "creazione: download del certificato forzato sul generatore PDF Chrome" },
+	{ date = "2026-07-20", ref = "a3ed8652d", summary = "niente «Ottieni certificato» dopo l'emissione" },
+	{ date = "2026-07-20", ref = "ce30c447e", summary = "«Visualizza certificato» apre la pagina Certificati del profilo" },
+	{ date = "2026-09-11", ref = "dd87156bd", summary = "campi del certificato a pagamento azzerati quando lo si disattiva" },
+	{ date = "2026-10-28", ref = "d825bc9d5", summary = "OWASP E4: certificati limitati ai corsi insegnati dallo staff non moderatore" },
+]

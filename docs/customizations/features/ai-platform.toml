@@ -1,0 +1,72 @@
+id = "ai-platform"
+title = "Configurazione AI: fornitori, chiavi e prompt"
+status = "active"
+summary = """
+Lo strato comune a tutte le funzioni AI della piattaforma: dalle impostazioni si scelgono il
+fornitore (OpenAI, Google Gemini, Anthropic, DeepSeek) e i modelli per il tutor, le simulazioni,
+la voce e la trascrizione, si inseriscono le chiavi (salvate cifrate) e si accendono o spengono le
+singole funzioni. Un pannello a parte permette di modificare i testi dei prompt dell'AI (Tutor,
+Coach, personaggio delle simulazioni, generatore di varianti), che a ogni aggiornamento seguono il
+codice solo se nessuno li ha cambiati."""
+why = """
+Il cliente vuole poter cambiare fornitore e modello senza interventi sul codice, contenere i costi
+e adattare il comportamento dell'AI ai propri corsi. La politica AI (certificazione ESG) chiede
+inoltre di sapere sempre quale versione del prompt è in uso e di proteggere le chiavi (OWASP A04).
+L'upstream non ha alcuna integrazione AI."""
+roles = ["System Manager", "Gestore", "Moderator"]
+behaviour = [
+	"la scheda AI delle impostazioni (Rag Tutor, chiavi API, Simulazioni AI, voce in tempo reale, dettatura e lettura vocale) è visibile solo agli amministratori (System Manager, Administrator); il doctype LMSA Settings ha permessi solo per System Manager",
+	"per chat e resoconto si sceglie il fornitore fra OpenAI, Google Gemini, Anthropic, DeepSeek (o «auto», che usa il fornitore predefinito) e il modello; per dettatura e lettura vocale solo OpenAI o Gemini; per la voce in tempo reale OpenAI o Gemini",
+	"con il fornitore su «auto», se una chiamata non in streaming fallisce si provano gli altri fornitori nell'ordine di fallback configurato; con un fornitore scelto esplicitamente, o con chiave non valida o contesto troppo lungo, l'errore arriva subito senza tentativi",
+	"le chiavi OpenAI, Gemini, DeepSeek, Anthropic e Vimeo sono campi password cifrati; le chiavi OpenAI e Vimeo salvate in chiaro in passato vengono cifrate al migrate e cancellate dallo storico delle modifiche",
+	"il pannello «Prompt AI» (amministratori e Gestore) modifica i prompt Tutor AI, Coach AI, Personaggio della simulazione e Generatore di varianti dello scenario: abilitato, system prompt, user template, temperatura, max token, con l'elenco dei segnaposto disponibili; un prompt disabilitato torna al testo del codice",
+	"a ogni migrate un prompt ancora uguale a un testo scritto dal codice passa alla versione nuova del codice; un prompt modificato dal pannello resta com'è e il record indica quale versione del codice non è stata applicata",
+	"ogni uso di un prompt porta una firma con la versione e l'inizio dell'impronta SHA-256 del testo davvero usato (es. debrief.v2#bb628576), perché l'etichetta di versione resta uguale quando il testo cambia dal pannello",
+	"le trascrizioni dei video YouTube e Vimeo usate dall'AI sono conservate in una cache per video e non si richiedono di nuovo",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/ai/__init__.py",
+	"apps/os_lms/os_lms/os_lms/ai/utils/*",
+	"apps/os_lms/os_lms/os_lms/doctype/lmsa_settings/*",
+	"apps/os_lms/os_lms/os_lms/doctype/lmsa_prompt_template/*",
+	"apps/os_lms/os_lms/os_lms/doctype/lmsa_transcript_cache/*",
+	"frontend/src/oslms/components/ai/Settings/AISettings.vue",
+	"frontend/src/oslms/components/ai/Settings/PromptSettings.vue",
+]
+upstream_watch = [
+	"AI settings", "LLM provider", "openai", "gemini", "anthropic", "deepseek", "API key", "prompt template",
+	"system prompt", "Settings.vue tabsStructure", "ADMIN_ONLY_ROLES", "Password field", "after_migrate",
+	"transcript",
+]
+data = [
+	"single LMSA Settings (sezioni Rag Tutor, chiavi API, Simulazioni AI, chat, resoconto, audio, voce in tempo reale); DocPerm solo System Manager",
+	"doctype LMSA Prompt Template, un record per scopo (name = purpose: tutor, debrief, role_play, scenario_variant_generator, scenario_generator_ai, evaluation_schema_generator_ai, llm_student e i quattro giudici); campi code_version_not_applied e default_fingerprint; DocPerm System Manager e Moderator",
+	"doctype LMSA Transcript Cache (name_key, video_id, source, video_title, cached_on, transcript)",
+	"after_migrate: setup.seed_prompt_templates, ai.utils.prompt_sync.sync_prompt_templates, ai.utils.api_keys.encrypt_plaintext_api_keys",
+	"extra opzionale tracing (arize-phoenix-otel) in apps/os_lms/pyproject.toml, usato solo dai test di imparzialità",
+]
+tests = ["apps/os_lms/os_lms/os_lms/ai/simulations/tests/test_prompt_sync.py"]
+notes = """
+- Il campo «LLM Model» della sezione Rag Tutor non è letto da nessuno: lo usa solo GptChatbot, che
+  nessun codice chiama. Tutor e simulazioni rispondono con il fornitore e il modello «Chat» delle
+  Simulazioni AI (resolve_provider("chat")). Vedi i dubbi del lotto 4.
+- La temperatura del Coach impostata dal Desk viene ignorata: _ask_llm passa 0.2 (rilevato il
+  2026-11-02, non cambiato).
+- Sincronizzazione dei prompt e cifratura delle chiavi sono in after_migrate e non in patch, perché
+  il deploy di staging segna come eseguite le patch nuove senza lanciarle: dopo un deploy su staging
+  verificare con SELECT che l'effetto ci sia.
+- PREVIOUS_FINGERPRINTS in prompt_sync.py elenca i testi passati del codice (e quelli salvati dal
+  pannello su staging) che il migrate può sostituire: un testo modificato a mano non va aggiunto
+  lì, altrimenti verrebbe sovrascritto.
+- La scheda Prompt AI era solo per amministratori (27f046d7c, 2026-07-14), poi aperta ai Gestore
+  con canManageOsIntegrations; il Gestore salva perché ha sempre Moderator, che ha la DocPerm.
+- Un cambio di fornitore, modello o prompt del Coach richiede un giro dei test di imparzialità
+  prima del rilascio (politica AI, scheda ai-bias-tests)."""
+history = [
+	{ date = "2026-03-16", ref = "3acbde924", summary = "creazione: doctype AI e impostazioni LMSA Settings" },
+	{ date = "2026-05-18", ref = "261e421c7", summary = "strato fornitori LLM indipendente dal fornitore, con fallback" },
+	{ date = "2026-06-09", ref = "38e370546", summary = "prompt configurabili (LMSA Prompt Template); il tutor li usa dal 2026-06-10 (43b3dcbb5)" },
+	{ date = "2026-07-14", ref = "27f046d7c", summary = "pannello «Prompt AI» nelle impostazioni" },
+	{ date = "2026-10-23", ref = "a8e3fbcec", summary = "OWASP: chiavi OpenAI e Vimeo cifrate e ripulite dallo storico" },
+	{ date = "2026-11-03", ref = "c12f952d4", summary = "i prompt non modificati seguono il codice a ogni migrate" },
+]

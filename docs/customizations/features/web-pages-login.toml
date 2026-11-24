@@ -1,0 +1,80 @@
+id = "web-pages-login"
+title = "Pagine web di accesso, profilo e password"
+status = "active"
+summary = """
+Le pagine che stanno fuori dalla SPA (accesso, registrazione, password dimenticata, accesso con
+link via email, la pagina «Impostazioni» /me, la modifica del profilo e il cambio password)
+hanno lo stile e i colori del cliente, i testi in italiano e i collegamenti per tornare alla
+piattaforma. Le risposte di accesso con link e di recupero password sono uguali per ogni
+indirizzo, così nessuno può scoprire chi è registrato."""
+why = """
+Le pagine web di Frappe hanno lo stile e i testi standard (molti restano in inglese, perché la
+pagina per un ospite ha un dizionario di traduzioni ridotto) e il modulo di modifica del profilo non
+mostra l'immagine né offre un modo per tornare indietro. Il cliente vuole un accesso coerente con
+il proprio marchio (marzo-luglio 2026). Le risposte uguali per tutti chiudono i rilievi OWASP del
+2026-10-26 e 2026-10-28."""
+roles = ["Guest", "Student"]
+behaviour = [
+	"la pagina /login è servita dal template di os_lms (copia della pagina di Frappe) con il foglio di stile os_lms e i colori della pagina di accesso impostati in Brand Customize, caricati per ultimi",
+	"la richiesta di accesso con link via email risponde allo stesso modo che l'indirizzo esista o no; il link arriva con il modello email di os_lms (modificabile dal Desk) ed è limitato ai tentativi orari impostati in System Settings (5 per default)",
+	"la richiesta di nuova password risponde sempre «se l'indirizzo appartiene a un account attivo, abbiamo inviato le istruzioni», senza dire se l'account esiste, se è disabilitato né di chi è; per Administrator non parte nessuna email",
+	"la pagina /me («Impostazioni») offre Modifica profilo, Reimposta password e «Vai alla Piattaforma» verso /lms",
+	"il modulo di modifica del profilo (/update-profile) e la pagina di cambio password hanno un collegamento per tornare alle Impostazioni",
+	"nel modulo di modifica del profilo la foto si vede sempre in anteprima, con i pulsanti Carica/Cambia e Rimuovi; l'etichetta è «Foto profilo» e l'avviso sui file pubblici è in italiano; la modifica si salva con il pulsante Salva del modulo",
+]
+areas = [
+	"apps/os_lms/os_lms/www/*",
+	"apps/os_lms/os_lms/templates/base.html",
+	"apps/os_lms/os_lms/templates/emails/login_with_email_link.html",
+	"apps/os_lms/os_lms/public/js/os_lms.js",
+	"apps/os_lms/os_lms/public/css/os_lms.css",
+	"lms/www/login.html",
+	"lms/www/login.py",
+]
+upstream_watch = [
+	"login.html", "login.py", "frappe/www/login", "login.bundle.css", "send_login_link", "login_via_key",
+	"reset_password", "me.html", "update-password", "edit-profile", "update-profile", "web form",
+	"Attach Image", "ControlAttach", "base.html", "frappe._messages", "templates/includes/login/login.js",
+]
+data = [
+	"pagine www di os_lms: login.html/login.py, me.html/me.py, update-password.html/update_password.py",
+	"override dei metodi frappe.www.login.send_login_link e frappe.core.doctype.user.user.reset_password verso os_lms.www.login (hooks.py)",
+	"base_template = templates/base.html di os_lms: carica os_lms.css, brand_css e os_lms.js su tutte le pagine web",
+	"modello email login_with_email_link (sovrascrivibile dal Desk tramite OS LMS Email Settings, scheda email-templates)",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_2026_10.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_package_d.py",
+]
+notes = """
+- Quale template viene servito: Frappe risolve le pagine www scorrendo le app installate dall'ultima
+  alla prima, e os_lms è l'ultima. /login quindi usa apps/os_lms/os_lms/www/login.html, e
+  lms/www/login.html con lms/www/login.py è codice morto in produzione (analisi del worklog, sezione
+  sullo stile della pagina di accesso). Il dizionario seminato in lms/www/login.html per il titolo
+  «Message» del dialogo dopo la registrazione non è quindi attivo sul sito.
+- Pagine anonime (accesso, registrazione): il dizionario client frappe._messages contiene solo una
+  parte delle traduzioni, e senza utente collegato anche {{ _() }} può uscire nella lingua predefinita
+  del sito. Per un testo che deve uscire in italiano: seminare frappe._messages o, se non basta,
+  scrivere il testo italiano direttamente (memoria web_login_client_dict_gap).
+- Il widget della foto profilo in os_lms.js dipende da dettagli interni di Frappe: struttura DOM
+  .frappe-control > .form-group > .control-input-wrapper, API frappe.web_form (fields_dict, doc) e
+  accept() che trasforma i valori mancanti in "". Non richiamare mai set_input() del controllo Attach
+  (su questo modulo cancella tutto il campo e lascia un link nudo): il widget lo sostituisce con un
+  setter che scrive solo il valore. Riverificare dopo ogni aggiornamento di Frappe.
+- Il template di login è una copia della pagina di Frappe: dopo un aggiornamento di Frappe
+  confrontarlo con frappe/www/login.html (il 2026-11-04 i fogli di stile più recenti di Frappe hanno
+  rotto l'impaginazione, corretto in os_lms.css). La regola globale input{...!important} di
+  os_lms.css per l'accesso si applica anche alle altre pagine web.
+- La pagina /me mostra «Delete Account» se Website Settings ha show_account_deletion_link: porta alla
+  richiesta standard di Frappe, diversa dall'eliminazione completa della scheda account-deletion.
+- La vecchia pagina di invito /new-sign-up rimanda a /login: scheda signup-privacy. I colori della pagina di accesso sono della scheda brand-customize."""
+history = [
+	{ date = "2026-03-18", ref = "678467050", summary = "creazione: foglio di stile os_lms per le pagine web e la pagina di accesso" },
+	{ date = "2026-03-26", ref = "1bbab1343", summary = "pagina /me sostituita da os_lms" },
+	{ date = "2026-03-31", ref = "e8f2e9f2f", summary = "pagina di accesso di os_lms e modello email dell'accesso con link" },
+	{ date = "2026-07-20", ref = "1c90974c3", summary = "collegamento per tornare alle Impostazioni da profilo e password" },
+	{ date = "2026-07-21", ref = "a886442a8", summary = "foto profilo visibile e caricabile nel modulo di modifica del profilo" },
+	{ date = "2026-10-26", ref = "749104b3f", summary = "OWASP: l'accesso con link non rivela se l'indirizzo esiste" },
+	{ date = "2026-10-28", ref = "03164a13b", summary = "OWASP: la richiesta di nuova password dà la stessa risposta per ogni indirizzo" },
+	{ date = "2026-11-04", ref = "b419ee0bc", summary = "impaginazione della pagina di accesso tenuta con i fogli di stile più recenti di Frappe" },
+]

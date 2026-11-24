@@ -1,6 +1,7 @@
 """Tests for the Stop-hook inventory guard."""
 
 import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -34,11 +35,19 @@ class BuildDecisionTest(unittest.TestCase):
 		self.assertEqual(decision["reason"].count("a.vue"), 1)
 
 
-def guard_repo(tmp, marked):
-	"""A repository with an empty inventory and optionally one marked file."""
+def guard_repo(tmp, marked, hooks_path=".githooks", strict=True):
+	"""A real git repository with an empty inventory and optionally one marked file.
+
+	`strict` creates the flag file that marks the catalogue migration as done:
+	only then does the guard ask for the commit hooks.
+	"""
 	root = Path(tmp)
-	(root / "docs" / "customizations").mkdir(parents=True)
-	(root / ".git").mkdir()
+	(root / "docs" / "customizations" / "features").mkdir(parents=True)
+	if strict:
+		(root / "docs" / "customizations" / "features" / ".strict").write_text("", encoding="utf-8")
+	subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+	if hooks_path is not None:
+		subprocess.run(["git", "config", "core.hooksPath", hooks_path], cwd=root, check=True)
 	(root / "frontend" / "src").mkdir(parents=True)
 	body = "// OSLMS-CUSTOM: nostro\n" if marked else "const a = 1\n"
 	(root / "frontend" / "src" / "Loose.vue").write_text(body, encoding="utf-8")
@@ -87,6 +96,64 @@ class MainTest(unittest.TestCase):
 			run_guard(root, "s1")
 			_, second = run_guard(root, "s2")
 		self.assertNotEqual(second, "")
+
+	def test_blocks_once_when_hooks_path_not_set(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			root = guard_repo(tmp, marked=False, hooks_path=None)
+			_, first = run_guard(root, "s1")
+			_, second = run_guard(root, "s1")
+		self.assertEqual(json.loads(first)["decision"], "block")
+		self.assertIn("git config core.hooksPath .githooks", json.loads(first)["reason"])
+		self.assertEqual(second, "")
+
+	def test_hooks_reminder_asks_for_the_user_ok(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			_, output = run_guard(guard_repo(tmp, marked=False, hooks_path=None), "s1")
+		reason = json.loads(output)["reason"]
+		self.assertIn("chiedi", reason.lower())
+		self.assertIn("ok", reason)
+
+	def test_silent_about_hooks_before_the_migration(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			code, output = run_guard(guard_repo(tmp, marked=False, hooks_path=None, strict=False), "s1")
+		self.assertEqual((code, output), (0, ""))
+
+	def test_marker_still_blocks_before_the_migration(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			_, output = run_guard(guard_repo(tmp, marked=True, hooks_path=None, strict=False), "s1")
+		reason = json.loads(output)["reason"]
+		self.assertIn("Loose.vue", reason)
+		self.assertNotIn("core.hooksPath", reason)
+
+	def test_silent_when_hooks_path_set(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			code, output = run_guard(guard_repo(tmp, marked=False), "s1")
+		self.assertEqual((code, output), (0, ""))
+
+	def test_blocks_when_hooks_path_points_elsewhere(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			_, output = run_guard(guard_repo(tmp, marked=False, hooks_path="other"), "s1")
+		self.assertIn("git config core.hooksPath .githooks", json.loads(output)["reason"])
+
+	def test_combines_marker_and_hooks_path_messages(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			_, output = run_guard(guard_repo(tmp, marked=True, hooks_path=None), "s1")
+		reason = json.loads(output)["reason"]
+		self.assertIn("Loose.vue", reason)
+		self.assertIn("git config core.hooksPath .githooks", reason)
+
+	def test_sentinel_lives_in_git_dir(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			root = guard_repo(tmp, marked=True)
+			run_guard(root, "s1")
+			self.assertEqual((root / ".git" / "oslms-inventory-guard").read_text(), "s1")
+
+	def test_stays_silent_outside_a_git_repository(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			root = Path(tmp)
+			(root / "docs" / "customizations").mkdir(parents=True)
+			code, output = run_guard(root, "s1")
+		self.assertEqual((code, output), (0, ""))
 
 	def test_never_blocks_when_the_inventory_is_broken(self):
 		with tempfile.TemporaryDirectory() as tmp:

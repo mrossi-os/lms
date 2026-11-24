@@ -1,0 +1,59 @@
+id = "navigation-menus"
+title = "Barra laterale e menu"
+status = "active"
+summary = """
+La barra laterale presenta la piattaforma con il marchio del cliente: niente rimandi a Frappe, al
+suo percorso di onboarding o alle pagine web personalizzate, e in fondo il numero di versione
+installata. L'amministratore può nascondere anche le voci Home, Programmi, Cerca, Quiz e Compiti. Il
+menu utente è in italiano e la navigazione su telefono usa i colori del tema."""
+why = """
+La piattaforma è venduta con il marchio del cliente e non deve rimandare a Frappe; le pagine web
+personalizzate dell'upstream non sono usate. Il cliente voleva poter spegnere più voci della barra di
+quante l'upstream ne preveda, e il numero di versione serve a capire quale build è installata su un
+sito quando si segnala un problema."""
+roles = ["Student", "Moderator", "Gestore", "System Manager"]
+behaviour = [
+	"la barra laterale non ha il gruppo «Altro» con le pagine web personalizzate né il pulsante per aggiungerle",
+	"la barra laterale non mostra il riquadro «Completa il tuo profilo», il banner Getting Started, le icone di aiuto e di prenotazione dell'onboarding con Frappe né «Powered by Frappe Learning»",
+	"il piede della barra laterale mostra il numero di versione dell'app (per esempio 1.16.66)",
+	"la scheda Barra laterale delle impostazioni ha cinque interruttori in più, Home, Programmi, Cerca, Quiz e Compiti, accesi per default: spegnerne uno nasconde la voce corrispondente",
+	"la voce Programmi compare già al primo caricamento della barra",
+	"il menu utente ha le etichette in italiano («Il mio profilo», «Impostazioni», «Cancella dati demo», «Accedi a Frappe Cloud», «Esci», «Accedi») anche per chi usa l'interfaccia in inglese",
+	"sul telefono lo sfondo del layout è quello del tema e la barra di navigazione inferiore ha un grigio che la stacca dal contenuto",
+	"sul telefono le voci della navigazione rispettano gli interruttori della barra laterale e Programmi compare come scheda della barra inferiore (comportamenti oggi dell'upstream)",
+]
+areas = []
+upstream_watch = [
+	"AppSidebar.vue", "UserDropdown.vue", "MobileLayout.vue", "MobileYou.vue", "mobileNavLinks",
+	"get_sidebar_settings", "updateSidebarLinksVisibility", "LMS Sidebar Item", "web pages", "PageModal",
+	"GettingStartedBanner", "onboarding", "Powered by", "versionApp", "Sidebar settings", "isLinkEnabled",
+]
+data = [
+	"custom field LMS Settings home, programs, search, quizzes, assignments (Check, default 1), dalle fixture custom_field.json",
+	"override di lms.lms.api.get_sidebar_settings in os_lms.os_lms.override_api",
+]
+notes = """
+- Ogni commit di codice della piattaforma alza di uno l'ultimo numero dell'etichetta versionApp in
+  AppSidebar.vue (1.16.2 -> 1.16.3), nello stesso commit, con la riga «Version: X.Y.Z» nel messaggio:
+  l'utente confronta l'etichetta sul server con i commit. I commit di sola documentazione non la
+  alzano; maggiore e minore li cambia solo l'utente.
+- La barra applica i nostri interruttori con il meccanismo upstream: il nome del campo deve
+  coincidere con l'etichetta della voce (minuscolo, underscore).
+- Le etichette del menu utente sono msgid già in italiano, fuori dal flusso it.po/it.csv.
+- Nello script di AppSidebar restano import e variabili di pagine web e onboarding non più usati
+  (toggleWebPages, PageModal, setUpOnboarding...): residui, non da riattivare.
+- Voci accepted-drift dal merge di v2.62.0: il menu mobile upstream filtra già con gli interruttori
+  (mobile-nav-sidebar-settings-toggles) e ha reso Programmi visibile su telefono
+  (mobile-nav-programs-hidden, scelta upstream accettata).
+- Collegamento «Carica file» e interruttore Alto contrasto del menu utente sono nelle schede
+  bulk-data-import e theme-contrast."""
+history = [
+	{ date = "2026-03-17", ref = "c634f2bd1", summary = "creazione: interruttore Programmi nella scheda Barra laterale" },
+	{ date = "2026-03-19", ref = "e577585ca", summary = "menu utente con etichette in italiano" },
+	{ date = "2026-03-23", ref = "032752e69", summary = "gruppo «Altro» tolto dalla barra laterale" },
+	{ date = "2026-03-25", ref = "1d3fa64ea", summary = "icone di aiuto, onboarding e «Powered by Frappe Learning» tolte" },
+	{ date = "2026-03-26", ref = "a4e416fe2", summary = "interruttori per nascondere tutte le voci della barra" },
+	{ date = "2026-07-20", ref = "5b09a2c99", summary = "tolto il riquadro «Completa il tuo profilo»" },
+	{ date = "2026-09-07", ref = "10b5ac7eb", summary = "numero di versione nel piede della barra laterale" },
+	{ date = "2026-09-24", ref = "335f9aa8d", summary = "merge v2.62.0: menu mobile upstream adottato, filtro e Programmi accepted-drift" },
+]

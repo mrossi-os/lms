@@ -1,0 +1,61 @@
+id = "profile-page"
+title = "Profilo utente"
+status = "active"
+summary = """
+Il profilo è ridotto all'essenziale: lo studente vede solo i suoi certificati, senza copertina né
+schede in più, e nella modifica del profilo trova solo immagine, nome, cognome e codice fiscale. Il
+codice fiscale serve all'emissione dei badge TrueSkill e viene controllato nel formato. Un profilo che
+non si può aprire mostra un messaggio chiaro invece di una pagina bianca."""
+why = """
+Il cliente non usa le informazioni personali del profilo né il flusso upstream di prenotazione delle
+valutazioni con le disponibilità del valutatore, e vuole un profilo semplice. Il codice fiscale è
+obbligatorio per i certificati TrueSkill (fiscalId) e deve essere inserito dallo studente stesso.
+Decisione del 2026-11-23: il codice fiscale sta in questa scheda; la scheda TrueSkill lo cita."""
+roles = ["Student", "Moderator", "Course Creator", "Batch Evaluator", "Docente", "Valutatore"]
+behaviour = [
+	"il profilo si apre sulla scheda Certificati; le schede Informazioni, Disponibilità e Calendario valutazioni non compaiono (le loro rotte esistono ancora)",
+	"allo studente la barra delle schede non viene mostrata; agli altri ruoli compare con Certificati e, per il Moderator, Ruoli",
+	"il profilo non ha l'immagine di copertina né il pulsante per cambiarla: resta uno spazio vuoto sopra l'avatar",
+	"un utente vede sempre il proprio profilo, anche senza un ruolo LMS; per il profilo di altri serve un ruolo LMS (regola oggi anche dell'upstream)",
+	"il profilo di un utente inesistente mostra la pagina Non trovato; ogni altro errore di caricamento, in particolare il profilo altrui senza ruolo LMS, mostra la pagina Permesso negato",
+	"la modifica del profilo è a una colonna con immagine, nome, cognome e codice fiscale; titolo, LinkedIn, GitHub, Twitter, «disponibile per», lingua e bio non compaiono, quindi la lingua non si cambia dal profilo",
+	"l'immagine del profilo è facoltativa: il profilo si salva anche senza (regola oggi anche dell'upstream)",
+	"il codice fiscale si salva in maiuscolo e senza spazi ai lati, può restare vuoto e deve avere il formato italiano di 16 caratteri: un formato errato mostra un errore e non salva nulla",
+	"due utenti non possono avere lo stesso codice fiscale",
+	"il codice fiscale si legge solo dal proprio record e non compare nei dati del profilo mostrati agli altri",
+	"nella pagina Disponibilità del valutatore, ancora raggiungibile dall'indirizzo, aggiungere una fascia senza giorno o orari dà un avviso; il calendario delle valutazioni ha il titolo «Valutazioni prenotate» e un testo quando è vuoto",
+]
+areas = []
+upstream_watch = [
+	"Profile.vue", "ProfileEditForm.vue", "EditProfile.vue", "ProfileAbout", "ProfileEvaluator",
+	"ProfileEvaluationSchedule", "ProfileCertificates", "ProfileRoles", "get_profile_details", "TabButtons",
+	"cover_image", "EditCoverImage", "codice_fiscale", "fiscalId", "headline", "language",
+]
+data = [
+	"custom field User.codice_fiscale (Data, 16 caratteri, unico), creato da os_lms.setup (CUSTOM_FIELDS)",
+]
+notes = """
+- Il codice fiscale non passa da get_profile_details: il modulo lo legge a parte con
+  frappe.client.get_value sul proprio record e lo confronta a parte per lo stato «modificato».
+- Dal 2026-09-25 un corso TrueSkill non emette il certificato senza codice fiscale
+  (MissingFiscalIdError); il messaggio allo studente rimanda a questa modifica del profilo. Lo usano
+  anche Elite API e importazione delle iscrizioni.
+- Dal merge di v2.62.0 la modifica non è più una modale (EditProfile.vue eliminata) ma la pagina
+  instradata upstream pages/Forms/ProfileEditForm.vue: colonna unica, campi nascosti e codice fiscale
+  riportati lì.
+- Due voci accepted-drift: profile-own-without-lms-role (get_profile_details upstream consente il
+  proprio profilo e rifiuta il permesso prima del controllo di esistenza, così chi non ha un ruolo
+  LMS non scopre quali username esistono) e profile-edit-image-optional.
+- In Profile.vue restano EditCoverImage e la risorsa coverImage importati ma non usati.
+- L'eliminazione del proprio account dal profilo è nella scheda account-deletion; i certificati
+  TrueSkill ricevuti nella scheda Certificati sono in trueskills-certificates."""
+history = [
+	{ date = "2026-03-23", ref = "498ec89d4", summary = "creazione: schede Disponibilità e Calendario valutazioni nascoste nel profilo" },
+	{ date = "2026-07-13", ref = "29f976c3b", summary = "modifica del profilo a una colonna" },
+	{ date = "2026-07-16", ref = "3f63fec00", summary = "barra delle schede nascosta agli studenti, scheda Informazioni tolta" },
+	{ date = "2026-07-20", ref = "97b62f6f9", summary = "proprio profilo visibile senza ruolo LMS, messaggio di permesso invece della pagina vuota" },
+	{ date = "2026-07-20", ref = "02839f37a", summary = "codice fiscale nella modifica del profilo, immagine facoltativa" },
+	{ date = "2026-07-20", ref = "317ca5274", summary = "controllo del formato del codice fiscale" },
+	{ date = "2026-09-24", ref = "335f9aa8d", summary = "merge v2.62.0: regole riportate nella pagina instradata ProfileEditForm" },
+	{ date = "2026-09-25", ref = "c57838acd", summary = "utente inesistente: Non trovato; altri errori: Permesso negato" },
+]

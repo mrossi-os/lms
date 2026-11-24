@@ -1,0 +1,74 @@
+id = "rich-text-editor-overrides"
+title = "Editor di testo frappe-ui: copie tradotte e sicure"
+status = "active"
+summary = """
+L'editor di testo di frappe-ui (descrizioni di corsi e programmi, annunci, discussioni, compiti e
+molti altri campi) mostra in italiano barra degli strumenti, menu delle tabelle, comandi «/»,
+finestra di incorporamento, didascalie, popup dei link e indice. Per riuscirci alcuni suoi pezzi
+sono copiati e congelati nella cartella degli override, con le sole differenze di traduzione e
+di sicurezza sui link e sui contenuti incorporati."""
+why = """
+frappe-ui disegna l'editor con testi inglesi fissi e senza agganci per le traduzioni: l'unico modo
+di tradurli senza modificare il pacchetto è sostituire i componenti che li mostrano. La regola del
+committente (2026-09-24) è che ogni testo visibile sia tradotto. Con v2.62.0 l'upstream ha introdotto
+safeUrl e v-safe-html: le copie congelate non li ricevono da sole e vanno adeguate a mano."""
+roles = []
+behaviour = [
+	"il TextEditor classico conserva il comportamento di frappe-ui e riceve la classe os-editor-wrapper, che il tema usa per lo stile (in particolare della barra fissa)",
+	"nella barra degli strumenti fissa e nei suoi menu a tendina (tabelle comprese) etichette e suggerimenti sono in italiano",
+	"i comandi «/» del TextEditor classico hanno i titoli in italiano",
+	"la finestra di inserimento di un incorporamento (titolo, campo URL o codice, conferma della piattaforma riconosciuta, errori) e il segnaposto «Aggiungi didascalia» di immagini, video e incorporamenti sono in italiano",
+	"il popup dei link (Conferma, Annulla, Copia, Modifica, Rimuovi) è in italiano e inserire un link non manda in errore l'editor",
+	"il blocco indice senza titoli mostra il messaggio in italiano sia mentre si modifica sia nel contenuto salvato, e il pulsante di rimozione è «Rimuovi indice»",
+	"nei menu del nuovo editor (frappe-ui/editor: barra fissa, menu a bolla, menu flottanti e delle tabelle) le etichette sono tradotte al momento del render, quindi seguono le traduzioni anche se arrivano dopo il caricamento",
+	"nei pezzi copiati i collegamenti del popup dei link, le sorgenti di immagini e video e gli iframe incorporati passano per safeUrl; le anteprime locali accettano solo immagini raster e video",
+]
+areas = [
+	"frontend/src/overrides/frappe-ui/src/components/TextEditor/TextEditor.vue",
+	"frontend/src/overrides/frappe-ui/src/components/TextEditor/components/LinkPopup.vue",
+	"frontend/src/overrides/frappe-ui/src/components/TextEditor/components/MediaNodeView.vue",
+	"frontend/src/overrides/frappe-ui/src/components/TextEditor/components/TextEditorMenu.vue",
+	"frontend/src/overrides/frappe-ui/src/components/TextEditor/extensions/*",
+	"frontend/src/overrides/frappe-ui/src/molecules/editor/MenuItems.vue",
+]
+upstream_watch = [
+	"frappe-ui TextEditor", "TextEditorMenu", "Menu.vue", "commands.js", "LinkPopup", "link-extension",
+	"MediaNodeView", "IframeNodeView", "InsertIframe", "SlashCommandsList", "TocNodeView",
+	"toc-node-extension.ts", "toc-render.ts", "molecules/editor", "MenuItems", "RichTextEditor", "tiptap",
+]
+data = [
+	"override wrap: TextEditor.vue (alias frappe-ui-texteditor-original) e molecules/editor/MenuItems.vue (alias frappe-ui-menuitems-original)",
+	"copie congelate: TextEditorMenu.vue, LinkPopup.vue, MediaNodeView.vue, extensions/iframe/InsertIframe.vue e IframeNodeView.vue, extensions/slash-commands/SlashCommandsList.vue, extensions/toc-node/TocNodeView.vue",
+	"plugin Vite osTranslateTocFallback in vite.config.js per il testo dell'indice nel contenuto salvato (file .ts, fuori dalla portata degli override)",
+	"traduzioni in lms/translations/it.csv con le chiavi esatte di commands.js (maiuscole comprese)",
+]
+notes = """
+- Le copie congelate non ricevono le correzioni di frappe-ui: a ogni aggiornamento di frappe-ui che
+  tocca questi file riconfrontarle con node_modules/frappe-ui/src/components/TextEditor/ e
+  riapplicare solo le differenze dichiarate in testa a ciascun file (traduzioni, safeUrl,
+  import riscritti). Percorsi spostati = override ignorati senza errori (Menu.vue è diventato
+  TextEditorMenu.vue con 1.0.0-beta.29).
+- Il plugin osOverrideTheme non reindirizza gli import fatti DA un override: ogni import relativo
+  interno a frappe-ui va riscritto verso il barile 'frappe-ui' o verso un percorso relativo dentro
+  node_modules (7 livelli per components/, 8 per extensions/<x>/). MediaNodeView deve importare
+  localFileMap dallo stesso modulo usato dall'estensione immagini, altrimenti i caricamenti si rompono.
+- LinkPopup è montato da link-extension.ts con un createApp separato, che non eredita la __ globale:
+  nello <script setup> c'è const __ = window.__. Ogni override montato in un'app separata ha bisogno
+  dello stesso legame.
+- osTranslateTocFallback è una sostituzione letterale: se frappe-ui cambia il testo inglese smette di
+  tradurre senza errori, e con endsWith sull'id funziona solo in build, non in sviluppo. In
+  1.0.0-beta.7 esisteva anche una copia in molecules/editor/extensions/toc-node/toc-render.ts, oggi
+  coperta dal plugin os-translate-frappe-ui (scheda italian-translations).
+- Aggiungere un nuovo file di override richiede il riavvio di yarn dev (Vite tiene in cache la
+  risoluzione). Gli import nudi @tiptap/* delle copie funzionano solo perché tiptap è dipendenza
+  diretta e deduplicata (scheda frontend-build-compat).
+- FontColor.vue, pur stando nella stessa cartella, appartiene alla scheda rich-text-colors.
+- La protezione dell'HTML incollato negli editor è nella scheda security-hardening."""
+history = [
+	{ date = "2026-06-10", ref = "8c4ae2455", summary = "creazione: override del TextEditor per lo stile del tema" },
+	{ date = "2026-07-20", ref = "236ff76f7", summary = "tradotti incorporamenti, tabelle, didascalie e comandi «/» dell'editor" },
+	{ date = "2026-07-22", ref = "5cf03abd6", summary = "popup dei link senza errore all'inserimento (__ legato a window.__)" },
+	{ date = "2026-09-24", ref = "44c0c6fd4", summary = "collegamenti e incorporamenti delle copie passano per safeUrl (v2.62.0)" },
+	{ date = "2026-09-24", ref = "fa9361e92", summary = "copie riallineate a frappe-ui 1.0.0-beta.29" },
+	{ date = "2026-09-24", ref = "3dea9e265", summary = "menu del nuovo editor tradotti con l'override MenuItems" },
+]

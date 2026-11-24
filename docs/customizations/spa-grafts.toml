@@ -16,6 +16,7 @@ id = "course-card-admin-gate"
 title = "Menu di gestione sulla card corso visibile anche al Docente"
 layer = "spa-graft"
 confidence = "high"
+feature = "docente-role"
 intent = """
 Il ruolo custom Docente è un istruttore globale: deve essere trattato come amministratore
 del corso sulla card (niente CTA di iscrizione, azioni di gestione) esattamente come
@@ -36,6 +37,7 @@ id = "course-card-self-enrol-badge-wraps"
 title = "Il messaggio «Contatta l'amministratore per iscriverti» va a capo nella card corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-page-redesign"
 intent = """
 Sui corsi con iscrizione autonoma disattivata la card mostra il messaggio in un Badge di
 frappe-ui, che è una riga sola (whitespace-nowrap) ad altezza fissa (h-6): il testo
@@ -51,6 +53,7 @@ id = "course-detail-docente-admin-gate"
 title = "Pagina corso e lezione: il Docente è trattato da amministratore su ogni corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "docente-role"
 intent = """
 Il Docente è un istruttore globale (come can_modify_course lato server): su un corso che
 non insegna deve aprire i corsi, anche non pubblicati o in arrivo, e avere i controlli di
@@ -88,6 +91,7 @@ id = "course-card-valutatore-no-enroll"
 title = "Nessuna CTA di iscrizione per il Valutatore"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore di un batch che contiene il corso lo consulta in sola lettura e non è mai
 uno studente. Raggiunge le lezioni senza iscrizione: offrirgli la CTA di iscrizione è una
@@ -118,6 +122,7 @@ id = "course-card-certificate-dedup"
 title = "Niente doppio pulsante certificato dopo l'emissione"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-certificates"
 intent = """
 Una volta emesso il certificato deve restare solo il «View Certificate» di
 CertificationLinks, non anche un «Get Certificate». LMS Enrollment.certificate non viene
@@ -139,6 +144,7 @@ id = "trueskills-certificate-viewer"
 title = "Il certificato TrueSkills sostituisce il PDF interno"
 layer = "spa-graft"
 confidence = "high"
+feature = "trueskills-certificates"
 intent = """
 Per i corsi con emissione TrueSkills il certificato di completamento è l'immagine
 openbadge TrueSkills (aperta in linea), non il PDF del Print Format interno. Vale sulla
@@ -175,6 +181,7 @@ id = "profile-trueskills-received-certificates"
 title = "Certificati emessi direttamente da TrueSkill nella tab Certificati del profilo"
 layer = "spa-graft"
 confidence = "high"
+feature = "trueskills-certificates"
 intent = """
 TrueSkill può emettere certificati in blocco alle email degli utenti Elite senza che Elite
 li richieda: non esiste un LMS Certificate né un Issue Log. La tab Certificati del profilo
@@ -209,6 +216,7 @@ id = "course-card-outline"
 title = "Programma del corso navigabile al posto delle statistiche"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-page-redesign"
 intent = """
 La card mostra il programma del corso (CourseOutline) navigabile al posto del blocco
 «This course includes» con le statistiche, che resta commentato nel file per un facile
@@ -231,6 +239,8 @@ id = "course-mobile-cta-bar"
 title = "Barra fissa «Continue Learning» su telefono"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-page-mobile"
+frozen_from = "v2.55.0"
 intent = """
 Sul telefono (<640px, MobileLayout con barra di navigazione in basso) lo studente iscritto
 vede una barra fissa a tutta larghezza con «Continue Learning», che diventa l'unica azione
@@ -276,6 +286,8 @@ id = "course-mobile-outline-bottom"
 title = "Programma del corso in fondo alla pagina su telefono"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-page-mobile"
+frozen_from = "v2.55.0"
 intent = """
 Sul telefono (<640px) il programma del corso si sposta in fondo alla pagina, sotto le
 sezioni di contenuto, e viene tolto dalla card (hideOutline). In ogni layout più largo
@@ -299,6 +311,7 @@ id = "course-card-hide-when-empty"
 title = "La card corso sparisce quando resterebbe vuota"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-page-mobile"
 intent = """
 Su telefono programma e CTA escono dalla card, che può rimanere senza contenuto: invece di
 un riquadro vuoto con bordo la card non si rende. Per saperlo replica la visibilità di
@@ -317,6 +330,8 @@ id = "course-tablet-inline-card"
 title = "Card corso completa in linea sul tablet"
 layer = "override-file"
 confidence = "high"
+feature = "course-page-mobile"
+frozen_from = "v2.55.0"
 intent = """
 Tra 640 e 1023px la pagina è a colonna singola ma la card laterale desktop (lg:) è
 nascosta: lì si rende in linea la card completa originale, così il trattamento mobile
@@ -335,6 +350,8 @@ id = "course-hero-banner"
 title = "Banner hero del corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-page-redesign"
+frozen_from = "v2.55.0"
 intent = """
 Se il corso ha un hero abilitato con un media, il media compare come sezione a tutta
 larghezza con angoli arrotondati tra l'introduzione breve e «About this course», e usa lo
@@ -368,6 +385,8 @@ id = "course-instructors-hidden-from-students"
 title = "Istruttori nascosti agli studenti (pagina corso e intestazione della lezione)"
 layer = "override-file"
 confidence = "high"
+feature = "course-page-redesign"
+frozen_from = "v2.55.0"
 intent = """
 L'elenco degli istruttori in testa alla pagina corso è visibile solo a moderatori e
 istruttori del corso, non agli studenti.
@@ -395,6 +414,8 @@ id = "course-short-intro-preline"
 title = "Introduzione breve del corso su più righe"
 layer = "override-file"
 confidence = "high"
+feature = "course-page-redesign"
+frozen_from = "v2.55.0"
 intent = """
 short_introduction è un campo Small Text in cui gli autori scrivono su più righe; l'HTML
 collasserebbe gli a capo, quindi si conservano con whitespace-pre-line."""
@@ -408,6 +429,8 @@ id = "course-content-section-removed"
 title = "Sezione «Course content» rimossa dalla pagina corso"
 layer = "override-file"
 confidence = "high"  # rimozione confermata voluta dal committente il 2026-09-23
+feature = "course-page-redesign"
+frozen_from = "v2.55.0"
 intent = """
 La sezione «Course content» dell'upstream è commentata, insieme alla risorsa
 get_course_outline che la alimentava (per non sprecare la chiamata API). Il programma
@@ -427,6 +450,8 @@ id = "course-description-collapsible"
 title = "Descrizione del corso comprimibile"
 layer = "override-file"
 confidence = "high"
+feature = "course-page-redesign"
+frozen_from = "v2.55.0"
 intent = """
 La descrizione lunga del corso si rende con CourseDescription, che la comprime con
 «mostra di più / di meno» invece di mostrarla sempre per intero."""
@@ -440,6 +465,8 @@ id = "course-feature-sections"
 title = "Sezioni in evidenza del corso"
 layer = "override-file"
 confidence = "high"
+feature = "feature-sections"
+frozen_from = "v2.55.0"
 intent = """
 Il corso può avere sezioni in evidenza configurate dall'autore, rese dopo la descrizione;
 i dati arrivano annidati dall'override os_lms di get_course_details e il rendering tiene
@@ -458,6 +485,8 @@ id = "course-reviews-removed"
 title = "Recensioni rimosse dalla pagina corso"
 layer = "override-file"
 confidence = "high"  # rimozione confermata voluta dal committente il 2026-09-23
+feature = "hidden-upstream-features"
+frozen_from = "v2.55.0"
 intent = """
 Il blocco CourseReviews dell'upstream è commentato: le recensioni non compaiono nella
 pagina corso. Motivazione non documentata nel codice, presumibilmente scelta del
@@ -472,6 +501,8 @@ id = "course-creator-card-removed"
 title = "Card dell'autore rimossa dalla pagina corso"
 layer = "override-file"
 confidence = "high"  # rimozione confermata voluta dal committente il 2026-09-23
+feature = "course-page-redesign"
+frozen_from = "v2.55.0"
 intent = """
 La CourseCreatorCard dell'upstream nella colonna laterale è commentata. Coerente con
 l'occultamento degli istruttori agli studenti, ma la motivazione non è scritta."""
@@ -485,6 +516,8 @@ id = "course-overview-tag-colors"
 title = "Colori dei tag anche nella pagina corso"
 layer = "override-file"
 confidence = "high"
+feature = "content-tags"
+frozen_from = "v2.55.0"
 intent = """
 La mappa colori dei tag (LMS OS Tag) è fornita da Courses.vue solo nell'elenco corsi;
 la pagina corso la ricarica e la fornisce, altrimenti CourseTagBadges non si rende."""
@@ -502,6 +535,7 @@ id = "chapter-row-chevron-lucide"
 title = "Chevron dei capitoli come componente lucide"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 intent = """
 Il chevron di apertura del capitolo usa il componente lucide ChevronRight perché con
 la resa upstream non compariva."""
@@ -515,6 +549,7 @@ id = "lesson-tag-badges"
 title = "Badge dei tag sulle lezioni nel programma"
 layer = "spa-graft"
 confidence = "high"
+feature = "content-tags"
 intent = """
 Ogni lezione nel programma del corso mostra i propri tag come badge. I tag arrivano
 come stringa separata da virgole dall'override os_lms di get_course_outline."""
@@ -536,6 +571,7 @@ id = "lesson-ai-status"
 title = "Stato di indicizzazione AI delle lezioni nell'editor"
 layer = "spa-graft"
 confidence = "high"
+feature = "ai-lesson-indexing"
 intent = """
 Nel programma in modalità modifica ogni lezione mostra in forma compatta lo stato di
 indicizzazione per l'assistente AI (RAG os_lms). Lo stato arriva dall'override os_lms
@@ -563,6 +599,7 @@ id = "video-preview-plyr"
 title = "Anteprima YouTube/Vimeo nel player Plyr"
 layer = "spa-graft"
 confidence = "high"
+feature = "video-embeds"
 intent = """
 Un'anteprima YouTube/Vimeo si riproduce con lo stesso player Plyr delle lezioni invece
 che con l'iframe nudo del provider, così non compaiono i controlli del provider (titolo,
@@ -578,6 +615,7 @@ id = "batch-description-preline"
 title = "Descrizione del batch su più righe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-detail-page"
 intent = """
 La descrizione del batch è un campo Small Text scritto su più righe; si conservano gli a
 capo con whitespace-pre-line, come per l'introduzione breve del corso."""
@@ -591,6 +629,7 @@ id = "batch-preview-video"
 title = "Video di anteprima nella pagina batch"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-detail-page"
 intent = """
 Il video di anteprima del batch compare sotto la descrizione breve a ogni larghezza (mai
 in colonna laterale), largo quanto la descrizione e in 16:9. Solo il video: il resto di
@@ -609,6 +648,7 @@ id = "program-description"
 title = "Descrizione del programma visibile allo studente"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 La descrizione del programma (campo custom os_lms) si mostra sia nel dettaglio del
 programma sia nel dialogo di iscrizione, con la formattazione conservata e sanificata
@@ -634,6 +674,7 @@ id = "home-programs-row"
 title = "Riga dei programmi nella home dello studente"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 La home dello studente mostra i suoi programmi o, se non è iscritto a nessuno, quelli
 pubblicati (stesso schema della riga dei batch). Riusa la risorsa programs dello store
@@ -654,6 +695,7 @@ id = "program-member-unpublished-course"
 title = "Membri del programma vedono i corsi non pubblicati"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 Un programma si pubblica nel suo insieme: chi ne è membro vede, apre e si iscrive a ogni
 corso del programma anche se il corso da solo non è pubblicato. La regola vive in tre
@@ -706,6 +748,8 @@ id = "toc-node-translations"
 title = "Traduzione delle stringhe dell'indice nel TextEditor"
 layer = "override-file"
 confidence = "high"
+feature = "rich-text-editor-overrides"
+frozen_from = "1.0.0-beta.7"
 intent = """
 Copia integrale di TocNodeView.vue di frappe-ui con due sole differenze: il messaggio
 «There are no headings in this document.» passa per __() e il titolo del pulsante di
@@ -730,6 +774,7 @@ id = "course-form-os-sections"
 title = "Impostazioni custom del corso nel modulo impostazioni"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-settings-extensions"
 intent = """
 Le impostazioni del corso volute dal cliente vivono in due componenti os_lms montati dentro
 il CourseForm upstream: OsCourseDetailForm (hero con immagine o video, feature sections) nella
@@ -753,6 +798,7 @@ id = "course-outline-editor-hash"
 title = "Modifica lezione dal programma del corso apre la scheda giusta"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
 status = "accepted-drift"
 intent = """
 Il pulsante di modifica di una lezione nel programma del corso porta al corso con l'hash
@@ -777,6 +823,7 @@ id = "profile-own-without-lms-role"
 title = "Il proprio profilo è visibile anche senza ruolo LMS"
 layer = "spa-graft"
 confidence = "high"
+feature = "profile-page"
 status = "accepted-drift"
 intent = """
 Un utente vede sempre il proprio profilo, anche senza un ruolo LMS (per esempio un account
@@ -796,6 +843,7 @@ id = "lesson-pdf-inline-filename"
 title = "PDF delle lezioni con il nome giusto su mobile"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-attachments"
 intent = """
 serve_resource dà un nome esplicito ai file privati serviti inline (in pratica i PDF delle
 lezioni) con un Content-Disposition inline; senza, il browser usa l'ultimo pezzo dell'URL, cioè
@@ -815,6 +863,7 @@ id = "quiz-submit-unanswered"
 title = "Un quiz si può consegnare con domande senza risposta"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 intent = """
 Una domanda saltata arriva con risposta vuota o nulla; prima faceva fallire l'intera consegna
 e lo studente non riusciva più a consegnare il quiz. Ora le risposte vuote vengono filtrate e
@@ -870,6 +919,7 @@ id = "vite-override-theme-plugin"
 title = "Plugin osOverrideTheme per sostituire componenti senza fork"
 layer = "spa-graft"
 confidence = "high"
+feature = "frappe-ui-overrides"
 intent = """
 Tutto il sistema di override (frontend/src/overrides/) dipende da questo plugin Vite: intercetta
 gli import .vue che risolvono dentro node_modules (frappe-ui) o dentro src/ e, se esiste un file
@@ -898,6 +948,7 @@ id = "vite-original-component-aliases"
 title = "Alias verso i componenti frappe-ui originali per gli override «wrap»"
 layer = "spa-graft"
 confidence = "high"
+feature = "frappe-ui-overrides"
 intent = """
 Gli override di Switch, Combobox, TextEditor e MenuItems (nuovo editor frappe-ui/editor) avvolgono il componente originale invece di
 copiarlo (FileUploader non serve più da frappe-ui 1.0.0-beta.29, che registra Button da sé;
@@ -930,6 +981,8 @@ id = "brand-customize-chart-and-table-colors"
 title = "Grafici e tabelle seguono i ruoli Brand Customize (Base e Avanzata)"
 layer = "spa-graft"
 confidence = "high"
+feature = "brand-customize"
+frozen_from = "1.0.0-beta.29"
 intent = """
 I ruoli «Serie 1-5 dei grafici», «Intestazione tabelle» e «Righe tabelle» di Brand Customize
 (os_lms branding_roles.py) scrivono --os-chart-1..5, --os-table-header-bg e
@@ -975,6 +1028,7 @@ id = "vite-translate-frappe-ui-strings"
 title = "Traduzione in fase di build dei testi inglesi fissi di frappe-ui (nuovo editor)"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 Il nuovo editor di frappe-ui (frappe-ui/editor, usato da RichTextEditor dalla v2.63.0) mostra
 popup, finestre e controlli dei media con testi inglesi fissi e senza aggancio per le
@@ -999,6 +1053,7 @@ id = "badge-form-image-i18n"
 title = "Etichetta e descrizione dell'immagine del badge tradotte"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 Nel modulo del badge (Impostazioni → Badge) l'upstream passa all'Uploader label="Badge Image"
 e description="An image that represents the badge." come testo fisso inglese. Qui passano per
@@ -1015,6 +1070,7 @@ id = "color-swatch-names-i18n"
 title = "Nomi dei colori dei campioni letti in italiano"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 I campioni colore della miniatura del corso (CourseThumbnailField) e il controllo condiviso
 ColorSwatches usano come aria-label il nome inglese del colore (Red, Blue, Amber…), che è
@@ -1034,6 +1090,7 @@ id = "vite-utils-alias-oslms"
 title = "@/utils risolto sul modulo utils di os_lms"
 layer = "spa-graft"
 confidence = "high"
+feature = "frappe-ui-overrides"
 intent = """
 Ogni import di '@/utils' nell'app finisce su src/oslms/utils/index.js, che riesporta tutto
 src/utils/index.js e sostituisce timeAgo con una versione che passa i testi relativi («2 ore
@@ -1050,6 +1107,7 @@ id = "vite-socketio-port-define"
 title = "Porta socket.io letta da common_site_config in fase di build"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 intent = """
 Nell'ambiente Docker di sviluppo (e in bench con porte non standard) la porta di socket.io non
 è quella predefinita: vite.config la legge da common_site_config.json (con ripiego sul file
@@ -1084,6 +1142,7 @@ id = "vite-toc-fallback-translation"
 title = "Traduzione del messaggio dell'indice senza titoli nel rendering salvato"
 layer = "spa-graft"
 confidence = "high"
+feature = "rich-text-editor-overrides"
 intent = """
 Il blocco «indice» del TextEditor, quando il documento non ha titoli, scrive nel contenuto
 salvato un messaggio inglese cablato in un file .ts di frappe-ui, fuori dalla portata di
@@ -1108,6 +1167,7 @@ id = "vitest-known-failures-baseline"
 title = "yarn test giudica Vitest contro una baseline di rossi attesi"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 intent = """
 Decisione del committente (2026-09-24, B3.1): i test upstream che falliscono per nostre
 personalizzazioni (asseriscono un comportamento che cambiamo apposta, o i loro mock non
@@ -1130,6 +1190,7 @@ id = "deps-tiptap-direct-deps"
 title = "@tiptap dichiarati come dipendenze dirette e deduplicati"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 intent = """
 Gli override del TextEditor (MediaNodeView, InsertIframe, TocNodeView, IframeNodeView,
 SlashCommandsList) importano @tiptap/vue-3, @tiptap/core e @tiptap/pm con specificatori nudi.
@@ -1162,6 +1223,7 @@ id = "deps-prosemirror-resolutions"
 title = "Versione unica dei pacchetti prosemirror via resolutions"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 intent = """
 Dichiarare @tiptap come dipendenze dirette aveva installato una seconda copia di
 prosemirror-model e prosemirror-view annidata sotto @tiptap/pm. Due istanze generano chiavi di
@@ -1187,6 +1249,7 @@ id = "vite-prosemirror-optimizedeps"
 title = "Pre-bundle di tutti gli entrypoint tiptap/prosemirror in sviluppo"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 intent = """
 In sviluppo frappe-ui è escluso da optimizeDeps (serve a osOverrideTheme), quindi lo scanner di
 Vite non vede i sottopercorsi @tiptap/pm/* né i prosemirror-* nudi importati solo attraverso
@@ -1216,6 +1279,7 @@ id = "link-control-picked-label"
 title = "Il controllo Link aggiorna l'etichetta quando si sceglie un valore dai risultati"
 layer = "spa-graft"
 confidence = "high"
+feature = "frappe-ui-overrides"
 intent = """
 Correzione di un difetto upstream (presente in v2.63.0 e in develop al 2026-09-24). Link.vue
 ricorda l'etichetta del valore corrente in currentLabel, ma il watch sul valore usciva subito
@@ -1237,6 +1301,7 @@ id = "command-palette-result-routes"
 title = "Risultati della palette Cmd+K aperti sulla pagina giusta secondo il ruolo"
 layer = "spa-graft"
 confidence = "high"
+feature = "global-search"
 intent = """
 L'upstream instradava ogni risultato che non fosse un corso su BatchDetail, così lezioni, quiz,
 esercitazioni, percorsi finivano su una pagina classe inesistente. La mappatura doctype → rotta
@@ -1268,6 +1333,7 @@ id = "command-palette-search-page-entry"
 title = "Voce «Cerca …» della palette verso la pagina /search"
 layer = "spa-graft"
 confidence = "high"
+feature = "global-search"
 intent = """
 Mentre si digita, la palette mostra come prima voce «Search for "<testo>"», che apre la pagina
 /search con la query. L'upstream ha tolto questa voce e la pagina Search nel commit 46a356b08
@@ -1295,6 +1361,7 @@ id = "command-palette-jobs-removed"
 title = "Voce «Jobs» rimossa dalla palette Cmd+K"
 layer = "spa-graft"
 confidence = "high"
+feature = "hidden-upstream-features"
 intent = """
 L'elenco «Jump to» della palette mostra solo Corsi e Classi: la voce Jobs dell'upstream (e la
 relativa icona Briefcase) è stata tolta (commit 7142c05ba). Motivazione non scritta nel commit;
@@ -1311,13 +1378,16 @@ id = "command-palette-i18n-labels"
 title = "Etichette della palette Cmd+K tradotte anche dopo il ricaricamento"
 layer = "spa-graft"
 confidence = "high"
+feature = "global-search"
+status = "accepted-drift"
 intent = """
 Il segnaposto del campo di ricerca passa per __() e i titoli Corsi/Classi dell'elenco «Jump to»
 sono getter invece di stringhe: l'elenco è costruito una volta al setup, che al ricaricamento
 completo della pagina avviene prima che le traduzioni asincrone siano caricate, e un __()
 valutato lì resterebbe in inglese (memoria translation_baked_ref_freezes_english). Il getter
 ripete __() a ogni rendering.
-Merge di v2.62.0 (2026-09-24): la palette upstream (categories.ts) traduce le etichette al rendering (title: __(entry.label)), quindi il problema dei __() valutati prima del caricamento delle traduzioni non si pone: siti dei getter tolti. Resta il segnaposto di ricerca."""
+Merge di v2.62.0 (2026-09-24): la palette upstream (categories.ts) traduce le etichette al rendering (title: __(entry.label)), quindi il problema dei __() valutati prima del caricamento delle traduzioni non si pone: siti dei getter tolti. Resta il segnaposto di ricerca.
+accepted-drift (2026-11-24, base della release v2.66.0, decisione del committente): la palette upstream traduce al rendering sia il segnaposto __('Search') sia i titoli «Jump to»: niente più etichette congelate in inglese."""
 
   [[entries.sites]]
   file = "frontend/src/components/CommandPalette/CommandPalette.vue"
@@ -1328,6 +1398,7 @@ id = "command-palette-mark-theme-tokens"
 title = "Evidenziazione dei risultati di ricerca sui token del tema"
 layer = "spa-graft"
 confidence = "high"
+feature = "global-search"
 intent = """
 L'evidenziazione <mark> delle corrispondenze usa i token del tema (bg-surface-amber-1,
 text-ink-gray-9) invece del colore fisso amber-100 dell'upstream: così si adatta al tema scuro
@@ -1347,6 +1418,7 @@ id = "empty-state-translated-name"
 title = "Nome dell'entità tradotto nei messaggi di stato vuoto"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 Titolo e descrizione predefiniti dello stato vuoto («No {0} Found», «There are no {0}
 currently…») ricevono il nome dell'entità passato dalla pagina in inglese (es. «Courses»); lo
@@ -1368,6 +1440,7 @@ id = "empty-state-mobile-full-width"
 title = "Stato vuoto a tutta larghezza su telefono"
 layer = "spa-graft"
 confidence = "high"
+feature = "frappe-ui-overrides"
 status = "accepted-drift"
 intent = """
 Le larghezze fisse dell'upstream (2/12, 4/12, 8/12 dello schermo) su telefono comprimono
@@ -1399,6 +1472,7 @@ id = "notifications-tabs-translated"
 title = "Schede Da leggere/Lette del pannello notifiche tradotte"
 layer = "spa-graft"
 confidence = "high"
+feature = "notifications"
 intent = """
 Le etichette delle schede sono getter che richiamano __() a ogni rendering, mentre value tiene
 la chiave logica 'Unread'/'Read' usata da filtro e stato vuoto. Un array costruito al setup
@@ -1421,6 +1495,7 @@ id = "notifications-link-routing"
 title = "Clic su una notifica porta alla pagina giusta o avvisa"
 layer = "spa-graft"
 confidence = "high"
+feature = "notifications"
 intent = """
 I link delle notifiche possono essere assoluti o relativi, con o senza prefisso /lms e con un
 frammento di scheda (#discussions); il parsing a indici fissi dell'upstream sbagliava parametri
@@ -1471,6 +1546,7 @@ id = "event-modal-status-placeholder"
 title = "Segnaposto tradotto sullo stato della valutazione"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 La select Stato della valutazione nel modale dell'evento ha un segnaposto «Select option»
 passato per __(). Introdotto in un commit generico di traduzioni (e577585ca): motivazione
@@ -1499,6 +1575,7 @@ id = "settings-tabs-stable-keys"
 title = "Le schede delle impostazioni si identificano con una chiave stabile"
 layer = "spa-graft"
 confidence = "high"
+feature = "settings-dialog"
 intent = """
 Tutte le etichette del dialogo Impostazioni (gruppi, schede, sezioni, campi, descrizioni) sono
 tradotte con __() nel punto in cui vengono definite, per avere l'interfaccia in italiano. Una
@@ -1531,6 +1608,7 @@ id = "settings-admin-only-tabs"
 title = "Schede di sistema delle impostazioni solo per gli amministratori"
 layer = "spa-graft"
 confidence = "high"
+feature = "settings-dialog"
 intent = """
 Le schede che cambiano il comportamento dell'intera piattaforma (Generale, Badge, Registrazione,
 SEO) sono riservate agli amministratori (System Manager o utente Administrator). Il dialogo
@@ -1556,6 +1634,7 @@ id = "settings-payment-group-removed"
 title = "Gruppo Pagamenti tolto dalle impostazioni"
 layer = "spa-graft"
 confidence = "high"
+feature = "hidden-upstream-features"
 intent = """
 Il gruppo upstream "Payment" (Configurazione valuta/gateway, Gateway, Transazioni, Coupon) è
 stato tolto volutamente dal dialogo Impostazioni (commit 39907513c "Hide payment section in
@@ -1574,6 +1653,7 @@ id = "settings-google-calendar-tab"
 title = "Scheda Google Calendar nelle impostazioni e calendario legato agli account Zoom"
 layer = "spa-graft"
 confidence = "high"
+feature = "zoom-google-calendar"
 intent = """
 Nel gruppo Conferenze c'è una scheda Google Calendar per gestire i calendari Google usati per
 gli inviti delle classi live e delle valutazioni; è visibile solo a System Manager e Gestore
@@ -1607,6 +1687,7 @@ id = "settings-oslms-tabs-injection"
 title = "Schede os_lms iniettate nel dialogo Impostazioni"
 layer = "spa-graft"
 confidence = "high"
+feature = "settings-dialog"
 intent = """
 Le schede del modulo os_lms (TrueSkills API, Configurazioni con Corsi e Classi live, AI, Prompt
 AI) non sono scritte in Settings.vue ma costruite da buildOslmsSettingsTabs in
@@ -1648,6 +1729,7 @@ id = "settings-sidebar-extra-toggles"
 title = "Interruttori aggiuntivi per le voci della barra laterale"
 layer = "spa-graft"
 confidence = "high"
+feature = "navigation-menus"
 intent = """
 La scheda Barra laterale delle impostazioni ha cinque interruttori in più rispetto all'upstream
 (Home, Programmi, Cerca, Quiz, Compiti), salvati in campi personalizzati di LMS Settings
@@ -1686,6 +1768,7 @@ id = "settings-welcome-tab"
 title = "Scheda Benvenuto: notifica e video al primo accesso dello studente"
 layer = "spa-graft"
 confidence = "high"
+feature = "welcome-onboarding"
 intent = """
 La scheda Benvenuto (gruppo Personalizza) configura la notifica di benvenuto e il video di
 benvenuto mostrati allo studente al primo accesso; i due si attivano in modo indipendente
@@ -1714,6 +1797,7 @@ id = "settings-dialog-style"
 title = "Ritocchi di stile del dialogo Impostazioni"
 layer = "spa-graft"
 confidence = "high"
+feature = "settings-dialog"
 intent = """
 Ritocchi estetici del dialogo Impostazioni: il Dialog usa ancora l'API v-model + options
 (introdotta dopo un crash seguito a un merge, commit 265842cde), il pannello del contenuto ha
@@ -1736,14 +1820,14 @@ id = "settings-fields-translations"
 title = "Ritocchi di traduzione nei campi delle impostazioni"
 layer = "spa-graft"
 confidence = "high"
+feature = "settings-dialog"
 intent = """
-Testi dei campi delle impostazioni tradotti con __(): pulsante di caricamento immagine e relativa
-percentuale, descrizione del campo HTML di registrazione, segnaposto delle select. Solo
-traduzione, nessuna regola funzionale."""
+Descrizione del campo HTML di registrazione tradotta con __(). Solo traduzione, nessuna regola
+funzionale."""
 
   [[entries.sites]]
   file = "frontend/src/components/Settings/SettingFields.vue"
-  anchor = "__('Upload an image')"
+  anchor = "__('The HTML you add here will be shown on your sign up page.')"
 
 # ── Members.vue ────────────────────────────────────────────────────────────
 
@@ -1752,6 +1836,7 @@ id = "settings-members-row-opens-edit"
 title = "Clic sulla riga di un membro apre la modifica"
 layer = "spa-graft"
 confidence = "high"
+feature = "members-and-roles"
 intent = """
 Nella scheda Membri il clic su una riga apre la finestra di modifica del membro (nome, ruoli,
 compreso Valutatore), non solo la voce "Edit member" del menu; così il gestore modifica un
@@ -1775,6 +1860,7 @@ id = "settings-members-valutatore-badge"
 title = "Badge del ruolo Valutatore nell'elenco membri"
 layer = "spa-graft"
 confidence = "high"
+feature = "members-and-roles"
 intent = """
 L'elenco dei membri mostra un badge anche per il ruolo personalizzato Valutatore (valutatore di
 una singola classe), che l'override get_members ora restituisce (commit 1af13d630); un ruolo
@@ -1804,6 +1890,7 @@ id = "settings-email-template-list-translation"
 title = "Titolo tradotto nell'elenco dei modelli email"
 layer = "spa-graft"
 confidence = "high"
+feature = "email-templates"
 intent = """
 Il titolo della pagina Modelli email passa da __() per comparire in italiano. Solo traduzione.
 ATTENZIONE al merge di v2.59.0: l'upstream riscrive il corpo del file (ricerca, List/ListRows)
@@ -1818,6 +1905,7 @@ id = "settings-transaction-details-cosmetic"
 title = "Ritocchi nel dettaglio transazione"
 layer = "spa-graft"
 confidence = "high"
+feature = "hidden-upstream-features"
 intent = """
 Segnaposto tradotto nella select "Payment For Document Type" e una virgola finale di
 formattazione. C'è anche un import di Switch (BooleanSwitch) non usato, rimasto da una
@@ -1834,6 +1922,7 @@ id = "settings-email-template-modal-formatting"
 title = "Solo formattazione nella finestra dei modelli email"
 layer = "spa-graft"
 confidence = "high"
+feature = "email-templates"
 status = "accepted-drift"
 intent = """
 Il file differisce dall'upstream solo per virgole finali aggiunte da Prettier; nessun
@@ -1852,6 +1941,7 @@ id = "profile-roles-custom-role-toggles"
 title = "Interruttori dei ruoli Valutatore, Gestore e Docente nel profilo"
 layer = "spa-graft"
 confidence = "high"
+feature = "members-and-roles"
 intent = """
 La scheda Ruoli del profilo (visibile ai moderatori) permette di assegnare anche i tre ruoli
 personalizzati: Valutatore (valutatore per classe; l'interruttore assegna il ruolo globale,
@@ -1887,6 +1977,7 @@ id = "profile-tab-bar-hidden-for-students"
 title = "Barra delle schede del profilo nascosta agli studenti"
 layer = "spa-graft"
 confidence = "high"
+feature = "profile-page"
 intent = """
 Uno studente nel profilo ha solo la scheda Certificati, quindi la barra delle schede sarebbe
 solo rumore: si mostra solo ai non studenti (istruttori, moderatori, valutatori), che possono
@@ -1907,6 +1998,7 @@ id = "profile-tabs-certificates-only"
 title = "Profilo senza schede Informazioni, Disponibilità e Calendario"
 layer = "spa-graft"
 confidence = "high"
+feature = "profile-page"
 intent = """
 Il profilo ha tolto la scheda Informazioni (About) e parte dalla scheda Certificati (commit
 3f63fec00); le schede Disponibilità (Slots) e Calendario valutazioni (Schedule) per valutatori
@@ -1938,6 +2030,7 @@ id = "profile-cover-image-removed"
 title = "Profilo senza immagine di copertina"
 layer = "spa-graft"
 confidence = "high"
+feature = "profile-page"
 intent = """
 Nella pagina profilo l'immagine di copertina e il pulsante per cambiarla sono stati tolti,
 resta solo lo spazio vuoto sopra l'avatar; l'intestazione ha uno sfondo grigio chiaro (commit
@@ -1955,6 +2048,7 @@ id = "profile-load-error-no-permission"
 title = "Profilo non caricato: messaggio di permesso invece della pagina vuota"
 layer = "spa-graft"
 confidence = "high"
+feature = "profile-page"
 intent = """
 Se la risorsa del profilo fallisce (profilo di altri senza ruolo LMS, username inesistente) la
 pagina mostra NoPermission invece di restare bianca (commit 97b62f6f9). È la metà frontend della
@@ -1974,6 +2068,7 @@ id = "profile-evaluator-availability"
 title = "Disponibilità del valutatore: avviso sulla fascia incompleta"
 layer = "spa-graft"
 confidence = "high"
+feature = "profile-page"
 intent = """
 Se l'utente aggiunge una fascia senza giorno o orari riceve un avviso invece di un nulla
 silenzioso; i segnaposto delle select sono tradotti. Fino al 2026-09-24 la pagina leggeva i dati
@@ -1992,6 +2087,7 @@ id = "profile-evaluation-schedule-heading"
 title = "Titolo e stato vuoto nel calendario delle valutazioni prenotate"
 layer = "spa-graft"
 confidence = "high"
+feature = "profile-page"
 intent = """
 La scheda Calendario valutazioni del profilo ha un titolo ("Valutazioni prenotate") e un testo
 quando non c'è nulla in calendario, per far capire a cosa serve la scheda (commit 1815bdc42).
@@ -2010,6 +2106,7 @@ id = "profile-edit-codice-fiscale"
 title = "Codice fiscale nella modifica del profilo"
 layer = "spa-graft"
 confidence = "high"
+feature = "profile-page"
 intent = """
 Lo studente inserisce il proprio codice fiscale dalla modifica del profilo: è il campo
 personalizzato codice_fiscale di User, che l'integrazione TrueSkills invia come fiscalId per
@@ -2038,6 +2135,7 @@ id = "profile-edit-image-optional"
 title = "Immagine del profilo facoltativa"
 layer = "spa-graft"
 confidence = "high"
+feature = "profile-page"
 status = "accepted-drift"
 intent = """
 Il profilo si salva anche senza immagine: l'upstream la rendeva obbligatoria, e uno studente che
@@ -2055,6 +2153,7 @@ id = "profile-edit-reduced-fields"
 title = "Modifica profilo ridotta a una colonna"
 layer = "spa-graft"
 confidence = "high"
+feature = "profile-page"
 intent = """
 La finestra di modifica del profilo è a una sola colonna: sono commentati titolo (headline),
 LinkedIn, Twitter e l'intera colonna destra (disponibile per, lingua, bio) (commit 29f976c3b
@@ -2081,6 +2180,7 @@ id = "permissions-valutatore-lesson-access"
 title = "Il Valutatore legge le lezioni dei corsi delle sue classi"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Un Valutatore rivede i corsi delle classi che valuta: può leggere ogni lezione e i suoi
 materiali per studenti come uno studente iscritto, senza iscrizione (quindi senza tracciamento
@@ -2108,6 +2208,7 @@ id = "sidebar-more-group-removed"
 title = "Gruppo \"Altro\" (pagine web) tolto dalla barra laterale"
 layer = "spa-graft"
 confidence = "high"
+feature = "navigation-menus"
 intent = """
 Il gruppo upstream "More" della barra laterale (pagine web personalizzate, con il pulsante + per
 aggiungerle riservato ai moderatori) è stato tolto (commit 032752e69 "Hide More group section in
@@ -2124,6 +2225,7 @@ id = "sidebar-frappe-onboarding-removed"
 title = "Onboarding, aiuto e riferimenti a Frappe tolti dalla barra laterale"
 layer = "spa-graft"
 confidence = "high"
+feature = "navigation-menus"
 intent = """
 Dalla barra laterale sono stati tolti il riquadro "Completa il tuo profilo" per gli studenti
 (commit 5b09a2c99), il banner Getting Started con HelpModal e IntermediateStepModal (commit
@@ -2146,6 +2248,7 @@ id = "sidebar-app-version-label"
 title = "Versione dell'app nel piede della barra laterale"
 layer = "spa-graft"
 confidence = "high"
+feature = "navigation-menus"
 intent = """
 Il piede della barra laterale mostra il numero di versione dell'app, scritto a mano e aggiornato
 a ogni rilascio (commit 10b5ac7eb, fd1856c7b, cbdc9582b), per sapere quale versione è installata
@@ -2169,6 +2272,7 @@ id = "lesson-sequential-access-lock"
 title = "Blocco sequenziale di lezioni e quiz nella pagina lezione"
 layer = "spa-graft"
 confidence = "high"
+feature = "guided-learning-path"
 intent = """
 Quando il corso ha attivi enforce_lesson_order o enforce_quiz_on_completion (impostazioni
 os_lms del corso, OsCourseSettings), lo studente non può aprire una lezione finché la
@@ -2205,13 +2309,16 @@ id = "lesson-edit-button-editor-hash"
 title = "Il pulsante Modifica della lezione apre la scheda Editor"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
+status = "accepted-drift"
 intent = """
 Gemella di course-outline-editor-hash: il pulsante Modifica nella pagina lezione porta al
 corso con hash '#editor', che è l'id della scheda Editor; l'upstream usava '#course editor',
 che non corrisponde a nessuna scheda, e l'amministratore finiva sull'anteprima del corso
 invece che nell'editor della lezione. Se l'upstream corregge da sé l'hash in modo
 equivalente, accettare la sua versione e marcare la voce come accepted-drift.
-Merge di v2.61.0 (2026-09-23): il nostro pulsante «Modifica» accanto al titolo non esiste più (rimosso anche upstream); la regola vive ora sul link «Editor View» nell'intestazione di Lesson.vue, con il gate upstream canEditLesson (moderatore o istruttore reale) al posto di isAdmin && !embedded. Ancora invariata."""
+Merge di v2.61.0 (2026-09-23): il nostro pulsante «Modifica» accanto al titolo non esiste più (rimosso anche upstream); la regola vive ora sul link «Editor View» nell'intestazione di Lesson.vue, con il gate upstream canEditLesson (moderatore o istruttore reale) al posto di isAdmin && !embedded. Ancora invariata.
+accepted-drift (2026-11-24, base della release v2.66.0, decisione del committente): Lesson.vue upstream usa già hash '#editor' nel pulsante Modifica."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Lesson.vue"
@@ -2222,6 +2329,7 @@ id = "lesson-discussions-removed"
 title = "Discussioni/Community rimosse dalla lezione; restano solo le Note dello studente"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-page"
 intent = """
 Il cliente non usa la community: la scheda Community (Discussions) e il pulsante delle
 domande in modalità Zen sono rimossi per tutti i ruoli. Sotto la lezione resta solo il
@@ -2232,7 +2340,7 @@ TabButtons che abbiamo tolto; mantenere la rimozione, non reintrodurre il compon
 
   [[entries.sites]]
   file = "frontend/src/pages/Lesson.vue"
-  anchor = "currentTab === 'Notes'"
+  anchor = "v-if=\"lesson.data && allowDiscussions && currentTab === 'Notes'\""
 
   [[entries.sites]]
   file = "frontend/src/pages/Lesson.vue"
@@ -2248,6 +2356,7 @@ id = "lesson-ai-tutor-context"
 title = "Il tutor AI conosce la lezione aperta o in modifica"
 layer = "spa-graft"
 confidence = "high"
+feature = "ai-tutor"
 intent = """
 Il tutor AI os_lms (pulsanti flottanti AiFixedButtons) risponde nel contesto della lezione
 corrente: la pagina lezione e l'editor della lezione pubblicano il nome della lezione nello
@@ -2268,6 +2377,7 @@ id = "lesson-zen-mode-fullscreen-only"
 title = "Modalità Zen nascosta dove manca la Fullscreen API (iPhone)"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-page"
 intent = """
 La modalità Zen usa la Fullscreen API, che su iPhone (tutti i browser iOS sono WebKit) non
 esiste per elementi non video: il pulsante non faceva nulla. canGoZen() rileva il supporto
@@ -2284,6 +2394,7 @@ id = "lesson-video-error-keeps-enforcement"
 title = "Un errore non fatale del player non disattiva l'obbligo di vedere il video"
 layer = "spa-graft"
 confidence = "high"
+feature = "guided-learning-path"
 intent = """
 Con enforce_video_completion attivo, un errore del player fa ripiegare il completamento
 sul timer di permanenza. Plyr inoltra però anche errori non legati alla riproduzione: Vimeo
@@ -2306,6 +2417,7 @@ id = "lesson-highlight-offset"
 title = "Evidenziazioni dello studente sull'occorrenza selezionata"
 layer = "spa-graft"
 confidence = "high"
+feature = "student-highlights"
 intent = """
 Un'evidenziazione salvata solo come testo si ripristinava sempre sulla prima occorrenza
 (evidenziando il terzo «con» si illuminava il primo). Ora la nota salva anche text_offset
@@ -2362,6 +2474,7 @@ id = "lesson-highlight-menu-ink"
 title = "Ritocco di stile: etichette del menu evidenziazione leggibili nel tema"
 layer = "spa-graft"
 confidence = "high"
+feature = "student-highlights"
 intent = """
 Il menu che compare selezionando testo nella lezione non aveva un colore di inchiostro:
 nomi dei colori e azioni restavano neri e ignoravano il tema (illeggibili in scuro).
@@ -2377,6 +2490,7 @@ id = "lesson-long-strings-wrap"
 title = "Stringhe lunghe nella lezione vanno a capo invece di spostare la pagina"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-page"
 intent = """
 Una lezione con un token lungo senza spazi (per esempio un URL Cloudflare/Bunny incollato
 come testo) sforava la colonna e spingeva tutta la pagina a destra. overflow-wrap sul
@@ -2404,6 +2518,7 @@ id = "lesson-sidebar-open-active-chapter"
 title = "La barra laterale apre il capitolo della lezione attiva"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-page"
 intent = """
 Il Disclosure di headlessui legge defaultOpen solo al mount e la barra laterale non si
 rimonta tra una lezione e l'altra: passando con «Next» a una lezione del capitolo
@@ -2427,6 +2542,7 @@ id = "editor-i18n-labels"
 title = "Etichette dell'editor EditorJS tradotte"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
 intent = """
 EditorJS mostra menu dei blocchi, barra inline e block tune in inglese se non riceve un
 dizionario i18n. getEditorI18n() passa ogni etichetta per __() così l'editor segue la
@@ -2450,6 +2566,7 @@ id = "lesson-form-os-settings-panel"
 title = "Pannello impostazioni os_lms nell'editor della lezione"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
 intent = """
 Al posto dell'interruttore upstream «Include in preview» l'editor della lezione monta
 OsLessonForm, che raccoglie le impostazioni volute dal cliente: include_in_preview, durata
@@ -2471,6 +2588,7 @@ id = "lesson-form-editable-fields"
 title = "Il salvataggio della lezione scrive solo i campi modificabili"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
 intent = """
 L'upstream salvava con set_value l'intero oggetto lesson caricato all'apertura; così ogni
 salvataggio o autosave riscriveva anche i campi gestiti dal server, in particolare
@@ -2490,6 +2608,7 @@ id = "lesson-form-style-tweaks"
 title = "Ritocchi di stile nell'editor della lezione"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
 intent = """
 Su telefono l'editor perde il margine orizzontale e il padding di 20 unità (resta px-3),
 così non è schiacciato in una colonna stretta (commit a1437f5fa). Il titolo ha
@@ -2509,6 +2628,7 @@ id = "upload-documents-and-archives"
 title = "Documenti e archivi caricabili nelle lezioni"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-attachments"
 intent = """
 Gli autori allegano alle lezioni anche documenti e archivi (doc/xls/ppt/odt, csv, txt,
 zip, rar, 7z…), non solo immagini, video, audio e PDF; prima tutto il resto veniva
@@ -2561,6 +2681,7 @@ id = "upload-unattached-new-lesson"
 title = "Upload senza allegato finché la lezione non è salvata"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-attachments"
 status = "accepted-drift"
 intent = """
 Una lezione nuova non ha ancora un docname; inviare doctype senza un docname valido fa
@@ -2584,6 +2705,7 @@ id = "upload-pdf-block-mobile"
 title = "PDF delle lezioni leggibili su mobile"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-attachments"
 intent = """
 I browser mobili non mostrano un PDF in un iframe (Chrome Android mostra un segnaposto di
 download, Safari iOS una prima pagina statica). Fino a v2.59.0 il nostro PdfBlock mostrava su
@@ -2643,6 +2765,7 @@ id = "upload-toolbox-icon-theme"
 title = "Ritocco di stile: icona Upload dell'editor segue il tema"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-attachments"
 intent = """
 L'icona del tool Upload nel menu dei blocchi era nera fissa, invisibile nel tema scuro;
 con currentColor segue il colore del testo del menu. Commit «fix color» (75ded9ac6), il
@@ -2659,6 +2782,7 @@ id = "video-block-dead-timeupdate"
 title = "Rimosso il binding @timeupdate orfano dal VideoBlock"
 layer = "spa-graft"
 confidence = "high"
+feature = "video-embeds"
 intent = """
 Il template legava @timeupdate="updateTime" a una funzione che non esiste più (il player
 traccia il tempo con videoRef.ontimeupdate): il gestore era un no-op che generava un
@@ -2675,6 +2799,7 @@ id = "editor-style-css-import"
 title = "Foglio di stile del nuovo editor importato a mano (colori ed evidenziatori)"
 layer = "spa-graft"
 confidence = "high"
+feature = "rich-text-colors"
 intent = """
 Il nuovo editor di frappe-ui (frappe-ui/editor, usato da RichTextEditor: descrizione di corsi e
 classi, discussioni, compiti, quiz) ha un proprio foglio di stile, che definisce le variabili
@@ -2698,6 +2823,7 @@ id = "editor-inline-color-persist"
 title = "Il colore del testo delle lezioni sopravvive al caricamento"
 layer = "spa-graft"
 confidence = "high"
+feature = "rich-text-colors"
 intent = """
 Il tool colore inline avvolge la selezione in <lms-inline-color style=…>; DOMPurify con la
 configurazione di default scarta i tag sconosciuti, quindi a ogni caricamento o
@@ -2745,6 +2871,7 @@ id = "editor-header-inline-toolbar"
 title = "Barra inline anche sui titoli delle lezioni"
 layer = "spa-graft"
 confidence = "low"
+feature = "lesson-editor"
 status = "accepted-drift"
 intent = """
 I blocchi titolo dell'editor hanno la stessa barra inline dei paragrafi (colore,
@@ -2764,6 +2891,7 @@ id = "embed-vimeo-share-links"
 title = "Link di condivisione Vimeo incollati nelle lezioni"
 layer = "spa-graft"
 confidence = "high"
+feature = "video-embeds"
 intent = """
 Il pulsante «Copia link» di Vimeo dà vimeo.com/share/<uuid>, che non contiene l'id del
 video, non reindirizza e che l'oEmbed di Vimeo rifiuta: gli autori ottenevano testo invece
@@ -2796,6 +2924,7 @@ id = "video-embed-url-reexport"
 title = "getVideoEmbedURL riesportata da utils per l'hero del corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "video-embeds"
 intent = """
 getVideoEmbedURL (YouTube e Vimeo, incluse le forme con hash) vive in utils/video.ts ed è
 riesportata da utils/index.js per i chiamanti esistenti, in particolare l'hero os_lms del
@@ -2811,6 +2940,7 @@ id = "sidebar-export-statistics"
 title = "Voce «Export Statistics» nella barra laterale"
 layer = "spa-graft"
 confidence = "high"
+feature = "student-stats-export"
 intent = """
 Voce di menu verso la pagina os_lms di esportazione delle statistiche studenti
 (StudentStatsExport, CSV/XLSX). Compare solo se get_user_info restituisce can_export_stats,
@@ -2832,6 +2962,7 @@ id = "search-like-filter-words"
 title = "Ricerca nelle liste per parole indipendenti"
 layer = "spa-graft"
 confidence = "high"
+feature = "list-search-words"
 intent = """
 La casella di ricerca delle liste costruiva un unico LIKE contiguo ("%Corso p%"): aggiungere
 una seconda parola azzerava i risultati. searchLikeFilter() unisce le parole con %
@@ -2849,6 +2980,7 @@ id = "theme-elite-import"
 title = "Tema Elite del cliente caricato sopra frappe-ui"
 layer = "spa-graft"
 confidence = "high"
+feature = "elite-theme"
 intent = """
 Il foglio di stile globale importa il tema Elite del cliente (styles/theme/elite/main.css,
 nostro), che ridefinisce colori e componenti per l'identità visiva della piattaforma. Senza
@@ -2865,6 +2997,7 @@ id = "popover-above-floating-buttons"
 title = "Menu e popover sopra i pulsanti flottanti del tutor AI"
 layer = "spa-graft"
 confidence = "high"
+feature = "ai-tutor"
 intent = """
 I wrapper popper di Radix Vue (Dropdown, Select, Tooltip, Popover di frappe-ui) sono
 teletrasportati nel body senza z-index; gli elementi fissi locali, come i pulsanti
@@ -2881,6 +3014,7 @@ id = "prose-hr-table-colors"
 title = "Ritocchi di stile del testo ricco: separatori e bordi delle tabelle"
 layer = "spa-graft"
 confidence = "high"
+feature = "rich-text-colors"
 intent = """
 Nei testi ricchi (descrizioni) il separatore <hr> prende il colore del testo circostante
 invece del grigio di prose, così resta visibile dove il testo è bianco (per esempio su un
@@ -2901,6 +3035,7 @@ id = "quiz-radio-classic"
 title = "Radio button classici nei quiz"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 intent = """
 @tailwindcss/forms ridisegna i radio selezionati come cerchio pieno colorato con puntino
 bianco; il cliente vuole l'aspetto classico (cerchio bianco con puntino nero) per le
@@ -2922,16 +3057,14 @@ id = "image-upload-translations"
 title = "Ritocchi di traduzione nei selettori di immagine"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
-Nei selettori di immagine di copertina (EditCoverImage) e Unsplash il segnaposto della
-ricerca e l'etichetta «Upload Image» passano per __(), così compaiono in italiano. In
+Nel selettore di immagini Unsplash il segnaposto della ricerca passa per __(), così compare
+in italiano (il selettore di copertina EditCoverImage è ora identico all'upstream). In
 UnsplashImageBrowser si importa anche TextInput, usato nel template ma mai importato (il
-campo di ricerca non veniva risolto). v2.59.0 cambia l'API del Popover in cima agli stessi
+campo di ricerca non veniva risolto). v2.59.0 cambia l'API del Popover in cima allo stesso
 file, fuori dalle nostre righe."""
 
-  [[entries.sites]]
-  file = "frontend/src/components/Modals/EditCoverImage.vue"
-  anchor = ":placeholder=\"__('search by keyword')\""
 
   [[entries.sites]]
   file = "frontend/src/components/UnsplashImageBrowser.vue"
@@ -2946,9 +3079,12 @@ id = "video-statistics-tab-label"
 title = "Ritocco di traduzione: etichetta delle schede nelle statistiche video"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
+status = "accepted-drift"
 intent = """
 L'etichetta delle schede «Video N» usava __() su un template literal, che non è
-traducibile (la chiave cambia a ogni indice); ora è __('Video {0}').format(n)."""
+traducibile (la chiave cambia a ogni indice); ora è __('Video {0}').format(n).
+accepted-drift (2026-11-24, base della release v2.66.0, decisione del committente): VideoStatistics.vue upstream ha già __('Video {0}').format(index + 1); resta solo una virgola finale (residuo)."""
 
   [[entries.sites]]
   file = "frontend/src/components/Modals/VideoStatistics.vue"
@@ -2970,6 +3106,7 @@ id = "courses-card-duration"
 title = "Durata del corso sulla card al posto degli iscritti"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-catalogue"
 intent = """
 La card del corso mostra la durata complessiva (somma dei minuti delle lezioni, campo os_lms
 total_minutes calcolato dall'override get_courses) invece del numero di studenti iscritti:
@@ -2993,6 +3130,7 @@ id = "courses-card-certification-badge"
 title = "Indicatore \"certificazione disponibile\" sulla card del corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-catalogue"
 intent = """
 Al posto della valutazione media (le recensioni sono disattivate, vedi course-reviews-removed)
 la card indica se il corso rilascia un certificato, anche quando il certificato è solo
@@ -3011,6 +3149,7 @@ id = "courses-card-tag-colors"
 title = "Tag colorati (LMS OS Tag) sulla card del corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "content-tags"
 intent = """
 I tag del corso si mostrano sulla card come badge colorati, con i colori configurati nel
 doctype os_lms LMS OS Tag. L'elenco corsi carica una volta la mappa tag→colore e la fornisce
@@ -3039,6 +3178,7 @@ id = "courses-card-footer-removed"
 title = "Piè di card del corso rimosso (istruttori, prezzo, certificazione)"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-catalogue"
 intent = """
 Dalla card del corso è stata tolta la fascia inferiore dell'upstream: avatar e nomi degli
 istruttori, prezzo del corso a pagamento e icona "Get Certified". Tolta nel commit 84bde1890
@@ -3059,6 +3199,7 @@ id = "create-outline-button-import"
 title = "Import esplicito di Button in CreateOutline"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 intent = """
 Import esplicito di Button da frappe-ui aggiunto durante la correzione di un merge (commit
 027c0c56f) perché il componente non risolveva più Button da solo. Il componente non è usato
@@ -3074,6 +3215,7 @@ id = "course-certificate-pdf-chrome"
 title = "Certificato scaricato con il generatore PDF Chrome"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-certificates"
 intent = """
 download_pdf usa wkhtmltopdf se non riceve pdf_generator, ignorando sia il Print Format sia
 le Print Settings; il modello di certificato del cliente usa transform:rotate, che solo il
@@ -3104,6 +3246,7 @@ id = "course-dashboard-rating-card-hidden"
 title = "Riquadro \"Valutazione media\" nascosto nella dashboard del corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "hidden-upstream-features"
 intent = """
 Le recensioni dei corsi sono disattivate (course-reviews-removed, confermato dal committente
 il 2026-09-23), quindi la valutazione media sarebbe sempre 0: il riquadro è commentato e la
@@ -3119,6 +3262,7 @@ id = "course-dashboard-sortable-students"
 title = "Colonne ordinabili nell'elenco studenti della dashboard del corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-dashboard"
 intent = """
 Chi gestisce il corso può ordinare gli studenti per nome, avanzamento e data di iscrizione
 cliccando le intestazioni (freccia di direzione). L'ordinamento è lato server (orderBy della
@@ -3150,6 +3294,7 @@ id = "course-dashboard-progress-labels-it"
 title = "Legenda della distribuzione dei progressi in italiano"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-dashboard"
 intent = """
 Il backend restituisce le fasce di avanzamento in inglese ("Just Started (0-30%)"…) e non
 passano da __(): la risposta viene rietichettata in italiano, conservando il suffisso
@@ -3174,6 +3319,7 @@ id = "course-dashboard-mobile-layout"
 title = "Dashboard del corso impilata in una colonna su mobile"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-dashboard"
 intent = """
 Su telefono le griglie a più colonne della dashboard rendevano il contenuto più largo dello
 schermo e l'intera pagina scorreva di lato. I numeri vanno in una colonna sotto sm, elenco
@@ -3184,13 +3330,14 @@ Merge di v2.62.0 (2026-09-24): redesign mobile upstream (decisione del committen
 
   [[entries.sites]]
   file = "frontend/src/pages/Courses/CourseDashboard.vue"
-  anchor = "grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-5 items-start"
+  anchor = '<div class="min-w-0 space-y-5">'
 
 [[entries]]
 id = "course-dashboard-search-by-name"
 title = "Ritocchi di stile/traduzioni nella dashboard del corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-dashboard"
 intent = """
 Ritocchi senza regola di business: il campo di ricerca studenti è compatto (classe small-form
 del tema elite) ed etichettato "Cerca per nome", perché cerca solo sul nome; i riquadri hanno
@@ -3206,6 +3353,7 @@ id = "courses-programs-theme-card-hooks"
 title = "Classe card del tema elite su riquadri e card di corsi e programmi"
 layer = "spa-graft"
 confidence = "high"
+feature = "elite-theme"
 intent = """
 La classe card è l'aggancio dello stile delle card del tema elite
 (frontend/src/styles/theme/elite/main.css): aggiunta ai riquadri numerici delle dashboard
@@ -3234,6 +3382,7 @@ id = "course-overview-original-shadowed"
 title = "CourseOverview originale oscurato dall'override"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-page-redesign"
 intent = """
 Codice morto a runtime: il plugin osOverrideTheme serve al suo posto
 frontend/src/overrides/pages/Courses/CourseOverview.vue, dove vivono tutte le
@@ -3255,6 +3404,7 @@ id = "course-form-overview-theme-hooks"
 title = "Agganci del tema elite nella sezione panoramica del modulo corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "elite-theme"
 intent = """
 Nella sezione "Panoramica" delle impostazioni del corso, il contenitore dell'editor della
 descrizione porta la classe ProseMirror-wrapper (più un anello di focus) e il campo "Corsi
@@ -3279,6 +3429,7 @@ id = "course-form-mobile-layout"
 title = "Creazione e copertina del corso utilizzabili su mobile"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-settings-extensions"
 status = "accepted-drift"
 intent = """
 Su telefono il campo copertina del corso (anteprima + pulsanti) e i campi del dialogo "Nuovo
@@ -3300,6 +3451,7 @@ id = "course-new-modal-title-translated"
 title = "Ritocchi di traduzione nel dialogo Nuovo corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 status = "accepted-drift"
 intent = """
 Il titolo del dialogo "New Course" era una stringa fissa in inglese: passa da __() per
@@ -3317,6 +3469,7 @@ id = "courses-list-students-enrolled-only"
 title = "Lo studente vede nell'elenco corsi solo i corsi a cui è iscritto"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-catalogue"
 intent = """
 Per lo studente l'elenco corsi ha solo la scheda "Iscritto": le schede pubbliche "Pubblicati"
 e "In arrivo" sono nascoste, il selettore delle schede sparisce quando resta una sola scheda,
@@ -3354,6 +3507,7 @@ id = "courses-list-persist-tab"
 title = "L'elenco corsi ricorda la scheda selezionata"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-catalogue"
 intent = """
 La scheda scelta nell'elenco corsi resta selezionata quando si esce e si torna (localStorage
 'lms_courses_tab'); se la scheda salvata non è più disponibile per il ruolo dell'utente si
@@ -3368,6 +3522,7 @@ id = "courses-list-category-per-tab"
 title = "Filtro categoria dell'elenco corsi limitato alla scheda attiva"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-catalogue"
 intent = """
 Il menu delle categorie elencava solo le categorie dei corsi pubblicati, quindi risultava
 vuoto sulle schede con bozze o iscrizioni (Creati, Non pubblicati, Iscritto). Ora le
@@ -3391,6 +3546,7 @@ id = "courses-programs-list-search"
 title = "Ricerca per parole indipendenti negli elenchi di corsi e programmi"
 layer = "spa-graft"
 confidence = "high"
+feature = "list-search-words"
 intent = """
 La casella di ricerca costruiva un unico LIKE sull'intera frase ("%Corso p%"), quindi
 aggiungere una seconda parola azzerava i risultati: searchLikeFilter divide la ricerca in
@@ -3424,6 +3580,7 @@ id = "courses-list-certification-first-click"
 title = "Il filtro Certificazione dell'elenco corsi si applica al primo clic"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-catalogue"
 status = "accepted-drift"
 intent = """
 La casella "Certificazione" usava @change, che scatta prima che il Checkbox di frappe-ui
@@ -3442,6 +3599,7 @@ id = "courses-list-gestore-no-import"
 title = "Import dei corsi da file nascosto al Gestore"
 layer = "spa-graft"
 confidence = "high"
+feature = "gestore-role"
 intent = """
 Il Gestore può creare i corsi solo a mano: dal menu "Crea" spariscono "Importa tramite Data
 Import" e "Importa tramite ZIP". Il System Manager li conserva anche se ha il ruolo Gestore,
@@ -3476,6 +3634,7 @@ id = "courses-list-upcoming-students-unpublished"
 title = "Scheda In arrivo senza filtro pubblicati per lo studente"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-catalogue"
 intent = """
 Aggiunta con il commit 7c44a7dc8 ("accesso ai corsi tramite i batch"): sulla scheda "In
 arrivo" lo studente non riceveva il filtro published=1, presumibilmente per vedere i corsi
@@ -3496,6 +3655,7 @@ id = "home-valutatore-admin-home"
 title = "Il Valutatore riceve la home in stile amministratore"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore non è uno studente: la home dello studente lanciava widget per cui non ha
 permessi (valutazioni in arrivo, conteggio delle richieste di certificato) e produceva 403.
@@ -3534,6 +3694,7 @@ id = "home-admin-live-class-card"
 title = "Lezioni dal vivo della home amministratore con la card condivisa"
 layer = "spa-graft"
 confidence = "high"
+feature = "live-classes"
 intent = """
 Le lezioni dal vivo della home amministratore usano LiveClassCard, la card unica condivisa
 con la home dello studente e la scheda del batch: finestra di accesso di 15 minuti, controllo
@@ -3556,6 +3717,7 @@ id = "home-welcome-video-hero"
 title = "Video di benvenuto in cima alla home"
 layer = "spa-graft"
 confidence = "high"
+feature = "welcome-onboarding"
 intent = """
 La home mostra in cima il video di benvenuto configurato dal cliente
 (oslms/components/Home/WelcomeVideoHero.vue: video o iframe, si riduce a fine riproduzione).
@@ -3570,6 +3732,7 @@ id = "home-live-classes-toggle"
 title = "Nessuna richiesta delle lezioni dal vivo quando sono disattivate"
 layer = "spa-graft"
 confidence = "high"
+feature = "live-classes"
 intent = """
 Le lezioni dal vivo si possono disattivare per tutto il sito con l'impostazione
 enable_live_classes (gruppo Configurazioni delle impostazioni os_lms): la home non chiede più
@@ -3593,6 +3756,7 @@ id = "program-form-title-rename"
 title = "Il titolo del programma si modifica rinominando il documento"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 LMS Program ha come nome il titolo (autoname field:title, allow_rename). Il campo Titolo
 dell'upstream era legato a program.name, quindi su un programma esistente modificarlo non
@@ -3622,6 +3786,7 @@ id = "program-form-description-editor"
 title = "Descrizione del programma modificabile con formattazione"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 Il modulo del programma ha un editor ricco per la descrizione (campo custom os_lms di LMS
 Program), mostrata poi allo studente (program-description). Al salvataggio passa da
@@ -3654,6 +3819,7 @@ id = "description-images-upload-public"
 title = "Le immagini nelle descrizioni di programmi e corsi si caricano pubbliche"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 Gli editor ricchi (TextEditor di frappe-ui e il nostro RichTextEditor) caricano le immagini
 private per default, senza agganciarle al documento: Frappe aggancia in automatico solo i file
@@ -3685,6 +3851,7 @@ id = "program-form-add-courses-multi"
 title = "Più corsi aggiunti insieme a un programma"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 Il dialogo "Aggiungi corso al programma" usa un MultiSelect: si scelgono più corsi in una
 volta, quelli già presenti nel programma sono esclusi dalla lista e le nuove righe prendono il
@@ -3709,6 +3876,7 @@ id = "program-form-add-members-bulk"
 title = "Membri del programma aggiunti in blocco o da un batch"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 Al posto del singolo campo "Membro del programma" ci sono due azioni: "Aggiungi membro" (più
 utenti insieme, esclusi quelli già membri) e "Aggiungi gruppo", che elenca gli iscritti di un
@@ -3735,6 +3903,7 @@ id = "program-form-full-document"
 title = "Il modulo del programma lavora sul documento completo"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 Invece delle due list resource upstream sui doctype figli (LMS Program Course, LMS Program
 Member) il modulo carica l'intero LMS Program con frappe.client.get (righe ordinate per idx),
@@ -3772,6 +3941,7 @@ id = "program-form-translated-selection"
 title = "Ritocchi di traduzione nel modulo del programma"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 Testi del modulo del programma resi traducibili: il banner di selezione delle righe usa
 l'override os_lms di ListSelectBanner (importato direttamente dal percorso overrides) con il
@@ -3795,6 +3965,7 @@ id = "job-form-select-placeholder"
 title = "Ritocchi di traduzione nel modulo offerta di lavoro"
 layer = "spa-graft"
 confidence = "high"
+feature = "hidden-upstream-features"
 intent = """
 Le tendine Tipo e Modalità di lavoro mostrano il segnaposto tradotto "Seleziona opzione"
 invece di un valore vuoto. Nessuna regola di business. L'ancora è su due righe perché il
@@ -3819,6 +3990,7 @@ id = "quiz-skip-unanswered-ui"
 title = "Nel player del quiz si può saltare una domanda e consegnare da qualunque domanda"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 intent = """
 Metà frontend della regola quiz-submit-unanswered (quella voce copre solo process_results in
 lms_quiz.py). Lo studente deve poter lasciare una domanda senza risposta e consegnare il quiz
@@ -3861,6 +4033,7 @@ id = "quiz-cached-remount"
 title = "Un quiz riaperto dalla cache non perde le domande"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 status = "accepted-drift"
 intent = """
 La risorsa del quiz è in cache per nome e frappe-ui restituisce lo stesso oggetto ai mount
@@ -3890,6 +4063,7 @@ id = "quiz-timer-wall-clock"
 title = "Timer del quiz ancorato all'orologio e consegna una sola volta"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 intent = """
 Il conto alla rovescia dei quiz a tempo si calcola da una scadenza reale (Date.now) invece di
 decrementare un contatore: setInterval rallenta molto nelle schede in background, il contatore
@@ -3916,6 +4090,7 @@ id = "quiz-player-style-translations"
 title = "Ritocchi di stile, layout mobile e traduzioni del player del quiz"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 intent = """
 Testi delle istruzioni leggibili (text-ink-gray-9 al posto del blu), classe card del tema sui
 riquadri, riga delle azioni impilata su telefono (checkbox di revisione, paginazione e pulsanti
@@ -3944,6 +4119,7 @@ id = "quiz-form-mobile-layout"
 title = "Modulo del quiz usabile su telefono e pulsanti in stile del tema"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 status = "accepted-drift"
 intent = """
 Il modulo di authoring del quiz (Docente, Moderator, istruttori) sotto lg passa a una colonna:
@@ -3965,6 +4141,7 @@ id = "quiz-submission-valutatore-readonly"
 title = "Il Valutatore vede le consegne dei quiz in sola lettura"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore di un batch deve poter leggere le risposte ai quiz dei propri studenti,
 arrivandoci dalla dashboard della classe (Dashboard → studente → riga del quiz): decisione del
@@ -4014,7 +4191,7 @@ Merge di v2.63.0 (2026-09-24): QuizSubmissionList.vue eliminata, sostituita da Q
 
   [[entries.sites]]
   file = "frontend/src/pages/QuizSubmissions.vue"
-  anchor = '#selection-actions="{ unselectAll, selections }"'
+  anchor = "v-if=\"!isValutatoreOnly\"\n\t\t\t#selection-actions=\"{ unselectAll, selections }\""
 
   [[entries.sites]]
   file = "frontend/src/pages/QuizSubmissions.vue"
@@ -4030,6 +4207,7 @@ id = "quiz-submission-list-style"
 title = "Tema della lista consegne del quiz"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 status = "accepted-drift"
 intent = """
 La lista delle consegne di un quiz usa la classe os-list-view del tema, come le altre liste.
@@ -4045,6 +4223,7 @@ id = "quiz-list-mobile-columns"
 title = "Lista dei quiz ridotta su telefono"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 status = "accepted-drift"
 intent = """
 Su telefono la lista dei quiz (Moderator, Docente, istruttori) mostra solo titolo, percentuale
@@ -4067,6 +4246,7 @@ id = "quiz-list-style"
 title = "Ritocchi di stile della lista dei quiz"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 intent = """
 Lista dei quiz con la classe os-list-view del tema, testo delle celle in text-sm, segnaposto
 della ricerca tradotto e, nella colonna Show Answers, una spunta verde al posto di una checkbox
@@ -4087,6 +4267,7 @@ id = "assessment-list-search-words"
 title = "Ricerca per parole nelle liste di quiz, compiti ed esercizi"
 layer = "spa-graft"
 confidence = "high"
+feature = "list-search-words"
 intent = """
 Nelle caselle di ricerca delle liste il filtro costruiva un unico LIKE contiguo («%Corso p%»):
 aggiungere una seconda parola, anche una sola lettera, azzerava i risultati. Con
@@ -4114,6 +4295,7 @@ id = "quiz-question-type-translated"
 title = "Tipi di domanda tradotti nel modale della domanda"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 status = "accepted-drift"
 intent = """
 Nel modale di creazione della domanda la select del tipo mostra etichette tradotte (Scelta
@@ -4133,6 +4315,7 @@ id = "quiz-question-radio-style-removed"
 title = "Rimosso lo stile globale dei radio del modale domanda"
 layer = "spa-graft"
 confidence = "high"
+feature = "quizzes"
 status = "accepted-drift"
 intent = """
 Il modale della domanda portava un blocco <style> non scoped che forzava in gray-900 ogni radio
@@ -4152,6 +4335,7 @@ id = "questionnaire-surface-base-token"
 title = "Questionario con bg-surface-base al posto di bg-surface-white"
 layer = "spa-graft"
 confidence = "high"
+feature = "elite-theme"
 status = "accepted-drift"
 intent = """
 Le opzioni e i pulsanti di navigazione del questionario usano bg-surface-base perché
@@ -4175,6 +4359,7 @@ id = "assignment-valutatore-grading"
 title = "Il Valutatore corregge i compiti degli studenti del proprio batch"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore di un batch vede, corregge e invia la valutazione dei compiti («elaborati») dei
 soli studenti del proprio batch. Frontend: canGradeSubmission lo ammette al riquadro di
@@ -4216,6 +4401,7 @@ id = "assignment-mobile-single-column"
 title = "Pagina del compito a una colonna su telefono"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 Su telefono consegna e testo del compito stanno in colonna: affiancati ogni riquadro era largo
 circa 190px e Save e la barra dell'editor uscivano dallo schermo; l'altezza fissa e lo
@@ -4238,6 +4424,7 @@ id = "assignment-style-translations"
 title = "Ritocchi di stile e traduzioni della pagina del compito"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 Stato della consegna tradotto nel badge e nella select di correzione (Non valutato, Superato,
 Non superato) con valori inglesi invariati, tipo di file tradotto nel testo «You can only upload
@@ -4262,6 +4449,7 @@ id = "assignment-new-submission-no-shared-cache"
 title = "Consegna del compito: niente cache condivisa per il modulo «new»"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 frappe-ui (createDocumentResource) tiene ogni documento in un singleton per nome e in IndexedDB,
 che sopravvivono al logout. L'upstream legava il modulo di nuova consegna al nome "new" e, dopo
@@ -4296,6 +4484,7 @@ id = "assignment-form-required-warnings"
 title = "Avviso sui campi obbligatori nel modulo del compito"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 Salvando un compito senza titolo, tipo di consegna o testo della domanda, chi crea il compito
 (Moderator, Docente, istruttori) riceve un avviso tradotto «{0} is required» sul campo mancante
@@ -4313,6 +4502,7 @@ id = "assignment-form-translations"
 title = "Tipi di consegna e segnaposto tradotti nel modulo del compito"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 Nel modulo del compito le etichette dei tipi di consegna (PDF, Immagine, Documento, Testo, URL)
 sono tradotte con valori inglesi invariati, e i campi hanno segnaposto tradotti invece del
@@ -4333,6 +4523,7 @@ id = "assignment-submission-list-style"
 title = "Ritocchi di stile e traduzioni della lista consegne dei compiti"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 La lista delle consegne dei compiti ha filtri impilati su telefono, la classe os-list-view del
 tema, e stato, colonne, filtro di stato e breadcrumb tradotti (i valori restano inglesi).
@@ -4352,6 +4543,7 @@ id = "assignment-submission-list-header"
 title = "Intestazione a tema della lista consegne dei compiti"
 layer = "spa-graft"
 confidence = "low"
+feature = "assignments"
 status = "accepted-drift"
 intent = """
 La pagina usa un <header> sticky con la classe main-page-header del tema invece del
@@ -4371,6 +4563,7 @@ id = "assignment-block-empty-placeholder"
 title = "Blocco compito nella lezione: segnaposto e etichetta tradotti"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 Nell'editor della lezione, salvare il modale del blocco compito senza scegliere un compito
 passava null e il blocco mostrava «Assignment: undefined»: ora mostra un segnaposto tradotto
@@ -4394,6 +4587,7 @@ id = "assignment-block-iframe-height"
 title = "Consegna del compito nella lezione a tutta altezza"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 Lo studente consegna il compito dentro la lezione attraverso un iframe: con l'altezza fissa di
 500px dell'upstream editor e pulsanti restavano tagliati. La classe os-frame (in
@@ -4412,6 +4606,7 @@ id = "exercise-list-search-clear"
 title = "La ricerca degli esercizi si azzera svuotando la casella"
 layer = "spa-graft"
 confidence = "high"
+feature = "list-search-words"
 intent = """
 La casella di ricerca degli esercizi di programmazione ricaricava la lista sull'evento DOM
 @input, che arriva prima che frappe-ui aggiorni il v-model: la ricerca era sempre indietro di
@@ -4428,6 +4623,7 @@ id = "exercise-list-dayjs-locale"
 title = "Date della lista esercizi con il dayjs localizzato in italiano"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 La colonna «Updated On» della lista esercizi formatta le date con il dayjs dell'app
 (@/utils/dayjs, locale italiano) per avere i mesi in italiano; in origine il file prendeva dayjs
@@ -4445,6 +4641,7 @@ id = "exercise-form-translations"
 title = "Traduzioni del modulo esercizio di programmazione"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 Nel modulo dell'esercizio di programmazione la select del linguaggio ha un segnaposto tradotto e
 le intestazioni della tabella dei casi di test (Input, Expected Output) sono tradotte.
@@ -4461,6 +4658,7 @@ id = "exercise-submission-commented-icons"
 title = "Icone rinominate in un blocco commentato della consegna esercizio"
 layer = "spa-graft"
 confidence = "low"
+feature = "frontend-build-compat"
 status = "accepted-drift"
 intent = """
 Nessun effetto a runtime: dentro un blocco che l'upstream tiene commentato, le icone Check e X
@@ -4480,6 +4678,7 @@ id = "discussion-no-embed-toolbar"
 title = "Niente pulsante Embed (iframe) nell'editor delle discussioni"
 layer = "spa-graft"
 confidence = "high"
+feature = "discussions"
 intent = """
 Negli editor delle discussioni del batch (risposta, modifica della risposta, nuovo argomento)
 gli studenti non devono poter incorporare iframe: la barra fissa è quella di frappe-ui senza il
@@ -4519,6 +4718,7 @@ id = "discussion-batch-chat-newest-first"
 title = "Chat del batch con i messaggi più recenti in alto"
 layer = "spa-graft"
 confidence = "high"
+feature = "discussions"
 intent = """
 Nella discussione del batch a thread unico (tab Discussions di BatchDetail, singleThread) i
 messaggi più recenti stanno in alto e l'editor sopra di loro, come in una chat; le discussioni
@@ -4546,6 +4746,7 @@ id = "discussion-reply-null-user"
 title = "Risposta di un utente senza profilo senza crash"
 layer = "spa-graft"
 confidence = "high"
+feature = "discussions"
 intent = """
 Una risposta il cui utente non viene risolto (reply.user nullo, per esempio utente eliminato o
 disattivato) faceva fallire il rendering dell'intero thread; ora mostra l'owner della risposta
@@ -4560,9 +4761,10 @@ id = "discussion-replies-style"
 title = "Ritocchi di stile e traduzioni delle risposte alle discussioni"
 layer = "spa-graft"
 confidence = "high"
+feature = "discussions"
 intent = """
 Risposte e editor su sfondo bg-surface-gray-2, editor della nuova risposta con altezza massima
-e scroll, icona del menu della risposta scura e segnaposto «Type your reply here...» tradotto.
+e scroll, icona del menu della risposta scura.
 ATTENZIONE al merge di v2.59.0: il TextEditor diventa RichTextEditor, che ha un editorClass di
 default diverso: riportare le nostre classi sul nuovo componente."""
 
@@ -4572,13 +4774,14 @@ default diverso: riportare le nostre classi sul nuovo componente."""
 
   [[entries.sites]]
   file = "frontend/src/components/DiscussionReplies.vue"
-  anchor = ":placeholder=\"__('Type your reply here...')\""
+  anchor = "max-h-[16rem] overflow-y-scroll"
 
 [[entries]]
 id = "discussion-new-label"
 title = "Etichetta personalizzabile per creare un argomento di discussione"
 layer = "spa-graft"
 confidence = "high"
+feature = "discussions"
 intent = """
 Il componente Discussions accetta una prop newLabel che sostituisce la dicitura generica «New
 {0}» sul pulsante di creazione e nel titolo del modale: serviva a mostrare «Ask a question» /
@@ -4599,6 +4802,7 @@ id = "list-search-restarts-paging"
 title = "La ricerca negli elenchi Quiz ed Esercizi riparte dalla prima pagina"
 layer = "spa-graft"
 confidence = "high"
+feature = "list-search-words"
 intent = """
 Con la paginazione «Carica altri» di ListPage, reload() di createListResource (frappe-ui) con
 start > 0 ricarica da 0 le righe già caricate e poi RIPRISTINA il vecchio start. Dopo «Carica
@@ -4624,6 +4828,7 @@ id = "assignment-list-type-i18n"
 title = "Tipo di consegna tradotto nell'elenco Elaborati"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 Nell'elenco Elaborati la colonna Tipo mostrava il valore grezzo (Document, Image, PDF, URL,
 Text) mentre il filtro Tipo sopra la tabella lo traduce già con __(). La cella passa ora il
@@ -4640,6 +4845,7 @@ id = "assignment-list-style"
 title = "Ritocchi di stile della lista dei compiti"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 La lista dei compiti usa la classe os-list-view del tema, con padding ridotto e testo delle
 celle più piccolo su telefono, come le altre liste del fork. v2.59.0 cambia le icone delle
@@ -4666,6 +4872,7 @@ id = "batch-form-valutatori"
 title = "Valutatori della classe nel modulo impostazioni"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore è un ruolo os_lms limitato a una sola classe: si assegna dentro la classe, nel
 campo custom valutatori (Table MultiSelect, figlio LMS Batch Valutatore), scegliendo fra tutti
@@ -4695,6 +4902,7 @@ id = "batch-form-people-dirty-autosave"
 title = "Modificare istruttori o valutatori attiva il salvataggio"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-form"
 intent = """
 I selettori di istruttori e valutatori usano ref separate, non batchDetail.doc, quindi il
 watcher profondo del documento non vede le loro modifiche: senza questo watcher il modulo non
@@ -4711,6 +4919,7 @@ id = "batch-form-saved-people-removable"
 title = "Istruttori e valutatori non più attivi restano rimovibili dalla classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-form"
 intent = """
 I due selettori ricevono opzioni solo dall'endpoint di ricerca, che esclude utenti disattivati,
 utenti che hanno perso il ruolo e utenti cancellati, e restituisce una sola pagina di risultati.
@@ -4737,6 +4946,7 @@ id = "batch-form-feature-sections"
 title = "Editor delle sezioni in evidenza nelle impostazioni della classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "feature-sections"
 intent = """
 La classe ha sezioni in evidenza (campo custom custom_feature_sections su LMS Batch) mostrate in
 sola lettura nella pagina della classe; l'editor os_lms FeatureSectionEditor, montato dopo i
@@ -4757,6 +4967,7 @@ id = "batch-form-os-link"
 title = "Campi Link del modulo classe con lo stile del tema"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-form"
 intent = """
 I campi Link del modulo classe (categoria, template email, account Zoom/Meet) usano il wrapper
 os_lms Controls/Link.vue, che avvolge il Link upstream in un div os-link solo per restilizzarlo
@@ -4774,6 +4985,7 @@ id = "batch-form-style-i18n"
 title = "Ritocchi di stile e traduzioni nel modulo classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-form"
 intent = """
 Ritocchi cosmetici: i segnaposto dei selettori di data e ora passano da __() ("Select date",
 "Select time"), perché i default di frappe-ui sono letterali inglesi; i selettori (fuso orario,
@@ -4791,6 +5003,7 @@ id = "batch-list-student-enrolled-only"
 title = "Lo studente vede solo le proprie classi, senza schede"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-list"
 intent = """
 Allo studente la lista delle classi mostra solo quelle a cui è iscritto: niente barra delle
 schede e scheda fissa su "Iscritto". La scheda non si legge dalla chiave per browser
@@ -4823,6 +5036,7 @@ id = "batch-list-default-tab-persist"
 title = "Scheda iniziale per ruolo e ricordata fra una visita e l'altra"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-list"
 intent = """
 Chi gestisce le classi (Moderator, istruttore, Batch Evaluator) parte da "Prossime"; chi non ha
 quelle schede, come un Valutatore limitato a una classe, parte da "Tutte". La scheda scelta si
@@ -4847,6 +5061,7 @@ id = "batch-list-enrolled-tab-members"
 title = "La scheda Iscritto filtra per iscrizione per ogni membro"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-list"
 intent = """
 La scheda "Iscritto" è offerta a ogni utente non gestore, compreso un Valutatore che è anche
 iscritto (per lui is_student è falso). Il filtro upstream era legato a is_student, quindi quei
@@ -4864,6 +5079,7 @@ id = "batch-list-archived-end-date"
 title = "Archiviate = classi già finite"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-list"
 intent = """
 La scheda "Archiviate" mostra le classi con data di fine passata; l'upstream usava la data di
 inizio, così una classe appena iniziata e ancora in corso finiva fra le archiviate."""
@@ -4878,6 +5094,7 @@ id = "batch-list-category-all"
 title = "Opzione Tutte per azzerare il filtro categoria"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-list"
 intent = """
 Scelta una categoria non c'era modo di toglierla dal menu (il pulsante di pulizia del
 combobox è inaffidabile) e bisognava ricaricare la pagina. La voce "Tutte" azzera il filtro e
@@ -4896,6 +5113,7 @@ id = "batch-list-search-words"
 title = "Ricerca classi per parole indipendenti"
 layer = "spa-graft"
 confidence = "high"
+feature = "list-search-words"
 intent = """
 La casella di ricerca costruiva un solo LIKE sull'intera frase, quindi aggiungere una seconda
 parola (anche una lettera) azzerava i risultati. searchLikeFilter divide la ricerca in parole
@@ -4915,6 +5133,7 @@ id = "batch-list-certification-filter-hidden"
 title = "Casella Certificazione tolta dai filtri della lista classi"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-list"
 intent = """
 La casella "Certificazione" (solo classi che rilasciano un certificato) è tolta dai filtri
 della lista; la logica del filtro resta e si può ancora attivare con ?certification=1
@@ -4935,6 +5154,7 @@ id = "batch-dashboard-export-statistics"
 title = "Esportazione delle statistiche della classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-dashboard"
 intent = """
 Dalla dashboard della classe il gestore scarica i progressi degli studenti in due formati da un
 solo endpoint (os_lms.os_lms.api.export_batch_progress): Excel leggibile (una riga per studente
@@ -4965,6 +5185,7 @@ id = "batch-dashboard-remove-students"
 title = "Rimozione di studenti dalla classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-students"
 intent = """
 Il gestore seleziona uno o più studenti nella lista della dashboard e li toglie dalla classe
 (cancellazione delle LMS Batch Enrollment). La selezione è attiva solo con isFullAdmin: il
@@ -4989,6 +5210,7 @@ id = "course-dashboard-remove-students"
 title = "Rimozione di studenti dal corso, con pulizia completa per l'amministratore"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-dashboard"
 intent = """
 Nella dashboard del corso chi ha System Manager (Administrator) o Gestore seleziona uno o più
 studenti e li toglie dal corso: si cancella solo la LMS Enrollment, progressi/consegne/certificati
@@ -5031,6 +5253,7 @@ id = "responsive-list-desktop-banner-dock"
 title = "Barra di selezione di ResponsiveListView in un dock fornito dalla pagina (desktop)"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-dashboard"
 intent = """
 frappe-ui ancora la barra di selezione (absolute bottom-6) al fondo della radice di ListView, alta
 quanto tutte le righe: in una pagina dove a scorrere è un riquadro esterno (dashboard del corso,
@@ -5052,6 +5275,7 @@ id = "batch-dashboard-import-students"
 title = "Importazione degli studenti nella classe dalla dashboard"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-students"
 intent = """
 Il pulsante Importa nell'intestazione della classe (BatchDetail, via childRef) apre
 un'importazione dati di LMS Batch Enrollment già nominata, per iscrivere molti studenti in
@@ -5072,6 +5296,7 @@ id = "batch-dashboard-student-progress"
 title = "Progresso di ogni studente nella dashboard della classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-dashboard"
 intent = """
 La lista studenti della dashboard ha una colonna Progresso (barra + percentuale): la media dei
 progressi dello studente sui corsi della classe. Dati e conteggio dei certificati arrivano da
@@ -5101,6 +5326,7 @@ id = "batch-dashboard-sortable-students"
 title = "Lista studenti ordinabile per colonna"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-dashboard"
 intent = """
 Le intestazioni della lista studenti (nome, progresso, data di iscrizione) sono cliccabili e
 ordinano in modo crescente/decrescente, come nella dashboard del corso. Nome e data si
@@ -5124,6 +5350,7 @@ id = "batch-dashboard-progress-panel"
 title = "Riepilogo progressi e progresso per corso nella dashboard della classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-dashboard"
 intent = """
 Al posto del grafico a barre upstream "Batch Summary" la dashboard ha una sola card con: un
 anello "Riepilogo progressi" che divide gli studenti in Appena iniziato / In corso / Avanzato /
@@ -5152,6 +5379,7 @@ id = "batch-feedback-removed"
 title = "Feedback della classe tolto dalle dashboard"
 layer = "spa-graft"
 confidence = "high"
+feature = "hidden-upstream-features"
 intent = """
 La sezione Feedback della classe (BatchFeedback) non compare più: tolta dalla dashboard dello
 studente già a marzo 2026 insieme alle schede Annunci/Discussioni (poi reintrodotte), e
@@ -5175,6 +5403,7 @@ id = "batch-admin-dashboard-style"
 title = "Ritocchi di stile nella dashboard del gestore della classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-dashboard"
 intent = """
 Ritocco cosmetico: il riquadro della lista studenti porta la classe card del tema. Nessuna
 regola di comportamento."""
@@ -5188,6 +5417,7 @@ id = "batch-student-dashboard-style"
 title = "Ritocchi di stile nella dashboard dello studente della classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-dashboard"
 intent = """
 Ritocco cosmetico: la tabella dei corsi della classe porta la classe os-list-view del tema.
 Nessuna regola di comportamento.
@@ -5202,6 +5432,7 @@ id = "batch-student-progress-lesson-drilldown"
 title = "Dettaglio per lezione nel riquadro progressi dello studente"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-dashboard"
 intent = """
 Nel riquadro che si apre cliccando uno studente nella dashboard della classe, un selettore di
 corso passa dalla media per corso ("Tutti i corsi") al dettaglio per lezione di quello studente
@@ -5225,8 +5456,9 @@ id = "batch-student-progress-i18n"
 title = "Traduzioni nel riquadro progressi dello studente"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-dashboard"
 intent = """
-Ritocchi di traduzione: intestazioni di colonna e stato dei compiti passano da __(), e il
+Ritocchi di traduzione: lo stato dei compiti passa da __(), e il
 badge di completamento usa il letterale italiano "Completato" dentro __() (motivazione
 dedotta: la chiave "Complete" è tradotta come verbo altrove e qui serve l'aggettivo). Nessuna
 regola di comportamento."""
@@ -5237,13 +5469,14 @@ regola di comportamento."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/BatchStudentProgress.vue"
-  anchor = "label: __('Percentage/Status')"
+  anchor = "{{ __(value as string) }}"
 
 [[entries]]
 id = "batch-card-style"
 title = "Ritocchi di stile nella card della classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-list"
 intent = """
 Ritocco cosmetico: la card della classe (lista classi e home) porta la classe card del tema.
 Nessuna regola di comportamento. ATTENZIONE al merge di v2.59.0: l'upstream cambia la riga del
@@ -5258,6 +5491,7 @@ id = "batch-feedback-card-style"
 title = "Ritocchi di stile nel riquadro feedback della classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "hidden-upstream-features"
 intent = """
 Ritocco cosmetico: il riquadro BatchFeedback ha padding, bordo e classe card propri, perché è
 stato tolto dal contenitore che li forniva. Oggi il componente non è montato da nessuna parte
@@ -5272,6 +5506,7 @@ id = "batch-overlay-meta-image"
 title = "Anteprima della classe: immagine di ripiego da meta_image"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-detail-page"
 intent = """
 LMS Batch non ha un campo image, quindi il ripiego upstream sull'immagine (quando manca il
 video) non poteva mai comparire: si usa meta_image. Il video è ritagliato con gli angoli
@@ -5290,6 +5525,7 @@ id = "announcement-send-os-lms"
 title = "Annunci inviati come notifica in piattaforma con email facoltativa"
 layer = "spa-graft"
 confidence = "high"
+feature = "announcements"
 intent = """
 Un annuncio della classe non passa più da frappe.core...communication.email.make (email in
 Ccn con Rispondi-a obbligatorio) ma da os_lms.os_lms.api.send_batch_announcement, che crea la
@@ -5313,6 +5549,7 @@ id = "announcement-email-template-composer"
 title = "Composizione degli annunci con template email"
 layer = "spa-graft"
 confidence = "high"
+feature = "announcements"
 intent = """
 Con "Invia email insieme alla notifica" si sceglie un Email Template (prima quelli marcati
 custom_available_for_announcements; se nessuno è marcato, tutti; preselezionato "Announcement
@@ -5354,6 +5591,7 @@ id = "announcement-specific-recipients"
 title = "Annuncio a tutta la classe o a studenti scelti"
 layer = "spa-graft"
 confidence = "high"
+feature = "announcements"
 intent = """
 "Invia a" permette di mandare l'annuncio a tutta la classe o solo a studenti scelti da un
 elenco con ricerca (nome completo ed email); con "Studenti specifici" serve almeno una
@@ -5373,6 +5611,7 @@ id = "announcement-named-colors"
 title = "Colori e evidenziazioni degli annunci visibili ovunque"
 layer = "spa-graft"
 confidence = "high"
+feature = "rich-text-colors"
 intent = """
 L'editor di frappe-ui salva i colori con nome come var(--prose-color-<nome>) e le
 evidenziazioni come var(--prose-highlight-<nome>), variabili definite solo dentro l'editor
@@ -5400,6 +5639,7 @@ id = "announcement-rich-render"
 title = "Annunci con template email mostrati come l'email ricevuta"
 layer = "spa-graft"
 confidence = "high"
+feature = "announcements"
 intent = """
 Nella scheda Annunci ogni annuncio mostra l'oggetto sopra il corpo. Un annuncio con HTML da
 template email (documento, tabelle, sfondi, larghezze) si mostra in un iframe isolato
@@ -5424,6 +5664,7 @@ id = "announcement-list-pagination"
 title = "Annunci della classe paginati"
 layer = "spa-graft"
 confidence = "high"
+feature = "announcements"
 intent = """
 La scheda Annunci mostra 10 annunci per pagina con Precedente/Successivo invece di caricarli
 tutti. Dipende dall'override os_lms di lms.lms.api.get_announcements (hooks.py,
@@ -5448,6 +5689,7 @@ id = "announcement-modal-in-tab"
 title = "Il composer degli annunci vive nella scheda Annunci"
 layer = "spa-graft"
 confidence = "high"
+feature = "announcements"
 intent = """
 Il pulsante "Fai un annuncio" è nell'intestazione della classe, visibile solo sulla scheda
 Annunci e ai gestori (BatchDetail). Il composer è montato dalla scheda stessa, che espone
@@ -5470,6 +5712,7 @@ id = "live-class-batch-card-observer"
 title = "Card unica delle lezioni live e accesso da osservatore per il Valutatore"
 layer = "spa-graft"
 confidence = "high"
+feature = "live-classes"
 intent = """
 Le lezioni live della classe usano LiveClassCard, la stessa card della home: finestra di
 accesso di 15 minuti, Avvia per l'host, "in attesa dell'host" finché la lezione non è
@@ -5492,6 +5735,7 @@ id = "live-class-edit-delete"
 title = "Modifica ed eliminazione delle lezioni live dalla classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "live-classes"
 intent = """
 Il gestore della classe (Moderator, Batch Evaluator) modifica una lezione live dallo stesso
 modal di creazione (carica il documento completo) e la elimina con conferma; l'eliminazione
@@ -5532,6 +5776,7 @@ id = "live-class-pagination-sort"
 title = "Lezioni live della classe paginate e ordinabili"
 layer = "spa-graft"
 confidence = "high"
+feature = "live-classes"
 intent = """
 Una classe accumula molte lezioni live: la scheda ne mostra 20 per pagina (conteggio a parte
 con get_count) e si ordina per data di creazione (default, più recenti prima) o per data della
@@ -5557,6 +5802,7 @@ id = "batch-new-modal-required-warnings"
 title = "Avvisi sui campi obbligatori nella creazione di una classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-form"
 intent = """
 Prima di creare la classe il modal controlla uno per uno i campi obbligatori (titolo, date,
 orari, fuso, descrizione, istruttori, dettagli) e mostra un avviso che nomina il campo
@@ -5573,15 +5819,16 @@ id = "batch-new-modal-i18n"
 title = "Traduzioni nel modal Nuova classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-form"
 intent = """
-Ritocchi di traduzione: il titolo del dialog e i segnaposto dei selettori di data e ora
+Ritocchi di traduzione: i segnaposto dei selettori di data e ora
 passano da __() (i default di frappe-ui sono letterali inglesi). Nessuna regola di
 comportamento.
 Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/NewBatchForm.vue; regola riapplicata li, ancore invariate."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Forms/NewBatchForm.vue"
-  anchor = ":title=\"__('New Batch')\""
+  anchor = ":label=\"__('Start Date')\"\n\t\t\t\t\t\ttype=\"date\"\n\t\t\t\t\t\t:placeholder=\"__('Select date')\""
 
 # --- Iscrizione alla classe (lms_batch_enrollment.py) -------------------------
 
@@ -5590,13 +5837,13 @@ id = "batch-enrollment-courses-after-insert"
 title = "Iscrizione ai corsi della classe dopo aver scritto l'iscrizione alla classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-students"
 intent = """
 Iscrivendosi a una classe lo studente viene iscritto ai suoi corsi. LMS Enrollment concede
 l'accesso a un membro della classe cercando nel database proprio questa LMS Batch Enrollment
 (bypass enrollment_from_batch), quindi le iscrizioni ai corsi vanno create in after_insert,
 quando il record esiste già: da validate la ricerca non trovava nulla e uno studente che si
-iscriveva da solo veniva respinto da ogni corso non aperto all'autoiscrizione. Il salvataggio
-è con ignore_permissions perché lo crea il sistema, non lo studente. Fa parte di una correzione
+iscriveva da solo veniva respinto da ogni corso non aperto all'autoiscrizione. Fa parte di una correzione
 in più file (commit a7cd6d837): in lms_enrollment.py il bypass di classe viene prima dei
 controlli di autoiscrizione, in lms_batch.py un corso aggiunto a una classe in corso iscrive
 gli studenti già presenti, e una patch v2_0 ha sistemato le classi esistenti. Il metodo è
@@ -5609,7 +5856,7 @@ rinominato da validate_course_enrollment a enroll_in_batch_courses."""
 
   [[entries.sites]]
   file = "lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.py"
-  anchor = "enrollment.save(ignore_permissions=True)"
+  anchor = "def enroll_in_batch_courses(self):"
   symbol = "enroll_in_batch_courses"
 
 # ---------------------------------------------------------------------------
@@ -5621,6 +5868,7 @@ id = "assignment-answer-readonly-for-graders"
 title = "Chi corregge vede la risposta del compito in sola lettura"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 Chi corregge un compito (Valutatore, istruttori, moderatori) deve poter leggere la risposta dello
 studente e compilare solo voto e commenti, mai modificare la risposta. Fino a v2.58.1 l'upstream
@@ -5649,6 +5897,7 @@ id = "permissions-valutatore-quiz-access"
 title = "Il Valutatore vede i quiz dei corsi e delle classi che valuta"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore di una classe legge le lezioni dei corsi di quella classe senza esserne iscritto
 (permissions-valutatore-lesson-access). Da v2.59.0 l'upstream protegge i quiz con
@@ -5680,6 +5929,7 @@ id = "course-card-price-hidden"
 title = "Prezzo del corso nascosto sulla card laterale"
 layer = "spa-graft"
 confidence = "high"
+feature = "hidden-upstream-features"
 intent = """
 La card laterale del corso non mostra il prezzo (blocco priceLabel commentato, commit 8fafc219c
 «Fix merge course», senza motivazione scritta). Motivo dedotto: la piattaforma non vende corsi
@@ -5697,6 +5947,7 @@ id = "course-detail-valutatore-tabs"
 title = "Il Valutatore vede il corso a schede (Panoramica + Dashboard) in sola lettura"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore di una classe che contiene il corso apre la vista a schede del dettaglio corso con
 Panoramica e Dashboard, per seguire i progressi degli studenti che valuta, ma senza le schede di
@@ -5720,6 +5971,7 @@ id = "course-detail-simulations-tab"
 title = "Scheda Simulazioni del corso per chi ne gestisce le simulazioni, Valutatore compreso"
 layer = "spa-graft"
 confidence = "high"
+feature = "ai-simulations"
 intent = """
 Punto 5 ESG, fase 5 del piano docs/ai-simulator/PIANO-esito-e-punteggio-coach.md (commit
 c0740a705, 1.16.54): la scheda Simulazioni del dettaglio corso (CourseSimulations di os_lms:
@@ -5756,6 +6008,7 @@ id = "time-ago-italian"
 title = "Date relative in italiano («ieri», «3 giorni fa»)"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 useTimeAgo di @vueuse produce solo testi inglesi («3 days ago»), che comparivano in italiano
 misto nelle liste (notifiche, discussioni, consegne). timeAgo gli passa i messaggi italiani, con
@@ -5785,6 +6038,7 @@ id = "certification-links-view-on-profile"
 title = "\"Visualizza certificato\" porta alla pagina Certificati del profilo"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-certificates"
 intent = """
 Nella card del corso, quando lo studente ha già il certificato, il pulsante «Visualizza
 certificato» non scarica più il PDF da qui: è un router-link alla pagina Certificati del
@@ -5813,6 +6067,7 @@ id = "chapter-modal-translations"
 title = "Etichette tradotte nel modale del capitolo"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 L'etichetta Titolo e il testo del pulsante «Upload an ZIP file» (pacchetto SCORM) passano da
 __() per comparire in italiano (commit cbc7146dd e d8b533a6b). Solo traduzione, nessuna
@@ -5833,6 +6088,7 @@ id = "evaluation-modal-select-placeholder"
 title = "Segnaposto tradotto sulla scelta del corso nel modale di valutazione"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 La select Corso del modale «Prenota la valutazione» mostra il segnaposto tradotto «Select
 option» invece di un valore vuoto (commit e577585ca, traduzioni). Il resto del diff è una
@@ -5853,6 +6109,7 @@ id = "review-modal-submit-translation"
 title = "Pulsante Invia tradotto nel modale recensione"
 layer = "spa-graft"
 confidence = "high"
+feature = "hidden-upstream-features"
 intent = """
 La nostra modifica voluta è solo l'etichetta dell'azione «Submit» passata da __() (commit
 f33c6ca45). Il resto del file è quello upstream. 2026-09-24 (B3.1): tolto il residuo di merge
@@ -5871,6 +6128,7 @@ id = "notes-type-text-offset"
 title = "Campo text_offset nel tipo Note delle evidenziazioni"
 layer = "spa-graft"
 confidence = "high"
+feature = "student-highlights"
 intent = """
 Il tipo Note ha il campo opzionale text_offset (numero o null): è la parte di tipizzazione
 della regola lesson-highlight-offset (commit a4573499a), cioè l'evidenziazione salvata con la
@@ -5896,6 +6154,7 @@ id = "coupon-forms-select-placeholder"
 title = "Segnaposto tradotto nelle select dei coupon"
 layer = "spa-graft"
 confidence = "high"
+feature = "hidden-upstream-features"
 intent = """
 Le select Tipo di sconto (dettaglio coupon) e Tipo documento (righe «Applicabile a») mostrano
 il segnaposto tradotto «Select option» (commit e577585ca, traduzioni). Solo traduzione; il
@@ -5922,6 +6181,7 @@ id = "email-config-lazy-translation-getters"
 title = "Testi della configurazione account email tradotti al momento del render"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 Il modulo viene importato subito (dal dialogo Impostazioni importato staticamente nella barra
 laterale), prima che il plugin di traduzione imposti window.__ e carichi le traduzioni: le
@@ -5951,6 +6211,7 @@ id = "setting-details-formatting"
 title = "Solo formattazione nel dettaglio impostazioni"
 layer = "spa-graft"
 confidence = "high"
+feature = "settings-dialog"
 intent = """
 Il file differisce dall'upstream solo per una virgola finale aggiunta da Prettier nella
 chiamata save.submit; nessun comportamento cambiato, per questo non porta marcatori. Al merge
@@ -5970,6 +6231,7 @@ id = "zoom-account-google-calendar-field"
 title = "Account Zoom legato a un Google Calendar"
 layer = "spa-graft"
 confidence = "high"
+feature = "zoom-google-calendar"
 intent = """
 Regola voluta (commit 0619704f2, «bind Google Calendar to Zoom accounts for live class
 invites»): ogni account Zoom ha un campo Google Calendar obbligatorio (campo google_calendar
@@ -5998,6 +6260,7 @@ id = "zoom-account-rename-keeps-account-name"
 title = "Rinominando un account Zoom il nome resta quello nuovo"
 layer = "spa-graft"
 confidence = "high"
+feature = "zoom-google-calendar"
 intent = """
 Salvando un account Zoom esistente con il nome cambiato, il form prima rinomina il documento
 (rename_doc) e poi salva i campi. L'upstream in quel salvataggio passa account_name =
@@ -6029,6 +6292,7 @@ id = "command-palette-group-title-i18n-ink"
 title = "Titoli dei gruppi della palette tradotti e titolo dei risultati in inchiostro del tema"
 layer = "spa-graft"
 confidence = "high"
+feature = "global-search"
 intent = """
 CommandPalette passa ai gruppi titoli letterali in inglese («Jump to», nomi di doctype dei
 risultati di ricerca): CommandPaletteGroup li traduce con __() al momento del rendering, ed è
@@ -6057,13 +6321,16 @@ id = "image-uploader-progress-format"
 title = "Percentuale di caricamento immagine con .format()"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
+status = "accepted-drift"
 intent = """
 __('Uploading {0}%', [progress]) mostrava «[object Object]» o il segnaposto non sostituito:
 il __() del frontend non accetta argomenti di formato, quindi si usa .format(progress)
 (commit 0a8870811, correzione i18n su tutti i {0}). Nessun marcatore: la riga sta dentro
 un attributo del template. ATTENZIONE al merge di v2.61.0: l'upstream contiene la stessa
 identica modifica, il merge è pulito e da quel momento non è più una personalizzazione;
-la voce può essere rimossa dopo il merge."""
+la voce può essere rimossa dopo il merge.
+accepted-drift (2026-11-24, base della release v2.66.0, decisione del committente): ImageUploader.vue è identico a v2.66.0 (__('Uploading {0}%').format(progress))."""
 
   [[entries.sites]]
   file = "frontend/src/components/Controls/ImageUploader.vue"
@@ -6074,6 +6341,7 @@ id = "multiselect-exclude-cached-options"
 title = "MultiSelect con valori esclusi e opzioni scelte esposte"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 Il dialogo «Aggiungi corso al programma» (ProgramForm, voce program-form-add-courses-multi)
 passa :exclude con i corsi già nel programma, che non devono comparire tra le opzioni, e legge
@@ -6106,6 +6374,7 @@ id = "multiselect-focus-input-handler"
 title = "Gestore focusInput definito nel MultiSelect"
 layer = "spa-graft"
 confidence = "high"
+feature = "frappe-ui-overrides"
 intent = """
 Il template upstream chiama @click="focusInput" sul riquadro dei valori e dà ref="search"
 all'input, ma lo script upstream non definisce né focusInput né il ref (gestore orfano rimasto
@@ -6126,6 +6395,7 @@ id = "uploader-mobile-wrap-description"
 title = "Uploader usabile su telefono"
 layer = "spa-graft"
 confidence = "high"
+feature = "frappe-ui-overrides"
 intent = """
 Nel dialogo Nuovo corso, su telefono, l'anteprima larga w-56 in una riga che non andava a capo
 spingeva fuori vista i pulsanti Carica/Sostituisci/Rimuovi: la riga ora fa flex-wrap e
@@ -6147,6 +6417,7 @@ id = "video-preview-field-vimeo"
 title = "Campo video di anteprima: link Vimeo e link di condivisione Vimeo"
 layer = "spa-graft"
 confidence = "high"
+feature = "video-embeds"
 intent = """
 Il campo «Video di anteprima» di corsi e batch accetta anche link Vimeo, non solo YouTube:
 l'anteprima nel modulo usa l'iframe anche per il tipo 'embed' (Vimeo) di getVideoPreview, e
@@ -6189,6 +6460,7 @@ id = "ai-fixed-buttons-layouts"
 title = "Pulsanti flottanti AI montati nei layout desktop e mobile"
 layer = "spa-graft"
 confidence = "high"
+feature = "ai-tutor"
 intent = """
 I pulsanti flottanti del coach/tutor AI di os_lms (AiFixedButtons) sono montati una volta sola
 nella shell dell'app, così compaiono su ogni pagina senza toccare le singole pagine. All'inizio
@@ -6222,6 +6494,7 @@ id = "desktop-layout-elite-sidebar"
 title = "Contenitore della sidebar desktop senza bordo e sfondo upstream"
 layer = "spa-graft"
 confidence = "high"
+feature = "elite-theme"
 intent = """
 Nel tema elite il contenitore della AppSidebar non porta le classi upstream border-e
 bg-surface-sidebar (commit e9b6577b7 «update theme colors»): colore e bordo della sidebar sono
@@ -6242,6 +6515,7 @@ id = "mobile-layout-theme-labels"
 title = "Colori e etichette tradotte nel layout mobile"
 layer = "spa-graft"
 confidence = "high"
+feature = "navigation-menus"
 intent = """
 Sul telefono la radice del layout porta bg-surface-base (lo sfondo del body restava
 diverso dal contenuto) e la barra di navigazione inferiore usa bg-surface-gray-1 per staccarsi
@@ -6267,6 +6541,7 @@ id = "mobile-nav-sidebar-settings-toggles"
 title = "Menu mobile rispettoso delle impostazioni della sidebar"
 layer = "spa-graft"
 confidence = "high"
+feature = "navigation-menus"
 status = "accepted-drift"
 intent = """
 Le voci che MobileLayout aggiunge a mano al menu «altro» (Notifiche per tutti; Quiz, Compiti,
@@ -6302,6 +6577,7 @@ id = "mobile-nav-programs-hidden"
 title = "Voce Programmi assente dal menu mobile"
 layer = "spa-graft"
 confidence = "low"
+feature = "navigation-menus"
 status = "accepted-drift"
 intent = """
 Sul telefono la navigazione non mostra Programmi, per nessun ruolo: l'upstream la inserisce
@@ -6327,6 +6603,7 @@ id = "global-dts-runtime-core-augmentation"
 title = "__ dichiarato anche su @vue/runtime-core"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 intent = """
 Oltre all'aumento upstream di ComponentCustomProperties su 'vue', lo stesso __ è dichiarato
 sul modulo '@vue/runtime-core' (commit 6d6d2af78 di Gabriele Pagnotta, «fix merge problems on
@@ -6348,6 +6625,7 @@ id = "router-lesson-edit-route"
 title = "Rotta diretta dell'editor di lezione /learn/<cap>-<lez>/edit"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
 intent = """
 La rotta LessonForm (/courses/:courseName/learn/:chapterNumber-:lessonNumber/edit) apre
 l'editor di una lezione con un URL proprio. L'upstream l'ha eliminata spostando la modifica
@@ -6371,6 +6649,7 @@ id = "router-search-page-route"
 title = "Rotta /search della pagina di ricerca ripristinata"
 layer = "spa-graft"
 confidence = "high"
+feature = "global-search"
 intent = """
 La pagina Search (pages/Search/Search.vue) è stata tolta dall'upstream (commit 46a356b08) e da
 noi ripristinata: ci arriva la voce «Search for …» della palette Cmd+K
@@ -6391,6 +6670,7 @@ id = "router-file-upload-route"
 title = "Rotta della pagina Carica file"
 layer = "spa-graft"
 confidence = "high"
+feature = "bulk-data-import"
 intent = """
 La pagina FileUpload (pages/FileUpload.vue, creata da noi nel commit f546fed1c insieme al file
 picker) permette di caricare file riusabili nei contenuti; la raggiunge la voce «Importa» del
@@ -6409,6 +6689,7 @@ id = "router-simulation-routes"
 title = "Rotte delle simulazioni AI di os_lms"
 layer = "spa-graft"
 confidence = "high"
+feature = "ai-simulations"
 intent = """
 Le simulazioni AI di os_lms (chat e voce) hanno sei pagine proprie sotto /simulations:
 InstructorReports (area docente/admin), ScenarioCreate e ScenarioEdit (editor degli scenari),
@@ -6438,6 +6719,7 @@ id = "router-student-stats-export-route"
 title = "Rotta della pagina di esportazione delle statistiche studenti"
 layer = "spa-graft"
 confidence = "high"
+feature = "student-stats-export"
 intent = """
 La pagina StudentStatsExport (oslms/pages/StudentStatsExport.vue, commit 68ce20f5d) esporta le
 statistiche degli studenti con filtri; la voce di sidebar in utils/index.js è condizionata a
@@ -6455,6 +6737,7 @@ id = "vitest-inline-frappe-ui"
 title = "frappe-ui trasformato da Vite nei test Vitest"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 status = "accepted-drift"
 intent = """
 frappe-ui è distribuito come sorgenti non transpilate: un test che importa suoi moduli
@@ -6479,6 +6762,7 @@ id = "patch-backfill-batch-course-enrollments"
 title = "Patch di recupero delle iscrizioni ai corsi dei batch"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-students"
 intent = """
 Le iscrizioni ai corsi di un batch nascevano solo all'ingresso dello studente nel batch: un
 corso aggiunto dopo a un batch in corso non arrivava agli studenti già iscritti (commit
@@ -6534,6 +6818,7 @@ id = "assignment-submission-mobile-frame"
 title = "Cornice ad altezza fissa della consegna solo da md in su"
 layer = "spa-graft"
 confidence = "high"
+feature = "assignments"
 intent = """
 Contenitore di pagina della voce assignment-mobile-single-column (che vive in
 components/Assignment.vue): su telefono consegna e testo del compito sono impilati e la pagina
@@ -6555,6 +6840,7 @@ id = "batch-detail-mobile-header"
 title = "Intestazione della classe su due righe e compatta su telefono"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-detail-page"
 status = "accepted-drift"
 intent = """
 Su telefono l'intestazione della classe (breadcrumb, badge Pubblicata, azioni) non stava in una
@@ -6588,6 +6874,7 @@ id = "batch-detail-tab-keys"
 title = "Schede della classe con chiave non tradotta ed etichetta tradotta"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-detail-page"
 status = "accepted-drift"
 intent = """
 Le etichette delle schede passano da __() (Panoramica, Dashboard, Lezioni, Annunci,
@@ -6626,6 +6913,7 @@ id = "batch-detail-hash-sync"
 title = "La scheda attiva segue anche il solo cambio di hash"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-detail-page"
 status = "accepted-drift"
 intent = """
 Cliccando una notifica della classe mentre si è già dentro quella classe cambia solo l'hash
@@ -6643,6 +6931,7 @@ id = "batch-detail-tab-notification-badges"
 title = "Contatore di notifiche non lette sulle schede della classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "notifications"
 intent = """
 Le schede Lezioni, Annunci e Discussioni mostrano un badge rosso con il numero di notifiche non
 lette di quella sezione per l'utente (batch.data.tab_notifications, calcolato dall'override
@@ -6680,6 +6969,7 @@ id = "batch-detail-valutatore-tabs"
 title = "Il Valutatore della classe vede le schede e la dashboard amministrativa"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore è un ruolo per singola classe (campo valutatori di LMS Batch; is_valutatore
 calcolato lato server nel get_batch_details di lms/lms/utils.py, innesto backend nostro). Per la sua classe non vede la sola panoramica
@@ -6713,6 +7003,7 @@ id = "batch-detail-docente-admin"
 title = "Il Docente gestisce la classe come un moderatore"
 layer = "spa-graft"
 confidence = "high"
+feature = "docente-role"
 intent = """
 Docente è il ruolo globale di istruttore del cliente (flag is_docente): nella pagina della
 classe conta come amministratore, quindi vede Dashboard amministrativa e Impostazioni, può
@@ -6746,6 +7037,7 @@ id = "batch-detail-live-classes-toggle"
 title = "Scheda Lezioni della classe nascosta quando le lezioni dal vivo sono disattivate"
 layer = "spa-graft"
 confidence = "high"
+feature = "live-classes"
 intent = """
 Con l'impostazione os_lms enable_live_classes a 0 (gruppo Configurazioni) le lezioni dal vivo
 sono spente per tutto il sito e la scheda Lezioni della classe non viene aggiunta. È la stessa
@@ -6762,13 +7054,13 @@ id = "batch-detail-header-actions"
 title = "Azioni della scheda nell'intestazione della classe (Importa, Fai un annuncio)"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-detail-page"
 intent = """
 Sulla scheda Dashboard l'intestazione ha, accanto a Iscrivi (ora solid), il pulsante Importa
 che chiama goToImport della dashboard via childRef (voce batch-dashboard-import-students). Sulla
-scheda Annunci il pulsante «Fai un annuncio» (solid) apre il composer montato dalla scheda
-stessa via childRef.openAnnouncementModal (voce announcement-modal-in-tab): BatchDetail non
-monta più AnnouncementModal e il menu «...» non ha più la voce annuncio (commit dd55dbbbc,
-265842cde, 027c0c56f). Il pulsante è disabilitato, con tooltip, se la classe non ha studenti.
+scheda Annunci il pulsante «Fai un annuncio» (solid) è quello upstream e apre la pagina
+instradata NewAnnouncement via openBatchForm; il menu «...» non ha più la voce annuncio (commit
+dd55dbbbc, 265842cde, 027c0c56f). Il pulsante è disabilitato, con tooltip, se la classe non ha studenti.
 Nota: il v-if usa !readOnlyMode ma dd55dbbbc ha tolto `const readOnlyMode =
 window.read_only_mode` e l'upstream ha poi reintrodotto il riferimento nel template: oggi
 readOnlyMode non è definito (sempre falso), quindi in modalità sola lettura il pulsante resta
@@ -6781,7 +7073,7 @@ Merge di v2.62.0 (2026-09-24): BatchDetail e ora costruito su TabbedDetailPage: 
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/BatchDetail.vue"
-  anchor = "@click=\"openAnnouncementModal\""
+  anchor = "variant=\"solid\"\n\t\t\t\t@click=\"openStudentForm\""
 
   [entries.visibility]
   subject = "pulsanti Importa, Iscrivi e Fai un annuncio nell'intestazione della classe"
@@ -6795,6 +7087,7 @@ id = "batch-content-add-moderator-only"
 title = "Aggiunta di corsi e valutazioni alla classe solo per Moderator"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-management-permissions"
 intent = """
 I pulsanti Aggiungi delle schede Corsi e Valutazioni della classe erano concessi a
 is_moderator || is_evaluator, ma i selettori che aprono caricano le opzioni con search_link,
@@ -6835,11 +7128,14 @@ id = "batch-courses-row-course-link"
 title = "Il clic su un corso della classe apre il corso giusto"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-detail-page"
+status = "accepted-drift"
 intent = """
 Le righe della scheda Corsi sono righe figlie Batch Course: row.name è il nome della riga
 figlia, non del corso, quindi il link upstream verso CourseDetail portava a un corso
 inesistente. Il parametro usa row.course, il Link al corso (commit 30111a51d). Bug upstream
-ancora presente in v2.61.0, che non tocca questa riga."""
+ancora presente in v2.61.0, che non tocca questa riga.
+accepted-drift (2026-11-24, base della release v2.66.0, decisione del committente): BatchCourses.vue upstream usa già row.course nel link al corso (bug corretto)."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/BatchCourses.vue"
@@ -6850,9 +7146,9 @@ id = "batch-tabs-list-style-i18n"
 title = "Stile e traduzioni delle liste Corsi e Valutazioni della classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-detail-page"
 intent = """
-Ritocchi senza regola di business: le due liste portano la classe os-list-view del tema elite;
-le intestazioni di colonna della lista Corsi (Title, Evaluator) passano da __(); lo stato della
+Ritocchi senza regola di business: le due liste portano la classe os-list-view del tema elite; lo stato della
 valutazione nel badge della lista Valutazioni (vista anche dallo studente nella sua dashboard)
 passa da __() e compare in italiano. Differenze solo di formattazione: virgola finale in
 removeAssessments e `<div class="">` come radice di BatchCourses. Al merge di v2.61.0
@@ -6872,9 +7168,6 @@ Merge di v2.62.0 (2026-09-24): il redesign mobile toglie bordo e raggio sotto sm
   file = "frontend/src/pages/Batches/components/BatchCourses.vue"
   anchor = 'class="sm:border sm:rounded-lg os-list-view"'
 
-  [[entries.sites]]
-  file = "frontend/src/pages/Batches/components/BatchCourses.vue"
-  anchor = "label: __('Evaluator'),"
 
 # --- Modulo corso: sezione Dettagli (CourseDetailsSection.vue) ------------------
 
@@ -6883,6 +7176,7 @@ id = "course-details-tag-picker"
 title = "Selettore di tag colorati os_lms nella sezione Dettagli del corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "content-tags"
 intent = """
 Il MultiSelect dei tag upstream (tag liberi senza colore) è sostituito dal TagPicker os_lms,
 che gestisce i tag con colore usati nelle card e nella panoramica del corso (voci
@@ -6909,6 +7203,7 @@ id = "course-details-os-link"
 title = "Campo Categoria del corso con il wrapper os-link e segnaposto tradotto"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-settings-extensions"
 intent = """
 Il campo Categoria usa il wrapper os_lms Controls/Link.vue (div os-link attorno al Link
 upstream, per restilizzarlo con i colori del cliente senza toccare il componente base; come
@@ -6931,6 +7226,7 @@ id = "course-details-doc-guard"
 title = "Sezione Dettagli del corso resa solo a documento caricato"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-settings-extensions"
 intent = """
 La sezione ha v-if="doc" sulla radice, così il template (v-model="doc.title", doc.category,
 doc.tags…) non viene valutato prima che resource.doc esista. Introdotto da Gabriele Pagnotta nel
@@ -6952,6 +7248,8 @@ id = "course-editor-tab-hash"
 title = "L'editor del corso tiene l'hash della scheda Editor"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
+status = "accepted-drift"
 intent = """
 Compagna di course-outline-editor-hash. Quando l'editor del corso riscrive l'URL (lezione
 selezionata, modalità, lezione eliminata) e l'hash è vuoto, usa '#editor', che è l'id della
@@ -6971,7 +7269,8 @@ di Lesson.vue, fuori da questo gruppo). La prima ancora (hash '#editor' seguito 
 colpisce syncModeToUrl e, dopo un merge risolto bene, colpirà syncSelectedToUrl, che resta
 l'ultima funzione prima di STORAGE_KEY; la seconda è la lezione eliminata. Verificare anche che CourseDetail (fuori
 gruppo) non rimandi più a preview/mode dell'editor.
-Merge di v2.61.0 (2026-09-23): preso CourseEditor upstream (sparisce l'anteprima incorporata e lessonMode); la regola vale sui tre siti, incluso il nuovo watch upstream che ripulisce il vecchio ?lessonMode. Per il controllo contare solo il codice (es. `hash: route.hash || '#course editor'`): i nostri commenti OSLMS-CUSTOM citano la stringa '#course editor'."""
+Merge di v2.61.0 (2026-09-23): preso CourseEditor upstream (sparisce l'anteprima incorporata e lessonMode); la regola vale sui tre siti, incluso il nuovo watch upstream che ripulisce il vecchio ?lessonMode. Per il controllo contare solo il codice (es. `hash: route.hash || '#course editor'`): i nostri commenti OSLMS-CUSTOM citano la stringa '#course editor'.
+accepted-drift (2026-11-24, base della release v2.66.0, decisione del committente): CourseEditor.vue è identico a v2.66.0 e usa già '#editor'."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Courses/CourseEditor.vue"
@@ -6992,6 +7291,7 @@ id = "course-instructors-theme-hook"
 title = "Aggancio os-multilink del tema elite sul campo Istruttori"
 layer = "spa-graft"
 confidence = "high"
+feature = "elite-theme"
 intent = """
 Il campo Istruttori del modulo corso porta la classe os-multilink, l'aggancio con cui il tema
 elite (styles/theme/elite/main.css, .os-multilink div button) dà al campo lo sfondo degli altri
@@ -7009,6 +7309,7 @@ id = "course-instructors-orphan-removable"
 title = "Istruttore con account cancellato ancora rimovibile dal corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-settings-extensions"
 intent = """
 Le opzioni del menu degli istruttori selezionati nascono da resolvedSelected, e deselezionarle
 lì è l'unico modo per togliere un istruttore. Un istruttore il cui utente è stato cancellato non
@@ -7030,6 +7331,7 @@ id = "trueskills-template-required-data-refused"
 title = "Template TrueSkill con dati obbligatori: avviso nella scelta, blocco al salvataggio, messaggio allo studente"
 layer = "spa-graft"
 confidence = "high"
+feature = "trueskills-certificates"
 intent = """
 L'emissione TrueSkill non invia requiredData (i dati che un template chiede di compilare prima
 dell'emissione, es. «Performance 1/2» del template 10 «Certificato 1»): TrueSkill rifiuta con
@@ -7075,6 +7377,7 @@ id = "course-trueskills-publish-settings"
 title = "Emissione del certificato TrueSkill configurabile per corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "trueskills-certificates"
 intent = """
 Nella sezione «Prezzo e certificazione» il gestore del corso attiva l'emissione del certificato
 tramite TrueSkill (campo custom trueskills_certificate_enabled) e sceglie il template
@@ -7110,6 +7413,7 @@ id = "course-certificate-trueskill-exclusive"
 title = "Certificato di completamento interno e TrueSkill mutuamente esclusivi"
 layer = "spa-graft"
 confidence = "high"
+feature = "trueskills-certificates"
 intent = """
 Per ogni corso il certificato è o quello interno di completamento o l'openbadge TrueSkill, mai
 entrambi: attivare uno switch spegne l'altro (setCompletionCertificate /
@@ -7136,6 +7440,7 @@ id = "student-course-progress-i18n-mobile"
 title = "Dialogo dei progressi dello studente tradotto e a una colonna su telefono"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-dashboard"
 intent = """
 Ritocchi senza regola di business nel dialogo aperto dalla dashboard del corso: titolo
 «Student Progress» passato da __(); stato di compiti ed esercizi di programmazione nel badge
@@ -7170,6 +7475,7 @@ id = "settings-raven-admin-only"
 title = "Scheda Raven delle impostazioni solo per gli amministratori"
 layer = "spa-graft"
 confidence = "high"
+feature = "settings-dialog"
 intent = """
 v2.61.0 aggiunge il gruppo «Integrations» con la scheda Raven (sincronizzazione di workspace e
 canali Raven), visibile a chiunque apra le Impostazioni (Moderator compreso, upstream f020f366f).
@@ -7188,6 +7494,7 @@ id = "search-course-live-visibility"
 title = "La ricerca Cmd+K offre solo corsi che esistono e che l'utente può aprire"
 layer = "spa-graft"
 confidence = "high"
+feature = "global-search"
 intent = """
 L'override os_lms di search_sqlite (get_grouped_results_custom) giudicava un corso dal valore
 `published` dell'indice di ricerca (learning.db), che è fermo all'ultima scrittura: contiene corsi
@@ -7224,6 +7531,7 @@ id = "oslms-api-overrides-upstream-compat"
 title = "Gli override API di os_lms restano compatibili con gli originali upstream"
 layer = "spa-graft"
 confidence = "high"
+feature = "oslms-core"
 intent = """
 os_lms sostituisce 23 metodi whitelisted upstream (override_whitelisted_methods in hooks.py).
 Un merge upstream li può rompere senza che build, rilevatore o test se ne accorgano: v2.62.0 ha
@@ -7268,6 +7576,7 @@ id = "proctoring-log-hidden-from-valutatore"
 title = "Registro del proctoring con le foto: Gestore e Valutatore (solo la sua classe) lo vedono"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 v2.63.0 introduce il proctoring dei quiz (13d2114da e seguenti): durante il tentativo la webcam
 riconosce il volto e a ogni violazione salva una foto (File privato su LMS Quiz Violation Log);
@@ -7314,6 +7623,7 @@ id = "raven-framework-ui-stub"
 title = "@framework/ui sostituito da uno stub locale (editor delle condizioni Raven)"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 intent = """
 v2.63.0 (#2706, 088b2d3f4) costruisce l'editor delle regole dei canali Raven sul pacchetto
 condiviso @framework/ui, dichiarato in package.json come link:../../frappe/ui e verificato da
@@ -7349,6 +7659,7 @@ id = "student-view-oslms-roles"
 title = "La vista studente spegne anche i ruoli os_lms (Valutatore, Docente, Gestore)"
 layer = "spa-graft"
 confidence = "high"
+feature = "members-and-roles"
 intent = """
 v2.61.0 introduce la «vista studente» (useStudentView: $user simulato per il sottoalbero della
 lezione in anteprima), che spegne solo flag e ruoli upstream (is_moderator, is_instructor,
@@ -7377,6 +7688,7 @@ id = "lesson-rename-rag-reindex"
 title = "Rinomina di una lezione: indice dell'AI tutor ripulito e ricostruito"
 layer = "override-file"
 confidence = "high"
+feature = "ai-lesson-indexing"
 intent = """
 v2.61.0 (bbab35054) aggiunge un job giornaliero che rinomina le lezioni «NNNN Untitled lesson»
 nel loro titolo reale, con frappe.rename_doc. I campi Link (anche quelli os_lms: LMSA Query Log,
@@ -7417,6 +7729,7 @@ id = "block-editor-i18n-labels"
 title = "Etichette dell'editor a blocchi dell'autore tradotte"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
 intent = """
 Completa la voce editor-i18n-labels (che censisce getEditorI18n() in utils/index.js e il
 renderer in sola lettura di Lesson.vue) sul lato autore: l'editor EditorJS con cui docenti
@@ -7437,6 +7750,7 @@ id = "block-editor-table-popover-tokens"
 title = "Popover delle tabelle dell'editor con i colori del tema"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
 intent = """
 Il plugin tabelle di EditorJS inietta a runtime un CSS che ridefinisce
 --color-background: #fff direttamente su .tc-popover, e a parità di specificità vince sul
@@ -7463,6 +7777,7 @@ id = "quiz-editor-placeholder-title"
 title = "Segnaposto del quiz nell'editor con titolo tradotto e sicuro"
 layer = "spa-graft"
 confidence = "high"
+feature = "lesson-editor"
 intent = """
 Nell'editor della lezione (modalità modifica, non lettura) il blocco quiz mostrava
 «Quiz: untitled-quiz-5», cioè il docname del Link, che all'autore non dice nulla. Il
@@ -7497,6 +7812,7 @@ id = "assessment-modal-i18n"
 title = "Modale aggiungi valutazione: tipi e segnaposto tradotti"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 Nella scheda Valutazioni della classe la modale «Aggiungi valutazione» mostrava i tipi
 (Quiz, Assignment, Programming Exercise) e il segnaposto del tipo in inglese: le etichette
@@ -7531,6 +7847,7 @@ id = "data-import-doctype-titles-i18n"
 title = "Importazione dati: titoli dei doctype tradotti"
 layer = "spa-graft"
 confidence = "high"
+feature = "bulk-data-import"
 intent = """
 I titoli di doctypeMap (Courses, Batches, Categories) che la pagina passa al componente
 DataImport di frappe-ui (da noi il fork in src/overrides/frappe-ui/frappe/DataImport, che
@@ -7560,6 +7877,7 @@ id = "statistics-chart-labels-i18n"
 title = "Statistiche: titoli e assi dei grafici tradotti"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 I config dei NumberChart/AxisChart/DonutChart della pagina Statistiche (titoli, sottotitoli
 e titoli degli assi: Courses, Signups, Enrollments, Completions, Certifications, «… per
@@ -7595,6 +7913,7 @@ id = "batch-added-courses-enroll-existing-students"
 title = "Un corso aggiunto a una classe in corso iscrive gli studenti già presenti"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-students"
 intent = """
 Le iscrizioni ai corsi di una classe nascevano solo quando lo studente entrava nella classe:
 un corso aggiunto dopo a una classe già avviata non arrivava agli studenti già iscritti, che
@@ -7624,6 +7943,7 @@ id = "zoom-account-enabled-calendar-required"
 title = "Classe e classe live Zoom richiedono un account attivo legato a un Google Calendar"
 layer = "spa-graft"
 confidence = "high"
+feature = "zoom-google-calendar"
 intent = """
 Gli inviti delle classi live Zoom partono dal Google Calendar legato all'account Zoom (campo
 google_calendar su LMS Zoom Settings, commit 0619704f2; l'evento lo crea
@@ -7654,6 +7974,7 @@ id = "live-class-calendar-oauth-check"
 title = "Classe live rifiutata se il Google Calendar non è autorizzato"
 layer = "spa-graft"
 confidence = "high"
+feature = "zoom-google-calendar"
 intent = """
 Un Google Calendar il cui flusso OAuth non è stato completato non ha refresh token, e la
 creazione dell'evento (con invito e, per Meet, link della riunione) fallisce con un errore
@@ -7682,6 +8003,7 @@ id = "zoom-start-time-local-wallclock"
 title = "Orario della riunione Zoom inviato come ora locale"
 layer = "spa-graft"
 confidence = "high"
+feature = "zoom-google-calendar"
 intent = """
 Zoom legge start_time nel fuso indicato dal campo timezone del payload. L'upstream formatta con
 il pattern Babel "yyyy-MM-ddTHH:mm:ssZ", dove la Z finale è l'offset RFC822 e non una Z
@@ -7704,6 +8026,7 @@ id = "zoom-authenticate-error-message"
 title = "Errore leggibile quando l'autenticazione Zoom fallisce"
 layer = "spa-graft"
 confidence = "high"
+feature = "zoom-google-calendar"
 intent = """
 L'upstream fa response.json()["access_token"]: con credenziali sbagliate o account Zoom
 revocato la risposta non ha access_token (o non è JSON) e l'utente riceveva un KeyError o
@@ -7725,6 +8048,7 @@ id = "course-video-link-youtube-id"
 title = "Video di anteprima del corso: YouTube ridotto all'id, Vimeo intatto"
 layer = "spa-graft"
 confidence = "high"
+feature = "video-embeds"
 intent = """
 Il vecchio codice upstream prendeva l'ultimo segmento del percorso del link e rovinava i link
 Vimeo vimeo.com/<id>/<hash>. Il nostro validate_video_link (commit f51e0a512, «add support for
@@ -7755,6 +8079,7 @@ id = "course-paid-certificate-fields-cleared"
 title = "Valutatore e fuso del certificato a pagamento azzerati quando lo si disattiva"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-certificates"
 intent = """
 evaluator e timezone appartengono solo al certificato a pagamento (prezzo e valuta sono
 condivisi con paid_course). Spegnendo il certificato restavano valorizzati ma nascosti dal
@@ -7778,6 +8103,7 @@ id = "live-class-delete-drops-event-unchecked"
 title = "Chi gestisce la classe elimina le classi live anche quando hanno un evento di calendario"
 layer = "spa-graft"
 confidence = "high"
+feature = "live-classes"
 intent = """
 L'upstream (LMSLiveClass.after_delete, commit 701814060 del 2026-03-04) dopo aver eliminato la
 classe live cancella l'Event di calendario collegato con i permessi dell'utente. Sul sito le
@@ -7814,6 +8140,7 @@ id = "live-class-valutatore-read"
 title = "Il Valutatore legge le classi live della propria classe"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore di una classe non è iscritto come studente ma deve vedere (e raggiungere) le
 classi live della classe che valuta, come uno studente iscritto: has_permission concede la sola
@@ -7865,6 +8192,7 @@ id = "batch-course-modal-all-courses"
 title = "Nella scelta del corso da aggiungere alla classe compaiono anche le bozze"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-detail-page"
 intent = """
 Il Link «Corso» del modale «Aggiungi un corso alla classe» non ha più il filtro upstream
 :filters="{ published: 1 }": compaiono tutti i corsi, bozze comprese, perché i corsi di una
@@ -7886,7 +8214,7 @@ Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina in
 
   [[entries.sites]]
   file = "frontend/src/pages/Forms/BatchCourseForm.vue"
-  anchor = 'doctype="LMS Course"'
+  anchor = ":label=\"__('Course')\"\n\t\t\t\t\t:required=\"true\"\n\t\t\t\t\tvariant=\"outline\""
 
 # --- Candidatura a un'offerta di lavoro (JobApplicationModal.vue) -------------
 
@@ -7895,6 +8223,7 @@ id = "job-application-modal-translations"
 title = "Titolo e pulsante Invia tradotti nel modale di candidatura"
 layer = "spa-graft"
 confidence = "high"
+feature = "hidden-upstream-features"
 intent = """
 Il titolo «Apply for this job» e l'etichetta dell'azione «Submit» passano da __() per
 comparire in italiano (commit f33c6ca45, riportati da 265842cde dopo un merge). Solo
@@ -7922,6 +8251,7 @@ id = "live-class-modal-edit-reschedule"
 title = "Il modale della lezione live modifica e riprogramma una lezione esistente"
 layer = "spa-graft"
 confidence = "high"
+feature = "live-classes"
 intent = """
 Lo stesso modale di creazione serve anche a MODIFICARE una lezione live: LiveClass.vue gli
 passa la lezione (prop liveClass, vedi live-class-edit-delete) e il modale si precompila,
@@ -7997,6 +8327,7 @@ id = "live-class-modal-reminders"
 title = "Promemoria configurabili per ogni lezione live"
 layer = "spa-graft"
 confidence = "high"
+feature = "live-classes"
 intent = """
 Ogni lezione live ha i suoi promemoria (tabella figlia os_lms LMS Live Class Reminder):
 nel modale si aggiungono righe valore + unità (Minuti/Ore/Giorni) e per ognuna si vede se
@@ -8031,6 +8362,7 @@ id = "live-class-modal-submit-guard"
 title = "Salvataggio della lezione live protetto dal doppio clic e con validazione bloccante"
 layer = "spa-graft"
 confidence = "high"
+feature = "live-classes"
 intent = """
 Due regole sul salvataggio (commit e78ce251d, a4dc44396):
 - un secondo clic su Invia mentre il primo salvataggio è in corso viene ignorato (saving):
@@ -8063,6 +8395,7 @@ id = "live-class-modal-time-24h-i18n"
 title = "Ora a 24 ore, etichetta Ora esplicita e traduzioni nel modale della lezione live"
 layer = "spa-graft"
 confidence = "high"
+feature = "live-classes"
 intent = """
 Ritocchi di interfaccia:
 - il selettore dell'ora è forzato a 24 ore (:use12Hour="false", commit 305c803b8), coerente
@@ -8098,6 +8431,7 @@ id = "batch-student-modal-bulk-enroll"
 title = "Iscrizione di più studenti alla classe in un colpo solo, senza campo Pagamento"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-students"
 intent = """
 Il modale di iscrizione alla classe (dashboard admin della classe) sceglie PIÙ studenti con
 MultiLink invece di uno solo con Link (commit 033a2378a, «Enroll Students»): per ciascuno fa
@@ -8140,6 +8474,7 @@ id = "payment-gateway-details-formatting"
 title = "Solo formattazione nel dettaglio del gateway di pagamento"
 layer = "spa-graft"
 confidence = "high"
+feature = "hidden-upstream-features"
 intent = """
 Il file differisce dall'upstream solo per una virgola finale aggiunta da Prettier in
 getNewGateway (commit e577585ca); nessun comportamento cambiato, per questo non porta
@@ -8160,6 +8495,7 @@ id = "bulk-certificates-select-placeholder"
 title = "Segnaposto tradotto sulla scelta del corso nei certificati in blocco"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-certificates"
 intent = """
 La select Corso del modale «Genera certificati» della classe mostra il segnaposto tradotto
 «Select option» invece di un valore vuoto (commit e577585ca, traduzioni). Il resto del diff
@@ -8182,6 +8518,7 @@ id = "course-enrollment-purchased-certificate-hidden"
 title = "Casella «Certificato acquistato» nascosta nell'iscrizione al corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "hidden-upstream-features"
 intent = """
 Nel modale «Iscrivi uno studente» della dashboard del corso la casella «Purchased
 Certificate» è commentata (commit 1d3fa64ea): purchasedCertificate resta false, quindi non
@@ -8211,6 +8548,7 @@ id = "course-enrollment-enroll-label-it"
 title = "Pulsante «Iscrivi» e titolo tradotto nell'iscrizione al corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 Il pulsante di conferma del modale mostra «Iscrivi» scritto in italiano dentro __() (commit
 b580114cc) invece di __('Enroll'): all'epoca «Enroll» era tradotto in modo non adatto a un
@@ -8243,6 +8581,7 @@ id = "default-light-theme"
 title = "Tema chiaro di default con colori cliente; l'utente può passare allo scuro stock"
 layer = "spa-graft"
 confidence = "high"
+feature = "theme-contrast"
 intent = """
 Requisito ESG (2026-10-23, branch feature/esg, punto 1): l'utente deve poter cambiare tema,
 quindi la voce «Toggle Theme» del menu utente (UserDropdown) e la riga «Colour mode» della
@@ -8293,6 +8632,7 @@ id = "high-contrast-switch"
 title = "Interruttore «Alto contrasto» nel menu utente e nella pagina «Tu» del telefono"
 layer = "spa-graft"
 confidence = "high"
+feature = "theme-contrast"
 intent = """
 Requisito ESG (2026-10-23, branch feature/esg, punto 2): l'utente può attivare un tema ad alto
 contrasto, indipendente da chiaro/scuro. La logica sta in file nostri:
@@ -8347,6 +8687,7 @@ id = "self-service-account-deletion"
 title = "Pulsante «Elimina account» nel profilo e riga nella pagina «Tu» del telefono"
 layer = "spa-graft"
 confidence = "high"
+feature = "account-deletion"
 intent = """
 Requisito ESG (2026-10-23, branch feature/esg, punto 3): ogni utente tranne Administrator può
 cancellare da solo il proprio account, in modo completo (non anonimizzazione: l'anonimizzazione
@@ -8396,6 +8737,7 @@ id = "account-deletion-review-and-privacy-consent"
 title = "Eliminazione account su richiesta con revisione del Gestore e accettazione della privacy"
 layer = "spa-graft"
 confidence = "high"
+feature = "account-deletion"
 intent = """
 Estensione del punto 3 ESG (2026-10-30, branch feature/esg), regole del cliente: (a) con
 LMS Settings.account_deletion_requires_review attivo, chi non è Gestore, System Manager o
@@ -8467,6 +8809,7 @@ id = "app-ai-tutor-route-context"
 title = "Contesto del corso per il tutor AI sincronizzato con la rotta"
 layer = "spa-graft"
 confidence = "high"
+feature = "ai-tutor"
 intent = """
 Il pulsante fisso del tutor AI (oslms/components/AiFixedButtons, commit e1aa5e126 «add tutor
 ai fixed button, add course context to tutor») deve sapere in quale corso si trova lo
@@ -8494,6 +8837,7 @@ id = "main-brand-customize-css"
 title = "Foglio di stile «Brand Customize» caricato per ultimo"
 layer = "spa-graft"
 confidence = "high"
+feature = "brand-customize"
 intent = """
 L'amministratore personalizza i colori della piattaforma dal doctype os_lms «Brand Customize»
 (commit 55c34f1a7); os_lms.os_lms.branding.brand_css restituisce il CSS con quei valori.
@@ -8514,6 +8858,7 @@ id = "video-utils-vimeo-embed"
 title = "Supporto Vimeo nelle utilità video (share link, embed URL, anteprima)"
 layer = "spa-graft"
 confidence = "high"
+feature = "video-embeds"
 intent = """
 Lezioni, anteprime di corsi e batch e hero del corso devono riprodurre anche video Vimeo,
 mentre le utilità upstream conoscono solo YouTube e i file caricati. utils/video.ts ospita: VIMEO_SHARE_RE, il riconoscitore dei link
@@ -8561,6 +8906,7 @@ id = "tsconfig-allowjs-ignore-deprecations"
 title = "tsconfig: file .js inclusi nel controllo e deprecazioni di TypeScript 6 silenziate"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 intent = """
 Commit 6d6d2af78 (Gabriele Pagnotta, «fix merge problems on course and lesson form»):
 "allowJs": true e "src/**/*.js" in include fanno entrare nel progetto TypeScript i moduli .js
@@ -8596,6 +8942,7 @@ id = "user-dropdown-italian-labels-icons"
 title = "Menu utente con etichette in italiano e icone lucide come componenti"
 layer = "spa-graft"
 confidence = "high"
+feature = "navigation-menus"
 intent = """
 Le voci del menu utente sono scritte direttamente in italiano dentro __() («Il mio profilo»,
 «Impostazioni», «Cancella dati demo», «Accedi a Frappe Cloud», «Esci», «Accedi», dialoghi di
@@ -8634,6 +8981,7 @@ id = "user-dropdown-file-upload-item"
 title = "Voce «Importa» del menu utente verso la pagina Carica file"
 layer = "spa-graft"
 confidence = "high"
+feature = "bulk-data-import"
 intent = """
 La voce «Importa» (icona Upload) porta alla nostra pagina FileUpload (pages/FileUpload.vue,
 rotta router-file-upload-route, commit f546fed1c e 5fc238264), dove si caricano file riusabili
@@ -8664,6 +9012,7 @@ id = "layout-header-gray-background"
 title = "Intestazione di pagina con sfondo grigio del tema"
 layer = "spa-graft"
 confidence = "high"
+feature = "elite-theme"
 intent = """
 LayoutHeader usa bg-surface-gray-1 al posto dello sfondo di base (bg-surface-white, poi
 bg-surface-base nell'upstream) per l'intestazione sticky delle pagine elenco (commit 81e2c2db8
@@ -8691,6 +9040,7 @@ id = "signup-form-terms-no-category"
 title = "Registrazione: niente categoria utente, termini in riquadro scorrevole con casella breve"
 layer = "spa-graft"
 confidence = "high"
+feature = "signup-privacy"
 intent = """
 Modulo di registrazione pubblico (/login#signup, ospiti). Due regole:
 (1) Termini e condizioni: custom_signup_content (testo lungo delle LMS Settings) sta in un
@@ -8745,6 +9095,7 @@ id = "live-class-docente-manage"
 title = "Il Docente vede, crea, modifica ed elimina le lezioni live"
 layer = "spa-graft"
 confidence = "high"
+feature = "docente-role"
 intent = """
 Decisione del committente al merge di v2.62.0 (2026-09-23): il Docente, istruttore globale, gestisce
 le lezioni live di ogni classe come Moderator e Batch Evaluator. L'upstream conosce solo quei due
@@ -8803,6 +9154,7 @@ id = "batch-list-valutatore-docente"
 title = "Elenco classi: il Valutatore vede le classi non pubblicate che valuta, il Docente tutte"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 v2.62.0 aggiunge un filtro sugli elenchi di LMS Batch (pubblicate, oppure quelle in cui si è
 iscritti; tutte per Moderator e Batch Evaluator). Decisione del committente (2026-09-23): il
@@ -8831,6 +9183,7 @@ id = "course-lesson-list-mirrors-read-gate"
 title = "Elenco lezioni allineato al gate di lettura (Docente e Valutatore)"
 layer = "spa-graft"
 confidence = "high"
+feature = "docente-role"
 intent = """
 v2.62.0 aggiunge un filtro sugli elenchi di Course Lesson che traduce in SQL resolve_lesson_access
 (istruttore del corso, iscritto, lezione di anteprima di un corso pubblicato; tutto al Moderator).
@@ -8856,6 +9209,7 @@ id = "member-valutatore-role-exact-roles"
 title = "Gestione membri: ruolo Valutatore e creazione con i soli ruoli scelti"
 layer = "spa-graft"
 confidence = "high"
+feature = "members-and-roles"
 intent = """
 La gestione dei membri (Impostazioni → Membri, e la creazione al volo di un istruttore dai campi
 Istruttori di corso e classe) deve conoscere il ruolo custom Valutatore (valutatore per classe,
@@ -8915,6 +9269,7 @@ id = "valutatore-phone-back-history"
 title = "Su telefono il Valutatore torna indietro nella cronologia dalle liste consegne"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Su telefono PageHeader (v2.62.0) trasforma la briciola padre in un pulsante «indietro» verso
 quella rotta. Nelle liste consegne di quiz e compiti la briciola padre è l'elenco dei quiz (o il
@@ -8955,6 +9310,7 @@ id = "open-external-opener-and-pending-tab"
 title = "Aperture di finestre che openExternal non copre: OAuth con opener e scheda anticipata"
 layer = "spa-graft"
 confidence = "high"
+feature = "oslms-core"
 intent = """
 v2.62.0 confina ogni window.open in utils/openExternal.ts (test openExternal: nessun window.open
 altrove) e openExternal apre sempre con noopener. Due nostri flussi non lo sopportano:
@@ -9001,6 +9357,7 @@ id = "repo-gitignore-local-files"
 title = "File locali di Overside esclusi da git"
 layer = "spa-graft"
 confidence = "high"
+feature = "repo-devops"
 intent = """
 Il blocco «OVERSIDE» in coda al .gitignore tiene fuori dal repository i file che esistono solo
 sulle macchine di sviluppo e non devono mai essere pubblicati: le credenziali (.env, docker/.env,
@@ -9030,6 +9387,7 @@ id = "repo-root-package-manager-pin"
 title = "Yarn classic fissato nel package.json di root"
 layer = "spa-graft"
 confidence = "low"
+feature = "repo-devops"
 intent = """
 Il campo packageManager (yarn@1.22.22 con hash) nel package.json di root dice a corepack quale
 yarn usare. docker/init.sh abilita corepack quando yarn manca: senza il campo corepack potrebbe
@@ -9053,6 +9411,7 @@ id = "permissions-docente-global-v264"
 title = "Il Docente resta docente globale nei cancelli di permesso di v2.64.0"
 layer = "spa-graft"
 confidence = "high"
+feature = "docente-role"
 intent = """
 Il Docente è un docente globale: gestisce ogni corso, classe e contenuto anche senza comparire
 fra gli istruttori (graft in can_modify_course). v2.64.0 aggiunge cancelli che riconoscono solo
@@ -9105,6 +9464,7 @@ id = "permissions-valutatore-course-scope-v264"
 title = "Il Valutatore legge i corsi delle sue classi anche nei cancelli di v2.64.0"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore di una classe legge, in sola lettura, i corsi di quella classe anche se non
 pubblicati: dashboard del corso con il drilldown dei progressi, bozze assegnate nelle liste di
@@ -9161,6 +9521,7 @@ id = "program-authoring-pool"
 title = "Moderator, Course Creator e Docente modificano tutti i programmi"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 I programmi sono gestiti come un insieme condiviso: chiunque abbia un ruolo di authoring
 (Moderator/Gestore, Course Creator, Docente) crea e modifica ogni programma. v2.64.0 restringe la
@@ -9189,6 +9550,7 @@ id = "course-categories-published-gate"
 title = "Le categorie dei corsi rispettano il filtro dei pubblicati"
 layer = "spa-graft"
 confidence = "high"
+feature = "course-catalogue"
 intent = """
 La nostra get_course_categories accetta gli stessi filtri di scheda di get_courses per elencare
 solo le categorie presenti nella scheda. v2.64.0 chiude in get_courses/get_batches la fuga per cui
@@ -9209,6 +9571,7 @@ id = "settings-elite-api-tab"
 title = "Tab «Elite API» nelle impostazioni: gestione delle chiavi API"
 layer = "override-file"
 confidence = "high"
+feature = "elite-api"
 intent = """
 Amministratori e Gestore creano, vedono e revocano le chiavi con cui i sistemi esterni
 (primo: TrueSkill) leggono corsi, classi e studenti tramite l'Elite API, senza passare
@@ -9239,6 +9602,7 @@ id = "docente-people-pickers-access"
 title = "Il Docente può cercare gli utenti per assegnare istruttori e valutatori"
 layer = "override-file"
 confidence = "high"
+feature = "docente-role"
 intent = """
 I campi Istruttori (corsi e classi) e Valutatori (classi) sono alimentati da tre ricerche
 che upstream apre solo a Moderator / Course Creator / Batch Evaluator: un utente con il solo
@@ -9277,6 +9641,7 @@ id = "gestore-submission-lists"
 title = "Il Gestore apre le liste degli invii di quiz e compiti (sola lettura)"
 layer = "spa-graft"
 confidence = "high"
+feature = "gestore-role"
 intent = """
 Un Gestore senza i flag di amministratore (nessun Moderator, istruttore o evaluator) non
 aveva Quiz né Elaborati nella barra laterale e le due liste lo rimandavano a Corsi, quindi
@@ -9312,6 +9677,7 @@ id = "program-form-description-dirty-guard"
 title = "Il modulo programma non si dichiara «Non salvato» per le modifiche fatte dall'editor"
 layer = "spa-graft"
 confidence = "high"
+feature = "programs"
 intent = """
 L'editor della descrizione (frappe-ui TextEditor su tiptap v3) emette change da solo: quando apre
 una descrizione e la normalizza (id dei titoli, contenitori delle tabelle…) e quando il
@@ -9339,6 +9705,7 @@ id = "permissions-docente-global-v265"
 title = "Il Docente resta docente globale nei cancelli di permesso di v2.65.0"
 layer = "spa-graft"
 confidence = "high"
+feature = "docente-role"
 intent = """
 Il Docente è un docente globale (decisione «Docente globale ovunque» del merge di v2.64.0,
 confermata dal committente al merge di v2.65.0 il 2026-10-12). v2.65.0 aggiunge cancelli che
@@ -9410,6 +9777,7 @@ id = "permissions-valutatore-batch-scope-v265"
 title = "Il Valutatore legge prove, consegne e iscrizioni della sua classe nei cancelli di v2.65.0"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Il Valutatore di una classe legge (mai modifica) le prove della classe e le consegne dei suoi
 studenti, corregge i compiti, vede la dashboard con la lista studenti (decisione del committente
@@ -9494,6 +9862,7 @@ id = "batch-course-creator-tagged-manage-v265"
 title = "Il Course Creator taggato su una classe la gestisce (adozione di #2845, v2.65.0)"
 layer = "spa-graft"
 confidence = "high"
+feature = "batch-management-permissions"
 intent = """
 Decisione del committente al merge di v2.65.0 (2026-10-12): si adotta la regola upstream per cui
 un Course Creator taggato come istruttore di una classe (o evaluator di un suo corso) gestisce
@@ -9570,6 +9939,7 @@ id = "trueskills-badge-reuse-same-template"
 title = "TrueSkills: un badge per studente, corso e template"
 layer = "spa-graft"
 confidence = "high"
+feature = "trueskills-certificates"
 intent = """
 Da v2.65.0 uno studente può avere più LMS Certificate per lo stesso corso (uno per classe più
 quello di corso; upstream 4e0ad06b0, correzione di sicurezza sugli evaluator). L'emissione
@@ -9598,6 +9968,7 @@ id = "ci-assets-workflow-fork-guard"
 title = "Il workflow Pilot degli asset non gira sul fork"
 layer = "spa-graft"
 confidence = "high"
+feature = "repo-devops"
 intent = """
 v2.65.0 aggiunge .github/workflows/assets.yml (c4ea6591e): a ogni push su develop/main costruisce
 gli asset con il workflow riutilizzabile frappe/pilot@develop, con permesso di scrittura sul
@@ -9617,6 +9988,7 @@ id = "external-calls-timeout"
 title = "Tempo massimo sulle chiamate esterne dell'upstream (OWASP E17)"
 layer = "spa-graft"
 confidence = "high"
+feature = "security-hardening"
 intent = """
 Le chiamate requests dell'upstream verso ip-api.com, frankfurter, Unsplash e Zoom non avevano
 timeout: un servizio lento teneva la richiesta aperta senza limite. La geolocalizzazione della
@@ -9660,6 +10032,7 @@ id = "permissions-valutatore-batch-learners"
 title = "Il Valutatore legge i dati degli studenti delle sue classi, non di tutto il corso (OWASP E8)"
 layer = "spa-graft"
 confidence = "high"
+feature = "valutatore-role"
 intent = """
 Iscrizioni, avanzamento, tempo di visione e recensioni (course_record_has_permission e
 course_record_query_conditions) erano aperti al Valutatore per tutti gli studenti dei corsi
@@ -9695,6 +10068,7 @@ id = "discussion-reply-count-dict-syntax"
 title = "Conteggio delle risposte delle discussioni con la sintassi a dizionario"
 layer = "spa-graft"
 confidence = "high"
+feature = "discussions"
 intent = """
 Il commit upstream 6f299d0d2 (11/06/2026, «show reply counts») conta le risposte di ogni
 discussione con fields=["topic", "count(name) as count"]. La nostra versione di Frappe rifiuta
@@ -9719,6 +10093,7 @@ id = "inert-paste-html-plugin"
 title = "L'HTML incollato negli editor frappe-ui si legge in un documento inerte (OWASP, XSS)"
 layer = "spa-graft"
 confidence = "high"
+feature = "security-hardening"
 intent = """
 I due editor di frappe-ui (TextEditor classico e frappe-ui/editor) mettevano l'HTML degli
 appunti in un <div> della pagina viva prima del filtro di ProseMirror: un
@@ -9751,6 +10126,7 @@ id = "security-dependency-floors"
 title = "Versioni minime di sicurezza delle dipendenze del frontend (OWASP A03)"
 layer = "spa-graft"
 confidence = "high"
+feature = "security-hardening"
 intent = """
 Il commit 29b287f31 (27/10, piano OWASP A03) ha alzato oltre gli avvisi di sicurezza
 pubblicati: DOMPurify 3.4.17, markdown-it 14.3.3, socket.io-client 4.8.4, vue 3.5.44,
@@ -9784,6 +10160,7 @@ id = "rich-text-mention-items-getter"
 title = "Menu @ delle discussioni pieno anche quando l'elenco utenti arriva dopo l'editor"
 layer = "spa-graft"
 confidence = "high"
+feature = "discussions"
 intent = """
 Il compositore delle discussioni apre l'editor con un elenco di menzioni vuoto e lo riempie
 quando risponde get_all_users. RichTextEditor passava a frappe-ui una copia presa all'avvio e
@@ -9805,6 +10182,7 @@ id = "lesson-completion-after-open-and-watch"
 title = "La lezione si completa solo dopo averla aperta e, con l'obbligo video, dopo un tempo di visione (OWASP H-1)"
 layer = "spa-graft"
 confidence = "high"
+feature = "guided-learning-path"
 intent = """
 Il server completa una lezione solo se l'ha consegnata allo stesso utente (get_lesson o il
 player SCORM registrano l'apertura in cache per 7 giorni) e, con enforce_video_completion

@@ -1,0 +1,95 @@
+id = "brand-customize"
+title = "Personalizzazione del marchio (Brand Customize)"
+status = "active"
+summary = """
+Dal Desk l'amministratore adatta i colori della piattaforma al marchio del cliente senza toccare il
+codice, in una di tre modalità: Base (quattro colori da cui si ricava tutto), Avanzata (un colore
+per ogni ruolo: barra laterale, testi, pulsanti, bordi, grafici, tabelle...) o Esperto (qualsiasi
+variabile CSS della piattaforma). Un'anteprima dal vivo mostra le pagine vere mentre si cambiano i
+colori, con un controllo della leggibilità. I colori valgono per l'interfaccia, il Desk, la pagina
+di accesso, i grafici e le tabelle; si possono salvare come preset, esportare e importare fra
+istanze."""
+why = """
+Ogni istanza Elite ha il proprio cliente con la propria identità visiva; l'upstream permette solo
+logo e nome. Il rifacimento del 2026-11 nasce dal report del cliente sulle variabili di colore:
+alcune variabili condivise colorano insieme cose che il cliente vuole distinguere, e senza
+anteprima ogni prova richiedeva un salvataggio (docs/brand-customize/PIANO.md)."""
+roles = ["System Manager"]
+behaviour = [
+	"Brand Customize si modifica solo dal Desk e solo da System Manager; anche anteprima, preset e valori predefiniti rispondono solo a System Manager",
+	"è attiva una sola modalità alla volta (Base, Avanzata o Esperto; Esperto per default): solo quella diventa CSS, i campi delle altre restano salvati ma ignorati; cambiando modalità il modulo propone di partire dai colori attuali",
+	"in Base si scelgono colore principale, accento, sfondo e tinta dei grigi e il modulo mostra i colori dei ruoli che ne derivano; in Avanzata si sceglie un colore per ciascun ruolo (sfondi, barra laterale, testi, link, pulsanti, bordi, stati, 5 serie dei grafici, intestazione e righe delle tabelle) e il raggio degli angoli; Base e Avanzata accettano solo colori esadecimali",
+	"in Esperto si scrive qualsiasi variabile CSS della piattaforma da una tabella con ricerca; il server accetta solo nomi presenti nell'elenco delle variabili della build e valori sicuri; una variabile salvata che la build non ha più resta, con un avviso, invece di bloccare il salvataggio; in ogni modalità il server rifiuta di salvare valori che potrebbero uscire dalla regola CSS e non li scrive mai nel foglio di stile",
+	"i colori del marchio valgono solo nel tema chiaro: nel tema scuro e con l'alto contrasto restano i colori standard della piattaforma",
+	"i colori della pagina di accesso (sfondo sfumato, testo, campi, pulsante) sono fuori dalle modalità e valgono sempre; lasciati vuoti, la pagina di accesso è quella standard; un'istanza senza nessun colore impostato produce un foglio di stile senza valori e la piattaforma resta com'è",
+	"i colori si applicano alla SPA, al Desk e alle pagine web, caricati per ultimi così da prevalere sul tema statico; un salvataggio li aggiorna subito per tutti",
+	"grafici e tabelle seguono le serie dei grafici e i colori di intestazione e righe delle tabelle solo se il marchio li imposta; altrimenti restano quelli standard",
+	"l'anteprima carica le pagine principali della piattaforma (anche in vista telefono) con i valori non ancora salvati, evidenzia dove si vede il campo sotto il cursore, blocca clic e invii, e riporta il contrasto WCAG delle coppie testo/sfondo principali",
+	"«Salva come preset» e «Applica preset» conservano e riapplicano un insieme di colori; «Esporta» e «Importa» spostano i colori fra istanze (file versione 2, che legge anche i file versione 1)",
+	"i due colori dell'app mobile (App Main Color, App Secondary Color) si impostano qui e l'app li legge (scheda mobile-app-backend)",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/branding.py",
+	"apps/os_lms/os_lms/os_lms/branding_*.py",
+	"apps/os_lms/os_lms/os_lms/doctype/brand_customize/*",
+	"apps/os_lms/os_lms/os_lms/doctype/brand_customize_token/*",
+	"apps/os_lms/os_lms/os_lms/doctype/brand_preset/*",
+	"apps/os_lms/os_lms/patches/v0_0_10/*",
+	"apps/os_lms/os_lms/patches/v0_0_11/*",
+	"frontend/src/oslms/utils/brandChartColors.ts",
+	"frontend/src/overrides/frappe-ui/src/components/Charts/*",
+	"apps/os_lms/os_lms/os_lms/tests/test_brand_customize_*.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_branding_*.py",
+	"frontend/src/tests/brandAnchors.test.ts",
+]
+upstream_watch = [
+	"brand", "branding", "theme color", "custom colors", "whitelabel", "AxisChart", "DonutChart",
+	"config.colors", "frappe-ui tokens", "--surface-", "--ink-", "--outline-", "tailwind colors",
+	"main.js", "base.html", "app_include_css", "login page styles",
+]
+data = [
+	"single Brand Customize (mode, campi base_*, adv_*, tabella figlia expert_tokens = Brand Customize Token, login_*, app_main_color, app_secondary_color; il vecchio campo theme non c'è più); DocPerm solo System Manager",
+	"doctype Brand Preset (insiemi di colori salvati); DocPerm solo System Manager",
+	"endpoint ospite os_lms.os_lms.branding.brand_css (foglio di stile in cache, svuotata a ogni salvataggio da doc_events on_update), più brand_css_preview, base_to_advanced, get_preview_targets, get_token_defaults, get_expert_tokens, to_expert e branding_presets.*",
+	"app_include_css con brand_css e desk.css (Desk), link in templates/base.html (pagine web), link aggiunto a runtime in frontend/src/main.js (SPA); override di AxisChart e DonutChart di frappe-ui",
+	"patch v0_0_10.brand_customize_cleanup e v0_0_11.brand_customize_expert_tokens (spostano i vecchi campi per variabile nella tabella Esperto)",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_branding_light_only.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_branding_preview.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_branding_roles.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_branding_tokens.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_branding_color.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_branding_contrast.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_brand_customize_import_export.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_brand_customize_cleanup_patch.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_brand_customize_expert_tokens_patch.py",
+	"frontend/src/tests/brandAnchors.test.ts",
+]
+notes = """
+- Il CSS del marchio va caricato per ULTIMO: in sviluppo Vite inietta il CSS importato dopo i <link>
+  statici, per questo main.js aggiunge il link a runtime. Il Desk carica desk.css dopo brand_css.
+- Il selettore dei colori del marchio è :root:not([data-theme="dark"]):not([data-contrast="more"])
+  (BRANDED_THEME_SELECTOR); os_lms.css fa lo stesso per la palette aziendale. Regola dell'utente
+  del 2026-10-23: i colori del cliente valgono solo nel tema chiaro; scuro e alto contrasto usano la
+  palette standard.
+- I token di frappe-ui (--surface-*, --ink-*, --outline-*) sono canali RGB separati da spazi, non
+  colori: in CSS semplice vanno usati come rgb(var(--token)). L'elenco delle variabili per la
+  modalità Esperto viene dalla build della SPA (senza build non c'è elenco da controllare).
+- Grafici: gli override di AxisChart e DonutChart avvolgono l'originale (alias frappe-ui-*-original)
+  e passano i colori solo se il marchio li imposta. A ogni aggiornamento di frappe-ui verificare che
+  i due componenti esistano e accettino ancora config.colors (brandAnchors.test.ts).
+- Deploy: le patch v0_0_10 e v0_0_11 sono state verificate a mano su staging (2026-11-09), perché il
+  deploy di staging tendeva a segnarle eseguite senza lanciarle. Prova fra ambienti fatta: esporta
+  in locale, importa su staging e viceversa, con brand.css identico byte per byte. Il lavoro sul
+  marchio non si pubblica senza chiedere all'utente; script di prova
+  docs/brand-customize/test-import-export.js.
+- Il tema imposto dall'amministratore (campo theme) non esiste più: dal 2026-10-23 l'utente sceglie
+  chiaro o scuro (scheda theme-contrast)."""
+history = [
+	{ date = "2026-05-04", ref = "55c34f1a7", summary = "creazione: doctype Brand Customize per i colori del tema" },
+	{ date = "2026-06-05", ref = "a537eebb0", summary = "esportazione e importazione dei colori, ripristino dei colori (b5e349d04)" },
+	{ date = "2026-09-11", ref = "7a85b8e21", summary = "colori della pagina di accesso da Brand Customize" },
+	{ date = "2026-10-23", ref = "9ea888636", summary = "colori del marchio solo nel tema chiaro; esclusi anche dall'alto contrasto (d416db2b1)" },
+	{ date = "2026-11-09", ref = "86f361466", summary = "rifacimento: tre modalità Base, Avanzata, Esperto, anteprima dal vivo, contrasto, preset, grafici e tabelle (versione 1.16.63)" },
+]

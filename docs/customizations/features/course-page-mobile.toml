@@ -1,0 +1,46 @@
+id = "course-page-mobile"
+title = "Pagina del corso su telefono e tablet"
+status = "active"
+summary = """
+Sul telefono la pagina del corso mette in primo piano l'azione principale: lo studente iscritto ha
+una barra fissa «Continue Learning» in fondo allo schermo e il programma del corso si sposta in fondo
+alla pagina. Sul tablet resta la card completa, in linea nella pagina. I pulsanti flottanti
+dell'assistente AI si spostano per non coprire la barra."""
+why = """
+Sul telefono la card laterale dell'upstream finisce in mezzo alla pagina, con il pulsante per
+continuare il corso e il programma lontani dal pollice e sovrapposti ai pulsanti flottanti dell'AI.
+Il cliente voleva un'unica azione primaria sempre raggiungibile (2026-07-22)."""
+roles = ["Student"]
+behaviour = [
+	"su telefono (larghezza sotto 640 px) lo studente iscritto vede in fondo alla pagina del corso una barra a tutta larghezza «Continue Learning», sempre sopra la barra di navigazione mobile; il pulsante equivalente nella card sparisce",
+	"su telefono il programma del corso compare in fondo alla pagina, sotto le sezioni di contenuto, e non nella card",
+	"su telefono la card del corso non compare quando resterebbe vuota; restano visibili il video di anteprima, le azioni sul certificato per lo studente iscritto e l'invito a iscriversi per chi non lo è",
+	"tra 640 e 1023 px la card completa del corso (programma e pulsanti) è mostrata in linea nella pagina",
+	"i pulsanti flottanti dell'AI si alzano sopra la barra «Continue Learning» e, nella lezione su telefono, sopra la pillola «Capitoli»",
+]
+areas = ["frontend/src/stores/mobileCta.js"]
+upstream_watch = [
+	"mobile course page", "sticky CTA", "continue learning", "MobileLayout", "bottom navigation",
+	"useScreenSize", "isMobile", "CourseCardOverlay", "hideOutline", "Lesson.vue chapters pill",
+	"safe-area-inset-bottom",
+]
+notes = """
+- Due soglie: la pagina corso upstream si divide a 768 px (md:), ma la shell dell'app passa a
+  MobileLayout (con la barra di navigazione in basso) a 640 px (useScreenSize().isMobile). Barra e
+  programma in fondo sono legati a isMobile in JavaScript, non a md:, così tra 640 e 767 px la barra
+  non copre la barra laterale desktop; in quella fascia resta la card originale in linea.
+- Dal merge di v2.62.0 la barra è sticky bottom-0 nel flusso della pagina (prima era fixed bottom-12 e
+  la nuova barra di navigazione upstream, alta 62 px più l'area sicura, la copriva). I pulsanti AI
+  usano offset calcolati su 62 px + env(safe-area-inset-bottom) (5rem senza barra, 9rem con barra).
+- Lo store mobileCta (barVisible) è condiviso: lo scrivono CourseOverview e Lesson.vue (pillola
+  «Capitoli»), lo legge AiFixedButtons (scheda ai-tutor).
+- Card vuota: CourseCardOverlay replica la visibilità di CertificationLinks con la stessa risorsa
+  certification; se cambia la logica dei certificati va riallineata.
+- La variante Tailwind standalone: non è registrata (nessun effetto), tenuta solo per somiglianza con
+  MobileLayout.
+- I file da riapplicare dopo i merge sono l'override CourseOverview.vue, CourseCardOverlay.vue e Lesson.vue."""
+history = [
+	{ date = "2026-07-22", ref = "4452fd96a", summary = "creazione: programma in fondo e barra «Continue Learning» su telefono, card in linea sul tablet" },
+	{ date = "2026-09-24", ref = "68f64c2f3", summary = "merge v2.62.0: barra resa sticky bottom-0 sopra la nuova navigazione mobile, offset dei pulsanti AI ricalcolati" },
+	{ date = "2026-10-05", ref = "607f9ecfa", summary = "collaudo v2.64 (prova 15.4): i pulsanti AI si alzano anche sopra la pillola «Capitoli» della lezione" },
+]

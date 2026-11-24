@@ -1,0 +1,89 @@
+id = "frappe-ui-overrides"
+title = "Sostituzione di componenti frappe-ui e controlli"
+status = "active"
+summary = """
+Meccanismo che permette di sostituire un componente di frappe-ui o una pagina della SPA upstream
+con una versione nostra senza modificare l'originale, più i controlli dei moduli (Link, Combobox,
+Autocomplete, MultiSelect, Uploader, interruttori) corretti o tradotti. Non è una funzione per
+l'utente: è l'impalcatura su cui poggiano traduzioni, tema e diverse correzioni dell'interfaccia."""
+why = """
+Ogni modifica diretta a un file upstream è un conflitto futuro. Tenere le sostituzioni in
+frontend/src/overrides lascia intatti frappe-ui e le pagine upstream e sposta il lavoro dal merge
+a un confronto fatto quando serve. Alcuni controlli upstream hanno difetti (etichetta del Link,
+gestore mancante nel MultiSelect, Uploader inutilizzabile su telefono) o testi fissi in inglese."""
+roles = []
+behaviour = [
+	"un file .vue in frontend/src/overrides allo stesso percorso relativo di un componente di frappe-ui (node_modules) o della SPA (src/) viene usato al posto dell'originale, in sviluppo e in build, e l'originale resta intatto",
+	"gli import fatti da un file di override non vengono mai reindirizzati: un override che avvolge l'originale lo importa tramite gli alias frappe-ui-*-original (switch, combobox, menuitems, texteditor, axischart, donutchart) senza ricorsione infinita",
+	"ogni import di @/utils nell'app arriva al modulo utils di os_lms, che riesporta quello upstream sostituendo solo timeAgo con la versione tradotta",
+	"l'interruttore (Switch) si comporta come quello di frappe-ui e porta la classe component-switch per i colori del tema",
+	"Combobox: il testo «nessun risultato» e il segnaposto sono tradotti; per il resto è il componente di frappe-ui 1.0.0-beta.29 con i suoi eventi",
+	"Autocomplete di frappe-ui: la casella di ricerca, «No results found» e «Select All» sono tradotti",
+	"il campo Link di frappe-ui, quando cerca fra i DocType, propone solo i doctype LMS con le etichette tradotte; i valori degli altri collegamenti restano come sono",
+	"nel controllo Link della SPA, un valore scelto dai risultati prende la propria etichetta: niente voci doppie nel menu né l'etichetta della scelta precedente (es. «Design» per Finance)",
+	"nel MultiSelect un clic sul riquadro dei valori fuori dall'input mette a fuoco la ricerca senza errori in console",
+	"nell'Uploader su telefono i pulsanti Carica, Sostituisci e Rimuovi vanno a capo sotto l'anteprima, e la descrizione passata dalla pagina (es. linee guida della miniatura del corso, immagine del badge) compare tradotta sotto il controllo",
+	"il banner di selezione delle liste mostra il testo della selezione traducibile",
+	"il wrapper Link di os_lms (os-link) dà lo stile del marchio al campo Link senza modificare il componente upstream, inoltrando attributi, slot e reload",
+	"il selettore di file delle impostazioni (FilePicker) continua a funzionare con il controllo Autocomplete conservato, che l'upstream ha cancellato",
+]
+areas = [
+	"frontend/src/overrides/frappe-ui/frappe/Link/*",
+	"frontend/src/overrides/frappe-ui/src/components/Autocomplete/*",
+	"frontend/src/overrides/frappe-ui/src/components/Combobox/*",
+	"frontend/src/overrides/frappe-ui/src/components/ListView/*",
+	"frontend/src/overrides/frappe-ui/src/components/Switch/*",
+	"frontend/src/oslms/components/Controls/*",
+	"frontend/src/components/Controls/Autocomplete.vue",
+	"frontend/src/components/Controls/FilePicker.vue",
+]
+upstream_watch = [
+	"frappe-ui", "osOverrideTheme", "resolve.alias", "optimizeDeps.exclude", "Combobox", "emptyText",
+	"SelectionExposed", "Autocomplete", "frappe/Link", "search_link", "Controls/Link.vue", "currentLabel",
+	"resolvedOptions", "MultiSelect", "focusInput", "Uploader", "ListSelectBanner", "Switch",
+	"BooleanSwitch", "EmptyStateLayout", "FilePicker", "@/utils",
+]
+data = [
+	"plugin Vite osOverrideTheme e array resolve.alias con gli alias frappe-ui-*-original e @/utils in frontend/vite.config.js",
+	"override: frappe/Link/Link.vue (copia), Autocomplete.vue (copia), Combobox.vue (wrap), ListView/ListSelectBanner.vue (copia), Switch.vue (wrap)",
+	"wrapper frontend/src/oslms/components/Controls/Link.vue; controlli conservati Controls/Autocomplete.vue e Controls/FilePicker.vue",
+	"innesti in Controls/Link.vue, Controls/MultiSelect.vue e Controls/Uploader.vue (voci collegate)",
+]
+notes = """
+- Se osOverrideTheme sparisce da plugins[] ogni override smette di applicarsi in silenzio: la build
+  passa e l'interfaccia torna quella upstream. Il plugin richiede che frappe-ui resti in
+  optimizeDeps.exclude in sviluppo, altrimenti non vede gli import relativi interni.
+- La guardia sull'importer (importerPath.startsWith(overridesDir)) è la vera protezione contro la
+  ricorsione degli override wrap: Vite applica resolve.alias prima del plugin, quindi gli alias
+  arrivano già come percorsi assoluti e senza la guardia tornerebbero sull'override stesso
+  («Maximum call stack size exceeded»). Gli alias sono una difesa in più.
+- resolve.alias è un array (l'upstream usa la forma oggetto): al merge riportare nell'array gli alias
+  nuovi dell'upstream, non il contrario. @/utils deve restare prima dell'alias generico @.
+- Dopo ogni aggiornamento di frappe-ui: verificare che i percorsi degli alias in node_modules
+  esistano ancora (altrimenti la build fallisce), riconfrontare le copie (Link, Autocomplete,
+  ListSelectBanner) con gli originali e, per Combobox, che emptyText sia ancora il nome della prop e
+  che l'esposto abbia ancora solo clear e focus. Percorsi spostati = override ignorati senza errori.
+- Un override importato da un altro override va nominato con @/overrides/... esplicito: il plugin non
+  reindirizza gli import fatti dentro src/overrides (trappola delle copie di Data Import, scheda
+  bulk-data-import).
+- Per verificare che un override sia davvero nel bundle cercare nel JS costruito una stringa che
+  esiste solo nell'override; la scansione delle classi di Tailwind non è una prova.
+- Wrapper os-link: quando l'upstream cambia Controls/Link.vue aggiornare anche il wrapper (firma di
+  onCreate e inoltro di reload); dopo un merge controllare che i punti che lo usano (BatchForm.vue e
+  gli altri) non siano tornati all'import upstream.
+- Il Combobox era una copia di 1082 righe della 0.1.x che emetteva solo @input/@focus: dal 2026-09-24
+  è un wrap e Controls/Link.vue usa di nuovo gli eventi upstream (update:query, update:open). Sui
+  branch senza 2a99fc847 vale ancora la vecchia regola.
+- La voce empty-state-mobile-full-width è in accepted-drift dal merge di v2.62.0: l'upstream parte già
+  da w-full e applica le frazioni solo da sm.
+- Le correzioni di Link, MultiSelect e Uploader sono da togliere quando l'upstream le fa da sé (al
+  merge tenere una sola definizione)."""
+history = [
+	{ date = "2026-03-25", ref = "5e7a9c481", summary = "creazione: plugin osOverrideTheme per sostituire componenti di frappe-ui senza fork" },
+	{ date = "2026-06-04", ref = "d5c8b2288", summary = "override wrap dello Switch con l'alias verso l'originale; il plugin copre anche le pagine della SPA" },
+	{ date = "2026-06-04", ref = "8fafc219c", summary = "guardia sull'importer contro la ricorsione degli override wrap" },
+	{ date = "2026-07-13", ref = "1de09e4d5", summary = "MultiSelect: definito il gestore focusInput lasciato orfano dall'upstream" },
+	{ date = "2026-07-31", ref = "252fce492", summary = "Uploader usabile su telefono e con la descrizione visibile" },
+	{ date = "2026-09-24", ref = "2a99fc847", summary = "override grandi ricostruiti su frappe-ui 1.0.0-beta.29; Combobox ridotto a un wrap che traduce" },
+	{ date = "2026-09-24", ref = "9e5d17e42", summary = "il valore scelto nel controllo Link prende la propria etichetta" },
+]

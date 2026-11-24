@@ -1,0 +1,65 @@
+id = "discussions"
+title = "Discussioni e chat della classe"
+status = "active"
+summary = """
+La scheda Discussioni della classe funziona come una chat: i messaggi più recenti in alto e l'editor
+sopra di loro. Negli editor delle discussioni non si possono incorporare pagine esterne, il menu delle
+menzioni @ si riempie sempre e una risposta di un utente cancellato non blocca il thread. Etichette e
+aspetto sono in italiano e con i colori del tema."""
+why = """
+Il cliente usa la discussione della classe come chat fra docenti e studenti. L'upstream la mostra in
+ordine cronologico con l'editor in fondo, lascia agli studenti il pulsante per incorporare iframe,
+aveva il menu @ vuoto per tutti quando l'elenco utenti arrivava dopo l'editor e andava in errore con
+le risposte di utenti non più risolvibili. Il conteggio delle risposte introdotto dall'upstream
+falliva con la nostra versione di Frappe."""
+roles = ["Student", "Moderator", "Docente", "Valutatore"]
+behaviour = [
+	"negli editor delle discussioni (risposta, modifica della risposta, nuovo argomento) manca il pulsante «Embed» per incorporare iframe; gli altri editor della piattaforma non cambiano",
+	"nella discussione a filo unico della classe (scheda Discussioni) i messaggi più recenti stanno in alto e l'editor sopra di loro; le discussioni per argomento restano in ordine cronologico con l'editor in fondo",
+	"il menu @ delle menzioni mostra gli utenti anche quando il loro elenco arriva dopo l'apertura dell'editor",
+	"una risposta il cui utente non si risolve più (eliminato o disattivato) mostra l'autore registrato invece di bloccare tutto il thread",
+	"l'elenco degli argomenti di discussione con il conteggio delle risposte si carica senza errori (il conteggio usa la sintassi accettata dalla nostra versione di Frappe)",
+	"risposte ed editor hanno sfondo grigio del tema, l'editor della nuova risposta ha un'altezza massima con scorrimento e il segnaposto «Type your reply here...» è tradotto",
+]
+areas = [
+	"frontend/src/utils/discussionToolbar.js",
+	"apps/os_lms/os_lms/os_lms/tests/test_discussion_reply_count.py",
+	"frontend/src/tests/RichTextEditorMentions.test.ts",
+]
+upstream_watch = [
+	"DiscussionReplies.vue", "DiscussionModal.vue", "Discussions.vue", "RichTextEditor", "excludeItems",
+	"InsertIframe", "fixedMenu", "singleThread", "mentions", "get_all_users", "get_discussion_topics",
+	"get_discussion_replies", "count(name)", "submit_discussion", "newLabel", "7fc531540",
+]
+data = [
+	"prop OSLMS-CUSTOM excludeItems di frontend/src/components/RichTextEditor.vue e lista discussionExcludedItems",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_discussion_reply_count.py",
+	"frontend/src/tests/RichTextEditorMentions.test.ts",
+]
+notes = """
+- Dal merge di v2.59.0 (decisione del committente) le discussioni usano il RichTextEditor upstream, la
+  cui barra fissa include sempre InsertIframe: il pulsante Embed resta fuori solo grazie alla prop
+  excludeItems. Se un merge la perde, il pulsante torna senza errori.
+- Menu @: l'Editor di frappe-ui legge le estensioni una volta sola, quindi gli elementi sono una
+  funzione letta a ogni tasto (items: () => extensions). È la stessa correzione dell'upstream
+  7fc531540, non ancora in una release: quando arriva, adottarla e segnare la voce accepted-drift.
+- Il conteggio delle risposte (upstream 6f299d0d2) usava "count(name) as count" come stringa: la
+  nostra Frappe rifiuta le funzioni SQL scritte così e rispondeva 417 in modalità elenco. Il test se
+  ne accorge se un merge riporta la forma a stringa.
+- La prop newLabel di Discussions.vue («Fai una domanda») oggi non la passa nessuno: dal commit
+  ca61596d2 le lezioni non mostrano più le discussioni. Innocua.
+- Gli override di sicurezza di get_discussion_topics, get_discussion_replies e submit_discussion
+  (OWASP M-06) e la lettura delle discussioni da parte del Valutatore stanno nelle schede
+  security-hardening e valutatore-role. Il badge dei non letti sulla scheda è nella scheda
+  notifications."""
+history = [
+	{ date = "2026-04-14", ref = "792fdab8c", summary = "creazione: schede Annunci e Discussioni reintrodotte nella classe, con ritocchi e traduzioni" },
+	{ date = "2026-05-29", ref = "afa9a73d2", summary = "risposta di un utente senza profilo senza errori" },
+	{ date = "2026-07-20", ref = "4ad7d05c7", summary = "niente pulsante Embed negli editor delle discussioni" },
+	{ date = "2026-07-20", ref = "5120fba51", summary = "chat della classe con i messaggi più recenti in alto e l'editor sopra" },
+	{ date = "2026-09-23", ref = "f02f4448f", summary = "merge v2.59.0: discussioni sul RichTextEditor upstream, Embed escluso con la prop excludeItems" },
+	{ date = "2026-10-26", ref = "20e17ba9b", summary = "menu @ pieno anche quando l'elenco utenti arriva dopo l'editor" },
+	{ date = "2026-10-28", ref = "1b6c3262e", summary = "conteggio delle risposte con la sintassi a dizionario (417 in modalità elenco)" },
+]

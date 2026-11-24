@@ -1,0 +1,78 @@
+id = "signup-privacy"
+title = "Registrazione e consenso privacy"
+status = "active"
+summary = """
+Il modulo pubblico di registrazione non chiede la categoria dell'utente, mostra i termini e
+condizioni in un riquadro scorrevole con una casella breve e, se il cliente ha indicato
+un'informativa privacy, chiede di accettarla. Chi entra senza un'accettazione registrata (utenti
+importati, creati dallo staff o con accesso social) la deve confermare in una finestra al primo
+accesso. La registrazione è protetta contro gli abusi: limiti per ora e stessa risposta per chi è
+già registrato."""
+why = """
+Il cliente non usa le categorie utente dell'LMS e il testo lungo dei termini dentro l'etichetta
+della casella rendeva il modulo illeggibile (luglio 2026). Il consenso privacy registrato è un
+requisito ESG (GDPR art. 7(1), 2026-10-30). I limiti e la risposta uguale per tutti chiudono due
+rilievi OWASP del 2026-10-27: l'upstream supera il limite orario con un semplice avviso e dice a
+chiunque se un indirizzo è già registrato."""
+roles = ["Guest", "Student"]
+behaviour = [
+	"il modulo di registrazione su /login#signup non mostra la scelta della categoria utente e invia sempre una categoria vuota",
+	"il testo dei termini e condizioni delle LMS Settings sta in un riquadro scorrevole alto al massimo 140 px e la casella obbligatoria ha l'etichetta breve «Accetto i Termini e le Condizioni»",
+	"con l'URL dell'informativa privacy impostato nelle LMS Settings il modulo ha una casella privacy obbligatoria con il link all'informativa; il server rifiuta la registrazione senza la casella anche se chiamato direttamente",
+	"quando il sito userebbe il modulo standard di Frappe (nessun testo dei termini) e l'informativa è impostata, la pagina di accesso serve la copia os_lms del modulo con la casella privacy",
+	"alla registrazione l'accettazione viene registrata sull'utente con data, URL dell'informativa e provenienza «Signup»",
+	"dopo l'accesso, chiunque non abbia un'accettazione registrata (tranne Administrator) vede nella SPA una finestra che non si chiude, con la casella «Ho letto e accetto l'informativa sulla privacy» (con il link) e i pulsanti Accetta (attivo solo con la casella spuntata) ed Esci; accettando l'accettazione viene registrata con provenienza «Login»",
+	"senza URL dell'informativa nelle LMS Settings non compaiono né la casella né la finestra",
+	"la registrazione si blocca davvero oltre il limite orario del sito (System Settings, 300 per default) e oltre 10 tentativi l'ora dallo stesso indirizzo IP, con un messaggio che dice fra quanti minuti riprovare",
+	"la risposta alla registrazione è sempre «controlla la tua email», che l'indirizzo sia nuovo o già registrato; il titolare di un account attivo riceve invece un'email «Hai già un account» al massimo una volta l'ora",
+	"anche il metodo di registrazione di Frappe passa dagli stessi controlli",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/privacy_consent.py",
+	"apps/os_lms/os_lms/os_lms/signup.py",
+	"apps/os_lms/os_lms/templates/signup-privacy.html",
+	"apps/os_lms/os_lms/templates/emails/signup_already_registered.html",
+	"frontend/src/oslms/components/PrivacyConsentDialog.vue",
+]
+upstream_watch = [
+	"signup-form.html", "sign_up", "user_category", "custom_signup_content", "verify_terms",
+	"signup_form_template", "show_custom_signup", "signup-select", "max_signups_allowed_per_hour",
+	"already registered", "privacy policy", "consent", "terms and conditions", "new-sign-up",
+]
+data = [
+	"custom field LMS Settings.privacy_policy_url (Data)",
+	"custom field User.privacy_accepted_on (Datetime), privacy_accepted_url (Data), privacy_accepted_via (Select Signup/Login)",
+	"flag privacy_consent_required e privacy_policy_url in get_user_info (override_api)",
+	"hooks: signup_form_template = privacy_consent.signup_form_template; override di lms.lms.user.sign_up e frappe.core.doctype.user.user.sign_up verso os_lms.os_lms.signup",
+	"chiavi Redis os_lms:signup:ip:<ip> (finestra di un'ora) e os_lms:signup:already_registered:<user>",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_account_deletion_requests.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_2026_10.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_package_e.py",
+]
+notes = """
+- lms/templates/signup-form.html è riscritto a ogni release importante dell'upstream (v2.62.0 l'ha
+  rifatto per intero, v2.65.0 ha aggiunto la select della categoria costruita a parte con
+  vite.signup-select.config.js). Al merge: prendere il file upstream e riapplicare etichetta breve
+  e riquadro scorrevole (id signup-terms invariato, la validazione upstream lo usa), togliere il
+  blocco {% if user_category %}, rimettere la casella privacy e il parametro accept_privacy.
+  Tradurre le stringhe nuove dell'upstream. La build separata signup-select resta nel package.json
+  upstream e yarn build la esegue anche se non ha più niente da montare.
+- login.py sceglie signup_form_template con l'ultimo hook registrato: se l'upstream cambia questa
+  regola o la chiamata a lms.lms.user.sign_up, la casella privacy sparisce senza errori.
+- La finestra privacy legge l'utente da usersStore(), non da inject('$user'): main.js fa provide
+  dopo app.mount, quindi nei componenti montati subito (App.vue) inject restituisce undefined.
+  L'etichetta con il link è una frase sola tradotta con {0}: __() restituisce un oggetto con
+  .format quando la frase ha segnaposto, mai una stringa da spezzare.
+- La pagina /new-sign-up (invito dell'upstream senza più backend) rimanda a /login
+  (website_redirects in hooks.py, rilievo OWASP E2).
+- La voce di inventario account-deletion-review-and-privacy-consent è collegata alla scheda
+  account-deletion e copre anche la casella privacy in signup-form.html e la finestra in App.vue."""
+history = [
+	{ date = "2026-07-16", ref = "cb8ad4e01", summary = "creazione: termini e condizioni in un riquadro scorrevole con una casella breve" },
+	{ date = "2026-07-29", ref = "a4d44b72a", summary = "tolta la scelta della categoria utente; casella dei termini di nuovo obbligatoria" },
+	{ date = "2026-10-12", ref = "4f673bc97", summary = "merge v2.65.0: tenuta la nostra versione senza categoria, tolto il montaggio della select upstream" },
+	{ date = "2026-10-27", ref = "ccfc9f550", summary = "OWASP: limiti di registrazione che bloccano davvero e stessa risposta per gli indirizzi già registrati" },
+	{ date = "2026-10-30", ref = "49b668f47", summary = "consenso privacy: casella alla registrazione e finestra al primo accesso (ESG)" },
+]

@@ -1,0 +1,64 @@
+id = "batch-students"
+title = "Iscrizione e rimozione degli studenti della classe"
+status = "active"
+summary = """
+Chi gestisce una classe può iscrivere più studenti insieme, importarli da un file e toglierli dalla
+classe, tutto dalla dashboard della classe e senza passare dal Desk. Chi entra in una classe viene
+iscritto a tutti i suoi corsi, anche a quelli aggiunti dopo che la classe è partita."""
+why = """
+Il cliente iscrive gruppi numerosi alle classi e non usa i pagamenti. L'upstream iscriveva uno
+studente alla volta e chiedeva il pagamento; soprattutto creava le iscrizioni ai corsi quando
+l'iscrizione alla classe non era ancora scritta, così uno studente che si iscriveva da solo veniva
+respinto dai corsi non aperti all'autoiscrizione, e un corso aggiunto a una classe già avviata non
+arrivava agli studenti già presenti, che non lo vedevano (correzione del 2026-09-10)."""
+roles = ["Moderator", "Batch Evaluator", "Docente", "Course Creator", "Student", "Valutatore"]
+behaviour = [
+	"nella lista studenti della dashboard della classe Moderator, Batch Evaluator, Docente e chi gestisce la classe selezionano uno o più studenti e li tolgono dalla classe (si cancella la loro iscrizione alla classe); il Valutatore vede la lista senza selezione",
+	"il pulsante «Importa» dell'intestazione apre l'importazione dati delle iscrizioni alla classe, per iscrivere molti studenti in una volta da file",
+	"il modulo «Iscrivi» sceglie più studenti insieme e li iscrive uno dopo l'altro; se alcuni non si possono iscrivere (per esempio perché già iscritti) compare un solo messaggio con il numero dei falliti e restano selezionati solo quelli, da riprovare",
+	"se almeno uno studente viene iscritto la dashboard della classe si aggiorna",
+	"il modulo di iscrizione non ha il campo Pagamento; «Crea nuovo» chiude il menu e porta a Impostazioni, Membri",
+	"anche il Docente può iscrivere studenti a qualunque classe, come Moderator e Batch Evaluator",
+	"chi entra in una classe, anche iscrivendosi da solo, viene iscritto a tutti i corsi della classe, compresi quelli non aperti all'autoiscrizione",
+	"un corso aggiunto a una classe già avviata iscrive subito gli studenti già presenti, che lo trovano fra i corsi della classe",
+	"all'aggiornamento, gli studenti delle classi preesistenti sono stati iscritti una volta ai corsi della classe che mancavano; una classe che dà errore viene registrata nel log e saltata",
+]
+areas = ["lms/patches/v2_0/backfill_batch_course_enrollments.py"]
+upstream_watch = [
+	"AdminBatchDashboard.vue", "removeStudents", "selectable", "goToImport", "Data Import LMS Batch Enrollment",
+	"BatchStudentForm.vue", "NewBatchStudent", "MultiLink", "LMS Payment", "LMS Batch Enrollment",
+	"after_insert", "validate_course_enrollment", "enroll_in_batch_courses", "enroll_batch_students_in_courses",
+	"enrollment_from_batch", "LMS Batch on_update", "patches.txt", "validate_owner",
+]
+data = [
+	"patch lms.patches.v2_0.backfill_batch_course_enrollments, registrata in lms/patches.txt (#10-09-2026)",
+	"funzione enroll_batch_students_in_courses in lms/lms/utils.py, usata da LMS Batch.on_update e dalla patch",
+]
+notes = """
+- Iscrizioni ai corsi in after_insert: LMS Enrollment concede l'accesso a un membro della classe
+  cercando nel database proprio la LMS Batch Enrollment (bypass enrollment_from_batch), quindi le
+  iscrizioni ai corsi vanno create quando il record esiste già. Il salvataggio è con
+  ignore_permissions perché le crea il sistema. Correzione in più file (a7cd6d837): anche
+  lms_enrollment.py mette il bypass di classe prima dei controlli di autoiscrizione.
+- ignore_permissions chiude anche un problema visto in produzione (2026-06-23/24): l'iscrizione a
+  cascata ai corsi falliva con «You need the 'create' permission on Iscrizione LMS» (Iscrizione LMS =
+  LMS Enrollment) per DocPerm personalizzate e per un hook has_permission che restituiva None, che
+  nella Frappe attuale vale come rifiuto.
+- patches.txt contiene solo voci, senza marcatore: se la nostra riga sparisce in un merge, i siti non
+  ancora migrati non recuperano le iscrizioni. Al merge di v2.61.0 l'upstream ha accodato la sua
+  patch nello stesso punto: tenere entrambe le righe.
+- Al merge di v2.62.0 l'upstream ha sostituito la finestra con il modulo instradato BatchStudentForm
+  (un solo utente, campo Pagamento, gate senza Docente): riapplicati selezione multipla, ciclo con
+  messaggio aggregato, niente Pagamento e Docente ammesso. frontend/src/tests/batchStudentForm.test.ts
+  è dell'upstream. Il controllo vero è validate_owner sul server, che ammette il Docente tramite
+  can_author_batch.
+- La rimozione dalla classe ha regole diverse da quella dal corso (scheda course-dashboard): il
+  committente ha scelto di non cambiarle. La rimozione cancella solo l'iscrizione alla classe.
+- Il pulsante Importa vive nell'intestazione della classe (scheda batch-detail-page) e chiama
+  goToImport esposto dalla dashboard: se sparisce da defineExpose il pulsante non fa nulla."""
+history = [
+	{ date = "2026-03-26", ref = "970d4ec60", summary = "creazione: importazione degli studenti della classe dalla dashboard" },
+	{ date = "2026-06-08", ref = "033a2378a", summary = "iscrizione di più studenti insieme, senza campo Pagamento" },
+	{ date = "2026-09-10", ref = "a7cd6d837", summary = "iscrizioni ai corsi dopo l'iscrizione alla classe, corsi aggiunti dopo estesi agli studenti presenti, patch di recupero" },
+	{ date = "2026-09-24", ref = "335f9aa8d", summary = "merge v2.62.0: iscrizione multipla riapplicata nel modulo instradato, anche per il Docente" },
+]

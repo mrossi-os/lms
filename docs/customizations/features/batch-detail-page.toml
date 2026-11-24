@@ -1,0 +1,58 @@
+id = "batch-detail-page"
+title = "Pagina della classe"
+status = "active"
+summary = """
+La pagina di una classe mostra nella panoramica la descrizione con i suoi a capo e il video di
+anteprima, mette nell'intestazione le azioni della scheda aperta (importare o iscrivere studenti,
+fare un annuncio) e porta ai corsi giusti. Nella scelta dei corsi da aggiungere compaiono anche
+quelli non ancora pubblicati."""
+why = """
+Il cliente prepara le classi prima che partano, quando i corsi non sono ancora pubblicati, e voleva
+le azioni più usate a portata di mano. L'upstream perdeva gli a capo della descrizione, non mostrava
+il video di anteprima della classe, apriva un corso inesistente cliccando una riga della scheda Corsi
+(usava il nome della riga figlia invece del corso) e lasciava in inglese colonne e stati delle
+valutazioni."""
+roles = ["Moderator", "Batch Evaluator", "Docente", "Course Creator", "Student"]
+behaviour = [
+	"nella panoramica della classe la descrizione breve conserva gli a capo con cui è stata scritta",
+	"il video di anteprima della classe compare sotto la descrizione breve a ogni larghezza dello schermo, largo quanto la descrizione e in 16:9; prezzo, posti e invito all'iscrizione dell'upstream non compaiono",
+	"sulla scheda Dashboard l'intestazione ha, accanto a «Iscrivi» (pulsante pieno), il pulsante «Importa», che apre l'importazione dati delle iscrizioni alla classe",
+	"sulla scheda Annunci l'intestazione ha il pulsante «Fai un annuncio», disattivato con un suggerimento quando la classe non ha studenti; il menu «...» non ha la voce annuncio",
+	"i pulsanti Importa, Iscrivi e Fai un annuncio compaiono a Moderator, Batch Evaluator e Docente (e a chi gestisce la classe), non al Valutatore né allo studente",
+	"cliccando un corso nella scheda Corsi della classe si apre quel corso",
+	"nelle liste Corsi e Valutazioni della classe le intestazioni delle colonne e lo stato della valutazione sono in italiano, anche nella dashboard dello studente",
+	"nella scelta del corso da aggiungere alla classe compaiono tutti i corsi, anche le bozze; il modulo è aperto solo al Moderator e a chi gestisce la classe",
+]
+areas = []
+upstream_watch = [
+	"BatchDetail.vue", "TabbedDetailPage", "BatchOverview.vue", "BatchOverlay.vue", "video_link",
+	"meta_image", "whitespace-pre-line", "BatchCourses.vue", "row.course", "Assessments.vue",
+	"BatchCourseForm.vue", "published: 1", "NewBatchCourse", "HeaderButton", "goToImport",
+	"openAnnouncementModal", "currentTabLabel", "tab key", "route.hash",
+]
+notes = """
+- Dal merge di v2.62.0 BatchDetail è costruito su TabbedDetailPage dell'upstream, che identifica le
+  schede con chiavi inglesi fisse e segue anche il solo cambio di hash: le nostre voci su chiavi delle
+  schede, sincronizzazione dell'hash e intestazione su telefono sono tollerate dal 2026-09-24. Se
+  l'upstream torna a confrontare l'etichetta tradotta (tab.label == o currentTabLabel), in italiano
+  link diretti e pulsanti dell'intestazione si rompono.
+- Il pulsante Importa chiama goToImport della scheda Dashboard: se goToImport sparisce dal
+  defineExpose di AdminBatchDashboard il pulsante non fa nulla (vedi batch-students).
+- Corsi in bozza: la regola è un'ASSENZA (niente filtro published: 1 sul Link del corso in
+  pages/Forms/BatchCourseForm.vue); il rilevatore non si accorge se il filtro torna, va controllato a
+  mano dopo ogni merge. Batch Course non ha validazioni lato server sul corso pubblicato.
+- BatchOverlay non è montato (commentato in BatchOverview da marzo 2026): il ripiego sull'immagine
+  meta_image della voce batch-overlay-meta-image conta solo se l'overlay torna in uso.
+- Il bug dei corsi della classe (row.name al posto di row.course) è ancora presente nell'upstream.
+- Dashboard e iscrizioni sono nelle schede batch-dashboard e batch-students; il Valutatore nella
+  pagina della classe nella scheda valutatore-role; chi aggiunge corsi e valutazioni nella scheda
+  batch-management-permissions."""
+history = [
+	{ date = "2026-03-23", ref = "30111a51d", summary = "creazione: il clic su un corso della classe apre il corso giusto" },
+	{ date = "2026-03-26", ref = "970d4ec60", summary = "pulsante Importa per gli studenti della classe" },
+	{ date = "2026-03-30", ref = "93dc50217", summary = "corsi non pubblicati aggiungibili alla classe" },
+	{ date = "2026-04-15", ref = "dd55dbbbc", summary = "«Fai un annuncio» nell'intestazione della scheda Annunci" },
+	{ date = "2026-09-07", ref = "0a61c2f10", summary = "video di anteprima della classe nella panoramica" },
+	{ date = "2026-09-08", ref = "877b47bed", summary = "a capo conservati nella descrizione breve" },
+	{ date = "2026-09-24", ref = "335f9aa8d", summary = "merge v2.62.0: pagina su TabbedDetailPage, chiavi delle schede e hash ora dell'upstream" },
+]

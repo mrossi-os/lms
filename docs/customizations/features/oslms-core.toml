@@ -1,0 +1,110 @@
+id = "oslms-core"
+title = "Ossatura dell'app os_lms e compatibilità con l'upstream"
+status = "active"
+summary = """
+L'app os_lms è l'estensione che contiene quasi tutto il codice nostro lato server. Questa scheda
+copre i file condivisi da molte funzionalità: la registrazione dell'app (hooks.py), le operazioni a
+ogni migrate (setup.py), i campi custom e l'elenco delle patch, i grandi moduli api.py,
+override_api.py e override_utils.py che sostituiscono metodi dell'upstream, i ponti verso metodi
+che Frappe non ha, le cascate di cancellazione di utenti e lezioni. Non è una funzione per
+l'utente: è ciò che deve restare compatibile a ogni release dell'upstream."""
+why = """
+Tenere il codice nostro in un'app separata evita i conflitti di merge, ma la lega alle API
+dell'upstream: os_lms sostituisce decine di metodi whitelisted di lms e Frappe, e un merge può
+romperli senza che build, rilevatore delle ancore o test del frontend se ne accorgano (v2.62.0 ha
+tolto un helper importato da override_api.py e per due release l'intero modulo non si importava)."""
+roles = []
+behaviour = [
+	"os_lms richiede l'app lms e a ogni migrate abilita l'italiano, crea i campi custom mancanti, toglie quelli dismessi, riscrive ruoli e permessi custom (Valutatore, Gestore, Docente, Course Creator sulle classi, registro di sorveglianza), prepara il client Elite API, l'indice vettoriale Redis (se configurato), l'indice di ricerca e i modelli di prompt AI, e cifra le chiavi API e i token Google rimasti in chiaro",
+	"40 metodi whitelisted di lms e Frappe sono sostituiti da versioni os_lms (override_whitelisted_methods, più il ponte qui sotto); ogni sostituto si importa e accetta tutti i parametri dell'originale, e test_override_signatures fallisce se uno smette di risolversi o ne scarta uno",
+	"la richiesta frappe.utils.telemetry.pulse.client.boot_config che frappe-ui 1.0.0-beta.29 fa a ogni caricamento della SPA riceve «telemetria spenta» invece di un 417; il test fallisce quando Frappe introduce il metodo originale, e allora il ponte va tolto",
+	"l'autorizzazione di Google Calendar apre un popup che conserva il collegamento alla finestra principale, così la configurazione si chiude da sola al ritorno; il visualizzatore dei certificati apre una scheda vuota già al clic (non bloccata dai blocchi dei popup) e la indirizza quando il badge TrueSkills è pronto; entrambi gli indirizzi passano per safeUrl",
+	"eliminare un utente non si blocca per i collegamenti: i suoi record LMS personali vengono cancellati, le righe che lo nominano come istruttore o membro di programma vengono tolte lasciando corsi e programmi, e nei record altrui in cui ha solo agito (correzioni, host di una lezione dal vivo, scenari scritti...) il riferimento passa ad Administrator o viene svuotato",
+	"eliminare una lezione cancella i suoi tempi di visione, avanzamenti, note e registri del tutor, stacca quiz, iscrizioni e consegne che la nominano e toglie i suoi vettori dall'indice AI senza che un problema dell'AI blocchi l'eliminazione",
+	"il server rifiuta di salvare una lezione in cui un blocco «upload» punta fuori dai file caricati (es. /private/../site_config.json); sono ammessi i file del sito e i link http/https",
+	"modificando il contenuto di una lezione già salvata lo stato di indicizzazione torna «pending»",
+	"un utente importato da un Gestore con Data Import, che Frappe lascerebbe senza alcun ruolo, riceve il ruolo LMS Student",
+]
+areas = [
+	"apps/os_lms/os_lms/__init__.py",
+	"apps/os_lms/os_lms/hooks.py",
+	"apps/os_lms/os_lms/setup.py",
+	"apps/os_lms/os_lms/modules.txt",
+	"apps/os_lms/os_lms/patches.txt",
+	"apps/os_lms/os_lms/patches/__init__.py",
+	"apps/os_lms/os_lms/requirements.txt",
+	"apps/os_lms/os_lms/fixtures/*",
+	"apps/os_lms/os_lms/badge_utils.py",
+	"apps/os_lms/os_lms/events/lesson.py",
+	"apps/os_lms/os_lms/events/user.py",
+	"apps/os_lms/os_lms/public/css/desk.css",
+	"apps/os_lms/os_lms/os_lms/__init__.py",
+	"apps/os_lms/os_lms/os_lms/api.py",
+	"apps/os_lms/os_lms/os_lms/utils.py",
+	"apps/os_lms/os_lms/os_lms/override_api.py",
+	"apps/os_lms/os_lms/os_lms/override_utils.py",
+	"apps/os_lms/os_lms/os_lms/framework_shims.py",
+	"apps/os_lms/os_lms/os_lms/tests/__init__.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_override_signatures.py",
+	"apps/os_lms/pyproject.toml",
+]
+upstream_watch = [
+	"hooks.py", "override_whitelisted_methods", "whitelist", "require_type_annotated_api_methods",
+	"lms.lms.api", "lms.lms.utils", "command_palette", "get_instructor_info", "search_sqlite",
+	"get_courses", "get_batches", "limit_page_length", "get_user_info", "get_lms_settings",
+	"has_permission", "permission_query_conditions", "doc_events", "after_migrate", "patches.txt",
+	"custom fields", "telemetry", "boot_config", "openExternal", "window.open", "noopener",
+	"on_trash User", "LinkExistsError", "Data Import roles",
+]
+data = [
+	"fixtures/custom_field.json: 43 campi custom su LMS Settings (20), LMS Course (8), User (5), Course Lesson (4), LMS Live Class (3), LMS Program, LMS Batch, LMS Quiz; più i CUSTOM_FIELDS creati da setup.create_custom_fields",
+	"patches.txt: pre_model_sync v0_0_2-v0_0_4, post_model_sync v0_0_5-v0_0_11",
+	"hooks: override_whitelisted_methods (40 sostituzioni più il ponte), framework_method_shims, doc_events, has_permission, permission_query_conditions, scheduler_events, after_migrate, before_job, before_request/after_request, website_redirects, signup_form_template, app_include_css (brand_css e desk.css)",
+	"frontend/src/utils/openExternal.ts: openWithOpener e openPendingTab accanto a openExternal (voce open-external-opener-and-pending-tab)",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_override_signatures.py",
+]
+notes = """
+- Dopo OGNI merge upstream lanciare, nel container, os_lms.os_lms.tests.test_override_signatures
+  e la suite di os_lms. Le ancore provano solo che il testo c'è, non che il ramo sia raggiungibile:
+  quando l'upstream riscrive una funzione che contiene un ramo OSLMS controllare che ci si arrivi
+  ancora (v2.63.0 ha spostato un controllo di iscrizione prima del ramo Valutatore di can_access_quiz).
+- I test dei quiz di lms sul database di sviluppo sono distruttivi (tearDownClass cancella TUTTE le
+  LMS Question): lanciarli con frappe.db.commit disattivato e rollback finale.
+- has_permission: in questa versione di Frappe un hook che restituisce None vale come rifiuto.
+  Restituire True nel caso neutro, False solo per vietare.
+- Mai usare frappe.set_user dentro una richiesta per scavalcare un controllo di ruolo dell'upstream:
+  riscrive sid e dati di sessione e disconnette chi chiama. Copiare il corpo della funzione con il
+  controllo allargato, con un test che lo confronta con l'upstream.
+- has_value_changed normalizza solo date e orari: un Int che arriva dalla SPA come stringa sembra
+  cambiato a ogni salvataggio. Per gli hook che reagiscono a modifiche vere normalizzare i due lati
+  (helper api.normalize_live_class_value).
+- Campi upstream validati su un Single: se l'upstream aggiunge un campo con default e una
+  validazione, il record già esistente tiene 0/NULL e ogni salvataggio delle impostazioni fallisce
+  (417 su schede non correlate). Rimedio: patch post_model_sync di backfill (v0_0_5).
+- create_custom_fields crea solo i campi che mancano: cambiare la definizione in CUSTOM_FIELDS non
+  aggiorna un campo già esistente.
+- Container di sviluppo: init.sh fa bench migrate solo all'avvio; impostazioni che non si salvano o
+  funzioni legate a un flag che spariscono = meta dei doctype vecchia nel container (frappe.get_meta(dt)
+  .get_field(f) sul sito che gira). Se la CLI bench è rotta usare il python dell'env.
+- Deploy di staging: install-app --force a ogni avvio segnava tutte le patch come eseguite prima del
+  migrate, quindi le patch nuove non giravano; prima di provare su staging verificare l'effetto di
+  ogni patch nuova.
+- api.py, override_api.py e override_utils.py contengono codice di molte funzionalità (ruoli,
+  impostazioni, membri, live, AI, TrueSkills...): le regole stanno nelle schede di quelle funzioni;
+  qui resta la compatibilità con le firme upstream. Il ponte boot_config esiste perché frappe-ui
+  beta.29 chiede un metodo di Frappe develop (prima il problema era nato dal caret su frappe-ui).
+- Voce condivisa open-external-opener-and-pending-tab: copre Google Calendar (scheda
+  zoom-google-calendar) e i certificati TrueSkills (scheda trueskills-certificates).
+- Lacuna nota: il file indicato da standard_email_override in hooks.py
+  (os_lms/templates/emails/login_via_key.html) non esiste nel repository."""
+history = [
+	{ date = "2026-03-16", ref = "323102017", summary = "creazione: app os_lms aggiunta al repository" },
+	{ date = "2026-05-20", ref = "af89d7607", summary = "cascata di cancellazione dei record LMS all'eliminazione di un utente" },
+	{ date = "2026-09-17", ref = "f7070242d", summary = "hook before_job per la lingua dei job in background" },
+	{ date = "2026-09-24", ref = "a4363c4a8", summary = "ripristinati gli override API rotti da v2.62.0-v2.63.0 (get_instructor_info copiato, parametri category e limit_page_length)" },
+	{ date = "2026-09-24", ref = "b8b1e82a1", summary = "guardia permanente test_override_signatures" },
+	{ date = "2026-09-24", ref = "f60887410", summary = "ponte per boot_config della telemetria di frappe-ui su Frappe v16" },
+	{ date = "2026-09-24", ref = "44c0c6fd4", summary = "openWithOpener e openPendingTab accanto a openExternal (v2.62.0)" },
+]

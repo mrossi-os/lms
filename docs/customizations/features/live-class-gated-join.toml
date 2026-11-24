@@ -1,0 +1,67 @@
+id = "live-class-gated-join"
+title = "Accesso controllato alla stanza della lezione live"
+status = "active"
+summary = """
+Il pulsante Partecipa e i link nelle email e nei calendari non portano direttamente alla riunione
+Zoom o Meet, ma a un indirizzo della piattaforma che controlla chi sta entrando e quando. Lo studente
+entra solo nella finestra prevista e dopo che il docente ha avviato la lezione; prima vede una pagina
+che glielo spiega. Chi non ha accesso alla classe non arriva mai alla riunione."""
+why = """
+Con il link Zoom grezzo nelle email e nella home, gli studenti entravano prima che il docente avesse
+avviato la lezione, chiunque ricevesse un'email inoltrata poteva entrare, e l'upstream dava a ogni
+studente iscritto anche il link da organizzatore (start_url). Il controllo lato server sostituisce
+quello che prima era solo nella card. Separata dalla gestione delle lezioni (decisione del
+2026-11-23) perché ha regole proprie da riverificare a ogni merge."""
+roles = ["Student", "Moderator", "Batch Evaluator", "Valutatore", "Docente"]
+behaviour = [
+	"il pulsante Partecipa della card e il link «Partecipa alla lezione» nelle email di invito e di aggiornamento portano a un indirizzo interno della piattaforma (join_live_class), mai al link Zoom o Meet; il link resta valido anche dopo una riprogrammazione",
+	"chi apre il link senza aver effettuato l'accesso viene mandato al login e poi riportato al link",
+	"Moderator, Batch Evaluator e gli istruttori della classe vengono portati alla riunione come organizzatori, in qualunque momento prima della fine e senza attendere l'avvio",
+	"il Valutatore della classe viene portato alla riunione come partecipante finché la lezione non è finita, senza attendere l'avvio",
+	"lo studente iscritto entra solo da 15 minuti prima dell'inizio e solo dopo che chi conduce ha premuto Avvia; prima vede una pagina che dice da che ora potrà entrare o che la lezione non è ancora stata avviata",
+	"una lezione inesistente, finita, senza link o un utente senza accesso alla classe ricevono una pagina di messaggio con il ritorno alla classe, mai la riunione",
+	"i link nei file .ics e nei pulsanti Google Calendar e Outlook passano da una porta firmata (live_class_join.join) che funziona senza login: il link nomina il suo destinatario e scade un giorno dopo la fine della lezione",
+	"dalla porta firmata, prima dell'avvio si vede una pagina d'attesa che si ricarica ogni 30 secondi e porta alla riunione appena la lezione parte; a lezione finita una pagina «La lezione è terminata»",
+	"un link firmato scaduto, alterato, di un'altra lezione o di uno studente tolto dalla classe non apre nulla: chi lo usa viene mandato al login e poi decide il suo accesso",
+	"l'elenco delle lezioni nella home dello studente non contiene più il link da organizzatore e il suo link di ingresso è quello interno",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/live_class_join.py",
+]
+upstream_watch = [
+	"join_url", "start_url", "get_my_live_classes", "join live class", "started_at", "start_live_class",
+	"LiveClassCard", "canStudentJoin", "join window", "send_invitation_email", "build_event_description",
+	"Google Meet link", "verified_command", "get_signed_params",
+]
+data = [
+	"custom field LMS Live Class.started_at (Datetime), scritto da os_lms.os_lms.api.start_live_class",
+	"endpoint os_lms.os_lms.api.join_live_class (allow_guest, accesso a livelli host / observer / student) e os_lms.os_lms.live_class_join.join (allow_guest, firma con name, user ed exp)",
+	"override di lms.lms.api.get_my_live_classes in os_lms.os_lms.override_api (toglie start_url, sostituisce join_url)",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_2026_10.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_package_e.py",
+]
+notes = """
+- Ci sono due porte. join_live_class (in os_lms/api.py, area oslms-core) serve card, email di invito
+  e aggiornamento e home dello studente: richiede il login e applica i livelli host / observer /
+  student. live_class_join.join serve .ics, Google Calendar e Outlook: link firmato per
+  destinatario, senza login, controlla solo l'avvio e la fine (non la finestra dei 15 minuti) e
+  porta tutti al join_url.
+- La regola sull'avvio vale solo per gli studenti; imporla lato server è stata la correzione dopo
+  che gli studenti entravano su Zoom dal link dell'email senza che il docente avesse avviato.
+- La finestra dei 15 minuti è scritta due volte: JOIN_WINDOW_MINUTES_BEFORE in api.py e in
+  LiveClassCard.vue. Tenerle allineate.
+- La memoria di progetto dice che i link di .ics, Google e Outlook incorporano il link grezzo della
+  riunione: non è più vero dal commit a8e3fbcec (OWASP, 2026-10-23), passano dalla porta firmata.
+- Restano volutamente invariati: il pulsante Avvia apre direttamente start_url dopo
+  start_live_class, e il join_url grezzo resta nel payload delle lezioni della classe perché la
+  card controlla Boolean(cls.join_url).
+- LiveClassCard.vue è un file nostro ma le ancore dell'ingresso stanno anche nelle card upstream che
+  lo montano: dopo ogni merge verificare che i pulsanti puntino ancora alla porta interna.
+- La pagina della porta firmata ha logo e nome Salescience scritti nel codice."""
+history = [
+	{ date = "2026-07-01", ref = "bb5973b73", summary = "creazione: porta che impedisce allo studente di entrare prima dell'avvio, con pagina d'attesa" },
+	{ date = "2026-07-06", ref = "742e6e336", summary = "card e email passano dall'endpoint interno join_live_class con i controlli lato server" },
+	{ date = "2026-10-23", ref = "a8e3fbcec", summary = "OWASP: il link firmato nomina il destinatario e scade un giorno dopo la lezione; home dello studente senza start_url" },
+]

@@ -1,0 +1,119 @@
+"""The feature catalogue: one TOML card per functionality.
+
+A card carries the meaning (what the feature does, why it exists, which rules
+are observable from outside); inventory entries carry the anchors that raise
+the quick alarm. Entries point at a card through their `feature` field.
+"""
+
+from __future__ import annotations
+
+import tomllib
+from dataclasses import dataclass
+from fnmatch import fnmatch
+from pathlib import Path
+from typing import Callable
+
+from scripts.customizations.model import InventoryError, list_cached_toml
+from scripts.customizations.paths import STRICT_FEATURES_FLAG  # noqa: F401 (re-exported)
+
+FEATURE_STATUSES = frozenset({"active", "retired", "replaced-by-upstream"})
+REQUIRED_FIELDS = (
+	"id",
+	"title",
+	"status",
+	"summary",
+	"why",
+	"behaviour",
+	"areas",
+	"upstream_watch",
+	"history",
+)
+# Required, but may be empty: a card can live only in inventory entries (design §5.2).
+MAY_BE_EMPTY = frozenset({"areas"})
+
+
+@dataclass(frozen=True)
+class Feature:
+	"""One functionality of the fork, as described by its card."""
+
+	id: str
+	title: str
+	status: str
+	summary: str
+	why: str
+	behaviour: tuple[str, ...]
+	areas: tuple[str, ...]
+	upstream_watch: tuple[str, ...]
+	history: tuple[dict, ...]
+	roles: tuple[str, ...] = ()
+	data: tuple[str, ...] = ()
+	tests: tuple[str, ...] = ()
+	notes: str = ""
+	source: str = ""
+
+	def matches_path(self, path: str) -> bool:
+		"""True when `path` falls under one of the card's `areas` globs."""
+		return any(fnmatch(path, pattern) for pattern in self.areas)
+
+
+def _build_feature(raw: dict, filename: str) -> Feature:
+	for key in REQUIRED_FIELDS:
+		if key not in raw:
+			raise InventoryError(f"{filename}: campo obbligatorio mancante '{key}'")
+		if not raw[key] and key not in MAY_BE_EMPTY:
+			raise InventoryError(f"{filename}: il campo obbligatorio '{key}' è vuoto")
+	expected = filename.removesuffix(".toml")
+	if raw["id"] != expected:
+		raise InventoryError(f"{filename}: l'id '{raw['id']}' non coincide con il nome del file")
+	if raw["status"] not in FEATURE_STATUSES:
+		raise InventoryError(f"{filename}: stato sconosciuto '{raw['status']}'")
+	return Feature(
+		id=raw["id"],
+		title=raw["title"],
+		status=raw["status"],
+		summary=raw["summary"].strip(),
+		why=raw["why"].strip(),
+		behaviour=tuple(raw["behaviour"]),
+		areas=tuple(raw["areas"]),
+		upstream_watch=tuple(raw["upstream_watch"]),
+		history=tuple(raw["history"]),
+		roles=tuple(raw.get("roles", ())),
+		data=tuple(raw.get("data", ())),
+		tests=tuple(raw.get("tests", ())),
+		notes=raw.get("notes", "").strip(),
+		source=filename,
+	)
+
+
+def load_features(
+	directory: Path,
+	read: Callable[[str], str | None] | None = None,
+	list_files: Callable[[Path], list[str]] | None = None,
+) -> dict[str, Feature]:
+	"""Load every card and return them keyed by id.
+
+	Without `read`, the `*.toml` files in `directory` are read from disk. With
+	`read`, `directory` is the repo-relative path (for instance
+	Path("docs/customizations/features")): cards are enumerated with
+	`list_cached_toml` (git index, current working directory) and their contents
+	come from `read(relative_path)`, which reads the git index; the disk is not
+	touched. `read` returning None means the file is absent and it is skipped.
+	`list_files` replaces `list_cached_toml`, for instance to list a ref.
+	"""
+	if read is None:
+		sources = [(path.name, path.read_text(encoding="utf-8")) for path in sorted(Path(directory).glob("*.toml"))]
+	else:
+		sources = []
+		for relative in (list_files or list_cached_toml)(Path(directory)):
+			text = read(relative)
+			if text is not None:
+				sources.append((relative.rsplit("/", 1)[-1], text))
+	features: dict[str, Feature] = {}
+	for filename, text in sources:
+		try:
+			raw = tomllib.loads(text)
+		except tomllib.TOMLDecodeError as exc:
+			raise InventoryError(f"{filename}: TOML non valido ({exc})") from exc
+		feature = _build_feature(raw, filename)
+		features[feature.id] = feature
+	return features

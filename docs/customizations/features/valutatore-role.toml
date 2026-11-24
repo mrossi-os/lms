@@ -1,0 +1,91 @@
+id = "valutatore-role"
+title = "Ruolo Valutatore (per classe)"
+status = "active"
+summary = """
+Il Valutatore è una persona assegnata a una o più classi per seguirne gli studenti: vede la
+dashboard, le lezioni dal vivo, gli annunci e le discussioni della sua classe, legge i corsi
+della classe e le risposte ai quiz e corregge i compiti degli studenti iscritti. Tutto in sola
+lettura tranne la correzione dei compiti, e solo per le classi che gli sono assegnate."""
+why = """
+Il cliente ha bisogno di valutatori esterni o interni che correggano il lavoro di una classe
+senza diventare istruttori né vedere le altre classi. L'upstream non ha un ruolo limitato a una
+classe: il Batch Evaluator legge tutte le classi e il Course Creator gestisce i propri corsi.
+Decisione del 2026-06-09, regole confermate ai merge di v2.64.0 e v2.65.0 e nella matrice dei
+ruoli del cliente del 2026-10-05."""
+roles = ["Valutatore", "Moderator", "Batch Evaluator", "Docente", "Gestore"]
+behaviour = [
+	"il Valutatore si assegna dentro la classe, nel campo Valutatori del modulo impostazioni, scegliendo fra gli utenti che non sono studenti; salvando la classe l'utente riceve il ruolo Valutatore",
+	"il server rifiuta di salvare una classe a cui viene aggiunto come valutatore un utente con il ruolo LMS Student",
+	"togliere un utente dai valutatori di una classe non gli toglie il ruolo, ma da quel momento non vede più nulla di quella classe",
+	"il Valutatore riceve la home in stile amministratore, senza l'invito «Crea corso», con la sezione «Batch che valuti» e le lezioni dal vivo delle sue classi",
+	"nella pagina della sua classe il Valutatore vede le schede con Dashboard amministrativa, Lezioni, Annunci e Discussioni, ma non Impostazioni né i comandi di pubblicazione, importazione e iscrizione",
+	"il Valutatore trova negli elenchi anche le classi non pubblicate che valuta",
+	"il Valutatore legge in sola lettura i corsi delle sue classi, anche non pubblicati: outline, capitoli (anche SCORM), lezioni e quiz, con le schede Panoramica e Dashboard e senza Editor né Impostazioni; non gli viene mai offerta l'iscrizione",
+	"le risorse delle lezioni riservate agli istruttori restano escluse per il Valutatore",
+	"il Valutatore vede le lezioni dal vivo della sua classe ma non può crearle, modificarle, eliminarle né avviarle: vi partecipa solo da osservatore (decisione dell'utente del 2026-11-23; oggi il codice gli mostra ancora Avvia, difetto noto nella scheda live-classes)",
+	"il Valutatore vede la consegna di un quiz solo se lo studente è iscritto a una sua classe e il quiz appartiene a quella stessa classe; la vede in sola lettura: nel dettaglio Salva, voti e Mod+S sono disattivati, nell'elenco niente selezione, Elimina né filtro per quiz",
+	"il Valutatore vede e corregge i compiti dei soli studenti delle sue classi e ne invia la valutazione",
+	"il Valutatore vede il registro di sorveglianza (proctoring) con le foto solo per le consegne della sua classe; il server rifiuta le altre",
+	"il Valutatore legge iscrizioni, avanzamento, tempi di visione e recensioni solo degli studenti iscritti a una classe che valuta, non di tutti gli studenti dello stesso corso",
+	"su telefono, nelle liste delle consegne di quiz e compiti, «indietro» porta il Valutatore alla pagina precedente (o all'elenco delle classi) invece che ai Corsi",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/valutatore.py",
+	"apps/os_lms/os_lms/os_lms/doctype/lms_batch_valutatore/*",
+	"apps/os_lms/os_lms/os_lms/tests/test_valutatore_*.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_violation_log_access.py",
+]
+upstream_watch = [
+	"batch evaluator", "evaluator per batch", "grader", "reviewer", "valutatori", "is_valutatore",
+	"resolve_lesson_access", "can_access_quiz", "can_access_assessment", "_assessment_submission_query_conditions",
+	"assessment_submission_has_permission", "PRIVILEGED_ROLES", "enforce_grading_permission",
+	"enforce_member_ownership", "LMS Batch Enrollment has_permission", "course_record_has_permission",
+	"get_batch_details", "get_batch_student_progress", "get_batch_chart_data", "can_access_topic",
+	"LMS Quiz Violation Log", "get_quiz_violation_logs", "proctoring", "QuizSubmissions.vue",
+	"get_permission_query_conditions", "PageHeader back",
+]
+data = [
+	"custom field LMS Batch.valutatori (Table MultiSelect, creato da os_lms.setup) con il doctype figlio LMS Batch Valutatore",
+	"Ruolo «Valutatore» e le sue DocPerm (lettura di LMS Batch Enrollment, LMS Live Class, LMS Quiz Submission, LMS Enrollment, LMS Course Progress; lettura e scrittura di LMS Assignment Submission) da setup_valutatore_role_and_permissions; in produzione le DocPerm sono gestite a mano dal Desk",
+	"lettura di LMS Quiz Violation Log per Moderator, Course Creator, Docente, Gestore e Valutatore da setup_quiz_violation_log_permissions",
+	"flag is_valutatore in get_user_info (utente) e in get_batch_details / get_course_details (per classe e per corso)",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_valutatore_quiz_access.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_valutatore_quiz_submission_scope.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_valutatore_assignment_submission_scope.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_violation_log_access.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_role_gates_v2_64.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_role_gates_v2_65.py",
+]
+notes = """
+- Il ruolo è solo il contenitore delle DocPerm: il restringimento alla classe lo fanno le
+  get_permission_query_conditions e i veti has_permission di os_lms.valutatore, che Frappe mette in
+  AND con quelli dell'upstream. Ogni nuovo filtro di lista upstream (v2.62.0 classi e live, v2.64.0
+  progressi, v2.65.0 consegne e iscrizioni) ha svuotato le liste del Valutatore finché la regola non
+  è stata scritta dentro il filtro upstream: è il primo controllo da fare dopo un merge.
+- Un hook has_permission deve restituire True nel caso neutro e False solo per vietare: in questa
+  versione di Frappe None vale come rifiuto (ha bloccato la creazione di ogni LMS Enrollment).
+- frappe.db.escape(v, percent=False) mette già gli apici: non aggiungerne altri nelle IN.
+- PRIVILEGED_ROLES: aggiungere Valutatore solo all'insieme locale di lms_assignment_submission.py,
+  mai a quello condiviso di lms/lms/utils.py (darebbe poteri su certificati e progressi). Senza,
+  la correzione dà 403 su frappe.client.set_value o viene riportata in silenzio ai valori salvati.
+- Consegne dei quiz: mai filtrare sul campo course della consegna (copiato all'inserimento, vuoto se
+  il quiz è stato collegato dopo); il quiz si risolve com'è collegato oggi.
+- Decisione 2026-07-31, da non annullare: il Valutatore arriva alle risposte di quiz e compiti dei
+  suoi studenti dalla dashboard della classe. Il registro di sorveglianza con foto gli è aperto dal
+  2026-10-05 (ribaltata la decisione del 2026-09-24).
+- Bundle reale: il Valutatore ha SOLO il ruolo Valutatore; è questo che lo tiene «puro»
+  (_only_scoped_valutatore). Con ruoli più ampi le restrizioni non si applicano.
+- Lacuna nota: get_course_count / get_batch_count non sono ristretti per il Valutatore (solo il totale).
+- Voci condivise: batch-list-valutatore-docente e proctoring-log-hidden-from-valutatore sono qui;
+  course-lesson-list-mirrors-read-gate e i test v2.64/v2.65 sono nella scheda docente-role. Le lezioni
+  dal vivo (pulsante Partecipa da osservatore) sono nelle schede live-classes e live-class-gated-join."""
+history = [
+	{ date = "2026-06-09", ref = "f25d5ca3e", summary = "creazione: ruolo Valutatore per classe con permessi limitati agli studenti della classe" },
+	{ date = "2026-06-10", ref = "68a4a06e7", summary = "il Valutatore legge corsi e lezioni delle sue classi e ha la Dashboard del corso in sola lettura" },
+	{ date = "2026-07-31", ref = "1af13d630", summary = "ruolo mai revocato in automatico togliendolo dalla classe; correzione dei compiti salvata" },
+	{ date = "2026-10-05", ref = "b9073314c", summary = "consegne dei quiz limitate a studente e quiz della stessa classe; registro di sorveglianza aperto al Valutatore della classe" },
+	{ date = "2026-10-12", ref = "721be82c6", summary = "merge v2.65.0: regole riespresse nel predicato assessment e nelle iscrizioni alle classi" },
+	{ date = "2026-10-28", ref = "d825bc9d5", summary = "OWASP E8: dati degli studenti solo per gli studenti delle sue classi; studenti rifiutati come valutatori" },
+]

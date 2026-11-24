@@ -1,0 +1,84 @@
+id = "frontend-build-compat"
+title = "Build, test e compatibilità del frontend"
+status = "active"
+summary = """
+Configurazione che tiene la SPA compilabile e testabile sopra la versione di frappe-ui e di
+Frappe che usiamo: Vite, Vitest, TypeScript, dipendenze dell'editor (tiptap, prosemirror), icone,
+la porta di socket.io dell'ambiente Docker, lo stub di un pacchetto che esiste solo in Frappe
+develop e la regola con cui giudicare i test upstream che falliscono per scelta. Non è una
+funzione per l'utente: se si rompe, la SPA non si costruisce o le pagine con l'editor vanno in
+errore."""
+why = """
+Il fork aggiunge override che importano direttamente tiptap e frappe-ui, gira su Frappe version-16
+mentre l'upstream a volte usa pacchetti di Frappe develop, e cambia di proposito comportamenti che
+alcuni test upstream verificano. Senza questi aggiustamenti la build fallisce in un'installazione
+pulita (Docker, bench build) o l'editor va in crash in sviluppo."""
+roles = []
+behaviour = [
+	"la SPA si costruisce e la sua suite Vitest gira sopra frappe-ui 1.0.0-beta.29 (versione esatta, senza caret), Vite 5.4.21 e TypeScript 5.7.2",
+	"la porta di socket.io viene letta da common_site_config.json al momento della build e iniettata come costante: le notifiche in tempo reale si collegano anche nell'ambiente Docker con porte non standard; se la costante manca la build fallisce",
+	"tiptap e prosemirror sono presenti in una sola copia (dipendenze dirette @tiptap/*, resolve.dedupe, resolutions di prosemirror e pre-bundle completo in sviluppo): nessuna pagina con l'editor va in errore con «Adding different instances of a keyed plugin (plugin$)», né in sviluppo né in un'installazione pulita",
+	"l'editor delle regole dei canali Raven usa uno stub locale al posto di @framework/ui, che esiste solo in Frappe develop: la build passa su Frappe version-16 e la schermata mostra un avviso al posto dell'editor",
+	"yarn test fallisce solo per un test rosso nuovo, per un rosso atteso diventato verde o per una voce dell'elenco che non corrisponde più a nessun test; i test upstream che falliscono per nostre scelte sono elencati uno per uno con tipo e motivo (93 oggi), e yarn test:raw resta Vitest puro",
+	"TypeScript controlla anche i moduli .js importati dai componenti e __ è tipizzato nei template anche tramite @vue/runtime-core",
+	"il chevron di apertura dei capitoli si vede (componente lucide ChevronRight) e CreateOutline importa Button in modo esplicito",
+]
+areas = [
+	"frontend/src/oslms/stubs/*",
+]
+upstream_watch = [
+	"frontend/package.json", "frappe-ui version", "vite.config.js", "vitest.config.ts", "tsconfig.json",
+	"optimizeDeps", "resolve.dedupe", "resolutions", "@tiptap", "prosemirror", "interactjs",
+	"@framework/ui", "assertFrameworkUiLinked", "preserveSymlinks", "socketio_port", "common_site_config",
+	"frontend-tests.yml", "yarn test", "lucide", "global.d.ts",
+]
+data = [
+	"frontend/package.json: frappe-ui 1.0.0-beta.29 esatto, @tiptap/core, @tiptap/pm, @tiptap/vue-3 dirette, blocco resolutions di prosemirror, script test = node oslms-test/vitest-baseline.mjs",
+	"frontend/vite.config.js: define __SOCKETIO_PORT__ con importConfigSite, dedupe, optimizeDeps.include di tutti i sottopercorsi @tiptap/pm e dei prosemirror-* nudi, alias @framework/ui/ConditionBuilder",
+	"frontend/vitest.config.ts e frontend/tsconfig.json: alias dello stub @framework/ui, allowJs, include src/**/*.js, ignoreDeprecations",
+	"frontend/oslms-test/known-failures.json e vitest-baseline.mjs; frontend/src/oslms/stubs/frameworkUi/ConditionBuilder.ts",
+]
+tests = [
+	"frontend/src/tests/prosemirrorDedupe.test.ts",
+]
+notes = """
+- Doppio prosemirror in sviluppo: frappe-ui è escluso da optimizeDeps (serve a osOverrideTheme),
+  quindi lo scanner di Vite non vede i sottopercorsi @tiptap/pm/* né i prosemirror-* nudi importati
+  solo da frappe-ui; servirli grezzi accanto alla copia ottimizzata crea due prosemirror-state.
+  resolve.dedupe non basta. Verifica senza browser: rm -rf node_modules/.vite && npx vite optimize
+  --force, poi il messaggio «Adding different instances of a keyed plugin» deve stare in un solo
+  chunk di node_modules/.vite/deps. Dopo ogni aggiornamento di tiptap o frappe-ui controllare se
+  @tiptap/pm esporta sottopercorsi nuovi e aggiungerli. Stesso meccanismo per interactjs, che deve
+  restare in optimizeDeps.include (senza, yarn dev muore al caricamento mentre yarn build è verde):
+  dopo un merge aprire la SPA nel server di sviluppo, non solo la build.
+- Le resolutions di prosemirror non esistono upstream: se il merge prende il package.json
+  dell'upstream vanno riaggiunte; se una dipendenza chiede versioni più alte alzare i pin, non
+  toglierli. Le versioni minime di sicurezza sono sorvegliate dalla scheda security-hardening.
+- frappe-ui va tenuto a una versione esatta su tutti i branch: il caret ^1.0.0-beta.7 ha fatto
+  divergere i lock (master in produzione era finito su beta.24, con il 417 di telemetria). Dopo un
+  cambio di branch con un'altra versione di frappe-ui, node_modules resta vecchio: yarn install
+  --check-files --ignore-engines (Node 23 non supera il controllo engines di jsdom). Non migrare a
+  mano le classi dei token: la migrazione v2 sta nel commit 304727680.
+- Stub @framework/ui: se un merge reintroduce in package.json la dipendenza link:../../frappe/ui o in
+  vite.config.js assertFrameworkUiLinked, toglierle di nuovo; la loro assenza non ha un'ancora che il
+  rilevatore possa controllare. Lo stub va tolto quando lo stack passerà a una Frappe che include il
+  pacchetto.
+- Baseline Vitest (decisione del committente 2026-09-24): un test upstream non si modifica mai per
+  farlo passare. Se l'upstream cambia lo script test tenere il nostro; dopo ogni merge rilanciare
+  yarn test e aggiornare known-failures.json solo per test upstream nuovi o rinominati, con il motivo.
+- vitest.config.ts è oggi identico all'upstream per server.deps.inline (voce vitest-inline-frappe-ui in
+  accepted-drift); la voce exercise-submission-commented-icons è in accepted-drift (file preso
+  dall'upstream al merge di v2.62.0).
+- ignoreDeprecations "6.0" con TypeScript 5.7.2 installato potrebbe essere inutile o dare TS5103 in
+  vue-tsc (confidence bassa nella voce, modifica confermata dal committente il 2026-09-25).
+- Dopo il salto a frappe-ui 1.0-beta l'upstream è passato alle icone come classi CSS (lucide-static):
+  gli import di componenti lucide rimasti orfani rompono la build; editorjs-color-picker è una
+  dipendenza solo nostra da riaggiungere se il merge prende il package.json upstream."""
+history = [
+	{ date = "2026-03-16", ref = "eb04db67c", summary = "creazione: porta di socket.io letta in fase di build per l'ambiente Docker" },
+	{ date = "2026-07-20", ref = "ab8b11fee", summary = "tiptap dichiarato come dipendenza diretta per le installazioni pulite" },
+	{ date = "2026-07-21", ref = "1a5b041e5", summary = "prosemirror deduplicato e pre-bundle completo contro il crash plugin$" },
+	{ date = "2026-07-31", ref = "81f591dbf", summary = "frappe-ui portato a 1.0.0-beta.29 (versione esatta, dall'upstream)" },
+	{ date = "2026-09-24", ref = "b81e94159", summary = "merge v2.63.0: stub locale di @framework/ui per l'editor delle regole Raven" },
+	{ date = "2026-09-24", ref = "55d4c1c93", summary = "yarn test giudicato contro una baseline di rossi attesi" },
+]

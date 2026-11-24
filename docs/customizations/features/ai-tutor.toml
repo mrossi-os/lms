@@ -1,0 +1,84 @@
+id = "ai-tutor"
+title = "Tutor AI"
+status = "active"
+summary = """
+Nelle pagine di un corso compare un pulsante flottante che apre il tutor AI: un assistente che
+risponde alle domande dello studente usando il contenuto del corso, della lezione aperta e degli
+allegati dei badge del corso. Si può scrivere o dettare a voce, e la risposta può essere letta ad
+alta voce. Ogni domanda viene registrata con la risposta e il contesto usato, a disposizione di
+amministratori e docenti del corso."""
+why = """
+Funzionalità richiesta dal cliente per dare allo studente un aiuto continuo sul materiale del
+corso; l'upstream non ha alcun assistente AI. Il registro delle domande serve a vedere dove gli
+studenti si bloccano e a rendicontare l'uso dell'AI (politica AI e certificazione ESG)."""
+roles = ["Student", "Docente", "Course Creator", "Moderator", "Gestore", "System Manager"]
+behaviour = [
+	"il pulsante del tutor compare in basso a destra su ogni pagina che ha un corso nell'indirizzo, su desktop e telefono, solo con l'interruttore AI acceso (Impostazioni > AI > Rag Tutor > Enabled); su telefono sale sopra la barra fissa «Continua» del corso",
+	"il tutor conosce il corso della pagina e, nella pagina della lezione e nell'editor della lezione, anche la lezione aperta; uscendo dalle pagine del corso il contesto si azzera",
+	"il server risponde solo a chi può leggere il corso e, se la domanda riguarda una lezione, a chi può leggere quella lezione nello stato in cui è adesso",
+	"per uno studente il tutor usa solo le lezioni che ha già completato, più la lezione aperta e i file allegati ai badge del corso; per chi è istruttore del corso o moderatore usa tutte le lezioni del corso",
+	"quando usa un allegato dei badge, il tutor dice allo studente il nome del file e che fa parte degli allegati del corso",
+	"ogni utente può fare al massimo 60 domande all'ora (testo e voce insieme); una domanda oltre 4000 caratteri è rifiutata e della conversazione precedente il server considera solo gli ultimi 20 messaggi",
+	"la dettatura a voce funziona solo con «Abilita dettatura vocale» acceso e la lettura della risposta solo con «Abilita lettura vocale dei messaggi» acceso, controllati dal server; un errore della lettura vocale lascia comunque la risposta scritta; con l'opzione relativa la risposta a una domanda dettata parte da sola",
+	"ogni domanda, anche fallita, viene registrata con risposta, contesto usato, corso, lezione e studente; un errore di registrazione non blocca la risposta",
+	"il registro delle domande lo leggono e gestiscono per intero System Manager e Moderator (quindi i Gestore); un Course Creator lo legge in sola lettura solo per i corsi di cui è istruttore; gli studenti non hanno alcun permesso",
+	"la lingua delle risposte e il comportamento del tutor seguono il prompt «Tutor AI» modificabile dal pannello Prompt AI (scheda ai-platform)",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/ai/tutor/*",
+	"apps/os_lms/os_lms/os_lms/ai/audio/*",
+	"apps/os_lms/os_lms/os_lms/doctype/lmsa_query_log/*",
+	"frontend/src/oslms/components/AiFixedButtons.vue",
+	"frontend/src/oslms/components/ai/AiChatButton.vue",
+	"frontend/src/oslms/components/ai/ChatBot.vue",
+	"frontend/src/oslms/components/ai/MicButton.vue",
+	"frontend/src/oslms/components/ai/SpeakButton.vue",
+	"frontend/src/oslms/pages/AiFixedButton.vue",
+	"frontend/src/oslms/pages/Courses/AiFixedButton.vue",
+	"frontend/src/oslms/composables/useSpeechToText.js",
+	"frontend/src/oslms/composables/useTextToSpeech.js",
+	"frontend/src/oslms/utils/audioApi.js",
+	"frontend/src/oslms/utils/audioConvert.js",
+	"frontend/src/stores/aiChat.js",
+	"frontend/src/stores/aiContext.js",
+]
+upstream_watch = [
+	"AI", "assistant", "tutor", "chatbot", "copilot", "RAG", "LLM", "openai", "speech to text", "text to speech",
+	"DesktopLayout.vue", "MobileLayout.vue", "App.vue afterEach", "courseName route param", "Lesson.vue",
+	"LessonForm.vue", "reka-popper-content-wrapper", "z-index popper",
+]
+data = [
+	"doctype LMSA Query Log (course, lesson, member, question, answer, context, status Pending/Answered/Failed) con permission_query_conditions e has_permission propri",
+	"impostazioni in LMSA Settings: enabled (Rag Tutor), stt_enabled, stt_provider, stt_model, tts_enabled, tts_provider, tts_model, tts_voice, tts_autoplay_on_stt; flag ai_enabled in get_lms_settings",
+	"endpoint os_lms.os_lms.ai.tutor.api.ask e ask_audio; os_lms.os_lms.ai.audio.api.transcribe e synthesize (120 chiamate all'ora, audio fino a 25 MB, lettura fino a 5000 caratteri)",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/ai/tutor/tests/test_api.py",
+	"apps/os_lms/os_lms/os_lms/ai/audio/tests/test_api.py",
+	"apps/os_lms/os_lms/os_lms/ai/audio/tests/test_pipeline.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_2026_10.py",
+]
+notes = """
+- Il tutor risponde con il fornitore e il modello «Chat» della sezione Simulazioni AI
+  (resolve_provider("chat")), non con il campo «LLM Model» della sezione Rag Tutor, che oggi non
+  è letto da nessuno: vedi la scheda ai-platform.
+- L'interruttore AI nasconde solo il pulsante; lato server lo controlla la ricerca nelle lezioni
+  (per lo studente con lezioni completate risponde «LMSA is not enabled»), non la ricerca su tutto
+  il corso usata per istruttori e moderatori.
+- I pulsanti flottanti sono montati una volta nei due layout (DesktopLayout, MobileLayout): al
+  merge di v2.61.0 i layout sono stati riscritti e <AiFixedButtons /> va rimesso come ultimo figlio
+  del contenitore radice. Il selettore dello z-index dei popover copre sia Radix sia reka-ui
+  (frappe-ui 1.0-beta).
+- Lo spostamento sopra la barra «Continua» del corso su telefono usa lo store mobileCta (scheda
+  course-page-mobile).
+- Il contesto si sincronizza dalla rotta con il parametro :courseName; se un merge lo rinomina,
+  adeguare aiContext.syncFromRoute."""
+history = [
+	{ date = "2026-03-16", ref = "1cddda666", summary = "creazione: componente chatbot e doctype AI (3acbde924)" },
+	{ date = "2026-06-04", ref = "e1aa5e126", summary = "pulsante fisso del tutor con il contesto del corso" },
+	{ date = "2026-06-17", ref = "7e24bd4d9", summary = "il tutor usa anche i file allegati ai badge del corso, citandone il nome (d08aa3cc8)" },
+	{ date = "2026-06-23", ref = "6b6726c13", summary = "dettatura vocale e lettura ad alta voce delle risposte" },
+	{ date = "2026-07-13", ref = "099e173c9", summary = "pulsanti AI anche su telefono" },
+	{ date = "2026-10-23", ref = "a8e3fbcec", summary = "OWASP: domanda autorizzata sul corso e sulla lezione, limiti per utente e lunghezza della conversazione" },
+	{ date = "2026-10-28", ref = "b624419ac", summary = "registro delle domande ristretto ai corsi del Course Creator, in sola lettura" },
+]

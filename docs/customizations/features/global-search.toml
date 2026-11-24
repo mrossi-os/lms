@@ -1,0 +1,74 @@
+id = "global-search"
+title = "Ricerca globale (Cmd+K e pagina /search)"
+status = "active"
+summary = """
+La ricerca globale, dalla palette Cmd+K o dalla pagina /search, trova corsi, classi, programmi, quiz,
+compiti e lezioni, e mostra a ciascuno solo ciò che può davvero aprire. Il clic su un risultato apre la
+pagina giusta per il ruolo: lo studente la lezione, chi gestisce l'editor. Etichette e colori sono in
+italiano e seguono il tema."""
+why = """
+L'upstream indicizzava solo corsi, classi e offerte di lavoro, mandava ogni risultato diverso da un
+corso su una pagina di classe inesistente e aveva tolto la pagina /search. Giudicava i corsi dal valore
+dell'indice, fermo all'ultima scrittura: studenti e Valutatori trovavano corsi cancellati o in bozza e
+il clic apriva una pagina vuota. Senza filtro, il testo delle domande dei compiti era leggibile da
+chiunque nei risultati."""
+roles = ["Student", "Moderator", "Course Creator", "Docente", "Valutatore"]
+behaviour = [
+	"la ricerca trova, oltre a corsi e classi, programmi, quiz, compiti e lezioni (nel titolo, nei tag e nel testo della lezione)",
+	"un corso compare solo se esiste ancora; pubblicato lo vede chiunque, in bozza solo chi ne può aprire la pagina (autori e istruttori, Docente, Valutatori delle sue classi, membri di un programma che lo contiene, iscritti)",
+	"un corso rinominato si trova e si vede con il nome attuale, non con quello di quando era stato indicizzato",
+	"una lezione compare se il suo corso è pubblicato; di un corso in bozza la vedono solo il Moderator, il proprietario e i Course Creator istruttori del corso",
+	"quiz e compiti compaiono a Moderator, Course Creator e Docente; allo studente compaiono solo i quiz dei corsi a cui è iscritto, mai i compiti",
+	"un programma pubblicato compare a tutti, in bozza solo a Moderator, Course Creator e Docente",
+	"una classe compare anche allo studente iscritto e al Valutatore della classe quando non è pubblicata o è già iniziata",
+	"una lezione si apre nella sua posizione del corso (capitolo e lezione), altrimenti sulla pagina del corso; un quiz si apre per lo studente nella lezione che lo contiene e per moderatore o istruttore nell'editor del quiz; un compito apre il modulo del compito; un programma apre il modulo per moderatore o istruttore e la pagina del programma per gli altri",
+	"un risultato senza pagina da aprire non fa nulla al clic",
+	"mentre si digita, l'ultima riga della palette è «Search for “<testo>”», che apre la pagina /search con la ricerca",
+	"cercando dentro una categoria della palette (Jump to > Corsi e simili) escono solo risultati di quel tipo",
+	"segnaposto della palette e titoli dei gruppi sono in italiano anche dopo un ricaricamento completo; le parole trovate sono evidenziate con i colori del tema, leggibili anche nel tema scuro",
+]
+areas = [
+	"apps/os_lms/os_lms/overrides/sqlite.py",
+	"frontend/src/pages/Search/*",
+	"frontend/src/oslms/utils/searchRoutes.ts",
+	"apps/os_lms/os_lms/os_lms/tests/test_search_course_visibility.py",
+]
+upstream_watch = [
+	"command palette", "CommandPalette.vue", "CommandPaletteGroup.vue", "paletteTypes.ts", "routeForSearchHit",
+	"categories.ts", "search_sqlite", "LearningSearch", "INDEXABLE_DOCTYPES", "describes_its_own_doc",
+	"get_grouped_results", "can_access_batch", "CATEGORY_DOCTYPES", "learning.db", "Search.vue", "/search",
+	"Jump to", "mark",
+]
+data = [
+	"hook sqlite_search os_lms.overrides.sqlite.CustomLearningSearch (LMS Course, LMS Program, LMS Quiz, LMS Assignment, Course Lesson nell'indice learning.db)",
+	"override di lms.command_palette.search_sqlite in os_lms.os_lms.override_api (get_grouped_results_custom, can_find_course, can_access_quiz, can_access_program, can_access_lesson, can_access_batch_custom)",
+	"after_migrate os_lms.setup.rebuild_search_index; rotta /search in frontend/src/routes.js",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_search_course_visibility.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_override_signatures.py",
+]
+notes = """
+- searchRoutes.ts è l'unica mappa doctype -> pagina, condivisa da palette e pagina /search: un nuovo
+  doctype indicizzato si aggiunge lì. Dal merge di v2.62.0 l'upstream ha un suo routeForSearchHit
+  (paletteTypes.ts); restano nostri la lezione aperta nella sua posizione e il quiz nella lezione per
+  lo studente.
+- Etichette costruite una volta al setup restano in inglese al ricaricamento completo (le traduzioni
+  arrivano dopo): per questo il segnaposto passa da __() nel template e i titoli dei gruppi sono
+  tradotti al rendering in CommandPaletteGroup. Il titolo del risultato è v-html: la traduzione deve
+  stare nei dati.
+- Per togliere dall'indice le righe di corsi cancellati basta cancellare learning.db del sito e
+  lasciarlo ricostruire: una ricostruzione con l'indice presente non cancella nulla. Classi e
+  programmi usano ancora il valore pubblicato dell'indice (non richiesto).
+- La riga «Search for» è in fondo e non guida più il gruppo (decisione al merge di v2.62.0): tre test
+  upstream che si aspettano un elenco vuoto o un numero preciso di righe restano incompatibili.
+- La voce Jobs tolta dall'elenco Jump to è nella scheda hidden-upstream-features."""
+history = [
+	{ date = "2026-03-17", ref = "30c73b518", summary = "creazione: programmi, quiz e compiti nell'indice di ricerca" },
+	{ date = "2026-04-16", ref = "3cf457179", summary = "palette Cmd+K adattata alle nuove voci" },
+	{ date = "2026-07-20", ref = "61831abd7", summary = "etichette della palette tradotte anche dopo il ricaricamento" },
+	{ date = "2026-09-07", ref = "0192e5127", summary = "risultati aperti sulla pagina giusta e filtrati per l'utente (searchRoutes.ts)" },
+	{ date = "2026-09-24", ref = "335f9aa8d", summary = "merge v2.62.0: allineamento al routeForSearchHit upstream, riga «Search for» in fondo" },
+	{ date = "2026-10-05", ref = "49ffb36ff", summary = "corsi controllati sui corsi veri: niente cancellati né bozze non apribili" },
+	{ date = "2026-10-05", ref = "deb7b90b5", summary = "scartate le righe dell'indice che mostravano un corso con il vecchio titolo" },
+]

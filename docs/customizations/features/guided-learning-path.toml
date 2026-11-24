@@ -1,0 +1,79 @@
+id = "guided-learning-path"
+title = "Percorso guidato: ordine delle lezioni e obbligo di visione"
+status = "active"
+summary = """
+Chi prepara un corso può imporre un percorso: le lezioni si aprono in ordine, il quiz si sblocca
+solo dopo aver completato le lezioni che lo precedono, e una lezione conta come completata solo se
+lo studente l'ha davvero aperta e, quando è richiesto, ne ha guardato il video. Le regole valgono per
+gli studenti iscritti; chi gestisce il corso le attraversa liberamente."""
+why = """
+Il cliente fa formazione e deve poter dimostrare che lo studente ha seguito i contenuti in ordine,
+senza saltare quiz o video. L'upstream non aveva un blocco sequenziale fino a v2.62.0 e non ha
+tuttora il blocco del quiz a completamento; inoltre completava una lezione su semplice chiamata API,
+senza che fosse mai stata aperta (audit OWASP H-1, 2026-10-29), e accettava i dettagli SCORM
+inviati dal browser su qualunque lezione (audit del 2026-10-28)."""
+roles = ["Student", "Moderator", "Course Creator", "Docente", "Valutatore"]
+behaviour = [
+	"con «Enforce Quiz on Completion» attivo nelle impostazioni del corso, lo studente iscritto che apre la lezione con il quiz prima di aver completato tutte le lezioni precedenti vede, al posto del quiz, la schermata «Quiz bloccato» con il motivo «Completa tutte le lezioni precedenti prima di accedere al quiz.»",
+	"il blocco del quiz vale sia per il quiz inserito come blocco nel contenuto della lezione sia per il quiz collegato alla lezione nel vecchio formato",
+	"l'ordine delle lezioni è quello dell'upstream (interruttore «Enforce Lesson Completion» del corso); un corso che aveva acceso il vecchio interruttore os_lms «Enforce Lesson Order» lo ritrova acceso dopo l'aggiornamento",
+	"moderatori, Course Creator, istruttori del corso e il Valutatore di una classe che contiene il corso non sono mai bloccati né dall'ordine delle lezioni né dal quiz",
+	"l'app mobile riceve con la lezione gli stessi esiti (lezione accessibile, quiz accessibile, ordine imposto); a chi è esente il pulsante «avanti» non resta disattivato",
+	"il server completa una lezione solo se l'ha consegnata allo stesso utente negli ultimi 7 giorni (pagina della lezione o player SCORM); altrimenti rifiuta con «Apri la lezione prima di segnarla come completata.»",
+	"con l'obbligo di visione del video attivo nelle impostazioni, una lezione con un video YouTube, Vimeo o caricato si completa solo dopo che la pagina ha registrato un tempo di visione per quella lezione; altrimenti il server rifiuta con «Guarda il video della lezione prima di segnarla come completata.»",
+	"i dettagli SCORM inviati dal browser contano solo sulle lezioni di un capitolo SCORM: su una lezione normale il completamento passa dai controlli consueti, quiz e compiti compresi",
+	"le regole di completamento valgono solo per chi è iscritto al corso: per lo staff che guarda una lezione non si registra nulla, come nell'upstream",
+	"un errore non fatale del player (per esempio Vimeo che rifiuta la lettura dei metadati di un video non in elenco) non disattiva l'obbligo di vedere il video: il ripiego sul timer di permanenza scatta solo se il player non è mai diventato pronto, oppure dopo 15 secondi senza avvio",
+	"a fine video il tempo di visione viene scritto una sola volta",
+	"su un sito con il tempo di permanenza della lezione a 0 o vuoto, l'aggiornamento lo porta a 30 secondi, così le impostazioni tornano a salvarsi",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/lesson_progress.py",
+	"apps/os_lms/os_lms/patches/v0_0_5/*",
+	"apps/os_lms/os_lms/patches/v0_0_6/*",
+]
+upstream_watch = [
+	"enforce_lesson_completion", "get_lesson_gate", "enforces_lesson_completion", "LockedLessonNotice",
+	"lesson.data.locked", "quiz lock", "enforce_quiz_on_completion", "get_lesson", "save_progress",
+	"mark_lesson_progress", "get_scorm_playback", "scorm_details", "enforce_video_completion",
+	"track_video_watch_duration", "markProgress", "lesson_dwell_time", "shouldEngageFallbackOnPlayerError",
+	"Lesson.vue", "lessonProgress.ts",
+]
+data = [
+	"custom field LMS Course.enforce_quiz_on_completion (Check), interruttore in OsCourseSettings",
+	"custom field LMS Course.enforce_lesson_order (Check): dati conservati ma non più letti, copiati una volta in enforce_lesson_completion dalla patch os_lms.patches.v0_0_6.copy_enforce_lesson_order",
+	"campi upstream usati: LMS Course.enforce_lesson_completion, LMS Settings.enforce_video_completion e lesson_dwell_time (riportato a 30 da os_lms.patches.v0_0_5.backfill_lesson_dwell_time)",
+	"chiave di cache os_lms:lesson_open:<utente>:<lezione> (7 giorni) scritta da get_lesson e get_scorm_playback",
+	"override in hooks.py: lms.lms.utils.get_lesson, course_lesson.save_progress, lms.lms.api.mark_lesson_progress, course_chapter.get_scorm_playback; evaluate_quiz_access ed evaluate_lesson_access in os_lms/api.py",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_lesson_completion.py",
+	"frontend/src/tests/lessonProgress.test.ts",
+]
+notes = """
+- Il blocco del quiz è perso già una volta (merge upstream 1f5978236 del 2026-06-04) e ripristinato il
+  2026-09-07 in d88fc97f4: senza le schermate in Lesson.vue gli interruttori restano configurabili ma
+  non fanno nulla. Le condizioni sono innestate sulle catene v-if esistenti per tenere piccolo il
+  conflitto.
+- Decisione del committente al merge di v2.62.0 (F5): l'ordine delle lezioni lo impone l'upstream lato
+  server; nostro resta solo il blocco del quiz. Le chiavi lesson_access ed enforce_lesson_order di
+  get_lesson restano perché le legge l'app mobile, calcolate sul gate upstream.
+- Il blocco del quiz è solo nella pagina della lezione (e nell'app tramite get_lesson): né la pagina
+  diretta del quiz né submit_quiz lo controllano.
+- Completamento (H-1): se l'upstream riscrive markProgress o trackVideoWatchDuration in Lesson.vue,
+  rimettere l'ordine: prima i tempi di visione, poi save_progress con la lezione fissata. Il controllo
+  ferma chi chiama l'API senza aprire la lezione, non chi apre la lezione e salta il video (correzione
+  minima scelta il 2026-10-29).
+- La patch v0_0_5 nasce da un problema generale: un campo validato aggiunto dall'upstream a un Single
+  non riceve il default sui record esistenti e blocca ogni salvataggio delle impostazioni.
+- Dopo un merge che tocca get_lesson verificare che il ramo os_lms sia ancora raggiungibile (vedi
+  test_override_signatures), non solo presente."""
+history = [
+	{ date = "2026-03-27", ref = "9179fc83c", summary = "creazione: accesso sequenziale a lezioni e quiz (enforce_lesson_order, enforce_quiz_on_completion)" },
+	{ date = "2026-07-01", ref = "bffa35eac", summary = "patch che riporta a 30 secondi il tempo di permanenza della lezione, per sbloccare il salvataggio delle impostazioni" },
+	{ date = "2026-09-07", ref = "d88fc97f4", summary = "blocco di lezioni e quiz ripristinato dopo la perdita nel merge del 2026-06-04" },
+	{ date = "2026-09-08", ref = "a931cf98b", summary = "un errore non fatale del player non disattiva più l'obbligo di vedere il video" },
+	{ date = "2026-09-24", ref = "d0ab8953d", summary = "merge v2.62.0: ordine delle lezioni lasciato all'upstream (enforce_lesson_completion), nostro solo il blocco del quiz" },
+	{ date = "2026-10-28", ref = "03164a13b", summary = "dettagli SCORM accettati solo sulle lezioni SCORM" },
+	{ date = "2026-10-29", ref = "402aca307", summary = "OWASP H-1: lezione completata solo dopo averla aperta e, con l'obbligo video, dopo un tempo di visione" },
+]

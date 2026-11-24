@@ -11,7 +11,6 @@
 					class="overflow-hidden rounded-lg p-3 shadow-2xl ring-1 ring-black ring-opacity-5"
 				>
 					<div class="flex items-center justify-center gap-x-2">
-						<!-- OSLMS-CUSTOM: search placeholder and Upload Image label wrapped in __() -->
 						<TextInput
 							type="text"
 							:placeholder="__('search by keyword')"

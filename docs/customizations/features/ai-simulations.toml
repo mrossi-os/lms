@@ -1,0 +1,112 @@
+id = "ai-simulations"
+title = "Simulazioni AI (chat e voce)"
+status = "active"
+summary = """
+Lo studente si allena in una conversazione con un personaggio interpretato dall'AI (per esempio un
+cliente in una trattativa), in chat o a voce, partendo dal pulsante flottante del corso. Alla fine
+il Coach AI scrive un resoconto con un punteggio indicativo per criterio, punti di forza, cose da
+migliorare e lezioni consigliate. Docenti, valutatori e gestori preparano gli scenari e gli schemi
+di valutazione, rivedono le sessioni e pubblicano una propria versione del resoconto; nelle
+simulazioni «con esito» sono loro, mai l'AI, a decidere se lo studente l'ha superata. I limiti
+d'uso per studente si impostano dalla piattaforma."""
+why = """
+Richiesta del cliente per la formazione commerciale: esercitare colloqui realistici con un
+riscontro immediato. L'upstream non ha nulla di simile. La revisione umana e la decisione
+dell'esito da parte di una persona discendono dalla politica AI (AI Act, certificazione ESG del
+2026-10-28) e dai test di imparzialità sul Coach (scheda ai-bias-tests)."""
+roles = ["Student", "Docente", "Course Creator", "Valutatore", "Gestore", "System Manager", "Moderator"]
+behaviour = [
+	"con «Simulazioni AI» spente (Impostazioni > AI) il pulsante non compare e il server rifiuta avvii e messaggi, anche delle sessioni già aperte",
+	"lo studente vede e avvia dal pulsante flottante del corso solo gli scenari pubblicati dei corsi a cui è iscritto, con l'elenco dei propri tentativi per scenario",
+	"prima dell'avvio, nell'intestazione della chat e sopra il resoconto lo studente è avvisato che il personaggio e il resoconto sono generati dall'AI",
+	"in chat la sessione ha il tempo dello scenario (0 = senza limite) misurato senza contare l'attesa delle risposte dell'AI, e un tetto di messaggi per sessione: superato uno dei due, il personaggio risponde un'ultima volta chiudendo la conversazione e lo studente non può più scrivere; la sessione finisce come completata con «Termina» o allo scadere del tempo (la pagina la chiude da sola), mentre uscendo prima, chiudendo la scheda o restando inattivi 30 minuti finisce come abbandonata; il resoconto del Coach si genera solo per le sessioni completate",
+	"la simulazione a voce parte solo con «Simulazioni vocali realtime» attive e uno scenario che la prevede, e solo dal proprietario della sessione; l'audio va direttamente dal browser al fornitore AI e non passa dal server; i nuovi scenari nascono in modalità chat",
+	"il Coach non vede il nome dello studente: nel testo che valuta i nomi del profilo sono sostituiti da [NOME], mentre la trascrizione salvata li conserva per i docenti",
+	"lo studente vede il punteggio indicativo dell'AI e i criteri e, quando un docente la pubblica, anche la versione del docente (due schede, Docente e AI); per ogni tentativo vale un solo punteggio, quello del docente se pubblicato; può rifare la simulazione dal resoconto. La versione del docente parte come copia di quella dell'AI, si modifica in bozza e diventa visibile solo alla pubblicazione; la versione dell'AI non si modifica mai; nelle simulazioni con esito il docente deve scegliere superata o non superata (con motivo) prima di pubblicare",
+	"Gestore, System Manager e Administrator gestiscono tutto; Docente o Course Creator istruttore di un corso ne gestisce scenari, sessioni, report e versioni del docente; il Valutatore di una classe gestisce gli scenari dei corsi della classe ma vede e valuta solo le sessioni dei suoi studenti; il solo Moderator non ha accesso; tutto è controllato anche dal server",
+	"la scheda Simulazioni del dettaglio corso (simulazioni, sessioni da rivedere, versione del docente ed esito) la vede solo chi gestisce le simulazioni di quel corso, Valutatore compreso, e solo con le simulazioni attive",
+	"quando il resoconto di una sessione con esito è pronto, istruttori del corso e valutatori della classe dello studente ricevono una notifica; ogni 7 giorni, finché la versione del docente non è pubblicata, ricevono un promemoria in piattaforma e via email; lo studente è avvisato alla prima pubblicazione",
+	"System Manager e Gestore impostano dalla scheda «Limiti simulazioni AI» messaggi al minuto, caratteri per messaggio, messaggi per sessione, avvii all'ora, sessioni al giorno, collegamenti vocali per sessione e all'ora e durata massima della voce; ogni limite vale almeno 1 (non esiste «illimitato»)",
+	"il report del docente mostra i punteggi visti dagli studenti (con «AI X → docente Y» sulle sessioni riviste), la percentuale di superamento solo sugli esiti decisi da una persona e il miglioramento fra primo e ultimo tentativo per studente e scenario",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/ai/simulations/*",
+	"apps/os_lms/os_lms/os_lms/ai/realtime/*",
+	"apps/os_lms/os_lms/os_lms/doctype/lmsa_criterion_score/*",
+	"apps/os_lms/os_lms/os_lms/doctype/lmsa_debrief_*",
+	"apps/os_lms/os_lms/os_lms/doctype/lmsa_evaluation_schema/*",
+	"apps/os_lms/os_lms/os_lms/doctype/lmsa_evaluation_trace/*",
+	"apps/os_lms/os_lms/os_lms/doctype/lmsa_quality_evaluation/*",
+	"apps/os_lms/os_lms/os_lms/doctype/lmsa_schema_criterion/*",
+	"apps/os_lms/os_lms/os_lms/doctype/lmsa_simulation_*",
+	"frontend/src/oslms/components/simulations/*",
+	"frontend/src/oslms/components/ai/Settings/SimulationLimitsSettings.vue",
+	"frontend/src/oslms/composables/realtime/*",
+	"frontend/src/oslms/composables/useRealtimeSession.js",
+	"frontend/src/oslms/composables/useSimulation*.js",
+	"frontend/src/oslms/composables/useEvaluation.js",
+	"frontend/src/oslms/pages/Simulation/*",
+	"frontend/src/oslms/pages/Courses/CourseSimulations.vue",
+	"frontend/src/oslms/pages/Courses/CourseStudentSimulations.vue",
+	"frontend/src/oslms/pages/Courses/LessonSimulation.vue",
+	"apps/os_lms/os_lms/templates/emails/simulation_*",
+	"apps/os_lms/os_lms/patches/v0_0_3/*",
+	"apps/os_lms/os_lms/patches/v0_0_4/*",
+	"cypress/e2e/simulations.cy.js",
+]
+upstream_watch = [
+	"simulation", "role play", "roleplay", "AI coach", "debrief", "evaluation schema", "rubric", "voice",
+	"realtime", "webrtc", "CourseDetail tabs", "routes.js", "NotFound route", "AI disclosure", "AI Act",
+	"teacher review", "grading AI",
+]
+data = [
+	"doctype LMSA Simulation Scenario (con has_human_outcome, time_limit_minutes, modality, status Draft/Published/Archived), LMSA Simulation Session, LMSA Simulation Turn, LMSA Simulation Debrief con figli LMSA Debrief Strength / Improvement / Recommendation e LMSA Criterion Score, LMSA Evaluation Schema con LMSA Schema Criterion, LMSA Simulation Learning Objective, LMSA Simulation Seed Variation, LMSA Evaluation Trace, LMSA Quality Evaluation",
+	"single LMSA Simulation Limits (8 limiti; DocPerm di lettura e scrittura al Gestore da setup_gestore_role_permissions), creato al migrate da limits.ensure_simulation_limits",
+	"impostazioni in LMSA Settings: simulations_enabled, fornitori e modelli di chat e debrief, ordine di fallback, realtime_enabled, realtime_provider, realtime_model, realtime_voice, turn_detection",
+	"scheduler: */10 reap_stale_sessions, notifications.send_outcome_reminders; doc_events LMSA Simulation Session before_insert validate_quota; modelli email simulation_*",
+	"rotte SPA /simulations (InstructorReports, ScenarioCreate, ScenarioEdit, EvaluationSchemas, SimulationPlay, SimulationDebrief) innestate in routes.js",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/ai/simulations/tests/test_access.py",
+	"apps/os_lms/os_lms/os_lms/ai/simulations/tests/test_api.py",
+	"apps/os_lms/os_lms/os_lms/ai/simulations/tests/test_orchestrator.py",
+	"apps/os_lms/os_lms/os_lms/ai/simulations/tests/test_debrief_job.py",
+	"apps/os_lms/os_lms/os_lms/ai/simulations/tests/test_instructor_api.py",
+	"apps/os_lms/os_lms/os_lms/ai/simulations/tests/test_notifications.py",
+	"apps/os_lms/os_lms/os_lms/ai/realtime/tests/test_realtime_api.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_simulation_limits.py",
+	"cypress/e2e/simulations.cy.js",
+]
+notes = """
+- Il ciclo di vita della sessione è cambiato il 2026-07-16 (3337b7bef, b4e5bcea9): allo scadere del
+  tempo la sessione si chiude da sola come completata e un'uscita anticipata è un abbandono, con un
+  job ogni 10 minuti che chiude le sessioni inattive da 30. Il 2026-10-29 (134fc3fe7) si è aggiunto
+  il tetto di messaggi per sessione (OWASP H-3) e la durata della voce è passata da
+  LMSA Settings.realtime_max_session_seconds a LMSA Simulation Limits.voice_max_session_seconds.
+  La nota di memoria simulations_natural_close_limits descrive lo stato del 2026-07-10 (nessuna
+  chiusura automatica, turni non limitati) ed è superata su questi punti.
+- Il tempo attivo esclude la latenza dell'AI; max_turns dello scenario esiste ancora ma guida solo
+  il banco di prova automatico (eval/runner.py) e il campo è nascosto nell'editor.
+- La direttiva di chiusura «[REGIA] ...» va sia nel system prompt sia, come ultima istruzione, nel
+  messaggio dello studente inviato al modello: nel solo system prompt veniva ignorata.
+- Regole di accesso tutte in ai/simulations/access.py (decise il 2026-11-03, fase 5 di
+  docs/ai-simulator/PIANO-esito-e-punteggio-coach.md). Valutatore e Docente senza Course Creator non
+  hanno DocPerm sui doctype delle simulazioni: lavorano solo dalla SPA. Le query sui figli della
+  versione del docente devono filtrare parentfield (riusano i doctype figli dell'AI).
+- Il prompt del Coach si aggiorna dal codice al migrate solo se il record non è stato modificato dal
+  pannello (scheda ai-platform); ogni modifica del prompt, del modello o del fornitore del Coach
+  richiede un giro dei test di imparzialità prima del rilascio (scheda ai-bias-tests).
+- Sul sito di sviluppo simulations_enabled è spento e i test cancellano sessioni, resoconti e schemi:
+  per le prove nel browser servono dati di esempio e l'interruttore va rimesso com'era.
+- Voci collegate: course-detail-simulations-tab, router-simulation-routes (merge v2.61/v2.62:
+  rotte riaggiunte in coda a routes.js con marcatore)."""
+history = [
+	{ date = "2026-05-18", ref = "9abf758da", summary = "creazione: scenari, sessioni e resoconto delle simulazioni AI (sprint 1 e 2)" },
+	{ date = "2026-06-09", ref = "38e370546", summary = "creazione degli scenari con l'AI e prompt configurabili" },
+	{ date = "2026-06-30", ref = "72932757f", summary = "simulazioni a voce in tempo reale (OpenAI Realtime, poi Gemini Live)" },
+	{ date = "2026-07-10", ref = "bc2aa9fc1", summary = "chiusura naturale della chat allo scadere del tempo dello scenario" },
+	{ date = "2026-07-16", ref = "3337b7bef", summary = "sessioni chiuse in automatico (completata o abbandonata), resoconto solo se completata" },
+	{ date = "2026-10-29", ref = "134fc3fe7", summary = "limiti di spesa per studente impostabili dal Gestore (OWASP)" },
+	{ date = "2026-11-03", ref = "f4f92e460", summary = "l'AI non decide più superata/non superata; esito deciso da una persona (0cf9a97e0), versione del docente (4d9e6be38), accesso per Gestore, Docente e Valutatore (c0740a705), notifiche (8282eb5d9)" },
+	{ date = "2026-11-04", ref = "d7b680e9b", summary = "il nome dello studente è nascosto al Coach" },
+]

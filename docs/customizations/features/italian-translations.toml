@@ -1,0 +1,91 @@
+id = "italian-translations"
+title = "Interfaccia in italiano"
+status = "active"
+summary = """
+Tutta la piattaforma si legge in italiano: le pagine dell'LMS, i testi fissi dei componenti di
+frappe-ui (compreso il nuovo editor di testo), il calendario dei selettori di data, le date
+relative («ieri», «3 giorni fa»), le email e le notifiche prodotte in background. Questa scheda
+raccoglie i meccanismi comuni e i ritocchi di sola traduzione sparsi nelle pagine upstream che non
+hanno una funzionalità propria."""
+why = """
+Il cliente lavora solo in italiano e la regola è che ogni testo visibile sia tradotto, senza
+eccezioni (decisione dell'utente del 2026-09-24, che ha superato la scelta del 2026-07-13 di
+lasciare in inglese la barra dell'editor e il calendario). L'upstream lascia molti testi fissi in
+inglese, frappe-ui non ha agganci per le traduzioni in vari componenti e i job in background di
+Frappe girano in inglese se il sito non ha la lingua in site_config."""
+roles = []
+behaviour = [
+	"a ogni migrate la lingua Italiano esiste ed è abilitata",
+	"ogni testo visibile della SPA passa per __() e ha una traduzione italiana in lms/translations/it.csv, lms/locale/it.po o apps/os_lms/os_lms/translations/it.csv; quando it.po ha una traduzione non vuota, prevale sul CSV",
+	"i testi inglesi fissi del nuovo editor di frappe-ui (scelta dei colori, popup dei link, inserimento di incorporamenti, galleria e caricamento immagini, controlli di media e video, visualizzatore di immagini, blocco di codice, comandi «/», indice) e la descrizione del dialogo Impostazioni compaiono in italiano senza copiare i file di frappe-ui; se frappe-ui cambia uno di quei testi, la build e il server di sviluppo avvisano",
+	"le date relative compaiono in italiano in tutta l'app («proprio ora», «ieri», «domani», «3 giorni fa», «tra 2 ore»)",
+	"il calendario dei selettori di data e ora ha le iniziali dei giorni e i mesi in italiano e il pulsante Oggi/Adesso tradotto",
+	"email, notifiche e altri testi prodotti da job in background o dallo scheduler escono nella lingua dell'utente o, in mancanza, in quella del sito, non in inglese",
+	"le etichette costruite una volta sola al caricamento (es. configurazione degli account email) restano in italiano anche dopo un ricaricamento completo della pagina",
+	"nei messaggi di elenco vuoto anche il nome dell'entità è tradotto (niente «Nessun Courses trovato»)",
+	"titoli, sottotitoli e assi dei grafici della pagina Statistiche sono tradotti; i nomi delle serie restano chiavi dei dati",
+	"sono tradotti i ritocchi nelle pagine upstream senza funzionalità propria: segnaposto «Select option» (evento di valutazione, prenotazione della valutazione, aggiungi valutazione e i suoi tipi), modulo dell'esercizio di programmazione, immagine del badge, ricerca e caricamento di immagini di copertina e Unsplash, schede «Video N» delle statistiche video, titolo e campi del capitolo, pulsante «Iscrivi» nell'iscrizione di uno studente, nomi dei colori dei campioni letti dagli screen reader",
+	"le date della lista degli esercizi di programmazione hanno i mesi in italiano",
+	"la percentuale di caricamento delle immagini mostra il numero («Caricamento 40%»), non un segnaposto",
+	"le nostre traduzioni del catalogo it.po sono registrate in docs/customizations/translations-it.toml e il controllo C7 segnala quelle che un merge upstream ha perso o cambiato",
+]
+areas = [
+	"apps/os_lms/os_lms/translations/*",
+	"frontend/oslms-vite/translate-frappe-ui.js",
+	"frontend/src/oslms/utils/index.js",
+	"frontend/src/overrides/frappe-ui/src/components/DatePicker/CalendarPanel.vue",
+]
+upstream_watch = [
+	"translations", "it.csv", "it.po", "main.pot", "crowdin", "gettext", "__(", "translation.js",
+	"timeAgo", "useTimeAgo", "format.js", "dayjs locale", "CalendarPanel", "DatePicker", "WEEKDAYS",
+	"molecules/editor", "SettingsDialog", "EmptyStateLayout", "Statistics.vue", "before_job", "set_user_lang",
+]
+data = [
+	"cataloghi lms/translations/it.csv (CSV a due colonne, l'ultima occorrenza di una chiave vince), lms/locale/it.po (gettext, misto upstream e nostro) e apps/os_lms/os_lms/translations/it.csv",
+	"docs/customizations/translations-it.toml (generato da scripts/customization_translations.py --write, base v2.66.0) per il controllo C7",
+	"hook before_job = os_lms.os_lms.utils.set_job_language e after_migrate os_lms.setup.ensure_italian_language (scheda oslms-core per i file)",
+	"plugin Vite os-translate-frappe-ui (regole per file dentro node_modules/frappe-ui/src) e alias @/utils verso src/oslms/utils/index.js (scheda frappe-ui-overrides)",
+]
+tests = [
+	"scripts/tests/test_translations.py",
+]
+notes = """
+- Precedenza a runtime: msgstr di it.po se non è vuoto, altrimenti it.csv, altrimenti inglese.
+  Concettualmente la fonte è it.csv; quando si corregge una traduzione controllare in it.po lo
+  stesso msgid esatto e allinearlo se non è vuoto. Le modifiche a it.po richiedono la ricompilazione
+  del .mo e clear-cache; quelle al CSV solo clear-cache (e un ricaricamento forzato della SPA, che
+  tiene le traduzioni in cache). Le chiavi distinguono maiuscole e punteggiatura.
+- Le stringhe di Frappe che escono in inglese perché frappe/locale/it.po le ha vuote si correggono
+  aggiungendo lo stesso msgid, non vuoto, in lms/locale/it.po: il catalogo dell'app vince su quello
+  di Frappe.
+- Etichette costruite una sola volta al caricamento (ref, array, costanti di modulo) valutano __()
+  prima che le traduzioni arrivino e restano in inglese dopo un ricaricamento completo, mentre dopo
+  un salvataggio a caldo sembrano corrette: usare getter o __() al momento del render. Mai usare
+  str() del plugin su costanti di modulo.
+- __() restituisce un oggetto con .format(...) quando il testo ha segnaposto {0}, e non accetta un
+  array di argomenti: usare .format(n).
+- Plugin os-translate-frappe-ui: dopo ogni aggiornamento di frappe-ui lanciare la build e leggere gli
+  avvisi «[os-translate-frappe-ui] … not found»; aggiornare l'elenco e aggiungere le chiavi in it.csv.
+  In sviluppo gli id dei moduli hanno ?v=<hash>. Alcuni popup sono montati in un'istanza Vue separata
+  senza le proprietà globali: il plugin inietta const __ nello <script setup>. Vitest non usa questo
+  plugin. Per un testo nuovo e semplice di frappe-ui aggiungere una regola qui invece di un override.
+- Il vecchio osTranslateTocFallback in vite.config.js confronta l'id con endsWith, quindi traduce
+  solo in build, non in sviluppo (scheda rich-text-editor-overrides).
+- Job in background: senza set_job_language ogni _() in un worker vale «en»; ciò che viene salvato
+  (es. l'oggetto di una Notification Log) resta in inglese per sempre. Gli hook si leggono all'avvio
+  del worker: dopo una modifica riavviare i worker.
+- Ci sono due timeAgo: quello di @/utils (src/oslms/utils/index.js, testi per __()) e quello di
+  src/utils/format.js con i messaggi italiani scritti nel codice (voce time-ago-italian).
+- Lacune note fuori dall'inventario: frontend/src/translation.js e frontend/src/utils/dayjs.js sono
+  modificati senza voce. lms/locale/it.po dopo il merge di giugno 2026 aveva msgid duplicati e un
+  errore di sintassi.
+- Regola fissa: mai proporre di lasciare un testo in inglese come compromesso."""
+history = [
+	{ date = "2026-03-19", ref = "e577585ca", summary = "creazione: prime traduzioni italiane di os_lms e dei segnaposto upstream" },
+	{ date = "2026-04-15", ref = "ab98af3fa", summary = "modulo utils di os_lms con le date relative tradotte" },
+	{ date = "2026-07-22", ref = "87e8c5cc7", summary = "calendario e selettori di data e ora in italiano" },
+	{ date = "2026-07-31", ref = "df691861f", summary = "date relative in italiano anche nelle forme singolari («ieri», «domani»)" },
+	{ date = "2026-09-17", ref = "f7070242d", summary = "job in background nella lingua del sito" },
+	{ date = "2026-09-24", ref = "eca70e183", summary = "plugin di build che traduce i testi fissi del nuovo editor di frappe-ui; regola: tutto va tradotto" },
+	{ date = "2026-11-23", ref = "6703669e0", summary = "registro delle nostre traduzioni di it.po e controllo C7 sulle traduzioni perse" },
+]

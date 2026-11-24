@@ -1,0 +1,71 @@
+id = "email-templates"
+title = "Email e modelli email personalizzabili"
+status = "active"
+summary = """
+Le email mandate dalla piattaforma (lezioni dal vivo, accesso con link via email, simulazioni AI)
+hanno un modello predefinito in italiano fornito dall'app. Per ogni installazione l'amministratore può
+sostituire ciascuna email con un modello creato dal Desk, senza toccare il codice. L'invio SMTP è
+adattato al server di posta del cliente."""
+why = """
+La piattaforma è installata per più clienti, ognuno con la sua grafica e i suoi testi. L'upstream ha
+un proprio sistema di modelli solo per alcune email (conferma iscrizione, certificazione, pagamenti) e
+nessuno per le email aggiunte da os_lms. Il server SMTP del cliente chiudeva la sessione prima
+dell'invio e dichiarava una dimensione massima che faceva fallire il controllo dell'invio."""
+roles = ["System Manager", "Gestore"]
+behaviour = [
+	"ogni email di os_lms (invito, aggiornamento, promemoria e annullamento della lezione dal vivo, link di accesso via email, promemoria esito e revisione pubblicata delle simulazioni, avviso di indirizzo già registrato) usa un modello predefinito dell'app in italiano",
+	"nel Desk, «OS LMS Email Settings» (solo System Manager) permette di collegare a ciascuna di queste email, tranne l'avviso di indirizzo già registrato, un Email Template che la sostituisce; con il campo vuoto si usa il modello predefinito",
+	"con un modello del Desk collegato, l'oggetto dell'email è quello del modello, se ne ha uno",
+	"il modello del Desk viene usato anche quando chi fa partire l'email non può leggere gli Email Template (un ospite che chiede il link di accesso, un Gestore senza Desk)",
+	"titolo e descrizione delle lezioni dal vivo arrivano ai modelli come testo: HTML scritto nel titolo non viene interpretato, nemmeno nei modelli del Desk, e i modelli predefiniti non lo trasformano due volte",
+	"ai modelli delle lezioni dal vivo arrivano valori già pronti, fra cui il link di ingresso, i collegamenti Google Calendar, Outlook e .ics, l'ora di fine, il nome di chi conduce e il titolo della classe; la pagina delle impostazioni mostra lo schema dei pulsanti «Aggiungi al calendario» da incollare",
+	"nel dialogo Impostazioni il titolo della pagina dei modelli email è in italiano",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/email_utils.py",
+	"apps/os_lms/os_lms/os_lms/doctype/os_lms_email_settings/*",
+	"apps/os_lms/os_lms/overrides/email_account.py",
+	"apps/os_lms/os_lms/overrides/smtp.py",
+]
+upstream_watch = [
+	"Email Template", "get_email_template", "get_formatted_email", "frappe.sendmail template",
+	"EmailTemplateList.vue", "EmailTemplateForm", "EmailTemplateModal", "Email Account", "SMTPServer.session",
+	"get_smtp_server", "esmtp_features", "standard_email_override", "login_via_key", "send_login_link",
+]
+data = [
+	"doctype singolo os_lms OS LMS Email Settings: campi Link a Email Template live_class_invitation_template, live_class_updated_template, live_class_reminder_template, live_class_cancelled_template, login_with_email_link_template, simulation_outcome_reminder_template, simulation_review_published_template (permessi solo System Manager)",
+	"modelli predefiniti in apps/os_lms/os_lms/templates/emails/<chiave>.html (convenzione: chiave del file = campo <chiave>_template)",
+	"override_doctype_class Email Account -> os_lms.overrides.email_account.CustomEmailAccount; SMTPServer.session sostituita all'import di os_lms (os_lms/__init__.py importa os_lms.overrides.smtp)",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_2026_10.py",
+]
+notes = """
+- Punto d'ingresso unico: send_templated_email(template_key, recipients, subject, args) in
+  email_utils.py. Ogni nuova email os_lms che il cliente deve poter cambiare: (1) file
+  templates/emails/<chiave>.html, (2) campo Link <chiave>_template su OS LMS Email Settings con la
+  descrizione delle variabili Jinja, (3) chiamata a send_templated_email. Nessuna patch crea gli
+  Email Template: i clienti li creano dal Desk copiando il file.
+- Non replicare il meccanismo nelle LMS Settings dell'upstream: il singolo vive in os_lms apposta.
+- In pratica i clienti usano i modelli del Desk: ogni link o pulsante che serve a un modello va
+  passato già pronto negli args (l'autore scrive solo {{ variabile }}, mai frappe.utils.* o firme).
+- Il modello del Desk non passa da get_email_template di Frappe: le versioni recenti controllano che
+  il mittente possa leggere Email Template (corretto il 2026-10-26). Una chiave senza campo nelle
+  impostazioni salta la lettura, perché Frappe accoderebbe un messaggio d'errore per la pagina.
+- I destinatari di send_templated_email e delle notifiche si confrontano per EMAIL: un nome utente
+  diverso dall'email (Administrator) non riceve nulla.
+- Le email generate in un job in background usano la lingua dell'utente grazie a before_job
+  (set_job_language); senza, i testi _() uscivano in inglese.
+- SMTP: CustomEmailAccount porta a 1000000 il SIZE dichiarato 0 dal server; la sessione sostituita non
+  ripete EHLO dopo l'autenticazione perché quel server chiudeva la connessione. Entrambe dipendono da
+  interni di Frappe: riverificarle dopo un aggiornamento di Frappe.
+- La voce settings-email-template-modal-formatting è accepted-drift: la modale upstream non esiste
+  più dal merge di v2.62.0."""
+history = [
+	{ date = "2026-03-23", ref = "d231df9da", summary = "creazione: sessione SMTP che non si chiude prima dell'invio e limite di dimensione adattato" },
+	{ date = "2026-05-21", ref = "9d6597699", summary = "modelli email sostituibili dal Desk con OS LMS Email Settings" },
+	{ date = "2026-09-17", ref = "7b6ea7a18", summary = "nuovo modello live_class_updated per le lezioni riprogrammate" },
+	{ date = "2026-10-26", ref = "0c4f5a755", summary = "modelli del Desk usati senza il controllo di lettura del mittente" },
+	{ date = "2026-10-26", ref = "0a7dbe00b", summary = "valori delle lezioni scritti come testo anche nei modelli del Desk" },
+	{ date = "2026-11-03", ref = "8282eb5d9", summary = "modelli per le email delle simulazioni AI" },
+]

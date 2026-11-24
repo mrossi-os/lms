@@ -1,0 +1,40 @@
+id = "course-progress-reset"
+title = "Azzeramento dei progressi di un corso (Desk)"
+status = "active"
+summary = """
+Nel Desk, sulla scheda di un utente, un amministratore può azzerare i progressi di uno studente in
+un corso: lezioni completate, quiz, compiti e certificato vengono cancellati e l'iscrizione torna a
+zero, senza togliere lo studente dal corso. Serve a far rifare il corso da capo e a riemettere il
+certificato. Prima di procedere la finestra mostra quanti record verranno eliminati."""
+why = """
+L'upstream non permette di far ripartire uno studente da zero su un corso: il certificato resta e
+i progressi non si possono cancellare senza intervenire record per record. Il cliente ne ha
+bisogno per riemettere certificati (anche TrueSkill) dopo una correzione."""
+roles = ["System Manager", "Moderator"]
+behaviour = [
+	"nella scheda Utente del Desk il pulsante «Reset progressi corso» (menu Azioni) compare solo a System Manager e Moderator e mai su un utente non ancora salvato; il server rifiuta gli altri",
+	"il pulsante propone i corsi a cui lo studente è iscritto con la percentuale di avanzamento; se non è iscritto a nessun corso lo dice e non apre la scelta",
+	"prima di cancellare la finestra mostra quanti avanzamenti di lezione, quiz svolti, consegne dei compiti, certificati e log di emissione TrueSkill verranno eliminati, e chiede conferma dicendo che l'operazione è irreversibile",
+	"confermando vengono eliminati definitivamente avanzamento delle lezioni, consegne dei quiz, consegne dei compiti, certificati del corso e i loro log di emissione TrueSkill; l'iscrizione resta, con avanzamento 0, senza lezione corrente né certificato",
+	"le valutazioni e le richieste di certificazione (Certificate Evaluation / Request) non vengono toccate",
+	"il badge già emesso su TrueSkill non viene revocato: l'azzeramento non chiama TrueSkill",
+]
+areas = ["apps/os_lms/os_lms/public/js/user.js"]
+upstream_watch = [
+	"reset progress", "reset course progress", "retake course", "delete progress", "LMS Course Progress",
+	"LMS Enrollment progress", "certificate reissue", "User form", "doctype_js User",
+]
+data = [
+	"nessun dato proprio; doctype_js User -> public/js/user.js",
+	"endpoint os_lms.os_lms.api.get_member_courses e reset_course_progress (dry_run per l'anteprima), con RESET_PROGRESS_ROLES = Moderator, System Manager",
+]
+notes = """
+- Gli endpoint stanno in os_lms/os_lms/api.py, fuori dall'area della scheda: se si spostano, la
+  scheda va aggiornata.
+- È solo Desk: i Gestore che sono Website User non arrivano al pulsante.
+- Cancellando i log di emissione, il certificato riemesso dopo l'azzeramento non trova un badge
+  da riusare (regola «un badge per studente, corso e template» della scheda
+  trueskills-certificates) e TrueSkill ne emette uno nuovo."""
+history = [
+	{ date = "2026-06-15", ref = "0d14c3377", summary = "creazione: pulsante nel Desk per azzerare i progressi di uno studente in un corso" },
+]
