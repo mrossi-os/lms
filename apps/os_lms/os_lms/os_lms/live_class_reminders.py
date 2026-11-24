@@ -53,6 +53,11 @@ def _process_class_reminders(live_class, now: datetime, logger) -> None:
 	if not students:
 		return
 
+	# Reminders count from the publication: one that fell due while the class was a
+	# draft is skipped, not sent late. Classes published before drafts existed have
+	# no published_at and keep catching up as before.
+	published_at = get_datetime(doc.published_at) if doc.get("published_at") else None
+
 	any_sent = False
 	# Per student: the signed calendar links name who they were sent to.
 	cal_links = {student.member: _build_calendar_links(doc, student.member, logger) for student in students}
@@ -62,6 +67,8 @@ def _process_class_reminders(live_class, now: datetime, logger) -> None:
 		offset_minutes = offset_to_minutes(row.offset_value, row.offset_unit)
 		fire_at = class_dt - timedelta(minutes=offset_minutes)
 		if now < fire_at:
+			continue
+		if published_at and fire_at < published_at:
 			continue
 
 		for student in students:

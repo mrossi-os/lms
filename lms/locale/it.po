@@ -11601,3 +11601,7 @@ msgstr "Questa lezione dal vivo è già terminata: cambiane data e ora prima di 
 #: apps/os_lms/os_lms/os_lms/api.py
 msgid "Publish the live class before starting it."
 msgstr "Pubblica la lezione dal vivo prima di avviarla."
+
+#: frontend/src/pages/Forms/LiveClassForm.vue
+msgid "Skipped: due before publication"
+msgstr "Saltato: scadeva prima della pubblicazione"

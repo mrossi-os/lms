@@ -44,8 +44,12 @@ class CustomLMSLiveClass(LMSLiveClass):
 		The invitation email and the in-app notification used to go out at creation;
 		they are sent here now. The caller (`api.publish_live_class`) holds the row
 		lock and has already checked the class is a draft that has not ended.
+
+		`published_at` is what the reminders count from: one that fell due while the
+		class was a draft is skipped, the invitation sent now takes its place
+		(see `live_class_reminders._process_class_reminders`).
 		"""
-		self.db_set("status", PUBLISHED)
+		self.db_set({"status": PUBLISHED, "published_at": now_datetime()})
 		self._send_invitation_safe()
 		self._send_notification_safe()
 

@@ -175,6 +175,14 @@
 								{{ __('Sent') }}
 								{{ dayjs(row.sent_at).format('DD MMM HH:mm') }}
 							</span>
+							<!-- OSLMS-CUSTOM: a reminder due while the class was a draft is never sent -->
+							<span
+								v-else-if="isSkippedReminder(row)"
+								data-testid="live-class-reminder-skipped"
+								class="text-ink-gray-4"
+							>
+								{{ __('Skipped: due before publication') }}
+							</span>
 							<span v-else class="text-ink-gray-4">
 								{{ __('Not sent yet') }}
 							</span>
@@ -366,6 +374,17 @@ const scheduleLocked = computed(
 const isDraft = computed(
 	() => isEdit.value && isDraftLiveClass(liveClassDoc.data)
 )
+// OSLMS-CUSTOM: mirrors live_class_reminders: a reminder whose time fell before the
+// publication is skipped. Wall-clock date/time vs the server's published_at, as there.
+const isSkippedReminder = (row) => {
+	const publishedAt = liveClassDoc.data?.published_at
+	if (!publishedAt || !liveClass.date || !liveClass.time) return false
+	const fireAt = dayjs(`${liveClass.date} ${liveClass.time}`).subtract(
+		offsetToMinutes(row.offset_value, row.offset_unit),
+		'minute'
+	)
+	return fireAt.isBefore(dayjs(publishedAt))
+}
 
 const reminderUnitOptions = [
 	{ label: __('Minutes'), value: 'Minutes' },

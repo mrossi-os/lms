@@ -23,6 +23,11 @@ def _slot(days: int) -> dict:
 	return {"date": start.date().isoformat(), "time": start.strftime("%H:%M:%S")}
 
 
+def _slot_in(minutes: int) -> dict:
+	start = now_datetime() + timedelta(minutes=minutes)
+	return {"date": start.date().isoformat(), "time": start.strftime("%H:%M:%S")}
+
+
 def make_doc(status="Draft", days=2, **values):
 	return frappe.get_doc(
 		{
@@ -68,13 +73,16 @@ class TestDraftLifecycle(UnitTestCase):
 
 	def test_publish_sends_invitation_and_notification_once(self):
 		doc = make_doc()
+		published_at = now_datetime()
 		with (
+			patch.object(lms_live_class, "now_datetime", return_value=published_at),
 			patch.object(doc, "db_set") as db_set,
 			patch.object(doc, "_send_invitation_safe") as invitation,
 			patch.object(doc, "_send_notification_safe") as notification,
 		):
 			doc.publish()
-		db_set.assert_called_once_with("status", "Published")
+		# The publication instant is what the reminders are measured against.
+		db_set.assert_called_once_with({"status": "Published", "published_at": published_at})
 		invitation.assert_called_once_with()
 		notification.assert_called_once_with()
 
@@ -205,6 +213,43 @@ class TestDraftVisibility(UnitTestCase):
 			live_class_reminders.send_live_class_reminders()
 		filters = get_all.call_args.kwargs["filters"]
 		self.assertEqual(filters.get("status"), ["!=", "Draft"])
+
+	def _run_reminders(self, doc):
+		students = [frappe._dict(member="s@example.com", member_name="S")]
+		with (
+			patch.object(frappe, "get_doc", return_value=doc),
+			patch.object(frappe, "get_all", return_value=students),
+			patch.object(live_class_reminders, "_build_calendar_links", return_value={}),
+			patch.object(live_class_reminders, "_send_reminder_mail") as mail,
+			patch.object(doc, "save"),
+			patch.object(frappe.db, "commit"),
+		):
+			live_class_reminders._process_class_reminders(
+				frappe._dict(name=NAME), now_datetime(), MagicMock()
+			)
+		return mail
+
+	def test_reminders_due_before_publication_are_skipped(self):
+		# Class in 2 hours, published 30 minutes ago: the 3-hour reminder fell due
+		# while it was a draft (skipped), the 2-hour one after the publication (sent),
+		# the 1-hour one is still ahead (waits).
+		doc = make_doc(
+			status="Published",
+			published_at=now_datetime() - timedelta(minutes=30),
+			**_slot_in(minutes=120),
+		)
+		for hours in (3, 2, 1):
+			doc.append("reminders", {"offset_value": hours, "offset_unit": "Hours"})
+		mail = self._run_reminders(doc)
+		self.assertEqual(mail.call_count, 1)
+		self.assertEqual([bool(r.sent_at) for r in doc.reminders], [False, True, False])
+
+	def test_reminders_of_a_class_without_publication_time_still_catch_up(self):
+		# Created before drafts existed: no published_at, the old behaviour holds.
+		doc = make_doc(status="", **_slot_in(minutes=120))
+		doc.append("reminders", {"offset_value": 3, "offset_unit": "Hours"})
+		mail = self._run_reminders(doc)
+		self.assertEqual(mail.call_count, 1)
 
 	def test_enrollment_skips_draft_events(self):
 		enrollment = frappe.get_doc(

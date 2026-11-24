@@ -10126,7 +10126,10 @@ card offre «Pubblica»; eliminando una bozza non si propone di avvisare gli stu
 chiede conferma (frontend/src/oslms/utils/liveClassDraft.js), perché le email non si ritirano.
 Gli studenti non vedono le bozze: lo garantisce il backend (live_class_draft.py: permission
 query + has_permission, filtri status != Draft su home studente, timetable, promemoria,
-iscrizione, ics/join). Le live senza status (create prima) contano come pubblicate."""
+iscrizione, ics/join). Le live senza status (create prima) contano come pubblicate.
+2026-11-23 (seguito): i promemoria contano dalla pubblicazione. Uno il cui orario cade mentre la
+live è in bozza non parte nemmeno dopo (lo sostituisce l'invito); il form lo mostra «Saltato».
+La regola sta in live_class_reminders._process_class_reminders (published_at, custom field)."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Forms/LiveClassForm.vue"
@@ -10145,6 +10148,11 @@ iscrizione, ics/join). Le live senza status (create prima) contano come pubblica
   file = "frontend/src/pages/Forms/LiveClassForm.vue"
   anchor = "() => isEdit.value && isDraftLiveClass(liveClassDoc.data)"
   symbol = "isDraft"
+
+  [[entries.sites]]
+  file = "frontend/src/pages/Forms/LiveClassForm.vue"
+  anchor = "v-else-if=\"isSkippedReminder(row)\""
+  symbol = "isSkippedReminder"
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/LiveClass.vue"
