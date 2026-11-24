@@ -1,0 +1,84 @@
+id = "quizzes"
+title = "Quiz"
+status = "active"
+summary = """
+Lo studente può consegnare un quiz anche lasciando domande senza risposta e da qualunque domanda;
+le domande saltate valgono 0 punti, a meno che il quiz non chieda di penalizzarle. Il tempo dei quiz
+a tempo segue l'orologio reale e la consegna avviene una sola volta. Il server impedisce di gonfiare
+il punteggio, e quiz, liste e moduli hanno l'aspetto e le etichette in italiano voluti dal cliente."""
+why = """
+Nell'upstream una domanda saltata faceva fallire l'intera consegna: lo studente restava bloccato.
+Il conto alla rovescia rallentava nelle schede in secondo piano e la consegna automatica allo scadere
+non partiva. L'audit di sicurezza ha trovato che uno studente poteva ripetere la stessa risposta fino
+a superare il quiz (e ottenere lezione, certificato e badge) o riscrivere la propria consegna. Il
+cliente vuole i radio button classici e le etichette tradotte."""
+roles = ["Student", "Moderator", "Course Creator", "Docente"]
+behaviour = [
+	"un quiz si consegna anche con domande senza risposta; una domanda saltata vale 0 punti, anche con la penalità per le risposte sbagliate attiva",
+	"con la penalità per le risposte sbagliate attiva, il modulo del quiz offre l'interruttore «Penalizza le domande senza risposta» (spento per default e per i quiz esistenti): acceso, una domanda saltata perde gli stessi punti di una risposta sbagliata",
+	"nel player Verifica, Avanti e «Submit Quiz» stanno affiancati e si può consegnare da qualunque domanda, anche nei quiz che mostrano le risposte; nell'anteprima dell'autore il pulsante di consegna non compare",
+	"la conferma di consegna si apre in entrambe le modalità e dice quante domande restano senza risposta e che varranno 0 punti, oppure, con la penalità sulle saltate, quanti punti toglie ciascuna",
+	"una risposta vuota (editor della risposta aperta lasciato intatto, campo di testo vuoto) non conta come risposta e non viene inviata",
+	"Avanti registra la risposta scritta anche se non è stata verificata",
+	"il conto alla rovescia dei quiz a tempo segue l'orologio reale anche con la scheda in secondo piano, e allo scadere il quiz si consegna da solo",
+	"consegna manuale e scadenza del timer insieme producono una sola consegna; il timer riparte da capo a ogni nuovo tentativo e si ferma uscendo dalla pagina",
+	"il server rifiuta una consegna che risponde due volte alla stessa domanda o che ha più risposte delle domande servite dal quiz, e la percentuale non supera mai 100",
+	"lo studente non può modificare, creare o cancellare direttamente una consegna di quiz: la crea solo il server alla consegna",
+	"i radio button nativi dell'applicazione, a partire dalle opzioni dei quiz, hanno l'aspetto classico (cerchio bianco con puntino nero) e nessun anello di focus",
+	"«Try Again» è un pulsante pieno e le intestazioni della tabella dei tentativi sono in italiano",
+	"nella lista dei quiz la colonna Mostra risposte ha una spunta verde invece di una casella disattivata",
+]
+areas = [
+	"apps/os_lms/os_lms/events/quiz_submission.py",
+	"apps/os_lms/os_lms/patches/v0_0_8/*",
+	"apps/os_lms/os_lms/os_lms/tests/test_student_quiz_submission_perms.py",
+	"frontend/src/tests/quizCachedRemount.test.ts",
+]
+upstream_watch = [
+	"Quiz.vue", "submit_quiz", "process_results", "unanswered", "unattempted", "marks_to_cut",
+	"enable_negative_marking", "penalize_unanswered", "QuizForm.vue", "timer", "timer_expired",
+	"createSubmission", "LMS Quiz Submission", "validate_marks", "limit_questions_to", "question bank",
+	"QuestionEditor.vue", "Quizzes.vue", "QuizSubmissionList.vue", "ListPage", "@tailwindcss/forms radio",
+]
+data = [
+	"custom field LMS Quiz.penalize_unanswered (Check, default 0), dalle fixture custom_field.json; submit_quiz lo legge solo se il campo esiste",
+	"hook validate os_lms.events.quiz_submission.validate_quiz_rows su LMS Quiz Submission",
+	"patch os_lms.patches.v0_0_8.restrict_student_quiz_submission_perms: toglie write/create/delete e affini all'LMS Student nelle Custom DocPerm di LMS Quiz Submission",
+]
+tests = [
+	"lms/lms/doctype/lms_quiz/test_lms_quiz.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_student_quiz_submission_perms.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_package_e.py",
+	"frontend/src/tests/quizCachedRemount.test.ts",
+]
+notes = """
+- Dal merge di v2.58.1 il nostro ramo convive con la correzione upstream 567da4f1, che normalizza le
+  risposte nulle a "": senza il nostro filtro l'upstream penalizzerebbe la domanda saltata come
+  sbagliata. La scelta fra 0 e penalità è diventata un'impostazione del quiz il 2026-09-24, dopo il
+  merge di v2.63.0, per decisione del committente.
+- v2.63.0 ha ridisegnato player e authoring dei quiz (banca domande, proctoring): sono stati
+  riapplicati pulsanti affiancati, isBlankAnswer, conferma in entrambe le modalità e timer a
+  orologio; l'avviso sugli errori di consegna e il conteggio delle saltate nella conferma sono ora
+  dell'upstream. Molte voci di stile sono tollerate (aspetto upstream adottato): modulo del quiz,
+  tipi di domanda, stile dei radio del vecchio modale, lista delle consegne, colonne su telefono,
+  cache della risorsa del quiz.
+- Le liste dei quiz e delle consegne passano dal ListPage upstream, che disegna da sé la tabella:
+  l'aspetto upstream era «DA VERIFICARE nell'app» dal 2026-09-23.
+- Radio: @tailwindcss/forms usa appearance:none, quindi accent-color non ha effetto; il colore si
+  governa con color/currentColor e il puntino del plugin è bianco. Le regole del plugin usano :where()
+  (specificità 0) e riaffermano lo sfondo in :hover/:focus, da cui le varianti.
+- Il permesso dello studente sulle consegne: le righe Custom DocPerm già presenti su un sito
+  sostituiscono interamente i permessi del JSON, per questo serve la patch v0_0_8.
+- I test quiz dell'upstream sul database di sviluppo cancellano TUTTE le LMS Question nel
+  tearDownClass: eseguirli solo con commit disattivato e rollback finale.
+- Le regole del Valutatore sulle consegne dei quiz sono nella scheda valutatore-role; il blocco del
+  quiz a completamento delle lezioni è nella scheda guided-learning-path."""
+history = [
+	{ date = "2026-03-23", ref = "2132b28ef", summary = "creazione: stile e traduzioni di liste e pagine dei quiz" },
+	{ date = "2026-07-14", ref = "ebfca3fd2", summary = "radio button classici" },
+	{ date = "2026-07-30", ref = "17e39bfa0", summary = "consegna possibile con domande senza risposta, che valgono 0" },
+	{ date = "2026-07-30", ref = "96c6c73cb", summary = "timer del quiz sull'orologio reale e consegna una sola volta" },
+	{ date = "2026-09-24", ref = "1e0fcb011", summary = "lo studente non può più riscrivere le proprie consegne" },
+	{ date = "2026-09-24", ref = "1f6913194", summary = "impostazione per quiz: domanda saltata a 0 o con la penalità" },
+	{ date = "2026-10-28", ref = "779b15f42", summary = "OWASP: ogni domanda conta una volta sola, percentuale al massimo 100" },
+]

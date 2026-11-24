@@ -1,0 +1,94 @@
+id = "trueskills-certificates"
+title = "Certificati TrueSkill (Openbadge)"
+status = "active"
+summary = """
+Per i corsi configurati con TrueSkill, a fine corso lo studente riceve un Openbadge emesso dalla
+piattaforma TrueSkill (immagine PNG e certificato JSON-LD verificabile) al posto del certificato
+PDF interno. L'emissione avviene in background, con un registro di ogni tentativo e un controllo
+orario per recuperare le emissioni rimaste in sospeso. Nel profilo lo studente vede e scarica i
+suoi badge, compresi quelli che TrueSkill gli ha emesso direttamente. Chi gestisce il corso sceglie
+o crea il template TrueSkill dalle impostazioni del corso."""
+why = """
+Il cliente rilascia certificazioni riconosciute tramite TrueSkill, che richiede il codice fiscale
+del destinatario. L'upstream ha solo il certificato PDF interno (Print Format). Decisioni prese con
+il cliente: solo Openbadge, solo certificati di corso, emissione asincrona dopo la creazione del
+certificato, badge come unico certificato del corso (2026-05-21, 2026-07-08)."""
+roles = ["Student", "Gestore", "System Manager", "Moderator", "Course Creator", "Docente"]
+behaviour = [
+	"la connessione a TrueSkill (attivazione, chiave, indirizzo) si configura nella scheda «TrueSkills API» delle impostazioni, visibile ad amministratori e Gestore; il server rifiuta a chiunque altro, anche a un Moderator, di cambiare quei campi, e solo System Manager e Gestore provano la connessione",
+	"nelle impostazioni del corso (Prezzo e certificazione) si attiva «Emetti certificato TrueSkill» e si sceglie il template, caricato da TrueSkill solo con l'interruttore acceso; «+ Crea nuovo template» crea un template Openbadge su TrueSkill e lo seleziona, con un'immagine che può riprendere il disegno del certificato del corso",
+	"certificato interno e TrueSkill si escludono per corso: accendere uno spegne l'altro; un corso TrueSkill non manda l'email interna «certificato ottenuto» né apre mai il PDF interno",
+	"scegliendo un template TrueSkill che chiede dati obbligatori compare l'avviso con i campi richiesti e il server rifiuta di salvare il corso (controllato solo quando cambiano template o interruttore; con TrueSkill irraggiungibile non blocca)",
+	"«Ottieni certificato» è attivo sui corsi TrueSkill completati al 100% anche con il certificato interno spento; lo studente vede un'attesa finché il badge è pronto (fino a circa 30 secondi), poi l'immagine si apre in una nuova scheda; altrimenti un messaggio spiega perché (template con dati obbligatori, servizio non attivo, emissione fallita)",
+	"il server non crea il certificato di un corso TrueSkill per uno studente senza codice fiscale: lo studente riceve il messaggio di aggiungerlo al profilo (per chi crea il certificato per conto di altri il messaggio nomina lo studente)",
+	"l'emissione parte in background dopo la creazione di ogni certificato di un corso TrueSkill, anche se generato da una classe; se lo stesso studente ha già un badge emesso per lo stesso corso con lo stesso template, il nuovo certificato riusa quel badge senza chiamare TrueSkill; con un template diverso si emette un badge nuovo",
+	"ogni emissione lascia un log (in attesa, emesso, fallito, da ritentare) che non contiene mai il codice fiscale; un controllo orario abbina a TrueSkill i log in attesa o da ritentare da oltre 5 minuti senza mai riemettere; il nuovo tentativo manuale crea un log nuovo ed è rifiutato se il certificato ha già un badge emesso",
+	"nel profilo, scheda Certificati, i badge TrueSkill si scaricano in PNG o JSON-LD; un rifiuto di TrueSkill diventa un messaggio leggibile",
+	"nella stessa scheda compaiono dopo quelli interni i certificati che TrueSkill ha emesso direttamente all'email dell'utente, esclusi quelli già emessi dalla piattaforma; li vedono solo il proprietario del profilo, System Manager e Gestore; il download passa dal server ed è rifiutato per un certificato che la ricerca per quell'email non restituisce",
+	"«Nessun certificato» compare solo se non c'è nulla né di interno né di TrueSkill",
+	"il log delle emissioni lo scrive solo System Manager e lo legge anche Moderator; il collegamento al log dalla scheda del certificato nel Desk compare solo a chi lo può leggere",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/trueskills/*",
+	"apps/os_lms/os_lms/os_lms/doctype/trueskills_issue_log/*",
+	"apps/os_lms/os_lms/overrides/lms_certificate.py",
+	"frontend/src/oslms/components/trueskills/*",
+	"frontend/src/oslms/composables/useCertificateViewer.js",
+	"apps/os_lms/TRUESKILLS.md",
+	"apps/os_lms/os_lms/os_lms/tests/test_trueskills_*.py",
+]
+upstream_watch = [
+	"certificate", "LMS Certificate", "badge", "openbadge", "verifiable credential", "create_certificate",
+	"send_certification_email", "after_insert", "enable_certification", "CourseCardOverlay.vue",
+	"ProfileCertificates.vue", "CertificationLinks.vue", "CoursePublishSettings.vue", "certification filter",
+	"update_course_filters", "batch certificate", "Genera certificati", "is_certified",
+]
+data = [
+	"custom field LMS Course.trueskills_certificate_enabled (Check) e LMS Course.trueskills_template_id (Data, id numerico come stringa)",
+	"custom field LMS Settings.trueskills_api_enabled, trueskills_api_key (Password), trueskills_api_endpoint (solo host: il client aggiunge /api/v1/service/certificates)",
+	"User.codice_fiscale (custom field, 16 caratteri, unico): letto qui, gestito dalla scheda profile-page",
+	"doctype TrueSkills Issue Log (lms_certificate, template_id, recipient_email, recipient_name, state, requested_at, issued_at, trueskill_id, trueskill_uid, error_message, attempts); DocPerm System Manager in scrittura, Moderator in lettura",
+	"override_doctype_class LMS Certificate -> os_lms.overrides.lms_certificate.CustomLMSCertificate; doc_events LMS Certificate after_insert -> trueskills.emission.enqueue_issue, LMS Settings validate -> trueskills.settings.validate_lms_settings, LMS Course validate -> trueskills.api.validate_course_template; scheduler hourly trueskills.scheduler.reconcile_pending",
+	"endpoint os_lms.os_lms.trueskills.api (get_course_certificate, get_issue_status, list_templates, create_template, render_certificate_image, download, retry_emission, test_connection ...) e trueskills.received",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_trueskills_badge_reuse.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_trueskills_download_errors.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_trueskills_received_certificates.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_trueskills_status.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_trueskills_template_required_data.py",
+]
+notes = """
+- Riferimento dell'API TrueSkill: header X-Api-Key, base /api/v1/service/certificates, il campo
+  message è il contratto stabile degli errori; POST /issue e POST /templates non sono idempotenti e
+  non si ritentano mai in automatico (per questo il controllo orario abbina e non riemette).
+- Il controllo orario abbina per nome del template e finestra temporale, perché /list non
+  restituisce l'email: due studenti nella stessa finestra restano «ambigui» e vanno risolti a mano.
+- L'immagine del badge ricavata dal certificato del corso usa il generatore PDF Chrome e ruota la
+  pagina rasterizzata (certificate_image.py): wkhtmltopdf produce una pagina bianca con il modello
+  ruotato del cliente.
+- openBadgeImage non deve far passare l'URL blob: da navigate()/safeUrl (che rifiuta blob:):
+  regressione del 2026-09-25 corretta in a5c355069.
+- Certificati ricevuti: nessuna cache, una chiamata separata dalle altre del profilo (eccezione
+  voluta alla regola della chiamata unica), il download ripete la ricerca per email. Se «non
+  compare nulla», controllare quale organizzazione TrueSkill ha emesso il badge e a quale
+  appartiene la chiave dell'istanza (Test connection → organizationId).
+- apps/os_lms/TRUESKILLS.md è in parte superato: §3 descrive ancora la card PDF con il footer
+  Openbadge e §8.3 assegna test della connessione e retry a Moderator e Course Creator, mentre oggi
+  sono System Manager e Gestore (e il log è solo lettura per Moderator).
+- Il filtro «Certificazione» dell'elenco corsi conta anche i corsi TrueSkill grazie a un innesto in
+  update_course_filters (lms/lms/utils.py).
+- Il campo codice fiscale del profilo è nella scheda profile-page; l'azzeramento dei progressi
+  (course-progress-reset) cancella anche i log di emissione."""
+history = [
+	{ date = "2026-05-08", ref = "fa6937fed", summary = "creazione: impostazioni dell'API TrueSkills e creazione dei template (58a05c965)" },
+	{ date = "2026-05-21", ref = "2aaf236d0", summary = "emissione dell'Openbadge alla creazione del certificato, log delle emissioni e controllo orario" },
+	{ date = "2026-06-15", ref = "8b303956d", summary = "immagine del badge dal disegno del certificato" },
+	{ date = "2026-07-08", ref = "373c9fdee", summary = "il badge TrueSkill è l'unico certificato del corso, esclusivo con quello interno; si apre da Ottieni certificato e dal profilo (14c85335e)" },
+	{ date = "2026-09-25", ref = "8bb0718c3", summary = "nessun certificato TrueSkill senza codice fiscale" },
+	{ date = "2026-10-01", ref = "8bf25de94", summary = "certificati emessi direttamente da TrueSkill nella scheda Certificati del profilo" },
+	{ date = "2026-10-12", ref = "cba30800a", summary = "un badge per studente, corso e template" },
+	{ date = "2026-10-13", ref = "cb29e378f", summary = "rifiutati i template che chiedono dati obbligatori" },
+	{ date = "2026-10-23", ref = "a8e3fbcec", summary = "OWASP: connessione a TrueSkill modificabile solo da System Manager e Gestore (validate_lms_settings)" },
+	{ date = "2026-10-26", ref = "749104b3f", summary = "OWASP: log delle emissioni scritto solo da System Manager, letto da Moderator; Course Creator senza accesso" },
+]

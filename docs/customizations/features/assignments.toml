@@ -1,0 +1,70 @@
+id = "assignments"
+title = "Compiti"
+status = "active"
+summary = """
+I compiti (elaborati che lo studente consegna e che un docente corregge) hanno pagina, modulo e liste
+in italiano e usabili su telefono. Chi corregge vede la risposta dello studente in sola lettura e,
+una volta valutato, un compito non può più essere modificato dallo studente. Su un PC condiviso uno
+studente non vede mai la consegna di chi l'ha usato prima."""
+why = """
+Il cliente usa i compiti come prova di apprendimento, anche nelle classi con valutatori esterni. Su
+telefono la pagina dell'upstream affiancava due riquadri da circa 190 px e tagliava editor e
+pulsante Salva; stati, tipi e colonne restavano in inglese. Lo staging (2026-11-11, ASG-00810) ha
+mostrato che la cache del browser faceva vedere allo studente successivo file e stato del
+precedente; l'audit OWASP M-06 che il server lasciava cambiare un compito già valutato."""
+roles = ["Student", "Moderator", "Course Creator", "Docente", "Valutatore"]
+behaviour = [
+	"su telefono la consegna e il testo del compito stanno uno sotto l'altro e la pagina cresce con il contenuto, così editor della risposta e pulsante Salva si raggiungono; da tablet in su i due riquadri sono affiancati e scorrono ciascuno per conto suo",
+	"lo stato della consegna è in italiano nel badge e nel selettore di correzione (Non valutato, Superato, Non superato) e il tipo di file è tradotto nel messaggio sui file ammessi",
+	"aprendo un compito da consegnare, il modulo è sempre vuoto: su un PC condiviso non compaiono file né stato della consegna di un altro studente, nemmeno dopo un logout; dopo la consegna la pagina mostra la consegna appena salvata",
+	"salvando un compito senza titolo, tipo di consegna o testo della domanda, chi lo crea riceve un avviso «… è obbligatorio» che nomina il campo mancante",
+	"nel modulo del compito i tipi di consegna (PDF, Immagine, Documento, Testo, URL) e i segnaposto dei campi sono in italiano",
+	"nella lista delle consegne dei compiti lo stato e le intestazioni delle colonne sono in italiano; nell'elenco dei compiti la colonna Tipo usa le stesse parole del filtro Tipo",
+	"nell'editor della lezione un blocco compito salvato senza scegliere un compito mostra «Nessun compito selezionato» invece di «Assignment: undefined», e l'etichetta del blocco è tradotta",
+	"lo studente consegna il compito dentro la lezione in un riquadro a tutta altezza, senza editor né pulsanti tagliati",
+	"chi corregge (Valutatore, istruttori, moderatori) legge la risposta dello studente senza poterla modificare: il link consegnato resta selezionabile e copiabile e la barra dell'editor della risposta non compare",
+	"una consegna già valutata non può più essere modificata dallo studente, nemmeno chiamando il server direttamente; solo chi corregge può salvarla",
+]
+areas = [
+	"apps/os_lms/os_lms/events/assignment_submission.py",
+	"frontend/src/tests/assignmentSharedBrowserCache.test.ts",
+]
+upstream_watch = [
+	"Assignment.vue", "AssignmentSubmission.vue", "submissionResource", "addNewSubmission",
+	"createDocumentResource", "canModifyAssignment", "AssignmentForm.vue", "AssignmentSubmissionList.vue",
+	"Assignments.vue", "assignment.js", "renderAssignment", "renderSubmission",
+	"LMS Assignment Submission", "PRIVILEGED_ROLES", "graded submission", "ListPage",
+]
+data = [
+	"hook validate os_lms.events.assignment_submission.freeze_graded_submission su LMS Assignment Submission (usa PRIVILEGED_ROLES locale di lms_assignment_submission.py, che include il Valutatore)",
+	"classe os-frame in frontend/src/styles/theme/elite/main.css per l'altezza del riquadro di consegna",
+]
+tests = [
+	"frontend/src/tests/assignmentSharedBrowserCache.test.ts",
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_graded_submission.py",
+]
+notes = """
+- Cache condivisa: frappe-ui tiene ogni documento in un singleton per nome e in IndexedDB, che
+  sopravvivono al logout. L'upstream legava il modulo nuovo al nome "new" e dopo l'inserimento
+  rinominava quella risorsa: la consegna finiva sotto la chiave condivisa
+  ["LMS Assignment Submission","new"]. Se l'upstream riscrive submissionResource o addNewSubmission
+  rimettere entrambe le parti (segnaposto locale e niente rinomina; la key su submissionName in
+  AssignmentSubmission.vue rimonta il componente).
+- Sola lettura per chi corregge: decisione del committente al merge di v2.59.0; dal merge di v2.64.0
+  la regola è dell'upstream (canModifyAssignment, che la estende: lo studente non modifica più la
+  risposta dopo la correzione). Restano nostri il campo URL :readonly invece di :disabled e la barra
+  dell'editor nascosta.
+- Le liste di compiti e consegne passano dal ListPage upstream: la classe os-list-view non si può più
+  impostare e l'aspetto upstream era «DA VERIFICARE nell'app» dal 2026-09-23. L'intestazione sticky
+  della lista consegne è stata abbandonata (voce tollerata dal 2026-09-24).
+- I moduli del compito sono pagine instradate dal merge di v2.62.0 (pages/Forms/AssignmentForm.vue).
+- Le regole di accesso del Valutatore (solo gli studenti delle sue classi) sono nella scheda
+  valutatore-role; la lista delle consegne per il Gestore nella scheda gestore-role."""
+history = [
+	{ date = "2026-03-23", ref = "2132b28ef", summary = "creazione: stile e traduzioni di pagina e liste dei compiti" },
+	{ date = "2026-03-27", ref = "f02a1f596", summary = "riquadro di consegna nella lezione a tutta altezza" },
+	{ date = "2026-04-15", ref = "332469fa5", summary = "pagina del compito a una colonna su telefono" },
+	{ date = "2026-09-30", ref = "351e2acaf", summary = "merge v2.64.0: sola lettura della risposta per chi corregge adottata dall'upstream (canModifyAssignment)" },
+	{ date = "2026-10-29", ref = "74db1b7bc", summary = "OWASP M-06: consegna valutata non più modificabile dallo studente lato server" },
+	{ date = "2026-11-12", ref = "f8f177ac7", summary = "nessuna cache condivisa fra utenti per il modulo di nuova consegna" },
+]

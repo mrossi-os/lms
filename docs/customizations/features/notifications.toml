@@ -1,0 +1,65 @@
+id = "notifications"
+title = "Notifiche in piattaforma"
+status = "active"
+summary = """
+Il clic su una notifica apre la pagina giusta della piattaforma (lezione, quiz, classe, consegna,
+simulazione) oppure avvisa che non è più disponibile, invece di non fare nulla o finire su una pagina
+sbagliata. Le notifiche dei punteggi dei quiz ricevono una destinazione, e nelle schede della classe
+un contatore rosso mostra quante notifiche non lette riguardano lezioni, annunci e discussioni."""
+why = """
+Il pannello upstream leggeva i link a posizioni fisse: con link assoluti, prefisso /lms o frammenti
+di scheda apriva la pagina sbagliata o andava in errore, e l'avviso del punteggio di un quiz nasce
+upstream senza link, quindi il clic non faceva nulla. Il cliente vuole che lo studente veda subito
+dove c'è qualcosa di nuovo nella sua classe."""
+roles = ["Student", "Moderator", "Docente", "Valutatore"]
+behaviour = [
+	"le schede Da leggere e Lette del pannello notifiche sono in italiano anche dopo un ricaricamento completo della pagina",
+	"il clic su una notifica funziona con link assoluti o relativi, con o senza il prefisso /lms, e porta il frammento della scheda (per esempio #discussions) nella pagina aperta",
+	"una notifica che punta a una lezione (courses/<corso>/learn/<capitolo>-<lezione>) apre direttamente la lezione; una che punta a un quiz autonomo apre la pagina del quiz; una classe apre la pagina della classe; una consegna di compito apre la consegna",
+	"ogni altro link che nomina una pagina della piattaforma la apre con i suoi parametri (così si aprono le notifiche delle simulazioni AI per revisori e studenti)",
+	"una notifica con link sconosciuto o non più valido (documento cancellato, pagina rimossa) mostra l'avviso «Impossibile aprire questa notifica» invece di un errore",
+	"la notifica del punteggio di un quiz, che l'upstream crea senza link, porta alla lezione che contiene il quiz, oppure alla pagina del quiz se è autonomo; mai alla pagina della consegna, che mostrerebbe le risposte corrette",
+	"un errore nel calcolo del link non impedisce alla notifica di arrivare",
+	"le schede Lezioni, Annunci e Discussioni della classe mostrano un badge rosso con il numero di notifiche non lette dell'utente per quella sezione; aprire la scheda le segna come lette e azzera il badge",
+	"i contatori della classe si aggiornano da soli quando arriva una nuova notifica",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/notification_links.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_notification_links.py",
+]
+upstream_watch = [
+	"NotificationPanel.vue", "navigateToPage", "Notification Log", "notify_member", "get_notifications",
+	"publish_lms_notifications", "TabbedDetailPage", "TabButtons", "unread notifications", "BatchDetail tabs",
+	"get_batch_details", "link", "#discussions",
+]
+data = [
+	"doc_events Notification Log before_insert -> os_lms.os_lms.notification_links.set_missing_link",
+	"campo tab_notifications aggiunto da os_lms a get_batch_details (override_utils, get_batch_tab_unread_counts)",
+	"endpoint os_lms.os_lms.api.mark_batch_tab_notifications_read (sezioni classes, announcements, discussions; riconosce le notifiche dal link <classe>#<sezione>)",
+	"override di lms.lms.api.get_notifications in os_lms.os_lms.override_api: aggiunge i dettagli della lezione alle notifiche di tipo LMS Live Class",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_notification_links.py",
+]
+notes = """
+- Il link mancante si compila in before_insert e non sovrascrivendo notify_member, per non congelare
+  qui oggetto e testo dell'email upstream (l'upstream li ha già riformulati una volta, 45e98b9dd).
+  Anche la notifica push legge doc.link in after_insert e lo eredita.
+- Le etichette delle schede del pannello sono getter che chiamano __() a ogni rendering: un array
+  costruito al setup valuta __() prima che le traduzioni asincrone siano caricate e resta in inglese
+  al ricaricamento completo (corretto invece dopo un HMR, sintomo tipico).
+- make_notification_logs cerca i destinatari per EMAIL, non per nome utente: Administrator
+  (admin@example.com) non riceve nulla, senza errori. Il tipo Alert non viene mai inviato per email.
+- Un testo di notifica prodotto da un job in background era in inglese e restava congelato nel
+  database: os_lms imposta la lingua dell'utente in before_job (set_job_language).
+- Il badge delle schede è innestato nel componente upstream TabbedDetailPage (prop badge, dal merge
+  di v2.62.0): se l'upstream cambia il rendering delle schede, riportarlo.
+- Il pannello stesso (slide-over) è dell'upstream (13bf2825d); la nostra parte è il ramo di
+  navigazione."""
+history = [
+	{ date = "2026-04-17", ref = "22ebe74c4", summary = "creazione: badge delle notifiche non lette sulle schede della classe" },
+	{ date = "2026-07-01", ref = "6f1bbd491", summary = "navigazione delle notifiche riscritta sul nuovo pannello, con avviso per i link non validi" },
+	{ date = "2026-07-20", ref = "49a8d3b01", summary = "schede Da leggere e Lette tradotte anche dopo il ricaricamento" },
+	{ date = "2026-09-18", ref = "5b491f0cf", summary = "le notifiche del punteggio dei quiz ricevono una destinazione" },
+	{ date = "2026-11-04", ref = "d60ce261b", summary = "si aprono anche le notifiche delle simulazioni (ogni pagina della SPA nominata dal link)" },
+]

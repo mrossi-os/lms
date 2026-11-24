@@ -1,0 +1,71 @@
+id = "manager-settings"
+title = "Impostazioni gestore: pannello per il Gestore, Impostazioni solo all'Administrator"
+status = "active"
+summary = """
+Il menu utente ha due pannelli. «Impostazioni» (Settings.vue) è solo per l'Administrator (utente
+Administrator o ruolo System Manager). «Impostazioni gestore» è per Gestore e Administrator e
+contiene le sole schede che il Gestore può toccare: avanzamento del corso, categorie, modelli
+email, utenti, Zoom, Google Meet, Google Calendar, marchio e benvenuto. Il server limita i campi
+di LMS Settings che un non-Administrator può salvare. I collegamenti alle impostazioni sparsi nella
+SPA aprono il pannello che l'utente può usare, o avvisano che la sezione è solo per amministratori."""
+why = """
+Prima la voce «Impostazioni» si mostrava a chiunque avesse is_moderator e dava al Gestore tutte le
+configurazioni del sito. Il cliente vuole che il Gestore gestisca le impostazioni operative senza
+poter cambiare quelle di piattaforma. Il Gestore di norma non raggiunge il Desk, quindi il pannello
+vive nella SPA. Design: docs/superpowers/specs/2026-11-18-impostazioni-gestore-design.md."""
+roles = ["Gestore", "System Manager", "Moderator"]
+behaviour = [
+	"la voce «Impostazioni» del menu utente compare solo all'Administrator (utente Administrator o ruolo System Manager); la voce «Impostazioni gestore» a Gestore e Administrator",
+	"il pannello gestore mostra le schede Course Progress, Categories, Email Templates, Users, Zoom, Google Meet, Google Calendar, Branding e Welcome; sono definite una sola volta in oslms/utils/settingsTabs.js e condivise con Settings.vue",
+	"il server rifiuta il salvataggio di campi di LMS Settings fuori dal pannello gestore quando chi salva non è Administrator (validate os_lms settings_access.validate_lms_settings_access)",
+	"update_sidebar_item, delete_sidebar_item e delete_documents dell'upstream passano da os_lms: voci della barra laterale e paesi di pagamento sono solo Administrator",
+	"la scheda Branding salva con os_lms settings_access.save_branding (Administrator, System Manager o Gestore), che scrive solo app_name, banner_image, app_logo (uguale a banner_image) e favicon; il Gestore non riceve il ruolo Website Manager",
+	"openSettings(categoria) apre Settings.vue per l'Administrator, il pannello gestore per il Gestore se la scheda è sua, altrimenti mostra «Questa sezione è disponibile solo agli amministratori.»",
+	"i pulsanti di BatchForm verso 'Zoom Accounts' e 'Google Meet Accounts' aprono le schede reali Zoom e Google Meet",
+	"nella palette Cmd+K «Settings» è solo Administrator e «Manager Settings» è per Gestore e Administrator; il pulsante Impostazioni → General degli esercizi di programmazione è solo Administrator",
+	"alla chiusura di uno dei due pannelli le tendine <Link> ricaricano le opzioni, così una categoria o un account creati lì compaiono subito",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/settings_access.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_settings_access.py",
+	"frontend/src/oslms/components/Settings/SettingsGestore.vue",
+	"frontend/src/oslms/utils/settingsAccess.js",
+	"frontend/src/oslms/utils/settingsTabs.js",
+	"frontend/src/tests/settingsAccess.test.ts",
+	"frontend/src/tests/settingsTabs.test.ts",
+	"frontend/src/tests/openSettingsRouting.test.ts",
+	"frontend/src/tests/linkSettingsRefresh.test.ts",
+]
+upstream_watch = [
+	"Settings.vue", "SettingsDialog", "UserDropdown.vue", "settings.js", "isSettingsOpen", "openSettings",
+	"CommandPalette", "BrandSettings.vue", "Website Settings", "LMS Settings", "update_sidebar_item",
+	"delete_sidebar_item", "delete_documents", "is_moderator", "Link.vue", "ProgrammingExerciseSubmission",
+	"Zoom Accounts", "Google Meet Accounts",
+]
+data = [
+	"validate di LMS Settings: os_lms.os_lms.settings_access.validate_lms_settings_access (accanto a trueskills.settings.validate_lms_settings)",
+	"override_whitelisted_methods lms.lms.api.update_sidebar_item, delete_sidebar_item, delete_documents -> os_lms.os_lms.settings_access",
+	"endpoint os_lms.os_lms.settings_access.save_branding",
+	"store settings: isGestoreSettingsOpen e isGestoreSettingsMounted",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_settings_access.py",
+	"frontend/src/tests/settingsAccess.test.ts",
+	"frontend/src/tests/settingsTabs.test.ts",
+	"frontend/src/tests/openSettingsRouting.test.ts",
+	"frontend/src/tests/linkSettingsRefresh.test.ts",
+]
+notes = """
+- Voci d'inventario: settings-shared-tabs, settings-gestore-panel, settings-admin-only-routing,
+  branding-save-endpoint (contesa con brand-customize, qui perché nasce dal pannello gestore),
+  link-refresh-after-gestore-settings.
+- Dopo un merge upstream che cambia una scheda condivisa, portare la modifica nel builder di
+  settingsTabs.js, non in Settings.vue.
+- I test upstream della palette che simulano { is_moderator: true } e si aspettano la riga
+  «Settings» sono in frontend/oslms-test/known-failures.json (kind rule)."""
+history = [
+	{ date = "2026-11-23", ref = "c136ee794", summary = "creazione: campi di LMS Settings salvabili dal non-Administrator limitati lato server" },
+	{ date = "2026-11-23", ref = "eaa705405", summary = "pannello Impostazioni gestore, schede condivise (206d5cd89), regole di accesso (ec56bf816)" },
+	{ date = "2026-11-23", ref = "5058ab275", summary = "collegamenti alle impostazioni instradati al pannello che l'utente può aprire" },
+	{ date = "2026-11-23", ref = "dc057df58", summary = "Branding salvabile dal Gestore senza Website Manager; correzioni della revisione (afda7aa98)" },
+]

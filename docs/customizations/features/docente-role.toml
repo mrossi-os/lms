@@ -1,0 +1,89 @@
+id = "docente-role"
+title = "Ruolo Docente (istruttore globale)"
+status = "active"
+summary = """
+Il Docente è un ruolo personalizzato del cliente: un istruttore che vale su tutta la
+piattaforma. Apre ogni corso e ogni classe, anche dove non è indicato come istruttore,
+gestisce le classi e le loro lezioni dal vivo, corregge e modifica prove e contenuti
+creati da altri e assegna istruttori e valutatori. Non è un amministratore: niente
+impostazioni generali, import, né Desk."""
+why = """
+L'LMS standard conosce il Moderator (tutto, compresa l'amministrazione) e il Course Creator /
+istruttore (solo i corsi e le classi in cui compare). Il cliente voleva una figura di docente
+che lavori su tutti i corsi e le classi senza i poteri di amministrazione del Moderator
+(decisione 2026-06; «Docente globale ovunque» confermata ai merge di v2.64.0 e v2.65.0 e
+nella matrice dei ruoli del cliente del 2026-10-05). L'upstream aggiunge a ogni release nuovi
+controlli che conoscono solo Moderator e istruttori: senza innesti il Docente li perde uno a uno."""
+roles = ["Docente", "Moderator", "Course Creator", "Batch Evaluator"]
+behaviour = [
+	"il Docente vede la card di ogni corso da amministratore: nessun invito a iscriversi, compaiono le azioni di gestione",
+	"il Docente apre ogni corso, anche non pubblicato o in arrivo, senza essere rimandato all'elenco dei corsi, e nella lezione ha i controlli di gestione come un istruttore",
+	"su un corso di cui non è istruttore il Docente lo visiona soltanto: non vede le schede Dashboard, Editor lezioni, Impostazioni e Simulazioni, e il modulo impostazioni del corso lo rimanda all'elenco dei corsi",
+	"nella pagina di ogni classe il Docente è amministratore: vede Dashboard amministrativa e Impostazioni, pubblica, importa e iscrive studenti, invia annunci, genera certificati in blocco e modifica i modelli email della classe",
+	"il Docente vede «Crea classe» nell'elenco delle classi e trova negli elenchi anche le classi non pubblicate",
+	"il Docente crea, modifica ed elimina le lezioni dal vivo di qualunque classe, e il server accetta le stesse operazioni",
+	"il Docente apre, modifica e corregge quiz, compiti, esercizi e le loro consegne anche nei corsi dove non è istruttore, e vede corsi e contenuti in bozza nelle liste e nei selettori",
+	"il Docente iscrive studenti e legge le iscrizioni di qualunque classe",
+	"il Docente vede progressi e statistiche video anche dei corsi dove non è istruttore",
+	"i file caricati da un Docente nelle lezioni si aprono per gli studenti iscritti (niente 403), anche se il Docente non è istruttore del corso",
+	"un capitolo SCORM, la risposta modello di un compito e le spiegazioni di una domanda salvati da un Docente conservano questi campi (permlevel 1 concesso dove il Docente ha già il livello 0)",
+	"il Docente cerca gli utenti nei campi Istruttori di corsi e classi e Valutatori delle classi senza ricevere 403; per gli altri ruoli quelle ricerche restano come nell'upstream",
+	"le lezioni che il Docente può leggere per nome compaiono anche negli elenchi, per esempio nel selettore delle lezioni dell'editor delle simulazioni",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/tests/test_docente_user_pickers.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_role_gates_v2_64.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_role_gates_v2_65.py",
+]
+upstream_watch = [
+	"instructor role", "global instructor", "is_instructor", "can_modify_course", "can_modify_batch",
+	"can_author_batch", "has_authored_content_permission", "can_access_assessment", "_assessment_answer",
+	"courses_authored_by", "serve_resource", "can_list_unpublished", "restrict_to_published",
+	"UNSCOPED_ROLES", "search_users_by_role", "search_non_student_users", "canCreateBatch",
+	"reconcile_custom_docperm_permlevels", "permlevel", "LMS Live Class has_permission",
+	"get_permission_query_conditions",
+]
+data = [
+	"Ruolo «Docente» (creato e assegnato dal Desk; DocPerm di livello 0 gestite a mano dal Desk in produzione)",
+	"DocPerm Docente su LMS Program (lettura, creazione, scrittura, eliminazione) da os_lms.setup.setup_docente_role_permissions",
+	"permlevel 1 Docente su Course Chapter, LMS Assignment, LMS Question (DOCENTE_PERMLEVEL_DOCTYPES), solo dove ha già il livello 0",
+	"flag is_docente (e is_instructor forzato a True, is_student a False) nell'override os_lms di get_user_info",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_role_gates_v2_64.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_role_gates_v2_65.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_docente_user_pickers.py",
+]
+notes = """
+- La SPA decide cosa mostrare dai flag di $user (is_moderator, is_instructor, is_docente), non dai
+  permessi dei doctype: ogni nuovo gate upstream del tipo «is_moderator || is_instructor» o
+  «isAdmin» va controllato; il server decide con can_modify_course / can_modify_batch /
+  can_author_batch e i predicati di permissions.py. Pulsante visibile e server che rifiuta (o
+  viceversa) è il sintomo tipico di un innesto perso.
+- Dopo ogni merge ricontrollare is_docente in CourseDetail.vue, Lesson.vue e CourseCardOverlay.vue:
+  il bypass era già stato perso in un merge di giugno 2026 e ritrovato solo al collaudo del 2026-10-05.
+- Eccezione voluta (2026-09-23, ribadita 2026-10-05 dopo la matrice dei ruoli): sui corsi che non
+  insegna il Docente non ha Impostazioni, Dashboard, Editor né Simulazioni; CourseForm.checkPermission
+  non deve ammettere is_docente. Le API della dashboard però lo lasciano passare: è solo la SPA a
+  nascondere la scheda.
+- search_users_by_role è una copia del corpo upstream (v2.64.0) con il Docente nell'only_for: va
+  riconfrontata a ogni merge (test_same_answer_as_upstream). Mai usare frappe.set_user per aggirare
+  un only_for: disconnette il chiamante.
+- I certificati non seguono la regola globale: il Docente vede e gestisce solo quelli dei corsi in
+  cui è istruttore (scheda course-certificates). Programmi: scheda programs.
+- Bundle reale in produzione: Docente + «Istruttore della classe» (Batch Evaluator), spesso senza
+  Course Creator (verifica 2026-10-12): senza le DocPerm del Desk su LMS Course, Course Chapter,
+  LMS Question, LMS Quiz Submission e LMS Course Progress un Docente così non crea corsi né legge le
+  risposte dei quiz. È una scelta del cliente da fare nel Desk, non nel codice. Nei piani di test
+  usare sempre i bundle, mai il ruolo da solo.
+- Le voci course-lesson-list-mirrors-read-gate e i test test_role_gates_v2_64/65 sono condivisi con
+  la scheda valutatore-role; le voci live del Docente e can_author_batch toccano anche
+  batch-management-permissions."""
+history = [
+	{ date = "2026-06-01", ref = "f3b06d555", summary = "creazione: permessi del nuovo ruolo Docente come istruttore globale (flag is_docente, can_modify_course/can_modify_batch)" },
+	{ date = "2026-09-24", ref = "993f9448c", summary = "merge v2.62.0: filtri di lista di classi, lezioni live e lezioni allargati al Docente; gestione delle live decisa dal committente" },
+	{ date = "2026-09-30", ref = "90442f751", summary = "merge v2.64.0: innesti nei nuovi cancelli (contenuti di altri autori, bozze, media delle lezioni, permlevel 1)" },
+	{ date = "2026-10-05", ref = "438270639", summary = "sui corsi che non insegna il Docente vede solo la panoramica (matrice dei ruoli del cliente)" },
+	{ date = "2026-10-05", ref = "c15f01629", summary = "il Docente cerca gli utenti per assegnare istruttori e valutatori" },
+	{ date = "2026-10-12", ref = "721be82c6", summary = "merge v2.65.0: Docente in can_author_batch, predicato assessment, iscrizioni alle classi e media delle lezioni" },
+]

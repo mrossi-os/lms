@@ -1,0 +1,55 @@
+id = "hidden-upstream-features"
+title = "Funzioni dell'LMS standard spente"
+status = "active"
+summary = """
+Alcune funzioni dell'LMS standard non servono al cliente e sono nascoste: pagamenti e coupon, prezzi
+e certificati a pagamento, recensioni dei corsi, offerte di lavoro nella ricerca rapida e feedback
+della classe. Il codice upstream resta al suo posto; le poche pagine ancora raggiungibili hanno le
+etichette tradotte."""
+why = """
+La piattaforma non vende corsi né certificati, non raccoglie recensioni né feedback di classe da
+queste sezioni e non pubblica offerte di lavoro. Mostrarle confonderebbe gli utenti. Decisione del
+2026-11-23: una scheda sola per tutte; le rimozioni sono state confermate dal committente il
+2026-09-25 (B6.4)."""
+roles = ["Student", "Moderator", "Docente", "System Manager"]
+behaviour = [
+	"il dialogo Impostazioni non ha il gruppo Pagamenti (configurazione di valuta e gateway, gateway, transazioni, coupon)",
+	"la card laterale del corso non mostra il prezzo",
+	"nell'iscrizione di uno studente a un corso dalla dashboard del corso non c'è la casella «Certificato acquistato», quindi nemmeno il campo Pagamento: l'iscrizione nasce senza certificato acquistato",
+	"la pagina del corso non mostra le recensioni",
+	"la dashboard del corso non ha il riquadro «Valutazione media»: restano Iscritti, Completamento medio e Lezioni su tre colonne",
+	"l'elenco «Jump to» della palette Cmd+K mostra solo Corsi e Classi, senza le offerte di lavoro",
+	"la sezione Feedback della classe non compare né nella dashboard dello studente né in quella di chi gestisce la classe",
+	"nelle pagine ancora raggiungibili di coupon, transazioni, offerte di lavoro, candidatura e recensione segnaposto, titoli e pulsanti sono tradotti",
+]
+areas = []
+upstream_watch = [
+	"Payment", "PaymentGateways", "Coupons", "Transactions", "price", "priceLabel", "paid_course",
+	"purchased_certificate", "CourseEnrollmentForm.vue", "CourseReviews", "ReviewModal", "rating",
+	"NumberChartGraph", "Jobs", "Job Opportunity", "JobForm.vue", "JobApplicationModal", "BatchFeedback",
+	"AdminBatchDashboard", "BatchDashboard",
+]
+notes = """
+- Ogni merge che tocca il blocco Pagamenti di Settings.vue tende a reintrodurlo (anche con gli import
+  di PaymentGateways, Coupons e Transactions): va riscartato. Al merge di v2.58.0 il nostro
+  Settings.vue era stato tenuto proprio per questo.
+- Le rimozioni consistono nel commentare o togliere blocchi upstream: le ancore sono i commenti. I
+  componenti restano nel codice (BatchFeedback ancora importato nella dashboard del gestore,
+  CourseReviews, i moduli dei coupon).
+- Lato server enforce_server_managed_fields riporta comunque purchased_certificate a falso per chi
+  non ne ha diritto; nel nuovo CourseEnrollmentForm (v2.62.0) la casella è stata ricommentata e il
+  test upstream courseEnrollmentForm.test.ts la tocca.
+- Nascondere non spegne: offerte di lavoro, coupon e recensioni restano raggiungibili dall'indirizzo
+  e dalle API. Le letture delle recensioni sono comunque limitate dall'override di sicurezza
+  get_reviews (scheda security-hardening).
+- In CouponDetails.vue manca class="w-full" sulla tendina Tipo di sconto: residuo di merge, non
+  voluto.
+- Il campo Pagamento tolto dall'iscrizione alla classe è nella scheda batch-students."""
+history = [
+	{ date = "2026-03-19", ref = "f33c6ca45", summary = "creazione: traduzioni nei moduli di candidatura e recensione" },
+	{ date = "2026-03-23", ref = "39907513c", summary = "gruppo Pagamenti tolto dalle impostazioni" },
+	{ date = "2026-03-25", ref = "1d3fa64ea", summary = "casella «Certificato acquistato» tolta dall'iscrizione al corso" },
+	{ date = "2026-06-04", ref = "8fafc219c", summary = "prezzo nascosto sulla card del corso, recensioni tolte dalla pagina corso" },
+	{ date = "2026-07-16", ref = "7142c05ba", summary = "offerte di lavoro tolte dalla palette Cmd+K" },
+	{ date = "2026-09-25", ref = "9855ccde3", summary = "rimozioni confermate dal committente (B6.4)" },
+]

@@ -1,0 +1,60 @@
+id = "course-settings-extensions"
+title = "Impostazioni aggiuntive del corso"
+status = "active"
+summary = """
+Nel modulo delle impostazioni del corso compaiono i campi voluti dal cliente oltre a quelli
+standard: il banner in evidenza (immagine o video), le sezioni in evidenza e la regola che blocca il
+quiz finché le lezioni precedenti non sono completate. Il modulo resta utilizzabile anche quando un
+istruttore ha perso l'account."""
+why = """
+Le funzioni del cliente sul corso (hero, sezioni in evidenza, regole di apprendimento) hanno bisogno
+di un posto nel modulo per essere modificate. L'upstream rifattorizza periodicamente questa pagina
+(nel 2026-06 l'aveva sostituita con un'architettura a sezioni): se i nostri campi spariscono dal
+modulo restano nel database ma nessuno può più cambiarli."""
+roles = ["Moderator", "Course Creator", "Docente"]
+behaviour = [
+	"nella colonna principale del modulo impostazioni del corso si attiva il banner (hero) della pagina corso, se ne sceglie il tipo (immagine o video) e il media, con un indirizzo o scegliendo un file già caricato",
+	"nella stessa colonna si modificano le sezioni in evidenza del corso",
+	"nella barra laterale del modulo, sotto «Regole di Apprendimento», c'è l'interruttore «Blocca quiz al completamento»: lo studente deve completare le lezioni precedenti al quiz per accedervi",
+	"il campo Categoria usa il controllo os_lms con i colori del cliente e la creazione in linea mostra il segnaposto tradotto «Category name»",
+	"un istruttore il cui account è stato cancellato resta elencato tra gli istruttori del corso e si può togliere, così il corso torna a salvarsi",
+]
+areas = [
+	"frontend/src/oslms/pages/Courses/OsCourseDetailForm.vue",
+	"frontend/src/oslms/pages/Courses/OsCourseSettings.vue",
+	"frontend/src/oslms/types/lms-course-augment.d.ts",
+]
+upstream_watch = [
+	"CourseForm.vue", "CourseDetailsSection.vue", "CourseHeroSection", "CoursePublishSettings.vue",
+	"CourseInstructorsField.vue", "course settings", "enforce_lesson_completion", "Controls/Link.vue",
+	"inlineCreatePlaceholder", "NewCourseForm", "CourseThumbnailField",
+]
+data = [
+	"custom field LMS Course.hero_enabled, hero_media_type, hero_media_url (fixtures/custom_field.json)",
+	"custom field LMS Course.enforce_quiz_on_completion (fixtures); enforce_lesson_order esiste ancora nelle fixtures ma l'ordine delle lezioni oggi usa il campo upstream enforce_lesson_completion",
+	"custom field LMS Course.feature_sections (scheda feature-sections)",
+]
+notes = """
+- I campi del cliente sono due componenti os_lms montati nel CourseForm upstream: OsCourseDetailForm
+  (hero, sezioni in evidenza; colonna principale) e OsCourseSettings (regole di apprendimento; barra
+  laterale). In caso di riscrittura dell'upstream rimontarli nella nuova struttura, non tornare a un
+  modulo monolitico.
+- Decisione confermata il 2026-09-23: nel CourseForm checkPermission ammette solo moderatori e
+  istruttori del corso (niente bypass del Docente) e non esiste più la «save guard» con lo spazio a
+  larghezza zero. Non ripristinarli e non segnalarli come persi.
+- Il campo Categoria usa il wrapper oslms/components/Controls/Link.vue: dopo un merge l'import può
+  tornare a '@/components/Controls/Link.vue' e va ripuntato; quando l'upstream cambia
+  components/Controls/Link.vue va aggiornato anche il wrapper (firma di onCreate, reload esposto).
+- La sezione Dettagli ha v-if=\"doc\" sulla radice (6d6d2af78): motivazione dedotta, evita di valutare
+  il template prima che il documento sia caricato.
+- La voce course-form-mobile-layout (copertina e dialogo Nuovo corso impilati su telefono) è tollerata
+  dal merge di v2.62.0: lo fa già il redesign mobile upstream.
+- Ordine delle lezioni e blocco del quiz, come regole per lo studente, sono nella scheda
+  guided-learning-path; qui c'è solo il loro posto nel modulo."""
+history = [
+	{ date = "2026-04-22", ref = "6b9bd145a", summary = "creazione: campi del banner hero nelle impostazioni del corso" },
+	{ date = "2026-06-04", ref = "6d6d2af78", summary = "adottata l'architettura a sezioni dell'upstream e rinnestati tag, hero, sezioni e regole" },
+	{ date = "2026-06-09", ref = "22776c717", summary = "campi del cliente raccolti nei componenti OsCourseDetailForm e OsCourseSettings" },
+	{ date = "2026-07-14", ref = "3f21af05c", summary = "campo Categoria ripuntato sul wrapper os-link" },
+	{ date = "2026-09-11", ref = "1f3614c65", summary = "istruttore con account cancellato di nuovo rimovibile dal corso" },
+]

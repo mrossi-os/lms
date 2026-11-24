@@ -1,0 +1,84 @@
+id = "account-deletion"
+title = "Eliminazione dell'account (GDPR)"
+status = "active"
+summary = """
+Ogni utente può cancellare da solo il proprio account dal profilo (o, su telefono, dalla pagina
+«Tu»), confermando con la password o con un codice ricevuto via email. La cancellazione è
+completa: i dati della persona spariscono, i contenuti che appartengono al cliente (corsi, lezioni,
+lezioni dal vivo, compiti corretti) restano senza il suo nome. Se il cliente lo chiede, si può
+attivare la revisione: chi non è Gestore invia una richiesta, che un Gestore approva o rifiuta."""
+why = """
+Requisito della certificazione ESG (punto 3 del piano del 2026-10-23, GDPR art. 17): l'utente deve
+poter cancellare i propri dati. L'eliminazione standard di Frappe (Personal Data Deletion Request)
+rinomina l'utente in deleted-user-NNNN e conserva tutto sotto quel nome: è una pseudonimizzazione,
+che non soddisfa una richiesta di cancellazione. La revisione da parte del Gestore è una regola del
+cliente del 2026-10-30, con la decisione di tenerla nelle Impostazioni senza pagina né voce di menu
+proprie."""
+roles = ["Student", "Gestore", "System Manager", "Moderator"]
+behaviour = [
+	"ogni utente tranne Administrator vede «Elimina account» sul proprio profilo (non in sola lettura) e, su telefono, una riga «Elimina account» nella pagina «Tu» subito prima di «Esci»",
+	"l'eliminazione si conferma con la password; gli account senza password (accesso social) ricevono via email un codice di 6 cifre valido 15 minuti; avvio e conferma sono limitati a 5 tentativi l'ora",
+	"una password o un codice sbagliati danno un messaggio di errore senza disconnettere l'utente",
+	"confermata l'eliminazione diretta, l'account viene disattivato e tutte le sue sessioni chiuse subito; la cancellazione completa gira in background e al termine l'utente riceve un'email di commiato che ricorda che i badge già emessi su TrueSkills restano su TrueSkills",
+	"vengono cancellati per sempre i dati della persona (risposte alle discussioni, recensioni, discussioni aperte da lei senza risposte di altri, file caricati e non allegati, registri di attività e di accesso, notifiche, email in coda, log di emissione TrueSkills, copie nei Deleted Document che la riguardano); nei registri di errore l'indirizzo è sostituito da [deleted user]",
+	"corsi, lezioni, lezioni dal vivo e consegne corrette che l'utente ha solo creato o valutato restano: autore e ultimo modificatore diventano Administrator e i riferimenti di ruolo (valutatore, host...) passano ad Administrator o vengono svuotati",
+	"con l'opzione «Account Deletion Requires Review» delle LMS Settings attiva, chi non è Gestore, System Manager o Administrator dopo la stessa conferma invia una richiesta invece di cancellare: l'account resta attivo, la richiesta scade a 60 giorni e l'utente la vede e la può ritirare dalla stessa finestra",
+	"Gestore e System Manager trovano nelle Impostazioni la scheda «Richieste di eliminazione account» quando la revisione è attiva o restano richieste in attesa; approvare esegue la stessa cancellazione completa, rifiutare richiede un motivo (al massimo 1000 caratteri) che arriva all'utente per email",
+	"nessuno decide la propria richiesta, e un account con ruolo System Manager o Gestore viene eliminato, approvando una richiesta o da Membri, solo da un System Manager",
+	"«Elimina utente» in Membri è disponibile solo a Gestore e System Manager, non più al semplice Moderator",
+	"alla scadenza della richiesta non succede nulla in automatico: l'utente Administrator e i Gestori ricevono un promemoria 7 giorni prima, il giorno della scadenza e poi ogni settimana, con le sole date e mai il nome di chi ha chiesto",
+	"dopo la cancellazione la richiesta resta come registro della decisione, senza più l'utente né chi ha deciso",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/account_deletion.py",
+	"apps/os_lms/os_lms/os_lms/account_deletion_requests.py",
+	"apps/os_lms/os_lms/os_lms/doctype/os_account_deletion_request/*",
+	"frontend/src/oslms/components/DeleteAccountDialog.vue",
+	"frontend/src/oslms/components/AccountDeletionRequestsSettings.vue",
+	"frontend/src/oslms/utils/accountDeletion.ts",
+	"apps/os_lms/os_lms/os_lms/tests/test_account_deletion*.py",
+	"frontend/src/tests/accountDeletion.test.ts",
+]
+upstream_watch = [
+	"delete account", "account deletion", "Personal Data Deletion Request", "request-for-account-deletion",
+	"erase", "anonymize", "GDPR", "delete_member", "Members.vue", "Profile.vue", "MobileYou.vue",
+	"Log out row", "privacy", "show_account_deletion_link",
+]
+data = [
+	"doctype OS Account Deletion Request (user, full_name, status Pending/Approved/Rejected/Withdrawn, requested_on, due_on, decided_by, decided_on, rejection_reason, last_reminder_on); DocPerm solo System Manager, il resto passa dagli endpoint",
+	"custom field LMS Settings.account_deletion_requires_review (Check)",
+	"flag can_delete_users e show_account_deletion_requests in get_user_info (override_api)",
+	"endpoint account_deletion.start_account_deletion / delete_my_account e account_deletion_requests.withdraw_my_request / get_requests / approve_request / reject_request; scheduler giornaliero account_deletion_requests.send_reminders",
+	"cascata on_trash di User in os_lms/events/user.py (scheda oslms-core): ROLE_LINK_FIELDS svuota la richiesta invece di cancellarla",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_account_deletion.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_account_deletion_requests.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_package_e.py",
+	"frontend/src/tests/accountDeletion.test.ts",
+]
+notes = """
+- La prova di accettazione è find_traces(email, user) in account_deletion.py: cerca l'email e il
+  nome utente in ogni colonna di testo del database. I test la usano dopo la cancellazione di uno
+  studente e di un docente; usarla anche dalla console dopo una cancellazione reale.
+- La risposta a una password sbagliata è una ValidationError di proposito: una AuthenticationError
+  fa rispondere Frappe con 401 e cancellare i cookie, cioè un refuso disconnetterebbe l'utente.
+- erase_user va in coda dopo il logout, che fa commit: accodato prima, girava in anticipo e lasciava
+  indietro l'Activity Log «Force Logged out». La funzione si può rilanciare su un utente già
+  cancellato (ripulisce solo ciò che resta).
+- Ogni nuovo doctype che conserva l'email di un utente in un campo di testo (non un Link a User)
+  va aggiunto a LOG_RECORDS o OWNED_RECORDS, altrimenti find_traces lo trova dopo la cancellazione.
+  Ogni nuovo Link a User in cui l'utente ha solo «agito» su un record altrui va in ROLE_LINK_FIELDS
+  di events/user.py, altrimenti la cascata cancella dati di altre persone.
+- Innesti nei file upstream (voci collegate): Profile.vue e MobileYou.vue (pulsante e riga), App.vue
+  e Members.vue, lms/templates/signup-form.html. Se l'upstream rinomina la chiave «Log out» della riga
+  di uscita, withDeleteAccountRow non inserisce più la riga su telefono.
+- La voce account-deletion-review-and-privacy-consent è condivisa con la scheda signup-privacy, che
+  descrive la casella privacy e la finestra di accettazione.
+- La pagina web /me di Frappe (scheda web-pages-login) mostra ancora, se Website Settings la abilita,
+  la voce «Delete Account» verso la richiesta standard di Frappe, che pseudonimizza."""
+history = [
+	{ date = "2026-10-23", ref = "75ac68926", summary = "creazione: l'utente elimina da solo il proprio account, cancellazione completa (ESG punto 3)" },
+	{ date = "2026-10-30", ref = "49b668f47", summary = "revisione delle richieste da parte del Gestore, eliminazione di utenti riservata a Gestore e System Manager, consenso privacy" },
+	{ date = "2026-10-30", ref = "c681dda47", summary = "revisione delle richieste spostata in una scheda delle Impostazioni" },
+]

@@ -1,0 +1,77 @@
+id = "ai-lesson-indexing"
+title = "Indicizzazione delle lezioni per il tutor AI"
+status = "active"
+summary = """
+Perché il tutor AI possa rispondere, il testo delle lezioni viene indicizzato: paragrafi, titoli,
+elenchi, trascrizioni dei video YouTube e Vimeo e testo dei file caricati (PDF, Word, PowerPoint,
+testo). L'editor della lezione mostra lo stato dell'indicizzazione e permette di avviarla; ogni
+notte la piattaforma reindicizza le lezioni modificate. Anche i file allegati ai badge del corso si
+indicizzano, con un pulsante apposito."""
+why = """
+Il tutor AI risponde solo su quello che trova nell'indice vettoriale: senza indicizzazione non sa
+nulla del corso. L'upstream non ha nulla di simile. Il processo notturno evita che il docente
+debba ricordarsi di reindicizzare a ogni modifica, e la gestione delle rinomine tiene l'indice
+allineato al job giornaliero introdotto dall'upstream in v2.61.0."""
+roles = ["Docente", "Course Creator", "Moderator", "Gestore"]
+behaviour = [
+	"nell'editor della lezione il riquadro «AI Assistant» mostra lo stato (non indicizzata, in corso, indicizzata con data e ora, fallita) e il pulsante per indicizzare o reindicizzare",
+	"nel programma del corso in modalità modifica ogni lezione mostra in forma compatta il suo stato di indicizzazione; studenti e ospiti non lo vedono",
+	"solo chi può modificare il corso avvia l'indicizzazione di una lezione, al massimo 30 volte all'ora per utente; il server rifiuta gli altri",
+	"con l'interruttore AI spento l'indicizzazione è rifiutata e il processo notturno non fa nulla",
+	"modificare il contenuto della lezione la rimette in attesa (modificare solo le note per l'istruttore no); ogni notte il processo reindicizza tutte le lezioni in attesa o mai indicizzate",
+	"una lezione già in indicizzazione non viene riavviata né rimessa in coda",
+	"le note per l'istruttore (instructor_content) non entrano mai nell'indice: il tutor, che risponde anche agli studenti, non le può riportare",
+	"il testo indicizzato comprende paragrafi, titoli, elenchi, citazioni, codice, didascalie delle immagini, le trascrizioni dei video YouTube e Vimeo incorporati (conservate in cache per video) e il testo dei file caricati PDF, DOCX, PPTX e TXT",
+	"il server rifiuta di salvare una lezione con un blocco file che punta fuori dai file caricati (né file del sito né collegamento http/https)",
+	"eliminare una lezione ne toglie i contenuti dall'indice; rinominarla toglie i contenuti indicizzati con il vecchio nome e la rimette in attesa; un errore dell'indice non blocca mai eliminazione o rinomina",
+	"nelle impostazioni del corso il pulsante «Reindicizza features» indicizza in background i file allegati ai badge del corso (solo moderatori e istruttori del corso con ruolo Course Creator); un file indicizzato mostra la data, un file da cui non si ricava testo (per esempio un PDF scansionato) non la mostra",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/ai/ingestion/*",
+	"frontend/src/oslms/components/ai/Course/*",
+	"frontend/src/oslms/composables/useLessonIngestion.js",
+	"apps/os_lms/os_lms/os_lms/tests/test_lesson_rename_reindex.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_tutor_instructor_content.py",
+	"apps/os_lms/os_lms/patches/v0_0_12/*",
+]
+upstream_watch = [
+	"index", "embedding", "vector", "RAG", "Course Lesson rename", "rename_doc", "Untitled lesson",
+	"after_rename", "get_course_outline", "ChapterRow.vue", "LessonForm.vue", "instructor_content",
+	"transcript", "redis", "upload block", "feature_sections",
+]
+data = [
+	"custom field Course Lesson.index_status (pending, processing, indexed, failed) e Course Lesson.indexed_at, dalle fixture custom_field.json",
+	"doctype LMSA Transcript Cache (trascrizioni dei video per provider e id)",
+	"indice vettoriale Redis lmsa:{site}:chunks (redisvl, HNSW coseno, 1536 dimensioni), configurato in site_config.json con redis_vector_store; regenerate_rag_index forza la ricostruzione al migrate",
+	"impostazioni LMSA Settings: embedding_model, chunk_size, chunk_overlap, top_k, openai_key, vimeo_api_key",
+	"doc_events Course Lesson: validate (blocchi file), before_save (rimette in attesa), on_trash (pulizia), after_rename (reindicizzazione); scheduler daily os_lms.os_lms.ai.ingestion.scheduler.reindex_lesson_content; stato esposto dall'override os_lms di get_course_outline",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_lesson_rename_reindex.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_tutor_instructor_content.py",
+]
+notes = """
+- L'indice è unico per tutti i ruoli (i blocchi si filtrano per lezione, mai per ruolo): per questo
+  instructor_content resta fuori da LessonContentParser. Fino a e86808ea7 vi entrava; la patch
+  v0_0_12 rimette in coda le lezioni indicizzate che hanno note per l'istruttore, e il job notturno
+  le reindicizza togliendo i vecchi vettori. Sui siti dove le patch vengono marcate fatte prima del
+  migrate (staging) va lanciata a mano: bench --site <site> execute
+  os_lms.patches.v0_0_12.requeue_lessons_with_instructor_content.execute
+- Decisione del committente (2026-09-23): alla rinomina si cancellano i vettori col vecchio nome e
+  la lezione torna in coda; una lezione «processing» non si rimette in coda; mai bloccante. In
+  produzione, al 2026-09-23, 9 lezioni indicizzate su 105 sarebbero state rinominate dal job
+  upstream.
+- Gli stati index_status / indexed_at si scrivono con db_set senza aggiornare modified, così la
+  lunga chiamata di embedding non entra in conflitto con un salvataggio concorrente della lezione.
+- RediSearch richiede il database 0 di Redis.
+- Il pulsante «Reindicizza features» e la sezione dei badge stanno nell'editor delle feature del
+  corso (FeatureSectionEditor.vue), fuori dall'area di questa scheda."""
+history = [
+	{ date = "2026-03-16", ref = "2abef560c", summary = "creazione: componenti di indicizzazione e di stato AI della lezione" },
+	{ date = "2026-03-24", ref = "dc5efa19e", summary = "servizio di indicizzazione e indice vettoriale riscritti" },
+	{ date = "2026-06-17", ref = "7e24bd4d9", summary = "indicizzazione dei file allegati ai badge del corso" },
+	{ date = "2026-09-23", ref = "060a3642b", summary = "rinomina di una lezione: vettori ripuliti e lezione rimessa in coda (voce lesson-rename-rag-reindex)" },
+	{ date = "2026-10-28", ref = "d825bc9d5", summary = "OWASP: indicizzazione solo per chi modifica il corso, con limite orario" },
+	{ date = "2026-10-28", ref = "03164a13b", summary = "OWASP: blocchi file delle lezioni solo verso file caricati" },
+	{ date = "2026-11-24", ref = "e86808ea7", summary = "le note per l'istruttore escono dall'indice (il tutor poteva riportarle agli studenti); patch v0_0_12 di reindicizzazione" },
+]

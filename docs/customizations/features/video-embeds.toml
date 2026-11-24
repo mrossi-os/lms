@@ -1,0 +1,73 @@
+id = "video-embeds"
+title = "Video YouTube e Vimeo"
+status = "active"
+summary = """
+I video Vimeo funzionano ovunque funzionano quelli YouTube: nelle lezioni, nel video di anteprima di
+corsi e classi e nel banner del corso. Gli autori possono incollare anche il link di condivisione di
+Vimeo, che la piattaforma trasforma da sé nel link giusto. Le anteprime si guardano con lo stesso
+player delle lezioni, senza i controlli del sito del provider."""
+why = """
+Il cliente pubblica i suoi video su Vimeo, spesso non in elenco, mentre l'upstream conosce solo
+YouTube e i file caricati: un link Vimeo finiva in un lettore che non caricava nulla e il vecchio
+salvataggio del link rovinava le forme vimeo.com/<id>/<hash>. Il pulsante «Copia link» di Vimeo dà un
+link di condivisione che nessuno può incorporare, e gli autori ottenevano testo al posto del video.
+Le anteprime nell'iframe del provider mostravano titolo, canale, condivisione e video suggeriti."""
+roles = ["Moderator", "Course Creator", "Docente", "Student"]
+behaviour = [
+	"il video di anteprima di un corso o di una classe su YouTube o Vimeo si riproduce con lo stesso player delle lezioni, senza titolo, canale, condivisione né griglia di fine video del provider, e lo spazio 16:9 è riservato mentre il player parte",
+	"incollando nell'editor della lezione un link vimeo.com/share/<codice>, il blocco diventa un normale video Vimeo; se la risoluzione non riesce il link resta come testo e compare un messaggio",
+	"il campo «Video di anteprima» di corsi e classi accetta link YouTube e Vimeo, mostra l'anteprima anche per Vimeo e i suoi testi dicono «YouTube o Vimeo»",
+	"un link di condivisione Vimeo incollato nel campo «Video di anteprima» viene sostituito dal link canonico del video; se la risoluzione non riesce compare un messaggio e il valore resta com'è",
+	"i video Vimeo non in elenco, con il codice privato nel link (vimeo.com/<id>/<hash> o ?h=), si riproducono nelle lezioni, nelle anteprime e nel banner del corso",
+	"salvando il corso, un link YouTube del video di anteprima (watch?v= o youtu.be/) viene ridotto all'id del video, mentre un link Vimeo o un file caricato resta intero",
+	"la risoluzione dei link di condivisione Vimeo è rifiutata agli utenti non autenticati e accetta solo link vimeo.com/share/",
+	"con l'integrazione Vimeo attiva, l'audio di una lezione con video Vimeo (usato dall'app) si ottiene solo se l'utente può aprire la lezione in quel momento; in modalità test si riceve l'audio di prova configurato",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/doctype/vimeo_settings/*",
+	"frontend/src/tests/videoPreviewFieldShare.test.ts",
+	"frontend/src/tests/vimeoShareEmbed.test.ts",
+]
+upstream_watch = [
+	"vimeo", "VideoPreview.vue", "VideoPreviewField.vue", "video.ts", "getVideoPreview",
+	"getVideoEmbedURL", "isVimeoLink", "VIMEO_SHARE_RE", "@editorjs/embed", "Embed services", "Plyr",
+	"VideoBlock.vue", "validate_video_link", "video_link", "Store video_link exactly as entered",
+	"preview video", "CourseHero",
+]
+data = [
+	"doctype Single «Vimeo Settings» (solo System Manager): abilitazione, token personale Vimeo, durata della cache dello stream e timeout dell'API, modalità test con audio di prova, esito dell'ultima prova di connessione",
+	"endpoint os_lms.os_lms.api.resolve_vimeo_share (cache 24 ore) e get_lesson_audio_stream (legge Vimeo Settings)",
+]
+tests = [
+	"frontend/src/tests/vimeoShareEmbed.test.ts",
+	"frontend/src/tests/videoPreviewFieldShare.test.ts",
+	"frontend/src/tests/video.test.ts",
+]
+notes = """
+- Un link vimeo.com/share/<uuid> non si può incorporare in nessun modo: il codice non contiene l'id,
+  la pagina non reindirizza, l'oEmbed di Vimeo dà 404 e la pagina vieta l'iframe. L'id si ricava solo
+  leggendo la pagina lato server (resolve_vimeo_share ricostruisce l'URL dal codice, contro lo SSRF).
+- Invariante: un blocco di lezione risolto si salva con service «vimeo», source vimeo.com/<id>/<hash>
+  ed embed player.vimeo.com/video/<id>?h=<hash>; il servizio vimeoShare non deve mai essere salvato,
+  perché il backend legge source per l'audio HLS e il trascrittore AI legge embed.
+- Il campo di anteprima non risolve il link nel validate del server di proposito: il modulo del corso
+  si salva da solo e un disservizio di Vimeo bloccherebbe salvataggi che non c'entrano.
+- Entrambe le metà frontend sono innesti in file upstream (utils/index.js, VideoPreviewField.vue): da
+  riapplicare dopo ogni merge. getVideoEmbedURL vive in utils/video.ts ed è riesportata da
+  utils/index.js per l'hero del corso (CourseHero.vue): se la riesportazione sparisce il banner non
+  compila.
+- La lacuna «nessuna anteprima per i link Vimeo nel campo» segnata il 2026-07-15 è chiusa dal
+  2026-09-07 (0a61c2f10): getVideoPreview classifica un link Vimeo come embed.
+- validate_video_link (lms_course.py): dalla v2.57.0 l'upstream salva il link così com'è e il frontend
+  accetta URL e id; la nostra versione potrebbe essere superflua, ma il committente l'ha confermata il
+  2026-09-25 (B6.4).
+- Vimeo Settings serve oggi solo a get_lesson_audio_stream (audio delle lezioni Vimeo per l'app).
+- Nella suite dei test di questa scheda alcune failure erano già presenti alla creazione: mock
+  esplicito di frappe-ui, matchMedia stubbato prima di importare Plyr, __ nei mocks globali."""
+history = [
+	{ date = "2026-05-08", ref = "11d28f98c", summary = "creazione: integrazione Vimeo (Vimeo Settings) per lo stream audio delle lezioni" },
+	{ date = "2026-06-03", ref = "f51e0a512", summary = "link Vimeo nel video di anteprima del corso, YouTube ridotto all'id" },
+	{ date = "2026-07-15", ref = "10395cec9", summary = "link di condivisione Vimeo risolti nelle lezioni e nel video di anteprima" },
+	{ date = "2026-09-07", ref = "0a61c2f10", summary = "video di anteprima Vimeo della classe visibile" },
+	{ date = "2026-09-17", ref = "8f7729e58", summary = "anteprime di corsi e classi riprodotte con il player delle lezioni" },
+]

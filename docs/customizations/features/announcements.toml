@@ -1,0 +1,69 @@
+id = "announcements"
+title = "Annunci della classe"
+status = "active"
+summary = """
+Chi gestisce una classe manda annunci a tutta la classe o a studenti scelti. Ogni annuncio arriva come
+notifica in piattaforma e, se richiesto, anche come email personale, composta a partire dai modelli
+email del cliente senza rovinarne la grafica. Nella scheda Annunci lo studente vede solo gli annunci
+indirizzati a lui, mostrati come l'email ricevuta, dieci per pagina."""
+why = """
+L'upstream manda l'annuncio come un'unica email in copia nascosta, con il campo Rispondi-a
+obbligatorio, sempre a tutti gli studenti e senza notifica in piattaforma; l'editor ricco di
+frappe-ui cancella gli stili dei modelli email. Il cliente vuole comunicazioni con il proprio
+marchio, a gruppi mirati, che gli studenti trovino anche dentro la piattaforma."""
+roles = ["Moderator", "Docente", "Batch Evaluator", "Valutatore", "Student"]
+behaviour = [
+	"il pulsante «Fai un annuncio» compare nell'intestazione della classe solo sulla scheda Annunci e a chi gestisce la classe; il server accetta l'invio solo da Moderator, Docente, Batch Evaluator, System Manager e dagli utenti indicati sulla classe; il Valutatore legge gli annunci ma non li manda",
+	"ogni annuncio crea una notifica in piattaforma per ciascun destinatario («Hai un nuovo messaggio in annunci: <classe>») che porta alla scheda Annunci; l'email parte solo con «Invia email insieme alla notifica»",
+	"con l'email attiva ogni destinatario riceve una propria email, senza vedere gli altri indirizzi, con mittente l'autore dell'annuncio e risposte indirizzate all'autore; il campo Rispondi-a non c'è più",
+	"«Invia a» sceglie fra tutta la classe e studenti specifici, cercati per nome o email; con studenti specifici serve almeno una selezione",
+	"il server rifiuta un annuncio con destinatari che non sono studenti della classe",
+	"con l'email attiva si sceglie un modello: quelli marcati «Available for Batch Announcements» (se nessuno è marcato, tutti), con preselezionato «Announcement Email Template» se esiste; il modello si usa per l'annuncio e non viene mai modificato",
+	"un modello HTML con {{ message }} si compila scrivendo solo il messaggio nell'editor, con anteprima e HTML avanzato; un modello HTML senza segnaposto si modifica come HTML grezzo con anteprima fedele; senza modello HTML o senza email si usa l'editor ricco",
+	"nel testo vengono sostituiti solo i segnaposto {{ message }}, {{ announcement_url }}, {{ subject }} e {{ frappe.utils.get_url() }}; qualsiasi altra espressione resta testo e non viene eseguita",
+	"nella scheda Annunci ogni annuncio mostra l'oggetto sopra il corpo; un annuncio con HTML da modello email si vede in un riquadro isolato uguale all'email ricevuta, una notifica semplice nella card del tema; le righe vuote si conservano",
+	"la scheda Annunci mostra 10 annunci per pagina con Precedente e Successivo",
+	"lo studente vede solo gli annunci di cui è destinatario e non riceve gli indirizzi degli altri destinatari; gestori e Valutatore della classe li vedono tutti",
+	"tornando alla scheda dopo l'invio, l'elenco riparte dalla prima pagina e mostra subito l'annuncio appena inviato",
+]
+areas = [
+	"frontend/src/pages/Batches/components/AnnouncementContent.vue",
+]
+upstream_watch = [
+	"announcement", "AnnouncementForm.vue", "AnnouncementModal", "Announcements.vue", "get_announcements",
+	"communication.email.make", "reply_to", "Communication LMS Batch", "Email Template", "RichTextEditor",
+	"TextEditor", "batch announcements tab", "#announcements",
+]
+data = [
+	"custom field Email Template.custom_available_for_announcements (Check), creato da os_lms.setup (CUSTOM_FIELDS)",
+	"endpoint os_lms.os_lms.api.send_batch_announcement (batch, recipients, subject, content, message, send_email) e fill_announcement_placeholders",
+	"override di lms.lms.api.get_announcements in os_lms.os_lms.override_api: filtro per destinatario, paginazione start/page_length, risposta {data, total}",
+	"un record Communication per annuncio (riferito alla LMS Batch) che alimenta la scheda; le email partono una per destinatario",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_2026_10.py",
+]
+notes = """
+- L'editor ricco di frappe-ui (TipTap) non conserva l'HTML delle email: al primo tocco riscrive il
+  corpo e perde stili in linea, pulsanti e tabelle. Per questo i tre rami; scelta confermata
+  dall'utente, da non «semplificare».
+- L'anteprima (AnnouncementContent.vue) è un iframe con sandbox senza allow-scripts, di proposito:
+  l'avviso «Blocked script execution in about:srcdoc» è innocuo e non va «corretto» aggiungendo
+  allow-scripts (XSS).
+- L'endpoint richiede subject, batch, recipients e content: il modulo deve mandarli tutti.
+- Dal merge di v2.62.0 il compositore è la pagina instradata upstream pages/Forms/AnnouncementForm.vue
+  (non più una modale); il ricaricamento della lista segue il cambio di route. Il ramo dei modelli
+  era già stato perso una volta in un merge (3caf07639) e ripristinato.
+- La paginazione dipende dall'override di get_announcements: se sparisce, la risposta upstream è una
+  lista e la scheda risulta vuota. L'override non seleziona name, quindi la chiave degli elementi è
+  l'indice.
+- Il badge dei non letti sulla scheda Annunci è nella scheda notifications."""
+history = [
+	{ date = "2026-04-15", ref = "dd55dbbbc", summary = "creazione: annunci inviati come notifica in piattaforma con email facoltativa" },
+	{ date = "2026-04-24", ref = "5e33213bb", summary = "compositore con email e modelli" },
+	{ date = "2026-04-27", ref = "3bcdbb28d", summary = "paginazione degli annunci" },
+	{ date = "2026-06-08", ref = "11ce653d8", summary = "scelta del modello email per l'annuncio" },
+	{ date = "2026-09-24", ref = "335f9aa8d", summary = "merge v2.62.0: regole riportate nella pagina instradata AnnouncementForm" },
+	{ date = "2026-10-23", ref = "a8e3fbcec", summary = "OWASP: solo segnaposti noti, destinatari solo fra gli studenti della classe" },
+	{ date = "2026-10-26", ref = "ae689ba8a", summary = "OWASP: destinatario riconosciuto per indirizzo esatto, indirizzi degli altri nascosti agli studenti" },
+]

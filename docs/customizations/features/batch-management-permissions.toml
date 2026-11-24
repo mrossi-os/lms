@@ -1,0 +1,52 @@
+id = "batch-management-permissions"
+title = "Chi gestisce una classe"
+status = "active"
+summary = """
+Stabilisce chi può gestire una singola classe: oltre a Moderator e Docente, il Course Creator o il
+Batch Evaluator indicati su quella classe ne gestiscono dashboard, lezioni dal vivo, annunci e
+iscrizioni. Il pulsante per aggiungere corsi e valutazioni alla classe compare solo a chi può
+davvero completare l'operazione."""
+why = """
+Al merge di v2.65.0 l'upstream ha introdotto la regola per cui chi è indicato su una classe la
+gestisce (can_author_batch, #2845) e il committente l'ha adottata (2026-10-12), coerente con la
+colonna «Istruttore della classe» della sua matrice dei ruoli. Perché funzioni qui servivano permessi
+copiati nelle Custom DocPerm del sito e gli stessi controlli sugli endpoint os_lms che l'upstream non
+conosce. Il pulsante Aggiungi era invece offerto a chi poi trovava un selettore vuoto (2026-09-07)."""
+roles = ["Moderator", "Docente", "Course Creator", "Batch Evaluator"]
+behaviour = [
+	"un Course Creator indicato come istruttore di una classe, o come evaluator di un suo corso, gestisce quella classe: dashboard, lezioni dal vivo, annunci e iscrizioni",
+	"un Course Creator non indicato su una classe non la gestisce",
+	"il Course Creator non crea classi: la creazione resta a Moderator, Batch Evaluator e Docente",
+	"le azioni della dashboard della classe (iscrivere, importare, rimuovere, esportare) compaiono a chi gestisce quella classe, e gli endpoint os_lms di annunci, modifica, eliminazione e avvio delle lezioni dal vivo, statistiche ed esportazione dei progressi accettano le stesse persone",
+	"un Batch Evaluator non indicato su una classe non modifica né elimina le lezioni dal vivo di quella classe",
+	"il pulsante Aggiungi delle schede Corsi e Valutazioni della classe, e i moduli che apre, sono per il Moderator e per chi gestisce quella classe; il ruolo Batch Evaluator da solo non li vede",
+	"il selettore degli istruttori del modulo classe propone sia i Batch Evaluator sia i Course Creator",
+]
+areas = []
+upstream_watch = [
+	"can_author_batch", "can_manage", "can_modify_batch", "batch instructor", "tagged instructor",
+	"Course Creator LMS Batch DocPerm", "LMS Batch Enrollment", "BatchCourseForm", "AssessmentForm",
+	"BatchCourses.vue", "Assessments.vue", "AdminBatchDashboard", "isFullAdmin", "search_users_by_role",
+]
+data = [
+	"righe Custom DocPerm Course Creator su LMS Batch, LMS Live Class e LMS Batch Enrollment copiate dai JSON upstream da os_lms.setup.setup_course_creator_batch_permissions (after_migrate), solo se mancano, senza «create» su LMS Batch",
+]
+tests = ["apps/os_lms/os_lms/os_lms/tests/test_role_gates_v2_65.py"]
+notes = """
+- Le righe DocPerm Course Creator dei JSON upstream sono oscurate dalle Custom DocPerm del sito:
+  senza la copia di setup_course_creator_batch_permissions la regola upstream non funziona qui.
+- Gli endpoint os_lms che l'upstream non conosce (send_batch_announcement, get_announcements,
+  _ensure_live_class_admin, _ensure_can_start_live_class, get_batch_certified_count,
+  get_batch_progress_stats, get_batch_student_course_progress, export_batch_progress) devono usare
+  can_author_batch, non can_modify_batch: un Course Creator indicato solo come evaluator di un corso
+  della classe vede le azioni (can_manage) e riceverebbe 403.
+- Pulsante Aggiungi: se l'upstream ripristina «is_moderator || is_evaluator» torna il selettore vuoto
+  (search_link applica i permessi di lettura e il Batch Evaluator non legge LMS Course). I moduli
+  instradati BatchCourseForm e AssessmentForm devono leggere can_manage come i pulsanti: al collaudo
+  del 2026-10-13 il Docente vedeva il pulsante e poi il rifiuto del modulo.
+- Il Docente entra in can_author_batch per innesto (scheda docente-role); il Valutatore non gestisce
+  mai la classe (scheda valutatore-role)."""
+history = [
+	{ date = "2026-09-07", ref = "8a1086854", summary = "creazione: pulsanti Aggiungi di Corsi e Valutazioni nascosti a chi non può usarli (solo Moderator)" },
+	{ date = "2026-10-12", ref = "721be82c6", summary = "merge v2.65.0: adottata la regola upstream (#2845) del Course Creator indicato sulla classe; pulsanti aperti a can_manage" },
+]

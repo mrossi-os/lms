@@ -1,0 +1,69 @@
+id = "repo-devops"
+title = "Repository, Docker e CI"
+status = "active"
+summary = """
+Ciò che serve per lavorare sul fork: l'ambiente Docker di sviluppo con Frappe, lms e os_lms, il
+debugger remoto solo in sviluppo, i file locali e le credenziali tenuti fuori da git, la versione
+di Yarn fissata e i workflow di GitHub adattati al fork (quello dell'upstream per Pilot spento,
+il controllo delle personalizzazioni a ogni pull request). Non è una funzione per l'utente."""
+why = """
+L'upstream non fornisce un ambiente di sviluppo con os_lms e i suoi servizi, e alcuni suoi
+workflow (pubblicazione degli asset per Pilot di Frappe) non hanno senso sul fork. Le credenziali
+dei database remoti e le bozze per il cliente vivono nella copia locale e non devono mai finire nel
+repository."""
+roles = []
+behaviour = [
+	"docker compose up nella cartella docker avvia MariaDB, Redis, Frappe con lms e os_lms e Mailpit (Phoenix solo con il profilo ai-eval); il sito di sviluppo risponde su http://lms.localhost:8000/lms",
+	"a ogni avvio del container init.sh prepara il bench (Frappe version-16-hotfix) se manca e termina sempre con bench migrate e bench start",
+	"il debugger remoto debugpy sulla porta 5678 parte solo con DEBUG_MODE=1 e il sito in developer_mode, mai su un bench di produzione",
+	"credenziali e file locali (.env, docker/.env, common_site_config.json, .private/, bozze UAT per il cliente, esportazioni .tsv, cache di graphify, print format del certificato del cliente, file dell'IDE) sono esclusi da git; /frappe-ui è ancorato alla radice, così gli override in frontend/src/overrides/frappe-ui restano versionati",
+	"il package.json di radice fissa Yarn classic 1.22.22 (campo packageManager) per corepack, che init.sh abilita quando yarn manca",
+	"il workflow upstream assets.yml (asset per Pilot) non gira sul fork: ha la condizione github.repository == 'frappe/lms'",
+	"il workflow Customizations esegue i test del rilevatore e il controllo dell'inventario a ogni pull request e a ogni push su develop e feature/oslms, dopo aver scaricato i tag dell'upstream",
+]
+areas = [
+	"docker/Dockerfile",
+	"docker/README.md",
+	"apps/os_lms/os_lms/debug.py",
+]
+upstream_watch = [
+	".gitignore", "package.json packageManager", "docker", "docker-compose", "init.sh", "corepack",
+	".github/workflows", "assets.yml", "pilot", "playwright", "cypress", "frontend-tests.yml",
+	"ui-tests.yml", "debugpy",
+]
+data = [
+	"docker/Dockerfile, docker/docker-compose.yml, docker/init.sh, docker/README.md (variabili d'ambiente in docker/.env, non versionato; il file .env.example citato in CLAUDE.md non è nel repository)",
+	"blocco «OVERSIDE» in coda a .gitignore; campo packageManager nel package.json di radice",
+	"workflow nostri .github/workflows/customizations.yml e dependency-scan.yml (quest'ultimo descritto nella scheda security-hardening); guardia sul repository in .github/workflows/assets.yml",
+	"hook before_request os_lms.debug.active_debug",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_2026_10.py",
+]
+notes = """
+- Se il merge prende il .gitignore dell'upstream le credenziali tornano committabili per sbaglio e gli
+  override frappe-ui spariscono dall'indice (l'upstream scrive «frappe-ui» senza barra, che ignora
+  anche le cartelle annidate). Al merge di v2.64.0 l'upstream ha aggiunto in coda le cartelle di
+  Playwright: tenerle insieme al nostro blocco.
+- packageManager non esiste upstream: se il merge prende il package.json di radice dell'upstream va
+  riaggiunto. Senza, corepack potrebbe scegliere una Yarn moderna che non legge i yarn.lock v1.
+- assets.yml è lasciato com'è a monte con la sola guardia (decisione del committente del
+  2026-10-12), così i merge futuri restano facili.
+- Container: bench migrate gira solo all'avvio, quindi dopo un cambio di branch o di doctype il
+  container che gira da ore ha la meta vecchia; la CLI bench nel container è stata a volte rotta
+  (usare il python dell'env, vedi la scheda oslms-core). Gli hook (es. before_job) si leggono
+  all'avvio dei worker: docker compose restart frappe.
+- Porta 8080 occupata da un nginx locale di Homebrew: Vite parte su 8081, non è un server di
+  sviluppo rimasto acceso.
+- docker/README.md documenta anche Phoenix (test di bias dell'AI, scheda ai-bias-tests) e i comandi
+  per convertire e ricompilare le traduzioni.
+- Il test TestM11Debugpy in test_owasp_2026_10.py verifica che il debugger non parta fuori da
+  developer_mode."""
+history = [
+	{ date = "2026-03-16", ref = "eb04db67c", summary = "creazione: ambiente Docker di sviluppo con os_lms" },
+	{ date = "2026-06-05", ref = "ab9548b47", summary = "Yarn classic fissato nel package.json di radice" },
+	{ date = "2026-07-30", ref = "3a683af03", summary = "bozze UAT per il cliente escluse da git (blocco OVERSIDE nato con eb04db67c; .private/ aggiunto in b6475309d)" },
+	{ date = "2026-09-23", ref = "997ed477f", summary = "workflow Customizations sul rilevatore a ogni pull request" },
+	{ date = "2026-10-12", ref = "c08846ec9", summary = "workflow Pilot degli asset spento sul fork" },
+	{ date = "2026-10-23", ref = "a8e3fbcec", summary = "debugger remoto solo in developer_mode (OWASP)" },
+]

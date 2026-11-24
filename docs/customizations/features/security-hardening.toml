@@ -1,0 +1,101 @@
+id = "security-hardening"
+title = "Sicurezza applicativa (OWASP)"
+status = "active"
+summary = """
+Insieme di difese trasversali nate dalla revisione OWASP Top 10 dell'ottobre 2026: controlli di
+accesso comuni per le funzioni che leggono le lezioni o spendono credito dei fornitori AI, limiti
+per utente, HTML incollato negli editor reso innocuo, tempi massimi sulle chiamate esterne,
+dipendenze del frontend sopra le versioni vulnerabili, raccolta delle violazioni della Content
+Security Policy, allarmi via email sugli attacchi ed esportazione dei corsi senza file privati
+altrui. Le correzioni che riguardano una singola funzione stanno nella sua scheda."""
+why = """
+Requisito della certificazione ESG (punto 4 del piano del 2026-10-23): chiudere i rilievi della
+revisione OWASP Top 10. L'upstream lascia alcune lacune che riguardano tutto il sito: whitelist
+che vuol dire solo «utente collegato», chiamate HTTP senza timeout, HTML degli appunti interpretato
+nella pagina viva, file privati di altri utenti finiti negli ZIP dei corsi, nessun allarme sui
+tentativi di accesso ripetuti."""
+roles = ["System Manager", "Gestore"]
+behaviour = [
+	"in entrambi gli editor di frappe-ui (TextEditor classico e nuovo editor) l'HTML incollato viene letto in un documento inerte: un elemento come <img src=x onerror=...> incollato non esegue codice; se frappe-ui cambia i suoi gestori di incolla la build fallisce di proposito",
+	"il tutor AI e il flusso video della lezione per l'app (link HLS firmato di Vimeo) rispondono su un corso solo a chi lo segue (chi può modificarlo, Valutatore di una sua classe, iscritto) e, per una lezione, solo se lo studente potrebbe aprirla in quel momento (vale anche il blocco delle lezioni in sequenza); essere pubblicato non basta",
+	"le chiamate che consumano credito dei fornitori (tutor, trascrizione e sintesi vocale, voce in tempo reale, simulazioni, indicizzazione, rinnovo del flusso Vimeo) hanno un limite per utente, non per indirizzo IP; oltre il limite rispondono «Too many requests»",
+	"le chiamate dell'upstream verso servizi esterni hanno un tempo massimo (geolocalizzazione della registrazione 3 s, cambio valuta e Unsplash 10 s, Zoom 15 s); un errore della geolocalizzazione lascia l'utente senza paese invece di far fallire la registrazione",
+	"l'esportazione ZIP di un corso è riservata a chi può modificarlo e include un file privato solo se chi esporta potrebbe scaricarlo o se la lezione del corso lo serve ai suoi studenti; i file scartati sono annotati nel log lms.security",
+	"le anteprime di immagini e video locali (blob: o data:) accettano solo formati raster e video, mai un'immagine SVG in data:",
+	"le dipendenze del frontend non scendono sotto le versioni minime di sicurezza (fra le altre DOMPurify 3.4.17, markdown-it 14.3.3, socket.io-client 4.8.4, vue 3.5.44, vite 5.4.21, prosemirror-model 1.25.12, tiptap 3.32.0): un test lo verifica sul yarn.lock e la scansione delle dipendenze blocca le pull request; ogni eccezione accettata ha un motivo e una data di revisione",
+	"l'indirizzo /csp-report raccoglie le violazioni della Content Security Policy (inviata in Report-Only da nginx) come contatori per direttiva, sorgente bloccata, pagina e modalità, senza utente, IP, parametri né frammenti di codice; al massimo 20 report per richiesta e 500 tipi diversi; le righe si vedono solo da System Manager e si cancellano dopo 90 giorni",
+	"ogni 5 minuti il sito controlla gli accessi falliti (oltre 20 in 10 minuti) e le chiavi Elite API rifiutate (oltre 20 in un'ora): oltre la soglia l'utente Administrator e i Gestori ricevono un'email con gli IP e gli utenti più frequenti, al massimo una per ora per tipo di allarme",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/access_guards.py",
+	"apps/os_lms/os_lms/os_lms/csp_report.py",
+	"apps/os_lms/os_lms/os_lms/security_alerts.py",
+	"apps/os_lms/os_lms/os_lms/course_export.py",
+	"apps/os_lms/os_lms/os_lms/doctype/os_csp_violation/*",
+	"frontend/src/oslms/utils/safeImageData.ts",
+	"frontend/oslms-vite/inert-paste-html.js",
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_*.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_csp_report.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_security_alerts.py",
+	"frontend/src/tests/inertPasteHtml.test.ts",
+	"frontend/src/tests/safeImageData.test.ts",
+]
+upstream_watch = [
+	"security", "OWASP", "XSS", "paste", "content-paste-extension", "paste-html-utils", "createHTMLDocument",
+	"requests.get", "timeout", "ip-api", "frankfurter", "unsplash", "zoom", "export_course_as_zip",
+	"write_assets", "course_zip", "safeUrl", "v-safe-html", "dompurify", "Content-Security-Policy",
+	"rate_limit", "osv-scanner", "dependency scan", "Activity Log failed login",
+]
+data = [
+	"doctype OS CSP Violation (directive, blocked_source, page, disposition, hits, first_seen, last_seen); DocPerm solo System Manager; pulizia a 90 giorni via default_log_clearing_doctypes",
+	"endpoint ospite os_lms.os_lms.csp_report.collect (120 richieste al minuto), dietro /csp-report di nginx (repository elite-deploy)",
+	"scheduler cron */5 security_alerts.check_attack_thresholds; contatori Redis elite_api:suppressed_ips",
+	"override lms.lms.api.export_course_as_zip verso os_lms.os_lms.course_export",
+	"plugin Vite os-inert-paste-html registrato in vite.config.js e vitest.config.ts",
+	"scripts/tests/test_dependency_floors.py, osv-scanner.toml, workflow .github/workflows/dependency-scan.yml",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_2026_10.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_package_d.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_package_e.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_discussion_submit.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_graded_submission.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_lesson_completion.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_simulation_limits.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_csp_report.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_security_alerts.py",
+	"frontend/src/tests/inertPasteHtml.test.ts",
+	"frontend/src/tests/safeImageData.test.ts",
+	"scripts/tests/test_dependency_floors.py",
+]
+notes = """
+- Il plugin os-inert-paste-html va registrato in DUE configurazioni: vite.config.js (la build che
+  arriva agli utenti) e vitest.config.ts (i test). Se un merge lo toglie solo da vite.config.js i
+  test restano verdi ma il sito torna vulnerabile. Se la build fallisce con «expected N ×
+  document.createElement('div')», frappe-ui ha cambiato i gestori di incolla: ricontrollarli e
+  aggiornare RULES, mai togliere il plugin.
+- Versioni minime: un conflitto su frontend/package.json risolto prendendo il lato upstream
+  riporterebbe versioni vulnerabili. Le soglie si alzano, non si abbassano mai; le ancore
+  dell'inventario stanno sui nomi dei pacchetti, la versione la sorveglia test_dependency_floors.
+- I timeout sulle chiamate esterne sono innesti in lms/lms/utils.py, lms/unsplash.py,
+  lms_batch.py e lms_live_class.py: un merge che riscrive quelle funzioni li fa sparire senza
+  errori (voce external-calls-timeout). ip-api.com resta in HTTP perché la versione gratuita non
+  ha HTTPS.
+- Le correzioni OWASP legate a una funzione stanno nelle schede di quella funzione (registrazione e
+  password in signup-privacy e web-pages-login, ruoli in members-and-roles, completamento delle
+  lezioni, consegne valutate, discussioni, simulazioni, Elite API, TrueSkills); i test test_owasp_*
+  sono raccolti qui perché coprono più funzioni insieme.
+- Ogni correzione di sicurezza va provata su staging (elite.overside.it) prima della pubblicazione
+  (piano ESG); il deploy di staging tende a segnare le patch come eseguite senza lanciarle.
+- Il rapporto OWASP e il piano residuo citati nei commit (docs/security/owasp-*.md) non sono in
+  questo branch."""
+history = [
+	{ date = "2026-09-24", ref = "44c0c6fd4", summary = "creazione: link, incorporamenti e HTML di os_lms passano dai controlli di sicurezza di v2.62.0 (safeUrl, v-safe-html, safeImageData)" },
+	{ date = "2026-10-23", ref = "a8e3fbcec", summary = "chiusi i rilievi OWASP Top 10 in os_lms: controlli di accesso comuni e limiti per utente" },
+	{ date = "2026-10-26", ref = "749104b3f", summary = "allarmi via email su accessi falliti e chiavi Elite API rifiutate" },
+	{ date = "2026-10-27", ref = "9dbce3a1a", summary = "HTML incollato letto in un documento inerte in entrambi gli editor frappe-ui" },
+	{ date = "2026-10-27", ref = "29b287f31", summary = "dipendenze vulnerabili aggiornate e scansione delle dipendenze bloccante" },
+	{ date = "2026-10-27", ref = "972657489", summary = "raccolta delle violazioni CSP in OS CSP Violation" },
+	{ date = "2026-10-28", ref = "779b15f42", summary = "esportazione del corso senza file privati non scaricabili; tempi massimi sulle chiamate esterne (d825bc9d5)" },
+	{ date = "2026-10-29", ref = "38d59bd00", summary = "correzioni OWASP ed ESG messe sotto sorveglianza per i merge upstream" },
+]

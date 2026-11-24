@@ -1,0 +1,43 @@
+id = "lesson-page"
+title = "Pagina della lezione per lo studente"
+status = "active"
+summary = """
+La pagina in cui lo studente segue una lezione è più semplice e più robusta: niente discussioni
+sotto la lezione (restano le note personali), il comando della modalità Zen compare solo dove
+funziona davvero, i testi lunghi senza spazi non spostano la pagina e la barra laterale apre da sola
+il capitolo della lezione in corso."""
+why = """
+Il cliente non usa la community delle lezioni e voleva togliere un elemento che confonde gli
+studenti. Gli altri ritocchi correggono difetti visti in uso: su iPhone il pulsante Zen non faceva
+nulla, un URL incollato come testo spingeva la pagina di lato, e passando con «Avanti» al capitolo
+successivo la barra laterale lo lasciava chiuso."""
+roles = ["Student", "Moderator", "Course Creator", "Docente"]
+behaviour = [
+	"sotto la lezione non compaiono la scheda Community/Discussioni né, in modalità Zen, il pulsante delle domande, per nessun ruolo",
+	"lo studente vede sotto la lezione il solo pannello Note; moderatori e istruttori non vedono nessuna scheda sotto la lezione",
+	"il comando della modalità Zen (intestazione, controlli della lezione, anteprima nell'editor del corso) è nascosto dove il browser non offre lo schermo intero, cioè su iPhone; resta su desktop, Android e iPad",
+	"una parola o un URL lunghissimo senza spazi nel contenuto, nel titolo della lezione o nel titolo del corso della barra laterale va a capo invece di allargare la pagina",
+	"passando a una lezione di un altro capitolo, la barra laterale apre il capitolo della lezione attiva; gli altri capitoli restano aperti o chiusi come li ha lasciati lo studente",
+]
+areas = []
+upstream_watch = [
+	"Lesson.vue", "StudentLessonSidebar.vue", "Discussions", "TabButtons", "community", "Zen Mode",
+	"requestFullscreen", "fullscreenEnabled", "overflow-wrap", "break-words", "Disclosure defaultOpen",
+	"active chapter",
+]
+notes = """
+- Al merge di v2.59.0 l'upstream ha cambiato :buttons in :options proprio sui TabButtons che abbiamo
+  tolto: la rimozione va mantenuta, il componente non va reintrodotto.
+- Titoli: quando l'upstream cambia la classe del titolo della lezione o del corso (v2.59.0:
+  text-5xl -> text-4xl, text-xl -> text-lg), prendere la sua e riaggiungere break-words.
+- v2.63.0 ha riscritto StudentLessonSidebar: dopo ogni riscrittura verificare che il capitolo attivo
+  si apra da sé, altrimenti reinnestare la chiave del Disclosure (che include «contiene la lezione
+  attiva»), perché defaultOpen viene letto solo al montaggio.
+- Le note e le evidenziazioni dello studente sono nella scheda student-highlights; i blocchi di
+  lezione e quiz bloccati nella scheda guided-learning-path."""
+history = [
+	{ date = "2026-07-20", ref = "ca61596d2", summary = "creazione: discussioni tolte dalla lezione, restano le note" },
+	{ date = "2026-07-20", ref = "50aac4736", summary = "la barra laterale apre il capitolo della lezione attiva" },
+	{ date = "2026-07-21", ref = "f8b0680ec", summary = "modalità Zen nascosta su iPhone" },
+	{ date = "2026-07-21", ref = "774007852", summary = "stringhe lunghe a capo nella lezione" },
+]

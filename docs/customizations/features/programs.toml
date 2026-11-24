@@ -1,0 +1,85 @@
+id = "programs"
+title = "Programmi (percorsi di più corsi)"
+status = "active"
+summary = """
+Un programma raccoglie più corsi in un percorso. Per il cliente il programma ha una descrizione
+formattata che gli studenti leggono, si riempie aggiungendo più corsi e più membri insieme (anche
+un'intera classe) e si pubblica nel suo insieme: chi ne è membro vede e segue tutti i suoi corsi,
+anche quelli non pubblicati da soli. La home dello studente mostra i suoi programmi."""
+why = """
+Il cliente usa i programmi come percorsi formativi completi da assegnare a gruppi di studenti.
+L'upstream non ha la descrizione del programma, aggiunge corsi e membri uno alla volta, nasconde ai
+membri i corsi non pubblicati e, da v2.64.0, lascia modificare un programma solo ai suoi autori,
+che si cambiano solo dal Desk. Decisioni del cliente del 2026-09-23 (corsi non pubblicati visibili
+ai membri) e del 2026-09-30 (programmi gestiti in comune)."""
+roles = ["Student", "Moderator", "Course Creator", "Docente", "Gestore"]
+behaviour = [
+	"il modulo del programma ha un editor ricco per la descrizione, che conserva colori, evidenziazioni e barrato",
+	"la descrizione del programma si vede nel dettaglio del programma e nel dialogo di iscrizione; una descrizione svuotata non mostra un riquadro vuoto",
+	"le immagini inserite nella descrizione di programmi e corsi (modulo del programma, sezione Panoramica del corso, dialogo Nuovo corso) si caricano pubbliche, quindi studenti e membri le vedono",
+	"la home dello studente mostra una riga con i suoi programmi o, se non è iscritto a nessuno, con quelli pubblicati; un programma a cui non è iscritto apre il dialogo di iscrizione",
+	"i membri di un programma vedono, aprono e si iscrivono a ogni corso del programma anche se il corso da solo non è pubblicato, outline e pacchetti SCORM compresi; chi non è membro no",
+	"cambiare il titolo di un programma esistente lo rinomina davvero; gli spazi iniziali e finali si tolgono e non provocano rinomine",
+	"nel dialogo «Aggiungi corso» si scelgono più corsi insieme e i corsi già nel programma non compaiono",
+	"«Aggiungi membro» aggiunge più utenti insieme, esclusi i già membri; «Aggiungi gruppo» elenca gli iscritti di una classe scelta, esclusi i già membri, e li aggiunge uno a uno o tutti",
+	"corsi e membri si riordinano e si tolgono nel modulo e il programma si salva tutto insieme; il riordino di un programma già salvato si registra subito",
+	"il modulo del programma non si apre come «Non salvato»: contano come modifiche solo quelle fatte dall'utente nell'editor della descrizione",
+	"Moderator, Course Creator e Docente creano e modificano ogni programma, non solo quelli in cui sono autori, e il Docente vede anche i programmi in bozza; uno studente non li modifica",
+	"il banner delle righe selezionate e le colonne del modulo del programma sono in italiano",
+]
+areas = [
+	"apps/os_lms/os_lms/patches/v0_0_9/*",
+	"apps/os_lms/os_lms/os_lms/tests/test_program_course_access.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_publish_description_images.py",
+]
+upstream_watch = [
+	"LMS Program", "program description", "ProgramForm.vue", "ProgramDetail.vue", "ProgramEnrollment.vue",
+	"Programs.vue", "program members", "LMS Program Member", "LMS Program Course", "program authors",
+	"PROGRAM_AUTHORING_ROLES", "has_program_authoring_permission", "get_program_details",
+	"is_course_in_member_program", "can_view_course", "can_access_course", "validate_course_enrollment_eligibility",
+	"MultiSelect exclude", "uploadArgs", "StudentHome programs",
+]
+data = [
+	"custom field LMS Program.description (Text Editor; fixtures/custom_field.json), servito agli studenti dall'override os_lms di get_program_details",
+	"patch os_lms v0_0_9.publish_description_images: copia pubblica, agganciata al documento, delle immagini private già inserite nelle descrizioni",
+	"DocPerm Docente su LMS Program da os_lms.setup.setup_docente_role_permissions",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_program_course_access.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_publish_description_images.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_role_gates_v2_64.py",
+	"frontend/src/tests/sanitizeRichHTML.test.ts",
+]
+notes = """
+- I corsi non pubblicati dei membri passano da is_course_in_member_program (lms/lms/utils.py) in
+  get_course_details, nella validazione dell'iscrizione di LMS Enrollment (import locale, circolare)
+  e, da v2.64.0, in can_view_course e can_access_course; la guardia di CourseDetail.vue legge il flag
+  in_member_program. Se sparisce una guardia server lo studente non vede il corso o non si iscrive;
+  se sparisce quella della pagina viene rimandato all'elenco corsi. Domanda aperta: il dialogo di
+  iscrizione per i non membri non elenca i corsi non pubblicati.
+- La descrizione va salvata con sanitizeRichHTML, non con sanitizeHTML (la lista chiusa toglie
+  span, mark, s e style); in lettura passa da CourseDescription.vue (scheda course-page-redesign) con
+  hasRichContent.
+- Immagini nelle descrizioni: gli editor di frappe-ui caricano privato per default e Frappe aggancia
+  al documento solo i campi Attach, quindi il file resta privato e orfano e solo chi l'ha caricato lo
+  vede (403 per tutti gli altri, Elite «PROGRAMMA 2», 2026-09-28). Dopo ogni merge controllare la prop
+  uploadArgs nei due file upstream CourseOverviewSection.vue e NewCourseForm.vue. Ogni nuovo editor il
+  cui contenuto è letto da altri ha bisogno della stessa scelta. L'editor della descrizione della
+  classe non è stato cambiato. La patch non sposta l'originale privato (il passaggio
+  privato→pubblico di Frappe sposta il file su disco).
+- Il modulo lavora sul documento completo (frappe.client.get e PUT su /api/resource) invece delle
+  list resource upstream sui figli, che lasciavano gli elenchi vuoti; il motivo esatto del PUT non è
+  scritto. Il dialogo «Aggiungi corso» era stato rotto da un refactor (3255d0a07): serve solo i corsi.
+- Il MultiSelect upstream (components/Controls/MultiSelect.vue) ha due innesti nostri, la prop exclude
+  e l'esposizione di cachedOptions: senza, il dialogo riproporrebbe i corsi già presenti.
+- Programmi gestiti in comune: l'upstream (v2.64.0, #2787) restringe la scrittura agli autori del
+  programma; il nostro ramo restituisce sempre True per i ruoli di authoring. Il Gestore ci arriva
+  tramite Moderator."""
+history = [
+	{ date = "2026-03-17", ref = "41354bf3e", summary = "creazione: più corsi aggiunti insieme a un programma" },
+	{ date = "2026-09-23", ref = "388292605", summary = "descrizione formattata e corsi non pubblicati visibili ai membri del programma" },
+	{ date = "2026-09-23", ref = "cc402ce04", summary = "descrizione mostrata agli studenti e riga dei programmi nella home" },
+	{ date = "2026-09-28", ref = "c6495b997", summary = "immagini delle descrizioni caricate pubbliche (con la patch v0_0_9 per quelle esistenti)" },
+	{ date = "2026-09-30", ref = "90442f751", summary = "merge v2.64.0: programmi modificabili da tutti i ruoli di authoring, Docente compreso; regola dei membri riespressa nei nuovi cancelli" },
+	{ date = "2026-10-05", ref = "771bcaab0", summary = "il modulo del programma non si apre più come «Non salvato»" },
+]

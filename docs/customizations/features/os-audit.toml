@@ -1,0 +1,82 @@
+id = "os-audit"
+title = "OS Audit: tempi e presenze dimostrabili degli studenti"
+status = "active"
+summary = """
+OS Audit registra, per ogni studente, quando entra in un corso e in una lezione, quanto tempo ci
+resta, cosa fa (quiz, compiti, lezioni dal vivo, video, PDF e download, certificati, accessi) e in
+che ordine, con uno storico indipendente dall'Activity Log. Il tempo lo calcola il server dai
+segnali periodici della pagina; le presenze alle lezioni dal vivo si leggono da Zoom e Google Meet.
+Il Gestore lo configura e lo consulta dalla pagina /os-audit della SPA (impostazioni, registro,
+presenze, export, integrità). È spento per default e va acceso con una durata di conservazione."""
+why = """
+La piattaforma sapeva solo cosa era stato completato e quando: niente aperture, niente tempi,
+niente storico oltre i 90 giorni dell'Activity Log. Il cliente vuole tempi e presenze dimostrabili
+per ogni studente (D0, docs/audit-studenti/PIANO.md), con dati di cui si possa provare che non sono
+stati alterati, configurazione tracciata e registro presenze esportabile. L'upstream non ha nulla
+di simile. La formazione finanziata è esclusa per ora (REQUISITI-ENTI.md resta come riferimento)."""
+roles = ["Gestore", "System Manager", "Student"]
+behaviour = [
+	"OS Audit è spento per default (OS Audit Settings.enabled = 0); per accenderlo serve una durata di conservazione (retention_days); si applica a tutti i corsi o ai soli corsi scelti (scope, default Selected Courses)",
+	"ogni categoria di eventi si accende o spegne a parte: accessi, apertura di corso e lezione, tempo in lezione, quiz, compiti, lezioni dal vivo, SCORM, certificati, video, file; dispositivo registrato per default, indirizzo IP non registrato per default",
+	"la pagina lezione manda un segnale ogni 30 secondi (attivo o solo presente), un ultimo segnale con fetch keepalive quando la scheda si nasconde o la pagina si chiude, e chiude la sessione al cambio lezione; lo fa solo se get_lesson restituisce os_audit",
+	"il tempo lo somma il server dal tempo trascorso fra due segnali, con un tetto: uno script non può gonfiarlo oltre il tempo reale; permanenza e tempo attivo sono due misure distinte, il tempo contato segue l'impostazione counted_time (default Presence)",
+	"le sessioni senza segnali oltre la soglia vengono chiuse da un job schedulato",
+	"la durata di un quiz va dall'evento quiz_start, registrato quando lo studente avvia il tentativo (mai in anteprima autore), all'inserimento della LMS Quiz Submission",
+	"consegne di compiti, completamento di lezioni e certificati emessi diventano eventi tramite after_insert",
+	"le presenze alle lezioni dal vivo si leggono da Zoom e Google Meet dopo la fine della lezione (job schedulato); l'ingresso dalla card e dall'invito passa dalla piattaforma e viene registrato; il lettore orario upstream delle presenze Zoom viene fermato",
+	"ogni giorno il server sigilla gli eventi del giorno prima in una catena di hash (integrità verificabile) e cancella quanto supera la conservazione",
+	"la pagina /os-audit e la voce «OS Audit» della barra laterale (mai nel menu mobile) sono solo per System Manager e Gestore (OS_AUDIT_ROLES); gli endpoint ricontrollano lo stesso permesso",
+	"nessuno scrive o cancella eventi e sessioni a mano: il Gestore legge e fa report, scrive solo OS Audit Settings",
+	"gli export (registro presenze per corso e studente, presenze live, sessioni, eventi) si generano in background e si scaricano dalla pagina",
+	"all'eliminazione dell'account i dati di audit seguono l'impostazione on_account_deletion (default Delete Audit Data); le righe di audit non bloccano l'eliminazione di lezioni, corsi e documenti che citano",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/os_audit.py",
+	"apps/os_lms/os_lms/os_lms/os_audit_*.py",
+	"apps/os_lms/os_lms/os_lms/doctype/os_audit_*/*",
+	"apps/os_lms/os_lms/os_lms/doctype/os_live_*/*",
+	"apps/os_lms/os_lms/os_lms/tests/test_os_audit*.py",
+	"frontend/src/oslms/components/osAudit/*",
+	"frontend/src/oslms/composables/useOsAudit.ts",
+	"frontend/src/oslms/pages/OsAudit.vue",
+	"frontend/src/tests/osAudit*.test.ts",
+	"frontend/src/tests/useOsAudit.test.ts",
+]
+upstream_watch = [
+	"Lesson.vue", "get_lesson", "Quiz.vue", "startQuiz", "routes.js", "sidebar", "get_user_info",
+	"LMS Quiz Submission", "LMS Assignment Submission", "LMS Course Progress", "LMS Certificate",
+	"attendance", "LiveClassAttendance", "update_attendance", "zoom", "google meet", "video",
+	"scorm", "Activity Log", "audit", "heartbeat", "tracking",
+]
+data = [
+	"doctype os_lms OS Audit Settings (Single), OS Audit Event, OS Audit Session, OS Audit Course, OS Live Attendance, OS Live Identity, OS Live Class Read",
+	"permessi Gestore in hooks: OS Audit Settings lettura e scrittura; eventi, sessioni e presenze live solo lettura e report",
+	"doc_events after_insert su LMS Quiz Submission, LMS Assignment Submission, LMS Course Progress, LMS Certificate",
+	"scheduler: daily_seal e apply_retention ogni giorno; close_stale_sessions e os_audit_live.read_due_live_classes ogni 15 minuti; after_migrate os_audit_live.stop_upstream_attendance_job",
+	"ignore_links_on_delete per OS Audit Event, OS Audit Session, OS Live Attendance, OS Live Identity, OS Live Class Read",
+	"endpoint os_audit_page (get_page, save_settings, retention_impact, get_log, get_student_summary, get_attendance, get_seals), os_audit_export (start, list, delete), os_audit.verify_chain",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_os_audit.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_os_audit_content.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_os_audit_live.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_os_audit_page.py",
+	"frontend/src/tests/osAuditFormat.test.ts",
+	"frontend/src/tests/osAuditLiveClass.test.ts",
+	"frontend/src/tests/useOsAudit.test.ts",
+]
+notes = """
+- Piano, decisioni e stato delle fasi: docs/audit-studenti/PIANO.md; analisi della fase 4 (live):
+  docs/audit-studenti/fase-4-analisi.md. Google Meet è coperto solo dai test unitari (nessun
+  ambiente Meet per il collaudo).
+- Voci d'inventario: os-audit-lesson-heartbeat (Lesson.vue), os-audit-quiz-start (Quiz.vue),
+  os-audit-page-route (routes.js), os-audit-sidebar-entry (utils/index.js). Se l'upstream riscrive
+  quei file, riapplicare gli innesti come descritto nelle voci.
+- La pagina vive nella SPA perché il Gestore di norma non raggiunge il Desk.
+- OS Audit è nato sul branch feature/os-audit; feature/live-class-draft lo contiene."""
+history = [
+	{ date = "2026-11-11", ref = "e5d02a519", summary = "creazione, fase 1: registro eventi, sessioni di lezione con segnale periodico, impostazioni (correzioni 5fa55f0a8)" },
+	{ date = "2026-11-12", ref = "09f513f73", summary = "fase 2: pagina OS Audit nella SPA per il Gestore" },
+	{ date = "2026-11-12", ref = "7307ebfcf", summary = "fase 3: video, PDF e download (YouTube 00b8f8a39)" },
+	{ date = "2026-11-12", ref = "d7ab8ae2a", summary = "fase 4: presenze alle lezioni dal vivo da Zoom e Google Meet (ingresso dalla piattaforma 376bad5c2)" },
+]

@@ -1,0 +1,70 @@
+id = "lesson-editor"
+title = "Editor delle lezioni"
+status = "active"
+summary = """
+L'editor con cui docenti e gestori scrivono una lezione ha un pannello «Impostazioni lezione» con le
+regole volute dal cliente (anteprima libera, durata, tag, indicizzazione per il tutor AI), è
+tradotto in italiano, si apre sempre sulla scheda giusta del corso e ha anche un indirizzo diretto.
+Il salvataggio non riscrive i dati che gestisce il server."""
+why = """
+Il cliente ha bisogno di campi di lezione che l'upstream non ha (durata per calcolare la durata del
+corso, tag, stato dell'indicizzazione AI). L'upstream salvava l'intera lezione caricata
+all'apertura, riportando indietro lo stato dell'indicizzazione a ogni autosalvataggio; l'editor
+EditorJS restava in inglese; i link di modifica puntavano a una scheda inesistente («#course
+editor») e portavano l'utente sulla panoramica del corso."""
+roles = ["Moderator", "Course Creator", "Docente", "Gestore"]
+behaviour = [
+	"nell'editor della lezione un riquadro richiudibile «Impostazioni lezione» raccoglie: inclusione nell'anteprima per chi non è iscritto, durata in minuti, tag della lezione e controlli dell'indicizzazione per il tutor AI",
+	"modificare una di queste impostazioni rende la lezione modificata e fa partire il salvataggio",
+	"il salvataggio invia solo titolo, anteprima, contenuto, note per l'istruttore, durata e tag: lo stato dell'indicizzazione AI (index_status, indexed_at) non viene mai riportato al valore che aveva all'apertura",
+	"menu dei blocchi, barra di formattazione, opzioni del blocco, filtro di ricerca e azioni di tabelle ed embed dell'editor sono in italiano, sia per chi scrive sia nella lezione mostrata allo studente",
+	"il menu delle opzioni di riga e colonna delle tabelle usa i colori del tema ed è leggibile nel tema scuro",
+	"nel contenuto in modifica, un blocco quiz mostra «Quiz: <titolo del quiz>» invece del codice interno del quiz, e il titolo non può inserire markup nell'editor",
+	"il link «Editor View» della pagina della lezione e la modifica di una lezione dal programma del corso aprono la scheda Editor del corso sulla lezione",
+	"mentre si lavora nell'editor del corso (lezione scelta, lezione eliminata) l'indirizzo resta sulla scheda Editor e non riporta alla panoramica",
+	"l'indirizzo /courses/<corso>/learn/<capitolo>-<lezione>/edit apre direttamente l'editor di quella lezione",
+	"il titolo della lezione nell'editor non prende lo sfondo dei campi del tema",
+]
+areas = ["frontend/src/oslms/pages/OsLessonForm.vue"]
+upstream_watch = [
+	"LessonForm.vue", "include_in_preview", "Include in Preview", "lesson save", "set_value lesson",
+	"stop lesson content being destroyed on save", "getEditorI18n", "BlockEditor.vue", "EditorJS i18n",
+	"tc-popover", "blockEditor.css", "quiz.js", "blockNotice", "#course editor", "#editor", "editLesson",
+	"CourseEditor.vue", "syncSelectedToUrl", "routes.js", "LessonForm route", "inlineToolbar Heading",
+]
+data = [
+	"custom field Course Lesson.duration (minuti) e Course Lesson.tags; Course Lesson.index_status e indexed_at sono scritti solo dal server (indicizzazione AI)",
+	"elenco EDITABLE_LESSON_FIELDS in frontend/src/pages/LessonForm.vue: un nuovo campo modificabile dall'editor va aggiunto lì, altrimenti non si salva",
+]
+notes = """
+- Nessun test automatico nostro copre questa scheda: frontend/src/tests/lessonForm.test.ts è
+  dell'upstream e non verifica né OsLessonForm né il filtro dei campi salvati.
+- OsLessonForm è montato dentro LessonForm al posto dell'interruttore upstream «Include in preview»:
+  se un merge riscrive LessonForm e lo perde, i campi restano nel database ma nessuno può più
+  modificarli. Riverificare dopo ogni riscrittura upstream di LessonForm (v2.63.0 l'ha già fatto).
+- v2.63.0 dichiara «stop lesson content being destroyed on save»: dopo ogni riscrittura del percorso
+  di salvataggio controllare che non vengano reinviati i campi del server.
+- Le chiavi del dizionario i18n di EditorJS devono restare le stringhe inglesi esatte che EditorJS e i
+  suoi tool cercano; le traduzioni sono in lms/translations/it.csv.
+- Hash della scheda: dopo un merge `grep -c "'#course editor'"` sul codice (non sui commenti) di
+  CourseEditor.vue deve dare 0. CourseOutline e ChapterRow usano già '#editor' anche nell'upstream
+  (voce course-outline-editor-hash tollerata dal 2026-09-24); la barra di formattazione sui titoli
+  è arrivata nell'upstream con v2.61.0 (voce editor-header-inline-toolbar tollerata).
+- La rotta /edit è stata rimessa da noi (fe4d73061) dopo che l'upstream l'aveva eliminata; nessun
+  punto del codice ci naviga, la motivazione è dedotta (link diretti), ma il committente l'ha
+  confermata il 2026-09-25 (B6.4). Dal merge di v2.62.0 vive in routes.js.
+- Rifacimento dell'editor (testo ricco tiptap dentro EditorJS, quiz/compiti/esercizi/video restano
+  blocchi, nessuna migrazione): analizzato e progettato il 2026-09-18, mai iniziato; il video non
+  può lasciare EditorJS perché è il meccanismo di completamento. Ripartire dalla memoria di progetto,
+  non da zero.
+- Gli allegati e i PDF sono nella scheda lesson-attachments, i video in video-embeds, il colore del
+  testo in rich-text-colors."""
+history = [
+	{ date = "2026-03-17", ref = "84bde1890", summary = "creazione: durata della lezione nell'editor, usata per la durata del corso" },
+	{ date = "2026-06-04", ref = "fe4d73061", summary = "rotta diretta /edit dell'editor di lezione rimessa" },
+	{ date = "2026-06-04", ref = "1f5978236", summary = "impostazioni os_lms raccolte nel componente OsLessonForm montato in LessonForm" },
+	{ date = "2026-06-09", ref = "403e4d347", summary = "salvataggio dei soli campi modificabili" },
+	{ date = "2026-07-13", ref = "979d01269", summary = "etichette dell'editor dell'autore tradotte" },
+	{ date = "2026-07-14", ref = "9a71dfc70", summary = "modifica della lezione aperta sulla scheda Editor con l'hash corretto" },
+	{ date = "2026-07-30", ref = "96c6c73cb", summary = "segnaposto del quiz con il titolo e senza innerHTML" },
+]

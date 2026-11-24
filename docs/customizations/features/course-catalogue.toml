@@ -1,0 +1,59 @@
+id = "course-catalogue"
+title = "Catalogo dei corsi"
+status = "active"
+summary = """
+L'elenco dei corsi e le loro card sono adattati al cliente: lo studente vede solo i corsi a cui è
+iscritto, la card mostra la durata del corso e se rilascia un certificato invece di iscritti,
+istruttori e prezzo, la scheda scelta resta ricordata e il filtro delle categorie segue la scheda
+attiva."""
+why = """
+Per il cliente la durata e la certificazione sono le informazioni utili per scegliere un corso,
+mentre numero di iscritti, voto medio (le recensioni sono spente), istruttori e prezzo non servono.
+Gli studenti accedono ai corsi tramite le classi e i programmi, quindi le schede pubbliche
+«Pubblicati» e «In arrivo» per loro sono rumore. Il filtro delle categorie upstream elencava solo
+le categorie dei corsi pubblicati e risultava vuoto nelle altre schede."""
+roles = ["Student", "Moderator", "Docente", "Valutatore"]
+behaviour = [
+	"la card del corso mostra la durata complessiva (somma delle durate delle lezioni) con l'icona dell'orologio, al posto del numero di iscritti",
+	"la card mostra l'icona Award quando il corso rilascia un certificato, anche se il certificato è solo TrueSkill; non mostra la stella con il voto medio",
+	"la card non ha la fascia inferiore con avatar e nomi degli istruttori, prezzo e icona «Get Certified»",
+	"lo studente vede nell'elenco corsi solo la scheda «Iscritto», senza selettore delle schede, anche se aveva salvato un'altra scheda o ne chiede una diversa con ?tab= nell'indirizzo",
+	"chi non è né studente né amministratore (Moderator, istruttore, valutatore) vede solo le schede «Pubblicati» e «In arrivo»",
+	"la scheda scelta nell'elenco corsi resta selezionata quando si esce e si torna; se non è più disponibile per il ruolo si torna alla prima disponibile",
+	"il filtro categoria elenca solo le categorie dei corsi della scheda attiva, sparisce se la scheda non ne ha e si azzera cambiando scheda",
+	"chi non può vedere i corsi in bozza non ottiene nemmeno le loro categorie, anche chiedendo published=0 all'endpoint",
+	"il filtro Certificazione include anche i corsi che rilasciano solo il certificato TrueSkill",
+]
+areas = []
+upstream_watch = [
+	"CourseCard.vue", "Courses.vue", "course duration", "total_minutes", "lesson duration",
+	"enrolled tab", "courseTabs", "get_courses", "get_course_categories", "update_course_filters",
+	"restrict_to_published", "certification filter", "ToggleFilter", "course rating", "course card footer",
+]
+data = [
+	"custom field Course Lesson.duration (minuti della lezione) sommato da os_lms.os_lms.utils.get_courses_total_minutes e restituito come total_minutes dall'override os_lms di get_courses",
+	"custom field LMS Course.trueskills_certificate_enabled letto per l'icona e per il filtro Certificazione",
+	"chiave localStorage 'lms_courses_tab'",
+]
+notes = """
+- La durata è già stata persa una volta in un merge (ff9a87957): il blocco era rimasto con la nostra
+  condizione e il tooltip «Durata» ma mostrava di nuovo gli iscritti. Dopo ogni merge controllare che
+  nel blocco ci siano ancora l'icona dell'orologio e formattedDuration.
+- Un merge aveva rimesso nel badge della certificazione la stella con il voto medio (corretto il
+  2026-09-25, B6.5): il badge mostra solo l'icona Award.
+- Effetto collaterale voluto (confermato 2026-09-25): chi non è studente né amministratore non ha la
+  scheda «Iscritto». Il ramo «In arrivo senza filtro pubblicati per lo studente» oggi non si
+  raggiunge (lo studente non vede quella scheda) ma il committente l'ha voluto conservare.
+- La nostra get_course_categories non è upstream: la correzione di v2.64.0 su published=0
+  (restrict_to_published) è stata replicata a mano; la stessa eccezione vale per le schede ristrette
+  all'utente (created, enrolled) e per il Valutatore (flag oslms_valutatore_scoped_list).
+- La voce courses-list-certification-first-click è tollerata (accepted-drift dal merge di v2.61.0):
+  l'upstream applica già il filtro al primo clic; resta nostra solo la parte TrueSkill lato server.
+- I tag colorati sulla card sono nella scheda content-tags."""
+history = [
+	{ date = "2026-03-17", ref = "84bde1890", summary = "creazione: durata del corso sulla card al posto degli iscritti; tolta la fascia inferiore della card" },
+	{ date = "2026-06-26", ref = "46fd29fc7", summary = "la scheda dell'elenco corsi viene ricordata" },
+	{ date = "2026-07-20", ref = "5e3e6529d", summary = "lo studente vede solo i corsi a cui è iscritto" },
+	{ date = "2026-07-20", ref = "e6c656fb4", summary = "filtro categoria limitato alla scheda attiva" },
+	{ date = "2026-07-20", ref = "482e44810", summary = "il certificato TrueSkill conta come certificazione su card e filtro" },
+]

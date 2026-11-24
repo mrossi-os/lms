@@ -1,0 +1,67 @@
+id = "bulk-data-import"
+title = "Importazione massiva da Excel e CSV"
+status = "active"
+summary = """
+Chi amministra la piattaforma importa dati in blocco dall'interfaccia studenti, senza passare dal
+Desk: corsi e iscrizioni degli studenti alle classi da file Excel (.xlsx, .xls) o CSV. Il file
+delle iscrizioni descrive gli studenti, non i record: se uno studente non esiste ancora viene
+creato, con il codice fiscale se indicato, e riceve l'email di benvenuto. Accanto all'importazione
+c'è la pagina «Carica file», dove si caricano e si gestiscono i file da riusare nei contenuti."""
+why = """
+La pagina di importazione dell'upstream accetta solo CSV, è tutta in inglese e per le iscrizioni
+chiede un file con un record per iscrizione e utenti già registrati. Il cliente riceve elenchi di
+studenti in Excel da enti e aziende e vuole iscriverli a una classe in un passaggio solo, creando
+gli account mancanti. Il Desk con il suo import già tradotto non è raggiungibile dai Gestore (in
+gran parte Website User)."""
+roles = ["Moderator", "Gestore", "System Manager"]
+behaviour = [
+	"le voci di menu Configurazione > Importa e «Carica file» compaiono solo a chi ha il ruolo Moderator, quindi anche ai Gestore; la pagina di importazione riporta ai Corsi chi non è moderatore (la pagina «Carica file» non ha un controllo proprio: valgono i permessi Frappe sui File)",
+	"nella scelta del tipo di dati da importare compaiono solo LMS Badge, Course Chapter, LMS Course, LMS Enrollment, User e LMS Batch Enrollment",
+	"il caricamento accetta file .csv, .xlsx e .xls, riconosciuti dall'estensione e non dal tipo che dichiara il browser; la pagina di importazione è in italiano",
+	"per corsi e iscrizioni alle classi il server rifiuta un collegamento a Google Sheets e ogni formato diverso da .csv, .xlsx, .xls; il file caricato resta intatto e il server importa una copia CSV riscritta",
+	"il file delle iscrizioni alle classi ha le colonne Classe, Studente Email, Studente Nome, Studente Cognome, Studente Codice Fiscale (riconosciute senza badare a maiuscole e spazi, anche con gli alias inglesi Batch, Student Email, First name, Last name e CF); il modello scaricato dalla pagina contiene queste colonne con due righe di esempio e mai dati reali",
+	"uno studente non ancora registrato viene creato come Website User con il ruolo LMS Student, lingua italiana ed email di benvenuto; un utente esistente viene riusato e il suo codice fiscale, se mancava, viene completato",
+	"il server rifiuta l'intero file se una riga ha l'email vuota, un codice fiscale non valido, un codice fiscale già di un altro utente o diverso da quello già salvato per l'utente; gli utenti creati fino a quel punto non restano",
+	"le righe di studenti già iscritti alla classe, o ripetute nello stesso file, vengono saltate e l'importazione prosegue; alla fine un avviso «Righe saltate» elenca le prime 25 con il motivo",
+	"nell'importazione dei corsi la colonna «Email istruttori» compila la tabella degli istruttori del corso",
+	"la pagina «Carica file» carica più file insieme con avanzamento, come pubblici o privati, e mostra i file non collegati a un documento, 20 per pagina di default (numero modificabile), con ricerca, ordinamento, copia del percorso, apertura, download ed eliminazione singola o multipla",
+]
+areas = [
+	"apps/os_lms/os_lms/data_import/*",
+	"apps/os_lms/os_lms/overrides/data_import.py",
+	"frontend/src/overrides/frappe-ui/frappe/DataImport/*",
+	"frontend/src/pages/FileUpload.vue",
+	"frontend/src/plugins/resourceFetcherPlugin.js",
+]
+upstream_watch = [
+	"data import", "Data Import", "DataImport.vue", "DataImportList", "UploadStep", "ImportSteps",
+	"TemplateModal", "download_template", "start_import", "xlsx", "excel", "LMS Batch Enrollment import",
+	"bulk enrollment", "import students", "FileUpload", "upload_file", "file manager", "search_link DocType",
+]
+data = [
+	"override_doctype_class Data Import -> os_lms.overrides.data_import.CustomDataImport (riscrive il file per LMS Course e LMS Batch Enrollment)",
+	"override_whitelisted_methods frappe.core.doctype.data_import.data_import.download_template -> os_lms.data_import.template.download_template",
+	"nessun doctype proprio: usa User.codice_fiscale (custom field di os_lms, unico) e i doctype standard dell'importazione",
+]
+notes = """
+- La pagina di importazione della SPA è un fork completo dei 7 componenti DataImport di frappe-ui
+  (frontend/src/overrides/frappe-ui/frappe/DataImport/): le uniche differenze sono le stringhe in
+  __(), l'accept e il controllo per estensione in UploadStep, e gli import con l'alias
+  frappe-ui-original. Dopo ogni aggiornamento di frappe-ui vanno riconfrontati con
+  node_modules/frappe-ui/frappe/DataImport/ e riapplicate solo quelle differenze.
+- Un fork che importa un componente anch'esso sovrascritto deve nominare @/overrides/... in modo
+  esplicito: il plugin degli override non reindirizza gli import fatti da dentro src/overrides.
+- Dal merge di v2.62.0 la pagina upstream nasconde l'intestazione del componente e mostra un
+  proprio breadcrumb con il nome grezzo del doctype (voce data-import-doctype-titles-i18n).
+- L'import di User fatto da un Gestore (non System Manager) perdeva tutti i ruoli, quindi anche LMS
+  Student: corretto nella scheda gestore-role. L'import delle iscrizioni alle classi non ne soffre
+  (crea gli utenti con ignore_permissions) ma non aggiunge LMS Student a un utente esistente che
+  non ce l'ha.
+- I titoli di doctypeMap sono calcolati una volta: senza traduzioni caricate restano in inglese
+  fino al ricaricamento."""
+history = [
+	{ date = "2026-03-25", ref = "5e7a9c481", summary = "creazione: espansione delle colonne nell'importazione dati e sistema di override dei componenti; import delle iscrizioni alle classi (5dd4ed2b9) e filtro dei doctype importabili (9ea3f78ac)" },
+	{ date = "2026-03-31", ref = "f546fed1c", summary = "pagina «Carica file» con il selettore di file riusabili" },
+	{ date = "2026-07-29", ref = "5e5de1692", summary = "import delle iscrizioni rifatto: file Excel, creazione degli studenti con codice fiscale, righe già iscritte saltate, modello scaricabile" },
+	{ date = "2026-07-30", ref = "1a98bc463", summary = "pagina di importazione tradotta in italiano (fork dei componenti DataImport)" },
+]

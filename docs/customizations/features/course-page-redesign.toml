@@ -1,0 +1,54 @@
+id = "course-page-redesign"
+title = "Pagina del corso rivista"
+status = "active"
+summary = """
+La pagina di presentazione del corso è rifatta per il cliente: un banner con video o immagine in
+evidenza, la descrizione lunga comprimibile, il programma del corso navigabile direttamente nella
+card laterale e meno sezioni ripetute. Gli studenti non vedono l'elenco degli istruttori."""
+why = """
+Il cliente voleva una pagina corso più simile a una landing: media in evidenza, testo leggibile e un
+solo punto in cui consultare il programma. L'upstream mostra il programma due volte (sezione «Course
+content» e statistiche nella card), la card dell'autore e gli istruttori a tutti; il cliente non
+vuole esporre gli istruttori agli studenti."""
+roles = ["Student", "Moderator", "Course Creator"]
+behaviour = [
+	"se il corso ha il banner (hero) attivo con un media, il video o l'immagine compare a tutta larghezza tra l'introduzione breve e «About this course», con lo stesso player delle lezioni; in quel caso il video di anteprima sparisce dalla card",
+	"l'introduzione breve del corso conserva gli a capo scritti dall'autore",
+	"la descrizione lunga si mostra compressa (circa 156 px) con «Mostra altro / Mostra meno» solo quando supera quell'altezza; colori, evidenziazioni e righe vuote dell'editor restano visibili",
+	"la card laterale mostra il programma del corso navigabile al posto del blocco «This course includes» con le statistiche",
+	"la pagina del corso non ha la sezione «Course content» né la card dell'autore",
+	"l'elenco degli istruttori in testa alla pagina corso lo vedono solo moderatori e istruttori del corso; nell'intestazione della lezione solo moderatori, Docenti e istruttori; gli studenti mai",
+	"il messaggio «Contatta l'amministratore per iscriverti» dei corsi senza iscrizione autonoma va a capo dentro la card invece di uscirne",
+]
+areas = [
+	"frontend/src/overrides/pages/Courses/CourseOverview.vue",
+	"frontend/src/oslms/components/CourseHero.vue",
+	"frontend/src/oslms/components/CourseDescription.vue",
+]
+upstream_watch = [
+	"CourseOverview.vue", "course overview redesign", "CourseCardOverlay", "course hero", "course banner",
+	"course description", "show more", "Course content", "get_course_outline", "CourseCreatorCard",
+	"course instructors", "short_introduction", "This course includes", "self enrollment badge",
+]
+data = [
+	"custom field LMS Course.hero_enabled, hero_media_type (Video/Image), hero_media_url, restituiti annidati come hero dall'override os_lms di get_course_details",
+]
+notes = """
+- La pagina viva è l'override frontend/src/overrides/pages/Courses/CourseOverview.vue, servito dal
+  plugin osOverrideTheme al posto del file upstream; frontend/src/pages/Courses/CourseOverview.vue è
+  codice morto a runtime (voce course-overview-original-shadowed). Al merge prendere sempre la
+  versione upstream di quel file (tenendo il marcatore) e riportare nell'override le modifiche
+  upstream utili: l'override non riceve nulla in automatico.
+- Contenuti dell'editor resi in sola lettura: CourseDescription ha la classe ProseMirror (le variabili
+  dei colori e delle evidenziazioni esistono solo lì) e la regola p:empty per le righe vuote; senza,
+  colori e a capo sembrano «non salvati» anche se sono nel database.
+- Il programma vive nella card; su telefono si sposta in fondo alla pagina (scheda course-page-mobile).
+  Sezioni in evidenza: feature-sections; tag: content-tags; card dei certificati: course-certificates.
+- Le motivazioni della rimozione della card dell'autore e della sezione «Course content» non sono
+  scritte nei commit (dedotte: evitare doppioni, non esporre gli istruttori)."""
+history = [
+	{ date = "2026-04-22", ref = "6b9bd145a", summary = "creazione: banner video (hero) nella pagina del corso" },
+	{ date = "2026-06-04", ref = "8fafc219c", summary = "pagina ricostruita come override di CourseOverview.vue con descrizione comprimibile e programma nella card" },
+	{ date = "2026-07-20", ref = "1cf84e356", summary = "istruttori nascosti agli studenti nella pagina corso e nella lezione" },
+	{ date = "2026-10-16", ref = "05f25d32d", summary = "il messaggio di iscrizione su richiesta va a capo nella card (collaudo v2.66.0)" },
+]

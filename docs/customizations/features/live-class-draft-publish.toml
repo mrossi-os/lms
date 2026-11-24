@@ -1,0 +1,49 @@
+id = "live-class-draft-publish"
+title = "Lezioni dal vivo in bozza, pubblicate a parte"
+status = "active"
+summary = """
+Ogni lezione dal vivo nasce come bozza: nessuno viene avvisato e gli studenti non la vedono finché
+un gestore della classe non la pubblica. Pubblicando partono l'invito via email e la notifica in
+piattaforma. I promemoria contano dalla pubblicazione."""
+why = """
+Richiesta del cliente (2026-11-23): creare una lezione mandava subito invito e notifica a tutta la
+classe, anche mentre era ancora da sistemare. Le email non si ritirano, quindi la pubblicazione è un
+passo separato e confermato. Design: docs/superpowers/specs/2026-11-23-live-class-bozza-design.md."""
+roles = ["Moderator", "Docente", "Batch Evaluator", "Gestore", "Student"]
+behaviour = [
+	"ogni lezione nasce con status Draft, forzato in before_insert dell'override os_lms; alla creazione non parte nessuna email e nessuna notifica",
+	"il pulsante di creazione dice «Salva bozza» con un avviso; il modulo di modifica di una bozza ha anche «Pubblica», che salva e poi pubblica",
+	"pubblicare chiede conferma, perché le email non si ritirano; os_lms.os_lms.api.publish_live_class manda invito e notifica come faceva prima la creazione",
+	"la card mostra il badge Bozza e nessun Avvia o Partecipa; il menu della card offre «Pubblica»; eliminando una bozza non si propone di avvisare gli studenti",
+	"gli studenti non vedono le bozze: lo garantisce il backend con permission query e has_permission, e con il filtro status != Draft su home studente, orario, promemoria, iscrizione, .ics e ingresso",
+	"le lezioni senza status (create prima di questa funzione) contano come pubblicate",
+	"i promemoria contano dalla pubblicazione (published_at): uno il cui orario cade mentre la lezione è in bozza non parte nemmeno dopo, perché lo sostituisce l'invito; il modulo lo mostra «Saltato»",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/live_class_draft.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_live_class_draft.py",
+	"frontend/src/oslms/utils/liveClassDraft.js",
+]
+upstream_watch = [
+	"LMS Live Class", "status", "LiveClassForm.vue", "LiveClass.vue", "LiveClassCard", "create_live_class",
+	"create_google_meet_live_class", "send_invitation_email", "send_notification", "after_insert",
+	"get_my_live_classes", "get_admin_live_classes", "timetable", "reminder", "published",
+]
+data = [
+	"custom field LMS Live Class.status (Select Draft/Published, default Draft) e LMS Live Class.published_at, dalle fixture custom_field.json",
+	"permission_query_conditions e has_permission su LMS Live Class -> os_lms.os_lms.live_class_draft (accanto alla regola del Valutatore)",
+	"endpoint os_lms.os_lms.api.publish_live_class",
+	"regola dei promemoria in live_class_reminders._process_class_reminders",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_live_class_draft.py",
+	"frontend/src/tests/liveClassForm.test.ts",
+]
+notes = """
+- Voce d'inventario: live-class-draft-publish (LiveClassForm.vue, LiveClass.vue, LiveClassCard.vue).
+- Gestione, promemoria e inviti delle lezioni dal vivo sono nella scheda live-classes; l'accesso
+  alla stanza in live-class-gated-join."""
+history = [
+	{ date = "2026-11-23", ref = "50860c649", summary = "creazione: lezioni salvate in bozza e pubblicate a parte" },
+	{ date = "2026-11-24", ref = "b0398347f", summary = "i promemoria contano dalla pubblicazione" },
+]

@@ -1,0 +1,103 @@
+id = "live-classes"
+title = "Lezioni dal vivo: gestione, promemoria e inviti"
+status = "active"
+summary = """
+Chi gestisce una classe crea, modifica, riprogramma ed elimina le lezioni dal vivo (Zoom o Google
+Meet) dalla scheda Lezioni della classe. Ogni lezione ha i suoi promemoria via email, gli iscritti
+ricevono l'invito con i pulsanti per aggiungerla al proprio calendario e vengono avvisati quando la
+lezione cambia o viene annullata. La stessa card mostra le lezioni nella home e nella classe, con i
+pulsanti Avvia e Partecipa. Le lezioni dal vivo si possono spegnere per tutto il sito."""
+why = """
+L'upstream crea le lezioni dal vivo ma non permette di modificarle, riprogrammarle o eliminarle
+dalla classe, non ha promemoria configurabili e manda inviti in inglese senza scelta del calendario.
+Il cliente organizza molte lezioni per classe e vuole avvisare gli studenti a ogni cambio, con email
+in italiano e con il proprio marchio. Le regole di accesso alla stanza sono nella scheda
+live-class-gated-join."""
+roles = ["Moderator", "Docente", "Batch Evaluator", "Valutatore", "Student", "Gestore"]
+behaviour = [
+	"una lezione si crea e si modifica dal modulo della classe (rotte NewLiveClass e EditLiveClass, live-class/<nome>/edit); modificano ed eliminano solo Moderator, Docente e gli istruttori ed esaminatori indicati sulla classe",
+	"in modifica si possono cambiare titolo, descrizione, data, ora, durata, fuso e promemoria; la data futura è richiesta solo se l'orario cambia davvero, così si corregge anche il titolo di una lezione passata; la registrazione automatica Zoom si sceglie solo alla creazione",
+	"dopo che chi conduce ha premuto Avvia, data, ora, durata e fuso sono bloccati anche lato server e un avviso lo spiega; restano modificabili titolo, descrizione e promemoria",
+	"un cambio di titolo, data, ora, durata o fuso di una lezione non ancora finita riprogramma la riunione Zoom tenendo lo stesso link, manda a tutti i partecipanti l'email «Lezione dal vivo aggiornata» con tutti i dati attuali e una notifica in piattaforma agli studenti; cambiare solo la descrizione non avvisa nessuno, e una lezione già finita non avvisa nessuno",
+	"alla creazione partono l'email «Lezione dal vivo: <titolo>» agli studenti iscritti, agli istruttori, ai valutatori della classe e a chi l'ha creata, e la notifica «Nuova lezione dal vivo» agli studenti, che porta alla scheda Lezioni della classe",
+	"le email di invito, aggiornamento e promemoria hanno i pulsanti Google Calendar, Outlook e «.ics» personali per ogni destinatario; non allegano alcun file .ics",
+	"ogni lezione ha promemoria configurabili (valore più Minuti, Ore o Giorni), ciascuno almeno 15 minuti prima dell'inizio (controllato anche dal server); il modulo mostra se un promemoria è già partito",
+	"i promemoria partono via email ai soli studenti iscritti, da un controllo eseguito ogni 15 minuti, e mai dopo l'inizio della lezione; un promemoria con l'intervallo cambiato riparte, e un cambio di data, ora o durata li fa ripartire tutti",
+	"l'eliminazione chiede conferma con la casella «avvisa gli studenti» attiva per default: se attiva gli studenti ricevono l'email «Lezione annullata» e una notifica; la riunione Zoom e l'evento di calendario collegato vengono cancellati",
+	"un doppio clic su Elimina produce una sola eliminazione e una sola email agli studenti: il pulsante resta occupato finché il server risponde e il server rifiuta una lezione già eliminata o in corso di eliminazione",
+	"chi gestisce la classe elimina una lezione con evento di calendario anche senza permessi sugli Event",
+	"la scheda Lezioni della classe mostra 20 lezioni per pagina e si ordina per data di creazione (default, più recenti prima) o per data della lezione, in senso crescente o decrescente",
+	"il Valutatore della classe non avvia la lezione dal vivo: vi partecipa solo da osservatore (regola decisa dall'utente il 2026-11-23); la card gli mostra il Partecipa da partecipante per tutta la finestra di ingresso, senza attendere chi conduce, e start_live_class rifiuta di farlo avviare",
+	"home e classe usano la stessa card: chi conduce (i gestori della classe) vede Avvia, poi Apri, solo nel giorno della lezione e fino alla fine; lo studente vede Partecipa attivo da 15 minuti prima dell'inizio e solo dopo che chi conduce ha avviato, prima un Partecipa disattivato con il suggerimento «Live class not started yet»; finita la lezione compare «Terminata»",
+	"il selettore dell'ora del modulo è a 24 ore e le etichette del modulo sono in italiano",
+	"con l'impostazione «Abilita Classi Live» spenta (Impostazioni, Configurazioni > Classi, solo amministratori) la home non carica le lezioni dal vivo e la classe non ha la scheda Lezioni",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/live_class_ics.py",
+	"apps/os_lms/os_lms/os_lms/live_class_reminders.py",
+	"apps/os_lms/os_lms/overrides/lms_live_class.py",
+	"apps/os_lms/os_lms/os_lms/doctype/lms_live_class_reminder/*",
+	"apps/os_lms/os_lms/templates/emails/live_class_*",
+	"frontend/src/components/LiveClassCard.vue",
+	"apps/os_lms/os_lms/os_lms/tests/test_live_class_delete_*.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_live_class_valutatore_observer.py",
+	"frontend/src/tests/liveClassCardValutatore.test.ts",
+]
+upstream_watch = [
+	"live class", "LMS Live Class", "LiveClassForm.vue", "LiveClass.vue", "LiveClassCard", "EditLiveClass",
+	"NewLiveClass", "create_live_class", "create_google_meet_live_class", "get_my_live_classes",
+	"get_admin_live_classes", "after_delete", "on_update", "get_participants", "send_invitation_email",
+	"send_notification", "build_event_description", "reminder", "started_at", "start_live_class",
+	"update_live_class", "delete_live_class", "reschedule", "ics", "calendar event", "use12Hour",
+	"enable_live_classes", "LiveClassAttendance",
+]
+data = [
+	"custom field LMS Live Class.reminders (Table, doctype figlio os_lms LMS Live Class Reminder: offset_value, offset_unit, sent_at) e la sezione reminders_section, dalle fixture custom_field.json",
+	"custom field LMS Settings.enable_live_classes (Check, default 1) con la sezione live_classes_section",
+	"override_doctype_class LMS Live Class -> os_lms.overrides.lms_live_class.CustomLMSLiveClass; doc_events LMS Live Class before_save -> live_class_reminders.reset_sent_at",
+	"scheduler cron */15 os_lms.os_lms.live_class_reminders.send_live_class_reminders",
+	"endpoint os_lms.os_lms.api update_live_class, delete_live_class, start_live_class; download firmato del .ics os_lms.os_lms.live_class_ics.download",
+	"modelli email templates/emails/live_class_invitation, live_class_updated, live_class_reminder, live_class_cancelled, sostituibili dal Desk (scheda email-templates)",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_live_class_delete_event.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_live_class_delete_twice.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_2026_10.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_live_class_valutatore_observer.py",
+	"frontend/src/tests/liveClassCardValutatore.test.ts",
+]
+notes = """
+- Dal merge di v2.62.0 (2026-09-24) il vecchio LiveClassModal non esiste più: creazione e modifica
+  vivono nel modulo instradato upstream pages/Forms/LiveClassForm.vue, dove sono stati riportati
+  modifica, promemoria, blocco dopo l'avvio e guardia sul doppio salvataggio (decisione: un solo
+  modulo). L'upstream crea senza promemoria: il modulo li salva con una seconda chiamata a
+  update_live_class sulla lezione appena creata.
+- Gli effetti di una modifica (riprogrammazione Zoom con PATCH, email, notifiche) girano in un job
+  accodato dopo il commit: dentro la transazione tenevano il blocco sulla riga e un secondo clic
+  falliva con «Record has changed since last read».
+- has_value_changed confronta i numeri senza normalizzarli: la SPA manda la durata come stringa e
+  ogni salvataggio sembrerebbe un cambio d'orario (riarmerebbe tutti i promemoria). Usare
+  normalize_live_class_value per ogni nuovo controllo «il campo è cambiato davvero».
+- CustomLMSLiveClass sostituisce after_delete dell'upstream (cancella l'Event con
+  ignore_permissions): se l'upstream aggiunge altro ad after_delete, il nostro override lo nasconde.
+- I collegamenti «aggiungi al calendario» passano a ogni modello già pronti (google_url, outlook_url,
+  ics_url firmato per destinatario): i modelli del Desk scrivono solo {{ variabile }}.
+- Il Valutatore solo osservatore: dal 84571a094 al 7d2a68e96 la card gli dava Avvia/Apri e
+  start_live_class glielo consentiva; corretto in 7d2a68e96 (Partecipa tramite join_live_class,
+  livello osservatore, solo join_url).
+- Voci collegate a valutatore-role e docente-role: live-class-valutatore-read e
+  live-class-docente-manage. Account Zoom, Google Calendar e orario della riunione Zoom sono nella
+  scheda zoom-google-calendar."""
+history = [
+	{ date = "2026-04-16", ref = "72a4e71ff", summary = "creazione: inviti e eventi di calendario delle lezioni dal vivo personalizzati, notifiche in piattaforma (a8f463593)" },
+	{ date = "2026-04-27", ref = "a4dc44396", summary = "promemoria configurabili per lezione, modifica ed eliminazione dalla classe" },
+	{ date = "2026-05-21", ref = "b8276dcbe", summary = "interruttore Abilita Classi Live per tutto il sito" },
+	{ date = "2026-05-25", ref = "316625d1c", summary = "pulsanti per aggiungere la lezione a qualsiasi calendario (.ics), poi Google e Outlook (3b3590434)" },
+	{ date = "2026-07-01", ref = "bb5973b73", summary = "lo studente entra solo dopo l'avvio da parte di chi conduce" },
+	{ date = "2026-09-17", ref = "7b6ea7a18", summary = "riprogrammazione di una lezione già pubblicata con email di aggiornamento" },
+	{ date = "2026-09-24", ref = "335f9aa8d", summary = "merge v2.62.0: modifica e promemoria portati nel modulo instradato LiveClassForm" },
+	{ date = "2026-10-13", ref = "0747d9e6f", summary = "eliminazione anche con evento di calendario senza permessi sugli Event" },
+	{ date = "2026-10-16", ref = "d4d4d93aa", summary = "un solo annullamento per quanti clic su Elimina" },
+	{ date = "2026-10-26", ref = "83f78bd31", summary = "titolo e descrizione trattati come testo in tutte le email delle lezioni" },
+	{ date = "2026-11-24", ref = "7d2a68e96", summary = "il Valutatore della classe partecipa da osservatore e non avvia più la lezione" },
+]

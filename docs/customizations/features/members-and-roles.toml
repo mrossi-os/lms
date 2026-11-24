@@ -1,0 +1,77 @@
+id = "members-and-roles"
+title = "Membri e assegnazione dei ruoli custom"
+status = "active"
+summary = """
+Riguarda come si creano i membri della piattaforma e come si assegnano i ruoli personalizzati
+Gestore, Docente e Valutatore: dove compaiono gli interruttori, chi ha il diritto di usarli, come
+nasce un nuovo membro con i soli ruoli scelti e quale traccia resta di ogni concessione. Include la
+vista studente che spegne anche questi ruoli e l'esportazione dei ruoli con i loro permessi dal Desk."""
+why = """
+L'LMS standard gestisce solo i suoi quattro ruoli (LMS Student, Course Creator, Batch Evaluator,
+Moderator) e aggiunge LMS Student a ogni nuovo utente. Il cliente ha tre ruoli in più e vuole che
+siano assegnabili dalla SPA, che un valutatore non diventi studente per errore e che solo persone
+autorizzate concedano i ruoli più potenti (regola del cliente del 2026-10-23, OWASP H-2: prima ogni
+Moderator poteva farsi Gestore)."""
+roles = ["Moderator", "Gestore", "Docente", "Valutatore", "System Manager"]
+behaviour = [
+	"nella scheda Ruoli del profilo, visibile ai moderatori, ci sono anche gli interruttori Valutatore, Manager (= Gestore) e Teacher (= Docente)",
+	"solo l'account Administrator assegna o toglie il ruolo Gestore; Docente e Valutatore li assegnano anche i Gestori; un Moderator senza Gestore che ci prova riceve un errore di permesso dal server",
+	"Impostazioni → Membri mostra un badge anche per il ruolo Valutatore; un ruolo sconosciuto mostra il proprio nome e le etichette dei ruoli sono tradotte",
+	"in Impostazioni → Membri il clic sulla riga di un membro apre la sua modifica (nome e ruoli, compreso Valutatore); il clic su avatar e nome apre il profilo",
+	"un nuovo membro, creato da Impostazioni → Membri o dai campi Istruttori di corso e classe, ha esattamente i ruoli scelti: nessun LMS Student aggiunto in automatico",
+	"senza almeno un ruolo scelto la creazione del membro è rifiutata («Select at least one role»)",
+	"solo un Moderator crea membri; un Moderator che non può assegnare Gestore riesce comunque ad aggiungere un membro senza ruoli custom",
+	"ogni concessione o revoca di Gestore, Docente e Valutatore, anche quella automatica dalla classe, scrive una riga nell'Activity Log sulla timeline dell'utente: chi l'ha fatta, a chi, quale ruolo, quando",
+	"in vista studente (anteprima della lezione) anche i flag e i ruoli Docente, Valutatore e Gestore risultano spenti, quindi spariscono le loro funzioni, per esempio il pannello di correzione dei compiti",
+	"nel Desk la scheda di un Ruolo ha «Export with Permissions», che scarica un JSON con il ruolo e la sua matrice di permessi, e l'elenco dei Ruoli ha «Import with Permissions», che li ricrea senza toccare i permessi degli altri ruoli; entrambe riservate al System Manager",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/role_audit.py",
+	"apps/os_lms/os_lms/role_import_export.py",
+	"apps/os_lms/os_lms/public/js/role.js",
+	"apps/os_lms/os_lms/public/js/role_list.js",
+	"frontend/src/components/Modals/EditMemberModal.vue",
+	"frontend/src/tests/studentViewOslmsRoles.test.ts",
+]
+upstream_watch = [
+	"save_role", "get_roles", "get_members", "get_member", "create_member", "MemberForm.vue",
+	"NewMemberModal", "Members.vue", "ProfileRoles.vue", "add_lms_student_role", "useStudentView",
+	"asStudent", "student view", "role assignment", "Activity Log", "role export", "Custom DocPerm",
+]
+data = [
+	"EXTRA_LMS_ROLES = Gestore, Docente, Valutatore e MANAGEABLE_ROLES in os_lms.os_lms.override_api",
+	"righe Activity Log (reference_doctype User) scritte da os_lms.os_lms.role_audit.log_role_change",
+	"formato JSON di esportazione dei ruoli (EXPORT_VERSION = 1) di os_lms.role_import_export",
+]
+tests = [
+	"frontend/src/tests/studentViewOslmsRoles.test.ts",
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_2026_10.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_owasp_package_e.py",
+]
+notes = """
+- La regola su chi assegna i ruoli è applicata solo dal server (assert_can_assign_role in
+  override_api, usata da save_role e create_member): la SPA mostra ancora gli interruttori al
+  Moderator (ProfileRoles.vue, NewMemberModal, MemberForm). Nasconderli è un innesto in sospeso.
+- create_member riconcilia tutti i ruoli nella stessa richiesta dell'inserimento perché il
+  before_insert dell'LMS aggiunge sempre LMS Student. Il test upstream memberFormRoute.test.ts che si
+  aspetta frappe.client.insert diverge da questa regola.
+- Al merge di v2.62.0 l'upstream ha spostato Impostazioni → Membri sul modulo instradato
+  pages/Forms/MemberForm.vue con il nuovo endpoint get_member, perdendo in silenzio le regole: dopo
+  ogni riscrittura dei moduli membri ricontrollare ruolo Valutatore, create_member e il rifiuto senza ruoli.
+- EditMemberModal.vue (con il codice fiscale) oggi non è importato da nessun componente: la modifica
+  apre NewMemberModal in modalità modifica e in Members.vue restano variabili non più usate. Il codice
+  fiscale vive nella scheda profile-page.
+- La vista studente è fedeltà di presentazione, non un confine di sicurezza: i permessi del server
+  restano quelli reali. Non esiste un flag is_gestore nella vista studente: il Gestore passa dai ruoli.
+- Il ruolo Valutatore assegnato da qui è globale; quello concesso dalla classe non viene mai revocato
+  in automatico (scheda valutatore-role)."""
+history = [
+	{ date = "2026-04-29", ref = "f91a0e9be", summary = "creazione: interruttori Gestore e Docente nella scheda Ruoli del profilo" },
+	{ date = "2026-06-01", ref = "690cbbe1e", summary = "esportazione e importazione dei ruoli con i permessi dal Desk" },
+	{ date = "2026-07-14", ref = "e22d2b3ee", summary = "interruttore Valutatore nella scheda Ruoli del profilo" },
+	{ date = "2026-07-31", ref = "1af13d630", summary = "ruolo Valutatore letto e salvato dalla gestione membri, badge nell'elenco" },
+	{ date = "2026-09-07", ref = "290b14de4", summary = "nuovi membri creati con i soli ruoli scelti" },
+	{ date = "2026-09-23", ref = "8788bdcbb", summary = "merge v2.61.0: la vista studente spegne anche i ruoli os_lms" },
+	{ date = "2026-10-23", ref = "a8e3fbcec", summary = "OWASP H-2: Gestore assegnato solo dall'Administrator, Docente e Valutatore anche dal Gestore" },
+	{ date = "2026-10-28", ref = "d825bc9d5", summary = "traccia nell'Activity Log di ogni concessione o revoca dei ruoli custom" },
+]

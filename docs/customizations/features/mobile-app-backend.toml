@@ -1,0 +1,52 @@
+id = "mobile-app-backend"
+title = "App mobile Elite: API e notifiche push"
+status = "active"
+summary = """
+La piattaforma fa da server all'app mobile Elite: endpoint dedicati danno all'app il nome, il logo e
+i colori dell'istanza, i corsi in evidenza per la home e il dettaglio di un corso con capitoli,
+lezioni completate e durata. Ogni notifica che la piattaforma crea per un utente arriva anche come
+notifica push sui telefoni su cui l'utente ha fatto accesso all'app (Firebase Cloud Messaging)."""
+why = """
+Il cliente distribuisce un'app mobile propria collegata a ogni istanza Elite. L'upstream non ha API
+pensate per un'app né notifiche push: le notifiche restano nella campanella del sito."""
+roles = ["Student"]
+behaviour = [
+	"l'app legge senza login nome, logo e i due colori dell'app dell'istanza (nome da Website/System Settings, colori dai campi App Main Color e App Secondary Color di Brand Customize)",
+	"la home dell'app mostra fino a 3 corsi pubblicati e in evidenza, i più recenti, con la durata totale; a un ospite non restituisce nulla",
+	"il dettaglio di un corso per l'app aggiunge capitoli e lezioni in ordine con icona, durata, lezioni completate dall'utente, durata totale, sezioni feature, media di testata e il flag TrueSkill (per il pulsante del certificato); un corso che l'utente non può vedere non restituisce nulla",
+	"l'app registra il token del telefono dopo il login (un utente ospite è rifiutato); con lo stesso identificativo di dispositivo il token precedente viene sostituito, così ogni telefono ha un solo token attivo; al logout il token si elimina",
+	"ogni notifica della piattaforma (Notification Log) per un utente parte in background come push verso tutti i suoi telefoni attivi, con titolo, testo senza HTML fino a 240 caratteri e il collegamento; mai per Administrator e Guest",
+	"un errore della push non blocca mai la notifica nella campanella; un token che Firebase dichiara non più valido viene eliminato",
+	"senza credenziali Firebase nel site_config dell'istanza le push non partono e il resto funziona",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/app/*",
+	"apps/os_lms/os_lms/os_lms/push_notifications.py",
+	"apps/os_lms/os_lms/os_lms/doctype/push_device_token/*",
+]
+upstream_watch = [
+	"mobile app", "push notification", "FCM", "firebase", "device token", "Notification Log", "PWA",
+	"get_course_details", "get_featured_home_courses", "app api",
+]
+data = [
+	"doctype Push Device Token (user, platform Android/iOS/Web, device_id, enabled, last_active, token_hash, token); DocPerm solo System Manager",
+	"doc_events Notification Log after_insert -> os_lms.os_lms.push_notifications.on_notification_log_insert (job su coda short, dopo il commit)",
+	"site_config.json: fcm_service_account_path oppure fcm_service_account (credenziali del progetto Firebase dell'app)",
+	"endpoint os_lms.os_lms.app.api.get_course, get_app_home_courses, get_instance_info (ospite ammesso); os_lms.os_lms.api.register_push_token e unregister_push_token",
+	"Brand Customize.app_main_color e app_secondary_color (scheda brand-customize)",
+]
+notes = """
+- get_course dell'app chiama il get_course_details base di lms (non l'override os_lms): campi come
+  il flag TrueSkill e il media di testata vanno aggiunti a mano lì, altrimenti l'app non li vede.
+- Le notifiche di tipo Alert (campanella) Frappe non le manda mai per email: le push sono il loro
+  unico canale fuori dal sito.
+- Nelle prove d'integrazione che non devono lasciare righe, inserire, verificare e fare rollback:
+  la push è enqueue_after_commit e quindi non parte.
+- register_push_token / unregister_push_token stanno in os_lms/os_lms/api.py, fuori dall'area della
+  scheda; il codice dell'app mobile non è in questo repository."""
+history = [
+	{ date = "2026-04-03", ref = "cc28b788d", summary = "creazione: API per l'app con il dettaglio completo del corso" },
+	{ date = "2026-06-11", ref = "7c57eee53", summary = "informazioni dell'istanza (nome, logo, colori) per l'app" },
+	{ date = "2026-06-26", ref = "7a3152c15", summary = "notifiche push sui telefoni (Firebase) con registrazione dei token" },
+	{ date = "2026-07-09", ref = "232279c97", summary = "flag TrueSkill nel dettaglio del corso per l'app" },
+]
