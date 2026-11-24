@@ -240,6 +240,7 @@ title = "Barra fissa «Continue Learning» su telefono"
 layer = "spa-graft"
 confidence = "high"
 feature = "course-page-mobile"
+frozen_from = "v2.55.0"
 intent = """
 Sul telefono (<640px, MobileLayout con barra di navigazione in basso) lo studente iscritto
 vede una barra fissa a tutta larghezza con «Continue Learning», che diventa l'unica azione
@@ -286,6 +287,7 @@ title = "Programma del corso in fondo alla pagina su telefono"
 layer = "spa-graft"
 confidence = "high"
 feature = "course-page-mobile"
+frozen_from = "v2.55.0"
 intent = """
 Sul telefono (<640px) il programma del corso si sposta in fondo alla pagina, sotto le
 sezioni di contenuto, e viene tolto dalla card (hideOutline). In ogni layout più largo
@@ -329,6 +331,7 @@ title = "Card corso completa in linea sul tablet"
 layer = "override-file"
 confidence = "high"
 feature = "course-page-mobile"
+frozen_from = "v2.55.0"
 intent = """
 Tra 640 e 1023px la pagina è a colonna singola ma la card laterale desktop (lg:) è
 nascosta: lì si rende in linea la card completa originale, così il trattamento mobile
@@ -348,6 +351,7 @@ title = "Banner hero del corso"
 layer = "spa-graft"
 confidence = "high"
 feature = "course-page-redesign"
+frozen_from = "v2.55.0"
 intent = """
 Se il corso ha un hero abilitato con un media, il media compare come sezione a tutta
 larghezza con angoli arrotondati tra l'introduzione breve e «About this course», e usa lo
@@ -382,6 +386,7 @@ title = "Istruttori nascosti agli studenti (pagina corso e intestazione della le
 layer = "override-file"
 confidence = "high"
 feature = "course-page-redesign"
+frozen_from = "v2.55.0"
 intent = """
 L'elenco degli istruttori in testa alla pagina corso è visibile solo a moderatori e
 istruttori del corso, non agli studenti.
@@ -410,6 +415,7 @@ title = "Introduzione breve del corso su più righe"
 layer = "override-file"
 confidence = "high"
 feature = "course-page-redesign"
+frozen_from = "v2.55.0"
 intent = """
 short_introduction è un campo Small Text in cui gli autori scrivono su più righe; l'HTML
 collasserebbe gli a capo, quindi si conservano con whitespace-pre-line."""
@@ -424,6 +430,7 @@ title = "Sezione «Course content» rimossa dalla pagina corso"
 layer = "override-file"
 confidence = "high"  # rimozione confermata voluta dal committente il 2026-09-23
 feature = "course-page-redesign"
+frozen_from = "v2.55.0"
 intent = """
 La sezione «Course content» dell'upstream è commentata, insieme alla risorsa
 get_course_outline che la alimentava (per non sprecare la chiamata API). Il programma
@@ -444,6 +451,7 @@ title = "Descrizione del corso comprimibile"
 layer = "override-file"
 confidence = "high"
 feature = "course-page-redesign"
+frozen_from = "v2.55.0"
 intent = """
 La descrizione lunga del corso si rende con CourseDescription, che la comprime con
 «mostra di più / di meno» invece di mostrarla sempre per intero."""
@@ -458,6 +466,7 @@ title = "Sezioni in evidenza del corso"
 layer = "override-file"
 confidence = "high"
 feature = "feature-sections"
+frozen_from = "v2.55.0"
 intent = """
 Il corso può avere sezioni in evidenza configurate dall'autore, rese dopo la descrizione;
 i dati arrivano annidati dall'override os_lms di get_course_details e il rendering tiene
@@ -477,6 +486,7 @@ title = "Recensioni rimosse dalla pagina corso"
 layer = "override-file"
 confidence = "high"  # rimozione confermata voluta dal committente il 2026-09-23
 feature = "hidden-upstream-features"
+frozen_from = "v2.55.0"
 intent = """
 Il blocco CourseReviews dell'upstream è commentato: le recensioni non compaiono nella
 pagina corso. Motivazione non documentata nel codice, presumibilmente scelta del
@@ -492,6 +502,7 @@ title = "Card dell'autore rimossa dalla pagina corso"
 layer = "override-file"
 confidence = "high"  # rimozione confermata voluta dal committente il 2026-09-23
 feature = "course-page-redesign"
+frozen_from = "v2.55.0"
 intent = """
 La CourseCreatorCard dell'upstream nella colonna laterale è commentata. Coerente con
 l'occultamento degli istruttori agli studenti, ma la motivazione non è scritta."""
@@ -506,6 +517,7 @@ title = "Colori dei tag anche nella pagina corso"
 layer = "override-file"
 confidence = "high"
 feature = "content-tags"
+frozen_from = "v2.55.0"
 intent = """
 La mappa colori dei tag (LMS OS Tag) è fornita da Courses.vue solo nell'elenco corsi;
 la pagina corso la ricarica e la fornisce, altrimenti CourseTagBadges non si rende."""
@@ -737,6 +749,7 @@ title = "Traduzione delle stringhe dell'indice nel TextEditor"
 layer = "override-file"
 confidence = "high"
 feature = "rich-text-editor-overrides"
+frozen_from = "1.0.0-beta.7"
 intent = """
 Copia integrale di TocNodeView.vue di frappe-ui con due sole differenze: il messaggio
 «There are no headings in this document.» passa per __() e il titolo del pulsante di
@@ -969,6 +982,7 @@ title = "Grafici e tabelle seguono i ruoli Brand Customize (Base e Avanzata)"
 layer = "spa-graft"
 confidence = "high"
 feature = "brand-customize"
+frozen_from = "1.0.0-beta.29"
 intent = """
 I ruoli «Serie 1-5 dei grafici», «Intestazione tabelle» e «Righe tabelle» di Brand Customize
 (os_lms branding_roles.py) scrivono --os-chart-1..5, --os-table-header-bg e
@@ -1812,7 +1826,7 @@ traduzione, nessuna regola funzionale."""
 
   [[entries.sites]]
   file = "frontend/src/components/Settings/SettingFields.vue"
-  anchor = "__('Upload an image')"
+  anchor = "__('The HTML you add here will be shown on your sign up page.')"
 
 # ── Members.vue ────────────────────────────────────────────────────────────
 
@@ -2323,7 +2337,7 @@ TabButtons che abbiamo tolto; mantenere la rimozione, non reintrodurre il compon
 
   [[entries.sites]]
   file = "frontend/src/pages/Lesson.vue"
-  anchor = "currentTab === 'Notes'"
+  anchor = "v-if=\"lesson.data && allowDiscussions && currentTab === 'Notes'\""
 
   [[entries.sites]]
   file = "frontend/src/pages/Lesson.vue"
@@ -3314,7 +3328,7 @@ Merge di v2.62.0 (2026-09-24): redesign mobile upstream (decisione del committen
 
   [[entries.sites]]
   file = "frontend/src/pages/Courses/CourseDashboard.vue"
-  anchor = "grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-5 items-start"
+  anchor = '<div class="min-w-0 space-y-5">'
 
 [[entries]]
 id = "course-dashboard-search-by-name"
@@ -4175,7 +4189,7 @@ Merge di v2.63.0 (2026-09-24): QuizSubmissionList.vue eliminata, sostituita da Q
 
   [[entries.sites]]
   file = "frontend/src/pages/QuizSubmissions.vue"
-  anchor = '#selection-actions="{ unselectAll, selections }"'
+  anchor = "v-if=\"!isValutatoreOnly\"\n\t\t\t#selection-actions=\"{ unselectAll, selections }\""
 
   [[entries.sites]]
   file = "frontend/src/pages/QuizSubmissions.vue"
@@ -4758,7 +4772,7 @@ default diverso: riportare le nostre classi sul nuovo componente."""
 
   [[entries.sites]]
   file = "frontend/src/components/DiscussionReplies.vue"
-  anchor = ":placeholder=\"__('Type your reply here...')\""
+  anchor = "max-h-[16rem] overflow-y-scroll"
 
 [[entries]]
 id = "discussion-new-label"
@@ -5453,7 +5467,7 @@ regola di comportamento."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/BatchStudentProgress.vue"
-  anchor = "label: __('Percentage/Status')"
+  anchor = "{{ __(value as string) }}"
 
 [[entries]]
 id = "batch-card-style"
@@ -5812,7 +5826,7 @@ Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina in
 
   [[entries.sites]]
   file = "frontend/src/pages/Forms/NewBatchForm.vue"
-  anchor = ":title=\"__('New Batch')\""
+  anchor = ":label=\"__('Start Date')\"\n\t\t\t\t\t\ttype=\"date\"\n\t\t\t\t\t\t:placeholder=\"__('Select date')\""
 
 # --- Iscrizione alla classe (lms_batch_enrollment.py) -------------------------
 
@@ -5841,7 +5855,7 @@ rinominato da validate_course_enrollment a enroll_in_batch_courses."""
 
   [[entries.sites]]
   file = "lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.py"
-  anchor = "enrollment.save(ignore_permissions=True)"
+  anchor = "def enroll_in_batch_courses(self):"
   symbol = "enroll_in_batch_courses"
 
 # ---------------------------------------------------------------------------
@@ -7067,7 +7081,7 @@ Merge di v2.62.0 (2026-09-24): BatchDetail e ora costruito su TabbedDetailPage: 
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/BatchDetail.vue"
-  anchor = "@click=\"openAnnouncementModal\""
+  anchor = "variant=\"solid\"\n\t\t\t\t@click=\"openStudentForm\""
 
   [entries.visibility]
   subject = "pulsanti Importa, Iscrivi e Fai un annuncio nell'intestazione della classe"
@@ -8208,7 +8222,7 @@ Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina in
 
   [[entries.sites]]
   file = "frontend/src/pages/Forms/BatchCourseForm.vue"
-  anchor = 'doctype="LMS Course"'
+  anchor = ":label=\"__('Course')\"\n\t\t\t\t\t:required=\"true\"\n\t\t\t\t\tvariant=\"outline\""
 
 # --- Candidatura a un'offerta di lavoro (JobApplicationModal.vue) -------------
 

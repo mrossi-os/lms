@@ -19,3 +19,619 @@
 # approved = "2026-11-23"
 
 schema_version = 1
+
+[[files]]
+path = "docker/docker-compose.yml"
+features = ["repo-devops", "ai-bias-tests", "ai-lesson-indexing"]
+
+[[files]]
+path = "docker/init.sh"
+features = ["repo-devops", "ai-lesson-indexing", "ai-platform"]
+
+[[files]]
+path = "frontend/index.html"
+features = ["theme-contrast"]
+
+[[files]]
+path = "frontend/package.json"
+features = ["frontend-build-compat", "security-hardening"]
+
+[[files]]
+path = "frontend/src/App.vue"
+features = ["account-deletion", "signup-privacy", "ai-tutor"]
+
+[[files]]
+path = "frontend/src/components/Assignment.vue"
+features = ["assignments", "valutatore-role", "italian-translations"]
+
+[[files]]
+path = "frontend/src/components/BlockEditor.vue"
+features = ["lesson-editor"]
+
+[[files]]
+path = "frontend/src/components/CertificationLinks.vue"
+features = ["course-certificates", "trueskills-certificates"]
+
+[[files]]
+path = "frontend/src/components/ChapterRow.vue"
+features = ["ai-lesson-indexing", "content-tags", "frontend-build-compat", "lesson-editor"]
+
+[[files]]
+path = "frontend/src/components/CommandPalette/CommandPalette.vue"
+features = ["global-search", "hidden-upstream-features", "theme-contrast"]
+
+[[files]]
+path = "frontend/src/components/Controls/ColorSwatches.vue"
+features = ["italian-translations"]
+
+[[files]]
+path = "frontend/src/components/Controls/Link.vue"
+features = ["frappe-ui-overrides"]
+
+[[files]]
+path = "frontend/src/components/Controls/MultiSelect.vue"
+features = ["frappe-ui-overrides", "programs"]
+
+[[files]]
+path = "frontend/src/components/Controls/Uploader.vue"
+features = ["frappe-ui-overrides"]
+
+[[files]]
+path = "frontend/src/components/Controls/VideoPreviewField.vue"
+features = ["video-embeds"]
+
+[[files]]
+path = "frontend/src/components/CourseCard.vue"
+features = ["content-tags", "course-catalogue"]
+
+[[files]]
+path = "frontend/src/components/CourseCardOverlay.vue"
+features = ["course-certificates", "course-page-mobile", "course-page-redesign", "docente-role", "hidden-upstream-features", "trueskills-certificates", "valutatore-role"]
+
+[[files]]
+path = "frontend/src/components/CourseOutline.vue"
+features = ["elite-theme"]
+
+[[files]]
+path = "frontend/src/components/Courses/CourseDetailsSection.vue"
+features = ["content-tags", "course-settings-extensions", "frappe-ui-overrides"]
+
+[[files]]
+path = "frontend/src/components/Courses/CourseInstructorsField.vue"
+features = ["course-settings-extensions", "elite-theme"]
+
+[[files]]
+path = "frontend/src/components/Courses/CourseOverviewSection.vue"
+features = ["elite-theme", "programs"]
+
+[[files]]
+path = "frontend/src/components/Courses/CourseThumbnailField.vue"
+features = ["italian-translations", "frappe-ui-overrides"]
+
+[[files]]
+path = "frontend/src/components/DiscussionReplies.vue"
+features = ["discussions"]
+
+[[files]]
+path = "frontend/src/components/Discussions.vue"
+features = ["discussions"]
+
+[[files]]
+path = "frontend/src/components/Layouts/EmptyStateLayout.vue"
+features = ["frappe-ui-overrides", "italian-translations"]
+
+[[files]]
+path = "frontend/src/components/Layouts/ListPage.vue"
+features = ["valutatore-role"]
+
+[[files]]
+path = "frontend/src/components/Layouts/MobileLayout.vue"
+features = ["ai-tutor", "navigation-menus"]
+
+[[files]]
+path = "frontend/src/components/Layouts/PageHeader.vue"
+features = ["valutatore-role"]
+
+[[files]]
+path = "frontend/src/components/Layouts/TabbedDetailPage.vue"
+features = ["notifications"]
+
+[[files]]
+path = "frontend/src/components/LessonContent.vue"
+features = ["lesson-attachments"]
+
+[[files]]
+path = "frontend/src/components/Modals/DiscussionModal.vue"
+features = ["discussions"]
+
+[[files]]
+path = "frontend/src/components/Modals/EditCoverImage.vue"
+features = ["italian-translations"]
+
+[[files]]
+path = "frontend/src/components/Modals/EvaluationModal.vue"
+features = ["italian-translations"]
+
+[[files]]
+path = "frontend/src/components/Modals/Event.vue"
+features = ["course-certificates", "italian-translations"]
+
+[[files]]
+path = "frontend/src/components/Modals/JobApplicationModal.vue"
+features = ["hidden-upstream-features", "italian-translations"]
+
+[[files]]
+path = "frontend/src/components/Modals/NewMemberModal.vue"
+features = ["members-and-roles", "italian-translations"]
+
+[[files]]
+path = "frontend/src/components/Modals/ReviewModal.vue"
+features = ["hidden-upstream-features", "italian-translations"]
+
+[[files]]
+path = "frontend/src/components/Notes/InlineLessonMenu.vue"
+features = ["student-highlights"]
+
+[[files]]
+path = "frontend/src/components/Notifications/NotificationPanel.vue"
+features = ["notifications"]
+
+[[files]]
+path = "frontend/src/components/PdfBlock.vue"
+features = ["lesson-attachments", "italian-translations", "security-hardening"]
+
+[[files]]
+path = "frontend/src/components/Quiz.vue"
+features = ["quizzes", "italian-translations", "elite-theme"]
+
+[[files]]
+path = "frontend/src/components/ResponsiveListView.vue"
+features = ["course-dashboard"]
+
+[[files]]
+path = "frontend/src/components/RichTextEditor.vue"
+features = ["discussions"]
+
+[[files]]
+path = "frontend/src/components/Settings/Badges/BadgeForm.vue"
+features = ["italian-translations"]
+
+[[files]]
+path = "frontend/src/components/Settings/Coupons/CouponDetails.vue"
+features = ["hidden-upstream-features", "italian-translations"]
+
+[[files]]
+path = "frontend/src/components/Settings/Coupons/CouponItems.vue"
+features = ["hidden-upstream-features", "italian-translations"]
+
+[[files]]
+path = "frontend/src/components/Settings/EmailAccount/emailConfig.ts"
+features = ["italian-translations"]
+
+[[files]]
+path = "frontend/src/components/Settings/EmailTemplate/EmailTemplateList.vue"
+features = ["email-templates"]
+
+[[files]]
+path = "frontend/src/components/Settings/Members.vue"
+features = ["account-deletion", "members-and-roles"]
+
+[[files]]
+path = "frontend/src/components/Settings/Raven/RavenSetupRow.vue"
+features = ["italian-translations"]
+
+[[files]]
+path = "frontend/src/components/Settings/SettingFields.vue"
+features = ["settings-dialog", "welcome-onboarding", "italian-translations"]
+
+[[files]]
+path = "frontend/src/components/Settings/Settings.vue"
+features = ["hidden-upstream-features", "navigation-menus", "settings-dialog", "welcome-onboarding", "zoom-google-calendar"]
+
+[[files]]
+path = "frontend/src/components/Settings/Transactions/TransactionDetails.vue"
+features = ["hidden-upstream-features", "italian-translations"]
+
+[[files]]
+path = "frontend/src/components/Settings/ZoomAccountForm.vue"
+features = ["zoom-google-calendar"]
+
+[[files]]
+path = "frontend/src/components/Sidebar/AppSidebar.vue"
+features = ["navigation-menus"]
+
+[[files]]
+path = "frontend/src/components/Sidebar/UserDropdown.vue"
+features = ["bulk-data-import", "navigation-menus", "theme-contrast", "italian-translations"]
+
+[[files]]
+path = "frontend/src/components/StudentLessonSidebar.vue"
+features = ["lesson-page"]
+
+[[files]]
+path = "frontend/src/components/UnsplashImageBrowser.vue"
+features = ["italian-translations"]
+
+[[files]]
+path = "frontend/src/components/UploadPlugin.vue"
+features = ["lesson-attachments"]
+
+[[files]]
+path = "frontend/src/components/VideoBlock.vue"
+features = ["video-embeds"]
+
+[[files]]
+path = "frontend/src/components/VideoPreview.vue"
+features = ["video-embeds"]
+
+[[files]]
+path = "frontend/src/pages/AssignmentSubmissionList.vue"
+features = ["assignments", "gestore-role", "valutatore-role", "italian-translations"]
+
+[[files]]
+path = "frontend/src/pages/Assignments.vue"
+features = ["assignments", "list-search-words"]
+
+[[files]]
+path = "frontend/src/pages/Batches/BatchDetail.vue"
+features = ["batch-detail-page", "docente-role", "live-classes", "notifications", "valutatore-role"]
+
+[[files]]
+path = "frontend/src/pages/Batches/BatchForm.vue"
+features = ["batch-form", "batch-management-permissions", "feature-sections", "valutatore-role", "italian-translations"]
+
+[[files]]
+path = "frontend/src/pages/Batches/BatchOverview.vue"
+features = ["batch-detail-page", "feature-sections"]
+
+[[files]]
+path = "frontend/src/pages/Batches/Batches.vue"
+features = ["batch-list", "docente-role", "list-search-words"]
+
+[[files]]
+path = "frontend/src/pages/Batches/components/AdminBatchDashboard.vue"
+features = ["batch-dashboard", "batch-management-permissions", "batch-students", "hidden-upstream-features"]
+
+[[files]]
+path = "frontend/src/pages/Batches/components/Announcements.vue"
+features = ["announcements", "rich-text-colors"]
+
+[[files]]
+path = "frontend/src/pages/Batches/components/Assessments.vue"
+features = ["batch-detail-page", "batch-management-permissions"]
+
+[[files]]
+path = "frontend/src/pages/Batches/components/BatchCard.vue"
+features = ["batch-list", "elite-theme"]
+
+[[files]]
+path = "frontend/src/pages/Batches/components/BatchCourses.vue"
+features = ["batch-detail-page", "batch-management-permissions"]
+
+[[files]]
+path = "frontend/src/pages/Batches/components/BatchDashboard.vue"
+features = ["batch-dashboard", "hidden-upstream-features"]
+
+[[files]]
+path = "frontend/src/pages/Batches/components/BatchFeedback.vue"
+features = ["hidden-upstream-features"]
+
+[[files]]
+path = "frontend/src/pages/Batches/components/BatchOverlay.vue"
+features = ["batch-detail-page"]
+
+[[files]]
+path = "frontend/src/pages/Batches/components/BatchStudentProgress.vue"
+features = ["batch-dashboard"]
+
+[[files]]
+path = "frontend/src/pages/Batches/components/LiveClass.vue"
+features = ["docente-role", "live-classes", "valutatore-role", "live-class-gated-join"]
+
+[[files]]
+path = "frontend/src/pages/Courses/CourseCertification.vue"
+features = ["course-certificates"]
+
+[[files]]
+path = "frontend/src/pages/Courses/CourseDashboard.vue"
+features = ["course-dashboard", "hidden-upstream-features", "elite-theme"]
+
+[[files]]
+path = "frontend/src/pages/Courses/CourseDetail.vue"
+features = ["ai-simulations", "docente-role", "programs", "valutatore-role"]
+
+[[files]]
+path = "frontend/src/pages/Courses/CourseForm.vue"
+features = ["course-settings-extensions", "frontend-build-compat"]
+
+[[files]]
+path = "frontend/src/pages/Courses/CourseOverview.vue"
+features = ["course-page-redesign"]
+
+[[files]]
+path = "frontend/src/pages/Courses/CoursePublishSettings.vue"
+features = ["trueskills-certificates"]
+
+[[files]]
+path = "frontend/src/pages/Courses/Courses.vue"
+features = ["content-tags", "course-catalogue", "gestore-role", "list-search-words"]
+
+[[files]]
+path = "frontend/src/pages/Courses/StudentCourseProgress.vue"
+features = ["course-dashboard", "italian-translations"]
+
+[[files]]
+path = "frontend/src/pages/DataImport.vue"
+features = ["bulk-data-import"]
+
+[[files]]
+path = "frontend/src/pages/Forms/AnnouncementForm.vue"
+features = ["announcements", "rich-text-colors", "docente-role"]
+
+[[files]]
+path = "frontend/src/pages/Forms/AssessmentForm.vue"
+features = ["batch-management-permissions", "italian-translations"]
+
+[[files]]
+path = "frontend/src/pages/Forms/AssignmentForm.vue"
+features = ["assignments", "italian-translations"]
+
+[[files]]
+path = "frontend/src/pages/Forms/BatchCourseForm.vue"
+features = ["batch-detail-page", "batch-management-permissions"]
+
+[[files]]
+path = "frontend/src/pages/Forms/BatchStudentForm.vue"
+features = ["batch-students", "docente-role", "hidden-upstream-features"]
+
+[[files]]
+path = "frontend/src/pages/Forms/BulkCertificatesForm.vue"
+features = ["course-certificates", "docente-role"]
+
+[[files]]
+path = "frontend/src/pages/Forms/ChapterForm.vue"
+features = ["italian-translations"]
+
+[[files]]
+path = "frontend/src/pages/Forms/CourseEnrollmentForm.vue"
+features = ["hidden-upstream-features", "italian-translations"]
+
+[[files]]
+path = "frontend/src/pages/Forms/CourseImportForm.vue"
+features = ["gestore-role"]
+
+[[files]]
+path = "frontend/src/pages/Forms/JobForm.vue"
+features = ["hidden-upstream-features", "italian-translations"]
+
+[[files]]
+path = "frontend/src/pages/Forms/LiveClassForm.vue"
+features = ["docente-role", "live-classes"]
+
+[[files]]
+path = "frontend/src/pages/Forms/MemberForm.vue"
+features = ["members-and-roles", "italian-translations"]
+
+[[files]]
+path = "frontend/src/pages/Forms/NewBatchForm.vue"
+features = ["batch-form"]
+
+[[files]]
+path = "frontend/src/pages/Forms/NewCourseForm.vue"
+features = ["programs"]
+
+[[files]]
+path = "frontend/src/pages/Forms/ProfileEditForm.vue"
+features = ["profile-page", "trueskills-certificates"]
+
+[[files]]
+path = "frontend/src/pages/Forms/ProgramForm.vue"
+features = ["programs"]
+
+[[files]]
+path = "frontend/src/pages/Forms/ProgrammingExerciseForm.vue"
+features = ["italian-translations"]
+
+[[files]]
+path = "frontend/src/pages/Home/AdminHome.vue"
+features = ["live-classes", "valutatore-role", "live-class-gated-join", "frontend-build-compat"]
+
+[[files]]
+path = "frontend/src/pages/Home/Home.vue"
+features = ["live-classes", "valutatore-role", "welcome-onboarding"]
+
+[[files]]
+path = "frontend/src/pages/Home/StudentHome.vue"
+features = ["programs", "welcome-onboarding", "live-class-gated-join", "frontend-build-compat"]
+
+[[files]]
+path = "frontend/src/pages/Lesson.vue"
+features = ["ai-tutor", "course-page-mobile", "course-page-redesign", "docente-role", "guided-learning-path", "lesson-editor", "lesson-page", "student-highlights"]
+
+[[files]]
+path = "frontend/src/pages/LessonForm.vue"
+features = ["ai-tutor", "lesson-editor", "ai-lesson-indexing"]
+
+[[files]]
+path = "frontend/src/pages/MobileYou.vue"
+features = ["account-deletion", "theme-contrast"]
+
+[[files]]
+path = "frontend/src/pages/Profile.vue"
+features = ["account-deletion", "profile-page"]
+
+[[files]]
+path = "frontend/src/pages/ProfileCertificates.vue"
+features = ["trueskills-certificates", "profile-page"]
+
+[[files]]
+path = "frontend/src/pages/ProfileEvaluationSchedule.vue"
+features = ["profile-page"]
+
+[[files]]
+path = "frontend/src/pages/ProfileEvaluator.vue"
+features = ["profile-page", "italian-translations"]
+
+[[files]]
+path = "frontend/src/pages/ProfileRoles.vue"
+features = ["members-and-roles"]
+
+[[files]]
+path = "frontend/src/pages/ProgrammingExercises/ProgrammingExercises.vue"
+features = ["italian-translations", "list-search-words"]
+
+[[files]]
+path = "frontend/src/pages/Programs/ProgramDetail.vue"
+features = ["programs"]
+
+[[files]]
+path = "frontend/src/pages/Programs/ProgramEnrollment.vue"
+features = ["programs"]
+
+[[files]]
+path = "frontend/src/pages/Programs/Programs.vue"
+features = ["elite-theme", "list-search-words", "programs"]
+
+[[files]]
+path = "frontend/src/pages/Programs/StudentPrograms.vue"
+features = ["elite-theme", "programs"]
+
+[[files]]
+path = "frontend/src/pages/QuizSubmission.vue"
+features = ["valutatore-role"]
+
+[[files]]
+path = "frontend/src/pages/QuizSubmissions.vue"
+features = ["gestore-role", "valutatore-role"]
+
+[[files]]
+path = "frontend/src/pages/Quizzes.vue"
+features = ["list-search-words", "quizzes"]
+
+[[files]]
+path = "frontend/src/pages/Statistics.vue"
+features = ["italian-translations"]
+
+[[files]]
+path = "frontend/src/tests/VideoPreview.test.ts"
+features = ["video-embeds"]
+
+[[files]]
+path = "frontend/src/tests/lessonLocking.test.ts"
+features = ["guided-learning-path"]
+
+[[files]]
+path = "frontend/src/tests/lessonProgress.test.ts"
+features = ["guided-learning-path"]
+
+[[files]]
+path = "frontend/src/tests/sanitizeRichHTML.test.ts"
+features = ["programs", "rich-text-colors"]
+
+[[files]]
+path = "frontend/src/tests/setup.ts"
+features = ["frontend-build-compat"]
+
+[[files]]
+path = "frontend/src/tests/themeBootstrap.test.ts"
+features = ["theme-contrast"]
+
+[[files]]
+path = "frontend/src/tests/video.test.ts"
+features = ["video-embeds"]
+
+[[files]]
+path = "frontend/src/translation.js"
+features = ["italian-translations"]
+
+[[files]]
+path = "frontend/src/types/api.ts"
+features = ["ai-lesson-indexing", "content-tags", "programs", "valutatore-role", "docente-role"]
+
+[[files]]
+path = "frontend/src/utils/assignment.js"
+features = ["assignments"]
+
+[[files]]
+path = "frontend/src/utils/dayjs.js"
+features = ["italian-translations"]
+
+[[files]]
+path = "frontend/src/utils/format.js"
+features = ["italian-translations"]
+
+[[files]]
+path = "frontend/src/utils/index.js"
+features = ["gestore-role", "lesson-editor", "list-search-words", "rich-text-colors", "student-highlights", "student-stats-export", "video-embeds"]
+
+[[files]]
+path = "frontend/src/utils/lessonProgress.ts"
+features = ["guided-learning-path"]
+
+[[files]]
+path = "frontend/src/utils/quiz.js"
+features = ["lesson-editor"]
+
+[[files]]
+path = "frontend/src/utils/upload.js"
+features = ["lesson-attachments"]
+
+[[files]]
+path = "frontend/vite.config.js"
+features = ["brand-customize", "frappe-ui-overrides", "frontend-build-compat", "italian-translations", "rich-text-editor-overrides", "security-hardening"]
+
+[[files]]
+path = "frontend/vitest.config.ts"
+features = ["frontend-build-compat", "security-hardening"]
+
+[[files]]
+path = "lms/lms/api.py"
+features = ["valutatore-role", "live-classes", "live-class-gated-join"]
+
+[[files]]
+path = "lms/lms/doctype/course_lesson/course_lesson.py"
+features = ["docente-role", "lesson-attachments"]
+
+[[files]]
+path = "lms/lms/doctype/lms_batch/lms_batch.py"
+features = ["batch-students", "security-hardening", "valutatore-role", "zoom-google-calendar"]
+
+[[files]]
+path = "lms/lms/doctype/lms_batch_enrollment/lms_batch_enrollment.py"
+features = ["batch-students", "docente-role", "valutatore-role"]
+
+[[files]]
+path = "lms/lms/doctype/lms_live_class/lms_live_class.py"
+features = ["docente-role", "live-classes", "security-hardening", "valutatore-role"]
+
+[[files]]
+path = "lms/lms/doctype/lms_program/lms_program.py"
+features = ["programs"]
+
+[[files]]
+path = "lms/lms/doctype/lms_quiz/lms_quiz.py"
+features = ["quizzes"]
+
+[[files]]
+path = "lms/lms/doctype/lms_quiz/test_lms_quiz.py"
+features = ["quizzes"]
+
+[[files]]
+path = "lms/lms/doctype/lms_zoom_settings/lms_zoom_settings.json"
+features = ["zoom-google-calendar"]
+
+[[files]]
+path = "lms/lms/permissions.py"
+features = ["docente-role", "valutatore-role"]
+
+[[files]]
+path = "lms/lms/utils.py"
+features = ["course-catalogue", "discussions", "docente-role", "programs", "rich-text-colors", "security-hardening", "valutatore-role", "trueskills-certificates", "batch-students", "lesson-editor"]
+
+[[files]]
+path = "lms/templates/signup-form.html"
+features = ["account-deletion", "signup-privacy"]
+
+[[files]]
+path = "lms/www/new-sign-up.html"
+features = ["signup-privacy", "web-pages-login"]
