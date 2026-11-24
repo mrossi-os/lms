@@ -14,9 +14,10 @@ class LessonContentParser:
         lesson:
         """
         self.lesson = lesson
-        self.blocks: list[dict] = self._decode_content(
-            "content"
-        ) + self._decode_content("instructor_content")
+        # Only the student-facing body. instructor_content stays out: the RAG
+        # index is shared by every role and the tutor answers learners from it,
+        # so indexing it would let the tutor repeat instructor-only notes.
+        self.blocks: list[dict] = self._decode_content("content")
 
     # ------------------------------------------------------------------
     # Decode

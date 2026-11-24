@@ -8,7 +8,7 @@ Custom extension app for the ELITE LMS platform, built on Frappe Framework. Adds
 
 ```
 Course Lesson (EditorJS JSON)
-  → LessonContentParser (parse blocks, extract video transcripts via YoutubeTranscriber/VimeoTranscriber)
+  → LessonContentParser (parse `content` blocks only — never `instructor_content`, the index is shared with learners; extract video transcripts via YoutubeTranscriber/VimeoTranscriber)
   → chunk_text() (split into overlapping chunks)
   → OpenAIApiEmbedder (text-embedding-3-small, batched at 200K tokens)
   → RedisRagStorage (redisvl SearchIndex, HNSW, cosine similarity)

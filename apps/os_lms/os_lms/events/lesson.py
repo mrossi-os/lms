@@ -57,9 +57,9 @@ def validate_upload_blocks(doc, method=None):
 
 
 def reset_index_status_on_content_change(doc, method):
-    if not doc.is_new() and (
-        doc.has_value_changed("content") or doc.has_value_changed("instructor_content")
-    ):
+    # instructor_content is not indexed (see LessonContentParser), so editing
+    # it alone must not queue a paid re-index.
+    if not doc.is_new() and doc.has_value_changed("content"):
         doc.index_status = "pending"
 
 
