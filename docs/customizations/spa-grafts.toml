@@ -6123,17 +6123,15 @@ merge porta l'upstream a definirli, tenere una sola definizione."""
 
 [[entries]]
 id = "uploader-mobile-wrap-description"
-title = "Uploader usabile su telefono e con descrizione visibile"
+title = "Uploader usabile su telefono"
 layer = "spa-graft"
 confidence = "high"
 intent = """
 Nel dialogo Nuovo corso, su telefono, l'anteprima larga w-56 in una riga che non andava a capo
 spingeva fuori vista i pulsanti Carica/Sostituisci/Rimuovi: la riga ora fa flex-wrap e
-l'anteprima è limitata a max-w-full, così i pulsanti scendono sotto. Inoltre la prop
-description, già passata da NewCourseModal (linee guida della miniatura) e da BadgeForm, non
-era dichiarata né mostrata: la dichiariamo e la rendiamo tradotta sotto il controllo (commit
-252fce492). ATTENZIONE al merge di v2.61.0: l'upstream aggiunge solo :alt all'<img>
-dell'anteprima, lontano dalle nostre righe: merge atteso pulito."""
+l'anteprima è limitata a max-w-full, così i pulsanti scendono sotto. La prop description che
+avevamo aggiunto è stata adottata dall'upstream (f495a6fc4, <InputDescription>): la nostra
+dichiarazione e il nostro <p> sono stati rimossi, resta solo il layout."""
 
   [[entries.sites]]
   file = "frontend/src/components/Controls/Uploader.vue"
@@ -6143,14 +6141,6 @@ dell'anteprima, lontano dalle nostre righe: merge atteso pulito."""
   file = "frontend/src/components/Controls/Uploader.vue"
   anchor = "'w-56 max-w-full aspect-[750/422] rounded-md'"
   symbol = "previewBoxClasses"
-
-  [[entries.sites]]
-  file = "frontend/src/components/Controls/Uploader.vue"
-  anchor = '<p v-if="description"'
-
-  [[entries.sites]]
-  file = "frontend/src/components/Controls/Uploader.vue"
-  anchor = "description?: string"
 
 [[entries]]
 id = "video-preview-field-vimeo"

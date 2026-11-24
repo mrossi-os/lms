@@ -65,10 +65,6 @@
 						</Button>
 					</div>
 				</div>
-				<!-- OSLMS-CUSTOM: render the description prop callers already pass -->
-				<p v-if="description" class="text-p-xs text-ink-gray-5 mt-1.5">
-					{{ __(description) }}
-				</p>
 			</template>
 		</FileUploader>
 		<InputDescription
@@ -101,8 +97,6 @@ const props = withDefaults(
 	defineProps<{
 		modelValue: string | null
 		label?: string
-		// OSLMS-CUSTOM: declared so NewCourseModal/BadgeForm hints are shown
-		description?: string
 		type?: 'image' | 'video'
 		required?: boolean
 		shape?: 'square' | 'circle'
