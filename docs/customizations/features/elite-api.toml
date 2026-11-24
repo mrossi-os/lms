@@ -1,0 +1,76 @@
+id = "elite-api"
+title = "Elite API (lettura per sistemi esterni)"
+status = "active"
+summary = """
+Un'API in sola lettura con cui sistemi esterni (il primo è TrueSkill) leggono corsi, classi e
+studenti iscritti con nome, cognome, codice fiscale, email e avanzamento. L'accesso avviene con
+chiavi create e revocate da amministratori e Gestore in una scheda delle impostazioni; ogni chiamata
+viene registrata. La guida per chi integra è docs/elite-api/guida-integrazione.md."""
+why = """
+TrueSkill deve sapere chi ha completato quali corsi per emettere certificati in blocco. Le chiavi
+native di Frappe sono una coppia per utente e aprirebbero ogni endpoint autenticato; i Gestore, che
+devono gestire le chiavi, sono in gran parte Website User senza Desk. Decisioni D1-D13 prese con
+l'utente il 2026-09-30."""
+roles = ["System Manager", "Gestore"]
+behaviour = [
+	"la scheda «Elite API» delle impostazioni, e la creazione, l'elenco e la revoca delle chiavi, sono solo per System Manager (Administrator) e Gestore, controllate anche dal server; ognuno di loro vede e revoca tutte le chiavi",
+	"la chiave completa si vede una sola volta alla creazione; può avere una data di scadenza (valida tutto quel giorno); una chiave revocata o scaduta non si riattiva e non si modifica; più chiavi possono essere attive insieme, tutte con lo stesso ambito",
+	"le chiamate vanno solo in GET sugli endpoint v1 (ping, list_courses, list_batches, get_course_students, get_batch_students) con l'header X-Elite-Api-Key; senza header o con un altro metodo la risposta è 403",
+	"una chiave inviata insieme all'header Authorization, a una sessione di login o al parametro cmd è rifiutata con 400 invalid_request; chiave errata, revocata o scaduta danno tutte lo stesso 401 invalid_api_key",
+	"oltre 20 tentativi con chiave non valida dallo stesso indirizzo in 10 minuti danno 429; una chiave valida non viene mai bloccata e non c'è limite di chiamate per chiave",
+	"i corsi elencati comprendono anche quelli non pubblicati e dicono se il corso emette già il badge TrueSkill; la ricerca guarda il titolo, non l'identificativo",
+	"gli studenti restituiti sono solo gli iscritti come studenti con account attivo, una volta per corso, ordinati per cognome, nome ed email; il codice fiscale è in maiuscolo senza spazi oppure null, senza controllo di formato",
+	"lo stato di avanzamento: corso completato a 100, in corso fra 0 e 100, non iniziato a 0; per la classe contano solo i corsi (non le valutazioni), quindi può differire dalla dashboard della classe",
+	"le liste sono paginate (page fino a 100.000, page_length da 1 a 500, predefinito 100); un corso o una classe inesistenti danno 404 not_found, un parametro non valido 400 invalid_parameter",
+	"ogni chiamata viene registrata con chiave, endpoint, parametri, righe restituite, durata e indirizzo, mai i dati degli studenti; il registro si cancella dopo 90 giorni",
+	"le richieste girano come un utente tecnico disattivato con il solo ruolo «Elite API Client»; se quell'utente ha ruoli in più la chiave è rifiutata con 403 e un Error Log",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/elite_api/*",
+	"apps/os_lms/os_lms/os_lms/doctype/elite_api_key/*",
+	"apps/os_lms/os_lms/os_lms/doctype/elite_api_access_log/*",
+	"frontend/src/oslms/components/eliteApi/*",
+	"apps/os_lms/os_lms/os_lms/tests/test_elite_api_*.py",
+	"apps/os_lms/os_lms/os_lms/tests/elite_api_fixture.py",
+]
+upstream_watch = [
+	"REST API", "API key", "api token", "external integration", "webhook", "before_request", "auth_hooks",
+	"lms.auth", "block_endpoints", "validate_auth", "form_dict.cmd", "frappe/app.py", "Settings.vue tabsStructure",
+	"progress", "LMS Enrollment progress",
+]
+data = [
+	"doctype Elite API Key (key_name, enabled, expires_on, last_used_on, last_used_ip, revoked_on, revoked_by, secret_hash: solo SHA-256 del segreto; name = prefisso della chiave)",
+	"doctype Elite API Access Log (api_key, method, status_code, rows_returned, duration_ms, ip_address, request_params); default_log_clearing_doctypes 90 giorni, registrato in Log Settings dal setup",
+	"ruolo Elite API Client (desk_access senza permessi) e utente tecnico disattivato elite-api@elite-api.invalid, da setup.setup_elite_api_client",
+	"hook before_request os_lms.os_lms.elite_api.auth.authenticate_request e after_request record_request; endpoint os_lms.os_lms.elite_api.v1.* e admin.list_keys / create_key / revoke_key",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/tests/test_elite_api_admin.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_elite_api_auth.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_elite_api_catalog.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_elite_api_keys.py",
+	"apps/os_lms/os_lms/os_lms/tests/test_elite_api_students.py",
+]
+notes = """
+- La verifica della chiave deve restare un hook before_request: lms.auth.authenticate gira prima di
+  ogni auth_hook di os_lms e blocca /api/method/os_lms.* (block_endpoints). Un header custom serve
+  perché una chiave custom in Authorization darebbe 401 da validate_auth.
+- Lezione della revisione di sicurezza: frappe/app.py esegue form_dict.cmd PRIMA di instradare
+  /api/: con la chiave e un parametro cmd si eseguiva qualsiasi metodo whitelisted come utente
+  client. Ogni hook di autenticazione in before_request va verificato su quel ramo.
+- Frappe annulla le transazioni di ogni GET e delle richieste fallite: il registro si scrive in
+  after_request con commit esplicito. frappe.set_user azzera form_dict (salvato e ripristinato).
+- Le query di avanzamento sono SQL letterale (niente f-string, regole semgrep di Frappe); ogni lista
+  ha la sua COUNT gemella, tenuta allineata da test_lists_agree_with_the_summaries. Usa il
+  massimo progresso per studente e corso (in produzione esistono iscrizioni doppie).
+- Lacuna nota: un corso eliminato ma ancora collegato a una classe conta in courses_total senza
+  comparire in courses.
+- Oltre 20 chiavi rifiutate in un'ora parte un'email di allarme ad Administrator e Gestori (scheda
+  degli allarmi di sicurezza, 749104b3f).
+- Restavano fuori dal lavoro (2026-09-30): deploy in produzione, creazione della chiave di
+  produzione e consegna sicura a TrueSkill, verifica GDPR art. 28 a cura del cliente."""
+history = [
+	{ date = "2026-09-30", ref = "44f228b36", summary = "creazione: chiavi, registro degli accessi e utente tecnico; autenticazione (bbbed734a), corsi e classi (0ce3e078b), studenti (bdf8ef590), scheda delle impostazioni (f857a8901)" },
+	{ date = "2026-09-30", ref = "60b1ee333", summary = "chiusa la scorciatoia con il parametro cmd; tentativi falliti per IP solo sulle chiavi non valide" },
+	{ date = "2026-10-26", ref = "749104b3f", summary = "allarme email per le chiavi rifiutate, righe del registro aggregate per IP oltre il limite" },
+]

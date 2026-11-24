@@ -144,6 +144,7 @@ id = "trueskills-certificate-viewer"
 title = "Il certificato TrueSkills sostituisce il PDF interno"
 layer = "spa-graft"
 confidence = "high"
+feature = "trueskills-certificates"
 intent = """
 Per i corsi con emissione TrueSkills il certificato di completamento è l'immagine
 openbadge TrueSkills (aperta in linea), non il PDF del Print Format interno. Vale sulla
@@ -180,6 +181,7 @@ id = "profile-trueskills-received-certificates"
 title = "Certificati emessi direttamente da TrueSkill nella tab Certificati del profilo"
 layer = "spa-graft"
 confidence = "high"
+feature = "trueskills-certificates"
 intent = """
 TrueSkill può emettere certificati in blocco alle email degli utenti Elite senza che Elite
 li richieda: non esiste un LMS Certificate né un Issue Log. La tab Certificati del profilo
@@ -556,6 +558,7 @@ id = "lesson-ai-status"
 title = "Stato di indicizzazione AI delle lezioni nell'editor"
 layer = "spa-graft"
 confidence = "high"
+feature = "ai-lesson-indexing"
 intent = """
 Nel programma in modalità modifica ogni lezione mostra in forma compatta lo stato di
 indicizzazione per l'assistente AI (RAG os_lms). Lo stato arriva dall'override os_lms
@@ -961,6 +964,7 @@ id = "brand-customize-chart-and-table-colors"
 title = "Grafici e tabelle seguono i ruoli Brand Customize (Base e Avanzata)"
 layer = "spa-graft"
 confidence = "high"
+feature = "brand-customize"
 intent = """
 I ruoli «Serie 1-5 dei grafici», «Intestazione tabelle» e «Righe tabelle» di Brand Customize
 (os_lms branding_roles.py) scrivono --os-chart-1..5, --os-table-header-bg e
@@ -2317,6 +2321,7 @@ id = "lesson-ai-tutor-context"
 title = "Il tutor AI conosce la lezione aperta o in modifica"
 layer = "spa-graft"
 confidence = "high"
+feature = "ai-tutor"
 intent = """
 Il tutor AI os_lms (pulsanti flottanti AiFixedButtons) risponde nel contesto della lezione
 corrente: la pagina lezione e l'editor della lezione pubblicano il nome della lezione nello
@@ -2900,6 +2905,7 @@ id = "sidebar-export-statistics"
 title = "Voce «Export Statistics» nella barra laterale"
 layer = "spa-graft"
 confidence = "high"
+feature = "student-stats-export"
 intent = """
 Voce di menu verso la pagina os_lms di esportazione delle statistiche studenti
 (StudentStatsExport, CSV/XLSX). Compare solo se get_user_info restituisce can_export_stats,
@@ -2939,6 +2945,7 @@ id = "theme-elite-import"
 title = "Tema Elite del cliente caricato sopra frappe-ui"
 layer = "spa-graft"
 confidence = "high"
+feature = "elite-theme"
 intent = """
 Il foglio di stile globale importa il tema Elite del cliente (styles/theme/elite/main.css,
 nostro), che ridefinisce colori e componenti per l'identità visiva della piattaforma. Senza
@@ -2955,6 +2962,7 @@ id = "popover-above-floating-buttons"
 title = "Menu e popover sopra i pulsanti flottanti del tutor AI"
 layer = "spa-graft"
 confidence = "high"
+feature = "ai-tutor"
 intent = """
 I wrapper popper di Radix Vue (Dropdown, Select, Tooltip, Popover di frappe-ui) sono
 teletrasportati nel body senza z-index; gli elementi fissi locali, come i pulsanti
@@ -3308,6 +3316,7 @@ id = "courses-programs-theme-card-hooks"
 title = "Classe card del tema elite su riquadri e card di corsi e programmi"
 layer = "spa-graft"
 confidence = "high"
+feature = "elite-theme"
 intent = """
 La classe card è l'aggancio dello stile delle card del tema elite
 (frontend/src/styles/theme/elite/main.css): aggiunta ai riquadri numerici delle dashboard
@@ -3358,6 +3367,7 @@ id = "course-form-overview-theme-hooks"
 title = "Agganci del tema elite nella sezione panoramica del modulo corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "elite-theme"
 intent = """
 Nella sezione "Panoramica" delle impostazioni del corso, il contenitore dell'editor della
 descrizione porta la classe ProseMirror-wrapper (più un anello di focus) e il campo "Corsi
@@ -4287,6 +4297,7 @@ id = "questionnaire-surface-base-token"
 title = "Questionario con bg-surface-base al posto di bg-surface-white"
 layer = "spa-graft"
 confidence = "high"
+feature = "elite-theme"
 status = "accepted-drift"
 intent = """
 Le opzioni e i pulsanti di navigazione del questionario usano bg-surface-base perché
@@ -5920,6 +5931,7 @@ id = "course-detail-simulations-tab"
 title = "Scheda Simulazioni del corso per chi ne gestisce le simulazioni, Valutatore compreso"
 layer = "spa-graft"
 confidence = "high"
+feature = "ai-simulations"
 intent = """
 Punto 5 ESG, fase 5 del piano docs/ai-simulator/PIANO-esito-e-punteggio-coach.md (commit
 c0740a705, 1.16.54): la scheda Simulazioni del dettaglio corso (CourseSimulations di os_lms:
@@ -6409,6 +6421,7 @@ id = "ai-fixed-buttons-layouts"
 title = "Pulsanti flottanti AI montati nei layout desktop e mobile"
 layer = "spa-graft"
 confidence = "high"
+feature = "ai-tutor"
 intent = """
 I pulsanti flottanti del coach/tutor AI di os_lms (AiFixedButtons) sono montati una volta sola
 nella shell dell'app, così compaiono su ogni pagina senza toccare le singole pagine. All'inizio
@@ -6442,6 +6455,7 @@ id = "desktop-layout-elite-sidebar"
 title = "Contenitore della sidebar desktop senza bordo e sfondo upstream"
 layer = "spa-graft"
 confidence = "high"
+feature = "elite-theme"
 intent = """
 Nel tema elite il contenitore della AppSidebar non porta le classi upstream border-e
 bg-surface-sidebar (commit e9b6577b7 «update theme colors»): colore e bordo della sidebar sono
@@ -6616,6 +6630,7 @@ id = "router-file-upload-route"
 title = "Rotta della pagina Carica file"
 layer = "spa-graft"
 confidence = "high"
+feature = "bulk-data-import"
 intent = """
 La pagina FileUpload (pages/FileUpload.vue, creata da noi nel commit f546fed1c insieme al file
 picker) permette di caricare file riusabili nei contenuti; la raggiunge la voce «Importa» del
@@ -6634,6 +6649,7 @@ id = "router-simulation-routes"
 title = "Rotte delle simulazioni AI di os_lms"
 layer = "spa-graft"
 confidence = "high"
+feature = "ai-simulations"
 intent = """
 Le simulazioni AI di os_lms (chat e voce) hanno sei pagine proprie sotto /simulations:
 InstructorReports (area docente/admin), ScenarioCreate e ScenarioEdit (editor degli scenari),
@@ -6663,6 +6679,7 @@ id = "router-student-stats-export-route"
 title = "Rotta della pagina di esportazione delle statistiche studenti"
 layer = "spa-graft"
 confidence = "high"
+feature = "student-stats-export"
 intent = """
 La pagina StudentStatsExport (oslms/pages/StudentStatsExport.vue, commit 68ce20f5d) esporta le
 statistiche degli studenti con filtri; la voce di sidebar in utils/index.js è condizionata a
@@ -7234,6 +7251,7 @@ id = "course-instructors-theme-hook"
 title = "Aggancio os-multilink del tema elite sul campo Istruttori"
 layer = "spa-graft"
 confidence = "high"
+feature = "elite-theme"
 intent = """
 Il campo Istruttori del modulo corso porta la classe os-multilink, l'aggancio con cui il tema
 elite (styles/theme/elite/main.css, .os-multilink div button) dà al campo lo sfondo degli altri
@@ -7273,6 +7291,7 @@ id = "trueskills-template-required-data-refused"
 title = "Template TrueSkill con dati obbligatori: avviso nella scelta, blocco al salvataggio, messaggio allo studente"
 layer = "spa-graft"
 confidence = "high"
+feature = "trueskills-certificates"
 intent = """
 L'emissione TrueSkill non invia requiredData (i dati che un template chiede di compilare prima
 dell'emissione, es. «Performance 1/2» del template 10 «Certificato 1»): TrueSkill rifiuta con
@@ -7318,6 +7337,7 @@ id = "course-trueskills-publish-settings"
 title = "Emissione del certificato TrueSkill configurabile per corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "trueskills-certificates"
 intent = """
 Nella sezione «Prezzo e certificazione» il gestore del corso attiva l'emissione del certificato
 tramite TrueSkill (campo custom trueskills_certificate_enabled) e sceglie il template
@@ -7353,6 +7373,7 @@ id = "course-certificate-trueskill-exclusive"
 title = "Certificato di completamento interno e TrueSkill mutuamente esclusivi"
 layer = "spa-graft"
 confidence = "high"
+feature = "trueskills-certificates"
 intent = """
 Per ogni corso il certificato è o quello interno di completamento o l'openbadge TrueSkill, mai
 entrambi: attivare uno switch spegne l'altro (setCompletionCertificate /
@@ -7625,6 +7646,7 @@ id = "lesson-rename-rag-reindex"
 title = "Rinomina di una lezione: indice dell'AI tutor ripulito e ricostruito"
 layer = "override-file"
 confidence = "high"
+feature = "ai-lesson-indexing"
 intent = """
 v2.61.0 (bbab35054) aggiunge un job giornaliero che rinomina le lezioni «NNNN Untitled lesson»
 nel loro titolo reale, con frappe.rename_doc. I campi Link (anche quelli os_lms: LMSA Query Log,
@@ -7782,6 +7804,7 @@ id = "data-import-doctype-titles-i18n"
 title = "Importazione dati: titoli dei doctype tradotti"
 layer = "spa-graft"
 confidence = "high"
+feature = "bulk-data-import"
 intent = """
 I titoli di doctypeMap (Courses, Batches, Categories) che la pagina passa al componente
 DataImport di frappe-ui (da noi il fork in src/overrides/frappe-ui/frappe/DataImport, che
@@ -8513,6 +8536,7 @@ id = "default-light-theme"
 title = "Tema chiaro di default con colori cliente; l'utente può passare allo scuro stock"
 layer = "spa-graft"
 confidence = "high"
+feature = "theme-contrast"
 intent = """
 Requisito ESG (2026-10-23, branch feature/esg, punto 1): l'utente deve poter cambiare tema,
 quindi la voce «Toggle Theme» del menu utente (UserDropdown) e la riga «Colour mode» della
@@ -8563,6 +8587,7 @@ id = "high-contrast-switch"
 title = "Interruttore «Alto contrasto» nel menu utente e nella pagina «Tu» del telefono"
 layer = "spa-graft"
 confidence = "high"
+feature = "theme-contrast"
 intent = """
 Requisito ESG (2026-10-23, branch feature/esg, punto 2): l'utente può attivare un tema ad alto
 contrasto, indipendente da chiaro/scuro. La logica sta in file nostri:
@@ -8737,6 +8762,7 @@ id = "app-ai-tutor-route-context"
 title = "Contesto del corso per il tutor AI sincronizzato con la rotta"
 layer = "spa-graft"
 confidence = "high"
+feature = "ai-tutor"
 intent = """
 Il pulsante fisso del tutor AI (oslms/components/AiFixedButtons, commit e1aa5e126 «add tutor
 ai fixed button, add course context to tutor») deve sapere in quale corso si trova lo
@@ -8764,6 +8790,7 @@ id = "main-brand-customize-css"
 title = "Foglio di stile «Brand Customize» caricato per ultimo"
 layer = "spa-graft"
 confidence = "high"
+feature = "brand-customize"
 intent = """
 L'amministratore personalizza i colori della piattaforma dal doctype os_lms «Brand Customize»
 (commit 55c34f1a7); os_lms.os_lms.branding.brand_css restituisce il CSS con quei valori.
@@ -8906,6 +8933,7 @@ id = "user-dropdown-file-upload-item"
 title = "Voce «Importa» del menu utente verso la pagina Carica file"
 layer = "spa-graft"
 confidence = "high"
+feature = "bulk-data-import"
 intent = """
 La voce «Importa» (icona Upload) porta alla nostra pagina FileUpload (pages/FileUpload.vue,
 rotta router-file-upload-route, commit f546fed1c e 5fc238264), dove si caricano file riusabili
@@ -8936,6 +8964,7 @@ id = "layout-header-gray-background"
 title = "Intestazione di pagina con sfondo grigio del tema"
 layer = "spa-graft"
 confidence = "high"
+feature = "elite-theme"
 intent = """
 LayoutHeader usa bg-surface-gray-1 al posto dello sfondo di base (bg-surface-white, poi
 bg-surface-base nell'upstream) per l'intestazione sticky delle pagine elenco (commit 81e2c2db8
@@ -9490,6 +9519,7 @@ id = "settings-elite-api-tab"
 title = "Tab «Elite API» nelle impostazioni: gestione delle chiavi API"
 layer = "override-file"
 confidence = "high"
+feature = "elite-api"
 intent = """
 Amministratori e Gestore creano, vedono e revocano le chiavi con cui i sistemi esterni
 (primo: TrueSkill) leggono corsi, classi e studenti tramite l'Elite API, senza passare
@@ -9857,6 +9887,7 @@ id = "trueskills-badge-reuse-same-template"
 title = "TrueSkills: un badge per studente, corso e template"
 layer = "spa-graft"
 confidence = "high"
+feature = "trueskills-certificates"
 intent = """
 Da v2.65.0 uno studente può avere più LMS Certificate per lo stesso corso (uno per classe più
 quello di corso; upstream 4e0ad06b0, correzione di sicurezza sugli evaluator). L'emissione

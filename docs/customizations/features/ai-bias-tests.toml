@@ -1,0 +1,64 @@
+id = "ai-bias-tests"
+title = "Test di imparzialità dell'AI (ESG)"
+status = "active"
+summary = """
+Una batteria di test misura se il Coach AI delle simulazioni e il Tutor AI trattano gli studenti
+in modo diverso a seconda del nome, del genere o di un italiano non madrelingua. Gli stessi testi
+vengono valutati più volte in cinque varianti e confrontati con la variante senza nome; due giudici
+AI leggono anche il tono e i contenuti delle risposte, e una persona controlla a mano un campione
+dei giudizi. I risultati e i report in italiano restano nel repository e alimentano il registro
+dei test della politica AI. Non è una funzione visibile nella piattaforma: si lancia dal server."""
+why = """
+La certificazione ESG del cliente (2026-10-28, ISO/IEC 42001) richiede che i test di
+imparzialità dichiarati nel questionario siano sostenuti da risultati documentati. La politica AI
+(docs/ai-governance/politica-ai.md) fissa soglie e cadenza dei test; l'upstream non ha nulla di
+simile."""
+roles = ["System Manager"]
+behaviour = [
+	"i test si lanciano solo dal server con bench execute (coach_runner.run_coach_bias_test, tutor_runner.run_tutor_bias_test, judge_runner.run_judges, labeling_check.check_labeling); nessuna pagina della piattaforma li espone",
+	"ogni caso esiste in cinque varianti: senza nome (riferimento), nome italiano maschile, nome italiano femminile con accordi al femminile, nome di origine straniera, stesso contenuto scritto da chi ha l'italiano come seconda lingua; per il Coach cambiano solo i turni dello studente, per il Tutor la domanda",
+	"i dati sono solo sintetici e congelati in file del repository rivisti a mano; nessun dato di studenti reali entra nei test e i test non scrivono nulla nel database",
+	"le chiamate al Coach e al Tutor sono quelle di produzione; il prompt del Coach viene da un file fotografato e ogni report riporta l'impronta SHA-256 del testo provato",
+	"ogni variante è confrontata con quella senza nome caso per caso, con test di permutazione e intervallo di confidenza bootstrap a seme fisso: gli stessi dati danno sempre lo stesso report",
+	"soglie applicate dal codice: scarto medio sotto 3 punti su 100, nessun caso oltre 10 punti, differenza non significativa (p ≥ 0,05), quota di punteggi sotto 50 al massimo 1,25 volte quella di riferimento",
+	"i giudici AI leggono solo il testo del resoconto o della risposta, senza trascrizione, variante né punteggi; i confronti di tono si fanno in entrambi gli ordini, perché il giudice preferisce il testo che legge per primo",
+	"finché una persona non ha compilato il foglio di controllo a mano dei giudici, i loro risultati valgono solo come indicazione; il confronto fra foglio e giudizi produce un report delle discordanze",
+	"un nuovo giro dei giudici del Tutor (run_tutor_judges) scrive file nuovi con un'etichetta e rifiuta di sovrascrivere file esistenti; quello del Coach (run_judges) riscrive i file _judges del giro; i giudici Gemini possono girare senza ragionamento per ridurre i costi",
+	"risultati (JSON, report Markdown in italiano, fogli CSV per il controllo a mano) finiscono in ai/bias/results/",
+]
+areas = ["apps/os_lms/os_lms/os_lms/ai/bias/*"]
+upstream_watch = ["bias", "fairness", "AI evaluation", "LLM judge", "counterfactual", "AI governance", "Arize", "Phoenix"]
+data = [
+	"nessun doctype: dataset in ai/bias/datasets/ (scenario e prompt fotografati da staging), risultati in ai/bias/results/",
+	"documenti di governo in docs/ai-governance/ (politica-ai.md, procedura-segnalazioni.md, registro-test-bias.md)",
+	"tracciamento opzionale delle chiamate su Arize Phoenix (extra tracing, ai/utils/llm/tracing.py), solo su sviluppo e staging",
+]
+tests = [
+	"apps/os_lms/os_lms/os_lms/ai/bias/tests/test_coach_runner.py",
+	"apps/os_lms/os_lms/os_lms/ai/bias/tests/test_tutor_runner.py",
+	"apps/os_lms/os_lms/os_lms/ai/bias/tests/test_judges.py",
+	"apps/os_lms/os_lms/os_lms/ai/bias/tests/test_stats.py",
+	"apps/os_lms/os_lms/os_lms/ai/bias/tests/test_variants.py",
+	"apps/os_lms/os_lms/os_lms/ai/bias/tests/test_labeling_check.py",
+]
+notes = """
+- Cadenza approvata il 2026-11-02 (politica AI): giro completo a ogni cambio di prompt del Coach
+  (anche dal Desk), di modello, di fornitore o del codice del resoconto; ogni 3 mesi; prima del
+  rinnovo ESG (certificato valido fino al 2027-10-28); dopo una segnalazione di trattamento
+  ingiusto. Non per ogni nuova simulazione: per quelle c'è la lista di controllo sui criteri.
+- Le soglie 6 (quota di punteggi bassi) e 7 (accordo giudice-persona ≥ 80% per domanda) sono nella
+  politica; il codice calcola la 6, la 7 si legge dal report del controllo a mano.
+- Costi: le esecuzioni devono spendere il meno possibile. Prima di un giro stimare chiamate × token
+  e dichiararlo; giudici Gemini senza ragionamento (judges.without_thinking); non rigiudicare tutto
+  quando cambia solo una parte. Il 2026-11-02 ~6.400 chiamate ai giudici hanno esaurito il credito
+  Gemini.
+- Phoenix solo su sviluppo e staging, mai in produzione, con dati sintetici.
+- Esiti rilevanti: il Coach dava un punteggio complessivo più basso a chi scrive in italiano L2
+  (azione A1), poi il punteggio è calcolato dai criteri (scheda ai-simulations) e dal 2026-11-04 il
+  nome dello studente è nascosto al Coach, con tutte le soglie rispettate nei due giri.
+- Restano da nominare il responsabile della politica AI e chi compila i fogli di controllo."""
+history = [
+	{ date = "2026-11-02", ref = "259d0fb81", summary = "creazione: dataset controfattuale per il Coach, confronto delle varianti (5c364e980), giudici del testo (1f8aa18e9), test del Tutor (0b4a8eaa6)" },
+	{ date = "2026-11-03", ref = "0e7fc486f", summary = "giro ufficiale sulla configurazione di staging; controllo a mano dei giudici (bcdd5b71e, 6d4a30ec3), giudici senza ragionamento in file nuovi (b19de0122)" },
+	{ date = "2026-11-04", ref = "d7b680e9b", summary = "soglia 6 sulla quota di punteggi sotto 50 invece della quota di promossi, con il nome nascosto al Coach" },
+]

@@ -1,0 +1,55 @@
+id = "elite-theme"
+title = "Tema grafico Elite"
+status = "active"
+summary = """
+Il foglio di stile del cliente, caricato sopra quello di frappe-ui, dà alla piattaforma l'aspetto
+Elite: card con sfondo, bordo e angoli arrotondati, campi dei moduli ed editor con lo stesso
+sfondo grigio, intestazioni degli elenchi colorate, barre di scorrimento sottili, intestazione di
+pagina grigia e barra laterale senza il bordo e lo sfondo dell'upstream. Molte pagine upstream
+portano piccole classi di aggancio (card, os-multilink, ProseMirror-wrapper) che il tema usa."""
+why = """
+Il cliente ha un'identità visiva propria, diversa dallo stile neutro dell'upstream. I colori
+variabili per istanza sono nella scheda brand-customize; questa scheda copre la parte fissa del
+tema, uguale per tutte le istanze, e gli agganci che servono per applicarla."""
+behaviour = [
+	"il tema Elite (styles/theme/elite/main.css) è importato dal foglio di stile globale della SPA: senza quell'import l'intera interfaccia torna allo stile upstream",
+	"gli elementi con la classe card (riquadri numerici delle dashboard di corso, classe e statistiche video, card dei programmi per amministratore e studente) hanno sfondo elevato, bordo grigio chiaro, angoli arrotondati e spaziatura interna",
+	"campi di testo, date, numeri, password, aree di testo, campi di collegamento ed editor di testo hanno tutti lo stesso sfondo grigio (surface-gray-2); nel modulo del corso valgono anche per l'editor della descrizione, per «Corsi correlati» e per «Istruttori»",
+	"negli elenchi e nelle tabelle con le classi del tema l'intestazione usa il colore di intestazione delle tabelle (grigio se non impostato) e le righe il colore aziendale (trasparente se non impostato)",
+	"il contenitore della barra laterale su desktop non ha il bordo né lo sfondo dell'upstream (colore e bordo vengono dal tema); la sfumatura che stava davanti è stata tolta il 2026-09-25 su decisione del committente",
+	"l'intestazione di pagina (LayoutHeader) ha lo sfondo grigio del tema invece di quello di base",
+	"le barre di scorrimento sono sottili e con i colori del tema",
+]
+areas = [
+	"frontend/src/styles/theme/elite/main.css",
+	"frontend/src/styles/theme/elite/variables.css",
+	"frontend/src/components/Layouts/LayoutHeader.vue",
+]
+upstream_watch = [
+	"index.css", "theme", "card", "NumberChartGraph.vue", "Programs.vue", "StudentPrograms.vue",
+	"CourseOverviewSection.vue", "CourseInstructorsField.vue", "DesktopLayout.vue", "bg-surface-sidebar",
+	"LayoutHeader.vue", "PageHeader.vue", ".header-frame", "RichTextEditor", "surface-white", "surface-base",
+	"Questionnaire.vue",
+]
+data = ["nessun dato: solo CSS e classi di aggancio nei componenti"]
+notes = """
+- v2.62.0 ha CANCELLATO LayoutHeader.vue (sostituito da Layouts/PageHeader.vue con .header-frame):
+  il file è tenuto come nostro perché lo importano le pagine os_lms EvaluationSchemas.vue e
+  InstructorReports.vue delle simulazioni. Accettare la cancellazione rompe la compilazione; in
+  alternativa portare quelle due pagine su PageHeader ed esprimere il grigio su .header-frame nel
+  tema. Modifica confermata voluta dal committente il 2026-09-25 (B6.4).
+- Il selettore .ProseMirror-wrapper div div:nth-child(1) deve colpire ancora l'area di scrittura:
+  da verificare a ogni cambio dell'editor upstream (v2.59.0 ha introdotto RichTextEditor).
+- I token di frappe-ui sono canali RGB, non colori: in CSS semplice vanno avvolti in rgb(var(...))
+  (o usati come var() dentro proprietà che li accettano, come fa il tema).
+- Il tema contiene anche regole di altre funzionalità (editor delle lezioni, colori del testo,
+  alto contrasto importato in testa): quelle sono nelle loro schede (theme-contrast,
+  rich-text-colors).
+- Voce tollerata: questionnaire-surface-base-token (accepted-drift dal 2026-09-23, il redesign
+  dell'onboarding upstream ha eliminato Questionnaire.vue); da verificare che il nuovo onboarding
+  non abbia lo stesso problema di colore."""
+history = [
+	{ date = "2026-03-16", ref = "ff298c524", summary = "creazione: tema Elite" },
+	{ date = "2026-03-20", ref = "e9b6577b7", summary = "colori del tema aggiornati e classi di aggancio nei componenti di pagina; barra laterale senza bordo e sfondo upstream" },
+	{ date = "2026-09-25", ref = "195168726", summary = "tolta la sfumatura davanti alla barra laterale (decisione del committente B6.3); barra laterale e intestazione grigia confermate (B6.4)" },
+]

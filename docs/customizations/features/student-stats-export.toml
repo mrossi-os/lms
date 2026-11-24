@@ -1,0 +1,61 @@
+id = "student-stats-export"
+title = "Esportazione delle statistiche studenti"
+status = "active"
+summary = """
+Una pagina della barra laterale, riservata ad amministratori e Gestore, estrae in Excel o CSV i
+dati degli studenti: utenti con accessi, corsi e contenuti completati, tentativi dei quiz e
+domande fatte al tutor AI. Si scelgono il tipo di report, le colonne e i filtri; il file viene
+preparato in background e resta in un elenco di report condiviso, da scaricare o eliminare. Per
+gli accessi la piattaforma tiene un proprio registro permanente per utente, che non scade con il
+registro attività di Frappe."""
+why = """
+Il cliente deve rendicontare l'attività degli studenti a enti e aziende e l'upstream non offre
+un'esportazione trasversale (solo l'avanzamento di una singola classe). Il registro attività di
+Frappe cancella login e logout dopo circa 90 giorni: per avere primo accesso, numero di accessi e
+giorni di attività su tutta la vita dell'account servono contatori propri."""
+roles = ["System Manager", "Gestore"]
+behaviour = [
+	"la voce «Export Statistics» della barra laterale e la pagina compaiono solo a System Manager e Gestore, mai nel menu del telefono; il server rifiuta schema, avvio, elenco ed eliminazione dei report a ogni altro utente",
+	"tre tipi di report: Utenti (anagrafica, ruolo, classe, registrazione, stato, primo e ultimo accesso, numero accessi, giorni di attività, accessi falliti), Quiz (tentativi, date, punteggio dell'ultimo, migliore e massimo per studente e quiz) e Interazioni AI (data, corso, lezione, domanda, risposta, contesto, errore del server, «non posso rispondere»)",
+	"nel report Utenti, scegliere una colonna di corso passa a una riga per studente e corso, una colonna di contenuto a una riga per studente, corso e lezione",
+	"si filtra per corso, classe e studenti, e per intervalli di date propri di ogni report (ultimo accesso, registrazione, iscrizione; tentativo del quiz; interazione AI); ogni filtro ha il suo pulsante per svuotarlo",
+	"il server accetta solo colonne dichiarate dal report, nell'ordine dichiarato, e rifiuta una richiesta senza colonne valide o con un formato diverso da CSV e XLSX",
+	"il file si prepara sempre in background: il report nasce in coda (Queued), passa in elaborazione (Processing) e finisce pronto (Ready: file privato allegato, con numero di righe e dimensione) o fallito (Failed); la pagina ricontrolla da sola lo stato finché ci sono report in coda o in elaborazione",
+	"l'elenco dei report è condiviso: chi può esportare vede, scarica ed elimina anche i report degli altri; eliminare un report cancella anche il suo file",
+	"il report Utenti comprende solo account attivi, esclusi Guest e Administrator",
+	"ogni login riuscito o fallito aggiorna i contatori dell'utente (primo e ultimo accesso, accessi, giorni distinti con un login, accessi falliti); i contatori non calano quando Frappe cancella il registro attività e un loro errore non blocca mai il login",
+]
+areas = [
+	"apps/os_lms/os_lms/os_lms/access_tracking.py",
+	"apps/os_lms/os_lms/os_lms/doctype/student_stats_export/*",
+	"apps/os_lms/os_lms/os_lms/doctype/lmsa_user_access/*",
+	"frontend/src/oslms/pages/StudentStatsExport.vue",
+]
+upstream_watch = [
+	"export", "statistics", "student report", "analytics export", "xlsx", "csv", "export_batch_progress",
+	"Activity Log", "login tracking", "last_login", "access log", "Student Stats Export", "can_export_stats",
+	"get_user_info", "sidebar links",
+]
+data = [
+	"doctype Student Stats Export (report_type, report_label, file_format, status, row_count, file_size, columns, filters, file, error); DocPerm System Manager e, da setup_gestore_role_permissions, Gestore (serve al download del file privato)",
+	"doctype LMSA User Access (un record per utente: first_login, last_login, total_logins, distinct_active_days, failed_logins, last_active_date)",
+	"doc_events Activity Log after_insert -> os_lms.os_lms.access_tracking.on_activity_log_insert; backfill_from_activity_log (solo System Manager, da lanciare una volta con bench execute)",
+	"endpoint in os_lms.os_lms.api: get_student_stats_schema, start_student_stats_export, run_student_stats_export (coda long, timeout 30 minuti), list_student_stats_exports (ultimi 200), delete_student_stats_export; flag can_export_stats in get_user_info",
+]
+notes = """
+- Il gate è uno solo, can_export_student_stats() con EXPORT_STATS_ROLES (System Manager, Gestore):
+  lo usa anche get_user_info per la voce di menu. Per aprire l'esportazione ad altri ruoli si
+  aggiunge il ruolo lì e la DocPerm su Student Stats Export.
+- I contatori di LMSA User Access partono dal rilascio (2026-07-29); prima di allora valgono solo
+  i login ancora presenti nel registro attività, recuperati con backfill_from_activity_log.
+- «Giorni di attività» conta i giorni con un login NUOVO, non i giorni in cui lo studente ha usato
+  la piattaforma. «Data di primo avvio» e «Ultima attività» del corso sono la prima e l'ultima
+  data di completamento di una lezione, non di accesso: la piattaforma non registra le aperture
+  delle lezioni (analisi del 2026-11-11, funzionalità «OS Audit» in progettazione su un branch a
+  parte).
+- Le etichette di report e colonne sono scritte in italiano nel codice (STUDENT_STATS_REPORTS)."""
+history = [
+	{ date = "2026-07-27", ref = "68ce20f5d", summary = "creazione: pagina di esportazione delle statistiche studenti" },
+	{ date = "2026-07-28", ref = "970adf917", summary = "esportazione in background con elenco permanente dei report" },
+	{ date = "2026-07-29", ref = "bd894c6f3", summary = "registro degli accessi per utente (LMSA User Access); report Utenti e Utenti per corso uniti (581867df9), dettaglio per lezione (910ba0d59)" },
+]

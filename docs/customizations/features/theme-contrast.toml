@@ -1,0 +1,62 @@
+id = "theme-contrast"
+title = "Tema chiaro/scuro scelto dall'utente e alto contrasto"
+status = "active"
+summary = """
+Ogni utente sceglie da sé il tema chiaro o scuro (come nell'upstream) e può attivare a parte un
+alto contrasto, valido in entrambi i temi. Chi non ha mai scelto parte dal tema chiaro, quello con
+i colori del cliente. L'alto contrasto segue l'impostazione «aumenta contrasto» del sistema finché
+l'utente non lo cambia dal menu utente o dalla pagina «Tu» del telefono."""
+why = """
+Requisito della certificazione ESG (2026-10-23, punti 1 e 2 del piano feature/esg): l'utente deve
+poter cambiare tema e disporre di un tema ad alto contrasto. Prima il tema lo decideva
+l'amministratore da Brand Customize (fc752e056, 2026-06-05) e l'utente non poteva cambiarlo."""
+behaviour = [
+	"la voce «Toggle Theme» del menu utente e la riga «Colour mode» della pagina «Tu» del telefono permettono a ogni utente di passare fra chiaro e scuro, come nell'upstream; l'amministratore non impone più il tema",
+	"chi non ha mai scelto un tema parte dal tema chiaro anche se il sistema operativo è in modalità scura (nell'upstream partirebbe da «system»)",
+	"sulla pagina «Tu» del telefono il valore del tema è tradotto (Sistema / Chiaro / Scuro)",
+	"l'alto contrasto è un interruttore separato dal tema: «Attiva alto contrasto» / «Disattiva alto contrasto» subito dopo «Toggle Theme» nel menu utente, e la riga «High contrast» (Attivo / Disattivo) subito dopo «Colour mode» sulla pagina «Tu» del telefono",
+	"finché l'utente non tocca l'interruttore, l'alto contrasto segue l'impostazione «aumenta contrasto» del sistema operativo, anche se cambia mentre la pagina è aperta; dopo una scelta esplicita vale quella",
+	"tema e alto contrasto si ricordano per dispositivo (nel browser), non per account, e si applicano prima che la pagina compaia, senza lampi di colore",
+	"in alto contrasto i testi raggiungono almeno 7:1 e i bordi almeno 3:1 sulle superfici di lettura, il focus da tastiera è ben visibile e i link nei contenuti sono sottolineati, sia in chiaro sia in scuro",
+	"i colori del marchio (Brand Customize) valgono solo nel tema chiaro senza alto contrasto: nel tema scuro e in alto contrasto si usano i colori standard della piattaforma",
+]
+areas = [
+	"frontend/src/styles/theme/elite/high-contrast.css",
+	"frontend/src/oslms/utils/contrast.ts",
+	"frontend/src/tests/highContrast.test.ts",
+]
+upstream_watch = [
+	"theme", "Toggle Theme", "dark mode", "colour mode", "Colour mode", "theme.ts", "storedPreference",
+	"index.html", "data-theme", "prefers-color-scheme", "prefers-contrast", "UserDropdown.vue",
+	"MobileYou.vue", "mobileSettings.ts", "colour-mode", "--ink-", "--outline-", "frappe-ui tokens",
+	"accessibility", "a11y",
+]
+data = [
+	"localStorage del browser: chiave del tema dell'upstream e contrastPreference ('more' | 'normal'; assente = segue il sistema)",
+	"attributi <html data-theme> e <html data-contrast=\"more\">, scritti dallo script di avvio in frontend/index.html e da utils/theme.ts / oslms/utils/contrast.ts",
+	"traduzioni in lms/translations/it.csv: «System» → «Sistema», «Enable/Disable high contrast» → «Attiva/Disattiva alto contrasto»",
+]
+tests = [
+	"frontend/src/tests/highContrast.test.ts",
+	"frontend/src/tests/themeBootstrap.test.ts",
+]
+notes = """
+- La regola «senza scelta parte chiaro» è scritta due volte e le due copie devono coincidere:
+  storedPreference() in frontend/src/utils/theme.ts e lo script di avvio in frontend/index.html.
+  Se l'upstream cambia il ripiego 'system' in uno dei due punti, riapplicare 'light' in entrambi
+  (themeBootstrap.test.ts copre il caso «nessuna preferenza su sistema scuro → chiaro»).
+- Anche le regole dell'alto contrasto sono duplicate fra index.html e oslms/utils/contrast.ts;
+  highContrast.test.ts confronta le due copie e ricalcola i rapporti di contrasto dai token di
+  frappe-ui. Se l'upstream rinomina i token ink/outline, high-contrast.css smette di agire in
+  silenzio: il test lo segnala.
+- withContrastRow inserisce la riga dopo quella con chiave 'colour-mode': se l'upstream rinomina
+  la chiave la riga sparisce senza errori.
+- high-contrast.css è importato in testa da styles/theme/elite/main.css (scheda elite-theme); i
+  colori del marchio escludono [data-contrast="more"] tramite BRANDED_THEME_SELECTOR in
+  branding.py e os_lms.css (scheda brand-customize).
+- Il campo theme di Brand Customize, che imponeva il tema a tutti, non esiste più: la vecchia voce
+  d'inventario admin-forced-theme è sostituita da default-light-theme."""
+history = [
+	{ date = "2026-10-23", ref = "9ea888636", summary = "creazione: l'utente sceglie chiaro o scuro, chiaro di default; colori del marchio solo nel tema chiaro (sostituisce il tema imposto dall'amministratore di fc752e056)" },
+	{ date = "2026-10-23", ref = "d416db2b1", summary = "alto contrasto accanto a chiaro e scuro, nel menu utente e nella pagina «Tu» del telefono" },
+]
