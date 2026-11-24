@@ -523,6 +523,7 @@ id = "chapter-row-chevron-lucide"
 title = "Chevron dei capitoli come componente lucide"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 intent = """
 Il chevron di apertura del capitolo usa il componente lucide ChevronRight perché con
 la resa upstream non compariva."""
@@ -735,6 +736,7 @@ id = "toc-node-translations"
 title = "Traduzione delle stringhe dell'indice nel TextEditor"
 layer = "override-file"
 confidence = "high"
+feature = "rich-text-editor-overrides"
 intent = """
 Copia integrale di TocNodeView.vue di frappe-ui con due sole differenze: il messaggio
 «There are no headings in this document.» passa per __() e il titolo del pulsante di
@@ -904,6 +906,7 @@ id = "vite-override-theme-plugin"
 title = "Plugin osOverrideTheme per sostituire componenti senza fork"
 layer = "spa-graft"
 confidence = "high"
+feature = "frappe-ui-overrides"
 intent = """
 Tutto il sistema di override (frontend/src/overrides/) dipende da questo plugin Vite: intercetta
 gli import .vue che risolvono dentro node_modules (frappe-ui) o dentro src/ e, se esiste un file
@@ -932,6 +935,7 @@ id = "vite-original-component-aliases"
 title = "Alias verso i componenti frappe-ui originali per gli override «wrap»"
 layer = "spa-graft"
 confidence = "high"
+feature = "frappe-ui-overrides"
 intent = """
 Gli override di Switch, Combobox, TextEditor e MenuItems (nuovo editor frappe-ui/editor) avvolgono il componente originale invece di
 copiarlo (FileUploader non serve più da frappe-ui 1.0.0-beta.29, che registra Button da sé;
@@ -1010,6 +1014,7 @@ id = "vite-translate-frappe-ui-strings"
 title = "Traduzione in fase di build dei testi inglesi fissi di frappe-ui (nuovo editor)"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 Il nuovo editor di frappe-ui (frappe-ui/editor, usato da RichTextEditor dalla v2.63.0) mostra
 popup, finestre e controlli dei media con testi inglesi fissi e senza aggancio per le
@@ -1034,6 +1039,7 @@ id = "badge-form-image-i18n"
 title = "Etichetta e descrizione dell'immagine del badge tradotte"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 Nel modulo del badge (Impostazioni → Badge) l'upstream passa all'Uploader label="Badge Image"
 e description="An image that represents the badge." come testo fisso inglese. Qui passano per
@@ -1050,6 +1056,7 @@ id = "color-swatch-names-i18n"
 title = "Nomi dei colori dei campioni letti in italiano"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 I campioni colore della miniatura del corso (CourseThumbnailField) e il controllo condiviso
 ColorSwatches usano come aria-label il nome inglese del colore (Red, Blue, Amber…), che è
@@ -1069,6 +1076,7 @@ id = "vite-utils-alias-oslms"
 title = "@/utils risolto sul modulo utils di os_lms"
 layer = "spa-graft"
 confidence = "high"
+feature = "frappe-ui-overrides"
 intent = """
 Ogni import di '@/utils' nell'app finisce su src/oslms/utils/index.js, che riesporta tutto
 src/utils/index.js e sostituisce timeAgo con una versione che passa i testi relativi («2 ore
@@ -1085,6 +1093,7 @@ id = "vite-socketio-port-define"
 title = "Porta socket.io letta da common_site_config in fase di build"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 intent = """
 Nell'ambiente Docker di sviluppo (e in bench con porte non standard) la porta di socket.io non
 è quella predefinita: vite.config la legge da common_site_config.json (con ripiego sul file
@@ -1119,6 +1128,7 @@ id = "vite-toc-fallback-translation"
 title = "Traduzione del messaggio dell'indice senza titoli nel rendering salvato"
 layer = "spa-graft"
 confidence = "high"
+feature = "rich-text-editor-overrides"
 intent = """
 Il blocco «indice» del TextEditor, quando il documento non ha titoli, scrive nel contenuto
 salvato un messaggio inglese cablato in un file .ts di frappe-ui, fuori dalla portata di
@@ -1143,6 +1153,7 @@ id = "vitest-known-failures-baseline"
 title = "yarn test giudica Vitest contro una baseline di rossi attesi"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 intent = """
 Decisione del committente (2026-09-24, B3.1): i test upstream che falliscono per nostre
 personalizzazioni (asseriscono un comportamento che cambiamo apposta, o i loro mock non
@@ -1165,6 +1176,7 @@ id = "deps-tiptap-direct-deps"
 title = "@tiptap dichiarati come dipendenze dirette e deduplicati"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 intent = """
 Gli override del TextEditor (MediaNodeView, InsertIframe, TocNodeView, IframeNodeView,
 SlashCommandsList) importano @tiptap/vue-3, @tiptap/core e @tiptap/pm con specificatori nudi.
@@ -1197,6 +1209,7 @@ id = "deps-prosemirror-resolutions"
 title = "Versione unica dei pacchetti prosemirror via resolutions"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 intent = """
 Dichiarare @tiptap come dipendenze dirette aveva installato una seconda copia di
 prosemirror-model e prosemirror-view annidata sotto @tiptap/pm. Due istanze generano chiavi di
@@ -1222,6 +1235,7 @@ id = "vite-prosemirror-optimizedeps"
 title = "Pre-bundle di tutti gli entrypoint tiptap/prosemirror in sviluppo"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 intent = """
 In sviluppo frappe-ui è escluso da optimizeDeps (serve a osOverrideTheme), quindi lo scanner di
 Vite non vede i sottopercorsi @tiptap/pm/* né i prosemirror-* nudi importati solo attraverso
@@ -1251,6 +1265,7 @@ id = "link-control-picked-label"
 title = "Il controllo Link aggiorna l'etichetta quando si sceglie un valore dai risultati"
 layer = "spa-graft"
 confidence = "high"
+feature = "frappe-ui-overrides"
 intent = """
 Correzione di un difetto upstream (presente in v2.63.0 e in develop al 2026-09-24). Link.vue
 ricorda l'etichetta del valore corrente in currentLabel, ma il watch sul valore usciva subito
@@ -1387,6 +1402,7 @@ id = "empty-state-translated-name"
 title = "Nome dell'entità tradotto nei messaggi di stato vuoto"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 Titolo e descrizione predefiniti dello stato vuoto («No {0} Found», «There are no {0}
 currently…») ricevono il nome dell'entità passato dalla pagina in inglese (es. «Courses»); lo
@@ -1408,6 +1424,7 @@ id = "empty-state-mobile-full-width"
 title = "Stato vuoto a tutta larghezza su telefono"
 layer = "spa-graft"
 confidence = "high"
+feature = "frappe-ui-overrides"
 status = "accepted-drift"
 intent = """
 Le larghezze fisse dell'upstream (2/12, 4/12, 8/12 dello schermo) su telefono comprimono
@@ -1513,6 +1530,7 @@ id = "event-modal-status-placeholder"
 title = "Segnaposto tradotto sullo stato della valutazione"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 La select Stato della valutazione nel modale dell'evento ha un segnaposto «Select option»
 passato per __(). Introdotto in un commit generico di traduzioni (e577585ca): motivazione
@@ -3022,6 +3040,7 @@ id = "image-upload-translations"
 title = "Ritocchi di traduzione nei selettori di immagine"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 Nei selettori di immagine di copertina (EditCoverImage) e Unsplash il segnaposto della
 ricerca e l'etichetta «Upload Image» passano per __(), così compaiono in italiano. In
@@ -3046,6 +3065,7 @@ id = "video-statistics-tab-label"
 title = "Ritocco di traduzione: etichetta delle schede nelle statistiche video"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 L'etichetta delle schede «Video N» usava __() su un template literal, che non è
 traducibile (la chiave cambia a ogni indice); ora è __('Video {0}').format(n)."""
@@ -3163,6 +3183,7 @@ id = "create-outline-button-import"
 title = "Import esplicito di Button in CreateOutline"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 intent = """
 Import esplicito di Button da frappe-ui aggiunto durante la correzione di un merge (commit
 027c0c56f) perché il componente non risolveva più Button da solo. Il componente non è usato
@@ -3414,6 +3435,7 @@ id = "course-new-modal-title-translated"
 title = "Ritocchi di traduzione nel dialogo Nuovo corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 status = "accepted-drift"
 intent = """
 Il titolo del dialogo "New Course" era una stringa fissa in inglese: passa da __() per
@@ -4585,6 +4607,7 @@ id = "exercise-list-dayjs-locale"
 title = "Date della lista esercizi con il dayjs localizzato in italiano"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 La colonna «Updated On» della lista esercizi formatta le date con il dayjs dell'app
 (@/utils/dayjs, locale italiano) per avere i mesi in italiano; in origine il file prendeva dayjs
@@ -4602,6 +4625,7 @@ id = "exercise-form-translations"
 title = "Traduzioni del modulo esercizio di programmazione"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 Nel modulo dell'esercizio di programmazione la select del linguaggio ha un segnaposto tradotto e
 le intestazioni della tabella dei casi di test (Input, Expected Output) sono tradotte.
@@ -4618,6 +4642,7 @@ id = "exercise-submission-commented-icons"
 title = "Icone rinominate in un blocco commentato della consegna esercizio"
 layer = "spa-graft"
 confidence = "low"
+feature = "frontend-build-compat"
 status = "accepted-drift"
 intent = """
 Nessun effetto a runtime: dentro un blocco che l'upstream tiene commentato, le icone Check e X
@@ -5968,6 +5993,7 @@ id = "time-ago-italian"
 title = "Date relative in italiano («ieri», «3 giorni fa»)"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 useTimeAgo di @vueuse produce solo testi inglesi («3 days ago»), che comparivano in italiano
 misto nelle liste (notifiche, discussioni, consegne). timeAgo gli passa i messaggi italiani, con
@@ -6026,6 +6052,7 @@ id = "chapter-modal-translations"
 title = "Etichette tradotte nel modale del capitolo"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 L'etichetta Titolo e il testo del pulsante «Upload an ZIP file» (pacchetto SCORM) passano da
 __() per comparire in italiano (commit cbc7146dd e d8b533a6b). Solo traduzione, nessuna
@@ -6046,6 +6073,7 @@ id = "evaluation-modal-select-placeholder"
 title = "Segnaposto tradotto sulla scelta del corso nel modale di valutazione"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 La select Corso del modale «Prenota la valutazione» mostra il segnaposto tradotto «Select
 option» invece di un valore vuoto (commit e577585ca, traduzioni). Il resto del diff è una
@@ -6138,6 +6166,7 @@ id = "email-config-lazy-translation-getters"
 title = "Testi della configurazione account email tradotti al momento del render"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 Il modulo viene importato subito (dal dialogo Impostazioni importato staticamente nella barra
 laterale), prima che il plugin di traduzione imposti window.__ e carichi le traduzioni: le
@@ -6277,6 +6306,7 @@ id = "image-uploader-progress-format"
 title = "Percentuale di caricamento immagine con .format()"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 __('Uploading {0}%', [progress]) mostrava «[object Object]» o il segnaposto non sostituito:
 il __() del frontend non accetta argomenti di formato, quindi si usa .format(progress)
@@ -6327,6 +6357,7 @@ id = "multiselect-focus-input-handler"
 title = "Gestore focusInput definito nel MultiSelect"
 layer = "spa-graft"
 confidence = "high"
+feature = "frappe-ui-overrides"
 intent = """
 Il template upstream chiama @click="focusInput" sul riquadro dei valori e dà ref="search"
 all'input, ma lo script upstream non definisce né focusInput né il ref (gestore orfano rimasto
@@ -6347,6 +6378,7 @@ id = "uploader-mobile-wrap-description"
 title = "Uploader usabile su telefono e con descrizione visibile"
 layer = "spa-graft"
 confidence = "high"
+feature = "frappe-ui-overrides"
 intent = """
 Nel dialogo Nuovo corso, su telefono, l'anteprima larga w-56 in una riga che non andava a capo
 spingeva fuori vista i pulsanti Carica/Sostituisci/Rimuovi: la riga ora fa flex-wrap e
@@ -6564,6 +6596,7 @@ id = "global-dts-runtime-core-augmentation"
 title = "__ dichiarato anche su @vue/runtime-core"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 intent = """
 Oltre all'aumento upstream di ComponentCustomProperties su 'vue', lo stesso __ è dichiarato
 sul modulo '@vue/runtime-core' (commit 6d6d2af78 di Gabriele Pagnotta, «fix merge problems on
@@ -6697,6 +6730,7 @@ id = "vitest-inline-frappe-ui"
 title = "frappe-ui trasformato da Vite nei test Vitest"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 status = "accepted-drift"
 intent = """
 frappe-ui è distribuito come sorgenti non transpilate: un test che importa suoi moduli
@@ -7491,6 +7525,7 @@ id = "oslms-api-overrides-upstream-compat"
 title = "Gli override API di os_lms restano compatibili con gli originali upstream"
 layer = "spa-graft"
 confidence = "high"
+feature = "oslms-core"
 intent = """
 os_lms sostituisce 23 metodi whitelisted upstream (override_whitelisted_methods in hooks.py).
 Un merge upstream li può rompere senza che build, rilevatore o test se ne accorgano: v2.62.0 ha
@@ -7582,6 +7617,7 @@ id = "raven-framework-ui-stub"
 title = "@framework/ui sostituito da uno stub locale (editor delle condizioni Raven)"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 intent = """
 v2.63.0 (#2706, 088b2d3f4) costruisce l'editor delle regole dei canali Raven sul pacchetto
 condiviso @framework/ui, dichiarato in package.json come link:../../frappe/ui e verificato da
@@ -7770,6 +7806,7 @@ id = "assessment-modal-i18n"
 title = "Modale aggiungi valutazione: tipi e segnaposto tradotti"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 Nella scheda Valutazioni della classe la modale «Aggiungi valutazione» mostrava i tipi
 (Quiz, Assignment, Programming Exercise) e il segnaposto del tipo in inglese: le etichette
@@ -7834,6 +7871,7 @@ id = "statistics-chart-labels-i18n"
 title = "Statistiche: titoli e assi dei grafici tradotti"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 I config dei NumberChart/AxisChart/DonutChart della pagina Statistiche (titoli, sottotitoli
 e titoli degli assi: Courses, Signups, Enrollments, Completions, Certifications, «… per
@@ -8504,6 +8542,7 @@ id = "course-enrollment-enroll-label-it"
 title = "Pulsante «Iscrivi» e titolo tradotto nell'iscrizione al corso"
 layer = "spa-graft"
 confidence = "high"
+feature = "italian-translations"
 intent = """
 Il pulsante di conferma del modale mostra «Iscrivi» scritto in italiano dentro __() (commit
 b580114cc) invece di __('Enroll'): all'epoca «Enroll» era tradotto in modo non adatto a un
@@ -8642,6 +8681,7 @@ id = "self-service-account-deletion"
 title = "Pulsante «Elimina account» nel profilo e riga nella pagina «Tu» del telefono"
 layer = "spa-graft"
 confidence = "high"
+feature = "account-deletion"
 intent = """
 Requisito ESG (2026-10-23, branch feature/esg, punto 3): ogni utente tranne Administrator può
 cancellare da solo il proprio account, in modo completo (non anonimizzazione: l'anonimizzazione
@@ -8691,6 +8731,7 @@ id = "account-deletion-review-and-privacy-consent"
 title = "Eliminazione account su richiesta con revisione del Gestore e accettazione della privacy"
 layer = "spa-graft"
 confidence = "high"
+feature = "account-deletion"
 intent = """
 Estensione del punto 3 ESG (2026-10-30, branch feature/esg), regole del cliente: (a) con
 LMS Settings.account_deletion_requires_review attivo, chi non è Gestore, System Manager o
@@ -8859,6 +8900,7 @@ id = "tsconfig-allowjs-ignore-deprecations"
 title = "tsconfig: file .js inclusi nel controllo e deprecazioni di TypeScript 6 silenziate"
 layer = "spa-graft"
 confidence = "high"
+feature = "frontend-build-compat"
 intent = """
 Commit 6d6d2af78 (Gabriele Pagnotta, «fix merge problems on course and lesson form»):
 "allowJs": true e "src/**/*.js" in include fanno entrare nel progetto TypeScript i moduli .js
@@ -8992,6 +9034,7 @@ id = "signup-form-terms-no-category"
 title = "Registrazione: niente categoria utente, termini in riquadro scorrevole con casella breve"
 layer = "spa-graft"
 confidence = "high"
+feature = "signup-privacy"
 intent = """
 Modulo di registrazione pubblico (/login#signup, ospiti). Due regole:
 (1) Termini e condizioni: custom_signup_content (testo lungo delle LMS Settings) sta in un
@@ -9261,6 +9304,7 @@ id = "open-external-opener-and-pending-tab"
 title = "Aperture di finestre che openExternal non copre: OAuth con opener e scheda anticipata"
 layer = "spa-graft"
 confidence = "high"
+feature = "oslms-core"
 intent = """
 v2.62.0 confina ogni window.open in utils/openExternal.ts (test openExternal: nessun window.open
 altrove) e openExternal apre sempre con noopener. Due nostri flussi non lo sopportano:
@@ -9307,6 +9351,7 @@ id = "repo-gitignore-local-files"
 title = "File locali di Overside esclusi da git"
 layer = "spa-graft"
 confidence = "high"
+feature = "repo-devops"
 intent = """
 Il blocco «OVERSIDE» in coda al .gitignore tiene fuori dal repository i file che esistono solo
 sulle macchine di sviluppo e non devono mai essere pubblicati: le credenziali (.env, docker/.env,
@@ -9336,6 +9381,7 @@ id = "repo-root-package-manager-pin"
 title = "Yarn classic fissato nel package.json di root"
 layer = "spa-graft"
 confidence = "low"
+feature = "repo-devops"
 intent = """
 Il campo packageManager (yarn@1.22.22 con hash) nel package.json di root dice a corepack quale
 yarn usare. docker/init.sh abilita corepack quando yarn manca: senza il campo corepack potrebbe
@@ -9916,6 +9962,7 @@ id = "ci-assets-workflow-fork-guard"
 title = "Il workflow Pilot degli asset non gira sul fork"
 layer = "spa-graft"
 confidence = "high"
+feature = "repo-devops"
 intent = """
 v2.65.0 aggiunge .github/workflows/assets.yml (c4ea6591e): a ogni push su develop/main costruisce
 gli asset con il workflow riutilizzabile frappe/pilot@develop, con permesso di scrittura sul
@@ -9935,6 +9982,7 @@ id = "external-calls-timeout"
 title = "Tempo massimo sulle chiamate esterne dell'upstream (OWASP E17)"
 layer = "spa-graft"
 confidence = "high"
+feature = "security-hardening"
 intent = """
 Le chiamate requests dell'upstream verso ip-api.com, frankfurter, Unsplash e Zoom non avevano
 timeout: un servizio lento teneva la richiesta aperta senza limite. La geolocalizzazione della
@@ -10039,6 +10087,7 @@ id = "inert-paste-html-plugin"
 title = "L'HTML incollato negli editor frappe-ui si legge in un documento inerte (OWASP, XSS)"
 layer = "spa-graft"
 confidence = "high"
+feature = "security-hardening"
 intent = """
 I due editor di frappe-ui (TextEditor classico e frappe-ui/editor) mettevano l'HTML degli
 appunti in un <div> della pagina viva prima del filtro di ProseMirror: un
@@ -10071,6 +10120,7 @@ id = "security-dependency-floors"
 title = "Versioni minime di sicurezza delle dipendenze del frontend (OWASP A03)"
 layer = "spa-graft"
 confidence = "high"
+feature = "security-hardening"
 intent = """
 Il commit 29b287f31 (27/10, piano OWASP A03) ha alzato oltre gli avvisi di sicurezza
 pubblicati: DOMPurify 3.4.17, markdown-it 14.3.3, socket.io-client 4.8.4, vue 3.5.44,
