@@ -635,3 +635,18 @@ features = ["account-deletion", "signup-privacy"]
 [[files]]
 path = "lms/www/new-sign-up.html"
 features = ["signup-privacy", "web-pages-login"]
+
+[[residue]]
+path = "frontend/yarn-error.log"
+reason = "Log di errore di Yarn che l'upstream ha nel repository e che abbiamo cancellato (9ec78d026); non è una funzionalità"
+approved = "2026-11-24"
+
+[[residue]]
+path = "frontend/src/pages/ProgrammingExercises/ProgrammingExerciseSubmission.vue"
+reason = "Solo formattazione (virgole finali) lasciata dai merge; nessuna funzionalità"
+approved = "2026-11-24"
+
+[[residue]]
+path = "frontend/src/components/Modals/VideoStatistics.vue"
+reason = "Solo una virgola finale; la nostra modifica è ora nell'upstream"
+approved = "2026-11-24"

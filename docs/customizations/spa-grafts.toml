@@ -1379,13 +1379,15 @@ title = "Etichette della palette Cmd+K tradotte anche dopo il ricaricamento"
 layer = "spa-graft"
 confidence = "high"
 feature = "global-search"
+status = "accepted-drift"
 intent = """
 Il segnaposto del campo di ricerca passa per __() e i titoli Corsi/Classi dell'elenco «Jump to»
 sono getter invece di stringhe: l'elenco è costruito una volta al setup, che al ricaricamento
 completo della pagina avviene prima che le traduzioni asincrone siano caricate, e un __()
 valutato lì resterebbe in inglese (memoria translation_baked_ref_freezes_english). Il getter
 ripete __() a ogni rendering.
-Merge di v2.62.0 (2026-09-24): la palette upstream (categories.ts) traduce le etichette al rendering (title: __(entry.label)), quindi il problema dei __() valutati prima del caricamento delle traduzioni non si pone: siti dei getter tolti. Resta il segnaposto di ricerca."""
+Merge di v2.62.0 (2026-09-24): la palette upstream (categories.ts) traduce le etichette al rendering (title: __(entry.label)), quindi il problema dei __() valutati prima del caricamento delle traduzioni non si pone: siti dei getter tolti. Resta il segnaposto di ricerca.
+accepted-drift (2026-11-24, base della release v2.66.0, decisione del committente): la palette upstream traduce al rendering sia il segnaposto __('Search') sia i titoli «Jump to»: niente più etichette congelate in inglese."""
 
   [[entries.sites]]
   file = "frontend/src/components/CommandPalette/CommandPalette.vue"
@@ -1820,9 +1822,8 @@ layer = "spa-graft"
 confidence = "high"
 feature = "settings-dialog"
 intent = """
-Testi dei campi delle impostazioni tradotti con __(): pulsante di caricamento immagine e relativa
-percentuale, descrizione del campo HTML di registrazione, segnaposto delle select. Solo
-traduzione, nessuna regola funzionale."""
+Descrizione del campo HTML di registrazione tradotta con __(). Solo traduzione, nessuna regola
+funzionale."""
 
   [[entries.sites]]
   file = "frontend/src/components/Settings/SettingFields.vue"
@@ -2309,13 +2310,15 @@ title = "Il pulsante Modifica della lezione apre la scheda Editor"
 layer = "spa-graft"
 confidence = "high"
 feature = "lesson-editor"
+status = "accepted-drift"
 intent = """
 Gemella di course-outline-editor-hash: il pulsante Modifica nella pagina lezione porta al
 corso con hash '#editor', che è l'id della scheda Editor; l'upstream usava '#course editor',
 che non corrisponde a nessuna scheda, e l'amministratore finiva sull'anteprima del corso
 invece che nell'editor della lezione. Se l'upstream corregge da sé l'hash in modo
 equivalente, accettare la sua versione e marcare la voce come accepted-drift.
-Merge di v2.61.0 (2026-09-23): il nostro pulsante «Modifica» accanto al titolo non esiste più (rimosso anche upstream); la regola vive ora sul link «Editor View» nell'intestazione di Lesson.vue, con il gate upstream canEditLesson (moderatore o istruttore reale) al posto di isAdmin && !embedded. Ancora invariata."""
+Merge di v2.61.0 (2026-09-23): il nostro pulsante «Modifica» accanto al titolo non esiste più (rimosso anche upstream); la regola vive ora sul link «Editor View» nell'intestazione di Lesson.vue, con il gate upstream canEditLesson (moderatore o istruttore reale) al posto di isAdmin && !embedded. Ancora invariata.
+accepted-drift (2026-11-24, base della release v2.66.0, decisione del committente): Lesson.vue upstream usa già hash '#editor' nel pulsante Modifica."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Lesson.vue"
@@ -3056,15 +3059,12 @@ layer = "spa-graft"
 confidence = "high"
 feature = "italian-translations"
 intent = """
-Nei selettori di immagine di copertina (EditCoverImage) e Unsplash il segnaposto della
-ricerca e l'etichetta «Upload Image» passano per __(), così compaiono in italiano. In
+Nel selettore di immagini Unsplash il segnaposto della ricerca passa per __(), così compare
+in italiano (il selettore di copertina EditCoverImage è ora identico all'upstream). In
 UnsplashImageBrowser si importa anche TextInput, usato nel template ma mai importato (il
-campo di ricerca non veniva risolto). v2.59.0 cambia l'API del Popover in cima agli stessi
+campo di ricerca non veniva risolto). v2.59.0 cambia l'API del Popover in cima allo stesso
 file, fuori dalle nostre righe."""
 
-  [[entries.sites]]
-  file = "frontend/src/components/Modals/EditCoverImage.vue"
-  anchor = ":placeholder=\"__('search by keyword')\""
 
   [[entries.sites]]
   file = "frontend/src/components/UnsplashImageBrowser.vue"
@@ -3080,9 +3080,11 @@ title = "Ritocco di traduzione: etichetta delle schede nelle statistiche video"
 layer = "spa-graft"
 confidence = "high"
 feature = "italian-translations"
+status = "accepted-drift"
 intent = """
 L'etichetta delle schede «Video N» usava __() su un template literal, che non è
-traducibile (la chiave cambia a ogni indice); ora è __('Video {0}').format(n)."""
+traducibile (la chiave cambia a ogni indice); ora è __('Video {0}').format(n).
+accepted-drift (2026-11-24, base della release v2.66.0, decisione del committente): VideoStatistics.vue upstream ha già __('Video {0}').format(index + 1); resta solo una virgola finale (residuo)."""
 
   [[entries.sites]]
   file = "frontend/src/components/Modals/VideoStatistics.vue"
@@ -4762,7 +4764,7 @@ confidence = "high"
 feature = "discussions"
 intent = """
 Risposte e editor su sfondo bg-surface-gray-2, editor della nuova risposta con altezza massima
-e scroll, icona del menu della risposta scura e segnaposto «Type your reply here...» tradotto.
+e scroll, icona del menu della risposta scura.
 ATTENZIONE al merge di v2.59.0: il TextEditor diventa RichTextEditor, che ha un editorClass di
 default diverso: riportare le nostre classi sul nuovo componente."""
 
@@ -5456,7 +5458,7 @@ layer = "spa-graft"
 confidence = "high"
 feature = "batch-dashboard"
 intent = """
-Ritocchi di traduzione: intestazioni di colonna e stato dei compiti passano da __(), e il
+Ritocchi di traduzione: lo stato dei compiti passa da __(), e il
 badge di completamento usa il letterale italiano "Completato" dentro __() (motivazione
 dedotta: la chiave "Complete" è tradotta come verbo altrove e qui serve l'aggettivo). Nessuna
 regola di comportamento."""
@@ -5819,7 +5821,7 @@ layer = "spa-graft"
 confidence = "high"
 feature = "batch-form"
 intent = """
-Ritocchi di traduzione: il titolo del dialog e i segnaposto dei selettori di data e ora
+Ritocchi di traduzione: i segnaposto dei selettori di data e ora
 passano da __() (i default di frappe-ui sono letterali inglesi). Nessuna regola di
 comportamento.
 Merge di v2.62.0 (2026-09-24): l'upstream sostituisce la modale con la pagina instradata pages/Forms/NewBatchForm.vue; regola riapplicata li, ancore invariate."""
@@ -5841,8 +5843,7 @@ Iscrivendosi a una classe lo studente viene iscritto ai suoi corsi. LMS Enrollme
 l'accesso a un membro della classe cercando nel database proprio questa LMS Batch Enrollment
 (bypass enrollment_from_batch), quindi le iscrizioni ai corsi vanno create in after_insert,
 quando il record esiste già: da validate la ricerca non trovava nulla e uno studente che si
-iscriveva da solo veniva respinto da ogni corso non aperto all'autoiscrizione. Il salvataggio
-è con ignore_permissions perché lo crea il sistema, non lo studente. Fa parte di una correzione
+iscriveva da solo veniva respinto da ogni corso non aperto all'autoiscrizione. Fa parte di una correzione
 in più file (commit a7cd6d837): in lms_enrollment.py il bypass di classe viene prima dei
 controlli di autoiscrizione, in lms_batch.py un corso aggiunto a una classe in corso iscrive
 gli studenti già presenti, e una patch v2_0 ha sistemato le classi esistenti. Il metodo è
@@ -6321,13 +6322,15 @@ title = "Percentuale di caricamento immagine con .format()"
 layer = "spa-graft"
 confidence = "high"
 feature = "italian-translations"
+status = "accepted-drift"
 intent = """
 __('Uploading {0}%', [progress]) mostrava «[object Object]» o il segnaposto non sostituito:
 il __() del frontend non accetta argomenti di formato, quindi si usa .format(progress)
 (commit 0a8870811, correzione i18n su tutti i {0}). Nessun marcatore: la riga sta dentro
 un attributo del template. ATTENZIONE al merge di v2.61.0: l'upstream contiene la stessa
 identica modifica, il merge è pulito e da quel momento non è più una personalizzazione;
-la voce può essere rimossa dopo il merge."""
+la voce può essere rimossa dopo il merge.
+accepted-drift (2026-11-24, base della release v2.66.0, decisione del committente): ImageUploader.vue è identico a v2.66.0 (__('Uploading {0}%').format(progress))."""
 
   [[entries.sites]]
   file = "frontend/src/components/Controls/ImageUploader.vue"
@@ -7065,10 +7068,9 @@ feature = "batch-detail-page"
 intent = """
 Sulla scheda Dashboard l'intestazione ha, accanto a Iscrivi (ora solid), il pulsante Importa
 che chiama goToImport della dashboard via childRef (voce batch-dashboard-import-students). Sulla
-scheda Annunci il pulsante «Fai un annuncio» (solid) apre il composer montato dalla scheda
-stessa via childRef.openAnnouncementModal (voce announcement-modal-in-tab): BatchDetail non
-monta più AnnouncementModal e il menu «...» non ha più la voce annuncio (commit dd55dbbbc,
-265842cde, 027c0c56f). Il pulsante è disabilitato, con tooltip, se la classe non ha studenti.
+scheda Annunci il pulsante «Fai un annuncio» (solid) è quello upstream e apre la pagina
+instradata NewAnnouncement via openBatchForm; il menu «...» non ha più la voce annuncio (commit
+dd55dbbbc, 265842cde, 027c0c56f). Il pulsante è disabilitato, con tooltip, se la classe non ha studenti.
 Nota: il v-if usa !readOnlyMode ma dd55dbbbc ha tolto `const readOnlyMode =
 window.read_only_mode` e l'upstream ha poi reintrodotto il riferimento nel template: oggi
 readOnlyMode non è definito (sempre falso), quindi in modalità sola lettura il pulsante resta
@@ -7137,11 +7139,13 @@ title = "Il clic su un corso della classe apre il corso giusto"
 layer = "spa-graft"
 confidence = "high"
 feature = "batch-detail-page"
+status = "accepted-drift"
 intent = """
 Le righe della scheda Corsi sono righe figlie Batch Course: row.name è il nome della riga
 figlia, non del corso, quindi il link upstream verso CourseDetail portava a un corso
 inesistente. Il parametro usa row.course, il Link al corso (commit 30111a51d). Bug upstream
-ancora presente in v2.61.0, che non tocca questa riga."""
+ancora presente in v2.61.0, che non tocca questa riga.
+accepted-drift (2026-11-24, base della release v2.66.0, decisione del committente): BatchCourses.vue upstream usa già row.course nel link al corso (bug corretto)."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Batches/components/BatchCourses.vue"
@@ -7154,8 +7158,7 @@ layer = "spa-graft"
 confidence = "high"
 feature = "batch-detail-page"
 intent = """
-Ritocchi senza regola di business: le due liste portano la classe os-list-view del tema elite;
-le intestazioni di colonna della lista Corsi (Title, Evaluator) passano da __(); lo stato della
+Ritocchi senza regola di business: le due liste portano la classe os-list-view del tema elite; lo stato della
 valutazione nel badge della lista Valutazioni (vista anche dallo studente nella sua dashboard)
 passa da __() e compare in italiano. Differenze solo di formattazione: virgola finale in
 removeAssessments e `<div class="">` come radice di BatchCourses. Al merge di v2.61.0
@@ -7175,9 +7178,6 @@ Merge di v2.62.0 (2026-09-24): il redesign mobile toglie bordo e raggio sotto sm
   file = "frontend/src/pages/Batches/components/BatchCourses.vue"
   anchor = 'class="sm:border sm:rounded-lg os-list-view"'
 
-  [[entries.sites]]
-  file = "frontend/src/pages/Batches/components/BatchCourses.vue"
-  anchor = "label: __('Evaluator'),"
 
 # --- Modulo corso: sezione Dettagli (CourseDetailsSection.vue) ------------------
 
@@ -7259,6 +7259,7 @@ title = "L'editor del corso tiene l'hash della scheda Editor"
 layer = "spa-graft"
 confidence = "high"
 feature = "lesson-editor"
+status = "accepted-drift"
 intent = """
 Compagna di course-outline-editor-hash. Quando l'editor del corso riscrive l'URL (lezione
 selezionata, modalità, lezione eliminata) e l'hash è vuoto, usa '#editor', che è l'id della
@@ -7278,7 +7279,8 @@ di Lesson.vue, fuori da questo gruppo). La prima ancora (hash '#editor' seguito 
 colpisce syncModeToUrl e, dopo un merge risolto bene, colpirà syncSelectedToUrl, che resta
 l'ultima funzione prima di STORAGE_KEY; la seconda è la lezione eliminata. Verificare anche che CourseDetail (fuori
 gruppo) non rimandi più a preview/mode dell'editor.
-Merge di v2.61.0 (2026-09-23): preso CourseEditor upstream (sparisce l'anteprima incorporata e lessonMode); la regola vale sui tre siti, incluso il nuovo watch upstream che ripulisce il vecchio ?lessonMode. Per il controllo contare solo il codice (es. `hash: route.hash || '#course editor'`): i nostri commenti OSLMS-CUSTOM citano la stringa '#course editor'."""
+Merge di v2.61.0 (2026-09-23): preso CourseEditor upstream (sparisce l'anteprima incorporata e lessonMode); la regola vale sui tre siti, incluso il nuovo watch upstream che ripulisce il vecchio ?lessonMode. Per il controllo contare solo il codice (es. `hash: route.hash || '#course editor'`): i nostri commenti OSLMS-CUSTOM citano la stringa '#course editor'.
+accepted-drift (2026-11-24, base della release v2.66.0, decisione del committente): CourseEditor.vue è identico a v2.66.0 e usa già '#editor'."""
 
   [[entries.sites]]
   file = "frontend/src/pages/Courses/CourseEditor.vue"
