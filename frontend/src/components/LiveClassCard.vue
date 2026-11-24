@@ -55,7 +55,7 @@
 				</button>
 			</div>
 			<div
-				v-else-if="canStudentJoin(cls)"
+				v-else-if="canStudentJoin(cls) || canObserverJoin(cls)"
 				class="flex items-center gap-x-2 text-ink-gray-9 mt-auto"
 			>
 				<a
@@ -126,9 +126,9 @@ const props = defineProps({
 		type: Boolean,
 		default: false,
 	},
-	// Whether the current user is a batch valutatore. Valutatori are hosts of
-	// their batch's classes: like moderators/evaluators they get the Start/Open
-	// button, so they can start the class and enter the meeting as organizer.
+	// Whether the current user is a batch valutatore. Valutatori only observe
+	// (decision of 2026-11-23): they never get Start/Open, and they may join for
+	// the whole class without waiting for the host (see canObserverJoin).
 	observer: {
 		type: Boolean,
 		default: false,
@@ -188,10 +188,15 @@ const canStudentJoin = (cls) =>
 const studentJoinUrl = (cls) =>
 	`/api/method/os_lms.os_lms.live_class_join.join?name=${encodeURIComponent(cls.name)}`
 
-// Hosts (moderators/evaluators and batch valutatori) can start/open the class
-// on the class day: they enter the meeting as organizer.
-const canHost = (cls) =>
-	(props.isAdmin || props.observer) && canModeratorAccessClass(cls)
+// Hosts (moderators/evaluators and the batch's authors) can start/open the
+// class on the class day: they enter the meeting as organizer.
+const canHost = (cls) => props.isAdmin && canModeratorAccessClass(cls)
+
+// A batch valutatore watches as a participant during the whole join window,
+// without waiting for started_at: the host often opens the meeting straight on
+// Zoom/Meet. Mirrors the "observer" tier of join_live_class on the server.
+const canObserverJoin = (cls) =>
+	props.observer && isWithinJoinWindow(cls) && Boolean(cls.join_url)
 
 // Before the host has started, the student sees a disabled "Join" button with a
 // "Live not started yet" tooltip (within the join window, class not ended).

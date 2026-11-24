@@ -1866,13 +1866,10 @@ def _ensure_live_class_admin(name: str) -> None:
 def _ensure_can_start_live_class(doc) -> None:
 	"""Authorize starting a Live Class.
 
-	Starting is broader than the manage-only actions guarded by
-	`_ensure_live_class_admin`: besides global admins, a valutatore of this
-	class's batch is a host and may start their own batch's classes (but must
-	not update/delete them).
+	Moderators, evaluators and the batch's authors host its classes. A
+	Valutatore of the batch only observes (decision of 2026-11-23): they join
+	through `join_live_class` as an observer and never start the class.
 	"""
-	from os_lms.os_lms.valutatore import is_batch_valutatore
-
 	from lms.lms.permissions import can_author_batch
 
 	roles = frappe.get_roles(frappe.session.user)
@@ -1880,8 +1877,6 @@ def _ensure_can_start_live_class(doc) -> None:
 		return
 	# The batch's authors (Docente, tagged instructors) host its classes too
 	if can_author_batch(doc.batch_name):
-		return
-	if is_batch_valutatore(doc.batch_name, frappe.session.user):
 		return
 	frappe.throw(
 		frappe._("Non hai i permessi per avviare questa lezione."),
