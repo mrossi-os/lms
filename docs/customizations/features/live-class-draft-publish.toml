@@ -30,7 +30,7 @@ upstream_watch = [
 	"get_my_live_classes", "get_admin_live_classes", "timetable", "reminder", "published",
 ]
 data = [
-	"custom field LMS Live Class.status (Select Draft/Published, default Draft) e LMS Live Class.published_at, dalle fixture custom_field.json",
+	"custom field LMS Live Class.status (Select Draft/Published, senza default: Draft lo impone before_insert dell'override os_lms; vuoto = pubblicata) e LMS Live Class.published_at, dalle fixture custom_field.json",
 	"permission_query_conditions e has_permission su LMS Live Class -> os_lms.os_lms.live_class_draft (accanto alla regola del Valutatore)",
 	"endpoint os_lms.os_lms.api.publish_live_class",
 	"regola dei promemoria in live_class_reminders._process_class_reminders",
